@@ -3,100 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Merchandising - v6 Pro</title>
+    <title>Sucedoan Merchandising - v7 Final</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --bg-body: #0f172a;
-            --bg-card: #ffffff;
-            --text-primary: #0f172a; /* Preto quase absoluto */
-            --text-secondary: #64748b;
+            --bg-card: #1e293b; /* Fundo do card mais escuro para contraste */
+            --text-primary: #f8fafc; /* Texto claro */
+            --text-secondary: #94a3b8;
             --accent: #3b82f6;
             --success: #22c55e;
             --warning: #f59e0b;
             --danger: #ef4444;
-            --border: #e2e8f0;
+            --border: #334155;
         }
 
-        /* RESET E BASE */
+        /* RESET */
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; }
 
-        /* NAVEGAÇÃO */
+        /* HEADER */
         header {
-            background: #1e293b; height: 70px; display: flex; align-items: center; padding: 0 24px;
-            border-bottom: 1px solid #334155; gap: 20px; flex-shrink: 0;
+            background: #020617; height: 70px; display: flex; align-items: center; padding: 0 24px;
+            border-bottom: 1px solid var(--border); gap: 15px; flex-shrink: 0;
         }
-        .brand { font-weight: 900; font-size: 20px; color: white; letter-spacing: -0.5px; margin-right: auto; }
+        .brand { font-weight: 900; font-size: 20px; color: white; margin-right: auto; letter-spacing: -0.5px; }
         .brand span { color: var(--accent); }
         
         .nav-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1;
-            padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;
+            background: #1e293b; border: 1px solid #334155; color: #cbd5e1;
+            padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s;
             display: flex; align-items: center; gap: 8px; font-size: 13px;
         }
-        .nav-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
         .nav-btn.primary { background: var(--accent); color: white; border: none; }
         .nav-btn.config { color: var(--warning); border-color: rgba(245, 158, 11, 0.3); }
 
-        /* BARRA DE FERRAMENTAS */
+        /* TOOLBAR */
         .toolbar {
             padding: 16px 24px; display: flex; gap: 12px; background: #0f172a;
-            border-bottom: 1px solid #1e293b; flex-shrink: 0;
+            border-bottom: 1px solid var(--border); flex-shrink: 0;
         }
         .search-container { flex-grow: 1; position: relative; }
         .search-input {
             width: 100%; background: #1e293b; border: 1px solid #334155; color: white;
             padding: 12px 12px 12px 40px; border-radius: 8px; font-size: 15px; outline: none;
         }
-        .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .search-input:focus { border-color: var(--accent); }
         .search-icon { position: absolute; left: 12px; top: 12px; color: #64748b; }
 
-        /* GRID DE PRODUTOS (O CARRO CHEFE) */
+        /* GRID (CARDS) */
         .product-grid {
             flex-grow: 1; overflow-y: auto; padding: 24px;
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
             gap: 20px; align-content: start;
         }
 
-        /* CARD DESIGN (PROFISSIONAL) */
         .card {
             background: var(--bg-card); border-radius: 12px; overflow: hidden;
             display: flex; flex-direction: column; position: relative;
-            transition: transform 0.2s, box-shadow 0.2s; border: 1px solid transparent;
+            border: 1px solid var(--border); transition: transform 0.2s;
         }
-        .card:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); z-index: 10; }
+        .card:hover { transform: translateY(-4px); border-color: var(--accent); z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         
-        /* Status Borders */
+        /* Status Color Codes (Top Border) */
         .card.status-synced { border-top: 4px solid var(--success); }
-        .card.status-changed { border-top: 4px solid var(--warning); }
-        .card.status-error { border-top: 4px solid var(--danger); }
-
-        /* Imagem Area */
+        .card.status-changed { border-top: 4px solid var(--warning); } /* Laranja quando alterado/novo */
+        
+        /* Imagem */
         .card-img-area {
-            height: 200px; background: #f1f5f9; position: relative;
+            height: 180px; background: #000; position: relative;
             display: flex; justify-content: center; align-items: center; cursor: pointer;
             border-bottom: 1px solid var(--border); overflow: hidden;
         }
-        .card-img { width: 100%; height: 100%; object-fit: contain; background: white; transition: 0.3s; }
-        .card:hover .card-img { transform: scale(1.05); }
+        .card-img { width: 100%; height: 100%; object-fit: contain; background: white; }
         
-        /* Botões Flutuantes na Imagem (Aparecem no Hover) */
+        /* Botões Flutuantes da Imagem */
         .img-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.4); opacity: 0;
+            position: absolute; inset: 0; background: rgba(0,0,0,0.6); opacity: 0;
             display: flex; justify-content: center; align-items: center; gap: 10px;
             transition: 0.2s; backdrop-filter: blur(2px);
         }
         .card-img-area:hover .img-overlay { opacity: 1; }
         
         .overlay-btn {
-            background: white; color: var(--text-primary); border: none; width: 40px; height: 40px;
+            background: white; color: #0f172a; border: none; width: 40px; height: 40px;
             border-radius: 50%; display: flex; justify-content: center; align-items: center;
-            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s;
+            cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); transition: 0.2s;
         }
         .overlay-btn:hover { transform: scale(1.1); background: var(--accent); color: white; }
 
@@ -105,49 +102,49 @@
         
         .card-sku { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
         .card-title { 
-            font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0; 
+            font-size: 14px; font-weight: 600; color: white; margin: 0; 
             display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;
+            min-height: 40px;
         }
         
-        /* Grid de Inputs Compactos */
+        /* Inputs no Card */
         .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 10px; }
         .stat-box { display: flex; flex-direction: column; }
-        .stat-label { font-size: 10px; color: var(--text-secondary); margin-bottom: 2px; }
+        .stat-label { font-size: 10px; color: var(--accent); margin-bottom: 4px; font-weight: bold; }
         .stat-input { 
             width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 4px; 
-            font-size: 13px; font-weight: 600; color: var(--text-primary);
+            font-size: 13px; font-weight: 600; color: white; background: #0f172a; text-align: center;
         }
-        .stat-input:focus { border-color: var(--accent); outline: none; background: #f8fafc; }
+        .stat-input:focus { border-color: var(--accent); outline: none; }
 
-        /* Rodapé do Card */
+        /* Footer */
         .card-footer {
-            padding: 10px 16px; background: #f8fafc; border-top: 1px solid var(--border);
+            padding: 10px 16px; background: #0f172a; border-top: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center;
         }
         .btn-text { background: none; border: none; color: var(--text-secondary); font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; }
-        .btn-text:hover { color: var(--primary); }
+        .btn-text:hover { color: white; }
+        .btn-sync-mini { background: var(--success); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap:4px; }
+        .btn-sync-mini:hover { filter: brightness(1.1); }
 
-        /* MODAIS E LOADER (Mantidos e Estilizados) */
+        /* MODAIS */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-card { background: #1e293b; padding: 0; border-radius: 16px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); overflow: hidden; }
-        .modal-header { padding: 20px; background: #0f172a; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; font-size: 18px; }
-        .modal-body { padding: 24px; overflow-y: auto; color: #cbd5e1; }
+        .modal-card { background: #1e293b; padding: 0; border-radius: 12px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border); box-shadow: 0 25px 50px rgba(0,0,0,0.5); overflow: hidden; }
+        .modal-header { padding: 15px 20px; background: #020617; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; font-size: 16px; }
+        .modal-body { padding: 20px; overflow-y: auto; color: #cbd5e1; }
         .close-btn { background: none; border: none; color: #64748b; cursor: pointer; }
         .close-btn:hover { color: white; }
 
-        /* EDITOR STYLES */
-        canvas { background: #fff; max-width: 100%; border-radius: 4px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin: 0 auto; display: block; }
-        .range-group { margin-top: 15px; }
-        .range-group label { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 5px; }
-        input[type=range] { width: 100%; accent-color: var(--accent); }
-        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .form-group label { display: block; font-size: 11px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-group input { width: 100%; background: #020617; border: 1px solid #334155; padding: 10px; border-radius: 6px; color: white; }
-        
+        /* Form Grid nos Modais */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group label { display: block; font-size: 11px; color: var(--accent); margin-bottom: 5px; text-transform: uppercase; }
+        .form-group input { width: 100%; background: #0f172a; border: 1px solid var(--border); padding: 10px; border-radius: 6px; color: white; }
         .btn-full { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; background: var(--accent); color: white; font-size: 14px; }
-        .btn-full:hover { filter: brightness(1.1); }
 
+        /* EDITOR */
+        canvas { background: #fff; max-width: 100%; border: 2px solid var(--border); margin: 0 auto; display: block; }
+
+        /* LOADER */
         #loader { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; display: none; justify-content: center; align-items: center; color: white; flex-direction: column; gap: 15px; }
         .spinner { width: 40px; height: 40px; border: 4px solid #334155; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -159,7 +156,7 @@
     <script>
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
-        const STORAGE_KEY = 'sucedoan_data_v6';
+        const STORAGE_KEY = 'sucedoan_data_v7';
         const CONFIG_KEY = 'sucedoan_config';
     </script>
 
@@ -167,20 +164,20 @@
         <div class="brand">SUCEDOAN <span>PRO</span></div>
         <button class="nav-btn primary" onclick="importarBling()"><i data-lucide="cloud-download"></i> BAIXAR BLING</button>
         <input type="file" id="csv-file" accept=".csv" style="display:none">
-        <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet"></i> CSV</button>
+        <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet"></i> IMPORTAR CSV</button>
         <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings"></i></button>
     </header>
 
     <div class="toolbar">
         <div class="search-container">
             <i data-lucide="search" class="search-icon"></i>
-            <input type="text" class="search-input" id="search-input" placeholder="Pesquisar produto por Nome, SKU ou EAN...">
+            <input type="text" class="search-input" id="search-input" placeholder="Pesquisar produto...">
         </div>
         <button class="nav-btn" onclick="exportarCSV()"><i data-lucide="download"></i> Exportar</button>
+        <div style="margin-left:auto; color: #64748b; font-size: 12px; align-self: center;" id="total-count">0 produtos</div>
     </div>
 
-    <div class="product-grid" id="product-grid">
-        </div>
+    <div class="product-grid" id="product-grid"></div>
 
     <div id="modal-editor" class="modal-overlay">
         <div class="modal-card">
@@ -194,10 +191,10 @@
                     Dica: Copie a imagem no Google e pressione <b>Ctrl+V</b> aqui.
                 </div>
                 
-                <div class="range-group">
-                    <label><span>Zoom</span> <span id="zoom-val">100%</span></label>
-                    <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
+                <div style="margin-top: 15px; display: flex; justify-content: space-between; color: #94a3b8; font-size: 12px;">
+                    <span>Zoom: <b id="zoom-val">100%</b></span>
                 </div>
+                <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1" style="width:100%; accent-color: var(--accent);">
 
                 <div class="form-grid" style="margin-top:20px;">
                     <button class="nav-btn" style="justify-content:center" onclick="document.getElementById('fileInput').click()">
@@ -220,8 +217,7 @@
                 <button class="close-btn" onclick="saveDetails()"><i data-lucide="check"></i> SALVAR</button>
             </div>
             <div class="modal-body">
-                <div class="form-grid" id="details-form">
-                    </div>
+                <div class="form-grid" id="details-form"></div>
                 <button class="btn-full" onclick="saveDetails()">SALVAR ALTERAÇÕES</button>
             </div>
         </div>
@@ -243,22 +239,18 @@
     <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
 
     <script>
-        // --- ESTADO DA APLICAÇÃO ---
+        // --- ESTADO ---
         let products = [];
-        let currentEditingId = null; // Usaremos o código SKU como ID
-        
-        // Editor Vars
+        let currentEditingId = null; 
         const canvas = document.getElementById('imageCanvas');
         const ctx = canvas.getContext('2d');
         let loadedImage = null;
 
-        // --- INICIALIZAÇÃO ---
         window.onload = function() {
             lucide.createIcons();
             loadData();
             setupEditorEvents();
             
-            // Search Listener
             document.getElementById('search-input').addEventListener('input', (e) => {
                 renderGrid(e.target.value);
             });
@@ -282,33 +274,36 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
         }
 
-        // --- RENDERIZAÇÃO DO GRID (A MÁGICA UX) ---
+        // --- RENDER GRID (CORRIGIDO PARA EXIBIR DADOS) ---
         function renderGrid(filter = "") {
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
             const term = filter.toLowerCase();
 
-            // Filtra
-            const filtered = products.filter(p => 
-                (p.nome && p.nome.toLowerCase().includes(term)) || 
-                (p.codigo && p.codigo.toLowerCase().includes(term)) ||
-                (p.gtin && p.gtin.includes(term))
-            );
+            // Filtragem Segura
+            const filtered = products.filter(p => {
+                const nome = p.nome ? p.nome.toString().toLowerCase() : "";
+                const codigo = p.codigo ? p.codigo.toString().toLowerCase() : "";
+                const gtin = p.gtin ? p.gtin.toString() : "";
+                return nome.includes(term) || codigo.includes(term) || gtin.includes(term);
+            });
 
-            // Renderiza Cards
+            document.getElementById('total-count').innerText = filtered.length + " produtos";
+
             filtered.forEach(p => {
                 const card = document.createElement('div');
+                // Adiciona classe de status (Laranja = Alterado, Verde = Sincronizado)
                 card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
                 
-                // Lógica de Imagem
+                // Fallback de Imagem
                 const hasImg = p.url_imagem && p.url_imagem.length > 5;
-                const imgSrc = hasImg ? p.url_imagem : 'https://placehold.co/400x400/f1f5f9/94a3b8?text=SEM+FOTO';
+                const imgSrc = hasImg ? p.url_imagem : 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
                 
                 card.innerHTML = `
                     <div class="card-img-area">
-                        <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/f1f5f9/94a3b8?text=ERRO'">
+                        <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/1e293b/475569?text=ERRO'">
                         <div class="img-overlay">
-                            <button class="overlay-btn" title="Buscar no Google" onclick="searchGoogle('${p.nome}')">
+                            <button class="overlay-btn" title="Buscar no Google" onclick="searchGoogle('${p.nome || ''}')">
                                 <i data-lucide="search"></i>
                             </button>
                             <button class="overlay-btn" title="Editor de Foto" onclick="openPhotoEditor('${p.codigo}')">
@@ -320,30 +315,30 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="card-sku">${p.codigo || 'S/ SKU'}</div>
-                        <div class="card-title" contenteditable="true" onblur="updateField('${p.codigo}', 'nome', this.innerText)">${p.nome || 'Sem Nome'}</div>
+                        <div class="card-sku">${p.codigo || 'NOVO'}</div>
+                        <div class="card-title" contenteditable="true" onblur="updateField('${p.codigo}', 'nome', this.innerText)">${p.nome || 'Produto sem Nome'}</div>
                         
                         <div class="card-stats">
                             <div class="stat-box">
                                 <label class="stat-label">PREÇO (R$)</label>
-                                <input type="number" class="stat-input" value="${p.preco}" onchange="updateField('${p.codigo}', 'preco', this.value)">
+                                <input type="number" class="stat-input" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)">
                             </div>
                             <div class="stat-box">
                                 <label class="stat-label">ESTOQUE</label>
-                                <input type="number" class="stat-input" value="${p.estoque}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
+                                <input type="number" class="stat-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
                             </div>
                         </div>
                         
                         <div style="display:flex; gap:10px; margin-top:8px;">
                             <div class="stat-box" style="flex:1">
-                                <label class="stat-label">LOCAL</label>
+                                <label class="stat-label">LOCALIZAÇÃO</label>
                                 <input type="text" class="stat-input" value="${p.localizacao || ''}" onchange="updateField('${p.codigo}', 'localizacao', this.value)">
                             </div>
                         </div>
                     </div>
                     <div class="card-footer">
                         <button class="btn-text" onclick="openDetails('${p.codigo}')"><i data-lucide="list-plus" size="14"></i> DETALHES</button>
-                        <button class="nav-btn primary" style="padding: 4px 10px; font-size:10px;" onclick="syncBling('${p.codigo}')">
+                        <button class="btn-sync-mini" onclick="syncBling('${p.codigo}')">
                             <i data-lucide="refresh-cw" size="12"></i> SYNC
                         </button>
                     </div>
@@ -353,26 +348,97 @@
             lucide.createIcons();
         }
 
-        // --- LÓGICA DE DADOS ---
+        // --- UPDATE FIELDS ---
         function updateField(sku, field, value) {
             const product = products.find(p => p.codigo == sku);
             if(product) {
-                // Conversão de números
                 if(field === 'preco' || field === 'estoque') value = parseFloat(value) || 0;
-                
                 product[field] = value;
-                product._changed = true; // Marca como alterado visualmente
+                product._changed = true; 
                 saveData();
-                renderGrid(document.getElementById('search-input').value); // Re-render para atualizar bordas
+                renderGrid(document.getElementById('search-input').value);
             }
         }
 
         function searchGoogle(term) {
+            if(!term) return alert("Produto sem nome!");
             const query = encodeURIComponent(term);
             window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
         }
 
-        // --- EDITOR DE FOTO ---
+        // --- IMPORTAÇÃO CSV CORRIGIDA (O PULO DO GATO) ---
+        document.getElementById('csv-file').addEventListener('change', function(e) {
+            if(!e.target.files[0]) return;
+            
+            toggleLoader(true, "Lendo CSV...");
+
+            // Configuração para ler Bling e Excel corretamente
+            Papa.parse(e.target.files[0], {
+                header: true,
+                skipEmptyLines: true,
+                encoding: "ISO-8859-1", // ⚠️ Importante para Bling/Excel brasileiro
+                delimiter: ";",         // ⚠️ Força ponto e vírgula
+                complete: (results) => {
+                    
+                    // Helper para achar colunas independente de maiúsculas/acentos
+                    const findVal = (row, possibleNames) => {
+                        const keys = Object.keys(row);
+                        // Tenta encontrar a chave exata ou parecida
+                        const foundKey = keys.find(k => {
+                            const cleanKey = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                            return possibleNames.some(name => cleanKey.includes(name));
+                        });
+                        return foundKey ? row[foundKey] : "";
+                    };
+
+                    const parseNum = (val) => {
+                        if(typeof val === 'number') return val;
+                        if(!val) return 0;
+                        return parseFloat(val.toString().replace(/\./g, '').replace(',', '.')) || 0;
+                    };
+
+                    const novosProdutos = results.data.map(d => {
+                        return {
+                            // Mapeamento Inteligente
+                            codigo: findVal(d, ['codigo', 'sku']),
+                            nome: findVal(d, ['descricao', 'nome', 'produto']),
+                            preco: parseNum(findVal(d, ['preco', 'venda'])),
+                            estoque: parseNum(findVal(d, ['estoque'])),
+                            localizacao: findVal(d, ['localizacao', 'local']),
+                            gtin: findVal(d, ['gtin', 'ean']),
+                            ncm: findVal(d, ['ncm']),
+                            cest: findVal(d, ['cest']),
+                            url_imagem: findVal(d, ['url', 'imagem', 'foto']),
+                            
+                            // Campos Extras
+                            unidade: findVal(d, ['unidade']) || 'UN',
+                            pesoLiquido: parseNum(findVal(d, ['peso liq'])),
+                            pesoBruto: parseNum(findVal(d, ['peso bru'])),
+                            largura: parseNum(findVal(d, ['largura'])),
+                            altura: parseNum(findVal(d, ['altura'])),
+                            profundidade: parseNum(findVal(d, ['profundidade'])),
+                            
+                            _changed: true // Marca como "Novo/Alterado" (Borda Laranja)
+                        };
+                    });
+
+                    // Remove linhas vazias (sem código e sem nome)
+                    const validos = novosProdutos.filter(p => p.codigo || p.nome);
+
+                    products = validos;
+                    saveData();
+                    renderGrid();
+                    toggleLoader(false);
+                    alert(`${validos.length} produtos importados com sucesso!`);
+                },
+                error: (err) => {
+                    toggleLoader(false);
+                    alert("Erro ao ler CSV: " + err.message);
+                }
+            });
+        });
+
+        // --- EDITOR FOTO ---
         function openPhotoEditor(sku) {
             currentEditingId = sku;
             const product = products.find(p => p.codigo == sku);
@@ -388,7 +454,6 @@
         }
 
         function setupEditorEvents() {
-            // Paste
             window.addEventListener('paste', e => {
                 if(document.getElementById('modal-editor').style.display !== 'flex') return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -400,7 +465,6 @@
                     }
                 }
             });
-            // File Input
             document.getElementById('fileInput').addEventListener('change', function(){
                 if(this.files[0]) {
                     const r = new FileReader();
@@ -408,7 +472,6 @@
                     r.readAsDataURL(this.files[0]);
                 }
             });
-            // Zoom
             document.getElementById('zoomRange').addEventListener('input', drawImage);
         }
 
@@ -444,7 +507,10 @@
             toggleLoader(true, "Enviando para o GitHub...");
             
             const product = products.find(p => p.codigo == currentEditingId);
-            const slug = product.nome.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') + "-cesta-basica.webp";
+            const cleanName = product.nome ? product.nome : "produto-" + product.codigo;
+            
+            // Slugify Nome
+            const slug = cleanName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') + "-cesta-basica.webp";
             
             const dataUrl = canvas.toDataURL("image/webp", 0.8);
             const base64Content = dataUrl.split(',')[1];
@@ -453,14 +519,12 @@
             const apiUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
 
             try {
-                // Checa se existe (para pegar SHA)
                 let sha = null;
                 try {
                     const check = await fetch(apiUrl, { headers: { "Authorization": `token ${cfg.token}` } });
                     if(check.ok) sha = (await check.json()).sha;
                 } catch(e) {}
 
-                // Upload
                 const res = await fetch(apiUrl, {
                     method: 'PUT',
                     headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" },
@@ -523,27 +587,25 @@
             });
             p._changed = true;
             saveData();
+            renderGrid(document.getElementById('search-input').value);
             closeModal('modal-details');
         }
 
-        // --- INTEGRAÇÃO BLING ---
+        // --- SYNC BLING ---
         function syncBling(sku) {
-            // Se SKU vier nulo, é sync unitário do botão. Se não, precisaríamos de lógica bulk.
-            // Aqui faremos unitário
             const p = products.find(pr => pr.codigo == sku);
             if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure Webhook UPDATE!");
 
             toggleLoader(true, "Sincronizando com Bling...");
             
-            // Sanitização
             const payload = {...p};
-            delete payload._changed; // Não mandar controle interno
+            delete payload._changed;
             
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
             }).then(r => {
                 if(r.ok) {
-                    p._changed = false; // Remove marcação de alterado
+                    p._changed = false; 
                     saveData();
                     renderGrid(document.getElementById('search-input').value);
                     toggleLoader(false);
@@ -561,7 +623,6 @@
             toggleLoader(true, "Baixando catálogo...");
             fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(data => {
                 if(Array.isArray(data)) {
-                    // Mapeamento seguro
                     products = data.map(d => ({
                         codigo: d.codigo || d["Código"] || "",
                         nome: d.nome || d["Descrição"] || "",
@@ -586,8 +647,7 @@
                 alert("Erro de Importação: " + e);
             });
         }
-        
-        // Exportar CSV
+
         function exportarCSV() {
             const csv = Papa.unparse(products, { quotes: true, delimiter: ";", newline: "\r\n" });
             const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -597,24 +657,6 @@
             link.click();
         }
 
-        // CSV Import
-        document.getElementById('csv-file').addEventListener('change', function(e) {
-            Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, encoding: "UTF-8", complete: (r) => {
-                // Mesclar ou substituir? Vamos substituir para simplificar
-                const novos = r.data.map(d => ({
-                    codigo: d["Código"]||d.codigo, nome: d["Descrição"]||d.nome,
-                    preco: parseFloat(d["Preço"]||d.preco||0), estoque: parseFloat(d["Estoque"]||d.estoque||0),
-                    localizacao: d["Localização"]||d.localizacao, gtin: d["GTIN/EAN"]||d.gtin,
-                    ncm: d["NCM"]||d.ncm, url_imagem: d["URL Imagens Externas"]||d.url_imagem,
-                    _changed: true
-                }));
-                products = novos;
-                saveData();
-                renderGrid();
-            }});
-        });
-
-        // Config UI
         function openConfigModal() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             document.getElementById('cfg-token').value = cfg.token||'';
