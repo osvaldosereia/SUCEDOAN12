@@ -199,7 +199,7 @@
     <script>
         var table;
         var pedidosProcessados = [];
-        const STORAGE_KEY = 'sucedoan_kiosk_data_v3'; // Chave atualizada para v3
+        const STORAGE_KEY = 'sucedoan_kiosk_data_v3'; 
 
         // --- GESTÃO DO MODAL E LOADER ---
 
@@ -227,7 +227,7 @@
             if(!confirm("Tem certeza? Isso vai carregar a lista oficial do Bling e atualizar a tabela.")) return;
             
             if(MAKE_WEBHOOK_GET_PRODUCTS.includes("COLE_AQUI")) {
-                alert("ERRO: Configure o link do Webhook GET no código primeiro!");
+                alert("ERRO: Você precisa criar o Cenário de Busca no Make e colar o link no código.");
                 return;
             }
 
@@ -238,17 +238,33 @@
                 const data = await response.json();
                 
                 if(Array.isArray(data)) {
-                    // Mapeamento simples para garantir compatibilidade caso o Make mande nomes diferentes
-                    // Mas idealmente o Make já manda: codigo, nome, preco, etc.
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                    table.setData(data);
-                    alert("Sucesso! " + data.length + " produtos carregados.");
+                    // Mapeamento de segurança
+                    const dadosMapeados = data.map(d => ({
+                        codigo: d.codigo || "",
+                        nome: d.nome || "",
+                        situacao: d.situacao || "A",
+                        formato: d.formato || "S",
+                        preco: d.preco || 0,
+                        unidade: d.unidade || "UN",
+                        pesoBruto: d.pesoBruto || 0,
+                        pesoLiquido: d.pesoLiquido || 0,
+                        gtin: d.gtin || "",
+                        ncm: d.ncm || "",
+                        cest: d.cest || "",
+                        estoque: d.estoque || 0,
+                        localizacao: d.localizacao || "",
+                        url_imagem: d.url_imagem || ""
+                    }));
+
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(dadosMapeados));
+                    table.setData(dadosMapeados);
+                    alert("Sucesso! " + dadosMapeados.length + " produtos carregados.");
                 } else {
                     alert("Erro: O Make não retornou uma lista válida.");
                     console.log(data);
                 }
             } catch (error) {
-                alert("Erro ao conectar com o Make. Verifique o console.");
+                alert("Erro ao conectar com o Make. Verifique se o cenário 'GET' está ativo.");
                 console.error(error);
             } finally {
                 toggleLoader(false);
@@ -256,12 +272,6 @@
         }
 
        async function sincronizarProdutoUnitario(rowData, btnElement) {
-            if(MAKE_WEBHOOK_UPDATE_PRODUCT.includes("SEU_LINK")) {
-                alert("Configure o link do Webhook UPDATE no código!");
-                return;
-            }
-
-            // Função ajudante para limpar "Enters"
             const limparTexto = (texto) => {
                 if (!texto) return "";
                 return texto.toString().replace(/[\r\n]+/g, "").trim();
@@ -272,35 +282,26 @@
             btnElement.disabled = true;
 
             try {
-                // --- PAYLOAD COMPLETO (AQUI ESTÁ O SEGREDO) ---
-                // Enviamos TUDO de volta para o Make, para ele não apagar nada no Bling.
                 const payload = {
                     codigo: limparTexto(rowData["codigo"]),
                     nome: limparTexto(rowData["nome"]),
                     situacao: rowData["situacao"] || "A",
                     formato: rowData["formato"] || "S",
-                    tipo: "P",
                     
-                    // Preços e Pesos (Garantir que são números ou strings válidas)
                     preco: rowData["preco"],
                     unidade: rowData["unidade"],
                     pesoBruto: rowData["pesoBruto"],
                     pesoLiquido: rowData["pesoLiquido"],
                     
-                    // Tributação (Essenciais)
                     ncm: rowData["ncm"],
                     cest: rowData["cest"],
                     gtin: rowData["gtin"],
                     
-                    // Estoque (Módulo 5 do Make)
                     estoque: rowData["estoque"],
                     localizacao: rowData["localizacao"],
                     
-                    // Imagem
                     url_imagem: limparTexto(rowData["url_imagem"])
                 };
-
-                console.log("Enviando Payload:", payload); // Para debug
 
                 const response = await fetch(MAKE_WEBHOOK_UPDATE_PRODUCT, {
                     method: 'POST',
@@ -310,7 +311,6 @@
 
                 if(response.ok) {
                     btnElement.innerText = "✅ Salvo";
-                    // Atualiza visualmente a linha para mostrar que está ok
                     btnElement.parentElement.style.backgroundColor = "#dcfce7";
                     setTimeout(() => { 
                         btnElement.innerText = textoOriginal; 
@@ -363,39 +363,33 @@
                 data: data,
                 layout: "fitColumns",
                 height: "100%",
-                clipboard:true, // Permite copiar celulas
+                clipboard:true, 
                 columns: [
-                    // Coluna de Ação Fixa
                     {title: "AÇÕES", width: 100, headerSort: false, frozen:true, formatter: () => "<button class='action-btn btn-sync' style='width:100%'>☁ SALVAR</button>", hozAlign:"center", cellClick: (e, cell) => {
                         sincronizarProdutoUnitario(cell.getData(), e.target);
                     }},
                     
-                    // Identificação
                     {title: "SKU", field: "codigo", width: 90, headerFilter:"input"},
                     {title: "NOME (DESCRIÇÃO)", field: "nome", widthGrow: 2, editor: "input", headerFilter:"input"},
                     
-                    // Imagem e Links
                     {title: "IMAGEM", field: "url_imagem", width: 100, editor: "input", formatter: "link", formatterParams:{label:"Ver", target:"_blank"}},
                     {title: "🔍", width: 40, hozAlign: "center", headerSort:false, formatter: () => "🔍", cellClick: (e, cell) => {
                         openSideModal(cell.getData()["nome"]);
                     }},
                     
-                    // Dados Comerciais
                     {title: "R$ PREÇO", field: "preco", width: 90, editor: "number", hozAlign:"right"},
                     {title: "UN", field: "unidade", width: 60, editor: "input", hozAlign:"center"},
                     {title: "SIT", field: "situacao", width: 60, editor: "input", hozAlign:"center"},
                     
-                    // Estoque e Local
                     {title: "ESTOQUE", field: "estoque", width: 90, editor: "number", hozAlign: "center", formatter:"prop", formatterParams:{fontWeight:"bold"}},
                     {title: "LOCAL", field: "localizacao", width: 100, editor: "input"},
 
-                    // Dados Fiscais e Logísticos (Importantes para não apagar no Bling)
                     {title: "NCM", field: "ncm", width: 90, editor: "input"},
+                    {title: "CEST", field: "cest", width: 90, editor: "input"},
                     {title: "GTIN/EAN", field: "gtin", width: 110, editor: "input"},
                     {title: "PESO LIQ", field: "pesoLiquido", width: 90, editor: "number"},
                     {title: "PESO BRU", field: "pesoBruto", width: 90, editor: "number"},
                     
-                    // Ferramentas Extras
                     {title: "EDITOR", headerSort:false, formatter: () => "<button class='action-btn btn-copy'>FOTO</button>", width: 70, cellClick: (e, cell) => {
                         const slug = slugify(cell.getData()["nome"]);
                         navigator.clipboard.writeText(slug); 
@@ -453,33 +447,56 @@
 
         window.onload = function() {
             const saved = localStorage.getItem(STORAGE_KEY);
-            // Se tiver dados salvos, usa. Se não, espera o usuário clicar em Baixar.
             if (saved) initTable(JSON.parse(saved));
-            else initTable([]); // Inicia tabela vazia
+            else initTable([]); 
             
             setInterval(fetchOrders, 30000);
             fetchOrders();
             document.getElementById("search-field").focus();
         };
 
-        // Função de CSV (Mantida para backup)
+        // --- FUNÇÃO DE IMPORTAÇÃO CSV CORRIGIDA ---
         document.getElementById('csv-file').addEventListener('change', function(e) {
             Papa.parse(e.target.files[0], {
-                header: true, skipEmptyLines: true, encoding: "UTF-8",
+                header: true, 
+                skipEmptyLines: true, 
+                encoding: "UTF-8", // Geralmente Bling exporta UTF-8 ou ISO-8859-1. Se der erro de acentuação, mude para "ISO-8859-1"
                 complete: (results) => {
-                    // Adaptador simples caso o CSV venha com nomes antigos
+                    
+                    // Função auxiliar para converter "1.200,50" -> 1200.50
+                    const parseNum = (val) => {
+                        if (typeof val === 'number') return val;
+                        if (!val) return 0;
+                        return parseFloat(val.replace(/\./g, '').replace(',', '.')) || 0;
+                    };
+
                     const dadosAdaptados = results.data.map(d => ({
-                        codigo: d["Código"] || d.codigo,
-                        nome: d["Descrição"] || d.nome,
-                        estoque: d["Estoque"] || d.estoque,
-                        localizacao: d["Localização"] || d.localizacao,
-                        url_imagem: d["URL Imagens Externas"] || d.url_imagem,
-                        preco: d.preco || 0,
-                        ncm: d.ncm || ""
+                        // Mapeamento: Coluna CSV do Bling -> Campo Interno do Site
+                        codigo: d["Código"] || d.codigo || "",
+                        nome: d["Descrição"] || d.nome || "",
+                        unidade: d["Unidade"] || d.unidade || "UN",
+                        
+                        // Situação: Se vier "Ativo" converte para "A" (padrão API)
+                        situacao: (d["Situação"] === "Ativo" ? "A" : (d["Situação"] === "Inativo" ? "I" : (d["Situação"] || d.situacao || "A"))),
+                        
+                        preco: parseNum(d["Preço"] || d.preco),
+                        
+                        estoque: parseNum(d["Estoque"] || d.estoque),
+                        localizacao: d["Localização"] || d.localizacao || "",
+                        
+                        pesoLiquido: parseNum(d["Peso líquido (Kg)"] || d.pesoLiquido),
+                        pesoBruto: parseNum(d["Peso bruto (Kg)"] || d.pesoBruto),
+                        
+                        gtin: d["GTIN/EAN"] || d.gtin || "",
+                        ncm: d["NCM"] || d.ncm || "",
+                        cest: d["CEST"] || d.cest || "", // Adicionado
+                        
+                        url_imagem: d["URL Imagens Externas"] || d.url_imagem || ""
                     }));
+
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(dadosAdaptados));
                     table.setData(dadosAdaptados);
-                    alert("Dados do CSV carregados!");
+                    alert("Dados do CSV carregados com sucesso! " + dadosAdaptados.length + " produtos importados.");
                 }
             });
         });
