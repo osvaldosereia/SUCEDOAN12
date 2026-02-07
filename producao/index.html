@@ -865,18 +865,26 @@
                 body: JSON.stringify(payload)
             })
             .then(r => { 
-                if(r.ok) { 
-                    p.observacoes = payload.observacoes; // Salva obs atualizada localmente
-                    p._changed = false; 
-                    p._lastChange = ""; // Limpa status
-                    saveData(); 
-                    
-                    addToHistory(sku, p.nome, true, changeType); 
-                    
-                    renderGrid(document.getElementById('search-input').value); 
-                    toggleLoader(false); 
-                    alert("Sucesso! Sincronizado.");
-                } else throw new Error("Erro no Make");
+               if(r.ok) {
+            const j = await r.json();
+            const p = products.find(p => p.codigo == currentEditingId);
+            
+            // 1. O LINK VEM DO GITHUB E ENTRA NO PRODUTO AQUI:
+            p.url_imagem = j.content.download_url; 
+            
+            p._changed = true;
+            p._lastChange = "Alt: Imagem";
+            
+            saveData();
+            
+            // 2. CORREÇÃO DO TRAVAMENTO: Tira o loader antes de pedir senha
+            toggleLoader(false); 
+            closeModal('modal-editor');
+            
+            // 3. CHAMA O SYNC AUTOMATICAMENTE
+            requestLogin(currentEditingId); 
+            
+        } else throw new Error(res.status);
             })
             .catch(() => { 
                 toggleLoader(false); 
