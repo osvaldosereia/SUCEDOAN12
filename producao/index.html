@@ -908,8 +908,9 @@
             const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
             
-            // --- ATUALIZAÇÃO SOLICITADA: SOMENTE CÓDIGO + .webp ---
-            const slug = `${p.codigo}.webp`;
+            // --- CORREÇÃO: REMOVE ESPAÇOS E USA APENAS O CÓDIGO ---
+            const cleanSku = String(p.codigo).trim();
+            const slug = `${cleanSku}.webp`;
             // ------------------------------------------------------
             
             document.getElementById('file-name-preview').innerText = slug;
