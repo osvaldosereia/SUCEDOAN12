@@ -908,7 +908,11 @@
             const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
             
-            const slug = (p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-')+".webp";
+            // --- ATUALIZAÇÃO SOLICITADA: NOME DO FICHEIRO (SKU + NOME) ---
+            const rawName = (p.nome || "produto").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w\s-]/g, '').replace(/\s+/g, '-');
+            const slug = `${p.codigo}-${rawName}.webp`;
+            // --------------------------------------------------------------
+            
             document.getElementById('file-name-preview').innerText = slug;
             
             ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
