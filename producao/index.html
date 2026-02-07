@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v27 (Debug Visual)</title>
+    <title>Sucedoan Painel - v28 (CSV Fix + Debug URL)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
-        /* ESTILOS (Mantidos da v26) */
+        /* --- ESTILO VISUAL (Mantido da Versão Estável) --- */
         :root { --bg-body:#0f172a; --bg-card:#1e293b; --text-primary:#f8fafc; --text-secondary:#94a3b8; --accent:#3b82f6; --success:#22c55e; --warning:#f59e0b; --danger:#ef4444; --border:#334155; }
         * { box-sizing:border-box; } body { margin:0; font-family:'Inter',sans-serif; background:var(--bg-body); height:100vh; display:flex; flex-direction:column; color:var(--text-primary); overflow:hidden; }
         
@@ -76,11 +76,11 @@
 <body>
 
     <script>
-        // CONFIG
+        // --- 1. CONFIGURAÇÕES ---
         const USERS = { "090479":"OSVALDO", "170484":"ANDRE", "098765":"CLAUDENIL", "567890":"KELY", "121212":"JOSE", "123456":"ROSINA" };
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
-        const STORAGE_KEY = 'sucedoan_data_v27';
+        const STORAGE_KEY = 'sucedoan_data_v28';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
@@ -163,6 +163,7 @@
         window.onload = function() { lucide.createIcons(); loadData(); setupEditorEvents(); document.getElementById('search-input').addEventListener('input', (e)=>renderGrid(e.target.value)); };
         function showSection(id, btn) { document.querySelectorAll('.view-section').forEach(v=>v.classList.remove('active')); document.getElementById('section-'+id).classList.add('active'); if(btn){document.querySelectorAll('header .nav-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');} if(id==='history')renderHistory(); }
 
+        // --- IMPORTAÇÃO CSV (RESTAURADO V22 - ROBUSTO) ---
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
             toggleLoader(true, "Lendo CSV...");
@@ -170,22 +171,37 @@
                 header: true, skipEmptyLines: true, encoding: "ISO-8859-1", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        const getVal = (ks) => { const f = Object.keys(d).find(k => ks.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); return f ? d[f] : ""; };
-                        const getNum = (ks) => { const v = getVal(ks); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
-                        const b = {
-                            codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome']), preco: getNum(['preco','venda']), estoque: getNum(['estoque']),
-                            localizacao: getVal(['localizacao','local']), gtin: getVal(['gtin','ean']), url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']),
-                            cest: getVal(['cest']), unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
-                            origem: getVal(['origem']), observacoes: getVal(['observacoes','obs']), situacao: 'A', formato: 'S', _changed: true
+                        // Helpers de leitura
+                        const getVal = (keys) => { 
+                            const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
+                            return f ? d[f] : ""; 
                         };
-                        Object.keys(d).forEach(k => { const s = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); if(!b[s] && !['codigo','nome'].includes(s)) b[s] = d[k]; });
-                        return b;
+                        const getNum = (keys) => { 
+                            const v = getVal(keys); 
+                            return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; 
+                        };
+                        
+                        const base = {
+                            codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome','produto']),
+                            preco: getNum(['preco','venda']), estoque: getNum(['estoque']),
+                            localizacao: getVal(['localizacao','local']), gtin: getVal(['gtin','ean']),
+                            url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']), cest: getVal(['cest']),
+                            unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
+                            largura: getNum(['largura']), altura: getNum(['altura']), profundidade: getNum(['profundidade']),
+                            origem: getVal(['origem']), observacoes: getVal(['observacoes','obs']),
+                            situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
+                        };
+                        Object.keys(d).forEach(k => { const s = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; });
+                        return base;
                     });
-                    products = novos.filter(p => p.codigo || p.nome); saveData(); renderGrid(); toggleLoader(false); alert(`${products.length} importados!`);
+                    products = novos.filter(p => p.codigo || p.nome);
+                    saveData(); renderGrid(); toggleLoader(false);
+                    alert(`${products.length} importados!`);
                 }
             });
         });
 
+        // AUTH & SYNC (V26 - SYNC SEGURO)
         function requestLogin(sku) { pendingSyncSku = sku; document.getElementById('login-pass').value=''; document.getElementById('modal-login').style.display='flex'; document.getElementById('login-pass').focus(); }
         function attemptLogin() { const p = document.getElementById('login-pass').value; if(USERS[p]) { currentUser = USERS[p]; closeModal('modal-login'); if(pendingSyncSku) executeSync(pendingSyncSku); } else document.getElementById('login-error').style.display='block'; }
         function syncBling(sku) { requestLogin(sku); }
@@ -193,13 +209,16 @@
         function executeSync(sku) {
             const p = products.find(pr => pr.codigo == sku);
             if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Config Webhook!");
+            
             if(!currentUser) currentUser = "SISTEMA";
 
             toggleLoader(true, `Enviando...`);
             const type = p._lastChange || "Sincronização Manual";
             const pl = {...p}; delete pl._changed; delete pl._lastChange;
             if(!pl.situacao) pl.situacao='A'; if(!pl.formato) pl.formato='S';
-            if(!pl.url_imagem) pl.url_imagem = ""; // Garante campo vazio se nulo
+            
+            // Garantia: Se url_imagem estiver vazio, envia string vazia
+            if(!pl.url_imagem) pl.url_imagem = "";
 
             const time = new Date().toLocaleString('pt-BR');
             const note = `[Alt: ${currentUser} em ${time} - ${type}]`;
@@ -212,13 +231,14 @@
                 if(r.ok) { 
                     p.observacoes = obs; p._changed = false; p._lastChange = ""; saveData(); 
                     addToHistory(sku, p.nome, true, type); renderGrid(document.getElementById('search-input').value); 
-                    toggleLoader(false); alert("Sucesso!");
+                    toggleLoader(false); alert("Sucesso! Dados enviados.");
                 } else throw new Error();
             })
             .catch(() => { toggleLoader(false); addToHistory(sku, p.nome, false, "ERRO"); alert("Erro!"); })
             .finally(() => { pendingSyncSku = null; currentUser = null; });
         }
 
+        // FOTO UPLOAD (NITIDEZ POWER + LINK CALC)
         function openPhotoEditor(sku) { currentEditingId=sku; const p=products.find(pr=>pr.codigo==sku); document.getElementById('modal-editor').style.display='flex'; const s=(p.nome||"p").toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w\s-]/g,'').replace(/\s+/g,'-')+".webp"; document.getElementById('file-name-preview').innerText=s; ctx.fillStyle="#FFF"; ctx.fillRect(0,0,450,450); ctx.fillStyle="#94a3b8"; ctx.textAlign="center"; ctx.fillText("Ctrl+V",225,225); loadedImage=null; }
         function setupEditorEvents() {
             window.addEventListener('paste', e=>{if(document.getElementById('modal-editor').style.display==='flex'){const i=(e.clipboardData||e.originalEvent.clipboardData).items;for(let x of i)if(x.kind==='file'){const r=new FileReader();r.onload=v=>loadImageToCanvas(v.target.result);r.readAsDataURL(x.getAsFile());}}});
@@ -280,14 +300,13 @@
         function renderHistory() { const b=document.getElementById('history-tbody'); b.innerHTML=''; historyLog.forEach(h=>{ b.innerHTML+=`<tr><td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.nome}</td><td><span class="badge ${h.status?'success':'error'}">${h.obs}</span></td></tr>`; }); }
         function clearHistory() { if(confirm("Apagar?")){ historyLog=[]; localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
         
-        // --- FUNÇÃO CORRIGIDA PARA MOSTRAR URL NO MODAL ---
+        // --- NOVO: MODAL DETALHES COM DEBUG DE URL ---
         function openDetails(sku) { 
             currentEditingId=sku; const p=products.find(x=>x.codigo==sku); 
             const f=document.getElementById('details-form'); f.innerHTML=''; 
             
-            // Adicionado campo URL IMAGEM no topo da lista
+            // Link no topo para fácil verificação
             const fields = ['url_imagem', 'ncm','cest','origem','unidade','pesoBruto','pesoLiquido','largura','altura','profundidade'];
-            
             fields.forEach(k=>{
                 const label = k === 'url_imagem' ? 'URL DA IMAGEM (GITHUB)' : k.toUpperCase();
                 f.innerHTML+=`<div class="form-group"><label>${label}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`;
