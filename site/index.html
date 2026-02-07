@@ -504,26 +504,12 @@
                         
                         const nomeCategoria = categorias[primeiraLetra] || "Diversos";
 
-                        // --- NOVA LÓGICA DE IMAGEM LOCAL (SEM ESPAÇOS E SEM LIMITE DE DIGITOS) ---
-                        let finalImg = null;
-                        if (x.imagem && x.imagem !== "") {
-                            // 1. Pega só o nome do arquivo.
-                            // 2. Remove TODOS os espaços (.replace(/\s+/g, ''))
-                            const fileName = x.imagem.split('/').pop().replace(/\s+/g, '');
-                            
-                            // Normaliza para comparação (Maiúsculas)
-                            const skuCheck = sCodigo.toUpperCase();
-                            const fileCheck = fileName.toUpperCase();
-
-                            // Verifica se o nome do arquivo COMEÇA com o código do produto (qualquer tamanho: 3, 4, 5...)
-                            if (fileCheck.startsWith(skuCheck)) {
-                                finalImg = `site/img/produtos/${fileName}`;
-                            } else {
-                                // Se não bater exatamente o início, mas existir algo no JSON, 
-                                // mantemos a lógica de usar o nome do arquivo limpo localmente.
-                                finalImg = `site/img/produtos/${fileName}`;
-                            }
-                        }
+                        // --- NOVA LÓGICA DE IMAGEM (PADRONIZAÇÃO EXIGIDA) ---
+                        // Ignora campo imagem do JSON. Monta o caminho baseado APENAS no código.
+                        // IMPORTANTE: Suas imagens DEVEM se chamar CODIGO.webp (ex: P333.webp)
+                        // Se suas imagens forem .webp ou .png, altere a extensão abaixo.
+                        
+                        const finalImg = `site/img/produtos/${sCodigo}.webp`;
 
                         return {
                             id: sId,
