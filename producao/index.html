@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v26 (Link Fixo + Super Nitidez)</title>
+    <title>Sucedoan Painel - v27 (Sync Blindado + Multi-Variáveis)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -213,6 +213,7 @@
             height: 36px;
             border-radius: 50%;
             display: flex;
+
             justify-content: center;
             align-items: center;
             cursor: pointer;
@@ -808,7 +809,7 @@
         }
 
         // ----------------------------------------------------
-        // SINCRONIZAÇÃO
+        // SINCRONIZAÇÃO (BLINDAGEM SENIOR)
         // ----------------------------------------------------
         function syncBling(sku) {
             requestLogin(sku);
@@ -825,7 +826,7 @@
             // 1. Identifica o motivo da alteração
             const changeType = p._lastChange || "Sincronização Manual"; 
 
-            // 2. Prepara o Payload
+            // 2. Prepara o Payload (Base)
             const payload = {...p}; 
             delete payload._changed; 
             delete payload._lastChange;
@@ -833,8 +834,31 @@
             if(!payload.situacao) payload.situacao = 'A';
             if(!payload.formato) payload.formato = 'S';
 
-            // Garante que o link não seja undefined
-            if(!payload.url_imagem) payload.url_imagem = "";
+            // --- CORREÇÃO SENIOR: LIMPEZA DE LINK & REDUNDÂNCIA ---
+            
+            // A. Garante que não é null
+            let finalLink = (payload.url_imagem || "").trim();
+
+            // B. Converte link "Blob" (Visualizador) para "Raw" (Download Direto)
+            // Ex: github.com/.../blob/main/img.webp -> raw.githubusercontent.com/.../main/img.webp
+            if(finalLink.includes('github.com') && finalLink.includes('/blob/')) {
+                finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                // Remove parametros de query sujos se houver, exceto ?v= (cache)
+                // Mas geralmente o github raw funciona melhor limpo ou só com token. 
+                // Vamos manter como está após o replace, pois costuma funcionar.
+            }
+
+            // C. Bombardeio de Variáveis (Envia em todos os campos possíveis)
+            payload.url_imagem = finalLink;           // Campo original
+            payload.imagem = finalLink;               // Campo padrão simples
+            payload.url_imagens_externas = finalLink; // Campo que apareceu no seu log
+            
+            // Atualiza o objeto local também para ficar bonito
+            if(p.url_imagem !== finalLink) {
+                p.url_imagem = finalLink;
+                saveData();
+            }
+            // ------------------------------------------------------
 
             // 3. LOG E LIMPEZA DE TEXTO (Para não quebrar o Make)
             const time = new Date().toLocaleString('pt-BR');
@@ -862,7 +886,7 @@
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
                     
-                    alert(`✅ Produto atualizado!\nImagem Enviada: ${payload.url_imagem ? 'SIM' : 'NÃO'}`);
+                    alert(`✅ Produto atualizado!\nImagem Enviada: ${finalLink ? 'SIM' : 'NÃO'}`);
                 } else throw new Error("Erro no Make");
             })
             .catch(() => { 
@@ -877,7 +901,7 @@
         }
 
         // ----------------------------------------------------
-        // EDITOR E UPLOAD (MODIFICADO: CAPTURA LINK REAL)
+        // EDITOR E UPLOAD (MANTEVE A LÓGICA V26 + FALLBACK)
         // ----------------------------------------------------
         function openPhotoEditor(sku) {
             currentEditingId = sku;
@@ -985,17 +1009,13 @@
                 });
 
                 if(r.ok) {
-                    // 2. CAPTURA DO LINK REAL (CORREÇÃO DE PROGRAMADOR SENIOR)
-                    // Lemos a resposta JSON da API para pegar o 'download_url' oficial
+                    // 2. CAPTURA DO LINK
                     const apiResponse = await r.json();
-                    
                     let finalUrl = "";
                     
-                    // Prioridade: Link oficial devolvido pela API do GitHub
                     if(apiResponse.content && apiResponse.content.download_url) {
                         finalUrl = apiResponse.content.download_url;
                     } else {
-                        // Fallback: Se a API não devolver, tentamos construir (Modo Antigo)
                         finalUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
                     }
 
@@ -1124,7 +1144,7 @@
         }
 
         // ----------------------------------------------------
-        // UTILITÁRIOS (MODIFICADO: DETALHES COM CAMPO URL)
+        // UTILITÁRIOS (CAMPO MANUAL MANTIDO)
         // ----------------------------------------------------
         function openDetails(sku) {
             currentEditingId = sku;
@@ -1132,14 +1152,14 @@
             const form = document.getElementById('details-form');
             form.innerHTML = '';
 
-            // --- CAMPO MANUAL DE URL (ADICIONADO) ---
+            // --- CAMPO MANUAL DE URL ---
             form.innerHTML += `
                 <div class="form-group" style="grid-column: span 2;">
                     <label style="color:var(--success)">URL DA IMAGEM (LINK DIRETO)</label>
                     <input type="text" id="det-url_imagem" value="${p.url_imagem||''}" placeholder="https://..." style="border-color:var(--success);">
                 </div>
             `;
-            // ----------------------------------------
+            // ---------------------------
 
             ['ncm','cest','origem','unidade','pesoBruto','pesoLiquido','largura','altura','profundidade'].forEach(k => {
                 form.innerHTML += `<div class="form-group"><label>${k}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`;
@@ -1154,7 +1174,7 @@
             p._lastChange = "Alt: Detalhes"; 
             saveData();
             closeModal('modal-details');
-            renderGrid(document.getElementById('search-input').value); // Renderiza para atualizar visual se mudou url
+            renderGrid(document.getElementById('search-input').value); 
         }
 
         function openConfigModal() {
