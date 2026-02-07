@@ -267,25 +267,32 @@
             
             toggleLoader(true, `Enviando como ${currentUser}...`);
 
-            // Dados base
-            const payload = {...p}; 
+            // Cria uma cópia limpa do produto
+            const payload = {...p};
             delete payload._changed;
-            delete payload._lastChange; // Não envia controle interno
+            delete payload._lastChange;
             
-            // 1. Garante dados obrigatórios do Bling
+            // Garante campos obrigatórios do Bling
             if(!payload.situacao) payload.situacao = 'A';
             if(!payload.formato) payload.formato = 'S';
             
-            // 2. Lógica do Histórico nas Observações (CORRIGIDA)
+            // --- LÓGICA DO HISTÓRICO ---
             const time = new Date().toLocaleString('pt-BR');
-            // MUDANÇA AQUI: Usamos " | " em vez de "\n" para não quebrar o JSON
             const logNote = `[Alt: ${currentUser} em ${time}]`;
             
-            const obsAntiga = payload.observacoes || "";
-            // Adiciona no início ou fim, separado por barra vertical
-            payload.observacoes = obsAntiga ? (obsAntiga + " | " + logNote) : logNote;
+            // Pega a observação atual (ou vazia)
+            let obsAtual = payload.observacoes || "";
+            
+            // Adiciona o novo log. IMPORTANTE: Usamos " | " como separador, NÃO use \n
+            let novaObs = obsAtual ? (logNote + " | " + obsAtual) : logNote;
+            
+            // LIMPEZA FINAL DE SEGURANÇA (Remove qualquer Enter ou Aspas que possa quebrar o JSON)
+            novaObs = novaObs.replace(/(\r\n|\n|\r)/gm, " | ").replace(/"/g, "'");
+            
+            // Atualiza o payload com a observação limpa
+            payload.observacoes = novaObs;
 
-            // 3. Envia para o Make
+            // Envia para o Make
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
@@ -293,26 +300,26 @@
             })
             .then(r => { 
                 if(r.ok) { 
-                    // Sucesso: Atualiza localmente
-                    p.observacoes = payload.observacoes; 
+                    // Sucesso: Atualiza o produto localmente com a nova observação
+                    p.observacoes = novaObs;
                     p._changed = false; 
                     saveData(); 
                     
-                    addToHistory(sku, p.nome, true, "Atualizado"); // Log na aba Histórico
-                    
+                    addToHistory(sku, p.nome, true, "Atualizado"); 
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
                     
-                    alert(`✅ Sucesso! Alteração registrada.`);
+                    // Feedback visual (opcional)
+                    // alert(`✅ Sucesso! Alteração registrada.`); 
                 } else {
-                    throw new Error("Erro na resposta do Make");
+                    throw new Error("Erro do Servidor");
                 }
             })
             .catch((err) => { 
                 console.error(err);
                 toggleLoader(false); 
                 addToHistory(sku, p.nome, false, "Falha"); 
-                alert("❌ Erro ao enviar. Verifique se o Make está ativo."); 
+                alert("❌ Erro ao enviar. Verifique o Make."); 
             })
             .finally(() => { 
                 pendingSyncSku = null; 
