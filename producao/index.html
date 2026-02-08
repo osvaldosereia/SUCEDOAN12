@@ -954,7 +954,7 @@
         // ----------------------------------------------------
         // EDITOR E UPLOAD (BRILHO + SELOS)
         // ----------------------------------------------------
-        function openPhotoEditor(sku) {
+       function openPhotoEditor(sku) {
             currentEditingId = sku;
             const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
@@ -964,13 +964,52 @@
             
             document.getElementById('file-name-preview').innerText = slug;
             
-            // Reset tools
+            // 1. Resetar ferramentas
             document.getElementById('zoomRange').value = 1;
             document.getElementById('sharpenRange').value = 0;
             document.getElementById('brightnessRange').value = 1;
             activeSticker = null;
             updateStickerButtons();
 
+            // 2. Tentar carregar a imagem existente
+            if (p.url_imagem && p.url_imagem.length > 5) {
+                // Mostra carregando
+                ctx.fillStyle = "#1e293b"; 
+                ctx.fillRect(0,0, 450, 450);
+                ctx.font = "14px Inter"; 
+                ctx.fillStyle = "#94a3b8"; 
+                ctx.textAlign = "center";
+                ctx.fillText("Carregando imagem atual...", 225, 225);
+
+                const img = new Image();
+                // Importante: Permite editar imagens externas sem bloquear o Canvas (CORS)
+                img.crossOrigin = "Anonymous"; 
+                
+                // Adiciona timestamp para evitar cache e garantir que carregue a versão nova
+                const cacheBuster = p.url_imagem.includes('?') ? '&t=' + Date.now() : '?t=' + Date.now();
+                img.src = p.url_imagem + cacheBuster;
+
+                img.onload = () => {
+                    loadedImage = img;
+                    // Tenta ajustar o zoom inicial para caber na tela
+                    const scale = Math.max(450/img.width, 450/img.height);
+                    document.getElementById('zoomRange').value = scale; 
+                    drawImage();
+                };
+
+                img.onerror = () => {
+                    // Se falhar (link quebrado ou bloqueio), inicia em branco
+                    initBlankCanvas();
+                    console.log("Não foi possível carregar a imagem original (CORS ou 404).");
+                };
+
+            } else {
+                // Se não tiver imagem, inicia em branco
+                initBlankCanvas();
+            }
+        }
+
+        function initBlankCanvas() {
             ctx.filter = 'none';
             ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
             ctx.font = "14px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
