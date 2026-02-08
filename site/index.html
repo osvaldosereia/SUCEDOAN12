@@ -456,44 +456,74 @@
         const MAKE_WEBHOOK = "https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il"; 
 
         // ============================================================
-        //  CONFIGURAÇÃO MANUAL DAS CATEGORIAS (EDITE AQUI)
+        //  CONFIGURAÇÃO MANUAL DAS CATEGORIAS (14 CATEGORIAS)
         // ============================================================
-        // Dica: Coloque as palavras mais ESPECÍFICAS (ou compostas) antes.
-        // O sistema vai verificar na ordem desta lista.
-        // Se o nome do produto CONTIVER a palavra-chave, ele entra na categoria.
         const CONFIG_CATEGORIAS = {
+            "Bebê e Infantil": [
+                "FRALDA", "LENCO UMEDECIDO", "LENÇO UMED", "HUGGIES", "PIQUITUCHO", "POMADA", "MUCILON"
+            ],
+            "Cabelos": [
+                "SHAMPOO", "CONDICIONADOR", "SH SEDA", "SEDA", "SKALA", "CREME DE PENTEAR", 
+                "LOCAO", "LUMINOSO UV", "CACHOS", "LISO PERFEITO", "CERAMIDAS", "PENTE", "ELASTICO DE CABELO",
+                "ESCOVA DE CABELO", "ESCOVA RETANGULAR"
+            ],
             "Higiene Pessoal": [
-                "PAPEL HIGIENICO", "CREME DENTAL", "SHAMPOO", "CONDICIONADOR", 
-                "SABONETE", "DESODORANTE", "ABSORVENTE", "ESCOVA DENTAL", 
-                "COTONETE", "LÂMINA", "LAMINA", "BARBEAR"
+                "SABONETE", "SAB NIVEA", "SAB FARNESE", "SAB ALBANY", "PALMOLIVE", "FLOR DE YPE", 
+                "DESODORANTE", "DES AERO", "HERBISSIMO", "ABOVE", "TABU", "NIVEA", "LEITE DE ROSAS",
+                "ABSORVENTE", "ABS ", "INTIMUS", "SYM", "DIANA", "OB MEDIO", "OB TAMPAO",
+                "ALGODAO", "COTONETE", "HASTES FLEXIVEIS", "CURATIVO", "SALVELOX", 
+                "LAMINA", "BARBEAR", "PRESTOBARBA", "GILLETTE", "APAR BARB", "ACETONA", "REMOVEDOR", "LIXA", "TALCO"
             ],
-            "Limpeza": [
-                "SABAO EM PO", "AGUA SANITARIA", "DETERGENTE", "AMACIANTE", 
-                "DESINFETANTE", "ESPONJA", "LA DE ACO", "BOMBRIL", "ASSOALHO", 
-                "SABAO BARRA", "ALCOOL", "MULTI USO", "LIMPA"
+            "Higiene Bucal": [
+                "CREME DENTAL", "ESCOVA DENTAL", "FIO DENTAL", "SORRISO", "COLGATE", "KESS", "PALITO DENTAL"
             ],
-            "Açougue": [
-                "CARNE", "FRANGO", "LINGUICA", "BIFE", "ACEM", "MUSCULO", 
-                "COSTELA", "PALETA", "PERNIL", "SALSICHA", "CALABRESA"
+            "Lavanderia": [
+                "SABAO EM PO", "SABAO PO", "TIXAN", "OMO", "YPE", "SABAO BARRA", "MINUANO", "INDAIA",
+                "AMACIANTE", "AGUA SANITARIA", "Q BOA", "ALVEJANTE", "PRENDEDOR", "ESCOVA ROUPA"
             ],
-            "Bebidas": [
-                "REFRIGERANTE", "SUCO", "CAFE", "LEITE", "ACHOCOLATADO", 
-                "TODDY", "NESCAU", "CERVEJA", "AGUA"
+            "Limpeza da Casa": [
+                "DESINFETANTE", "BAK", "OESTE", "REMMUS", "PINHO", "VEJA", "MULTI USO", "LIMPA ALUMINIO", 
+                "DETERGENTE", "LAVA LOUCAS", "ESPONJA", "LA DE ACO", "BOMBRIL", "ASSOLAN", "PANO",
+                "INSETICIDA", "SBP", "PURIFICADOR", "GLADE", "PEDRA SANITARIA", "ESCOVA SANITARIA",
+                "VASSOURA", "RODO", "PA DE LIXO", "SACO DE LIXO", "SACO PANO"
             ],
-            "Molhos e Massas": [
-                "EXTRATO", "MOLHO", "MACARRAO", "MASSA", "LAZANHA"
+            "Mercearia Básica": [
+                "ARROZ", "FEIJAO", "OLEO", "AZEITE", "FARINHA", "FUBA", "FLOCAO", "MILHARINA", 
+                "AMIDO DE MILHO", "CANJIQUINHA", "PIPOCA", "MILHO PIPOCA", "SARDINHA", "COQUEIRO", 
+                "MILHO VERDE", "SELETA", "ERVILHA", "AZEITONA"
             ],
-            "Óleos e Temperos": [
-                "OLEO", "AZEITE", "SAL", "TEMPERO", "ALHO", "CALDO", "VINAGRE"
+            "Massas e Molhos": [
+                "MACARRAO", "MASSA", "PENNE", "PARAFUSO", "ESPAGUETE", "PADRE NOSSO",
+                "EXTRATO", "MOLHO TOMATE", "FUGINI", "QUEIJO RALADO"
             ],
-            "Matinais e Sobremesas": [
-                "BOLACHA", "BISCOITO", "ACUCAR", "ADOÇANTE", "GELATINA", "MISTURA BOLO"
+            "Café da Manhã": [
+                "CAFE", "FILTRO CAFE", "COADOR", "CHA ", "ERVA MATE", "ERVA TERERE", 
+                "LEITE PO", "LEITE EM PO", "MERILU", "ACHOCOLATADO", "TODDY", "NESCAU", 
+                "CEREAL MATINAL", "SUCRILHOS", "GRANOLA", "AVEIA"
             ],
-            "Hortifruti": [
-                "BATATA", "CEBOLA", "TOMATE", "ALHO", "FRUTA", "VERDURA"
+            "Biscoitos e Lanches": [
+                "BISCOITO", "BOLACHA", "WAFER", "CREAM CRACKER", "AGUA E SAL", "MAIZENA", "ROSQUINHA", 
+                "MABEL", "LIANE", "RANCHEIRO", "BELCOCO", "TUCS", "BARRA DE CEREAL", "BARRA CEREAIS", "TRIO"
             ],
-            "Mercearia": [
-                "ARROZ", "FEIJAO", "FARINHA", "FUBA", "CANJIQUINHA", "PIPOCA"
+            "Doces e Sobremesas": [
+                "ACUCAR", "ADOCANTE", "LEITE CONDENSADO", "CREME DE LEITE", "MISTURA CREME", "GELATINA", 
+                "MISTURA BOLO", "FERMENTO", "COCO RALADO", "LEITE DE COCO", "GOIABADA", "DOCE",
+                "BALA", "CHICLE", "TRIDENT", "FINI", "CHOCOLATE", "BOMBOM"
+            ],
+            "Temperos e Condimentos": [
+                "CALDO", "KNORR", "MAGGI", "ARISCO", "SAZON", "SAL ", "SAL REF", 
+                "TEMPERO", "PIMENTA", "OREGANO", "COLORAU", "ACAFRAO", "ALHO", "LOURO", "BICARBONATO",
+                "MAIONESE", "HELLMANNS", "KETCHUP", "MOSTARDA", "VINAGRE"
+            ],
+            "Utilidades Domésticas": [
+                "LAMPADA", "PILHA", "BATERIA", "RAYOVAC", "ELGIN", "FOSFORO", "ISQUEIRO", "COLA", 
+                "PAPEL ALUMINIO", "FILME PVC", "TIGELA", "JARRA", "POTE", "COPO", "PRATO", "TALHER", 
+                "FACA", "ESPATULA", "DESCASCADOR", "FORMA GELO", "PROTETOR DE RALO", "PILAO", "PENEIRA", 
+                "DESCANSO DE PANELA", "CHAVEIRO", "AGULHA DESENTUPIR", "ESPONJA DE BANHO"
+            ],
+            "Bazar e Papelaria": [
+                "CHINELO", "HAVAIANA", "SANDALIA", "CANETA", "LAPIS", "GRAFITE", "CADERNO", 
+                "LINHA", "AGULHA", "TESOURA"
             ]
         };
         const CATEGORIA_PADRAO = "Outros";
