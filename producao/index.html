@@ -170,7 +170,7 @@
 
         /* ESTADOS DE VALIDADE E SYNC */
         .card.status-synced { border-top: 3px solid var(--success); }
-        .card.status-changed { border-top: 3px solid #cbd5e1; } /* Cinza se alterado mas não crítico */
+        .card.status-changed { border-top: 3px solid #cbd5e1; }
         
         /* Prioridade para Validade */
         .card.validity-expired { border: 2px solid var(--danger); box-shadow: 0 0 15px rgba(239, 68, 68, 0.15); }
@@ -234,7 +234,6 @@
             height: 36px;
             border-radius: 50%;
             display: flex;
-
             justify-content: center;
             align-items: center;
             cursor: pointer;
@@ -765,73 +764,83 @@
         }
 
         // ----------------------------------------------------
-        // IMPORTAÇÃO CSV (AJUSTADO PARA MELHOR LEITURA)
+        // IMPORTAÇÃO CSV (BLINDADO - VERSÃO CORRIGIDA)
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
-            if(!e.target.files[0]) return;
-            toggleLoader(true, "Lendo CSV...");
+            const file = e.target.files[0];
+            if(!file) return;
+
+            toggleLoader(true, "Analisando CSV...");
             
-            Papa.parse(e.target.files[0], {
-                header: true, 
-                skipEmptyLines: true, 
-                encoding: "ISO-8859-1", 
-                delimiter: "", // Auto-detecta delimitador
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                encoding: "ISO-8859-1",
+                dynamicTyping: false,
+                delimiter: "", // Auto-detect
                 complete: (results) => {
-                    const novos = results.data.map(d => {
-                        // Função de busca robusta: limpa acentos e espaços do cabeçalho do CSV
-                        const getVal = (keys) => { 
-                            const f = Object.keys(d).find(k => {
-                                const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-                                return keys.some(pk => cleanK.includes(pk));
-                            });
-                            return f ? d[f] : ""; 
-                        };
+                    if (results.data && results.data.length > 0) {
+                        const novos = results.data.map(d => {
+                            // Limpeza profunda de cabeçalhos
+                            const getVal = (possibleKeys) => {
+                                const foundKey = Object.keys(d).find(k => {
+                                    const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+                                    return possibleKeys.some(pk => cleanK.includes(pk));
+                                });
+                                return foundKey ? String(d[foundKey]).trim() : "";
+                            };
 
-                        const getNum = (keys) => { 
-                            const v = getVal(keys); 
-                            if (!v) return 0;
-                            return parseFloat(v.toString().replace(/\./g,'').replace(',','.')) || 0; 
-                        };
+                            const getNum = (possibleKeys) => {
+                                let v = getVal(possibleKeys);
+                                if (!v) return 0;
+                                return parseFloat(v.replace(/\./g, '').replace(',', '.')) || 0;
+                            };
+
+                            return {
+                                codigo: getVal(['codigo', 'sku', 'id', 'referencia']),
+                                nome: getVal(['descricao', 'nome', 'produto', 'item']),
+                                preco: getNum(['preco', 'venda', 'valor']),
+                                estoque: getNum(['estoque', 'quantidade', 'saldo', 'atual']),
+                                localizacao: getVal(['localizacao', 'local', 'deposito', 'prateleira']),
+                                gtin: getVal(['gtin', 'ean', 'barras']),
+                                url_imagem: getVal(['url', 'imagem', 'foto', 'link']),
+                                ncm: getVal(['ncm']),
+                                cest: getVal(['cest']),
+                                unidade: getVal(['unidade', 'un']) || 'UN',
+                                pesoLiquido: getNum(['peso liq']),
+                                pesoBruto: getNum(['peso bru']),
+                                largura: getNum(['largura']),
+                                altura: getNum(['altura']),
+                                profundidade: getNum(['profundidade']),
+                                origem: getVal(['origem']),
+                                observacoes: getVal(['observacoes', 'obs', 'nota']),
+                                validade: getVal(['validade', 'vencimento', 'data']),
+                                situacao: 'A',
+                                formato: 'S',
+                                _changed: true,
+                                _lastChange: "Importação CSV"
+                            };
+                        });
+
+                        // Filtro: Aceita produtos que tenham Código OU Nome
+                        products = novos.filter(p => p.codigo !== "" || p.nome !== "");
                         
-                        const base = {
-                            codigo: getVal(['codigo','sku']), 
-                            nome: getVal(['descricao','nome','produto']),
-                            preco: getNum(['preco','venda']), 
-                            estoque: getNum(['estoque','quantidade','saldo']),
-                            localizacao: getVal(['localizacao','local']), 
-                            gtin: getVal(['gtin','ean']),
-                            url_imagem: getVal(['url','imagem','foto']), 
-                            ncm: getVal(['ncm']), 
-                            cest: getVal(['cest']),
-                            unidade: getVal(['unidade'])||'UN', 
-                            pesoLiquido: getNum(['peso liq']), 
-                            pesoBruto: getNum(['peso bru']),
-                            largura: getNum(['largura']), 
-                            altura: getNum(['altura']), 
-                            profundidade: getNum(['profundidade']),
-                            origem: getVal(['origem']), 
-                            observacoes: getVal(['observacoes','obs']),
-                            validade: getVal(['validade','vencimento']) || "",
-                            situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
-                        };
-                        return base;
-                    });
-
-                    // Filtro mais relaxado: permite importar se tiver pelo menos nome OU código
-                    products = novos.filter(p => p.codigo || p.nome);
-                    
-                    if(products.length === 0) {
-                        alert("Atenção: Nenhum produto válido encontrado no CSV. Verifique os nomes das colunas (Código, Nome, Preço).");
+                        if (products.length > 0) {
+                            saveData();
+                            renderGrid();
+                            alert(`Sucesso! ${products.length} produtos carregados.`);
+                        } else {
+                            alert("Erro: O arquivo parece estar vazio ou as colunas não foram reconhecidas.");
+                        }
                     } else {
-                        saveData(); 
-                        renderGrid(); 
-                        alert(`${products.length} produtos importados com sucesso!`);
+                        alert("Erro: Não foi possível ler os dados do arquivo.");
                     }
                     toggleLoader(false);
+                    e.target.value = ""; // Reseta o input
                 },
                 error: (err) => {
                     toggleLoader(false);
-                    alert("Erro ao processar CSV: " + err.message);
+                    alert("Erro Crítico no PapaParse: " + err.message);
                 }
             });
         });
@@ -872,10 +881,8 @@
 
             toggleLoader(true, `Sincronizando...`);
             
-            // 1. Identifica o motivo da alteração
             const changeType = p._lastChange || "Sincronização Manual"; 
 
-            // 2. Prepara o Payload (Base)
             const payload = {...p}; 
             delete payload._changed; 
             delete payload._lastChange;
@@ -883,22 +890,16 @@
             if(!payload.situacao) payload.situacao = 'A';
             if(!payload.formato) payload.formato = 'S';
 
-            // --- CORREÇÃO SENIOR: LIMPEZA DE LINK & REDUNDÂNCIA ---
-            
-            // A. Garante que não é null
             let finalLink = (payload.url_imagem || "").trim();
 
-            // B. Converte link "Blob" (Visualizador) para "Raw" (Download Direto)
             if(finalLink.includes('github.com') && finalLink.includes('/blob/')) {
                 finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
             }
 
-            // C. Bombardeio de Variáveis (Envia em todos os campos possíveis)
             payload.url_imagem = finalLink;           
             payload.imagem = finalLink;               
             payload.url_imagens_externas = finalLink; 
             
-            // D. (Passo 3) Garantia de envio da VALIDADE
             if(payload.validade) {
                 payload.dataValidade = payload.validade; 
             }
@@ -908,7 +909,6 @@
                 saveData();
             }
 
-            // 3. LOG E LIMPEZA DE TEXTO
             const time = new Date().toLocaleString('pt-BR');
             const logNote = `[Alt: ${currentUser} em ${time} - ${changeType}]`;
             
@@ -916,7 +916,6 @@
             obs = obs.replace(/[\r\n]+/g, " | ").replace(/"/g, "'");
             payload.observacoes = obs;
 
-            // 4. ENVIO
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
@@ -934,7 +933,7 @@
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
                     
-                    alert(`✅ Produto atualizado!\nImagem Enviada: ${finalLink ? 'SIM' : 'NÃO'}\nValidade Enviada: ${payload.validade || 'N/A'}`);
+                    alert(`✅ Produto atualizado!`);
                 } else throw new Error("Erro no Make");
             })
             .catch(() => { 
@@ -1086,7 +1085,7 @@
             const term = filter.toLowerCase().trim();
 
             const filtered = products.filter(p => {
-                const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque + (p.validade||"")).toLowerCase();
+                const searchStr = (String(p.nome) + String(p.codigo) + String(p.gtin) + String(p.localizacao) + (p.validade||"")).toLowerCase();
                 return searchStr.includes(term);
             });
 
