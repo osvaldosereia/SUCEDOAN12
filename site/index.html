@@ -147,10 +147,51 @@
             box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3); 
         }
 
+        /* --- NOVOS ELEMENTOS: BUSCA E MENU DE CATEGORIAS --- */
+        .catalog-tools {
+            position: sticky; top: 64px; z-index: 95;
+            background: var(--cor-bg);
+            padding: 10px 0 15px 0;
+            margin-bottom: 10px;
+        }
+        
+        .search-container {
+            position: relative; margin-bottom: 12px;
+        }
+        .search-input {
+            width: 100%; padding: 12px 15px 12px 45px;
+            border-radius: 30px; border: none;
+            background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            font-size: 1rem; color: #333; outline: none;
+        }
+        .search-icon {
+            position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+            color: #999; font-size: 1.2rem; pointer-events: none;
+        }
+
+        .cat-nav {
+            display: flex; gap: 8px; overflow-x: auto; 
+            padding-bottom: 5px; scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .cat-nav::-webkit-scrollbar { display: none; }
+        
+        .cat-chip {
+            white-space: nowrap; padding: 8px 16px;
+            border-radius: 20px; background: white;
+            font-size: 0.85rem; font-weight: 600; color: #555;
+            border: 1px solid #e0e0e0; transition: all 0.2s;
+        }
+        .cat-chip:active, .cat-chip.active {
+            background: var(--cor-primary); color: white; border-color: var(--cor-primary);
+        }
+
         /* --- CATÁLOGO --- */
+        .cat-section { scroll-margin-top: 180px; } /* Ajuste para o scroll não ficar escondido */
+        
         .cat-title {
             font-size: 1.1rem; font-weight: 800; color: var(--cor-text-main);
-            margin: 40px 0 15px 0; 
+            margin: 20px 0 15px 0; 
             text-transform: uppercase; letter-spacing: 0.5px;
             background: var(--cat-bg);
             padding: 12px 16px;
@@ -158,18 +199,16 @@
             border-left: 5px solid var(--cor-primary);
         }
         
-        /* --- NOVO ESTILO: CARROSSEL DE PRODUTOS --- */
+        /* CARROSSEL DE PRODUTOS */
         .products-carousel {
             display: flex;
             overflow-x: auto;
             gap: 15px;
-            padding: 10px 5px 25px 5px; /* Espaço inferior para sombra não cortar */
+            padding: 10px 5px 25px 5px;
             scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
-            scroll-snap-type: x mandatory; /* Efeito magnético opcional */
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x mandatory;
         }
-        
-        /* Personaliza a barra de rolagem do carrossel */
         .products-carousel::-webkit-scrollbar { height: 6px; }
         .products-carousel::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         .products-carousel::-webkit-scrollbar-thumb { background: #d1d1d1; border-radius: 4px; }
@@ -184,34 +223,25 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
             transition: all 0.2s;
             position: relative;
-            
-            /* Propriedades para o Carrossel */
-            flex: 0 0 auto; /* Não encolhe nem estica */
-            width: 170px;   /* Largura fixa base (Mobile) */
+            flex: 0 0 auto; 
+            width: 170px;
             scroll-snap-align: start;
         }
+        @media (min-width: 900px) { .prod-card { width: 220px; } }
 
-        @media (min-width: 900px) {
-            .prod-card { width: 220px; } /* Largura maior no Desktop */
-        }
-
-        /* Estilo para produto ESGOTADO */
         .prod-card.esgotado { opacity: 0.7; filter: grayscale(1); }
         .prod-card.active { border-color: var(--cor-primary); background: #FFFBFB; }
+        /* Classe utilitária para busca */
+        .prod-card.hidden { display: none !important; } 
 
         .prod-img-box {
             width: 100%; height: 130px;
             margin-bottom: 10px;
             display: flex; align-items: center; justify-content: center;
         }
-        .prod-img {
-            width: 100%; height: 100%;
-            object-fit: contain; 
-            mix-blend-mode: multiply;
-        }
+        .prod-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 
         .prod-price { font-size: 1.1rem; font-weight: 800; color: var(--cor-primary); margin-bottom: 4px; }
-        
         .prod-name { 
             font-size: 0.9rem; color: #555; font-weight: 500; 
             line-height: 1.3; margin-bottom: 15px;
@@ -337,7 +367,7 @@
     <div class="header-wrapper">
         <header>
             <div class="header-left">
-                <button class="btn-back" id="btn-back" onclick="goHome()">❮</button>
+                <button class="btn-back" id="btn-back" onclick="resetAndGoHome()">❮</button>
                 <div class="logo">D</div>
                 <div id="page-title" class="page-title">Super Cestas</div>
             </div>
@@ -355,6 +385,14 @@
         </div>
 
         <div id="view-catalogo" class="view">
+            <div class="catalog-tools">
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" id="search-input" placeholder="O que você procura?" onkeyup="doSearch(this.value)">
+                </div>
+                <div class="cat-nav" id="cat-nav">
+                    </div>
+            </div>
             <div id="catalog-content"></div>
         </div>
     </main>
@@ -395,27 +433,27 @@
             </div>
             
            <form onsubmit="sendWhatsapp(event)">
-    <label>Seu Nome</label>
-    <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
-    
-    <label>CPF (Para o Cadastro)</label>
-    <input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00">
-    
-    <label>Celular (WhatsApp)</label>
-    <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999">
+            <label>Seu Nome</label>
+            <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
+            
+            <label>CPF (Para o Cadastro)</label>
+            <input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00">
+            
+            <label>Celular (WhatsApp)</label>
+            <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999">
 
-    <label>Endereço de Entrega</label>
-    <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
-    
-    <label>Forma de Pagamento</label>
-    <select id="cust-pay" class="input-box">
-        <option>PIX (Na entrega)</option>
-        <option>Dinheiro (Levar troco?)</option>
-        <option>Cartão (Crédito/Débito)</option>
-    </select>
-    
-    <button type="submit" class="btn-finish" style="width:100%; padding: 15px; font-size: 1.1rem;">ENVIAR PEDIDO AGORA</button>
-</form>
+            <label>Endereço de Entrega</label>
+            <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
+            
+            <label>Forma de Pagamento</label>
+            <select id="cust-pay" class="input-box">
+                <option>PIX (Na entrega)</option>
+                <option>Dinheiro (Levar troco?)</option>
+                <option>Cartão (Crédito/Débito)</option>
+            </select>
+            
+            <button type="submit" class="btn-finish" style="width:100%; padding: 15px; font-size: 1.1rem;">ENVIAR PEDIDO AGORA</button>
+        </form>
         </div>
     </dialog>
 
@@ -456,96 +494,35 @@
         const MAKE_WEBHOOK = "https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il"; 
 
         // ============================================================
-        //  CONFIGURAÇÃO MANUAL DAS CATEGORIAS (14 CATEGORIAS)
+        //  CONFIGURAÇÃO DAS 14 CATEGORIAS
         // ============================================================
         const CONFIG_CATEGORIAS = {
-            "Bebê e Infantil": [
-                "FRALDA", "LENCO UMEDECIDO", "LENÇO UMED", "HUGGIES", "PIQUITUCHO", "POMADA", "MUCILON"
-            ],
-            "Cabelos": [
-                "SHAMPOO", "CONDICIONADOR", "SH SEDA", "SEDA", "SKALA", "CREME DE PENTEAR", 
-                "LOCAO", "LUMINOSO UV", "CACHOS", "LISO PERFEITO", "CERAMIDAS", "PENTE", "ELASTICO DE CABELO",
-                "ESCOVA DE CABELO", "ESCOVA RETANGULAR"
-            ],
-            "Higiene Pessoal": [
-                "SABONETE", "SAB NIVEA", "SAB FARNESE", "SAB ALBANY", "PALMOLIVE", "FLOR DE YPE", 
-                "DESODORANTE", "DES AERO", "HERBISSIMO", "ABOVE", "TABU", "NIVEA", "LEITE DE ROSAS",
-                "ABSORVENTE", "ABS ", "INTIMUS", "SYM", "DIANA", "OB MEDIO", "OB TAMPAO",
-                "ALGODAO", "COTONETE", "HASTES FLEXIVEIS", "CURATIVO", "SALVELOX", 
-                "LAMINA", "BARBEAR", "PRESTOBARBA", "GILLETTE", "APAR BARB", "ACETONA", "REMOVEDOR", "LIXA", "TALCO"
-            ],
-            "Higiene Bucal": [
-                "CREME DENTAL", "ESCOVA DENTAL", "FIO DENTAL", "SORRISO", "COLGATE", "KESS", "PALITO DENTAL"
-            ],
-            "Lavanderia": [
-                "SABAO EM PO", "SABAO PO", "TIXAN", "OMO", "YPE", "SABAO BARRA", "MINUANO", "INDAIA",
-                "AMACIANTE", "AGUA SANITARIA", "Q BOA", "ALVEJANTE", "PRENDEDOR", "ESCOVA ROUPA"
-            ],
-            "Limpeza da Casa": [
-                "DESINFETANTE", "BAK", "OESTE", "REMMUS", "PINHO", "VEJA", "MULTI USO", "LIMPA ALUMINIO", 
-                "DETERGENTE", "LAVA LOUCAS", "ESPONJA", "LA DE ACO", "BOMBRIL", "ASSOLAN", "PANO",
-                "INSETICIDA", "SBP", "PURIFICADOR", "GLADE", "PEDRA SANITARIA", "ESCOVA SANITARIA",
-                "VASSOURA", "RODO", "PA DE LIXO", "SACO DE LIXO", "SACO PANO"
-            ],
-            "Mercearia Básica": [
-                "ARROZ", "FEIJAO", "OLEO", "AZEITE", "FARINHA", "FUBA", "FLOCAO", "MILHARINA", 
-                "AMIDO DE MILHO", "CANJIQUINHA", "PIPOCA", "MILHO PIPOCA", "SARDINHA", "COQUEIRO", 
-                "MILHO VERDE", "SELETA", "ERVILHA", "AZEITONA"
-            ],
-            "Massas e Molhos": [
-                "MACARRAO", "MASSA", "PENNE", "PARAFUSO", "ESPAGUETE", "PADRE NOSSO",
-                "EXTRATO", "MOLHO TOMATE", "FUGINI", "QUEIJO RALADO"
-            ],
-            "Café da Manhã": [
-                "CAFE", "FILTRO CAFE", "COADOR", "CHA ", "ERVA MATE", "ERVA TERERE", 
-                "LEITE PO", "LEITE EM PO", "MERILU", "ACHOCOLATADO", "TODDY", "NESCAU", 
-                "CEREAL MATINAL", "SUCRILHOS", "GRANOLA", "AVEIA"
-            ],
-            "Biscoitos e Lanches": [
-                "BISCOITO", "BOLACHA", "WAFER", "CREAM CRACKER", "AGUA E SAL", "MAIZENA", "ROSQUINHA", 
-                "MABEL", "LIANE", "RANCHEIRO", "BELCOCO", "TUCS", "BARRA DE CEREAL", "BARRA CEREAIS", "TRIO"
-            ],
-            "Doces e Sobremesas": [
-                "ACUCAR", "ADOCANTE", "LEITE CONDENSADO", "CREME DE LEITE", "MISTURA CREME", "GELATINA", 
-                "MISTURA BOLO", "FERMENTO", "COCO RALADO", "LEITE DE COCO", "GOIABADA", "DOCE",
-                "BALA", "CHICLE", "TRIDENT", "FINI", "CHOCOLATE", "BOMBOM"
-            ],
-            "Temperos e Condimentos": [
-                "CALDO", "KNORR", "MAGGI", "ARISCO", "SAZON", "SAL ", "SAL REF", 
-                "TEMPERO", "PIMENTA", "OREGANO", "COLORAU", "ACAFRAO", "ALHO", "LOURO", "BICARBONATO",
-                "MAIONESE", "HELLMANNS", "KETCHUP", "MOSTARDA", "VINAGRE"
-            ],
-            "Utilidades Domésticas": [
-                "LAMPADA", "PILHA", "BATERIA", "RAYOVAC", "ELGIN", "FOSFORO", "ISQUEIRO", "COLA", 
-                "PAPEL ALUMINIO", "FILME PVC", "TIGELA", "JARRA", "POTE", "COPO", "PRATO", "TALHER", 
-                "FACA", "ESPATULA", "DESCASCADOR", "FORMA GELO", "PROTETOR DE RALO", "PILAO", "PENEIRA", 
-                "DESCANSO DE PANELA", "CHAVEIRO", "AGULHA DESENTUPIR", "ESPONJA DE BANHO"
-            ],
-            "Bazar e Papelaria": [
-                "CHINELO", "HAVAIANA", "SANDALIA", "CANETA", "LAPIS", "GRAFITE", "CADERNO", 
-                "LINHA", "AGULHA", "TESOURA"
-            ]
+            "Bebê e Infantil": ["FRALDA", "LENCO UMEDECIDO", "LENÇO UMED", "HUGGIES", "PIQUITUCHO", "POMADA", "MUCILON"],
+            "Cabelos": ["SHAMPOO", "CONDICIONADOR", "SH SEDA", "SEDA", "SKALA", "CREME DE PENTEAR", "LOCAO", "LUMINOSO UV", "CACHOS", "LISO PERFEITO", "CERAMIDAS", "PENTE", "ELASTICO DE CABELO", "ESCOVA DE CABELO", "ESCOVA RETANGULAR"],
+            "Higiene Pessoal": ["SABONETE", "SAB NIVEA", "SAB FARNESE", "SAB ALBANY", "PALMOLIVE", "FLOR DE YPE", "DESODORANTE", "DES AERO", "HERBISSIMO", "ABOVE", "TABU", "NIVEA", "LEITE DE ROSAS", "ABSORVENTE", "ABS ", "INTIMUS", "SYM", "DIANA", "OB MEDIO", "OB TAMPAO", "ALGODAO", "COTONETE", "HASTES FLEXIVEIS", "CURATIVO", "SALVELOX", "LAMINA", "BARBEAR", "PRESTOBARBA", "GILLETTE", "APAR BARB", "ACETONA", "REMOVEDOR", "LIXA", "TALCO"],
+            "Higiene Bucal": ["CREME DENTAL", "ESCOVA DENTAL", "FIO DENTAL", "SORRISO", "COLGATE", "KESS", "PALITO DENTAL"],
+            "Lavanderia": ["SABAO EM PO", "SABAO PO", "TIXAN", "OMO", "YPE", "SABAO BARRA", "MINUANO", "INDAIA", "AMACIANTE", "AGUA SANITARIA", "Q BOA", "ALVEJANTE", "PRENDEDOR", "ESCOVA ROUPA"],
+            "Limpeza da Casa": ["DESINFETANTE", "BAK", "OESTE", "REMMUS", "PINHO", "VEJA", "MULTI USO", "LIMPA ALUMINIO", "DETERGENTE", "LAVA LOUCAS", "ESPONJA", "LA DE ACO", "BOMBRIL", "ASSOLAN", "PANO", "INSETICIDA", "SBP", "PURIFICADOR", "GLADE", "PEDRA SANITARIA", "ESCOVA SANITARIA", "VASSOURA", "RODO", "PA DE LIXO", "SACO DE LIXO", "SACO PANO"],
+            "Mercearia Básica": ["ARROZ", "FEIJAO", "OLEO", "AZEITE", "FARINHA", "FUBA", "FLOCAO", "MILHARINA", "AMIDO DE MILHO", "CANJIQUINHA", "PIPOCA", "MILHO PIPOCA", "SARDINHA", "COQUEIRO", "MILHO VERDE", "SELETA", "ERVILHA", "AZEITONA"],
+            "Massas e Molhos": ["MACARRAO", "MASSA", "PENNE", "PARAFUSO", "ESPAGUETE", "PADRE NOSSO", "EXTRATO", "MOLHO TOMATE", "FUGINI", "QUEIJO RALADO"],
+            "Café da Manhã": ["CAFE", "FILTRO CAFE", "COADOR", "CHA ", "ERVA MATE", "ERVA TERERE", "LEITE PO", "LEITE EM PO", "MERILU", "ACHOCOLATADO", "TODDY", "NESCAU", "CEREAL MATINAL", "SUCRILHOS", "GRANOLA", "AVEIA"],
+            "Biscoitos e Lanches": ["BISCOITO", "BOLACHA", "WAFER", "CREAM CRACKER", "AGUA E SAL", "MAIZENA", "ROSQUINHA", "MABEL", "LIANE", "RANCHEIRO", "BELCOCO", "TUCS", "BARRA DE CEREAL", "BARRA CEREAIS", "TRIO"],
+            "Doces e Sobremesas": ["ACUCAR", "ADOCANTE", "LEITE CONDENSADO", "CREME DE LEITE", "MISTURA CREME", "GELATINA", "MISTURA BOLO", "FERMENTO", "COCO RALADO", "LEITE DE COCO", "GOIABADA", "DOCE", "BALA", "CHICLE", "TRIDENT", "FINI", "CHOCOLATE", "BOMBOM"],
+            "Temperos e Condimentos": ["CALDO", "KNORR", "MAGGI", "ARISCO", "SAZON", "SAL ", "SAL REF", "TEMPERO", "PIMENTA", "OREGANO", "COLORAU", "ACAFRAO", "ALHO", "LOURO", "BICARBONATO", "MAIONESE", "HELLMANNS", "KETCHUP", "MOSTARDA", "VINAGRE"],
+            "Utilidades Domésticas": ["LAMPADA", "PILHA", "BATERIA", "RAYOVAC", "ELGIN", "FOSFORO", "ISQUEIRO", "COLA", "PAPEL ALUMINIO", "FILME PVC", "TIGELA", "JARRA", "POTE", "COPO", "PRATO", "TALHER", "FACA", "ESPATULA", "DESCASCADOR", "FORMA GELO", "PROTETOR DE RALO", "PILAO", "PENEIRA", "DESCANSO DE PANELA", "CHAVEIRO", "AGULHA DESENTUPIR", "ESPONJA DE BANHO"],
+            "Bazar e Papelaria": ["CHINELO", "HAVAIANA", "SANDALIA", "CANETA", "LAPIS", "GRAFITE", "CADERNO", "LINHA", "AGULHA", "TESOURA"]
         };
         const CATEGORIA_PADRAO = "Outros";
 
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
-        // --- FUNÇÃO INTELIGENTE PARA DETECTAR CATEGORIA ---
+        // --- DETECÇÃO DE CATEGORIA ---
         function detectarCategoria(nomeProduto) {
             if (!nomeProduto) return CATEGORIA_PADRAO;
-            
-            // Remove acentos e joga para maiúsculo para facilitar a busca
             const nomeNormalizado = nomeProduto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-
-            // Percorre cada categoria configurada
             for (const [categoria, keywords] of Object.entries(CONFIG_CATEGORIAS)) {
-                // Percorre cada palavra-chave daquela categoria
                 for (const keyword of keywords) {
                     const kwNormalizada = keyword.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-                    
-                    // Se encontrar a palavra-chave dentro do nome do produto, retorna a categoria
-                    // Como a verificação de palavras compostas (ex: PAPEL HIGIENICO) deve ser feita
-                    // antes, certifique-se de colocar as compostas no início da lista lá em cima.
                     if (nomeNormalizado.includes(kwNormalizada)) {
                         return categoria;
                     }
@@ -554,7 +531,7 @@
             return CATEGORIA_PADRAO;
         }
 
-       async function init() {
+        async function init() {
             try {
                 // 1. CARREGA CESTAS
                 try {
@@ -577,31 +554,67 @@
                         if (!text.endsWith(']')) text = text + ']';
 
                         const rawProd = JSON.parse(text);
-                        
-                        DB_PROD = rawProd
-                            .filter(x => x && x.situacao === "A")
-                            .map(x => {
+                        DB_PROD = rawProd.filter(x => x && x.situacao === "A").map(x => {
                                 const sId = String(x.id);
                                 const sCodigo = x.codigo ? String(x.codigo) : sId;
                                 const finalImg = `img/produtos/${sCodigo}.webp`;
-                                
-                                // --- AQUI CHAMAMOS A NOVA INTELIGÊNCIA ---
                                 const nomeCategoria = detectarCategoria(x.nome);
-
-                                return {
-                                    id: sId,
-                                    name: x.nome,
-                                    price: parseFloat(x.preco),
-                                    cat: nomeCategoria,
-                                    stock: x.estoque || 0,
-                                    img: finalImg
-                                };
+                                return { id: sId, name: x.nome, price: parseFloat(x.preco), cat: nomeCategoria, stock: x.estoque || 0, img: finalImg };
                             });
                         console.log("Produtos carregados:", DB_PROD.length);
+
+                        // --- 3. PERSISTÊNCIA: RECUPERA CARRINHO SALVO ---
+                        const savedCestaId = localStorage.getItem('da_cesta_id');
+                        const savedCart = localStorage.getItem('da_cart');
+                        const savedOrig = localStorage.getItem('da_orig');
+                        
+                        if (savedCestaId && savedCart && DB_CESTAS.length > 0) {
+                            // Se existe carrinho salvo, carrega ele direto
+                            const c = DB_CESTAS.find(x => x.id === savedCestaId);
+                            if (c) {
+                                CURR_CESTA = c;
+                                CART = JSON.parse(savedCart);
+                                ORIG_COUNTS = savedOrig ? JSON.parse(savedOrig) : {};
+                                
+                                // Recalcula total original
+                                ORIG_TOTAL = 0;
+                                for(let k in ORIG_COUNTS) ORIG_TOTAL += ORIG_COUNTS[k];
+
+                                document.getElementById('view-home').classList.remove('active');
+                                document.getElementById('view-catalogo').classList.add('active');
+                                document.getElementById('btn-back').style.display = 'block';
+                                document.getElementById('cart-bar').style.display = 'flex';
+                                document.getElementById('page-title').innerText = CURR_CESTA.nome;
+                                
+                                renderCatalog();
+                                updateTotals();
+                                showToast("Seu carrinho foi restaurado!");
+                            }
+                        }
                     }
                 } catch (e) { console.error("Erro Produtos:", e); }
 
             } catch (err) { console.error("Erro fatal:", err); }
+        }
+
+        // --- FUNÇÃO PARA SALVAR O ESTADO ---
+        function saveState() {
+            if (CURR_CESTA) {
+                localStorage.setItem('da_cesta_id', CURR_CESTA.id);
+                localStorage.setItem('da_cart', JSON.stringify(CART));
+                localStorage.setItem('da_orig', JSON.stringify(ORIG_COUNTS));
+            }
+        }
+
+        // --- FUNÇÃO RESETAR E VOLTAR (LIMPA TUDO) ---
+        function resetAndGoHome() {
+            if(confirm("Deseja limpar o carrinho e voltar para o início?")) {
+                localStorage.removeItem('da_cesta_id');
+                localStorage.removeItem('da_cart');
+                localStorage.removeItem('da_orig');
+                CART = {}; CURR_CESTA = null; ORIG_COUNTS = {};
+                goHome();
+            }
         }
 
         function goHome() {
@@ -619,7 +632,6 @@
                 init();
                 return;
             }
-
             window.scrollTo(0,0);
             CURR_CESTA = DB_CESTAS.find(c => c.id === id);
             CART = {}; ORIG_COUNTS = {}; ORIG_TOTAL = 0;
@@ -629,12 +641,13 @@
                 if(parts.length >= 2) {
                     const iq = parseInt(parts[0]);
                     const cid = parts[1].trim();
-                    
                     if(DB_PROD.find(x => x.id === cid)) {
                         CART[cid] = iq; ORIG_COUNTS[cid] = iq; ORIG_TOTAL += iq;
                     }
                 }
             });
+            
+            saveState(); // Salva estado inicial
 
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-catalogo').classList.add('active');
@@ -678,6 +691,11 @@
             div.innerHTML = "";
             const ph = svgPlace();
             
+            // Renderiza Menu de Categorias
+            const navDiv = document.getElementById('cat-nav');
+            navDiv.innerHTML = "";
+            
+            // Renderiza lista de itens da cesta (topo)
             let html = `<div style="margin-bottom:30px;">
                 <h3 style="font-size:1rem; color:#888; margin-bottom:10px; padding-left:5px;">Itens da Cesta</h3>
                 <div class="basket-scroll">`;
@@ -698,21 +716,22 @@
             });
             html += `</div></div>`;
 
-            // Agrupa produtos por categoria
+            // Agrupa por categorias
             const cats = {};
-            DB_PROD.forEach(p => { 
-                if(!cats[p.cat]) cats[p.cat] = []; 
-                cats[p.cat].push(p); 
-            });
-            
+            DB_PROD.forEach(p => { if(!cats[p.cat]) cats[p.cat] = []; cats[p.cat].push(p); });
             const sortedKeys = Object.keys(cats).sort();
 
-            // Renderiza categorias com CARROSSEL HORIZONTAL
-            sortedKeys.forEach(c => {
-                if (c === CATEGORIA_PADRAO && cats[c].length === 0) return; // Oculta Outros se vazio
+            // Renderiza Catálogo
+            sortedKeys.forEach((c, index) => {
+                if (c === CATEGORIA_PADRAO && cats[c].length === 0) return;
 
-                html += `<div class="cat-title">${c}</div>
-                         <div class="products-carousel">`; // Mudança de Grid para Carousel
+                // Adiciona botão no menu de navegação
+                const safeId = `cat-${index}`;
+                navDiv.innerHTML += `<button class="cat-chip" onclick="scrollToCat('${safeId}')">${c}</button>`;
+
+                html += `<div id="${safeId}" class="cat-section">
+                         <div class="cat-title">${c}</div>
+                         <div class="products-carousel">`;
                 
                 cats[c].forEach(p => {
                     const q = CART[p.id] || 0;
@@ -721,30 +740,56 @@
                     const imgSrc = p.img || ph;
                     
                     let btnHtml = "";
-                    
                     if (semEstoque && q === 0) {
                         btnHtml = `<button class="btn-esgotado">ESGOTADO</button>`;
                     } else if (q > 0) {
-                        btnHtml = `<div class="qty-control">
-                               <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
-                               <span class="val-q">${q}</span>
-                               <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
-                           </div>`;
+                        btnHtml = `<div class="qty-control"><button class="btn-q" onclick="upd('${p.id}', -1)">-</button><span class="val-q">${q}</span><button class="btn-q" onclick="upd('${p.id}', 1)">+</button></div>`;
                     } else {
                         btnHtml = `<button class="btn-add-simple" onclick="upd('${p.id}', 1)">ADICIONAR</button>`;
                     }
 
+                    // Adicionei 'prod-search-item' e data-name para busca
                     html += `
-                    <div class="prod-card ${activeClass}" id="card-${p.id}">
+                    <div class="prod-card ${activeClass} prod-search-item" id="card-${p.id}" data-name="${p.name.toLowerCase()}">
                         <div class="prod-img-box"><img src="${imgSrc}" class="prod-img" loading="lazy" onclick="zoom('${imgSrc}')"></div>
                         <div class="prod-price">${fmt(p.price)}</div>
                         <div class="prod-name">${p.name}</div>
                         <div class="action-area" id="act-${p.id}">${btnHtml}</div>
                     </div>`;
                 });
-                html += `</div>`; // Fim carousel
+                html += `</div></div>`; 
             });
             div.innerHTML = html;
+        }
+
+        // --- FUNÇÃO DE BUSCA ---
+        function doSearch(term) {
+            const t = term.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            const items = document.querySelectorAll('.prod-search-item');
+            
+            items.forEach(el => {
+                const name = el.getAttribute('data-name').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (name.includes(t)) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+
+            // Oculta títulos de categorias vazias
+            document.querySelectorAll('.cat-section').forEach(sec => {
+                const visibleItems = sec.querySelectorAll('.prod-search-item:not(.hidden)');
+                sec.style.display = visibleItems.length > 0 ? 'block' : 'none';
+            });
+        }
+
+        // --- FUNÇÃO DE NAVEGAÇÃO RÁPIDA ---
+        function scrollToCat(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                const y = el.getBoundingClientRect().top + window.pageYOffset - 150; // Ajuste para o header
+                window.scrollTo({top: y, behavior: 'smooth'});
+            }
         }
 
         function upd(id, d) {
@@ -768,8 +813,13 @@
             if(nq < 0) return;
             CART[id] = nq;
             
+            saveState(); // Salva estado ao atualizar
             renderCatalog(); 
             updateTotals();
+            
+            // Re-aplica busca se houver
+            const searchVal = document.getElementById('search-input').value;
+            if(searchVal) doSearch(searchVal);
         }
 
         function updateTotals() {
@@ -867,6 +917,11 @@
             mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
 
             trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
+
+            // LIMPA CARRINHO APÓS PEDIDO
+            localStorage.removeItem('da_cesta_id');
+            localStorage.removeItem('da_cart');
+            localStorage.removeItem('da_orig');
 
             try {
                 fetch(MAKE_WEBHOOK, {
