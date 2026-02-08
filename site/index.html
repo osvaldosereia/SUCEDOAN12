@@ -67,7 +67,7 @@
         h1, h2, h3 { margin: 0; font-weight: 700; color: var(--cor-text-main); letter-spacing: -0.5px; }
         button { cursor: pointer; border: none; outline: none; background: none; font-family: inherit; }
 
-        /* --- ANIMAÇÕES (NOVO) --- */
+        /* --- ANIMAÇÕES --- */
         @keyframes pop { 
             0% { transform: scale(1); } 
             50% { transform: scale(1.4); } 
@@ -168,7 +168,7 @@
             box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3); 
         }
 
-        /* --- FERRAMENTAS DO CATÁLOGO (BUSCA E NAV) --- */
+        /* --- FERRAMENTAS DO CATÁLOGO --- */
         .catalog-tools {
             position: sticky; top: 64px; z-index: 95;
             background: var(--cor-bg);
@@ -462,10 +462,10 @@
             <input type="text" id="cust-name" class="input-box" required placeholder="Digite seu nome">
             
             <label>CPF (Para o Cadastro)</label>
-            <input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00">
+            <input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
             
             <label>Celular (WhatsApp)</label>
-            <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999">
+            <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999" maxlength="15" oninput="mascaraTelefone(this)">
 
             <label>Endereço de Entrega</label>
             <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
@@ -749,7 +749,6 @@
                     if (semEstoque && q === 0) {
                         btnHtml = `<button class="btn-esgotado">ESGOTADO</button>`;
                     } else if (q > 0) {
-                        // ADICIONEI ID ESPECÍFICO NA QUANTIDADE PARA ANIMAÇÃO
                         btnHtml = `<div class="qty-control"><button class="btn-q" onclick="upd('${p.id}', -1)">-</button><span class="val-q" id="qty-${p.id}">${q}</span><button class="btn-q" onclick="upd('${p.id}', 1)">+</button></div>`;
                     } else {
                         btnHtml = `<button class="btn-add-simple" onclick="upd('${p.id}', 1)">ADICIONAR</button>`;
@@ -795,23 +794,20 @@
             }
         }
 
-        // --- FUNÇÃO UPD ATUALIZADA COM EFEITOS VISUAIS ---
         function upd(id, d) {
             const prod = DB_PROD.find(x => x.id === id);
             
-            // Validação de Estoque com Feedback (Shake)
             if (prod && prod.stock <= 0 && d > 0) {
                  triggerShake(id);
                  showToast("Produto esgotado.");
                  return;
             }
 
-            if(navigator.vibrate) navigator.vibrate(10); // Vibração Tátil
+            if(navigator.vibrate) navigator.vibrate(10);
             
             if(!CART[id]) CART[id] = 0;
             const nq = CART[id] + d;
             
-            // Validação de Remoção com Feedback (Shake)
             if (d < 0 && ORIG_COUNTS[id]) {
                 let currOrig = 0;
                 for(let k in CART) if(ORIG_COUNTS[k]) currOrig += Math.min(k===id ? nq : CART[k], ORIG_COUNTS[k]);
@@ -829,7 +825,6 @@
             renderCatalog(); 
             updateTotals();
 
-            // Animações de Sucesso
             triggerPop(id);
             triggerPulseBar();
             
@@ -837,19 +832,17 @@
             if(searchVal) doSearch(searchVal);
         }
 
-        // --- FUNÇÕES DE ANIMAÇÃO AUXILIARES ---
         function triggerShake(id) {
             const card = document.getElementById(`card-${id}`);
             if(card) {
                 card.classList.remove('anim-shake');
-                void card.offsetWidth; // Reinicia animação
+                void card.offsetWidth; 
                 card.classList.add('anim-shake');
                 if(navigator.vibrate) navigator.vibrate([50, 50, 50]);
             }
         }
 
         function triggerPop(id) {
-            // Tenta encontrar o contador
             const qtySpan = document.getElementById(`qty-${id}`);
             if(qtySpan) {
                 qtySpan.classList.add('anim-pop');
@@ -1001,6 +994,22 @@
         function showToast(m) { const t=document.getElementById('status-toast'); t.innerText=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
         function svgPlace() { return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjRTI1QzZDIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjwvc3ZnPg=="; }
         function zoom(src) { document.getElementById('zoom-img').src = src; document.getElementById('zoom-modal').showModal(); }
+
+        // --- FUNÇÕES DE MÁSCARA ---
+        function mascaraTelefone(o) {
+            let v = o.value.replace(/\D/g, "");
+            v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+            v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+            o.value = v.substring(0, 15);
+        }
+
+        function mascaraCPF(o) {
+            let v = o.value.replace(/\D/g, "");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            o.value = v.substring(0, 14);
+        }
 
         (function(){
             document.addEventListener('contextmenu', e => e.preventDefault());
