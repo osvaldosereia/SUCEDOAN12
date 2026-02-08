@@ -158,14 +158,21 @@
             border-left: 5px solid var(--cor-primary);
         }
         
-        .products-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr; 
+        /* --- NOVO ESTILO: CARROSSEL DE PRODUTOS --- */
+        .products-carousel {
+            display: flex;
+            overflow-x: auto;
             gap: 15px;
+            padding: 10px 5px 25px 5px; /* Espaço inferior para sombra não cortar */
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
+            scroll-snap-type: x mandatory; /* Efeito magnético opcional */
         }
-        @media (min-width: 900px) {
-            .products-grid { grid-template-columns: repeat(4, 1fr); }
-        }
+        
+        /* Personaliza a barra de rolagem do carrossel */
+        .products-carousel::-webkit-scrollbar { height: 6px; }
+        .products-carousel::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+        .products-carousel::-webkit-scrollbar-thumb { background: #d1d1d1; border-radius: 4px; }
 
         .prod-card {
             background: var(--cor-surface);
@@ -174,10 +181,20 @@
             display: flex; flex-direction: column;
             align-items: center; text-align: center;
             border: 1px solid transparent;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
             transition: all 0.2s;
             position: relative;
+            
+            /* Propriedades para o Carrossel */
+            flex: 0 0 auto; /* Não encolhe nem estica */
+            width: 170px;   /* Largura fixa base (Mobile) */
+            scroll-snap-align: start;
         }
+
+        @media (min-width: 900px) {
+            .prod-card { width: 220px; } /* Largura maior no Desktop */
+        }
+
         /* Estilo para produto ESGOTADO */
         .prod-card.esgotado { opacity: 0.7; filter: grayscale(1); }
         .prod-card.active { border-color: var(--cor-primary); background: #FFFBFB; }
@@ -436,99 +453,125 @@
 
     <script>
         const CONFIG = { whatsapp: "5565984491018", maxRemoval: 0.3 };
-        
-        // --- SEU WEBHOOK DO MAKE ---
         const MAKE_WEBHOOK = "https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il"; 
 
-        // --- DEFINIÇÃO DAS CATEGORIAS DIRETO NO CÓDIGO ---
-        const CATEGORIAS_FIXAS = {
-            "A": "Mercearia",
-            "B": "Molhos e Massas",
-            "C": "Óleos e Temperos",
-            "D": "Matinais e Sobremesas",
-            "E": "Bebidas",
-            "P": "Higiene Pessoal",
-            "G": "Limpeza",
-            "H": "Hortifruti",
-            "I": "Açougue",
-            "1": "Promocionais",
-            "2": "Kits Especiais"
+        // ============================================================
+        //  CONFIGURAÇÃO MANUAL DAS CATEGORIAS (EDITE AQUI)
+        // ============================================================
+        // Dica: Coloque as palavras mais ESPECÍFICAS (ou compostas) antes.
+        // O sistema vai verificar na ordem desta lista.
+        // Se o nome do produto CONTIVER a palavra-chave, ele entra na categoria.
+        const CONFIG_CATEGORIAS = {
+            "Higiene Pessoal": [
+                "PAPEL HIGIENICO", "CREME DENTAL", "SHAMPOO", "CONDICIONADOR", 
+                "SABONETE", "DESODORANTE", "ABSORVENTE", "ESCOVA DENTAL", 
+                "COTONETE", "LÂMINA", "LAMINA", "BARBEAR"
+            ],
+            "Limpeza": [
+                "SABAO EM PO", "AGUA SANITARIA", "DETERGENTE", "AMACIANTE", 
+                "DESINFETANTE", "ESPONJA", "LA DE ACO", "BOMBRIL", "ASSOALHO", 
+                "SABAO BARRA", "ALCOOL", "MULTI USO", "LIMPA"
+            ],
+            "Açougue": [
+                "CARNE", "FRANGO", "LINGUICA", "BIFE", "ACEM", "MUSCULO", 
+                "COSTELA", "PALETA", "PERNIL", "SALSICHA", "CALABRESA"
+            ],
+            "Bebidas": [
+                "REFRIGERANTE", "SUCO", "CAFE", "LEITE", "ACHOCOLATADO", 
+                "TODDY", "NESCAU", "CERVEJA", "AGUA"
+            ],
+            "Molhos e Massas": [
+                "EXTRATO", "MOLHO", "MACARRAO", "MASSA", "LAZANHA"
+            ],
+            "Óleos e Temperos": [
+                "OLEO", "AZEITE", "SAL", "TEMPERO", "ALHO", "CALDO", "VINAGRE"
+            ],
+            "Matinais e Sobremesas": [
+                "BOLACHA", "BISCOITO", "ACUCAR", "ADOÇANTE", "GELATINA", "MISTURA BOLO"
+            ],
+            "Hortifruti": [
+                "BATATA", "CEBOLA", "TOMATE", "ALHO", "FRUTA", "VERDURA"
+            ],
+            "Mercearia": [
+                "ARROZ", "FEIJAO", "FARINHA", "FUBA", "CANJIQUINHA", "PIPOCA"
+            ]
         };
+        const CATEGORIA_PADRAO = "Outros";
 
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
+        // --- FUNÇÃO INTELIGENTE PARA DETECTAR CATEGORIA ---
+        function detectarCategoria(nomeProduto) {
+            if (!nomeProduto) return CATEGORIA_PADRAO;
+            
+            // Remove acentos e joga para maiúsculo para facilitar a busca
+            const nomeNormalizado = nomeProduto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
+            // Percorre cada categoria configurada
+            for (const [categoria, keywords] of Object.entries(CONFIG_CATEGORIAS)) {
+                // Percorre cada palavra-chave daquela categoria
+                for (const keyword of keywords) {
+                    const kwNormalizada = keyword.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                    
+                    // Se encontrar a palavra-chave dentro do nome do produto, retorna a categoria
+                    // Como a verificação de palavras compostas (ex: PAPEL HIGIENICO) deve ser feita
+                    // antes, certifique-se de colocar as compostas no início da lista lá em cima.
+                    if (nomeNormalizado.includes(kwNormalizada)) {
+                        return categoria;
+                    }
+                }
+            }
+            return CATEGORIA_PADRAO;
+        }
+
        async function init() {
-    try {
-        // 1. TENTA CARREGAR AS CESTAS (O teu ficheiro produtos-cesta-basica.json)
-        try {
-            const cRes = await fetch('produtos-cesta-basica.json');
-            if (cRes.ok) {
-                DB_CESTAS = await cRes.json();
-                console.log("Cestas carregadas com sucesso:", DB_CESTAS.length);
-                renderHome(); // Mostra as cestas imediatamente
-            } else {
-                console.error("Erro ao carregar ficheiro de cestas. Status:", cRes.status);
-                document.getElementById('cestas-container').innerHTML = "<p style='text-align:center; padding:40px'>Erro ao carregar cestas (Erro 404/500).</p>";
-            }
-        } catch (e) { 
-            console.error("Erro na leitura do JSON de cestas:", e); 
-        }
+            try {
+                // 1. CARREGA CESTAS
+                try {
+                    const cRes = await fetch('produtos-cesta-basica.json');
+                    if (cRes.ok) {
+                        DB_CESTAS = await cRes.json();
+                        renderHome();
+                    } else {
+                        document.getElementById('cestas-container').innerHTML = "<p style='text-align:center; padding:40px'>Erro ao carregar cestas.</p>";
+                    }
+                } catch (e) { console.error("Erro Cestas:", e); }
 
-        // 2. TENTA CARREGAR OS PRODUTOS (produtos.json do Make)
-        try {
-            const pRes = await fetch('produtos.json');
-            if (pRes.ok) {
-                let text = await pRes.text();
-                text = text.trim();
-                
-                // Limpeza agressiva para evitar erros de vírgulas extras no fim do JSON
-                text = text.replace(/,(\s+)?$/, ""); 
-                if (!text.startsWith('[')) text = '[' + text;
-                if (!text.endsWith(']')) text = text + ']';
+                // 2. CARREGA PRODUTOS DO MAKE
+                try {
+                    const pRes = await fetch('produtos.json');
+                    if (pRes.ok) {
+                        let text = await pRes.text();
+                        text = text.trim().replace(/,(\s+)?$/, ""); 
+                        if (!text.startsWith('[')) text = '[' + text;
+                        if (!text.endsWith(']')) text = text + ']';
 
-                const rawProd = JSON.parse(text);
-                
-                DB_PROD = rawProd
-                    .filter(x => x && x.situacao === "A")
-                    .map(x => {
-                        const sId = String(x.id);
-                        const sCodigo = x.codigo ? String(x.codigo) : sId;
-                        const primeiraLetra = sCodigo.charAt(0).toUpperCase();
+                        const rawProd = JSON.parse(text);
                         
-                        // Corrigi aqui: P para Higiene conforme o teu JSON de produtos
-                        const categorias = {
-                            "A": "Mercearia", "B": "Molhos", "C": "Óleos", "D": "Matinais",
-                            "E": "Bebidas", "P": "Higiene Pessoal", "G": "Limpeza",
-                            "H": "Hortifruti", "I": "Açougue"
-                        };
-                        
-                        const nomeCategoria = categorias[primeiraLetra] || "Diversos";
+                        DB_PROD = rawProd
+                            .filter(x => x && x.situacao === "A")
+                            .map(x => {
+                                const sId = String(x.id);
+                                const sCodigo = x.codigo ? String(x.codigo) : sId;
+                                const finalImg = `img/produtos/${sCodigo}.webp`;
+                                
+                                // --- AQUI CHAMAMOS A NOVA INTELIGÊNCIA ---
+                                const nomeCategoria = detectarCategoria(x.nome);
 
-                        // --- NOVA LÓGICA DE IMAGEM (PADRONIZAÇÃO EXIGIDA) ---
-                        // Ignora campo imagem do JSON. Monta o caminho baseado APENAS no código.
-                        // IMPORTANTE: Suas imagens DEVEM se chamar CODIGO.webp (ex: P333.webp)
-                        // Se suas imagens forem .webp ou .png, altere a extensão abaixo.
-                        
-                        const finalImg = `img/produtos/${sCodigo}.webp`;
+                                return {
+                                    id: sId,
+                                    name: x.nome,
+                                    price: parseFloat(x.preco),
+                                    cat: nomeCategoria,
+                                    stock: x.estoque || 0,
+                                    img: finalImg
+                                };
+                            });
+                        console.log("Produtos carregados:", DB_PROD.length);
+                    }
+                } catch (e) { console.error("Erro Produtos:", e); }
 
-                        return {
-                            id: sId,
-                            name: x.nome,
-                            price: parseFloat(x.preco),
-                            cat: nomeCategoria,
-                            stock: x.estoque || 0,
-                            img: finalImg
-                        };
-                    });
-                console.log("Produtos carregados:", DB_PROD.length);
-            }
-        } catch (e) { 
-            console.error("Erro nos produtos:", e); 
-        }
-
-    } catch (err) { 
-        console.error("Erro fatal no carregamento:", err);
-    }
+            } catch (err) { console.error("Erro fatal:", err); }
         }
 
         function goHome() {
@@ -625,6 +668,7 @@
             });
             html += `</div></div>`;
 
+            // Agrupa produtos por categoria
             const cats = {};
             DB_PROD.forEach(p => { 
                 if(!cats[p.cat]) cats[p.cat] = []; 
@@ -633,8 +677,13 @@
             
             const sortedKeys = Object.keys(cats).sort();
 
+            // Renderiza categorias com CARROSSEL HORIZONTAL
             sortedKeys.forEach(c => {
-                html += `<div class="cat-title">${c}</div><div class="products-grid">`;
+                if (c === CATEGORIA_PADRAO && cats[c].length === 0) return; // Oculta Outros se vazio
+
+                html += `<div class="cat-title">${c}</div>
+                         <div class="products-carousel">`; // Mudança de Grid para Carousel
+                
                 cats[c].forEach(p => {
                     const q = CART[p.id] || 0;
                     const semEstoque = p.stock <= 0;
@@ -663,7 +712,7 @@
                         <div class="action-area" id="act-${p.id}">${btnHtml}</div>
                     </div>`;
                 });
-                html += `</div>`;
+                html += `</div>`; // Fim carousel
             });
             div.innerHTML = html;
         }
@@ -747,83 +796,75 @@
             document.getElementById('modal-checkout').showModal();
         }
 
-       // Substitua a função sendWhatsapp antiga inteira por esta:
+        async function sendWhatsapp(e) {
+            e.preventDefault();
+            
+            const n = document.getElementById('cust-name').value;
+            const cpf = document.getElementById('cust-cpf').value;
+            const phone = document.getElementById('cust-phone').value; 
+            const a = document.getElementById('cust-addr').value;
+            const p = document.getElementById('cust-pay').value;
+            
+            let somaProdutos = 0;
+            const itensMake = [];
+            const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
 
-async function sendWhatsapp(e) {
-    e.preventDefault();
-    
-    const n = document.getElementById('cust-name').value;
-    const cpf = document.getElementById('cust-cpf').value; // <--- PEGANDO O CPF
-    const phone = document.getElementById('cust-phone').value; 
-    const a = document.getElementById('cust-addr').value;
-    const p = document.getElementById('cust-pay').value;
-    
-    // --- 1. PREPARAÇÃO DOS DADOS ---
+            for(let k in CART) {
+                if(CART[k] > 0) {
+                    const produto = DB_PROD.find(x => x.id === k);
+                    somaProdutos += (produto.price * CART[k]);
 
-    // Soma dos Produtos
-    let somaProdutos = 0;
-    const itensMake = [];
-    const itemsKeys = Object.keys(CART).filter(k=>CART[k]>0);
-
-    for(let k in CART) {
-        if(CART[k] > 0) {
-            const produto = DB_PROD.find(x => x.id === k);
-            somaProdutos += (produto.price * CART[k]);
-
-            itensMake.push({
-                "id": k,
-                "nome": produto.name,
-                "quantidade": CART[k],
-                "preco_unitario": produto.price
-            });
-        }
-    }
-
-    // Calcula Diferença
-    let diferenca = window.finalTotal - somaProdutos;
-    diferenca = parseFloat(diferenca.toFixed(2));
-
-    // --- 2. MONTAGEM DA MENSAGEM DO WHATSAPP (Incluindo CPF) ---
-    let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📄 CPF: ${cpf}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
-    
-    for(let k in CART) {
-        if(CART[k] > 0) {
-            const produto = DB_PROD.find(x => x.id === k);
-            mensagemZap += `${CART[k]}x ${produto.name}\n`;
-        }
-    }
-    mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
-
-    // --- 3. ENVIO PARA O MAKE (Incluindo CPF) ---
-    trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
-
-    try {
-        fetch(MAKE_WEBHOOK, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                "cliente": { 
-                    "nome": n, 
-                    "cpf": cpf,           // <--- ENVIANDO CPF PRO MAKE
-                    "celular": phone, 
-                    "endereco": a 
-                },
-                "pedido": {
-                    "itens": itensMake,
-                    "total_site": window.finalTotal,
-                    "soma_produtos": somaProdutos,
-                    "diferenca_ajuste": diferenca,
-                    "forma_pagamento": p,
-                    "cesta_origem": CURR_CESTA.nome
+                    itensMake.push({
+                        "id": k,
+                        "nome": produto.name,
+                        "quantidade": CART[k],
+                        "preco_unitario": produto.price
+                    });
                 }
-            })
-        });
-    } catch (erro) { console.error(erro); }
+            }
 
-    setTimeout(() => { 
-        window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensagemZap)}`; 
-    }, 500); 
-}
+            let diferenca = window.finalTotal - somaProdutos;
+            diferenca = parseFloat(diferenca.toFixed(2));
+
+            let mensagemZap = `*PEDIDO: ${CURR_CESTA.nome}*\n👤 ${n}\n📄 CPF: ${cpf}\n📱 ${phone}\n📍 ${a}\n💰 ${p}\n\n*ITENS:* \n`;
+            
+            for(let k in CART) {
+                if(CART[k] > 0) {
+                    const produto = DB_PROD.find(x => x.id === k);
+                    mensagemZap += `${CART[k]}x ${produto.name}\n`;
+                }
+            }
+            mensagemZap += `\n*TOTAL FINAL: ${fmt(window.finalTotal)}*`;
+
+            trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
+
+            try {
+                fetch(MAKE_WEBHOOK, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        "cliente": { 
+                            "nome": n, 
+                            "cpf": cpf,
+                            "celular": phone, 
+                            "endereco": a 
+                        },
+                        "pedido": {
+                            "itens": itensMake,
+                            "total_site": window.finalTotal,
+                            "soma_produtos": somaProdutos,
+                            "diferenca_ajuste": diferenca,
+                            "forma_pagamento": p,
+                            "cesta_origem": CURR_CESTA.nome
+                        }
+                    })
+                });
+            } catch (erro) { console.error(erro); }
+
+            setTimeout(() => { 
+                window.location.href = `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(mensagemZap)}`; 
+            }, 500); 
+        }
 
         function orderDirect() {
             const c = DB_CESTAS.find(x => x.id === window.viewId);
