@@ -172,11 +172,9 @@
         .card.status-synced { border-top: 3px solid var(--success); }
         .card.status-changed { border-top: 3px solid #cbd5e1; }
         
-        /* Prioridade para Validade */
         .card.validity-expired { border: 2px solid var(--danger); box-shadow: 0 0 15px rgba(239, 68, 68, 0.15); }
         .card.validity-warning { border: 2px solid var(--warning); }
 
-        /* Badge de Validade na Imagem */
         .validity-badge {
             position: absolute;
             top: 10px;
@@ -192,7 +190,6 @@
         .bg-danger { background: var(--danger); }
         .bg-warning { background: var(--warning); color: #000; }
 
-        /* Imagem do Card */
         .card-img-area {
             height: 160px;
             background: #000;
@@ -246,7 +243,6 @@
             color: white;
         }
 
-        /* Corpo do Card */
         .card-body {
             padding: 12px;
             display: flex;
@@ -307,7 +303,6 @@
         }
         .stat-input:focus { border-color: var(--accent); outline: none; }
 
-        /* Rodapé do Card */
         .card-footer {
             padding: 8px 12px;
             background: #0f172a;
@@ -539,7 +534,6 @@
         .btn-act:hover { background: #1e293b; border-color: #64748b; }
         .btn-act.primary { background: var(--accent); border: none; }
 
-        /* --- 9. LOADER --- */
         #loader {
             position: fixed;
             inset: 0;
@@ -740,12 +734,10 @@
         let pendingSyncSku = null;
         let currentUser = null;
 
-        // Variáveis do Editor
         const canvas = document.getElementById('imageCanvas');
         const ctx = canvas.getContext('2d');
         let loadedImage = null;
 
-        // Inicialização
         window.onload = function() {
             lucide.createIcons();
             loadData();
@@ -764,90 +756,67 @@
         }
 
         // ----------------------------------------------------
-        // IMPORTAÇÃO CSV (BLINDADO - VERSÃO CORRIGIDA)
+        // IMPORTAÇÃO CSV (RESTAURADO DA V23 COM MELHORIAS V27)
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(!file) return;
-
-            toggleLoader(true, "Analisando CSV...");
+            if(!e.target.files[0]) return;
+            toggleLoader(true, "Lendo CSV...");
             
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                encoding: "ISO-8859-1",
-                dynamicTyping: false,
-                delimiter: "", // Auto-detect
+            Papa.parse(e.target.files[0], {
+                header: true, 
+                skipEmptyLines: true, 
+                encoding: "ISO-8859-1", 
+                delimiter: ";",
+                transformHeader: h => h.replace(/"/g, '').trim(), // Limpa aspas do cabeçalho (Crucial v23)
                 complete: (results) => {
-                    if (results.data && results.data.length > 0) {
-                        const novos = results.data.map(d => {
-                            // Limpeza profunda de cabeçalhos
-                            const getVal = (possibleKeys) => {
-                                const foundKey = Object.keys(d).find(k => {
-                                    const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-                                    return possibleKeys.some(pk => cleanK.includes(pk));
-                                });
-                                return foundKey ? String(d[foundKey]).trim() : "";
-                            };
+                    const novos = results.data.map(d => {
+                        // Função de busca restaurada para maior compatibilidade
+                        const getVal = (keys) => { 
+                            const foundKey = Object.keys(d).find(k => {
+                                const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
+                                return keys.includes(cleanK);
+                            });
+                            return foundKey ? d[foundKey] : ""; 
+                        };
 
-                            const getNum = (possibleKeys) => {
-                                let v = getVal(possibleKeys);
-                                if (!v) return 0;
-                                return parseFloat(v.replace(/\./g, '').replace(',', '.')) || 0;
-                            };
-
-                            return {
-                                codigo: getVal(['codigo', 'sku', 'id', 'referencia']),
-                                nome: getVal(['descricao', 'nome', 'produto', 'item']),
-                                preco: getNum(['preco', 'venda', 'valor']),
-                                estoque: getNum(['estoque', 'quantidade', 'saldo', 'atual']),
-                                localizacao: getVal(['localizacao', 'local', 'deposito', 'prateleira']),
-                                gtin: getVal(['gtin', 'ean', 'barras']),
-                                url_imagem: getVal(['url', 'imagem', 'foto', 'link']),
-                                ncm: getVal(['ncm']),
-                                cest: getVal(['cest']),
-                                unidade: getVal(['unidade', 'un']) || 'UN',
-                                pesoLiquido: getNum(['peso liq']),
-                                pesoBruto: getNum(['peso bru']),
-                                largura: getNum(['largura']),
-                                altura: getNum(['altura']),
-                                profundidade: getNum(['profundidade']),
-                                origem: getVal(['origem']),
-                                observacoes: getVal(['observacoes', 'obs', 'nota']),
-                                validade: getVal(['validade', 'vencimento', 'data']),
-                                situacao: 'A',
-                                formato: 'S',
-                                _changed: true,
-                                _lastChange: "Importação CSV"
-                            };
-                        });
-
-                        // Filtro: Aceita produtos que tenham Código OU Nome
-                        products = novos.filter(p => p.codigo !== "" || p.nome !== "");
+                        const getNum = (keys) => { 
+                            const v = getVal(keys); 
+                            return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; 
+                        };
                         
-                        if (products.length > 0) {
-                            saveData();
-                            renderGrid();
-                            alert(`Sucesso! ${products.length} produtos carregados.`);
-                        } else {
-                            alert("Erro: O arquivo parece estar vazio ou as colunas não foram reconhecidas.");
-                        }
-                    } else {
-                        alert("Erro: Não foi possível ler os dados do arquivo.");
-                    }
+                        const base = {
+                            codigo: getVal(['codigo','sku']), 
+                            nome: getVal(['descricao','nome','produto']),
+                            preco: getNum(['preco','venda']), 
+                            estoque: getNum(['estoque','quantidade']),
+                            localizacao: getVal(['localizacao','local']), 
+                            gtin: getVal(['gtin','ean']),
+                            url_imagem: getVal(['url','imagem']), 
+                            ncm: getVal(['ncm']), 
+                            cest: getVal(['cest']),
+                            unidade: getVal(['unidade'])||'UN', 
+                            pesoLiquido: getNum(['peso liq']), 
+                            pesoBruto: getNum(['peso bru']),
+                            largura: getNum(['largura']), 
+                            altura: getNum(['altura']), 
+                            profundidade: getNum(['profundidade']),
+                            origem: getVal(['origem']), 
+                            observacoes: getVal(['observacoes','obs']),
+                            validade: getVal(['validade','vencimento']) || "",
+                            situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
+                        };
+                        return base;
+                    });
+
+                    products = novos.filter(p => p.codigo || p.nome);
+                    saveData(); 
+                    renderGrid(); 
                     toggleLoader(false);
-                    e.target.value = ""; // Reseta o input
-                },
-                error: (err) => {
-                    toggleLoader(false);
-                    alert("Erro Crítico no PapaParse: " + err.message);
+                    alert(`${products.length} produtos importados!`);
                 }
             });
         });
 
-        // ----------------------------------------------------
-        // AUTENTICAÇÃO
-        // ----------------------------------------------------
         function requestLogin(sku) {
             pendingSyncSku = sku;
             document.getElementById('login-pass').value = '';
@@ -866,23 +835,18 @@
             }
         }
 
-        // ----------------------------------------------------
-        // SINCRONIZAÇÃO (BLINDAGEM SENIOR)
-        // ----------------------------------------------------
         function syncBling(sku) {
             requestLogin(sku);
         }
 
         function executeSync(sku) {
             const p = products.find(pr => pr.codigo == sku);
-            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook no Código!");
+            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook!");
             
             if(!currentUser) currentUser = "SISTEMA";
-
             toggleLoader(true, `Sincronizando...`);
             
             const changeType = p._lastChange || "Sincronização Manual"; 
-
             const payload = {...p}; 
             delete payload._changed; 
             delete payload._lastChange;
@@ -891,7 +855,6 @@
             if(!payload.formato) payload.formato = 'S';
 
             let finalLink = (payload.url_imagem || "").trim();
-
             if(finalLink.includes('github.com') && finalLink.includes('/blob/')) {
                 finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
             }
@@ -899,10 +862,7 @@
             payload.url_imagem = finalLink;           
             payload.imagem = finalLink;               
             payload.url_imagens_externas = finalLink; 
-            
-            if(payload.validade) {
-                payload.dataValidade = payload.validade; 
-            }
+            if(payload.validade) payload.dataValidade = payload.validade; 
 
             if(p.url_imagem !== finalLink) {
                 p.url_imagem = finalLink;
@@ -911,7 +871,6 @@
 
             const time = new Date().toLocaleString('pt-BR');
             const logNote = `[Alt: ${currentUser} em ${time} - ${changeType}]`;
-            
             let obs = (payload.observacoes || "") + " | " + logNote;
             obs = obs.replace(/[\r\n]+/g, " | ").replace(/"/g, "'");
             payload.observacoes = obs;
@@ -927,19 +886,16 @@
                     p._changed = false; 
                     p._lastChange = ""; 
                     saveData(); 
-                    
                     addToHistory(sku, p.nome, true, changeType); 
-                    
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
-                    
                     alert(`✅ Produto atualizado!`);
                 } else throw new Error("Erro no Make");
             })
             .catch(() => { 
                 toggleLoader(false); 
                 addToHistory(sku, p.nome, false, "FALHA CONEXÃO"); 
-                alert("Erro ao enviar! Verifique a internet."); 
+                alert("Erro ao enviar!"); 
             })
             .finally(() => { 
                 pendingSyncSku = null; 
@@ -947,19 +903,13 @@
             });
         }
 
-        // ----------------------------------------------------
-        // EDITOR E UPLOAD
-        // ----------------------------------------------------
         function openPhotoEditor(sku) {
             currentEditingId = sku;
             const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
-            
             const cleanSku = String(p.codigo).trim();
             const slug = `${cleanSku}.webp`;
-            
             document.getElementById('file-name-preview').innerText = slug;
-            
             ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
             ctx.font = "14px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
             ctx.fillText("Cole a imagem aqui (Ctrl+V)", 225, 225);
@@ -988,7 +938,6 @@
             const wC = 450, hC = 450;
             const zoom = parseFloat(document.getElementById('zoomRange').value);
             const mix = parseFloat(document.getElementById('sharpenRange').value);
-            
             const w = loadedImage.width * zoom;
             const h = loadedImage.height * zoom;
             const tempC = document.createElement('canvas');
@@ -1040,38 +989,26 @@
             if(!loadedImage) return alert("Sem imagem");
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             if(!cfg.token) return alert("Configure o Token!");
-            
             toggleLoader(true, "Enviando para GitHub...");
             const f = document.getElementById('file-name-preview').innerText;
-            
             try {
                 const u = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}/${f}`;
                 let sha = null;
                 try { const c = await fetch(u, {headers:{"Authorization":`token ${cfg.token}`}}); if(c.ok) sha = (await c.json()).sha; } catch(e){}
-                
                 const r = await fetch(u, {
                     method: 'PUT',
                     headers: {"Authorization":`token ${cfg.token}`, "Content-Type":"application/json"},
                     body: JSON.stringify({message: "Painel Upload", content: canvas.toDataURL("image/webp", 0.8).split(',')[1], sha: sha})
                 });
-
                 if(r.ok) {
                     const apiResponse = await r.json();
-                    let finalUrl = "";
-                    if(apiResponse.content && apiResponse.content.download_url) {
-                        finalUrl = apiResponse.content.download_url;
-                    } else {
-                        finalUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
-                    }
+                    let finalUrl = apiResponse.content?.download_url || `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
                     finalUrl = `${finalUrl}?v=${Date.now()}`;
                     const p = products.find(p => p.codigo == currentEditingId);
                     p.url_imagem = finalUrl; 
                     p._changed = true;
                     p._lastChange = "Alt: Imagem (Upload)";
-                    saveData(); 
-                    closeModal('modal-editor');
-                    toggleLoader(false); 
-                    requestLogin(currentEditingId); 
+                    saveData(); closeModal('modal-editor'); toggleLoader(false); requestLogin(currentEditingId); 
                 } else throw new Error(r.status);
             } catch(e) { toggleLoader(false); alert("Erro: "+e.message); }
         }
@@ -1083,36 +1020,23 @@
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
             const term = filter.toLowerCase().trim();
-
             const filtered = products.filter(p => {
-                const searchStr = (String(p.nome) + String(p.codigo) + String(p.gtin) + String(p.localizacao) + (p.validade||"")).toLowerCase();
+                const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque + (p.validade||"")).toLowerCase();
                 return searchStr.includes(term);
             });
-
             document.getElementById('total-count').innerText = filtered.length + " produtos";
-
             filtered.forEach(p => {
-                let validityClass = "";
-                let validityBadge = "";
-                if (p.validade && p.validade.length === 10) {
-                    const parts = p.validade.split('/');
-                    const vDate = new Date(parts[2], parts[1] - 1, parts[0]);
-                    const today = new Date();
-                    today.setHours(0,0,0,0);
-                    const diffTime = vDate - today; 
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                    if (diffDays < 0) {
-                        validityClass = "validity-expired";
-                        validityBadge = `<div class="validity-badge bg-danger">VENCIDO</div>`;
-                    } else if (diffDays <= 30) {
-                        validityClass = "validity-warning";
-                        validityBadge = `<div class="validity-badge bg-warning">VENCE EM ${diffDays}D</div>`;
-                    }
+                let vClass = ""; let vBadge = "";
+                if (p.validade?.length === 10) {
+                    const pts = p.validade.split('/');
+                    const vDt = new Date(pts[2], pts[1] - 1, pts[0]);
+                    const today = new Date(); today.setHours(0,0,0,0);
+                    const diff = Math.ceil((vDt - today) / (1000 * 60 * 60 * 24)); 
+                    if (diff < 0) { vClass = "validity-expired"; vBadge = `<div class="validity-badge bg-danger">VENCIDO</div>`; }
+                    else if (diff <= 30) { vClass = "validity-warning"; vBadge = `<div class="validity-badge bg-warning">VENCE EM ${diff}D</div>`; }
                 }
-
-                let mainClass = 'status-synced';
-                if (validityClass) mainClass = validityClass;
-                else if (p._changed) mainClass = 'status-changed';
+                let mainClass = p._changed ? 'status-changed' : 'status-synced';
+                if (vClass) mainClass = vClass;
 
                 const card = document.createElement('div');
                 card.className = `card ${mainClass}`;
@@ -1120,7 +1044,7 @@
 
                 card.innerHTML = `
                     <div class="card-img-area">
-                        ${validityBadge}
+                        ${vBadge}
                         <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/1e293b/475569?text=ERRO'">
                         <div class="img-overlay">
                             <button class="overlay-btn" onclick="searchGoogle('${p.nome}')"><i data-lucide="search" size="14"></i></button>
@@ -1142,7 +1066,7 @@
                         <div class="card-stats">
                             <div class="stat-box" style="grid-column: span 2;">
                                 <label class="stat-label" style="color:var(--warning)">VALIDADE</label>
-                                <input type="text" class="stat-input" value="${p.validade||''}" placeholder="DD/MM/AAAA" style="border-color: #f59e0b;" onchange="updateField('${p.codigo}', 'validade', this.value)">
+                                <input type="text" class="stat-input" value="${p.validade||''}" placeholder="DD/MM/AAAA" onchange="updateField('${p.codigo}', 'validade', this.value)">
                             </div>
                         </div>
                     </div>
@@ -1160,64 +1084,35 @@
             const p = products.find(x => x.codigo == sku);
             if(p) {
                 if(['preco','estoque'].includes(field)) value = parseFloat(value) || 0;
-                p[field] = value;
-                p._changed = true;
-                p._lastChange = `Alt: ${field.toUpperCase()}`; 
-                saveData();
-                renderGrid(document.getElementById('search-input').value);
+                p[field] = value; p._changed = true; p._lastChange = `Alt: ${field.toUpperCase()}`; 
+                saveData(); renderGrid(document.getElementById('search-input').value);
             }
         }
         
         function searchGoogle(term) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(term)}`, '_blank'); }
 
         function addToHistory(sku, nome, success, obs) {
-            const entry = {
-                date: new Date().toLocaleString('pt-BR'),
-                user: currentUser,
-                sku: sku, name: nome, status: success, obs: obs
-            };
-            historyLog.unshift(entry);
-            if(historyLog.length > 500) historyLog.pop();
+            const entry = { date: new Date().toLocaleString('pt-BR'), user: currentUser, sku: sku, name: nome, status: success, obs: obs };
+            historyLog.unshift(entry); if(historyLog.length > 500) historyLog.pop();
             localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLog));
         }
 
         function renderHistory() {
-            const tbody = document.getElementById('history-tbody');
-            tbody.innerHTML = '';
+            const tbody = document.getElementById('history-tbody'); tbody.innerHTML = '';
             historyLog.forEach(h => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${h.date}</td>
-                    <td><b>${h.user}</b></td>
-                    <td>${h.sku}</td>
-                    <td>${h.name}</td>
-                    <td><span class="badge ${h.status ? 'success' : 'error'}">${h.obs || 'OK'}</span></td>
-                `;
+                tr.innerHTML = `<td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.name}</td><td><span class="badge ${h.status ? 'success' : 'error'}">${h.obs || 'OK'}</span></td>`;
                 tbody.appendChild(tr);
             });
         }
-        function clearHistory() { 
-            if(confirm("Apagar todo o histórico local?")) { 
-                historyLog = []; 
-                localStorage.removeItem(HISTORY_KEY); 
-                renderHistory(); 
-            } 
-        }
+        function clearHistory() { if(confirm("Apagar histórico?")) { historyLog = []; localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
 
         function openDetails(sku) {
-            currentEditingId = sku;
-            const p = products.find(pr => pr.codigo == sku);
-            const form = document.getElementById('details-form');
-            form.innerHTML = '';
+            currentEditingId = sku; const p = products.find(pr => pr.codigo == sku);
+            const form = document.getElementById('details-form'); form.innerHTML = '';
             form.innerHTML += `
-                <div class="form-group" style="grid-column: span 2;">
-                    <label style="color:var(--success)">URL DA IMAGEM (LINK DIRETO)</label>
-                    <input type="text" id="det-url_imagem" value="${p.url_imagem||''}" placeholder="https://..." style="border-color:var(--success);">
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label style="color:var(--warning)">DATA DE VALIDADE</label>
-                    <input type="text" id="det-validade" value="${p.validade||''}" placeholder="DD/MM/AAAA" style="border-color:var(--warning); font-weight:bold; text-align:center; letter-spacing:1px;">
-                </div>
+                <div class="form-group" style="grid-column: span 2;"><label style="color:var(--success)">URL IMAGEM</label><input type="text" id="det-url_imagem" value="${p.url_imagem||''}"></div>
+                <div class="form-group" style="grid-column: span 2;"><label style="color:var(--warning)">VALIDADE</label><input type="text" id="det-validade" value="${p.validade||''}" placeholder="DD/MM/AAAA"></div>
             `;
             ['ncm','cest','origem','unidade','pesoBruto','pesoLiquido','largura','altura','profundidade'].forEach(k => {
                 form.innerHTML += `<div class="form-group"><label>${k}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`;
@@ -1228,78 +1123,45 @@
         function saveDetails() {
             const p = products.find(pr => pr.codigo == currentEditingId);
             document.querySelectorAll('#details-form input').forEach(i => p[i.id.replace('det-', '')] = i.value);
-            p._changed = true;
-            p._lastChange = "Alt: Detalhes"; 
-            saveData();
-            closeModal('modal-details');
-            renderGrid(document.getElementById('search-input').value); 
+            p._changed = true; p._lastChange = "Alt: Detalhes"; saveData(); closeModal('modal-details'); renderGrid(document.getElementById('search-input').value); 
         }
 
         function openConfigModal() {
             const c = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            document.getElementById('cfg-token').value = c.token||'';
-            document.getElementById('cfg-user').value = c.user||'';
-            document.getElementById('cfg-repo').value = c.repo||'';
-            document.getElementById('cfg-path').value = c.path||'';
+            ['token','user','repo','path'].forEach(k => document.getElementById('cfg-'+k).value = c[k]||'');
             document.getElementById('modal-config').style.display = 'flex';
         }
 
         function saveConfig() {
-            localStorage.setItem(CONFIG_KEY, JSON.stringify({
-                token: document.getElementById('cfg-token').value,
-                user: document.getElementById('cfg-user').value,
-                repo: document.getElementById('cfg-repo').value,
-                path: document.getElementById('cfg-path').value
-            }));
-            closeModal('modal-config');
+            const cfg = {}; ['token','user','repo','path'].forEach(k => cfg[k] = document.getElementById('cfg-'+k).value);
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeModal('modal-config');
         }
         
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
         function exportarCSV() {
             const csv = Papa.unparse(products, {quotes:true, delimiter:";"});
-            const l = document.createElement("a"); 
-            l.href = URL.createObjectURL(new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'}));
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'}));
             l.download = "produtos.csv"; l.click();
         }
         
         function importarBling() {
-            if (MAKE_WEBHOOK_GET.includes("COLE_AQUI") || MAKE_WEBHOOK_GET.includes("SEU_WEBHOOK")) {
-                return alert("ERRO: Configure o Link do Webhook GET no topo do código!");
-            }
-            if (!confirm("Isso irá substituir a lista atual pelos produtos ativos do Bling via Make. Continuar?")) return;
-            toggleLoader(true, "Buscando ativos no Bling...");
-            fetch(MAKE_WEBHOOK_GET)
-            .then(r => r.json())
-            .then(response => {
-                const d = response.data ? response.data : response;
+            if (MAKE_WEBHOOK_GET.includes("SEU_WEBHOOK")) return alert("Configure o Webhook GET!");
+            if (!confirm("Substituir lista atual?")) return;
+            toggleLoader(true, "Buscando Bling...");
+            fetch(MAKE_WEBHOOK_GET).then(r => r.json()).then(resp => {
+                const d = resp.data || resp;
                 if (Array.isArray(d)) { 
                     products = d.map(x => ({
-                        codigo: x.codigo || x.sku || "",
-                        nome: x.nome || x.descricao || "",
-                        preco: parseFloat(x.preco || x.venda || 0),
-                        estoque: parseFloat(x.estoque || x.saldoVirtualTotal || 0),
-                        localizacao: x.localizacao || "",
-                        gtin: x.gtin || x.ean || "",
-                        url_imagem: x.imagemURL || x.url_imagem || x.imagem || "",
-                        validade: x.dataValidade || x.validade || "", 
-                        ncm: x.ncm || "",
-                        cest: x.cest || "",
-                        unidade: x.unidade || "UN",
-                        pesoBruto: x.pesoBruto || "",
-                        pesoLiquido: x.pesoLiquido || "",
-                        largura: x.largura || "",
-                        altura: x.altura || "",
-                        profundidade: x.profundidade || "",
-                        origem: x.origem || "",
-                        observacoes: x.observacoes || "",
+                        codigo: x.codigo || x.sku || "", nome: x.nome || x.descricao || "", preco: parseFloat(x.preco || 0), estoque: parseFloat(x.estoque || 0),
+                        localizacao: x.localizacao || "", gtin: x.gtin || "", url_imagem: x.imagemURL || x.url_imagem || "", validade: x.dataValidade || "",
+                        ncm: x.ncm || "", cest: x.cest || "", unidade: x.unidade || "UN", pesoBruto: x.pesoBruto || "", pesoLiquido: x.pesoLiquido || "",
+                        largura: x.largura || "", altura: x.altura || "", profundidade: x.profundidade || "", origem: x.origem || "", observacoes: x.observacoes || "",
                         situacao: 'A', formato: 'S', _changed: false
                     })); 
-                    saveData(); renderGrid(); toggleLoader(false);
-                    alert(`${products.length} produtos importados e atualizados!`);
-                } else throw new Error("O Make não retornou uma lista válida.");
-            })
-            .catch(e => { toggleLoader(false); alert("Erro na importação: " + e.message); });
+                    saveData(); renderGrid(); toggleLoader(false); alert(`Sucesso!`);
+                } else throw new Error("Erro de dados");
+            }).catch(e => { toggleLoader(false); alert("Erro: " + e.message); });
         }
 
         function toggleLoader(show, msg) {
