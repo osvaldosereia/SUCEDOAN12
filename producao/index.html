@@ -158,7 +158,7 @@
             position: relative;
             border: 1px solid var(--border);
             transition: transform 0.2s;
-            min-height: 420px;
+            min-height: 420px; /* Aumentei um pouco para caber a validade */
         }
 
         .card:hover {
@@ -168,28 +168,10 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
 
-        /* ESTADOS DE VALIDADE E SYNC */
         .card.status-synced { border-top: 3px solid var(--success); }
-        .card.status-changed { border-top: 3px solid #cbd5e1; }
-        
-        .card.validity-expired { border: 2px solid var(--danger); box-shadow: 0 0 15px rgba(239, 68, 68, 0.15); }
-        .card.validity-warning { border: 2px solid var(--warning); }
+        .card.status-changed { border-top: 3px solid var(--warning); }
 
-        .validity-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 800;
-            z-index: 5;
-            color: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
-        .bg-danger { background: var(--danger); }
-        .bg-warning { background: var(--warning); color: #000; }
-
+        /* Imagem do Card */
         .card-img-area {
             height: 160px;
             background: #000;
@@ -231,6 +213,7 @@
             height: 36px;
             border-radius: 50%;
             display: flex;
+
             justify-content: center;
             align-items: center;
             cursor: pointer;
@@ -243,6 +226,7 @@
             color: white;
         }
 
+        /* Corpo do Card */
         .card-body {
             padding: 12px;
             display: flex;
@@ -303,6 +287,7 @@
         }
         .stat-input:focus { border-color: var(--accent); outline: none; }
 
+        /* Rodapé do Card */
         .card-footer {
             padding: 8px 12px;
             background: #0f172a;
@@ -534,6 +519,7 @@
         .btn-act:hover { background: #1e293b; border-color: #64748b; }
         .btn-act.primary { background: var(--accent); border: none; }
 
+        /* --- 9. LOADER --- */
         #loader {
             position: fixed;
             inset: 0;
@@ -569,10 +555,10 @@
             "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
         };
 
-        const MAKE_WEBHOOK_GET = "https://hook.eu1.make.com/jel5p4kygmvqyf1moi31skox5e188i1z"; 
+        const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
-        const STORAGE_KEY = 'sucedoan_data_v27';
+        const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
     </script>
@@ -604,7 +590,7 @@
             
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
-                <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Validade...">
+                <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
             </div>
             
             <button class="nav-btn" onclick="exportarCSV()">
@@ -734,10 +720,12 @@
         let pendingSyncSku = null;
         let currentUser = null;
 
+        // Variáveis do Editor
         const canvas = document.getElementById('imageCanvas');
         const ctx = canvas.getContext('2d');
         let loadedImage = null;
 
+        // Inicialização
         window.onload = function() {
             lucide.createIcons();
             loadData();
@@ -756,7 +744,7 @@
         }
 
         // ----------------------------------------------------
-        // IMPORTAÇÃO CSV (RESTAURADO DA V23 COM MELHORIAS V27)
+        // IMPORTAÇÃO CSV
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -767,56 +755,42 @@
                 skipEmptyLines: true, 
                 encoding: "ISO-8859-1", 
                 delimiter: ";",
-                transformHeader: h => h.replace(/"/g, '').trim(), // Limpa aspas do cabeçalho (Crucial v23)
+                transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // Função de busca restaurada para maior compatibilidade
                         const getVal = (keys) => { 
-                            const foundKey = Object.keys(d).find(k => {
-                                const cleanK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim();
-                                return keys.includes(cleanK);
-                            });
-                            return foundKey ? d[foundKey] : ""; 
+                            const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
+                            return f ? d[f] : ""; 
                         };
-
                         const getNum = (keys) => { 
                             const v = getVal(keys); 
                             return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; 
                         };
                         
                         const base = {
-                            codigo: getVal(['codigo','sku']), 
-                            nome: getVal(['descricao','nome','produto']),
-                            preco: getNum(['preco','venda']), 
-                            estoque: getNum(['estoque','quantidade']),
-                            localizacao: getVal(['localizacao','local']), 
-                            gtin: getVal(['gtin','ean']),
-                            url_imagem: getVal(['url','imagem']), 
-                            ncm: getVal(['ncm']), 
-                            cest: getVal(['cest']),
-                            unidade: getVal(['unidade'])||'UN', 
-                            pesoLiquido: getNum(['peso liq']), 
-                            pesoBruto: getNum(['peso bru']),
-                            largura: getNum(['largura']), 
-                            altura: getNum(['altura']), 
-                            profundidade: getNum(['profundidade']),
-                            origem: getVal(['origem']), 
-                            observacoes: getVal(['observacoes','obs']),
-                            validade: getVal(['validade','vencimento']) || "",
+                            codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome','produto']),
+                            preco: getNum(['preco','venda']), estoque: getNum(['estoque']),
+                            localizacao: getVal(['localizacao','local']), gtin: getVal(['gtin','ean']),
+                            url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']), cest: getVal(['cest']),
+                            unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
+                            largura: getNum(['largura']), altura: getNum(['altura']), profundidade: getNum(['profundidade']),
+                            origem: getVal(['origem']), observacoes: getVal(['observacoes','obs']),
                             situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
                         };
+                        // Lógica dinâmica para capturar TODAS as outras colunas
+                        Object.keys(d).forEach(k => { const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; });
                         return base;
                     });
-
                     products = novos.filter(p => p.codigo || p.nome);
-                    saveData(); 
-                    renderGrid(); 
-                    toggleLoader(false);
-                    alert(`${products.length} produtos importados!`);
+                    saveData(); renderGrid(); toggleLoader(false);
+                    alert(`${products.length} produtos importados com sucesso!`);
                 }
             });
         });
 
+        // ----------------------------------------------------
+        // AUTENTICAÇÃO
+        // ----------------------------------------------------
         function requestLogin(sku) {
             pendingSyncSku = sku;
             document.getElementById('login-pass').value = '';
@@ -835,18 +809,25 @@
             }
         }
 
+        // ----------------------------------------------------
+        // SINCRONIZAÇÃO (BLINDAGEM SENIOR)
+        // ----------------------------------------------------
         function syncBling(sku) {
             requestLogin(sku);
         }
 
         function executeSync(sku) {
             const p = products.find(pr => pr.codigo == sku);
-            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook!");
+            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook no Código!");
             
             if(!currentUser) currentUser = "SISTEMA";
+
             toggleLoader(true, `Sincronizando...`);
             
+            // 1. Identifica o motivo da alteração
             const changeType = p._lastChange || "Sincronização Manual"; 
+
+            // 2. Prepara o Payload (Base)
             const payload = {...p}; 
             delete payload._changed; 
             delete payload._lastChange;
@@ -854,27 +835,41 @@
             if(!payload.situacao) payload.situacao = 'A';
             if(!payload.formato) payload.formato = 'S';
 
+            // --- CORREÇÃO SENIOR: LIMPEZA DE LINK & REDUNDÂNCIA ---
+            
+            // A. Garante que não é null
             let finalLink = (payload.url_imagem || "").trim();
+
+            // B. Converte link "Blob" (Visualizador) para "Raw" (Download Direto)
+            // Ex: github.com/.../blob/main/img.webp -> raw.githubusercontent.com/.../main/img.webp
             if(finalLink.includes('github.com') && finalLink.includes('/blob/')) {
                 finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+                // Remove parametros de query sujos se houver, exceto ?v= (cache)
+                // Mas geralmente o github raw funciona melhor limpo ou só com token. 
+                // Vamos manter como está após o replace, pois costuma funcionar.
             }
 
-            payload.url_imagem = finalLink;           
-            payload.imagem = finalLink;               
-            payload.url_imagens_externas = finalLink; 
-            if(payload.validade) payload.dataValidade = payload.validade; 
-
+            // C. Bombardeio de Variáveis (Envia em todos os campos possíveis)
+            payload.url_imagem = finalLink;           // Campo original
+            payload.imagem = finalLink;               // Campo padrão simples
+            payload.url_imagens_externas = finalLink; // Campo que apareceu no seu log
+            
+            // Atualiza o objeto local também para ficar bonito
             if(p.url_imagem !== finalLink) {
                 p.url_imagem = finalLink;
                 saveData();
             }
+            // ------------------------------------------------------
 
+            // 3. LOG E LIMPEZA DE TEXTO (Para não quebrar o Make)
             const time = new Date().toLocaleString('pt-BR');
             const logNote = `[Alt: ${currentUser} em ${time} - ${changeType}]`;
+            
             let obs = (payload.observacoes || "") + " | " + logNote;
             obs = obs.replace(/[\r\n]+/g, " | ").replace(/"/g, "'");
             payload.observacoes = obs;
 
+            // 4. ENVIO
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
@@ -886,16 +881,19 @@
                     p._changed = false; 
                     p._lastChange = ""; 
                     saveData(); 
+                    
                     addToHistory(sku, p.nome, true, changeType); 
+                    
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
-                    alert(`✅ Produto atualizado!`);
+                    
+                    alert(`✅ Produto atualizado!\nImagem Enviada: ${finalLink ? 'SIM' : 'NÃO'}`);
                 } else throw new Error("Erro no Make");
             })
             .catch(() => { 
                 toggleLoader(false); 
                 addToHistory(sku, p.nome, false, "FALHA CONEXÃO"); 
-                alert("Erro ao enviar!"); 
+                alert("Erro ao enviar! Verifique a internet."); 
             })
             .finally(() => { 
                 pendingSyncSku = null; 
@@ -903,13 +901,21 @@
             });
         }
 
+        // ----------------------------------------------------
+        // EDITOR E UPLOAD (MANTEVE A LÓGICA V26 + FALLBACK)
+        // ----------------------------------------------------
         function openPhotoEditor(sku) {
             currentEditingId = sku;
             const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
+            
+            // --- CORREÇÃO: REMOVE ESPAÇOS E USA APENAS O CÓDIGO ---
             const cleanSku = String(p.codigo).trim();
             const slug = `${cleanSku}.webp`;
+            // ------------------------------------------------------
+            
             document.getElementById('file-name-preview').innerText = slug;
+            
             ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
             ctx.font = "14px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
             ctx.fillText("Cole a imagem aqui (Ctrl+V)", 225, 225);
@@ -938,6 +944,7 @@
             const wC = 450, hC = 450;
             const zoom = parseFloat(document.getElementById('zoomRange').value);
             const mix = parseFloat(document.getElementById('sharpenRange').value);
+            
             const w = loadedImage.width * zoom;
             const h = loadedImage.height * zoom;
             const tempC = document.createElement('canvas');
@@ -947,6 +954,7 @@
             tCtx.drawImage(loadedImage, (wC-w)/2, (hC-h)/2, w, h);
 
             if(mix > 0) {
+                // ALGORITMO DE NITIDEZ
                 const imgData = tCtx.getImageData(0, 0, wC, hC);
                 const src = imgData.data;
                 const dstData = ctx.createImageData(wC, hC);
@@ -989,30 +997,54 @@
             if(!loadedImage) return alert("Sem imagem");
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             if(!cfg.token) return alert("Configure o Token!");
+            
             toggleLoader(true, "Enviando para GitHub...");
             const f = document.getElementById('file-name-preview').innerText;
+            
             try {
+                // 1. UPLOAD
                 const u = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}/${f}`;
                 let sha = null;
                 try { const c = await fetch(u, {headers:{"Authorization":`token ${cfg.token}`}}); if(c.ok) sha = (await c.json()).sha; } catch(e){}
+                
                 const r = await fetch(u, {
                     method: 'PUT',
                     headers: {"Authorization":`token ${cfg.token}`, "Content-Type":"application/json"},
                     body: JSON.stringify({message: "Painel Upload", content: canvas.toDataURL("image/webp", 0.8).split(',')[1], sha: sha})
                 });
+
                 if(r.ok) {
+                    // 2. CAPTURA DO LINK
                     const apiResponse = await r.json();
-                    let finalUrl = apiResponse.content?.download_url || `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
+                    let finalUrl = "";
+                    
+                    if(apiResponse.content && apiResponse.content.download_url) {
+                        finalUrl = apiResponse.content.download_url;
+                    } else {
+                        finalUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
+                    }
+
+                    // Adiciona parâmetro para quebrar cache
                     finalUrl = `${finalUrl}?v=${Date.now()}`;
+                    
                     const p = products.find(p => p.codigo == currentEditingId);
                     p.url_imagem = finalUrl; 
                     p._changed = true;
                     p._lastChange = "Alt: Imagem (Upload)";
-                    saveData(); closeModal('modal-editor'); toggleLoader(false); requestLogin(currentEditingId); 
+                    
+                    saveData(); 
+                    
+                    closeModal('modal-editor');
+                    toggleLoader(false); 
+                    
+                    // 3. DISPARA O SYNC AUTOMATICAMENTE
+                    requestLogin(currentEditingId); 
+                    
                 } else throw new Error(r.status);
             } catch(e) { toggleLoader(false); alert("Erro: "+e.message); }
         }
 
+        // --- UTILITÁRIOS ---
         function loadData() { const saved = localStorage.getItem(STORAGE_KEY); if(saved) { products = JSON.parse(saved); renderGrid(); } const hist = localStorage.getItem(HISTORY_KEY); if(hist) historyLog = JSON.parse(hist); }
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
@@ -1020,31 +1052,21 @@
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
             const term = filter.toLowerCase().trim();
+
             const filtered = products.filter(p => {
-                const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque + (p.validade||"")).toLowerCase();
+                const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque).toLowerCase();
                 return searchStr.includes(term);
             });
-            document.getElementById('total-count').innerText = filtered.length + " produtos";
-            filtered.forEach(p => {
-                let vClass = ""; let vBadge = "";
-                if (p.validade?.length === 10) {
-                    const pts = p.validade.split('/');
-                    const vDt = new Date(pts[2], pts[1] - 1, pts[0]);
-                    const today = new Date(); today.setHours(0,0,0,0);
-                    const diff = Math.ceil((vDt - today) / (1000 * 60 * 60 * 24)); 
-                    if (diff < 0) { vClass = "validity-expired"; vBadge = `<div class="validity-badge bg-danger">VENCIDO</div>`; }
-                    else if (diff <= 30) { vClass = "validity-warning"; vBadge = `<div class="validity-badge bg-warning">VENCE EM ${diff}D</div>`; }
-                }
-                let mainClass = p._changed ? 'status-changed' : 'status-synced';
-                if (vClass) mainClass = vClass;
 
+            document.getElementById('total-count').innerText = filtered.length + " produtos";
+
+            filtered.forEach(p => {
                 const card = document.createElement('div');
-                card.className = `card ${mainClass}`;
+                card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
                 const imgSrc = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
 
                 card.innerHTML = `
                     <div class="card-img-area">
-                        ${vBadge}
                         <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/1e293b/475569?text=ERRO'">
                         <div class="img-overlay">
                             <button class="overlay-btn" onclick="searchGoogle('${p.nome}')"><i data-lucide="search" size="14"></i></button>
@@ -1055,6 +1077,7 @@
                     <div class="card-body">
                         <div class="card-sku">${p.codigo}</div>
                         <div class="card-title" contenteditable="true" onblur="updateField('${p.codigo}', 'nome', this.innerText)">${p.nome}</div>
+                        
                         <div class="card-stats">
                             <div class="stat-box"><label class="stat-label">PREÇO</label><input type="number" class="stat-input" value="${p.preco}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
                             <div class="stat-box"><label class="stat-label">ESTOQUE</label><input type="number" class="stat-input" value="${p.estoque}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
@@ -1063,12 +1086,14 @@
                             <div class="stat-box"><label class="stat-label">LOCAL</label><input type="text" class="stat-input" value="${p.localizacao}" onchange="updateField('${p.codigo}', 'localizacao', this.value)"></div>
                             <div class="stat-box"><label class="stat-label">EAN</label><input type="text" class="stat-input" value="${p.gtin}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
                         </div>
-                        <div class="card-stats">
-                            <div class="stat-box" style="grid-column: span 2;">
-                                <label class="stat-label" style="color:var(--warning)">VALIDADE</label>
-                                <input type="text" class="stat-input" value="${p.validade||''}" placeholder="DD/MM/AAAA" onchange="updateField('${p.codigo}', 'validade', this.value)">
+                        
+                        <div class="card-stats" style="margin-top: 8px;">
+                             <div class="stat-box" style="grid-column: span 2;">
+                                <label class="stat-label">VALIDADE</label>
+                                <input type="text" class="stat-input" value="${p.data_validade || ''}" onchange="updateField('${p.codigo}', 'data_validade', this.value)" placeholder="DD/MM/AAAA">
                             </div>
                         </div>
+
                     </div>
                     <div class="card-footer">
                         <button class="btn-text" onclick="openDetails('${p.codigo}')"><i data-lucide="list-plus" size="12"></i> DETALHES</button>
@@ -1084,84 +1109,135 @@
             const p = products.find(x => x.codigo == sku);
             if(p) {
                 if(['preco','estoque'].includes(field)) value = parseFloat(value) || 0;
-                p[field] = value; p._changed = true; p._lastChange = `Alt: ${field.toUpperCase()}`; 
-                saveData(); renderGrid(document.getElementById('search-input').value);
+                p[field] = value;
+                p._changed = true;
+                p._lastChange = `Alt: ${field.toUpperCase()}`; 
+                saveData();
+                renderGrid(document.getElementById('search-input').value);
             }
         }
         
         function searchGoogle(term) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(term)}`, '_blank'); }
 
+        // ----------------------------------------------------
+        // HISTÓRICO
+        // ----------------------------------------------------
         function addToHistory(sku, nome, success, obs) {
-            const entry = { date: new Date().toLocaleString('pt-BR'), user: currentUser, sku: sku, name: nome, status: success, obs: obs };
-            historyLog.unshift(entry); if(historyLog.length > 500) historyLog.pop();
+            const entry = {
+                date: new Date().toLocaleString('pt-BR'),
+                user: currentUser,
+                sku: sku, name: nome, status: success, obs: obs
+            };
+            historyLog.unshift(entry);
+            if(historyLog.length > 500) historyLog.pop();
             localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLog));
         }
 
         function renderHistory() {
-            const tbody = document.getElementById('history-tbody'); tbody.innerHTML = '';
+            const tbody = document.getElementById('history-tbody');
+            tbody.innerHTML = '';
             historyLog.forEach(h => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${h.date}</td><td><b>${h.user}</b></td><td>${h.sku}</td><td>${h.name}</td><td><span class="badge ${h.status ? 'success' : 'error'}">${h.obs || 'OK'}</span></td>`;
+                tr.innerHTML = `
+                    <td>${h.date}</td>
+                    <td><b>${h.user}</b></td>
+                    <td>${h.sku}</td>
+                    <td>${h.name}</td>
+                    <td><span class="badge ${h.status ? 'success' : 'error'}">${h.obs || 'OK'}</span></td>
+                `;
                 tbody.appendChild(tr);
             });
         }
-        function clearHistory() { if(confirm("Apagar histórico?")) { historyLog = []; localStorage.removeItem(HISTORY_KEY); renderHistory(); } }
+        function clearHistory() { 
+            if(confirm("Apagar todo o histórico local?")) { 
+                historyLog = []; 
+                localStorage.removeItem(HISTORY_KEY); 
+                renderHistory(); 
+            } 
+        }
 
+        // ----------------------------------------------------
+        // UTILITÁRIOS (CAMPO MANUAL MANTIDO + DINÂMICO)
+        // ----------------------------------------------------
         function openDetails(sku) {
-            currentEditingId = sku; const p = products.find(pr => pr.codigo == sku);
-            const form = document.getElementById('details-form'); form.innerHTML = '';
+            currentEditingId = sku;
+            const p = products.find(pr => pr.codigo == sku);
+            const form = document.getElementById('details-form');
+            form.innerHTML = '';
+
+            // --- CAMPO MANUAL DE URL ---
             form.innerHTML += `
-                <div class="form-group" style="grid-column: span 2;"><label style="color:var(--success)">URL IMAGEM</label><input type="text" id="det-url_imagem" value="${p.url_imagem||''}"></div>
-                <div class="form-group" style="grid-column: span 2;"><label style="color:var(--warning)">VALIDADE</label><input type="text" id="det-validade" value="${p.validade||''}" placeholder="DD/MM/AAAA"></div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label style="color:var(--success)">URL DA IMAGEM (LINK DIRETO)</label>
+                    <input type="text" id="det-url_imagem" value="${p.url_imagem||''}" placeholder="https://..." style="border-color:var(--success);">
+                </div>
             `;
-            ['ncm','cest','origem','unidade','pesoBruto','pesoLiquido','largura','altura','profundidade'].forEach(k => {
-                form.innerHTML += `<div class="form-group"><label>${k}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`;
+            
+            // --- TODOS OS CAMPOS QUE NÃO ESTÃO NO CARD ---
+            const ignore = ['codigo', 'nome', 'preco', 'estoque', 'localizacao', 'gtin', 'url_imagem', 'data_validade', '_changed', '_lastChange', 'situacao', 'formato'];
+            
+            Object.keys(p).sort().forEach(k => {
+                if(!ignore.includes(k)) {
+                    // Formata a label (remove _ e deixa maiuscula)
+                    const label = k.replace(/_/g, ' ').toUpperCase();
+                    form.innerHTML += `<div class="form-group"><label>${label}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`;
+                }
             });
+
             document.getElementById('modal-details').style.display = 'flex';
         }
 
         function saveDetails() {
             const p = products.find(pr => pr.codigo == currentEditingId);
-            document.querySelectorAll('#details-form input').forEach(i => p[i.id.replace('det-', '')] = i.value);
-            p._changed = true; p._lastChange = "Alt: Detalhes"; saveData(); closeModal('modal-details'); renderGrid(document.getElementById('search-input').value); 
+            document.querySelectorAll('#details-form input').forEach(i => {
+                const key = i.id.replace('det-', '');
+                p[key] = i.value;
+            });
+            p._changed = true;
+            p._lastChange = "Alt: Detalhes"; 
+            saveData();
+            closeModal('modal-details');
+            renderGrid(document.getElementById('search-input').value); 
         }
 
         function openConfigModal() {
             const c = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            ['token','user','repo','path'].forEach(k => document.getElementById('cfg-'+k).value = c[k]||'');
+            document.getElementById('cfg-token').value = c.token||'';
+            document.getElementById('cfg-user').value = c.user||'';
+            document.getElementById('cfg-repo').value = c.repo||'';
+            document.getElementById('cfg-path').value = c.path||'';
             document.getElementById('modal-config').style.display = 'flex';
         }
 
         function saveConfig() {
-            const cfg = {}; ['token','user','repo','path'].forEach(k => cfg[k] = document.getElementById('cfg-'+k).value);
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeModal('modal-config');
+            localStorage.setItem(CONFIG_KEY, JSON.stringify({
+                token: document.getElementById('cfg-token').value,
+                user: document.getElementById('cfg-user').value,
+                repo: document.getElementById('cfg-repo').value,
+                path: document.getElementById('cfg-path').value
+            }));
+            closeModal('modal-config');
         }
         
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
         function exportarCSV() {
             const csv = Papa.unparse(products, {quotes:true, delimiter:";"});
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'}));
+            const l = document.createElement("a"); 
+            l.href = URL.createObjectURL(new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'}));
             l.download = "produtos.csv"; l.click();
         }
         
         function importarBling() {
-            if (MAKE_WEBHOOK_GET.includes("SEU_WEBHOOK")) return alert("Configure o Webhook GET!");
-            if (!confirm("Substituir lista atual?")) return;
-            toggleLoader(true, "Buscando Bling...");
-            fetch(MAKE_WEBHOOK_GET).then(r => r.json()).then(resp => {
-                const d = resp.data || resp;
-                if (Array.isArray(d)) { 
-                    products = d.map(x => ({
-                        codigo: x.codigo || x.sku || "", nome: x.nome || x.descricao || "", preco: parseFloat(x.preco || 0), estoque: parseFloat(x.estoque || 0),
-                        localizacao: x.localizacao || "", gtin: x.gtin || "", url_imagem: x.imagemURL || x.url_imagem || "", validade: x.dataValidade || "",
-                        ncm: x.ncm || "", cest: x.cest || "", unidade: x.unidade || "UN", pesoBruto: x.pesoBruto || "", pesoLiquido: x.pesoLiquido || "",
-                        largura: x.largura || "", altura: x.altura || "", profundidade: x.profundidade || "", origem: x.origem || "", observacoes: x.observacoes || "",
-                        situacao: 'A', formato: 'S', _changed: false
-                    })); 
-                    saveData(); renderGrid(); toggleLoader(false); alert(`Sucesso!`);
-                } else throw new Error("Erro de dados");
-            }).catch(e => { toggleLoader(false); alert("Erro: " + e.message); });
+            if(MAKE_WEBHOOK_GET.includes("COLE")) return alert("Configure Webhook GET no topo do código!");
+            if(!confirm("Isso substituirá a lista atual. Continuar?")) return;
+            toggleLoader(true, "Baixando do Bling...");
+            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d => {
+                if(Array.isArray(d)) { 
+                    products = d.map(x => ({...x, _changed: false})); 
+                    saveData(); renderGrid(); toggleLoader(false); 
+                }
+            }).catch(e => { toggleLoader(false); alert("Erro: "+e); });
         }
 
         function toggleLoader(show, msg) {
