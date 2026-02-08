@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v29 (Restaurador de Links)</title>
+    <title>Sucedoan Painel - v30 (Scroll Fixo + GitHub Fix)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -1305,10 +1305,15 @@
             if(!confirm("Isso vai forçar a atualização dos links de imagem de TODOS os produtos baseando-se no Código/SKU e na pasta configurada do GitHub. Use isto apenas se já tiver as fotos lá. Continuar?")) return;
 
             let count = 0;
+            // Garante que o caminho não tenha barra no começo nem no fim para evitar erros de URL
+            const cleanPath = (cfg.path || '').replace(/^\/|\/$/g, ''); 
+            // Se houver pasta, adiciona a barra no final, se não, deixa vazio
+            const finalPath = cleanPath ? cleanPath + '/' : '';
+
             products.forEach(p => {
                 const cleanSku = String(p.codigo).trim();
-                // Reconstrói o link padrão usando a lógica do GitHub raw
-                const newUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${cleanSku}.webp`;
+                // Adiciona o timestamp para forçar a atualização (ignorar cache)
+                const newUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${finalPath}${cleanSku}.webp?v=${Date.now()}`;
                 p.url_imagem = newUrl;
                 p._changed = true; // Marca como alterado para você saber que foi atualizado
                 count++;
@@ -1326,6 +1331,10 @@
 
         function renderGrid(filter = "") {
             const grid = document.getElementById('product-grid');
+            
+            // --- CORREÇÃO DE SCROLL (SALVA POSIÇÃO) ---
+            const scrollPos = grid.scrollTop; 
+            
             grid.innerHTML = "";
             const term = filter.toLowerCase().trim();
 
@@ -1378,6 +1387,10 @@
                 `;
                 grid.appendChild(card);
             });
+            
+            // --- CORREÇÃO DE SCROLL (RESTAURA POSIÇÃO) ---
+            grid.scrollTop = scrollPos;
+            
             lucide.createIcons();
         }
 
