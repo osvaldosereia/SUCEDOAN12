@@ -779,7 +779,7 @@
                     <i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE
                 </button>
                 <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">
-                    Força o uso de "img/produtos/CODIGO.webp" em tudo.
+                    Força o uso de "i/..site/img/produtos/CODIGO.webp" em tudo.
                 </div>
             </div>
         </div>
@@ -1272,7 +1272,7 @@
 
                 if(r.ok) {
                     // MUDANÇA: Agora salva o caminho relativo, como no seu site
-                    const relativeUrl = `img/produtos/${f}?v=${Date.now()}`;
+                    const relativeUrl = `..site/img/produtos/${f}?v=${Date.now()}`;
                     
                     const p = products.find(p => p.codigo == currentEditingId);
                     p.url_imagem = relativeUrl; 
@@ -1290,13 +1290,13 @@
 
         // --- NOVA FUNÇÃO PARA PADRONIZAR COMO NO SITE ---
         function restaurarLinksPadraoSite() {
-            if(!confirm("Isso vai configurar TODOS os produtos para buscar a imagem na pasta 'img/produtos/CODIGO.webp', igual ao seu site de vendas. \n\nIMPORTANTE: Para ver as imagens aqui no painel, você precisa ter a pasta 'img' salva junto com este arquivo.\n\nContinuar?")) return;
+            if(!confirm("Isso vai configurar TODOS os produtos para buscar a imagem na pasta '..site/img/produtos/CODIGO.webp', igual ao seu site de vendas. \n\nIMPORTANTE: Para ver as imagens aqui no painel, você precisa ter a pasta 'img' salva junto com este arquivo.\n\nContinuar?")) return;
 
             let count = 0;
             products.forEach(p => {
                 const cleanSku = String(p.codigo).trim();
                 // Força o padrão local/relativo
-                const newUrl = `img/produtos/${cleanSku}.webp?v=${Date.now()}`;
+                const newUrl = `..site/img/produtos/${cleanSku}.webp?v=${Date.now()}`;
                 p.url_imagem = newUrl;
                 p._changed = true;
                 count++;
