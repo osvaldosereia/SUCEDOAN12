@@ -34,6 +34,8 @@
             flex-direction: column;
             color: var(--text-primary);
             overflow: hidden;
+            /* Evita movimentos estranhos ao clicar */
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* --- 2. CABEÇALHO (HEADER) --- */
@@ -46,6 +48,7 @@
             border-bottom: 1px solid var(--border);
             gap: 15px;
             flex-shrink: 0;
+            user-select: none;
         }
 
         .brand {
@@ -70,6 +73,7 @@
             align-items: center;
             gap: 8px;
             font-size: 12px;
+            outline: none;
         }
 
         .nav-btn:hover, .nav-btn.active {
@@ -141,7 +145,7 @@
         /* --- 5. GRID DE PRODUTOS --- */
         .product-grid {
             flex-grow: 1;
-            overflow-y: auto;
+            overflow-y: scroll; /* Mantém a barra visível para evitar pulos de layout */
             padding: 20px;
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -157,14 +161,16 @@
             flex-direction: column;
             position: relative;
             border: 1px solid var(--border);
-            transition: transform 0.2s;
-            min-height: 420px; /* Aumentei um pouco para caber a validade */
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-height: 420px;
+            /* Previne o card de mudar de tamanho no hover/foco */
+            backface-visibility: hidden;
         }
 
         .card:hover {
             transform: translateY(-2px);
             border-color: var(--accent);
-            z-index: 10;
+            z-index: 5;
             box-shadow: 0 8px 20px rgba(0,0,0,0.4);
         }
 
@@ -213,7 +219,6 @@
             height: 36px;
             border-radius: 50%;
             display: flex;
-
             justify-content: center;
             align-items: center;
             cursor: pointer;
@@ -241,6 +246,7 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            user-select: none;
         }
 
         .card-title {
@@ -254,6 +260,13 @@
             overflow: hidden;
             line-height: 1.3;
             min-height: 34px;
+            outline: none;
+            padding: 2px;
+            border-radius: 4px;
+        }
+        .card-title:focus {
+            background: rgba(255,255,255,0.05);
+            -webkit-line-clamp: initial; /* Mostra o nome todo ao editar */
         }
 
         .card-stats {
@@ -272,6 +285,7 @@
             margin-bottom: 3px;
             font-weight: bold;
             text-transform: uppercase;
+            user-select: none;
         }
 
         .stat-input {
@@ -284,8 +298,9 @@
             color: white;
             background: #0f172a;
             text-align: center;
+            outline: none;
         }
-        .stat-input:focus { border-color: var(--accent); outline: none; }
+        .stat-input:focus { border-color: var(--accent); }
 
         /* Rodapé do Card */
         .card-footer {
@@ -295,6 +310,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            user-select: none;
         }
 
         .btn-text {
@@ -356,15 +372,6 @@
         }
         .history-table tr:hover { background: #1e293b; }
 
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        .badge.success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .badge.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-
         /* --- 7. MODAIS --- */
         .modal-overlay {
             position: fixed;
@@ -390,7 +397,6 @@
             box-shadow: 0 25px 50px rgba(0,0,0,0.5);
             overflow: hidden;
         }
-        .modal-card.login { width: 350px; }
 
         .modal-header {
             padding: 12px 16px;
@@ -542,6 +548,15 @@
             animation: spin 1s infinite linear;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .badge.success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .badge.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
     </style>
 </head>
 <body>
@@ -550,11 +565,6 @@
         // ==========================================
         // 1. CONFIGURAÇÕES E DADOS GERAIS
         // ==========================================
-        const USERS = {
-            "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL",
-            "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
-        };
-
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
@@ -620,32 +630,12 @@
                         <th>AÇÃO / DETALHE</th>
                     </tr>
                 </thead>
-                <tbody id="history-tbody">
-                    </tbody>
+                <tbody id="history-tbody"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="modal-login" class="modal-overlay">
-        <div class="modal-card login">
-            <div class="modal-header">
-                <span>AUTENTICAÇÃO</span>
-                <button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button>
-            </div>
-            <div class="modal-body">
-                <div style="text-align:center; margin-bottom:15px; color: var(--warning);">
-                    <i data-lucide="lock" size="32"></i>
-                    <p style="font-size:12px; margin-top:5px;">Digite sua senha pessoal</p>
-                </div>
-                <div class="form-group">
-                    <label>Senha de Acesso</label>
-                    <input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;">
-                </div>
-                <button class="btn-full" onclick="attemptLogin()">CONFIRMAR</button>
-                <div id="login-error" style="color:var(--danger); font-size:11px; text-align:center; margin-top:10px; display:none;">Senha incorreta!</div>
-            </div>
-        </div>
-    </div>
+    <div id="modal-login" class="modal-overlay"></div>
 
     <div id="modal-editor" class="modal-overlay">
         <div class="modal-card" style="width:450px;">
@@ -717,8 +707,7 @@
         let products = [];
         let historyLog = [];
         let currentEditingId = null;
-        let pendingSyncSku = null;
-        let currentUser = null;
+        let currentUser = "USUÁRIO"; // Nome padrão já que a senha foi removida
 
         // Variáveis do Editor
         const canvas = document.getElementById('imageCanvas');
@@ -777,7 +766,6 @@
                             origem: getVal(['origem']), observacoes: getVal(['observacoes','obs']),
                             situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
                         };
-                        // Lógica dinâmica para capturar TODAS as outras colunas
                         Object.keys(d).forEach(k => { const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; });
                         return base;
                     });
@@ -789,45 +777,19 @@
         });
 
         // ----------------------------------------------------
-        // AUTENTICAÇÃO
-        // ----------------------------------------------------
-        function requestLogin(sku) {
-            pendingSyncSku = sku;
-            document.getElementById('login-pass').value = '';
-            document.getElementById('modal-login').style.display = 'flex';
-            document.getElementById('login-pass').focus();
-        }
-
-        function attemptLogin() {
-            const pass = document.getElementById('login-pass').value;
-            if(USERS[pass]) {
-                currentUser = USERS[pass];
-                closeModal('modal-login');
-                if(pendingSyncSku) executeSync(pendingSyncSku);
-            } else {
-                document.getElementById('login-error').style.display = 'block';
-            }
-        }
-
-        // ----------------------------------------------------
-        // SINCRONIZAÇÃO (BLINDAGEM SENIOR)
+        // SINCRONIZAÇÃO (AGORA SEM SENHA)
         // ----------------------------------------------------
         function syncBling(sku) {
-            requestLogin(sku);
+            executeSync(sku);
         }
 
         function executeSync(sku) {
             const p = products.find(pr => pr.codigo == sku);
             if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook no Código!");
             
-            if(!currentUser) currentUser = "SISTEMA";
-
             toggleLoader(true, `Sincronizando...`);
             
-            // 1. Identifica o motivo da alteração
             const changeType = p._lastChange || "Sincronização Manual"; 
-
-            // 2. Prepara o Payload (Base)
             const payload = {...p}; 
             delete payload._changed; 
             delete payload._lastChange;
@@ -835,41 +797,24 @@
             if(!payload.situacao) payload.situacao = 'A';
             if(!payload.formato) payload.formato = 'S';
 
-            // --- CORREÇÃO SENIOR: LIMPEZA DE LINK & REDUNDÂNCIA ---
-            
-            // A. Garante que não é null
             let finalLink = (payload.url_imagem || "").trim();
-
-            // B. Converte link "Blob" (Visualizador) para "Raw" (Download Direto)
-            // Ex: github.com/.../blob/main/img.webp -> raw.githubusercontent.com/.../main/img.webp
             if(finalLink.includes('github.com') && finalLink.includes('/blob/')) {
                 finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
-                // Remove parametros de query sujos se houver, exceto ?v= (cache)
-                // Mas geralmente o github raw funciona melhor limpo ou só com token. 
-                // Vamos manter como está após o replace, pois costuma funcionar.
             }
 
-            // C. Bombardeio de Variáveis (Envia em todos os campos possíveis)
-            payload.url_imagem = finalLink;           // Campo original
-            payload.imagem = finalLink;               // Campo padrão simples
-            payload.url_imagens_externas = finalLink; // Campo que apareceu no seu log
+            payload.url_imagem = finalLink;
+            payload.imagem = finalLink;
+            payload.url_imagens_externas = finalLink;
             
-            // Atualiza o objeto local também para ficar bonito
-            if(p.url_imagem !== finalLink) {
-                p.url_imagem = finalLink;
-                saveData();
-            }
-            // ------------------------------------------------------
+            if(p.url_imagem !== finalLink) { p.url_imagem = finalLink; saveData(); }
 
-            // 3. LOG E LIMPEZA DE TEXTO (Para não quebrar o Make)
             const time = new Date().toLocaleString('pt-BR');
-            const logNote = `[Alt: ${currentUser} em ${time} - ${changeType}]`;
+            const logNote = `[Sinc: ${time} - ${changeType}]`;
             
             let obs = (payload.observacoes || "") + " | " + logNote;
             obs = obs.replace(/[\r\n]+/g, " | ").replace(/"/g, "'");
             payload.observacoes = obs;
 
-            // 4. ENVIO
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST', 
                 headers: {'Content-Type': 'application/json'}, 
@@ -881,41 +826,28 @@
                     p._changed = false; 
                     p._lastChange = ""; 
                     saveData(); 
-                    
                     addToHistory(sku, p.nome, true, changeType); 
-                    
                     renderGrid(document.getElementById('search-input').value); 
                     toggleLoader(false); 
-                    
-                    alert(`✅ Produto atualizado!\nImagem Enviada: ${finalLink ? 'SIM' : 'NÃO'}`);
                 } else throw new Error("Erro no Make");
             })
             .catch(() => { 
                 toggleLoader(false); 
                 addToHistory(sku, p.nome, false, "FALHA CONEXÃO"); 
                 alert("Erro ao enviar! Verifique a internet."); 
-            })
-            .finally(() => { 
-                pendingSyncSku = null; 
-                currentUser = null; 
             });
         }
 
         // ----------------------------------------------------
-        // EDITOR E UPLOAD (MANTEVE A LÓGICA V26 + FALLBACK)
+        // EDITOR E UPLOAD
         // ----------------------------------------------------
         function openPhotoEditor(sku) {
             currentEditingId = sku;
             const p = products.find(pr => pr.codigo == sku);
             document.getElementById('modal-editor').style.display = 'flex';
-            
-            // --- CORREÇÃO: REMOVE ESPAÇOS E USA APENAS O CÓDIGO ---
             const cleanSku = String(p.codigo).trim();
             const slug = `${cleanSku}.webp`;
-            // ------------------------------------------------------
-            
             document.getElementById('file-name-preview').innerText = slug;
-            
             ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
             ctx.font = "14px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
             ctx.fillText("Cole a imagem aqui (Ctrl+V)", 225, 225);
@@ -944,7 +876,6 @@
             const wC = 450, hC = 450;
             const zoom = parseFloat(document.getElementById('zoomRange').value);
             const mix = parseFloat(document.getElementById('sharpenRange').value);
-            
             const w = loadedImage.width * zoom;
             const h = loadedImage.height * zoom;
             const tempC = document.createElement('canvas');
@@ -954,7 +885,6 @@
             tCtx.drawImage(loadedImage, (wC-w)/2, (hC-h)/2, w, h);
 
             if(mix > 0) {
-                // ALGORITMO DE NITIDEZ
                 const imgData = tCtx.getImageData(0, 0, wC, hC);
                 const src = imgData.data;
                 const dstData = ctx.createImageData(wC, hC);
@@ -997,49 +927,29 @@
             if(!loadedImage) return alert("Sem imagem");
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             if(!cfg.token) return alert("Configure o Token!");
-            
             toggleLoader(true, "Enviando para GitHub...");
             const f = document.getElementById('file-name-preview').innerText;
-            
             try {
-                // 1. UPLOAD
                 const u = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}/${f}`;
                 let sha = null;
                 try { const c = await fetch(u, {headers:{"Authorization":`token ${cfg.token}`}}); if(c.ok) sha = (await c.json()).sha; } catch(e){}
-                
                 const r = await fetch(u, {
                     method: 'PUT',
                     headers: {"Authorization":`token ${cfg.token}`, "Content-Type":"application/json"},
                     body: JSON.stringify({message: "Painel Upload", content: canvas.toDataURL("image/webp", 0.8).split(',')[1], sha: sha})
                 });
-
                 if(r.ok) {
-                    // 2. CAPTURA DO LINK
                     const apiResponse = await r.json();
-                    let finalUrl = "";
-                    
-                    if(apiResponse.content && apiResponse.content.download_url) {
-                        finalUrl = apiResponse.content.download_url;
-                    } else {
-                        finalUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
-                    }
-
-                    // Adiciona parâmetro para quebrar cache
+                    let finalUrl = apiResponse.content?.download_url || `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
                     finalUrl = `${finalUrl}?v=${Date.now()}`;
-                    
                     const p = products.find(p => p.codigo == currentEditingId);
                     p.url_imagem = finalUrl; 
                     p._changed = true;
                     p._lastChange = "Alt: Imagem (Upload)";
-                    
                     saveData(); 
-                    
                     closeModal('modal-editor');
                     toggleLoader(false); 
-                    
-                    // 3. DISPARA O SYNC AUTOMATICAMENTE
-                    requestLogin(currentEditingId); 
-                    
+                    executeSync(currentEditingId); 
                 } else throw new Error(r.status);
             } catch(e) { toggleLoader(false); alert("Erro: "+e.message); }
         }
@@ -1052,12 +962,10 @@
             const grid = document.getElementById('product-grid');
             grid.innerHTML = "";
             const term = filter.toLowerCase().trim();
-
             const filtered = products.filter(p => {
-                const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque).toLowerCase();
+                const searchStr = (p.nome + p.codigo + (p.gtin||'') + (p.localizacao||'') + (p.estoque||'')).toLowerCase();
                 return searchStr.includes(term);
             });
-
             document.getElementById('total-count').innerText = filtered.length + " produtos";
 
             filtered.forEach(p => {
@@ -1076,15 +984,15 @@
                     </div>
                     <div class="card-body">
                         <div class="card-sku">${p.codigo}</div>
-                        <div class="card-title" contenteditable="true" onblur="updateField('${p.codigo}', 'nome', this.innerText)">${p.nome}</div>
+                        <div class="card-title" contenteditable="true" spellcheck="false" onblur="updateField('${p.codigo}', 'nome', this.innerText)">${p.nome}</div>
                         
                         <div class="card-stats">
                             <div class="stat-box"><label class="stat-label">PREÇO</label><input type="number" class="stat-input" value="${p.preco}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
                             <div class="stat-box"><label class="stat-label">ESTOQUE</label><input type="number" class="stat-input" value="${p.estoque}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
                         </div>
                         <div class="card-stats">
-                            <div class="stat-box"><label class="stat-label">LOCAL</label><input type="text" class="stat-input" value="${p.localizacao}" onchange="updateField('${p.codigo}', 'localizacao', this.value)"></div>
-                            <div class="stat-box"><label class="stat-label">EAN</label><input type="text" class="stat-input" value="${p.gtin}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
+                            <div class="stat-box"><label class="stat-label">LOCAL</label><input type="text" class="stat-input" value="${p.localizacao||''}" onchange="updateField('${p.codigo}', 'localizacao', this.value)"></div>
+                            <div class="stat-box"><label class="stat-label">EAN</label><input type="text" class="stat-input" value="${p.gtin||''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
                         </div>
                         
                         <div class="card-stats" style="margin-top: 8px;">
@@ -1093,7 +1001,6 @@
                                 <input type="text" class="stat-input" value="${p.data_validade || ''}" onchange="updateField('${p.codigo}', 'data_validade', this.value)" placeholder="DD/MM/AAAA">
                             </div>
                         </div>
-
                     </div>
                     <div class="card-footer">
                         <button class="btn-text" onclick="openDetails('${p.codigo}')"><i data-lucide="list-plus" size="12"></i> DETALHES</button>
@@ -1109,19 +1016,19 @@
             const p = products.find(x => x.codigo == sku);
             if(p) {
                 if(['preco','estoque'].includes(field)) value = parseFloat(value) || 0;
+                if(p[field] == value) return; // Evita gravar se não mudou
                 p[field] = value;
                 p._changed = true;
                 p._lastChange = `Alt: ${field.toUpperCase()}`; 
                 saveData();
-                renderGrid(document.getElementById('search-input').value);
+                // Não renderizamos o grid todo aqui para evitar que o campo perca o foco ou a página pule
+                const cards = document.querySelectorAll('.card');
+                cards.forEach(c => { if(c.querySelector('.card-sku').innerText == sku) c.classList.add('status-changed'); });
             }
         }
         
         function searchGoogle(term) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(term)}`, '_blank'); }
 
-        // ----------------------------------------------------
-        // HISTÓRICO
-        // ----------------------------------------------------
         function addToHistory(sku, nome, success, obs) {
             const entry = {
                 date: new Date().toLocaleString('pt-BR'),
@@ -1156,34 +1063,24 @@
             } 
         }
 
-        // ----------------------------------------------------
-        // UTILITÁRIOS (CAMPO MANUAL MANTIDO + DINÂMICO)
-        // ----------------------------------------------------
         function openDetails(sku) {
             currentEditingId = sku;
             const p = products.find(pr => pr.codigo == sku);
             const form = document.getElementById('details-form');
             form.innerHTML = '';
-
-            // --- CAMPO MANUAL DE URL ---
             form.innerHTML += `
                 <div class="form-group" style="grid-column: span 2;">
                     <label style="color:var(--success)">URL DA IMAGEM (LINK DIRETO)</label>
                     <input type="text" id="det-url_imagem" value="${p.url_imagem||''}" placeholder="https://..." style="border-color:var(--success);">
                 </div>
             `;
-            
-            // --- TODOS OS CAMPOS QUE NÃO ESTÃO NO CARD ---
             const ignore = ['codigo', 'nome', 'preco', 'estoque', 'localizacao', 'gtin', 'url_imagem', 'data_validade', '_changed', '_lastChange', 'situacao', 'formato'];
-            
             Object.keys(p).sort().forEach(k => {
                 if(!ignore.includes(k)) {
-                    // Formata a label (remove _ e deixa maiuscula)
                     const label = k.replace(/_/g, ' ').toUpperCase();
                     form.innerHTML += `<div class="form-group"><label>${label}</label><input type="text" id="det-${k}" value="${p[k]||''}"></div>`;
                 }
             });
-
             document.getElementById('modal-details').style.display = 'flex';
         }
 
