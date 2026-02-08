@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v28 (Sync Blindado + Editor Pro)</title>
+    <title>Sucedoan Painel - v29 (Restaurador de Links)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -450,6 +450,24 @@
             font-size: 13px;
         }
         
+        .btn-danger {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--danger);
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 12px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            align-items: center;
+        }
+        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+        
         /* Checkbox Customizado */
         .checkbox-wrapper {
             display: flex;
@@ -594,7 +612,7 @@
         const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
-        const LOGIN_KEY = 'sucedoan_saved_login'; // Nova chave para senha salva
+        const LOGIN_KEY = 'sucedoan_saved_login'; 
     </script>
 
     <header>
@@ -752,7 +770,17 @@
                 <div class="form-group"><label>Usuário GitHub</label><input type="text" id="cfg-user" onkeydown="if(event.key==='Enter') saveConfig()"></div>
                 <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo" onkeydown="if(event.key==='Enter') saveConfig()"></div>
                 <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" onkeydown="if(event.key==='Enter') saveConfig()"></div>
+                
                 <button class="btn-full" onclick="saveConfig()">SALVAR</button>
+                
+                <hr style="margin:20px 0; border:0; border-top:1px solid #334155;">
+                
+                <button class="btn-danger" onclick="relinkarImagensGitHub()">
+                    <i data-lucide="refresh-ccw" size="14"></i> RESTAURAR LINKS GITHUB
+                </button>
+                <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">
+                    Use isto se limpou o cache mas as fotos já estão no GitHub.
+                </div>
             </div>
         </div>
     </div>
@@ -1251,7 +1279,6 @@
                         finalUrl = apiResponse.content.download_url;
                     } else {
                         // Fallback seguro: Link RAW (Instantâneo)
-                        // Escolha técnica: RAW é usado para evitar delay de cache do GitHub Pages (erro 404 temporário)
                         finalUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${f}`;
                     }
                     finalUrl = `${finalUrl}?v=${Date.now()}`;
@@ -1268,6 +1295,29 @@
                     
                 } else throw new Error(r.status);
             } catch(e) { toggleLoader(false); alert("Erro: "+e.message); }
+        }
+
+        // --- NOVA FUNÇÃO PARA RESTAURAR LINKS ---
+        function relinkarImagensGitHub() {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
+            if(!cfg.user || !cfg.repo) return alert("Configure o GitHub primeiro!");
+            
+            if(!confirm("Isso vai forçar a atualização dos links de imagem de TODOS os produtos baseando-se no Código/SKU e na pasta configurada do GitHub. Use isto apenas se já tiver as fotos lá. Continuar?")) return;
+
+            let count = 0;
+            products.forEach(p => {
+                const cleanSku = String(p.codigo).trim();
+                // Reconstrói o link padrão usando a lógica do GitHub raw
+                const newUrl = `https://raw.githubusercontent.com/${cfg.user}/${cfg.repo}/main/${cfg.path}/${cleanSku}.webp`;
+                p.url_imagem = newUrl;
+                p._changed = true; // Marca como alterado para você saber que foi atualizado
+                count++;
+            });
+            
+            saveData();
+            renderGrid();
+            closeModal('modal-config');
+            alert(`${count} produtos tiveram seus links regenerados! As imagens devem aparecer se existirem no GitHub.`);
         }
 
         // --- UTILITÁRIOS ---
