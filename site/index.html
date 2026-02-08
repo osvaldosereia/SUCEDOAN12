@@ -67,6 +67,27 @@
         h1, h2, h3 { margin: 0; font-weight: 700; color: var(--cor-text-main); letter-spacing: -0.5px; }
         button { cursor: pointer; border: none; outline: none; background: none; font-family: inherit; }
 
+        /* --- ANIMAÇÕES (NOVO) --- */
+        @keyframes pop { 
+            0% { transform: scale(1); } 
+            50% { transform: scale(1.4); } 
+            100% { transform: scale(1); } 
+        }
+        @keyframes shake { 
+            0%, 100% { transform: translateX(0); } 
+            20%, 60% { transform: translateX(-6px); } 
+            40%, 80% { transform: translateX(6px); } 
+        }
+        @keyframes pulse-bar {
+            0% { transform: scale(1); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+            50% { transform: scale(1.02); box-shadow: 0 15px 40px rgba(230, 57, 70, 0.4); }
+            100% { transform: scale(1); box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
+        }
+
+        .anim-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .anim-shake { animation: shake 0.4s ease-in-out; }
+        .anim-pulse { animation: pulse-bar 0.3s ease-out; }
+
         /* --- CABEÇALHO --- */
         .header-wrapper {
             position: sticky; top: 0; z-index: 100;
@@ -147,7 +168,7 @@
             box-shadow: 0 4px 12px rgba(230, 57, 70, 0.3); 
         }
 
-        /* --- NOVOS ELEMENTOS: BUSCA E MENU DE CATEGORIAS --- */
+        /* --- FERRAMENTAS DO CATÁLOGO (BUSCA E NAV) --- */
         .catalog-tools {
             position: sticky; top: 64px; z-index: 95;
             background: var(--cor-bg);
@@ -187,7 +208,7 @@
         }
 
         /* --- CATÁLOGO --- */
-        .cat-section { scroll-margin-top: 180px; } /* Ajuste para o scroll não ficar escondido */
+        .cat-section { scroll-margin-top: 180px; }
         
         .cat-title {
             font-size: 1.1rem; font-weight: 800; color: var(--cor-text-main);
@@ -199,7 +220,7 @@
             border-left: 5px solid var(--cor-primary);
         }
         
-        /* CARROSSEL DE PRODUTOS */
+        /* CARROSSEL */
         .products-carousel {
             display: flex;
             overflow-x: auto;
@@ -231,7 +252,6 @@
 
         .prod-card.esgotado { opacity: 0.7; filter: grayscale(1); }
         .prod-card.active { border-color: var(--cor-primary); background: #FFFBFB; }
-        /* Classe utilitária para busca */
         .prod-card.hidden { display: none !important; } 
 
         .prod-img-box {
@@ -255,7 +275,10 @@
         .btn-add-simple {
             width: 100%; padding: 12px; background: #EDF2F4; color: var(--cor-text-main);
             border-radius: 12px; font-weight: 700; font-size: 0.9rem;
+            transition: transform 0.1s;
         }
+        .btn-add-simple:active { transform: scale(0.95); background: #e0e0e0; }
+
         .btn-esgotado {
             width: 100%; padding: 12px; background: #eee; color: #999;
             border-radius: 12px; font-weight: 700; font-size: 0.85rem;
@@ -267,7 +290,8 @@
             background: var(--cor-primary); border-radius: 12px;
             padding: 6px; color: white; width: 100%;
         }
-        .btn-q { width: 30px; height: 30px; font-size: 1.2rem; display: grid; place-items: center; font-weight: bold; }
+        .btn-q { width: 30px; height: 30px; font-size: 1.2rem; display: grid; place-items: center; font-weight: bold; transition: transform 0.1s; }
+        .btn-q:active { transform: scale(0.8); }
         .val-q { font-weight: 700; font-size: 1.1rem; }
 
         /* --- LISTA HORIZONTAL (ITENS DA CESTA) --- */
@@ -286,7 +310,8 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
         .ctrl-top { display: flex; gap: 10px; margin-top: 8px; align-items: center; }
-        .btn-mini-top { width: 32px; height: 32px; background: #f0f0f0; border-radius: 50%; font-weight: bold; font-size: 1.2rem; display: grid; place-items: center; color: var(--cor-primary); }
+        .btn-mini-top { width: 32px; height: 32px; background: #f0f0f0; border-radius: 50%; font-weight: bold; font-size: 1.2rem; display: grid; place-items: center; color: var(--cor-primary); transition: transform 0.1s; }
+        .btn-mini-top:active { transform: scale(0.8); }
 
         /* --- BARRA FLUTUANTE --- */
         .float-bar {
@@ -494,7 +519,7 @@
         const MAKE_WEBHOOK = "https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il"; 
 
         // ============================================================
-        //  CONFIGURAÇÃO DAS 14 CATEGORIAS
+        //  CONFIGURAÇÃO DAS CATEGORIAS
         // ============================================================
         const CONFIG_CATEGORIAS = {
             "Bebê e Infantil": ["FRALDA", "LENCO UMEDECIDO", "LENÇO UMED", "HUGGIES", "PIQUITUCHO", "POMADA", "MUCILON"],
@@ -516,7 +541,6 @@
 
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
 
-        // --- DETECÇÃO DE CATEGORIA ---
         function detectarCategoria(nomeProduto) {
             if (!nomeProduto) return CATEGORIA_PADRAO;
             const nomeNormalizado = nomeProduto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
@@ -533,7 +557,6 @@
 
         async function init() {
             try {
-                // 1. CARREGA CESTAS
                 try {
                     const cRes = await fetch('produtos-cesta-basica.json');
                     if (cRes.ok) {
@@ -544,7 +567,6 @@
                     }
                 } catch (e) { console.error("Erro Cestas:", e); }
 
-                // 2. CARREGA PRODUTOS DO MAKE
                 try {
                     const pRes = await fetch('produtos.json');
                     if (pRes.ok) {
@@ -561,31 +583,24 @@
                                 const nomeCategoria = detectarCategoria(x.nome);
                                 return { id: sId, name: x.nome, price: parseFloat(x.preco), cat: nomeCategoria, stock: x.estoque || 0, img: finalImg };
                             });
-                        console.log("Produtos carregados:", DB_PROD.length);
-
-                        // --- 3. PERSISTÊNCIA: RECUPERA CARRINHO SALVO ---
+                        
                         const savedCestaId = localStorage.getItem('da_cesta_id');
                         const savedCart = localStorage.getItem('da_cart');
                         const savedOrig = localStorage.getItem('da_orig');
                         
                         if (savedCestaId && savedCart && DB_CESTAS.length > 0) {
-                            // Se existe carrinho salvo, carrega ele direto
                             const c = DB_CESTAS.find(x => x.id === savedCestaId);
                             if (c) {
                                 CURR_CESTA = c;
                                 CART = JSON.parse(savedCart);
                                 ORIG_COUNTS = savedOrig ? JSON.parse(savedOrig) : {};
-                                
-                                // Recalcula total original
                                 ORIG_TOTAL = 0;
                                 for(let k in ORIG_COUNTS) ORIG_TOTAL += ORIG_COUNTS[k];
-
                                 document.getElementById('view-home').classList.remove('active');
                                 document.getElementById('view-catalogo').classList.add('active');
                                 document.getElementById('btn-back').style.display = 'block';
                                 document.getElementById('cart-bar').style.display = 'flex';
                                 document.getElementById('page-title').innerText = CURR_CESTA.nome;
-                                
                                 renderCatalog();
                                 updateTotals();
                                 showToast("Seu carrinho foi restaurado!");
@@ -597,7 +612,6 @@
             } catch (err) { console.error("Erro fatal:", err); }
         }
 
-        // --- FUNÇÃO PARA SALVAR O ESTADO ---
         function saveState() {
             if (CURR_CESTA) {
                 localStorage.setItem('da_cesta_id', CURR_CESTA.id);
@@ -606,7 +620,6 @@
             }
         }
 
-        // --- FUNÇÃO RESETAR E VOLTAR (LIMPA TUDO) ---
         function resetAndGoHome() {
             if(confirm("Deseja limpar o carrinho e voltar para o início?")) {
                 localStorage.removeItem('da_cesta_id');
@@ -647,14 +660,12 @@
                 }
             });
             
-            saveState(); // Salva estado inicial
-
+            saveState();
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-catalogo').classList.add('active');
             document.getElementById('btn-back').style.display = 'block';
             document.getElementById('cart-bar').style.display = 'flex';
             document.getElementById('page-title').innerText = CURR_CESTA.nome;
-            
             renderCatalog(); 
             updateTotals();
         }
@@ -691,11 +702,9 @@
             div.innerHTML = "";
             const ph = svgPlace();
             
-            // Renderiza Menu de Categorias
             const navDiv = document.getElementById('cat-nav');
             navDiv.innerHTML = "";
             
-            // Renderiza lista de itens da cesta (topo)
             let html = `<div style="margin-bottom:30px;">
                 <h3 style="font-size:1rem; color:#888; margin-bottom:10px; padding-left:5px;">Itens da Cesta</h3>
                 <div class="basket-scroll">`;
@@ -716,16 +725,13 @@
             });
             html += `</div></div>`;
 
-            // Agrupa por categorias
             const cats = {};
             DB_PROD.forEach(p => { if(!cats[p.cat]) cats[p.cat] = []; cats[p.cat].push(p); });
             const sortedKeys = Object.keys(cats).sort();
 
-            // Renderiza Catálogo
             sortedKeys.forEach((c, index) => {
                 if (c === CATEGORIA_PADRAO && cats[c].length === 0) return;
 
-                // Adiciona botão no menu de navegação
                 const safeId = `cat-${index}`;
                 navDiv.innerHTML += `<button class="cat-chip" onclick="scrollToCat('${safeId}')">${c}</button>`;
 
@@ -743,12 +749,12 @@
                     if (semEstoque && q === 0) {
                         btnHtml = `<button class="btn-esgotado">ESGOTADO</button>`;
                     } else if (q > 0) {
-                        btnHtml = `<div class="qty-control"><button class="btn-q" onclick="upd('${p.id}', -1)">-</button><span class="val-q">${q}</span><button class="btn-q" onclick="upd('${p.id}', 1)">+</button></div>`;
+                        // ADICIONEI ID ESPECÍFICO NA QUANTIDADE PARA ANIMAÇÃO
+                        btnHtml = `<div class="qty-control"><button class="btn-q" onclick="upd('${p.id}', -1)">-</button><span class="val-q" id="qty-${p.id}">${q}</span><button class="btn-q" onclick="upd('${p.id}', 1)">+</button></div>`;
                     } else {
                         btnHtml = `<button class="btn-add-simple" onclick="upd('${p.id}', 1)">ADICIONAR</button>`;
                     }
 
-                    // Adicionei 'prod-search-item' e data-name para busca
                     html += `
                     <div class="prod-card ${activeClass} prod-search-item" id="card-${p.id}" data-name="${p.name.toLowerCase()}">
                         <div class="prod-img-box"><img src="${imgSrc}" class="prod-img" loading="lazy" onclick="zoom('${imgSrc}')"></div>
@@ -762,7 +768,6 @@
             div.innerHTML = html;
         }
 
-        // --- FUNÇÃO DE BUSCA ---
         function doSearch(term) {
             const t = term.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             const items = document.querySelectorAll('.prod-search-item');
@@ -776,50 +781,86 @@
                 }
             });
 
-            // Oculta títulos de categorias vazias
             document.querySelectorAll('.cat-section').forEach(sec => {
                 const visibleItems = sec.querySelectorAll('.prod-search-item:not(.hidden)');
                 sec.style.display = visibleItems.length > 0 ? 'block' : 'none';
             });
         }
 
-        // --- FUNÇÃO DE NAVEGAÇÃO RÁPIDA ---
         function scrollToCat(id) {
             const el = document.getElementById(id);
             if(el) {
-                const y = el.getBoundingClientRect().top + window.pageYOffset - 150; // Ajuste para o header
+                const y = el.getBoundingClientRect().top + window.pageYOffset - 150; 
                 window.scrollTo({top: y, behavior: 'smooth'});
             }
         }
 
+        // --- FUNÇÃO UPD ATUALIZADA COM EFEITOS VISUAIS ---
         function upd(id, d) {
             const prod = DB_PROD.find(x => x.id === id);
             
+            // Validação de Estoque com Feedback (Shake)
             if (prod && prod.stock <= 0 && d > 0) {
+                 triggerShake(id);
                  showToast("Produto esgotado.");
                  return;
             }
 
-            if(navigator.vibrate) navigator.vibrate(10);
+            if(navigator.vibrate) navigator.vibrate(10); // Vibração Tátil
+            
             if(!CART[id]) CART[id] = 0;
             const nq = CART[id] + d;
             
+            // Validação de Remoção com Feedback (Shake)
             if (d < 0 && ORIG_COUNTS[id]) {
                 let currOrig = 0;
                 for(let k in CART) if(ORIG_COUNTS[k]) currOrig += Math.min(k===id ? nq : CART[k], ORIG_COUNTS[k]);
                 const minAllowed = Math.ceil(ORIG_TOTAL * (1 - CONFIG.maxRemoval));
-                if (currOrig < minAllowed) { showToast(`Mínimo de itens originais atingido.`); return; }
+                if (currOrig < minAllowed) { 
+                    triggerShake(id);
+                    showToast(`Mínimo de itens originais atingido.`); 
+                    return; 
+                }
             }
             if(nq < 0) return;
             CART[id] = nq;
             
-            saveState(); // Salva estado ao atualizar
+            saveState();
             renderCatalog(); 
             updateTotals();
+
+            // Animações de Sucesso
+            triggerPop(id);
+            triggerPulseBar();
             
-            // Re-aplica busca se houver
             const searchVal = document.getElementById('search-input').value;
             if(searchVal) doSearch(searchVal);
+        }
+
+        // --- FUNÇÕES DE ANIMAÇÃO AUXILIARES ---
+        function triggerShake(id) {
+            const card = document.getElementById(`card-${id}`);
+            if(card) {
+                card.classList.remove('anim-shake');
+                void card.offsetWidth; // Reinicia animação
+                card.classList.add('anim-shake');
+                if(navigator.vibrate) navigator.vibrate([50, 50, 50]);
+            }
+        }
+
+        function triggerPop(id) {
+            // Tenta encontrar o contador
+            const qtySpan = document.getElementById(`qty-${id}`);
+            if(qtySpan) {
+                qtySpan.classList.add('anim-pop');
+            }
+        }
+
+        function triggerPulseBar() {
+            const bar = document.getElementById('cart-bar');
+            bar.classList.remove('anim-pulse');
+            void bar.offsetWidth; 
+            bar.classList.add('anim-pulse');
         }
 
         function updateTotals() {
@@ -918,7 +959,6 @@
 
             trackEvent('Purchase', { value: window.finalTotal, currency: 'BRL', content_ids: itemsKeys, num_items: itemsKeys.reduce((acc,c)=>acc+CART[c],0) });
 
-            // LIMPA CARRINHO APÓS PEDIDO
             localStorage.removeItem('da_cesta_id');
             localStorage.removeItem('da_cart');
             localStorage.removeItem('da_orig');
