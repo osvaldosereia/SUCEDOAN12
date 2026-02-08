@@ -1060,41 +1060,114 @@
                 ctx.drawImage(tempC, 0, 0);
             }
 
-            // 3. Desenhar Selos (Stickers)
+            // 3. Desenhar Selos (Stickers) - VERSÃO PRO (MAIORES E BONITOS)
             if(activeSticker) {
                 ctx.save();
+                // Sombra projetada para destacar o selo da imagem
                 ctx.shadowColor = "rgba(0,0,0,0.5)";
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetY = 5;
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetY = 8;
 
                 if(activeSticker === 'offer') {
-                    // Círculo Vermelho no Canto
+                    // --- OFERTA (Bola Vermelha Grande com Borda) ---
+                    const cx = 370, cy = 90, r = 65; // Posição e Raio
+                    
+                    // Gradiente Vermelho Vibrante
+                    const grad = ctx.createLinearGradient(cx-r, cy-r, cx+r, cy+r);
+                    grad.addColorStop(0, "#ef4444");
+                    grad.addColorStop(1, "#991b1b");
+                    
                     ctx.beginPath();
-                    ctx.arc(380, 70, 50, 0, 2 * Math.PI);
-                    ctx.fillStyle = "#ef4444";
+                    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+                    ctx.fillStyle = grad;
                     ctx.fill();
+                    
+                    // Borda Branca Grossa
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = "white";
+                    ctx.stroke();
+
+                    // Texto
+                    ctx.shadowColor = "transparent"; // Tira sombra do texto para leitura
                     ctx.fillStyle = "white";
-                    ctx.font = "bold 16px Inter";
                     ctx.textAlign = "center";
-                    ctx.fillText("OFERTA", 380, 75);
+                    
+                    // Leve rotação no texto para ficar dinâmico
+                    ctx.translate(cx, cy);
+                    ctx.rotate(-10 * Math.PI / 180);
+                    
+                    ctx.font = "900 26px Inter, sans-serif";
+                    ctx.fillText("OFERTA", 0, 0);
+                    
+                    ctx.font = "600 14px Inter, sans-serif";
+                    ctx.fillText("ESPECIAL", 0, 18);
                 }
                 else if(activeSticker === 'best') {
-                    // Retangulo Amarelo
-                    ctx.fillStyle = "#f59e0b";
-                    ctx.fillRect(20, 380, 150, 40);
-                    ctx.fillStyle = "#000";
-                    ctx.font = "bold 14px Inter";
+                    // --- MELHOR PREÇO (Emblema Dourado no Rodapé) ---
+                    // Fundo Retangular Arredondado
+                    const rx = 20, ry = 360, rw = 180, rh = 70;
+                    
+                    const grad = ctx.createLinearGradient(rx, ry, rx, ry+rh);
+                    grad.addColorStop(0, "#fbbf24"); // Dourado claro
+                    grad.addColorStop(1, "#d97706"); // Dourado escuro
+                    
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    // Desenha retângulo com cantos arredondados manualmente (compatibilidade)
+                    ctx.moveTo(rx + 10, ry);
+                    ctx.lineTo(rx + rw - 10, ry);
+                    ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + 10);
+                    ctx.lineTo(rx + rw, ry + rh - 10);
+                    ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - 10, ry + rh);
+                    ctx.lineTo(rx + 10, ry + rh);
+                    ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - 10);
+                    ctx.lineTo(rx, ry + 10);
+                    ctx.quadraticCurveTo(rx, ry, rx + 10, ry);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    // Borda
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = "white";
+                    ctx.stroke();
+
+                    // Texto
+                    ctx.shadowColor = "transparent";
+                    ctx.fillStyle = "white"; // Texto branco para contraste forte
                     ctx.textAlign = "center";
-                    ctx.fillText("MELHOR PREÇO", 95, 405);
+                    
+                    ctx.font = "900 22px Inter, sans-serif";
+                    ctx.fillText("MELHOR", rx + (rw/2), ry + 32);
+                    ctx.font = "900 28px Inter, sans-serif";
+                    ctx.fillText("PREÇO", rx + (rw/2), ry + 58);
                 }
                 else if(activeSticker === 'today') {
-                    // Faixa Azul
-                    ctx.fillStyle = "#3b82f6";
-                    ctx.fillRect(0, 50, 120, 30);
+                    // --- SÓ HOJE (Etiqueta Azul no Topo Esquerdo) ---
+                    const tx = 0, ty = 40, tw = 160, th = 60;
+                    
+                    const grad = ctx.createLinearGradient(tx, ty, tx+tw, ty);
+                    grad.addColorStop(0, "#2563eb");
+                    grad.addColorStop(1, "#1e40af");
+
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.moveTo(tx, ty);
+                    ctx.lineTo(tx + tw, ty);
+                    ctx.lineTo(tx + tw - 20, ty + th); // Corte diagonal na ponta
+                    ctx.lineTo(tx, ty + th);
+                    ctx.closePath();
+                    ctx.fill();
+                    
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = "white";
+                    ctx.stroke();
+
+                    ctx.shadowColor = "transparent";
                     ctx.fillStyle = "white";
-                    ctx.font = "bold 12px Inter";
-                    ctx.textAlign = "center";
-                    ctx.fillText("SÓ HOJE", 60, 70);
+                    ctx.textAlign = "left";
+                    
+                    ctx.font = "900 28px Inter, sans-serif";
+                    ctx.fillText("SÓ HOJE", 15, ty + 40);
                 }
                 ctx.restore();
             }
