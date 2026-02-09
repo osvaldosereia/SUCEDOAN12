@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v34 (Exportação Bling Perfeita)</title>
+    <title>Sucedoan Painel - v35 (Paste + Badges + Zoom Fino)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -242,6 +242,7 @@
             letter-spacing: 0.5px;
         }
 
+        /* EDITAR NOME DO PRODUTO */
         .card-title-input {
             width: 100%;
             background: transparent;
@@ -252,15 +253,18 @@
             font-weight: 600;
             resize: none;
             overflow: hidden;
-            min-height: 40px;
+            min-height: 48px;
             line-height: 1.3;
             border-radius: 4px;
-            padding: 2px;
+            padding: 4px;
+            transition: 0.2s;
         }
+        .card-title-input:hover { background: #020617; border-color: #334155; }
         .card-title-input:focus {
             background: #0f172a;
             border-color: var(--accent);
             outline: none;
+            min-height: 80px; /* Expande ao focar */
         }
 
         .card-stats {
@@ -720,6 +724,9 @@
             </div>
             <div class="modal-body">
                 <canvas id="imageCanvas" width="450" height="450"></canvas>
+                <div style="font-size:10px; color:#64748b; text-align:center; margin-top:4px;">
+                    Dica: Use <b>Ctrl+V</b> para colar uma imagem copiada.
+                </div>
                 
                 <div class="file-info">
                     <span id="file-name-preview" style="color:var(--accent)">img.webp</span>
@@ -734,8 +741,8 @@
 
                 <div class="editor-tools">
                     <div class="tool-group">
-                        <label><span>Zoom</span></label>
-                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
+                        <label><span>Zoom (Ajuste Fino)</span></label>
+                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1">
                     </div>
                     <div class="tool-group">
                         <label><span>Nitidez</span></label>
@@ -826,7 +833,7 @@
         }
 
         // ----------------------------------------------------
-        // IMPORTAÇÃO CSV (AGORA MANTÉM DADOS EXTRAS)
+        // IMPORTAÇÃO CSV (MANTÉM DADOS EXTRAS)
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -840,7 +847,6 @@
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // Função auxiliar para mapear
                         const getVal = (keys) => {
                             const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk)));
                             return f ? d[f] : "";
@@ -850,7 +856,6 @@
                             return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0;
                         };
 
-                        // 1. Criamos a Base de Trabalho (Campos do App)
                         const base = {
                             codigo: getVal(['codigo','sku']) || getVal(['c_digo']),
                             nome: getVal(['descricao','nome','produto']) || getVal(['descri__o']),
@@ -875,13 +880,8 @@
                             _lastChange: "Importação CSV"
                         };
 
-                        // 2. FUNDAMENTAL: Copia TUDO o que veio no CSV para o objeto
-                        // Isso garante que colunas do Bling que não usamos no painel sejam preservadas
                         Object.keys(d).forEach(k => {
-                            // Se a chave ainda não existe no objeto 'base', adicionamos
-                            if(base[k] === undefined) {
-                                base[k] = d[k];
-                            }
+                            if(base[k] === undefined) { base[k] = d[k]; }
                         });
 
                         return base;
@@ -898,12 +898,11 @@
         });
 
         // ----------------------------------------------------
-        // EXPORTAÇÃO CSV (CORRIGIDA PARA ESPELHAR DADOS)
+        // EXPORTAÇÃO CSV (ESPELHAMENTO BLING)
         // ----------------------------------------------------
         function exportarCSV() {
             if (products.length === 0) return alert("Nada para exportar.");
 
-            // Cabeçalho EXATO do arquivo fornecido pelo usuário (Bling)
             const colunasModelo = [
                 "codigo", "nome", "preco", "estoque", "localizacao", "gtin", "url_imagem", "ncm", "cest", "unidade",
                 "pesoLiquido", "pesoBruto", "largura", "altura", "profundidade", "origem", "observacoes", "situacao",
@@ -922,67 +921,33 @@
             ];
 
             const dadosParaExportar = products.map(p => {
-                // Cria uma cópia rasa para não estragar os dados originais na memória
                 const copia = { ...p };
-
-                // ========================================================
-                // ESPELHAMENTO: Garante que o valor editado vá para as colunas do Bling
-                // ========================================================
-                
-                // Formatação de números
                 const fmt = (n) => (n !== undefined && n !== null) ? n.toString().replace('.', ',') : "0,00";
                 
-                // 1. CODIGO / SKU
                 copia['c_digo'] = p.codigo;
-                
-                // 2. NOME / DESCRIÇÃO
                 copia['descri__o'] = p.nome;
                 copia['descri__o_do_produto_no_fornecedor'] = p.nome;
-
-                // 3. PREÇO
                 copia['preco'] = fmt(p.preco);
-                copia['pre_o'] = fmt(p.preco); // Coluna Crítica do Bling
-                
-                // 4. ESTOQUE
+                copia['pre_o'] = fmt(p.preco); 
                 copia['estoque'] = fmt(p.estoque);
-
-                // 5. LOCALIZAÇÃO
                 copia['localiza__o'] = p.localizacao;
-
-                // 6. GTIN
                 copia['gtin_ean'] = p.gtin;
-
-                // 7. PESOS E MEDIDAS
                 copia['peso_l_quido__kg_'] = fmt(p.pesoLiquido);
                 copia['peso_bruto__kg_'] = fmt(p.pesoBruto);
                 copia['largura_do_produto'] = fmt(p.largura);
                 copia['altura_do_produto'] = fmt(p.altura);
                 copia['profundidade_do_produto'] = fmt(p.profundidade);
-
-                // 8. OBSERVAÇÕES
                 copia['observa__es'] = p.observacoes;
 
-                // ========================================================
-                // PREENCHIMENTO FINAL DA LINHA
-                // ========================================================
                 const linha = {};
                 colunasModelo.forEach(col => {
-                    // Pega o valor (já espelhado ou original)
                     let val = copia[col];
-                    // Se não tiver valor, string vazia
                     linha[col] = (val !== undefined && val !== null) ? val : "";
                 });
                 return linha;
             });
 
-            const csv = Papa.unparse({
-                fields: colunasModelo,
-                data: dadosParaExportar
-            }, {
-                quotes: false, // Força não usar aspas para ficar igual ao exemplo
-                delimiter: ";"
-            });
-
+            const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: false, delimiter: ";" });
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
             l.download = "produtos_bling_corrigido.csv"; 
@@ -1289,6 +1254,28 @@
                     reader.readAsDataURL(e.target.files[0]);
                 }
             });
+
+            // AJUSTE: Evento Paste global para colar imagens do Google
+            document.addEventListener('paste', (e) => {
+                // Só processa se o modal do editor estiver visível
+                if(document.getElementById('modal-editor').style.display === 'flex') {
+                    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                    for (let index in items) {
+                        const item = items[index];
+                        if (item.kind === 'file' && item.type.includes('image/')) {
+                            const blob = item.getAsFile();
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                                const img = new Image();
+                                img.onload = () => { loadedImage = img; drawCanvas(); };
+                                img.src = event.target.result;
+                                document.getElementById('file-size-preview').innerText = "Colado";
+                            };
+                            reader.readAsDataURL(blob);
+                        }
+                    }
+                }
+            });
         }
 
         function toggleSticker(type) {
@@ -1300,6 +1287,7 @@
             drawCanvas();
         }
 
+        // AJUSTE: Desenhar etiquetas BONITAS (Badges)
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -1320,23 +1308,51 @@
                 ctx.font = "20px Inter";
                 ctx.fillStyle = "#94a3b8";
                 ctx.textAlign = "center";
-                ctx.fillText("Sem imagem", canvas.width/2, canvas.height/2);
+                ctx.fillText("Sem imagem (Cole com Ctrl+V)", canvas.width/2, canvas.height/2);
             }
 
             if(activeSticker) {
-                ctx.font = "bold 40px Inter";
-                ctx.fillStyle = "#ef4444";
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 4;
-                ctx.textAlign = "right";
-                
                 let text = "";
-                if(activeSticker === 'offer') { text = "OFERTA"; ctx.fillStyle = "#ef4444"; }
-                if(activeSticker === 'best') { text = "MELHOR PREÇO"; ctx.fillStyle = "#f59e0b"; }
-                if(activeSticker === 'today') { text = "SÓ HOJE"; ctx.fillStyle = "#3b82f6"; }
+                let bgColor = "";
+                let textColor = "white";
 
-                ctx.strokeText(text, 430, 60);
-                ctx.fillText(text, 430, 60);
+                if(activeSticker === 'offer') { text = "OFERTA"; bgColor = "#ef4444"; }
+                if(activeSticker === 'best') { text = "MELHOR PREÇO"; bgColor = "#f59e0b"; }
+                if(activeSticker === 'today') { text = "SÓ HOJE"; bgColor = "#3b82f6"; }
+
+                // Configurações do Badge
+                const fontSize = 24;
+                ctx.font = `bold ${fontSize}px Inter, sans-serif`;
+                const paddingX = 15;
+                const paddingY = 8;
+                const textWidth = ctx.measureText(text).width;
+                const badgeW = textWidth + (paddingX * 2);
+                const badgeH = fontSize + (paddingY * 2);
+                
+                // Posição: Canto Superior Direito
+                const badgeX = canvas.width - badgeW - 20; 
+                const badgeY = 20;
+                const radius = 8;
+
+                // Sombra
+                ctx.shadowColor = "rgba(0,0,0,0.5)";
+                ctx.shadowBlur = 10;
+                ctx.shadowOffsetY = 4;
+
+                // Desenha o Fundo Arredondado
+                ctx.fillStyle = bgColor;
+                ctx.beginPath();
+                ctx.roundRect(badgeX, badgeY, badgeW, badgeH, radius);
+                ctx.fill();
+
+                // Remove Sombra para o Texto
+                ctx.shadowColor = "transparent";
+
+                // Texto Centralizado no Badge
+                ctx.fillStyle = textColor;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(text, badgeX + badgeW/2, badgeY + badgeH/2 + 2); // +2 para ajuste visual vertical
             }
         }
 
