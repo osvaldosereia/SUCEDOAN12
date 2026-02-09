@@ -24,7 +24,7 @@
             
             /* Tipografia */
             --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --font-size-name: 0.85rem;   
+            --font-size-name: 0.8rem; /* Reduzido levemente */  
             --font-size-price: 1.1rem;  
         }
 
@@ -53,6 +53,7 @@
             background: var(--cor-bar-bg);
             border-bottom: 1px solid var(--cor-divider);
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease; /* Animação para esconder */
         }
 
         header {
@@ -69,9 +70,11 @@
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid var(--cor-primary);
+            flex-shrink: 0; /* IMPEDE A LOGO DE ACHATAR */
         }
         
-        .page-title { font-size: 1.2rem; font-weight: 700; color: var(--cor-primary); }
+        /* Fonte reduzida conforme pedido */
+        .page-title { font-size: 1.0rem; font-weight: 700; color: var(--cor-primary); }
         .btn-back { display: none; font-size: 1.2rem; color: var(--cor-text-main); padding: 5px; }
         .btn-help { width: 32px; height: 32px; background: white; border: 1px solid #ddd; border-radius: 50%; color: var(--cor-primary); font-weight: 700; font-size: 1rem; }
 
@@ -102,20 +105,20 @@
         .carousel-container {
             position: relative;
             width: 100%;
-            /* Garante que as setas fiquem visíveis */
             padding: 0 0; 
         }
         
-        /* Botões de Navegação do Carrossel (Setas Permanentes) */
+        /* Botões de Navegação do Carrossel (MAIS VISÍVEIS) */
         .scroll-btn {
             position: absolute; top: 50%; transform: translateY(-50%);
-            width: 40px; height: 40px;
-            background: white; border: 1px solid #ddd; border-radius: 50%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 42px; height: 42px;
+            background: #FFFFFF; border: 1px solid #999; border-radius: 50%;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25); /* Sombra mais forte */
             z-index: 20; cursor: pointer;
             display: grid; place-items: center;
-            color: var(--cor-primary); font-size: 1.2rem; font-weight: bold;
+            color: var(--cor-primary); font-size: 1.3rem; font-weight: bold;
             transition: all 0.2s;
+            opacity: 0.95;
         }
         .scroll-btn:active { background: #f0f0f0; transform: translateY(-50%) scale(0.95); }
         .scroll-btn.left { left: 5px; }
@@ -149,12 +152,11 @@
         .products-carousel { 
             display: flex; 
             overflow-x: auto; 
-            padding: 10px 50px 20px 50px; /* Padding lateral maior para não cobrir itens com a seta */
+            padding: 10px 50px 20px 50px; 
             scroll-behavior: smooth; 
             -webkit-overflow-scrolling: touch; 
         }
         
-        /* BARRA DE ROLAGEM VISÍVEL */
         .products-carousel::-webkit-scrollbar { height: 8px; }
         .products-carousel::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 4px; }
         .products-carousel::-webkit-scrollbar-thumb { background: #B0BEC5; border-radius: 4px; border: 2px solid #f0f0f0; }
@@ -165,7 +167,7 @@
             background: white;
             padding: 15px; 
             margin-right: 15px;
-            border: 1px solid #eee; /* Borda leve em cada card */
+            border: 1px solid #eee; 
             border-radius: 8px;
             display: flex; flex-direction: column; 
             align-items: flex-start; 
@@ -186,12 +188,18 @@
         .prod-img { width: 100%; height: 100%; object-fit: contain; }
         
         .prod-name { 
-            font-size: var(--font-size-name);
+            font-size: var(--font-size-name); /* Fonte menor */
             color: var(--cor-text-main); 
             font-weight: 600;
-            line-height: 1.3; 
+            line-height: 1.2; 
             margin-bottom: 5px; 
-            height: 36px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            /* Permite até 3 linhas */
+            height: auto; 
+            min-height: 2.5rem; /* Altura mínima para alinhamento aproximado */
+            overflow: hidden; 
+            display: -webkit-box; 
+            -webkit-line-clamp: 3; 
+            -webkit-box-orient: vertical;
         }
         
         .prod-price { font-size: var(--font-size-price); font-weight: 800; color: var(--cor-primary); margin-bottom: 10px; }
@@ -221,7 +229,7 @@
         .total-lbl { font-size: 0.75rem; color: #666; text-transform: uppercase; }
         .total-val { font-size: 1.3rem; font-weight: 800; color: var(--cor-primary); }
         .btn-finish { 
-            background: #2E7D32; /* Verde Botão Ação */
+            background: #2E7D32; 
             color: white; 
             padding: 12px 25px; border-radius: 4px; 
             font-weight: 700; font-size: 0.95rem; text-transform: uppercase;
@@ -230,12 +238,19 @@
 
         /* --- FILTRO / CATEGORIAS --- */
         .catalog-tools { 
-            position: sticky; top: 60px; z-index: 95; 
+            position: sticky; top: 60px; /* Inicialmente 60px abaixo do header */
+            z-index: 95; 
             background: var(--cor-surface);
             padding: 10px 20px; 
             border-bottom: 1px solid var(--cor-divider);
             box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            transition: top 0.3s ease; /* Animação para subir ao topo */
         }
+        
+        /* CLASSES AUXILIARES PARA ESCONDER HEADER NO SCROLL */
+        body.hide-header .header-wrapper { transform: translateY(-100%); }
+        body.hide-header .catalog-tools { top: 0; }
+
         .search-container { position: relative; margin-bottom: 10px; }
         .search-input { 
             width: 100%; padding: 12px 10px 12px 40px; 
@@ -246,7 +261,7 @@
         .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; }
         
         /* MENU HORIZONTAL COM SETAS */
-        .cat-nav-wrapper { position: relative; padding: 0 35px; } /* Espaço para setas */
+        .cat-nav-wrapper { position: relative; padding: 0 35px; } 
         .cat-nav { 
             display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; 
             scroll-behavior: smooth;
@@ -426,7 +441,7 @@
         </div>
         <div class="modal-body">
             <h4 style="margin-bottom:15px; color:#666; font-size:0.9rem;">ITENS DO PEDIDO</h4>
-            <div id="checkout-list" style="margin-bottom:20px; font-size:0.9rem;"></div>
+            <div id="checkout-list" style="margin-bottom:20px;"></div>
             
             <label style="display:block; margin-bottom:5px;">Cupom de Desconto</label>
             <div style="display:flex; gap:10px; margin-bottom:15px;">
@@ -439,14 +454,14 @@
                 <span id="discount-value">- R$ 0,00</span>
             </div>
 
-            <div style="background: #f9f9f9; padding: 20px; border-radius: 4px; text-align: center; margin-bottom: 25px; border:1px solid #eee;">
+            <div style="background: #FFFDE7; padding: 20px; border-radius: 4px; text-align: center; margin-bottom: 25px; border:1px solid #FFF9C4;">
                 <span style="display:block; font-size:0.8rem; color:#888; text-transform:uppercase;">Valor Total a Pagar</span>
                 <span id="checkout-total" style="font-size:2rem; font-weight:700; color:var(--cor-accent);">R$ 0,00</span>
             </div>
             
            <form onsubmit="sendWhatsapp(event)">
             <label>Nome Completo</label><input type="text" id="cust-name" class="input-box" required placeholder="Seu nome">
-            <label>CPF</label><input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
+            <label>CPF (Obrigatório)</label><input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
             <label>WhatsApp</label><input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999" maxlength="15" oninput="mascaraTelefone(this)">
             <label>Endereço de Entrega</label><input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
             <label>Forma de Pagamento</label>
@@ -534,6 +549,19 @@
 
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
         let ACTIVE_COUPON = null;
+
+        // SCROLL LISTENER PARA HEADER
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.scrollY;
+            // Se rolar para baixo mais que 60px, esconde o header
+            if (currentScroll > lastScroll && currentScroll > 60) {
+                document.body.classList.add('hide-header');
+            } else {
+                document.body.classList.remove('hide-header');
+            }
+            lastScroll = currentScroll;
+        });
 
         let bannerIdx = 0;
         function cycleBanner() {
@@ -690,7 +718,6 @@
             container.style.display = 'block';
             list.innerHTML = "";
             
-            // Adicionando Setas Permanentes
             if(!scrollArea.querySelector('.scroll-btn')) {
                 scrollArea.insertAdjacentHTML('afterbegin', `<button class="scroll-btn left" onclick="scrollCat(this, -200)">❮</button>`);
                 scrollArea.insertAdjacentHTML('beforeend', `<button class="scroll-btn right" onclick="scrollCat(this, 200)">❯</button>`);
@@ -768,7 +795,6 @@
             div.innerHTML = html;
         }
 
-        // Funções de Scroll para os botões permanentes
         function scrollCat(btn, val) {
             const container = btn.parentElement.querySelector('.products-carousel');
             container.scrollBy({ left: val, behavior: 'smooth' });
@@ -866,20 +892,16 @@
             if(nq < 0) return;
             CART[id] = nq;
             saveState(); 
-            // Substituído renderCatalog() por updateCardVisuals para evitar "pulo" do carrossel
             updateCardVisuals(id, nq, p.stock <= 0);
             updateTotals();
         }
 
         function updateCardVisuals(id, q, semEstoque) {
-            // Atualiza apenas o card específico no DOM
             const card = document.getElementById(`card-${id}`);
-            if(!card) return; // Se for um item da cesta que não tá no DOM, ignora
+            if(!card) return; 
 
-            // Atualiza classe Active
             if(q > 0) card.classList.add('active'); else card.classList.remove('active');
 
-            // Atualiza Área de Ação (Botão vs Contador)
             const actArea = document.getElementById(`act-${id}`);
             actArea.innerHTML = getBtnHtml(id, q, semEstoque);
         }
@@ -919,7 +941,11 @@
             const l = document.getElementById('checkout-list'); l.innerHTML = "";
             for(let k in CART) if(CART[k]>0) {
                 const p = DB_PROD.find(x=>x.id===k);
-                l.innerHTML += `<div style="border-bottom:1px dashed #eee; padding:5px 0;">${CART[k]}un ${p.name}</div>`;
+                // FORMATADO EM 2 LINHAS CONFORME PEDIDO
+                l.innerHTML += `<div style="border-bottom:1px dashed #eee; padding:8px 0; font-size:0.85rem;">
+                    <div style="font-weight:700; color:#555;">${CART[k]} unidades de:</div>
+                    <div style="color:#333;">${p.name}</div>
+                </div>`;
             }
             document.getElementById('modal-checkout').showModal();
         }
