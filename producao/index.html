@@ -213,7 +213,6 @@
             height: 36px;
             border-radius: 50%;
             display: flex;
-
             justify-content: center;
             align-items: center;
             cursor: pointer;
@@ -745,7 +744,6 @@
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
                     
                     <button class="btn-act" onclick="downloadImage()">BAIXAR</button>
-                    
                     <button class="btn-act primary" style="flex:2" onclick="uploadToGithub()">GITHUB & SYNC</button>
                 </div>
             </div>
@@ -770,11 +768,9 @@
                 <div class="form-group"><label>Usuário GitHub</label><input type="text" id="cfg-user" onkeydown="if(event.key==='Enter') saveConfig()"></div>
                 <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo" onkeydown="if(event.key==='Enter') saveConfig()"></div>
                 <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                
                 <button class="btn-full" onclick="saveConfig()">SALVAR</button>
                 
                 <hr style="margin:20px 0; border:0; border-top:1px solid #334155;">
-                
                 <button class="btn-danger" onclick="restaurarLinksPadraoSite()">
                     <i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE
                 </button>
@@ -791,7 +787,6 @@
         // ==========================================
         // 2. LÓGICA DO SISTEMA (JAVASCRIPT)
         // ==========================================
-        
         let products = [];
         let historyLog = [];
         let currentEditingId = null;
@@ -815,6 +810,7 @@
         function showSection(id, btn) {
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.getElementById('section-' + id).classList.add('active');
+            
             if(btn) {
                 document.querySelectorAll('header .nav-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
@@ -830,686 +826,120 @@
             toggleLoader(true, "Lendo CSV...");
             
             Papa.parse(e.target.files[0], {
-                header: true, 
-                skipEmptyLines: true, 
-                encoding: "ISO-8859-1", 
-                delimiter: ";",
+                header: true,
+                skipEmptyLines: true,
+                encoding: "ISO-8859-1",
+                delimiter: ";", 
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        const getVal = (keys) => { 
-                            const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk))); 
-                            return f ? d[f] : ""; 
+                        // Função auxiliar para mapear colunas flexíveis
+                        const getVal = (keys) => {
+                            const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk)));
+                            return f ? d[f] : "";
                         };
-                        const getNum = (keys) => { 
-                            const v = getVal(keys); 
-                            return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; 
+                        const getNum = (keys) => {
+                            const v = getVal(keys);
+                            return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0;
                         };
-                        
+
                         const base = {
-                            codigo: getVal(['codigo','sku']), nome: getVal(['descricao','nome','produto']),
-                            preco: getNum(['preco','venda']), estoque: getNum(['estoque']),
-                            localizacao: getVal(['localizacao','local']), gtin: getVal(['gtin','ean']),
-                            url_imagem: getVal(['url','imagem']), ncm: getVal(['ncm']), cest: getVal(['cest']),
-                            unidade: getVal(['unidade'])||'UN', pesoLiquido: getNum(['peso liq']), pesoBruto: getNum(['peso bru']),
-                            largura: getNum(['largura']), altura: getNum(['altura']), profundidade: getNum(['profundidade']),
-                            origem: getVal(['origem']), observacoes: getVal(['observacoes','obs']),
-                            situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
+                            codigo: getVal(['codigo','sku']),
+                            nome: getVal(['descricao','nome','produto']),
+                            preco: getNum(['preco','venda']),
+                            estoque: getNum(['estoque']),
+                            localizacao: getVal(['localizacao','local']),
+                            gtin: getVal(['gtin','ean']),
+                            url_imagem: getVal(['url','imagem']),
+                            ncm: getVal(['ncm']),
+                            cest: getVal(['cest']),
+                            unidade: getVal(['unidade'])||'UN',
+                            pesoLiquido: getNum(['peso liq']),
+                            pesoBruto: getNum(['peso bru']),
+                            largura: getNum(['largura']),
+                            altura: getNum(['altura']),
+                            profundidade: getNum(['profundidade']),
+                            origem: getVal(['origem']),
+                            observacoes: getVal(['observacoes','obs']),
+                            situacao: 'A',
+                            formato: 'S',
+                            _changed: true,
+                            _lastChange: "Importação CSV"
                         };
-                        Object.keys(d).forEach(k => { const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_'); if(!base[safe] && !['codigo','nome'].includes(safe)) base[safe] = d[k]; });
+
+                        // Preserva campos extras do CSV original que não foram mapeados acima
+                        Object.keys(d).forEach(k => {
+                            const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                            // Se não existe na base e não é metadado nosso
+                            if(!base[safe] && !safe.startsWith('_')) {
+                                base[k] = d[k]; // Mantém chave original
+                            }
+                        });
+
                         return base;
                     });
-                    products = novos.filter(p => p.codigo || p.nome);
-                    saveData(); renderGrid(); toggleLoader(false);
-                    alert(`${products.length} produtos importados com sucesso!`);
+
+                    if(novos.length > 0) {
+                        products = novos;
+                        saveData();
+                        renderGrid();
+                    }
+                    toggleLoader(false);
                 }
             });
         });
 
-        // ----------------------------------------------------
-        // AUTENTICAÇÃO (COM SALVAR SENHA)
-        // ----------------------------------------------------
-        function requestLogin(sku) {
-            pendingSyncSku = sku;
-            const savedPass = localStorage.getItem(LOGIN_KEY);
-            
-            // Se tiver senha salva, preenche
-            if (savedPass) {
-                document.getElementById('login-pass').value = savedPass;
-                document.getElementById('save-login').checked = true;
-            } else {
-                document.getElementById('login-pass').value = '';
-                document.getElementById('save-login').checked = false;
-            }
-            
-            document.getElementById('modal-login').style.display = 'flex';
-            document.getElementById('login-pass').focus();
-        }
+        function exportarCSV() {
+            if (products.length === 0) return alert("Nada para exportar.");
 
-        function attemptLogin() {
-            const pass = document.getElementById('login-pass').value;
-            const save = document.getElementById('save-login').checked;
+            // Lista exata de colunas do arquivo modelo
+            const colunasModelo = [
+                "codigo", "nome", "preco", "estoque", "localizacao", "gtin", "url_imagem", "ncm", "cest", "unidade",
+                "pesoLiquido", "pesoBruto", "largura", "altura", "profundidade", "origem", "observacoes", "situacao",
+                "formato", "_changed", "_lastChange", "id", "c_digo", "descri__o", "pre_o", "valor_ipi_fixo",
+                "observa__es", "situa__o", "pre_o_de_custo", "c_d__no_fornecedor", "fornecedor", "localiza__o",
+                "estoque_m_ximo", "estoque_m_nimo", "peso_l_quido__kg_", "peso_bruto__kg_", "gtin_ean",
+                "gtin_ean_da_embalagem", "largura_do_produto", "altura_do_produto", "profundidade_do_produto",
+                "data_validade", "descri__o_do_produto_no_fornecedor", "descri__o_complementar", "itens_p__caixa",
+                "produto_varia__o", "tipo_produ__o", "classe_de_enquadramento_do_ipi", "c_digo_na_lista_de_servi_os",
+                "tipo_do_item", "grupo_de_tags_tags", "tributos", "c_digo_pai", "c_digo_integra__o", "grupo_de_produtos",
+                "marca", "volumes", "descri__o_curta", "cross_docking", "url_imagens_externas", "link_externo",
+                "meses_garantia_no_fornecedor", "clonar_dados_do_pai", "condi__o_do_produto", "frete_gr_tis",
+                "n_mero_fci", "v_deo", "departamento", "unidade_de_medida", "pre_o_de_compra",
+                "valor_base_icms_st_para_reten__o", "valor_icms_st_para_reten__o", "valor_icms_pr_prio_do_substituto",
+                "categoria_do_produto", "informa__es_adicionais"
+            ];
 
-            if(USERS[pass]) {
-                currentUser = USERS[pass];
+            const dadosParaExportar = products.map(p => {
+                const linha = {};
                 
-                // Lógica Salvar Senha
-                if (save) {
-                    localStorage.setItem(LOGIN_KEY, pass);
-                } else {
-                    localStorage.removeItem(LOGIN_KEY);
-                }
+                colunasModelo.forEach(col => {
+                    let val = p[col];
 
-                closeModal('modal-login');
-                if(pendingSyncSku) executeSync(pendingSyncSku);
-            } else {
-                document.getElementById('login-error').style.display = 'block';
-            }
-        }
-
-        // ----------------------------------------------------
-        // SINCRONIZAÇÃO (BLINDAGEM SENIOR)
-        // ----------------------------------------------------
-        function syncBling(sku) {
-            requestLogin(sku);
-        }
-
-        function executeSync(sku) {
-            const p = products.find(pr => pr.codigo == sku);
-            if(MAKE_WEBHOOK_UPDATE.includes("SEU_LINK")) return alert("Configure o Webhook no Código!");
-            
-            if(!currentUser) currentUser = "SISTEMA";
-
-            toggleLoader(true, `Sincronizando...`);
-            
-            const changeType = p._lastChange || "Sincronização Manual"; 
-            const payload = {...p}; 
-            delete payload._changed; 
-            delete payload._lastChange;
-            
-            if(!payload.situacao) payload.situacao = 'A';
-            if(!payload.formato) payload.formato = 'S';
-
-            let finalLink = (payload.url_imagem || "").trim();
-            if(finalLink.includes('github.com') && finalLink.includes('/blob/')) {
-                finalLink = finalLink.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
-            }
-
-            payload.url_imagem = finalLink;           
-            payload.imagem = finalLink;               
-            payload.url_imagens_externas = finalLink; 
-            
-            if(p.url_imagem !== finalLink) {
-                p.url_imagem = finalLink;
-                saveData();
-            }
-
-            const time = new Date().toLocaleString('pt-BR');
-            const logNote = `[Alt: ${currentUser} em ${time} - ${changeType}]`;
-            
-            let obs = (payload.observacoes || "") + " | " + logNote;
-            obs = obs.replace(/[\r\n]+/g, " | ").replace(/"/g, "'");
-            payload.observacoes = obs;
-
-            fetch(MAKE_WEBHOOK_UPDATE, {
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify(payload)
-            })
-            .then(r => { 
-                if(r.ok) { 
-                    p.observacoes = payload.observacoes; 
-                    p._changed = false; 
-                    p._lastChange = ""; 
-                    saveData(); 
-                    addToHistory(sku, p.nome, true, changeType); 
-                    renderGrid(document.getElementById('search-input').value); 
-                    toggleLoader(false); 
-                    alert(`✅ Produto atualizado!\nImagem Enviada: ${finalLink ? 'SIM' : 'NÃO'}`);
-                } else throw new Error("Erro no Make");
-            })
-            .catch(() => { 
-                toggleLoader(false); 
-                addToHistory(sku, p.nome, false, "FALHA CONEXÃO"); 
-                alert("Erro ao enviar! Verifique a internet."); 
-            })
-            .finally(() => { 
-                pendingSyncSku = null; 
-                currentUser = null; 
-            });
-        }
-
-        // ----------------------------------------------------
-        // EDITOR E UPLOAD (BRILHO + SELOS)
-        // ----------------------------------------------------
-       function openPhotoEditor(sku) {
-            currentEditingId = sku;
-            const p = products.find(pr => pr.codigo == sku);
-            document.getElementById('modal-editor').style.display = 'flex';
-            
-            const cleanSku = String(p.codigo).trim();
-            const slug = `${cleanSku}.webp`;
-            
-            document.getElementById('file-name-preview').innerText = slug;
-            
-            // 1. Resetar ferramentas
-            document.getElementById('zoomRange').value = 1;
-            document.getElementById('sharpenRange').value = 0;
-            document.getElementById('brightnessRange').value = 1;
-            activeSticker = null;
-            updateStickerButtons();
-
-            // 2. Tentar carregar a imagem existente
-            if (p.url_imagem && p.url_imagem.length > 5) {
-                // Mostra carregando
-                ctx.fillStyle = "#1e293b"; 
-                ctx.fillRect(0,0, 450, 450);
-                ctx.font = "14px Inter"; 
-                ctx.fillStyle = "#94a3b8"; 
-                ctx.textAlign = "center";
-                ctx.fillText("Carregando imagem atual...", 225, 225);
-
-                const img = new Image();
-                // Importante: Permite editar imagens externas sem bloquear o Canvas (CORS)
-                img.crossOrigin = "Anonymous"; 
-                
-                // Adiciona timestamp para evitar cache e garantir que carregue a versão nova
-                const cacheBuster = p.url_imagem.includes('?') ? '&t=' + Date.now() : '?t=' + Date.now();
-                img.src = p.url_imagem + cacheBuster;
-
-                img.onload = () => {
-                    loadedImage = img;
-                    // Tenta ajustar o zoom inicial para caber na tela
-                    const scale = Math.max(450/img.width, 450/img.height);
-                    document.getElementById('zoomRange').value = scale; 
-                    drawImage();
-                };
-
-                img.onerror = () => {
-                    // Se falhar (link quebrado ou bloqueio), inicia em branco
-                    initBlankCanvas();
-                    console.log("Não foi possível carregar a imagem original (CORS ou 404).");
-                };
-
-            } else {
-                // Se não tiver imagem, inicia em branco
-                initBlankCanvas();
-            }
-        }
-
-        function initBlankCanvas() {
-            ctx.filter = 'none';
-            ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0,0, 450, 450);
-            ctx.font = "14px sans-serif"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center";
-            ctx.fillText("Cole a imagem aqui (Ctrl+V)", 225, 225);
-            loadedImage = null;
-        }
-
-        function toggleSticker(type) {
-            if(activeSticker === type) activeSticker = null;
-            else activeSticker = type;
-            updateStickerButtons();
-            drawImage();
-        }
-
-        function updateStickerButtons() {
-            document.querySelectorAll('.sticker-btn').forEach(b => b.classList.remove('active'));
-            if(activeSticker) {
-                if(activeSticker === 'offer') document.getElementById('stk-offer').classList.add('active');
-                if(activeSticker === 'best') document.getElementById('stk-best').classList.add('active');
-                if(activeSticker === 'today') document.getElementById('stk-today').classList.add('active');
-            }
-        }
-        
-        function setupEditorEvents() {
-            window.addEventListener('paste', e => {
-                if(document.getElementById('modal-editor').style.display !== 'flex') return;
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for(let item of items) { if(item.kind === 'file') { const r = new FileReader(); r.onload = ev => loadImageToCanvas(ev.target.result); r.readAsDataURL(item.getAsFile()); } }
-            });
-            document.getElementById('fileInput').addEventListener('change', function(){ if(this.files[0]) { const r = new FileReader(); r.onload = e => loadImageToCanvas(e.target.result); r.readAsDataURL(this.files[0]); } });
-            document.getElementById('zoomRange').addEventListener('input', drawImage);
-            document.getElementById('sharpenRange').addEventListener('input', drawImage);
-            document.getElementById('brightnessRange').addEventListener('input', drawImage);
-        }
-
-        function loadImageToCanvas(url) {
-            const img = new Image();
-            img.onload = () => { loadedImage = img; document.getElementById('zoomRange').value = Math.max(450/img.width, 450/img.height); drawImage(); };
-            img.src = url;
-        }
-
-        function drawImage() {
-            if(!loadedImage) return;
-            const wC = 450, hC = 450;
-            const zoom = parseFloat(document.getElementById('zoomRange').value);
-            const mix = parseFloat(document.getElementById('sharpenRange').value);
-            const bright = parseFloat(document.getElementById('brightnessRange').value);
-            
-            const w = loadedImage.width * zoom;
-            const h = loadedImage.height * zoom;
-            const tempC = document.createElement('canvas');
-            tempC.width = wC; tempC.height = hC;
-            const tCtx = tempC.getContext('2d');
-            
-            // 1. Aplica Fundo e Brilho
-            tCtx.fillStyle = "#FFF"; tCtx.fillRect(0,0,wC,hC);
-            tCtx.filter = `brightness(${bright})`;
-            tCtx.drawImage(loadedImage, (wC-w)/2, (hC-h)/2, w, h);
-            tCtx.filter = 'none';
-
-            // 2. Processamento de Pixels (Nitidez)
-            if(mix > 0) {
-                const imgData = tCtx.getImageData(0, 0, wC, hC);
-                const src = imgData.data;
-                const dstData = ctx.createImageData(wC, hC);
-                const dst = dstData.data;
-                const wK = [0, -mix, 0, -mix, 1 + (4*mix), -mix, 0, -mix, 0]; 
-                for (let y=1; y<hC-1; y++) {
-                    for (let x=1; x<wC-1; x++) {
-                        const dstOff = (y*wC + x)*4;
-                        let r=0, g=0, b=0;
-                        for (let ky=0; ky<3; ky++) {
-                            for (let kx=0; kx<3; kx++) {
-                                const srcOff = ((y+ky-1)*wC + (x+kx-1))*4;
-                                const weight = wK[ky*3 + kx];
-                                r += src[srcOff] * weight;
-                                g += src[srcOff+1] * weight;
-                                b += src[srcOff+2] * weight;
-                            }
+                    // Formatação de números (trocar ponto por vírgula) para colunas específicas do app
+                    if (['preco', 'estoque', 'pesoLiquido', 'pesoBruto', 'largura', 'altura', 'profundidade'].includes(col)) {
+                        if (val !== undefined && val !== null && val !== "") {
+                            // Se for número, formata. Se string numérica, troca ponto
+                            val = val.toString().replace('.', ',');
+                        } else {
+                            // Valores padrão se estiver vazio
+                            val = (col === 'estoque' || col === 'preco') ? "0,00" : "0,00"; 
                         }
-                        dst[dstOff] = r; dst[dstOff+1] = g; dst[dstOff+2] = b; dst[dstOff+3] = src[dstOff+3]; 
                     }
-                }
-                ctx.putImageData(dstData, 0, 0);
-            } else {
-                ctx.fillStyle = "#FFF"; ctx.fillRect(0,0,wC,hC);
-                ctx.drawImage(tempC, 0, 0);
-            }
-
-            // 3. Desenhar Selos (Stickers) - VERSÃO PRO (MAIORES E BONITOS)
-            if(activeSticker) {
-                ctx.save();
-                // Sombra projetada para destacar o selo da imagem
-                ctx.shadowColor = "rgba(0,0,0,0.5)";
-                ctx.shadowBlur = 15;
-                ctx.shadowOffsetY = 8;
-
-                if(activeSticker === 'offer') {
-                    // --- OFERTA (Bola Vermelha Grande com Borda) ---
-                    const cx = 370, cy = 90, r = 65; // Posição e Raio
                     
-                    // Gradiente Vermelho Vibrante
-                    const grad = ctx.createLinearGradient(cx-r, cy-r, cx+r, cy+r);
-                    grad.addColorStop(0, "#ef4444");
-                    grad.addColorStop(1, "#991b1b");
-                    
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
-                    ctx.fillStyle = grad;
-                    ctx.fill();
-                    
-                    // Borda Branca Grossa
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = "white";
-                    ctx.stroke();
-
-                    // Texto
-                    ctx.shadowColor = "transparent"; // Tira sombra do texto para leitura
-                    ctx.fillStyle = "white";
-                    ctx.textAlign = "center";
-                    
-                    // Leve rotação no texto para ficar dinâmico
-                    ctx.translate(cx, cy);
-                    ctx.rotate(-10 * Math.PI / 180);
-                    
-                    ctx.font = "900 26px Inter, sans-serif";
-                    ctx.fillText("OFERTA", 0, 0);
-                    
-                    ctx.font = "600 14px Inter, sans-serif";
-                    ctx.fillText("ESPECIAL", 0, 18);
-                }
-                else if(activeSticker === 'best') {
-                    // --- MELHOR PREÇO (Emblema Dourado no Rodapé) ---
-                    // Fundo Retangular Arredondado
-                    const rx = 20, ry = 360, rw = 180, rh = 70;
-                    
-                    const grad = ctx.createLinearGradient(rx, ry, rx, ry+rh);
-                    grad.addColorStop(0, "#fbbf24"); // Dourado claro
-                    grad.addColorStop(1, "#d97706"); // Dourado escuro
-                    
-                    ctx.fillStyle = grad;
-                    ctx.beginPath();
-                    // Desenha retângulo com cantos arredondados manualmente (compatibilidade)
-                    ctx.moveTo(rx + 10, ry);
-                    ctx.lineTo(rx + rw - 10, ry);
-                    ctx.quadraticCurveTo(rx + rw, ry, rx + rw, ry + 10);
-                    ctx.lineTo(rx + rw, ry + rh - 10);
-                    ctx.quadraticCurveTo(rx + rw, ry + rh, rx + rw - 10, ry + rh);
-                    ctx.lineTo(rx + 10, ry + rh);
-                    ctx.quadraticCurveTo(rx, ry + rh, rx, ry + rh - 10);
-                    ctx.lineTo(rx, ry + 10);
-                    ctx.quadraticCurveTo(rx, ry, rx + 10, ry);
-                    ctx.closePath();
-                    ctx.fill();
-                    
-                    // Borda
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = "white";
-                    ctx.stroke();
-
-                    // Texto
-                    ctx.shadowColor = "transparent";
-                    ctx.fillStyle = "white"; // Texto branco para contraste forte
-                    ctx.textAlign = "center";
-                    
-                    ctx.font = "900 22px Inter, sans-serif";
-                    ctx.fillText("MELHOR", rx + (rw/2), ry + 32);
-                    ctx.font = "900 28px Inter, sans-serif";
-                    ctx.fillText("PREÇO", rx + (rw/2), ry + 58);
-                }
-                else if(activeSticker === 'today') {
-                    // --- SÓ HOJE (Etiqueta Azul no Topo Esquerdo) ---
-                    const tx = 0, ty = 40, tw = 160, th = 60;
-                    
-                    const grad = ctx.createLinearGradient(tx, ty, tx+tw, ty);
-                    grad.addColorStop(0, "#2563eb");
-                    grad.addColorStop(1, "#1e40af");
-
-                    ctx.fillStyle = grad;
-                    ctx.beginPath();
-                    ctx.moveTo(tx, ty);
-                    ctx.lineTo(tx + tw, ty);
-                    ctx.lineTo(tx + tw - 20, ty + th); // Corte diagonal na ponta
-                    ctx.lineTo(tx, ty + th);
-                    ctx.closePath();
-                    ctx.fill();
-                    
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = "white";
-                    ctx.stroke();
-
-                    ctx.shadowColor = "transparent";
-                    ctx.fillStyle = "white";
-                    ctx.textAlign = "left";
-                    
-                    ctx.font = "900 28px Inter, sans-serif";
-                    ctx.fillText("SÓ HOJE", 15, ty + 40);
-                }
-                ctx.restore();
-            }
-
-            const k = Math.round((canvas.toDataURL("image/webp",0.8).length * 0.75) / 1024);
-            document.getElementById('file-size-preview').innerText = `~${k}kb`;
-        }
-
-        function downloadImage() {
-            if(!loadedImage) return alert("Sem imagem");
-            const link = document.createElement('a');
-            link.download = document.getElementById('file-name-preview').innerText;
-            link.href = canvas.toDataURL("image/webp", 0.8);
-            link.click();
-        }
-
-        async function uploadToGithub() {
-            if(!loadedImage) return alert("Sem imagem");
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            if(!cfg.token) return alert("Configure o Token!");
-            
-            toggleLoader(true, "Enviando para GitHub...");
-            const f = document.getElementById('file-name-preview').innerText;
-            
-            try {
-                const u = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${cfg.path}/${f}`;
-                let sha = null;
-                try { const c = await fetch(u, {headers:{"Authorization":`token ${cfg.token}`}}); if(c.ok) sha = (await c.json()).sha; } catch(e){}
-                
-                const r = await fetch(u, {
-                    method: 'PUT',
-                    headers: {"Authorization":`token ${cfg.token}`, "Content-Type":"application/json"},
-                    body: JSON.stringify({message: "Painel Upload", content: canvas.toDataURL("image/webp", 0.8).split(',')[1], sha: sha})
+                    // Se a coluna não existe no objeto (undefined), retorna vazio para manter a estrutura
+                    linha[col] = (val !== undefined && val !== null) ? val : "";
                 });
 
-                if(r.ok) {
-                    // MUDANÇA: Agora salva o caminho relativo, como no seu site
-                    const relativeUrl = `../site/img/produtos/${f}?v=${Date.now()}`;                    
-                    const p = products.find(p => p.codigo == currentEditingId);
-                    p.url_imagem = relativeUrl; 
-                    p._changed = true;
-                    p._lastChange = "Alt: Imagem (Upload)";
-                    
-                    saveData(); 
-                    closeModal('modal-editor');
-                    toggleLoader(false); 
-                    requestLogin(currentEditingId); 
-                    
-                } else throw new Error(r.status);
-            } catch(e) { toggleLoader(false); alert("Erro: "+e.message); }
-        }
-
-        // --- NOVA FUNÇÃO PARA PADRONIZAR COMO NO SITE ---
-        function restaurarLinksPadraoSite() {
-            if(!confirm("Isso vai configurar TODOS os produtos para buscar a imagem na pasta '..site/img/produtos/CODIGO.webp', igual ao seu site de vendas. \n\nIMPORTANTE: Para ver as imagens aqui no painel, você precisa ter a pasta 'img' salva junto com este arquivo.\n\nContinuar?")) return;
-
-            let count = 0;
-            products.forEach(p => {
-                const cleanSku = String(p.codigo).trim();
-                // Força o padrão local/relativo
-const newUrl = `../site/img/produtos/${cleanSku}.webp?v=${Date.now()}`;
-                p.url_imagem = newUrl;
-                p._changed = true;
-                count++;
-            });
-            
-            saveData();
-            renderGrid();
-            closeModal('modal-config');
-            alert(`${count} produtos atualizados para o padrão do site!`);
-        }
-
-        // --- UTILITÁRIOS ---
-        function loadData() { const saved = localStorage.getItem(STORAGE_KEY); if(saved) { products = JSON.parse(saved); renderGrid(); } const hist = localStorage.getItem(HISTORY_KEY); if(hist) historyLog = JSON.parse(hist); }
-        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
-
-        function renderGrid(filter = "") {
-            const grid = document.getElementById('product-grid');
-            
-            // --- CORREÇÃO DE SCROLL (SALVA POSIÇÃO) ---
-            const scrollPos = grid.scrollTop; 
-            
-            grid.innerHTML = "";
-            const term = filter.toLowerCase().trim();
-
-            const filtered = products.filter(p => {
-                const searchStr = (p.nome + p.codigo + p.gtin + p.localizacao + p.estoque).toLowerCase();
-                return searchStr.includes(term);
+                return linha;
             });
 
-            document.getElementById('total-count').innerText = filtered.length + " produtos";
-
-            filtered.forEach(p => {
-                const card = document.createElement('div');
-                card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
-                const imgSrc = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x400/1e293b/475569?text=SEM+FOTO';
-
-                card.innerHTML = `
-                    <div class="card-img-area">
-                        <img src="${imgSrc}" class="card-img" onerror="this.src='https://placehold.co/400x400/1e293b/475569?text=ERRO'">
-                        <div class="img-overlay">
-                            <button class="overlay-btn" onclick="searchGoogle('${p.nome}')"><i data-lucide="search" size="14"></i></button>
-                            <button class="overlay-btn" onclick="openPhotoEditor('${p.codigo}')"><i data-lucide="camera" size="14"></i></button>
-                            <button class="overlay-btn" onclick="window.open('${imgSrc}', '_blank')"><i data-lucide="external-link" size="14"></i></button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="card-sku">${p.codigo}</div>
-                        <div class="card-title" contenteditable="true" onblur="updateField('${p.codigo}', 'nome', this.innerText)">${p.nome}</div>
-                        
-                        <div class="card-stats">
-                            <div class="stat-box"><label class="stat-label">PREÇO</label><input type="number" class="stat-input" value="${p.preco}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
-                            <div class="stat-box"><label class="stat-label">ESTOQUE</label><input type="number" class="stat-input" value="${p.estoque}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
-                        </div>
-                        <div class="card-stats">
-                            <div class="stat-box"><label class="stat-label">LOCAL</label><input type="text" class="stat-input" value="${p.localizacao}" onchange="updateField('${p.codigo}', 'localizacao', this.value)"></div>
-                            <div class="stat-box"><label class="stat-label">EAN</label><input type="text" class="stat-input" value="${p.gtin}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
-                        </div>
-                        
-                        <div class="card-stats" style="margin-top: 8px;">
-                             <div class="stat-box" style="grid-column: span 2;">
-                                <label class="stat-label">VALIDADE</label>
-                                <input type="text" class="stat-input" value="${p.data_validade || ''}" onchange="updateField('${p.codigo}', 'data_validade', this.value)" placeholder="DD/MM/AAAA">
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn-text" onclick="openDetails('${p.codigo}')"><i data-lucide="list-plus" size="12"></i> DETALHES</button>
-                        <button class="btn-sync-mini" onclick="syncBling('${p.codigo}')"><i data-lucide="refresh-cw" size="10"></i> SYNC</button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-            
-            // --- CORREÇÃO DE SCROLL (RESTAURA POSIÇÃO) ---
-            grid.scrollTop = scrollPos;
-            
-            lucide.createIcons();
-        }
-
-        function updateField(sku, field, value) {
-            const p = products.find(x => x.codigo == sku);
-            if(p) {
-                if(['preco','estoque'].includes(field)) value = parseFloat(value) || 0;
-                p[field] = value;
-                p._changed = true;
-                p._lastChange = `Alt: ${field.toUpperCase()}`; 
-                saveData();
-                renderGrid(document.getElementById('search-input').value);
-            }
-        }
-        
-        function searchGoogle(term) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(term)}`, '_blank'); }
-
-        // ----------------------------------------------------
-        // HISTÓRICO
-        // ----------------------------------------------------
-        function addToHistory(sku, nome, success, obs) {
-            const entry = {
-                date: new Date().toLocaleString('pt-BR'),
-                user: currentUser,
-                sku: sku, name: nome, status: success, obs: obs
-            };
-            historyLog.unshift(entry);
-            if(historyLog.length > 500) historyLog.pop();
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLog));
-        }
-
-        function renderHistory() {
-            const tbody = document.getElementById('history-tbody');
-            tbody.innerHTML = '';
-            historyLog.forEach(h => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${h.date}</td>
-                    <td><b>${h.user}</b></td>
-                    <td>${h.sku}</td>
-                    <td>${h.name}</td>
-                    <td><span class="badge ${h.status ? 'success' : 'error'}">${h.obs || 'OK'}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-        function clearHistory() { 
-            if(confirm("Apagar todo o histórico local?")) { 
-                historyLog = []; 
-                localStorage.removeItem(HISTORY_KEY); 
-                renderHistory(); 
-            } 
-        }
-
-        // ----------------------------------------------------
-        // UTILITÁRIOS (COM ENTER KEY NOS DETALHES)
-        // ----------------------------------------------------
-        function openDetails(sku) {
-            currentEditingId = sku;
-            const p = products.find(pr => pr.codigo == sku);
-            const form = document.getElementById('details-form');
-            form.innerHTML = '';
-
-            form.innerHTML += `
-                <div class="form-group" style="grid-column: span 2;">
-                    <label style="color:var(--success)">URL DA IMAGEM (LINK DIRETO)</label>
-                    <input type="text" id="det-url_imagem" value="${p.url_imagem||''}" placeholder="https://..." style="border-color:var(--success);" onkeydown="if(event.key==='Enter') saveDetails()">
-                </div>
-            `;
-            
-            const ignore = ['codigo', 'nome', 'preco', 'estoque', 'localizacao', 'gtin', 'url_imagem', 'data_validade', '_changed', '_lastChange', 'situacao', 'formato'];
-            
-            Object.keys(p).sort().forEach(k => {
-                if(!ignore.includes(k)) {
-                    const label = k.replace(/_/g, ' ').toUpperCase();
-                    form.innerHTML += `<div class="form-group"><label>${label}</label><input type="text" id="det-${k}" value="${p[k]||''}" onkeydown="if(event.key==='Enter') saveDetails()"></div>`;
-                }
-            });
-
-            document.getElementById('modal-details').style.display = 'flex';
-        }
-
-        function saveDetails() {
-            const p = products.find(pr => pr.codigo == currentEditingId);
-            document.querySelectorAll('#details-form input').forEach(i => {
-                const key = i.id.replace('det-', '');
-                p[key] = i.value;
-            });
-            p._changed = true;
-            p._lastChange = "Alt: Detalhes"; 
-            saveData();
-            closeModal('modal-details');
-            renderGrid(document.getElementById('search-input').value); 
-        }
-
-        function openConfigModal() {
-            const c = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            document.getElementById('cfg-token').value = c.token||'';
-            document.getElementById('cfg-user').value = c.user||'';
-            document.getElementById('cfg-repo').value = c.repo||'';
-            document.getElementById('cfg-path').value = c.path||'';
-            document.getElementById('modal-config').style.display = 'flex';
-        }
-
-        function saveConfig() {
-            localStorage.setItem(CONFIG_KEY, JSON.stringify({
-                token: document.getElementById('cfg-token').value,
-                user: document.getElementById('cfg-user').value,
-                repo: document.getElementById('cfg-repo').value,
-                path: document.getElementById('cfg-path').value
-            }));
-            closeModal('modal-config');
-        }
-        
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
-       function exportarCSV() {
-            // Criamos uma cópia dos produtos para não estragar os dados originais do sistema
-            const dadosParaExportar = products.map(p => {
-                const copia = { ...p };
-                
-                // Se o preço existir, transformamos em string com vírgula
-                if (copia.preco !== undefined && copia.preco !== null) {
-                    copia.preco = copia.preco.toString().replace('.', ',');
-                }
-                
-                // Fazemos o mesmo para o estoque, caso queira vírgula em decimais de estoque também
-                if (copia.estoque !== undefined && copia.estoque !== null) {
-                    copia.estoque = copia.estoque.toString().replace('.', ',');
-                }
-
-                return copia;
-            });
-
-            // Geramos o CSV usando a cópia formatada
-            const csv = Papa.unparse(dadosParaExportar, {
-                quotes: true, 
+            // Geramos o CSV usando a lista de colunas forçada
+            const csv = Papa.unparse({
+                fields: colunasModelo,
+                data: dadosParaExportar
+            }, {
+                quotes: false, // Compatibilidade com arquivo exemplo (sem aspas forçadas)
                 delimiter: ";"
             });
 
@@ -1535,6 +965,477 @@ const newUrl = `../site/img/produtos/${cleanSku}.webp?v=${Date.now()}`;
             document.getElementById('loader').style.display = show ? 'flex' : 'none';
             if(msg) document.getElementById('loader-msg').innerText = msg;
         }
+    </script>
+
+    <script>
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if(saved) products = JSON.parse(saved);
+            
+            const hist = localStorage.getItem(HISTORY_KEY);
+            if(hist) historyLog = JSON.parse(hist);
+
+            const savedLogin = localStorage.getItem(LOGIN_KEY);
+            if(savedLogin) currentUser = savedLogin;
+            
+            if(!currentUser) openModal('modal-login');
+            
+            // Config
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
+            if(cfg.token) {
+                document.getElementById('cfg-token').value = cfg.token;
+                document.getElementById('cfg-user').value = cfg.user;
+                document.getElementById('cfg-repo').value = cfg.repo;
+                document.getElementById('cfg-path').value = cfg.path;
+            }
+
+            renderGrid();
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+        }
+
+        function renderGrid(filter = "") {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = "";
+            
+            let filtered = products;
+            if(filter) {
+                const term = filter.toLowerCase();
+                filtered = products.filter(p => 
+                    (p.nome||"").toLowerCase().includes(term) ||
+                    (p.codigo||"").toLowerCase().includes(term) ||
+                    (p.gtin||"").includes(term) ||
+                    (p.localizacao||"").toLowerCase().includes(term)
+                );
+            }
+            
+            document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
+
+            filtered.slice(0, 100).forEach(p => {
+                const card = document.createElement('div');
+                card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
+                
+                const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
+                
+                card.innerHTML = `
+                    <div class="card-img-area" onclick="openEditor('${p.codigo}')">
+                        <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
+                        <div class="img-overlay">
+                            <button class="overlay-btn"><i data-lucide="edit-2" size="16"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="card-sku">${p.codigo}</div>
+                        <div class="card-title" title="${p.nome}">${p.nome}</div>
+                        
+                        <div class="card-stats">
+                            <div class="stat-box">
+                                <span class="stat-label">Preço (R$)</span>
+                                <input class="stat-input" value="${formatNum(p.preco)}" 
+                                    onchange="updateProduct('${p.codigo}', 'preco', this.value)">
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">Estoque</span>
+                                <input class="stat-input" value="${formatNum(p.estoque)}" 
+                                    onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
+                            </div>
+                        </div>
+
+                        <div style="margin-top:8px;">
+                            <div class="stat-box">
+                                <span class="stat-label">Localização</span>
+                                <input class="stat-input" value="${p.localizacao||''}" 
+                                    onchange="updateProduct('${p.codigo}', 'localizacao', this.value)"
+                                    style="text-align:left;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn-text" onclick="openDetails('${p.codigo}')">
+                            <i data-lucide="list-plus" size="14"></i> DETALHES
+                        </button>
+                        ${p._changed ? 
+                            `<button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')">
+                                <i data-lucide="refresh-cw" size="12"></i> SYNC
+                            </button>` : 
+                            `<i data-lucide="check-circle" size="16" color="var(--success)"></i>`
+                        }
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function updateProduct(sku, field, value) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+
+            let finalVal = value;
+            if(field === 'preco' || field === 'estoque') {
+                finalVal = parseFloat(value.replace(',','.')) || 0;
+            }
+
+            // Log history
+            if(p[field] != finalVal) {
+                addToHistory(sku, p.nome, `Alterou ${field}: ${p[field]} -> ${finalVal}`);
+                p[field] = finalVal;
+                p._changed = true;
+                p._lastChange = new Date().toLocaleString();
+                saveData();
+                renderGrid(document.getElementById('search-input').value);
+            }
+        }
+
+        function formatNum(n) {
+            return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
+        }
+
+        // --- SISTEMA DE LOGIN ---
+        function attemptLogin() {
+            const pass = document.getElementById('login-pass').value;
+            if(USERS[pass]) {
+                currentUser = USERS[pass];
+                if(document.getElementById('save-login').checked) {
+                    localStorage.setItem(LOGIN_KEY, currentUser);
+                }
+                closeModal('modal-login');
+                alert(`Bem-vindo, ${currentUser}!`);
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        }
+
+        // --- MODAIS ---
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+
+        function openDetails(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            currentEditingId = sku;
+            
+            const form = document.getElementById('details-form');
+            form.innerHTML = '';
+            
+            const fields = [
+                {k:'nome', l:'Nome Completo'}, {k:'gtin', l:'EAN / GTIN'},
+                {k:'ncm', l:'NCM'}, {k:'cest', l:'CEST'},
+                {k:'pesoLiquido', l:'Peso Líq (kg)'}, {k:'pesoBruto', l:'Peso Bruto (kg)'},
+                {k:'largura', l:'Largura (cm)'}, {k:'altura', l:'Altura (cm)'},
+                {k:'profundidade', l:'Profundidade (cm)'}, {k:'unidade', l:'Unidade'},
+                {k:'observacoes', l:'Observações (Validade/Lote)'}
+            ];
+
+            fields.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'form-group';
+                if(f.k==='nome' || f.k==='observacoes') div.style.gridColumn = "span 2";
+                
+                div.innerHTML = `
+                    <label>${f.l}</label>
+                    <input type="text" value="${p[f.k]||''}" id="det-${f.k}">
+                `;
+                form.appendChild(div);
+            });
+            
+            openModal('modal-details');
+        }
+
+        function saveDetails() {
+            const p = products.find(x => x.codigo === currentEditingId);
+            if(!p) return;
+            
+            const fields = ['nome','gtin','ncm','cest','pesoLiquido','pesoBruto','largura','altura','profundidade','unidade','observacoes'];
+            let changed = false;
+
+            fields.forEach(k => {
+                const val = document.getElementById('det-'+k).value;
+                let final = val;
+                if(['pesoLiquido','pesoBruto','largura','altura','profundidade'].includes(k)) final = parseFloat(val.replace(',','.'))||0;
+                
+                if(p[k] != final) {
+                    addToHistory(p.codigo, p.nome, `Alterou ${k}`);
+                    p[k] = final;
+                    changed = true;
+                }
+            });
+
+            if(changed) { p._changed = true; saveData(); renderGrid(); }
+            closeModal('modal-details');
+        }
+
+        // --- CONFIG ---
+        function openConfigModal() {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
+            document.getElementById('cfg-token').value = cfg.token||'';
+            document.getElementById('cfg-user').value = cfg.user||'';
+            document.getElementById('cfg-repo').value = cfg.repo||'';
+            document.getElementById('cfg-path').value = cfg.path||'';
+            openModal('modal-config');
+        }
+
+        function saveConfig() {
+            const cfg = {
+                token: document.getElementById('cfg-token').value,
+                user: document.getElementById('cfg-user').value,
+                repo: document.getElementById('cfg-repo').value,
+                path: document.getElementById('cfg-path').value
+            };
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+            closeModal('modal-config');
+            alert("Configurações Salvas!");
+        }
+
+        function restaurarLinksPadraoSite() {
+            if(!confirm("Isso mudará TODAS as imagens para 'i/..site/img/produtos/CODIGO.webp'. Continuar?")) return;
+            
+            let count = 0;
+            products.forEach(p => {
+                const novoLink = `../site/img/produtos/${p.codigo}.webp?v=${Date.now()}`;
+                if(p.url_imagem !== novoLink) {
+                    p.url_imagem = novoLink;
+                    p._changed = true;
+                    count++;
+                }
+            });
+            saveData();
+            renderGrid();
+            alert(`${count} produtos atualizados para o padrão do site!`);
+        }
+
+        // --- EDITOR ---
+        function openEditor(sku) {
+            const p = products.find(x => x.codigo === sku);
+            currentEditingId = sku;
+            document.getElementById('file-name-preview').innerText = sku + ".webp";
+            
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.src = p.url_imagem || "";
+            img.onload = () => {
+                loadedImage = img;
+                drawCanvas();
+                openModal('modal-editor');
+            };
+            img.onerror = () => {
+                loadedImage = null;
+                drawCanvas(); // limpa
+                openModal('modal-editor');
+            };
+        }
+
+        function setupEditorEvents() {
+            ['zoomRange','sharpenRange','brightnessRange'].forEach(id => {
+                document.getElementById(id).addEventListener('input', drawCanvas);
+            });
+            
+            document.getElementById('fileInput').addEventListener('change', (e) => {
+                if(e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        const img = new Image();
+                        img.onload = () => { loadedImage = img; drawCanvas(); };
+                        img.src = evt.target.result;
+                        
+                        document.getElementById('file-size-preview').innerText = 
+                            Math.round(e.target.files[0].size/1024) + "kb";
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+        }
+
+        function toggleSticker(type) {
+            if(activeSticker === type) activeSticker = null;
+            else activeSticker = type;
+            
+            document.querySelectorAll('.sticker-btn').forEach(b => b.classList.remove('active'));
+            if(activeSticker) document.getElementById('stk-'+type).classList.add('active');
+            drawCanvas();
+        }
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if(loadedImage) {
+                const zoom = parseFloat(document.getElementById('zoomRange').value);
+                const bright = parseFloat(document.getElementById('brightnessRange').value);
+                
+                // Filtro Brilho
+                ctx.filter = `brightness(${bright})`;
+                
+                // Desenha Imagem Centralizada com Zoom
+                const w = loadedImage.width * zoom;
+                const h = loadedImage.height * zoom;
+                const x = (canvas.width - w) / 2;
+                const y = (canvas.height - h) / 2;
+                
+                ctx.drawImage(loadedImage, x, y, w, h);
+                ctx.filter = 'none'; // reset
+            } else {
+                ctx.font = "20px Inter";
+                ctx.fillStyle = "#94a3b8";
+                ctx.textAlign = "center";
+                ctx.fillText("Sem imagem", canvas.width/2, canvas.height/2);
+            }
+
+            // Stickers
+            if(activeSticker) {
+                ctx.font = "bold 40px Inter";
+                ctx.fillStyle = "#ef4444";
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 4;
+                ctx.textAlign = "right";
+                
+                let text = "";
+                if(activeSticker === 'offer') { text = "OFERTA"; ctx.fillStyle = "#ef4444"; }
+                if(activeSticker === 'best') { text = "MELHOR PREÇO"; ctx.fillStyle = "#f59e0b"; }
+                if(activeSticker === 'today') { text = "SÓ HOJE"; ctx.fillStyle = "#3b82f6"; }
+
+                ctx.strokeText(text, 430, 60);
+                ctx.fillText(text, 430, 60);
+            }
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = currentEditingId + '.webp';
+            link.href = canvas.toDataURL('image/webp', 0.9);
+            link.click();
+        }
+
+        async function uploadToGithub() {
+            if(!currentEditingId) return;
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
+
+            toggleLoader(true, "Enviando pro GitHub...");
+            
+            const base64 = canvas.toDataURL('image/webp', 0.9).split(',')[1];
+            const fileName = currentEditingId + ".webp";
+            const path = `${cfg.path}/${fileName}`.replace('//','/');
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+
+            try {
+                // 1. Check if exists (to get SHA)
+                let sha = null;
+                try {
+                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                    if(check.ok) { const json = await check.json(); sha = json.sha; }
+                } catch(e) {}
+
+                // 2. Upload
+                const body = {
+                    message: `Alt: ${currentEditingId} via Painel`,
+                    content: base64
+                };
+                if(sha) body.sha = sha;
+
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        "Authorization": `token ${cfg.token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if(!res.ok) throw new Error(await res.text());
+
+                // 3. Update Product Link
+                const p = products.find(x => x.codigo === currentEditingId);
+                // Gera link raw do github ou usa padrao relativo se for mesmo repo do site
+                // Aqui vamos forçar o link relativo padrão com timestamp
+                p.url_imagem = `../site/img/produtos/${fileName}?v=${Date.now()}`;
+                
+                // Add Log
+                const logMsg = `[Alt: ${currentUser} em ${new Date().toLocaleString()} - Alt: Imagem (Upload)]`;
+                p.observacoes = (p.observacoes || "") + " | " + logMsg;
+                
+                p._changed = true;
+                saveData();
+                renderGrid();
+                closeModal('modal-editor');
+                alert("Sucesso! Imagem atualizada.");
+
+            } catch(err) {
+                alert("Erro GitHub: " + err.message);
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        // --- SYNC ---
+        function syncSingle(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            
+            if(!confirm(`Confirmar envio de ${p.nome}?`)) return;
+            
+            const payload = [p]; // Array com 1 item
+            sendToWebhook(payload, () => {
+                p._changed = false;
+                saveData();
+                renderGrid();
+            });
+        }
+
+        function sendToWebhook(data, callback) {
+            toggleLoader(true, "Enviando...");
+            fetch(MAKE_WEBHOOK_UPDATE, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).then(r => {
+                if(r.ok) {
+                    callback();
+                    alert("Sincronizado!");
+                } else {
+                    alert("Erro ao enviar.");
+                }
+            }).catch(e => alert("Erro: " + e))
+            .finally(() => toggleLoader(false));
+        }
+
+        // --- HISTORY ---
+        function addToHistory(sku, name, action) {
+            if(!currentUser) return;
+            const log = {
+                date: new Date().toLocaleString(),
+                user: currentUser,
+                sku: sku,
+                name: name,
+                action: action
+            };
+            historyLog.unshift(log);
+            if(historyLog.length > 200) historyLog.pop();
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLog));
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('history-tbody');
+            tbody.innerHTML = historyLog.map(h => `
+                <tr>
+                    <td>${h.date}</td>
+                    <td>${h.user}</td>
+                    <td style="font-weight:bold; color:var(--accent)">${h.sku}</td>
+                    <td>${h.name}</td>
+                    <td>${h.action}</td>
+                </tr>
+            `).join('');
+        }
+
+        function clearHistory() {
+            if(confirm("Apagar todo o histórico?")) {
+                historyLog = [];
+                localStorage.setItem(HISTORY_KEY, '[]');
+                renderHistory();
+            }
+        }
+
     </script>
 </body>
 </html>
