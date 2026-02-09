@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v34 (Exportação Bling Perfeita)</title>
+    <title>Sucedoan Painel - v35 (Dinâmico e Full Edit)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -21,6 +21,7 @@
             --warning: #f59e0b;
             --danger: #ef4444;
             --border: #334155;
+            --input-bg: #0f172a;
         }
 
         * { box-sizing: border-box; }
@@ -33,1437 +34,763 @@
             display: flex;
             flex-direction: column;
             color: var(--text-primary);
-            overflow: hidden;
+            overflow: hidden; /* Fixa a barra lateral e o header */
         }
 
-        /* --- 2. CABEÇALHO (HEADER) --- */
+        /* --- 2. LAYOUT --- */
         header {
-            background: #020617;
             height: 60px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
-            padding: 0 24px;
-            border-bottom: 1px solid var(--border);
-            gap: 15px;
+            justify-content: space-between;
+            padding: 0 20px;
             flex-shrink: 0;
         }
 
-        .brand {
-            font-weight: 900;
-            font-size: 18px;
-            color: white;
-            margin-right: auto;
-            letter-spacing: -0.5px;
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
         }
-        .brand span { color: var(--accent); }
 
-        .nav-btn {
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: #cbd5e1;
+        /* Sidebar Filtros */
+        aside {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        /* Área de Conteúdo (Cards) */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Grid de Cards */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding-bottom: 80px;
+        }
+
+        /* --- 3. COMPONENTES --- */
+        
+        /* Botões */
+        .btn {
             padding: 8px 16px;
             border-radius: 6px;
+            border: none;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            font-size: 12px;
+            transition: opacity 0.2s;
+            font-size: 0.9rem;
         }
+        .btn:hover { opacity: 0.9; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
 
-        .nav-btn:hover, .nav-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .nav-btn.config {
-            color: var(--warning);
-            border-color: rgba(245, 158, 11, 0.3);
-        }
-
-        /* --- 3. ÁREAS DE VISUALIZAÇÃO (ABAS) --- */
-        .view-section {
-            display: none;
-            flex-grow: 1;
-            overflow: hidden;
-            flex-direction: column;
-        }
-        .view-section.active {
-            display: flex;
-        }
-
-        /* --- 4. BARRA DE FERRAMENTAS --- */
-        .toolbar {
-            padding: 12px 24px;
-            display: flex;
-            gap: 12px;
-            background: #0f172a;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-            align-items: center;
-        }
-
-        .search-container {
-            flex-grow: 1;
-            position: relative;
-        }
-
-        .search-input {
+        /* Inputs */
+        input[type="text"], input[type="file"], select, textarea {
             width: 100%;
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: white;
-            padding: 10px 10px 10px 36px;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
+            padding: 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-family: inherit;
         }
-        .search-input:focus { border-color: var(--accent); }
-
-        .search-icon {
-            position: absolute;
-            left: 10px;
-            top: 10px;
-            color: #64748b;
-            width: 16px;
+        
+        input[type="file"] {
+            padding: 6px;
+            cursor: pointer;
         }
 
-        #total-count {
-            font-size: 11px;
-            color: #94a3b8;
-            font-weight: bold;
-            min-width: 80px;
-            text-align: right;
-        }
-
-        /* --- 5. GRID DE PRODUTOS --- */
-        .product-grid {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 16px;
-            align-content: start;
-        }
-
+        /* --- 4. CARD DO PRODUTO --- */
         .card {
             background: var(--bg-card);
-            border-radius: 8px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             position: relative;
-            border: 1px solid var(--border);
             transition: transform 0.2s;
-            min-height: 420px;
         }
+        .card:hover { transform: translateY(-2px); border-color: var(--accent); }
 
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: var(--accent);
-            z-index: 10;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
-        }
-
-        .card.status-synced { border-top: 3px solid var(--success); }
-        .card.status-changed { border-top: 3px solid var(--warning); }
-
-        /* Imagem do Card */
         .card-img-area {
-            height: 160px;
+            height: 200px;
             background: #000;
             position: relative;
             display: flex;
-            justify-content: center;
             align-items: center;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .card-img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: white;
-        }
-
-        .img-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            opacity: 0;
-            display: flex;
             justify-content: center;
-            align-items: center;
-            gap: 8px;
-            transition: 0.2s;
-            backdrop-filter: blur(2px);
         }
-        .card-img-area:hover .img-overlay { opacity: 1; }
-
-        .overlay-btn {
-            background: white;
-            color: #0f172a;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-            transition: 0.2s;
-        }
-        .overlay-btn:hover {
-            transform: scale(1.1);
-            background: var(--accent);
-            color: white;
-        }
-
-        /* Corpo do Card */
-        .card-body {
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex-grow: 1;
-        }
-
-        .card-sku {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .card-title-input {
-            width: 100%;
-            background: transparent;
-            border: 1px solid transparent;
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            resize: none;
-            overflow: hidden;
-            min-height: 40px;
-            line-height: 1.3;
-            border-radius: 4px;
-            padding: 2px;
-        }
-        .card-title-input:focus {
-            background: #0f172a;
-            border-color: var(--accent);
-            outline: none;
-        }
-
-        .card-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: auto;
-            padding-top: 8px;
-        }
-
-        .stat-box { display: flex; flex-direction: column; }
         
-        .stat-label {
-            font-size: 9px;
-            color: var(--accent);
-            margin-bottom: 3px;
-            font-weight: bold;
-            text-transform: uppercase;
+        .card-img-area img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
         }
 
-        .stat-input {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            color: white;
-            background: #0f172a;
-            text-align: center;
-        }
-        .stat-input:focus { border-color: var(--accent); outline: none; }
-
-        /* Rodapé do Card */
-        .card-footer {
-            padding: 8px 12px;
-            background: #0f172a;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .btn-text {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-text:hover { color: white; }
-
-        .btn-sync-mini {
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        /* --- 6. TABELA DE HISTÓRICO --- */
-        .history-container {
-            padding: 20px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .history-table th {
-            text-align: left;
-            padding: 12px;
-            background: #020617;
-            border-bottom: 2px solid var(--border);
-            color: var(--accent);
-            text-transform: uppercase;
-            font-size: 11px;
-            position: sticky;
-            top: 0;
-        }
-
-        .history-table td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            color: #cbd5e1;
-        }
-        .history-table tr:hover { background: #1e293b; }
-
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        .badge.success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .badge.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-
-        /* --- 7. MODAIS --- */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
+        /* ETIQUETAS DE IMAGEM (AJUSTADO: MAIOR E MAIS BONITA) */
+        .image-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
             background: rgba(0,0,0,0.85);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
             backdrop-filter: blur(4px);
         }
 
-        .modal-card {
-            background: #1e293b;
-            padding: 0;
-            border-radius: 12px;
-            width: 600px;
-            max-width: 95%;
-            max-height: 90vh;
+        .card-body {
+            padding: 15px;
+            flex: 1;
             display: flex;
             flex-direction: column;
-            border: 1px solid var(--border);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            gap: 8px;
+        }
+
+        .card-sku {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1rem;
+            line-height: 1.4;
+            margin: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
             overflow: hidden;
         }
-        .modal-card.login { width: 350px; }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .price { font-size: 1.1rem; font-weight: bold; color: var(--success); }
+        .stock { font-size: 0.85rem; color: var(--text-secondary); }
+
+        /* --- 5. MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: var(--bg-card);
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
 
         .modal-header {
-            padding: 12px 16px;
-            background: #020617;
+            padding: 20px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
         }
+        .modal-header h2 { margin: 0; font-size: 1.25rem; }
 
         .modal-body {
-            padding: 16px;
+            padding: 20px;
             overflow-y: auto;
-            color: #cbd5e1;
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: #64748b;
-            cursor: pointer;
-        }
-
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
-        .form-group label {
-            display: block;
-            font-size: 10px;
-            color: var(--accent);
-            margin-bottom: 4px;
-            text-transform: uppercase;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            background: #0f172a;
-            border: 1px solid var(--border);
-            padding: 8px;
-            border-radius: 4px;
-            color: white;
-            font-size: 12px;
-        }
-
-        .btn-full {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            background: var(--accent);
-            color: white;
-            font-size: 13px;
-        }
-        
-        .btn-danger {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--danger);
-            background: rgba(239, 68, 68, 0.1);
-            color: var(--danger);
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            font-size: 12px;
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            align-items: center;
-        }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
-        
-        /* Checkbox Customizado */
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            margin-top: 10px;
-            justify-content: center;
-            color: #94a3b8;
-        }
-        .checkbox-wrapper input { accent-color: var(--accent); }
-
-        /* --- 8. EDITOR DE IMAGEM --- */
-        canvas {
-            background: #fff;
-            max-width: 100%;
-            border: 1px solid var(--border);
-            margin: 0 auto;
-            display: block;
-        }
-
-        .editor-tools {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr; /* Duas colunas para os campos */
             gap: 15px;
-            margin-top: 15px;
-            background: #0f172a;
-            padding: 10px;
-            border-radius: 6px;
         }
-        
-        .sticker-tools {
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
             display: flex;
+            justify-content: flex-end;
             gap: 10px;
-            margin-top: 10px;
-            justify-content: space-between;
         }
 
-        .sticker-btn {
-            flex: 1;
-            padding: 6px;
-            border: 1px solid var(--border);
-            background: #1e293b;
-            color: #cbd5e1;
-            border-radius: 4px;
-            font-size: 10px;
-            cursor: pointer;
-            text-align: center;
-        }
-        .sticker-btn:hover { background: #334155; }
-        .sticker-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-        .tool-group label {
+        /* Estilo para campos no modal */
+        .form-group {
             display: flex;
-            justify-content: space-between;
-            font-size: 10px;
-            color: #94a3b8;
-            margin-bottom: 4px;
-        }
-
-        input[type=range] {
-            width: 100%;
-            accent-color: var(--accent);
-            height: 4px;
-        }
-
-        .file-info {
-            background: #020617;
-            padding: 8px;
-            border-radius: 4px;
-            margin-top: 10px;
-            font-size: 11px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px dashed var(--border);
-        }
-
-        .action-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 15px;
-        }
-
-        .btn-act {
-            flex: 1;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: #0f172a;
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-act:hover { background: #1e293b; border-color: #64748b; }
-        .btn-act.primary { background: var(--accent); border: none; }
-
-        /* --- 9. LOADER --- */
-        #loader {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 3000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            color: white;
             flex-direction: column;
+            gap: 5px;
+        }
+        .form-group label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .image-preview-large {
+            width: 100%;
+            height: 250px;
+            border: 2px dashed var(--border);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            background: #000;
+            overflow: hidden;
+            position: relative;
+        }
+        .image-preview-large img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .paste-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            pointer-events: none;
+        }
+
+        /* --- 6. LOADER --- */
+        .loader {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: var(--bg-body);
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             gap: 15px;
         }
-
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #334155;
+            width: 40px; height: 40px;
+            border: 4px solid var(--border);
             border-top-color: var(--accent);
             border-radius: 50%;
-            animation: spin 1s infinite linear;
+            animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- HISTÓRICO FLUTUANTE --- */
+        .history-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            max-height: 300px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            z-index: 50;
+            transition: transform 0.3s ease;
+            transform: translateY(110%); /* Escondido por padrão */
+        }
+        .history-panel.open { transform: translateY(0); }
+        
+        .history-header {
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.8rem;
+        }
+        .history-item {
+            padding: 8px 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        .history-item:last-child { border-bottom: none; }
+        
+        .history-toggle-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 51;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
     </style>
 </head>
 <body>
 
-    <script>
-        // ==========================================
-        // 1. CONFIGURAÇÕES E DADOS GERAIS
-        // ==========================================
-        const USERS = {
-            "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL",
-            "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
-        };
-
-        const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
-        const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
-        
-        const STORAGE_KEY = 'sucedoan_data_v26';
-        const CONFIG_KEY = 'sucedoan_config';
-        const HISTORY_KEY = 'sucedoan_history';
-        const LOGIN_KEY = 'sucedoan_saved_login'; 
-    </script>
+    <div id="loader" class="loader" style="display:none;">
+        <div class="spinner"></div>
+        <div id="loader-msg">Processando...</div>
+    </div>
 
     <header>
-        <div class="brand">SUCEDOAN <span>PRO</span></div>
-        <button class="nav-btn active" onclick="showSection('products', this)">
-            <i data-lucide="package" size="14"></i> PRODUTOS
-        </button>
-        <button class="nav-btn" onclick="showSection('history', this)">
-            <i data-lucide="scroll-text" size="14"></i> HISTÓRICO
-        </button>
-        <div style="flex-grow:1"></div>
-        <button class="nav-btn config" onclick="openConfigModal()">
-            <i data-lucide="settings" size="14"></i>
-        </button>
+        <div style="display:flex; align-items:center; gap:10px;">
+            <i data-lucide="box" color="var(--accent)"></i>
+            <h1 style="font-size:1.2rem; margin:0;">Painel de Produtos</h1>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-ghost" onclick="document.getElementById('fileInput').click()">
+                <i data-lucide="upload"></i> Importar CSV
+            </button>
+            <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="handleFileSelect(event)">
+            
+            <button class="btn btn-success" onclick="exportCSV()">
+                <i data-lucide="download"></i> Exportar CSV
+            </button>
+        </div>
     </header>
 
-    <div id="section-products" class="view-section active">
-        <div class="toolbar">
-            <button class="nav-btn primary" onclick="importarBling()">
-                <i data-lucide="cloud-download" size="14"></i> BAIXAR BLING
-            </button>
+    <div class="main-container">
+        <aside>
+            <h3 style="font-size:0.9rem; color:var(--text-secondary); margin-bottom:10px;">FILTROS</h3>
             
-            <input type="file" id="csv-file" accept=".csv" style="display:none">
-            <button class="nav-btn" onclick="document.getElementById('csv-file').click()">
-                <i data-lucide="file-spreadsheet" size="14"></i> IMPORTAR CSV
-            </button>
+            <input type="text" id="search" placeholder="Buscar por nome ou SKU..." onkeyup="filterProducts()">
             
-            <div class="search-container" style="margin-left: 15px;">
-                <i data-lucide="search" class="search-icon"></i>
-                <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
+            <label style="font-size:0.85rem; color:var(--text-secondary);">Filtrar por Status</label>
+            <select id="statusFilter" onchange="filterProducts()">
+                <option value="todos">Todos</option>
+                <option value="sem_imagem">Sem Imagem</option>
+                <option value="com_imagem">Com Imagem</option>
+            </select>
+
+            <div style="margin-top:auto; padding-top:20px; border-top:1px solid var(--border)">
+                <div style="font-size:0.8rem; color:var(--text-secondary);">
+                    Total: <strong id="totalCount" style="color:var(--text-primary)">0</strong>
+                </div>
             </div>
-            
-            <button class="nav-btn" onclick="exportarCSV()">
-                <i data-lucide="download" size="14"></i> Exportar
-            </button>
-            <div id="total-count">0</div>
-        </div>
-        
-        <div class="product-grid" id="product-grid"></div>
+        </aside>
+
+        <main id="products-grid" class="grid">
+            <div style="grid-column: 1/-1; text-align:center; padding:50px; color:var(--text-secondary);">
+                Importe um arquivo CSV para começar.
+            </div>
+        </main>
     </div>
 
-    <div id="section-history" class="view-section">
-        <div class="toolbar">
-            <h3 style="margin:0; font-size:14px; color:white;">Histórico de Alterações</h3>
-            <button class="nav-btn" onclick="clearHistory()">
-                <i data-lucide="trash-2" size="14"></i> Limpar
-            </button>
-        </div>
-        <div class="history-container">
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th width="150">DATA / HORA</th>
-                        <th width="120">USUÁRIO</th>
-                        <th width="100">SKU</th>
-                        <th>PRODUTO</th>
-                        <th>AÇÃO / DETALHE</th>
-                    </tr>
-                </thead>
-                <tbody id="history-tbody">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-
-    <div id="modal-login" class="modal-overlay">
-        <div class="modal-card login">
+    <div id="editModal" class="modal-overlay">
+        <div class="modal">
             <div class="modal-header">
-                <span>AUTENTICAÇÃO</span>
-                <button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button>
+                <h2 id="modalTitle">Detalhes do Produto</h2>
+                <button class="btn btn-ghost" onclick="closeModal()">X</button>
             </div>
-            <div class="modal-body">
-                <div style="text-align:center; margin-bottom:15px; color: var(--warning);">
-                    <i data-lucide="lock" size="32"></i>
-                    <p style="font-size:12px; margin-top:5px;">Digite sua senha pessoal</p>
-                </div>
-                <div class="form-group">
-                    <label>Senha de Acesso</label>
-                    <input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;" onkeydown="if(event.key==='Enter') attemptLogin()">
-                </div>
-                
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="save-login">
-                    <label for="save-login">Salvar senha neste dispositivo</label>
+            
+            <div class="modal-body" id="modalFormBody">
                 </div>
 
-                <button class="btn-full" onclick="attemptLogin()">CONFIRMAR</button>
-                <div id="login-error" style="color:var(--danger); font-size:11px; text-align:center; margin-top:10px; display:none;">Senha incorreta!</div>
+            <div class="modal-footer">
+                <button class="btn btn-danger" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-success" onclick="saveProduct()">Salvar Alterações</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-editor" class="modal-overlay">
-        <div class="modal-card" style="width:450px;">
-            <div class="modal-header">
-                <span>Editor de Imagem</span>
-                <button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <canvas id="imageCanvas" width="450" height="450"></canvas>
-                
-                <div class="file-info">
-                    <span id="file-name-preview" style="color:var(--accent)">img.webp</span>
-                    <span id="file-size-preview">0kb</span>
-                </div>
+    <button class="btn btn-primary history-toggle-btn" onclick="toggleHistory()">
+        <i data-lucide="history"></i>
+    </button>
 
-                <div class="sticker-tools">
-                    <div class="sticker-btn" id="stk-offer" onclick="toggleSticker('offer')">OFERTA</div>
-                    <div class="sticker-btn" id="stk-best" onclick="toggleSticker('best')">MELHOR PREÇO</div>
-                    <div class="sticker-btn" id="stk-today" onclick="toggleSticker('today')">SÓ HOJE</div>
-                </div>
-
-                <div class="editor-tools">
-                    <div class="tool-group">
-                        <label><span>Zoom</span></label>
-                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
-                    </div>
-                    <div class="tool-group">
-                        <label><span>Nitidez</span></label>
-                        <input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0">
-                    </div>
-                    <div class="tool-group" style="grid-column: span 2;">
-                        <label><span>Brilho</span></label>
-                        <input type="range" id="brightnessRange" min="0" max="2" step="0.1" value="1">
-                    </div>
-                </div>
-
-                <div class="action-row">
-                    <button class="btn-act" onclick="document.getElementById('fileInput').click()">PC</button>
-                    <input type="file" id="fileInput" style="display:none" accept="image/*">
-                    
-                    <button class="btn-act" onclick="downloadImage()">BAIXAR</button>
-                    <button class="btn-act primary" style="flex:2" onclick="uploadToGithub()">GITHUB & SYNC</button>
-                </div>
-            </div>
+    <div id="historyPanel" class="history-panel">
+        <div class="history-header" onclick="toggleHistory()">
+            Histórico de Alterações
+            <i data-lucide="chevron-down"></i>
         </div>
-    </div>
-
-    <div id="modal-details" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header"><span>Detalhes Técnicos</span><button class="close-btn" onclick="saveDetails()"><i data-lucide="check"></i></button></div>
-            <div class="modal-body">
-                <div class="form-grid" id="details-form"></div>
-                <button class="btn-full" onclick="saveDetails()">SALVAR</button>
+        <div id="historyList" class="history-list">
             </div>
-        </div>
+        <button onclick="clearHistory()" style="width:100%; border:none; background:var(--bg-card); color:var(--danger); padding:10px; cursor:pointer; border-top:1px solid var(--border);">Limpar Histórico</button>
     </div>
-
-    <div id="modal-config" class="modal-overlay">
-        <div class="modal-card" style="width:400px">
-            <div class="modal-header"><span>Configuração</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x"></i></button></div>
-            <div class="modal-body">
-                <div class="form-group"><label>Token GitHub</label><input type="password" id="cfg-token" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                <div class="form-group"><label>Usuário GitHub</label><input type="text" id="cfg-user" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                <button class="btn-full" onclick="saveConfig()">SALVAR</button>
-                
-                <hr style="margin:20px 0; border:0; border-top:1px solid #334155;">
-                <button class="btn-danger" onclick="restaurarLinksPadraoSite()">
-                    <i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE
-                </button>
-                <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">
-                    Força o uso de "i/..site/img/produtos/CODIGO.webp" em tudo.
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
 
     <script>
-        // ==========================================
-        // 2. LÓGICA DO SISTEMA (JAVASCRIPT)
-        // ==========================================
-        let products = [];
-        let historyLog = [];
-        let currentEditingId = null;
-        let pendingSyncSku = null;
-        let currentUser = null;
+        // --- ESTADO DA APLICAÇÃO ---
+        let allProducts = []; // Armazena os objetos originais completos
+        let currentEditingIndex = null;
+        const HISTORY_KEY = 'sucedoan_history_v35';
+        let historyLog = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
 
-        // Variáveis do Editor
-        const canvas = document.getElementById('imageCanvas');
-        const ctx = canvas.getContext('2d');
-        let loadedImage = null;
-        let activeSticker = null; 
+        // --- INICIALIZAÇÃO ---
+        lucide.createIcons();
+        renderHistory();
 
-        window.onload = function() {
-            lucide.createIcons();
-            loadData();
-            setupEditorEvents();
-            document.getElementById('search-input').addEventListener('input', (e) => renderGrid(e.target.value));
-        };
+        // --- 1. IMPORTAÇÃO CSV (DINÂMICA) ---
+        function handleFileSelect(evt) {
+            const file = evt.target.files[0];
+            if (!file) return;
 
-        function showSection(id, btn) {
-            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
-            document.getElementById('section-' + id).classList.add('active');
-            
-            if(btn) {
-                document.querySelectorAll('header .nav-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            }
-            if(id === 'history') renderHistory();
-        }
+            toggleLoader(true, "Lendo arquivo...");
 
-        // ----------------------------------------------------
-        // IMPORTAÇÃO CSV (AGORA MANTÉM DADOS EXTRAS)
-        // ----------------------------------------------------
-        document.getElementById('csv-file').addEventListener('change', function(e) {
-            if(!e.target.files[0]) return;
-            toggleLoader(true, "Lendo CSV...");
-            
-            Papa.parse(e.target.files[0], {
+            Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
-                encoding: "ISO-8859-1",
-                delimiter: ";", 
-                transformHeader: h => h.replace(/"/g, '').trim(),
-                complete: (results) => {
-                    const novos = results.data.map(d => {
-                        // Função auxiliar para mapear
-                        const getVal = (keys) => {
-                            const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk)));
-                            return f ? d[f] : "";
-                        };
-                        const getNum = (keys) => {
-                            const v = getVal(keys);
-                            return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0;
-                        };
-
-                        // 1. Criamos a Base de Trabalho (Campos do App)
-                        const base = {
-                            codigo: getVal(['codigo','sku']) || getVal(['c_digo']),
-                            nome: getVal(['descricao','nome','produto']) || getVal(['descri__o']),
-                            preco: getNum(['preco','venda','pre_o']),
-                            estoque: getNum(['estoque']),
-                            localizacao: getVal(['localizacao','local','localiza__o']),
-                            gtin: getVal(['gtin','ean','gtin_ean']),
-                            url_imagem: getVal(['url','imagem']),
-                            ncm: getVal(['ncm']),
-                            cest: getVal(['cest']),
-                            unidade: getVal(['unidade'])||'UN',
-                            pesoLiquido: getNum(['peso liq','peso_l_quido']),
-                            pesoBruto: getNum(['peso bru','peso_bruto']),
-                            largura: getNum(['largura']),
-                            altura: getNum(['altura']),
-                            profundidade: getNum(['profundidade']),
-                            origem: getVal(['origem']),
-                            observacoes: getVal(['observacoes','obs','observa__es']),
-                            situacao: 'A',
-                            formato: 'S',
-                            _changed: true,
-                            _lastChange: "Importação CSV"
-                        };
-
-                        // 2. FUNDAMENTAL: Copia TUDO o que veio no CSV para o objeto
-                        // Isso garante que colunas do Bling que não usamos no painel sejam preservadas
-                        Object.keys(d).forEach(k => {
-                            // Se a chave ainda não existe no objeto 'base', adicionamos
-                            if(base[k] === undefined) {
-                                base[k] = d[k];
-                            }
-                        });
-
-                        return base;
-                    });
-
-                    if(novos.length > 0) {
-                        products = novos;
-                        saveData();
-                        renderGrid();
+                encoding: "ISO-8859-1", // Ajuste comum para PT-BR, mas pode ser UTF-8
+                transformHeader: function(h) {
+                    return h.trim(); // Remove espaços extras dos cabeçalhos
+                },
+                transform: function(v, header) {
+                    // LIMPEZA CRÍTICA: Se for código, removemos tabs e espaços para evitar problemas
+                    if(header === "Código" || header === "Codigo") {
+                        return v.trim();
                     }
+                    return v;
+                },
+                complete: function(results) {
+                    allProducts = results.data;
+                    console.log("Colunas importadas:", results.meta.fields);
+                    renderCards();
+                    toggleLoader(false);
+                    addToHistory('Sistema', 'Importação', `Importou ${allProducts.length} produtos.`);
+                },
+                error: function(err) {
+                    alert("Erro ao ler CSV: " + err);
                     toggleLoader(false);
                 }
             });
-        });
+        }
 
-        // ----------------------------------------------------
-        // EXPORTAÇÃO CSV (CORRIGIDA PARA ESPELHAR DADOS)
-        // ----------------------------------------------------
-        function exportarCSV() {
-            if (products.length === 0) return alert("Nada para exportar.");
+        // --- 2. RENDERIZAÇÃO (CARDS) ---
+        function renderCards() {
+            const grid = document.getElementById('products-grid');
+            const search = document.getElementById('search').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
 
-            // Cabeçalho EXATO do arquivo fornecido pelo usuário (Bling)
-            const colunasModelo = [
-                "codigo", "nome", "preco", "estoque", "localizacao", "gtin", "url_imagem", "ncm", "cest", "unidade",
-                "pesoLiquido", "pesoBruto", "largura", "altura", "profundidade", "origem", "observacoes", "situacao",
-                "formato", "_changed", "_lastChange", "id", "c_digo", "descri__o", "pre_o", "valor_ipi_fixo",
-                "observa__es", "situa__o", "pre_o_de_custo", "c_d__no_fornecedor", "fornecedor", "localiza__o",
-                "estoque_m_ximo", "estoque_m_nimo", "peso_l_quido__kg_", "peso_bruto__kg_", "gtin_ean",
-                "gtin_ean_da_embalagem", "largura_do_produto", "altura_do_produto", "profundidade_do_produto",
-                "data_validade", "descri__o_do_produto_no_fornecedor", "descri__o_complementar", "itens_p__caixa",
-                "produto_varia__o", "tipo_produ__o", "classe_de_enquadramento_do_ipi", "c_digo_na_lista_de_servi_os",
-                "tipo_do_item", "grupo_de_tags_tags", "tributos", "c_digo_pai", "c_digo_integra__o", "grupo_de_produtos",
-                "marca", "volumes", "descri__o_curta", "cross_docking", "url_imagens_externas", "link_externo",
-                "meses_garantia_no_fornecedor", "clonar_dados_do_pai", "condi__o_do_produto", "frete_gr_tis",
-                "n_mero_fci", "v_deo", "departamento", "unidade_de_medida", "pre_o_de_compra",
-                "valor_base_icms_st_para_reten__o", "valor_icms_st_para_reten__o", "valor_icms_pr_prio_do_substituto",
-                "categoria_do_produto", "informa__es_adicionais"
-            ];
+            grid.innerHTML = '';
+            
+            // Definição das colunas chave (ajustar conforme nomes exatos do seu CSV)
+            const colImg = 'URL Imagens Externas';
+            const colDesc = 'Descrição';
+            const colSku = 'Código';
+            const colPreco = 'Preço';
+            const colEstoque = 'Estoque';
 
-            const dadosParaExportar = products.map(p => {
-                // Cria uma cópia rasa para não estragar os dados originais na memória
-                const copia = { ...p };
+            let count = 0;
 
-                // ========================================================
-                // ESPELHAMENTO: Garante que o valor editado vá para as colunas do Bling
-                // ========================================================
+            allProducts.forEach((p, index) => {
+                // Validação básica se a linha tem dados
+                if (!p[colSku]) return;
+
+                const desc = (p[colDesc] || '').toLowerCase();
+                const sku = (p[colSku] || '').toLowerCase();
+                const imgUrl = p[colImg] || '';
+
+                // Filtros
+                if (search && !desc.includes(search) && !sku.includes(search)) return;
+                if (status === 'sem_imagem' && imgUrl.trim() !== '') return;
+                if (status === 'com_imagem' && imgUrl.trim() === '') return;
+
+                count++;
                 
-                // Formatação de números
-                const fmt = (n) => (n !== undefined && n !== null) ? n.toString().replace('.', ',') : "0,00";
+                // Limita exibição para performance se tiver muitos itens
+                if (count > 200 && search === '') return;
+
+                const hasImg = imgUrl.length > 5;
+                const displayImg = hasImg ? imgUrl : 'https://placehold.co/400x400/1e293b/94a3b8?text=Sem+Imagem';
                 
-                // 1. CODIGO / SKU
-                copia['c_digo'] = p.codigo;
-                
-                // 2. NOME / DESCRIÇÃO
-                copia['descri__o'] = p.nome;
-                copia['descri__o_do_produto_no_fornecedor'] = p.nome;
+                // Badge da imagem
+                const badge = hasImg 
+                    ? `<span class="image-status" style="border-color:var(--success); color:var(--success)">OK</span>` 
+                    : `<span class="image-status" style="border-color:var(--danger); color:var(--danger)">SEM FOTO</span>`;
 
-                // 3. PREÇO
-                copia['preco'] = fmt(p.preco);
-                copia['pre_o'] = fmt(p.preco); // Coluna Crítica do Bling
-                
-                // 4. ESTOQUE
-                copia['estoque'] = fmt(p.estoque);
-
-                // 5. LOCALIZAÇÃO
-                copia['localiza__o'] = p.localizacao;
-
-                // 6. GTIN
-                copia['gtin_ean'] = p.gtin;
-
-                // 7. PESOS E MEDIDAS
-                copia['peso_l_quido__kg_'] = fmt(p.pesoLiquido);
-                copia['peso_bruto__kg_'] = fmt(p.pesoBruto);
-                copia['largura_do_produto'] = fmt(p.largura);
-                copia['altura_do_produto'] = fmt(p.altura);
-                copia['profundidade_do_produto'] = fmt(p.profundidade);
-
-                // 8. OBSERVAÇÕES
-                copia['observa__es'] = p.observacoes;
-
-                // ========================================================
-                // PREENCHIMENTO FINAL DA LINHA
-                // ========================================================
-                const linha = {};
-                colunasModelo.forEach(col => {
-                    // Pega o valor (já espelhado ou original)
-                    let val = copia[col];
-                    // Se não tiver valor, string vazia
-                    linha[col] = (val !== undefined && val !== null) ? val : "";
-                });
-                return linha;
-            });
-
-            const csv = Papa.unparse({
-                fields: colunasModelo,
-                data: dadosParaExportar
-            }, {
-                quotes: false, // Força não usar aspas para ficar igual ao exemplo
-                delimiter: ";"
-            });
-
-            const l = document.createElement("a"); 
-            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-            l.download = "produtos_bling_corrigido.csv"; 
-            l.click();
-        }
-        
-        function importarBling() {
-            if(MAKE_WEBHOOK_GET.includes("COLE")) return alert("Configure Webhook GET no topo do código!");
-            if(!confirm("Isso substituirá a lista atual. Continuar?")) return;
-            toggleLoader(true, "Baixando do Bling...");
-            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d => {
-                if(Array.isArray(d)) { 
-                    products = d.map(x => ({...x, _changed: false})); 
-                    saveData(); renderGrid(); toggleLoader(false); 
-                }
-            }).catch(e => { toggleLoader(false); alert("Erro: "+e); });
-        }
-
-        function toggleLoader(show, msg) {
-            document.getElementById('loader').style.display = show ? 'flex' : 'none';
-            if(msg) document.getElementById('loader-msg').innerText = msg;
-        }
-    </script>
-
-    <script>
-        function loadData() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if(saved) products = JSON.parse(saved);
-            
-            const hist = localStorage.getItem(HISTORY_KEY);
-            if(hist) historyLog = JSON.parse(hist);
-
-            const savedLogin = localStorage.getItem(LOGIN_KEY);
-            if(savedLogin) currentUser = savedLogin;
-            
-            if(!currentUser) openModal('modal-login');
-            
-            // Config
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            if(cfg.token) {
-                document.getElementById('cfg-token').value = cfg.token;
-                document.getElementById('cfg-user').value = cfg.user;
-                document.getElementById('cfg-repo').value = cfg.repo;
-                document.getElementById('cfg-path').value = cfg.path;
-            }
-
-            renderGrid();
-        }
-
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-        }
-
-        function searchGoogle(term) {
-            const query = encodeURIComponent(term);
-            window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
-        }
-
-        function renderGrid(filter = "") {
-            const grid = document.getElementById('product-grid');
-            grid.innerHTML = "";
-            
-            let filtered = products;
-            if(filter) {
-                const term = filter.toLowerCase();
-                filtered = products.filter(p => 
-                    (p.nome||"").toLowerCase().includes(term) ||
-                    (p.codigo||"").toLowerCase().includes(term) ||
-                    (p.gtin||"").includes(term) ||
-                    (p.localizacao||"").toLowerCase().includes(term)
-                );
-            }
-            
-            document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
-
-            filtered.forEach(p => {
                 const card = document.createElement('div');
-                card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
-                
-                const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
-                
+                card.className = 'card';
                 card.innerHTML = `
-                    <div class="card-img-area" onclick="openEditor('${p.codigo}')">
-                        <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
-                        <div class="img-overlay">
-                            <button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button>
-                            <button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button>
-                        </div>
+                    <div class="card-img-area">
+                        ${badge}
+                        <img src="${displayImg}" loading="lazy" alt="${p[colDesc]}">
                     </div>
                     <div class="card-body">
-                        <div class="card-sku">${p.codigo}</div>
-                        
-                        <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
-                        
-                        <div class="card-stats">
-                            <div class="stat-box">
-                                <span class="stat-label">Preço (R$)</span>
-                                <input class="stat-input" value="${formatNum(p.preco)}" 
-                                    onchange="updateProduct('${p.codigo}', 'preco', this.value)">
-                            </div>
-                            <div class="stat-box">
-                                <span class="stat-label">Estoque</span>
-                                <input class="stat-input" value="${formatNum(p.estoque)}" 
-                                    onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
-                            </div>
+                        <div class="card-sku">${p[colSku]}</div>
+                        <h3 class="card-title" title="${p[colDesc]}">${p[colDesc]}</h3>
+                        <div class="card-meta">
+                            <span class="price">R$ ${p[colPreco] || '0,00'}</span>
+                            <span class="stock">Estoque: ${p[colEstoque] || '0'}</span>
                         </div>
-
-                        <div style="margin-top:8px;">
-                            <div class="stat-box">
-                                <span class="stat-label">Localização</span>
-                                <input class="stat-input" value="${p.localizacao||''}" 
-                                    onchange="updateProduct('${p.codigo}', 'localizacao', this.value)"
-                                    style="text-align:left;">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn-text" onclick="openDetails('${p.codigo}')">
-                            <i data-lucide="list-plus" size="14"></i> DETALHES
+                        <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:10px;" onclick="openEditModal(${index})">
+                            <i data-lucide="edit-3"></i> Detalhes / Editar
                         </button>
-                        ${p._changed ? 
-                            `<button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')">
-                                <i data-lucide="refresh-cw" size="12"></i> SYNC
-                            </button>` : 
-                            `<i data-lucide="check-circle" size="16" color="var(--success)"></i>`
-                        }
                     </div>
                 `;
                 grid.appendChild(card);
             });
+
+            if (count === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:20px;">Nenhum produto encontrado.</div>';
+            }
+
+            document.getElementById('totalCount').innerText = allProducts.length;
             lucide.createIcons();
         }
 
-        function updateProduct(sku, field, value) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return;
-
-            let finalVal = value;
-            if(field === 'preco' || field === 'estoque') {
-                finalVal = parseFloat(value.replace(',','.')) || 0;
-            }
-
-            if(p[field] != finalVal) {
-                addToHistory(sku, p.nome, `Alterou ${field}: ${p[field]} -> ${finalVal}`);
-                p[field] = finalVal;
-                p._changed = true;
-                p._lastChange = new Date().toLocaleString();
-                saveData();
-                if(field !== 'nome') {} 
-            }
-        }
-
-        function formatNum(n) {
-            return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
-        }
-
-        function attemptLogin() {
-            const pass = document.getElementById('login-pass').value;
-            if(USERS[pass]) {
-                currentUser = USERS[pass];
-                if(document.getElementById('save-login').checked) {
-                    localStorage.setItem(LOGIN_KEY, currentUser);
-                }
-                closeModal('modal-login');
-                alert(`Bem-vindo, ${currentUser}!`);
-            } else {
-                document.getElementById('login-error').style.display = 'block';
-            }
-        }
-
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-
-        function openDetails(sku) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return;
-            currentEditingId = sku;
+        // --- 3. MODAL DE EDIÇÃO (DINÂMICO & PASTE) ---
+        function openEditModal(index) {
+            currentEditingIndex = index;
+            const p = allProducts[index];
+            const modal = document.getElementById('editModal');
+            const formBody = document.getElementById('modalFormBody');
+            const title = document.getElementById('modalTitle');
             
-            const form = document.getElementById('details-form');
-            form.innerHTML = '';
-            
-            const fields = [
-                {k:'nome', l:'Nome Completo'}, {k:'gtin', l:'EAN / GTIN'},
-                {k:'ncm', l:'NCM'}, {k:'cest', l:'CEST'},
-                {k:'pesoLiquido', l:'Peso Líq (kg)'}, {k:'pesoBruto', l:'Peso Bruto (kg)'},
-                {k:'largura', l:'Largura (cm)'}, {k:'altura', l:'Altura (cm)'},
-                {k:'profundidade', l:'Profundidade (cm)'}, {k:'unidade', l:'Unidade'},
-                {k:'observacoes', l:'Observações (Validade/Lote)'}
-            ];
+            // Colunas chave
+            const colSku = 'Código';
+            const colImg = 'URL Imagens Externas';
 
-            fields.forEach(f => {
+            title.innerText = `${p[colSku]} - Edição Completa`;
+            formBody.innerHTML = '';
+
+            // 1. Destaque para Imagem (Área de Paste)
+            const imgDiv = document.createElement('div');
+            imgDiv.className = 'form-group full-width';
+            imgDiv.innerHTML = `
+                <label>Visualização de Imagem (Cole com CTRL+V aqui)</label>
+                <div class="image-preview-large" id="modalImgPreviewContainer">
+                    <img id="modalImgPreview" src="${p[colImg] || ''}" onerror="this.style.display='none'">
+                    <div class="paste-hint">CTRL+V para colar imagem</div>
+                </div>
+            `;
+            formBody.appendChild(imgDiv);
+
+            // 2. Gerar campos para TODAS as colunas do CSV
+            Object.keys(p).forEach(key => {
+                const val = p[key] || '';
+                
+                // Cria o input wrapper
                 const div = document.createElement('div');
-                div.className = 'form-group';
-                if(f.k==='nome' || f.k==='observacoes') div.style.gridColumn = "span 2";
                 
-                div.innerHTML = `
-                    <label>${f.l}</label>
-                    <input type="text" value="${p[f.k]||''}" id="det-${f.k}">
-                `;
-                form.appendChild(div);
-            });
-            
-            openModal('modal-details');
-        }
-
-        function saveDetails() {
-            const p = products.find(x => x.codigo === currentEditingId);
-            if(!p) return;
-            
-            const fields = ['nome','gtin','ncm','cest','pesoLiquido','pesoBruto','largura','altura','profundidade','unidade','observacoes'];
-            let changed = false;
-
-            fields.forEach(k => {
-                const val = document.getElementById('det-'+k).value;
-                let final = val;
-                if(['pesoLiquido','pesoBruto','largura','altura','profundidade'].includes(k)) final = parseFloat(val.replace(',','.'))||0;
-                
-                if(p[k] != final) {
-                    addToHistory(p.codigo, p.nome, `Alterou ${k}`);
-                    p[k] = final;
-                    changed = true;
-                }
-            });
-
-            if(changed) { p._changed = true; saveData(); renderGrid(); }
-            closeModal('modal-details');
-        }
-
-        function openConfigModal() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            document.getElementById('cfg-token').value = cfg.token||'';
-            document.getElementById('cfg-user').value = cfg.user||'';
-            document.getElementById('cfg-repo').value = cfg.repo||'';
-            document.getElementById('cfg-path').value = cfg.path||'';
-            openModal('modal-config');
-        }
-
-        function saveConfig() {
-            const cfg = {
-                token: document.getElementById('cfg-token').value,
-                user: document.getElementById('cfg-user').value,
-                repo: document.getElementById('cfg-repo').value,
-                path: document.getElementById('cfg-path').value
-            };
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
-            closeModal('modal-config');
-            alert("Configurações Salvas!");
-        }
-
-        function restaurarLinksPadraoSite() {
-            if(!confirm("Isso mudará TODAS as imagens para 'i/..site/img/produtos/CODIGO.webp'. Continuar?")) return;
-            
-            let count = 0;
-            products.forEach(p => {
-                const novoLink = `../site/img/produtos/${p.codigo}.webp?v=${Date.now()}`;
-                if(p.url_imagem !== novoLink) {
-                    p.url_imagem = novoLink;
-                    p._changed = true;
-                    count++;
-                }
-            });
-            saveData();
-            renderGrid();
-            alert(`${count} produtos atualizados para o padrão do site!`);
-        }
-
-        // --- EDITOR ---
-        function openEditor(sku) {
-            const p = products.find(x => x.codigo === sku);
-            currentEditingId = sku;
-            document.getElementById('file-name-preview').innerText = sku + ".webp";
-            
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.src = p.url_imagem || "";
-            img.onload = () => {
-                loadedImage = img;
-                drawCanvas();
-                openModal('modal-editor');
-            };
-            img.onerror = () => {
-                loadedImage = null;
-                drawCanvas(); // limpa
-                openModal('modal-editor');
-            };
-        }
-
-        function setupEditorEvents() {
-            ['zoomRange','sharpenRange','brightnessRange'].forEach(id => {
-                document.getElementById(id).addEventListener('input', drawCanvas);
-            });
-            
-            document.getElementById('fileInput').addEventListener('change', (e) => {
-                if(e.target.files && e.target.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = (evt) => {
-                        const img = new Image();
-                        img.onload = () => { loadedImage = img; drawCanvas(); };
-                        img.src = evt.target.result;
-                        
-                        document.getElementById('file-size-preview').innerText = 
-                            Math.round(e.target.files[0].size/1024) + "kb";
-                    };
-                    reader.readAsDataURL(e.target.files[0]);
-                }
-            });
-        }
-
-        function toggleSticker(type) {
-            if(activeSticker === type) activeSticker = null;
-            else activeSticker = type;
-            
-            document.querySelectorAll('.sticker-btn').forEach(b => b.classList.remove('active'));
-            if(activeSticker) document.getElementById('stk-'+type).classList.add('active');
-            drawCanvas();
-        }
-
-        function drawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if(loadedImage) {
-                const zoom = parseFloat(document.getElementById('zoomRange').value);
-                const bright = parseFloat(document.getElementById('brightnessRange').value);
-                
-                ctx.filter = `brightness(${bright})`;
-                
-                const w = loadedImage.width * zoom;
-                const h = loadedImage.height * zoom;
-                const x = (canvas.width - w) / 2;
-                const y = (canvas.height - h) / 2;
-                
-                ctx.drawImage(loadedImage, x, y, w, h);
-                ctx.filter = 'none'; 
-            } else {
-                ctx.font = "20px Inter";
-                ctx.fillStyle = "#94a3b8";
-                ctx.textAlign = "center";
-                ctx.fillText("Sem imagem", canvas.width/2, canvas.height/2);
-            }
-
-            if(activeSticker) {
-                ctx.font = "bold 40px Inter";
-                ctx.fillStyle = "#ef4444";
-                ctx.strokeStyle = "white";
-                ctx.lineWidth = 4;
-                ctx.textAlign = "right";
-                
-                let text = "";
-                if(activeSticker === 'offer') { text = "OFERTA"; ctx.fillStyle = "#ef4444"; }
-                if(activeSticker === 'best') { text = "MELHOR PREÇO"; ctx.fillStyle = "#f59e0b"; }
-                if(activeSticker === 'today') { text = "SÓ HOJE"; ctx.fillStyle = "#3b82f6"; }
-
-                ctx.strokeText(text, 430, 60);
-                ctx.fillText(text, 430, 60);
-            }
-        }
-
-        function downloadImage() {
-            const link = document.createElement('a');
-            link.download = currentEditingId + '.webp';
-            link.href = canvas.toDataURL('image/webp', 0.9);
-            link.click();
-        }
-
-        async function uploadToGithub() {
-            if(!currentEditingId) return;
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-
-            toggleLoader(true, "Enviando pro GitHub...");
-            
-            const base64 = canvas.toDataURL('image/webp', 0.9).split(',')[1];
-            const fileName = currentEditingId + ".webp";
-            const path = `${cfg.path}/${fileName}`.replace('//','/');
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-
-            try {
-                let sha = null;
-                try {
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) { const json = await check.json(); sha = json.sha; }
-                } catch(e) {}
-
-                const body = {
-                    message: `Alt: ${currentEditingId} via Painel`,
-                    content: base64
-                };
-                if(sha) body.sha = sha;
-
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        "Authorization": `token ${cfg.token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-
-                if(!res.ok) throw new Error(await res.text());
-
-                const p = products.find(x => x.codigo === currentEditingId);
-                p.url_imagem = `../site/img/produtos/${fileName}?v=${Date.now()}`;
-                
-                const logMsg = `[Alt: ${currentUser} em ${new Date().toLocaleString()} - Alt: Imagem (Upload)]`;
-                p.observacoes = (p.observacoes || "") + " | " + logMsg;
-                
-                p._changed = true;
-                saveData();
-                renderGrid();
-                closeModal('modal-editor');
-                alert("Sucesso! Imagem atualizada.");
-
-            } catch(err) {
-                alert("Erro GitHub: " + err.message);
-            } finally {
-                toggleLoader(false);
-            }
-        }
-
-        function syncSingle(sku) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return;
-            if(!confirm(`Confirmar envio de ${p.nome}?`)) return;
-            const payload = [p];
-            sendToWebhook(payload, () => {
-                p._changed = false;
-                saveData();
-                renderGrid();
-            });
-        }
-
-        function sendToWebhook(data, callback) {
-            toggleLoader(true, "Enviando...");
-            fetch(MAKE_WEBHOOK_UPDATE, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            }).then(r => {
-                if(r.ok) {
-                    callback();
-                    alert("Sincronizado!");
+                // Se for descrição ou obs, usa textarea, se for imagem usa input largo
+                if (key === 'Descrição' || key === 'Observações' || key === 'Informações Adicionais') {
+                    div.className = 'form-group full-width';
+                    div.innerHTML = `<label>${key}</label><textarea rows="3" id="input_${key}">${val}</textarea>`;
+                } else if (key === colImg) {
+                    div.className = 'form-group full-width';
+                    div.innerHTML = `<label>${key}</label><input type="text" id="input_${key}" value="${val}" onchange="updatePreview(this.value)">`;
                 } else {
-                    alert("Erro ao enviar.");
+                    div.className = 'form-group';
+                    div.innerHTML = `<label>${key}</label><input type="text" id="input_${key}" value="${val}">`;
                 }
-            }).catch(e => alert("Erro: " + e))
-            .finally(() => toggleLoader(false));
+                
+                formBody.appendChild(div);
+            });
+
+            // Ativar ouvinte de PASTE
+            window.addEventListener('paste', handlePasteImage);
+
+            modal.classList.add('active');
+            
+            // Atualiza preview se ja tiver url
+            const inputImg = document.getElementById(`input_${colImg}`);
+            if(inputImg) updatePreview(inputImg.value);
         }
 
-        function addToHistory(sku, name, action) {
-            if(!currentUser) return;
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+            window.removeEventListener('paste', handlePasteImage);
+            currentEditingIndex = null;
+        }
+
+        function updatePreview(url) {
+            const img = document.getElementById('modalImgPreview');
+            img.src = url;
+            img.style.display = url ? 'block' : 'none';
+        }
+
+        // --- LÓGICA DE COLAR IMAGEM (PASTE) ---
+        function handlePasteImage(e) {
+            // Só executa se modal estiver aberto
+            if (currentEditingIndex === null) return;
+
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            let blob = null;
+
+            for (const item of items) {
+                if (item.type.indexOf("image") === 0) {
+                    blob = item.getAsFile();
+                    break;
+                }
+            }
+
+            if (blob) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64 = event.target.result;
+                    
+                    // Colunas chave
+                    const colImg = 'URL Imagens Externas';
+                    
+                    // Atualiza o input
+                    const input = document.getElementById(`input_${colImg}`);
+                    if(input) {
+                        input.value = base64; // Nota: Em produção, ideal seria upload, aqui salva base64 direto
+                        updatePreview(base64);
+                        
+                        // Feedback visual
+                        const container = document.getElementById('modalImgPreviewContainer');
+                        container.style.borderColor = var(--success);
+                        setTimeout(() => container.style.borderColor = var(--border), 1000);
+                    }
+                };
+                reader.readAsDataURL(blob);
+            }
+        }
+
+        // --- 4. SALVAR E EXPORTAR ---
+        function saveProduct() {
+            if (currentEditingIndex === null) return;
+            
+            const p = allProducts[currentEditingIndex];
+            const colSku = 'Código';
+            const oldSku = p[colSku];
+
+            // Percorre todos os campos do objeto original e busca o valor novo nos inputs
+            Object.keys(p).forEach(key => {
+                const input = document.getElementById(`input_${key}`);
+                if (input) {
+                    p[key] = input.value;
+                }
+            });
+
+            // Nome da imagem automático (regra do usuário: sem espaços)
+            // Lógica: se o campo de imagem for base64 (colado) ou mudou, podemos querer renomear no futuro.
+            // Aqui mantemos apenas os dados. Se for exportar p/ Bling, a URL Base64 vai junto.
+            
+            allProducts[currentEditingIndex] = p; // Salva
+            
+            addToHistory('Usuário', 'Edição', `Editou o produto ${oldSku}`);
+            
+            closeModal();
+            renderCards();
+            filterProducts(); // Mantém a posição na lista se estiver filtrada
+        }
+
+        function exportCSV() {
+            if (allProducts.length === 0) {
+                alert("Nada para exportar.");
+                return;
+            }
+
+            toggleLoader(true, "Gerando CSV Idêntico...");
+
+            // Papa.unparse com ponto e vírgula para manter fidelidade
+            const csv = Papa.unparse(allProducts, {
+                delimiter: ";",
+                header: true,
+                newline: "\r\n" // Padrão Windows
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            
+            // Data no nome do arquivo
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0,10);
+            link.setAttribute("download", `produtos_export_${dateStr}.csv`);
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            toggleLoader(false);
+            addToHistory('Sistema', 'Exportação', 'Exportou arquivo CSV.');
+        }
+
+        // --- UTILITÁRIOS ---
+        function filterProducts() {
+            renderCards();
+        }
+
+        function toggleLoader(show, msg = "") {
+            const l = document.getElementById('loader');
+            const m = document.getElementById('loader-msg');
+            l.style.display = show ? 'flex' : 'none';
+            m.innerText = msg;
+        }
+
+        // Histórico
+        function toggleHistory() {
+            document.getElementById('historyPanel').classList.toggle('open');
+        }
+
+        function addToHistory(user, action, details) {
             const log = {
-                date: new Date().toLocaleString(),
-                user: currentUser,
-                sku: sku,
-                name: name,
-                action: action
+                time: new Date().toLocaleTimeString(),
+                user, action, details
             };
             historyLog.unshift(log);
-            if(historyLog.length > 200) historyLog.pop();
+            if(historyLog.length > 50) historyLog.pop();
             localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLog));
+            renderHistory();
         }
 
         function renderHistory() {
-            const tbody = document.getElementById('history-tbody');
-            tbody.innerHTML = historyLog.map(h => `
-                <tr>
-                    <td>${h.date}</td>
-                    <td>${h.user}</td>
-                    <td style="font-weight:bold; color:var(--accent)">${h.sku}</td>
-                    <td>${h.name}</td>
-                    <td>${h.action}</td>
-                </tr>
+            const list = document.getElementById('historyList');
+            list.innerHTML = historyLog.map(h => `
+                <div class="history-item">
+                    <div style="display:flex; justify-content:space-between; color:var(--text-secondary); font-size:0.75rem;">
+                        <span>${h.time}</span>
+                        <span>${h.user}</span>
+                    </div>
+                    <div style="font-weight:bold; color:var(--accent);">${h.action}</div>
+                    <div>${h.details}</div>
+                </div>
             `).join('');
         }
 
         function clearHistory() {
-            if(confirm("Apagar todo o histórico?")) {
-                historyLog = [];
-                localStorage.setItem(HISTORY_KEY, '[]');
-                renderHistory();
-            }
+            historyLog = [];
+            localStorage.setItem(HISTORY_KEY, '[]');
+            renderHistory();
         }
     </script>
 </body>
