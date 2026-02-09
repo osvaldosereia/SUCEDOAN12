@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v35 (Dados Completos CSV)</title>
+    <title>Sucedoan Painel - v36 (Correção Bling)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -874,6 +874,11 @@
                             }
                         });
 
+                        // 3. HIGIENIZAÇÃO OBRIGATÓRIA (CORREÇÃO DE ERROS BLING)
+                        base['Origem'] = '0';
+                        base['Unidade'] = 'un';
+                        base['Grupo de produtos'] = '';
+
                         return base;
                     });
 
@@ -915,6 +920,11 @@
                 if(colunasModelo.includes('Localização')) p['Localização'] = p.localizacao;
                 if(colunasModelo.includes('GTIN/EAN')) p['GTIN/EAN'] = p.gtin;
                 if(colunasModelo.includes('URL Imagens Externas')) p['URL Imagens Externas'] = p.url_imagem;
+
+                // CORREÇÃO FORÇADA DE ERROS BLING NA EXPORTAÇÃO
+                if(colunasModelo.includes('Origem')) p['Origem'] = '0';
+                if(colunasModelo.includes('Unidade')) p['Unidade'] = 'un';
+                if(colunasModelo.includes('Grupo de produtos')) p['Grupo de produtos'] = '';
 
                 colunasModelo.forEach(col => {
                     let val = p[col];
