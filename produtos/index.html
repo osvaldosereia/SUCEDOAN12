@@ -303,19 +303,21 @@
                 const searchEan = xmlEan.trim();
 
                 if (baseBling[searchEan]) {
-                    // MODO ATUALIZAÇÃO: Preserva dados originais (incluindo tabs e formatação)
+                    // MODO ATUALIZAÇÃO: Preserva TODOS os dados originais do CSV, apenas soma estoque
                     item = { ...baseBling[searchEan] };
                     item._vinculado = true;
                     
-                    // Atualiza apenas campos novos/alterados
-                    item["Preço"] = xmlVuncom;
-                    item["Preço de custo"] = xmlVuncom;
-                    item["Estoque"] = xmlQcom;
-                    item["Cód. no fornecedor"] = xmlCprod;
-                    item["Fornecedor"] = emitente;
-                    item["NCM"] = xmlNcm;
-                    item["Origem"] = xmlOrig;
-                    if(xmlCest) item["CEST"] = xmlCest;
+                    // Lógica de Soma de Estoque
+                    const estAtual = parseFloat((item["Estoque"] || "0").replace(',', '.'));
+                    const estEntrada = parseFloat(xmlQcom.replace(',', '.'));
+                    
+                    item._estoqueAtual = estAtual;
+                    item._estoqueEntrada = estEntrada;
+                    
+                    // Soma estoque e formata para manter padrão
+                    item["Estoque"] = (estAtual + estEntrada).toFixed(2).replace('.', ',');
+
+                    // NÃO sobrescreve preço, custo, fornecedor, etc. Mantém o cadastro original.
                 } else {
                     // MODO NOVO: Cria estrutura
                     item = {};
@@ -415,11 +417,36 @@
         produtoSelecionadoIdx = produtosCarregados.findIndex(x => x._id === p._id);
         const area = document.getElementById('editorContent');
         const grid = document.getElementById('fieldsGrid');
+        const calcInfo = document.getElementById('calcInfo');
         
         area.classList.remove('hidden');
         document.getElementById('editMainName').value = p["Descrição"];
         document.getElementById('fatorInput').value = p["Itens p/ caixa"] || 1;
         
+        // Painel de Soma de Estoque
+        if (p._vinculado) {
+            calcInfo.innerHTML = `
+                <div class="flex items-center gap-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs shadow-sm">
+                    <div class="font-bold text-yellow-800 uppercase flex flex-col items-center">
+                        <span class="text-[9px] text-yellow-600">ESTOQUE ATUAL</span>
+                        <span class="text-lg">${p._estoqueAtual || 0}</span>
+                    </div>
+                    <i class="fas fa-plus text-yellow-400"></i>
+                    <div class="font-bold text-blue-800 uppercase flex flex-col items-center">
+                        <span class="text-[9px] text-blue-600">ENTRADA NOTA</span>
+                        <span class="text-lg">${p._estoqueEntrada || 0}</span>
+                    </div>
+                    <i class="fas fa-equals text-yellow-400"></i>
+                    <div class="font-bold text-emerald-700 uppercase flex flex-col items-center">
+                        <span class="text-[9px] text-emerald-600">NOVO TOTAL</span>
+                        <span class="text-lg">${p["Estoque"]}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            calcInfo.innerHTML = "";
+        }
+
         grid.innerHTML = "";
         
         // Show ALL fields from colunasModelo
