@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v39 (Print Fix)</title>
+    <title>Sucedoan Painel - v40 (Card Info & Blank URL Export)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -858,6 +858,7 @@
                             gtin: getVal('GTIN/EAN'),
                             url_imagem: getVal('URL Imagens Externas'), // Se existir no CSV
                             ncm: getVal('NCM'), // IMPORTANTE: Mapear NCM
+                            validade: getVal('Data Validade'), // NOVO: Mapear Validade
                             // Controle Interno
                             situacao: 'A',
                             formato: 'S',
@@ -926,8 +927,8 @@
                 p['Estoque'] = fmt(p.estoque);
                 p['Localização'] = p.localizacao;
                 p['GTIN/EAN'] = p.gtin;
-                p['URL Imagens Externas'] = p.url_imagem;
-                p['NCM'] = p.ncm; // Preenche NCM corretamente
+                p['URL Imagens Externas'] = ""; // FORÇADO EM BRANCO
+                p['NCM'] = p.ncm; 
                 
                 // Mantém sanitização anterior (já aplicada no import, mas garante consistência)
                 p['Origem'] = '0'; 
@@ -1041,6 +1042,12 @@
                         <div class="card-sku">${p.codigo}</div>
                         
                         <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
+
+                        <div style="font-size:10px; color:#64748b; margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:2px;">
+                            <span>EAN: <strong style="color:#cbd5e1">${p.gtin || '-'}</strong></span>
+                            <span>NCM: <strong style="color:#cbd5e1">${p.ncm || '-'}</strong></span>
+                            <span style="grid-column: span 2">VAL: <strong style="color:${p.validade ? '#f59e0b' : '#cbd5e1'}">${p.validade || '-'}</strong></span>
+                        </div>
                         
                         <div class="card-stats">
                             <div class="stat-box">
