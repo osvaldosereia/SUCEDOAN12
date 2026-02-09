@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v33 (Fix Full + Google + Edição Nome)</title>
+    <title>Sucedoan Painel - v34 (Exportação Bling Perfeita)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -805,9 +805,8 @@
         const canvas = document.getElementById('imageCanvas');
         const ctx = canvas.getContext('2d');
         let loadedImage = null;
-        let activeSticker = null; // 'offer', 'best', 'today'
+        let activeSticker = null; 
 
-        // Inicialização
         window.onload = function() {
             lucide.createIcons();
             loadData();
@@ -827,7 +826,7 @@
         }
 
         // ----------------------------------------------------
-        // IMPORTAÇÃO CSV
+        // IMPORTAÇÃO CSV (AGORA MANTÉM DADOS EXTRAS)
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -841,7 +840,7 @@
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // Função auxiliar para mapear colunas flexíveis
+                        // Função auxiliar para mapear
                         const getVal = (keys) => {
                             const f = Object.keys(d).find(k => keys.some(pk => k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").includes(pk)));
                             return f ? d[f] : "";
@@ -851,36 +850,37 @@
                             return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0;
                         };
 
+                        // 1. Criamos a Base de Trabalho (Campos do App)
                         const base = {
-                            codigo: getVal(['codigo','sku']),
-                            nome: getVal(['descricao','nome','produto']),
-                            preco: getNum(['preco','venda']),
+                            codigo: getVal(['codigo','sku']) || getVal(['c_digo']),
+                            nome: getVal(['descricao','nome','produto']) || getVal(['descri__o']),
+                            preco: getNum(['preco','venda','pre_o']),
                             estoque: getNum(['estoque']),
-                            localizacao: getVal(['localizacao','local']),
-                            gtin: getVal(['gtin','ean']),
+                            localizacao: getVal(['localizacao','local','localiza__o']),
+                            gtin: getVal(['gtin','ean','gtin_ean']),
                             url_imagem: getVal(['url','imagem']),
                             ncm: getVal(['ncm']),
                             cest: getVal(['cest']),
                             unidade: getVal(['unidade'])||'UN',
-                            pesoLiquido: getNum(['peso liq']),
-                            pesoBruto: getNum(['peso bru']),
+                            pesoLiquido: getNum(['peso liq','peso_l_quido']),
+                            pesoBruto: getNum(['peso bru','peso_bruto']),
                             largura: getNum(['largura']),
                             altura: getNum(['altura']),
                             profundidade: getNum(['profundidade']),
                             origem: getVal(['origem']),
-                            observacoes: getVal(['observacoes','obs']),
+                            observacoes: getVal(['observacoes','obs','observa__es']),
                             situacao: 'A',
                             formato: 'S',
                             _changed: true,
                             _lastChange: "Importação CSV"
                         };
 
-                        // Preserva campos extras do CSV original que não foram mapeados acima
+                        // 2. FUNDAMENTAL: Copia TUDO o que veio no CSV para o objeto
+                        // Isso garante que colunas do Bling que não usamos no painel sejam preservadas
                         Object.keys(d).forEach(k => {
-                            const safe = k.toLowerCase().replace(/[^a-z0-9]/g, '_');
-                            // Se não existe na base e não é metadado nosso
-                            if(!base[safe] && !safe.startsWith('_')) {
-                                base[k] = d[k]; // Mantém chave original
+                            // Se a chave ainda não existe no objeto 'base', adicionamos
+                            if(base[k] === undefined) {
+                                base[k] = d[k];
                             }
                         });
 
@@ -897,10 +897,13 @@
             });
         });
 
+        // ----------------------------------------------------
+        // EXPORTAÇÃO CSV (CORRIGIDA PARA ESPELHAR DADOS)
+        // ----------------------------------------------------
         function exportarCSV() {
             if (products.length === 0) return alert("Nada para exportar.");
 
-            // Lista exata de colunas do arquivo modelo
+            // Cabeçalho EXATO do arquivo fornecido pelo usuário (Bling)
             const colunasModelo = [
                 "codigo", "nome", "preco", "estoque", "localizacao", "gtin", "url_imagem", "ncm", "cest", "unidade",
                 "pesoLiquido", "pesoBruto", "largura", "altura", "profundidade", "origem", "observacoes", "situacao",
@@ -919,41 +922,70 @@
             ];
 
             const dadosParaExportar = products.map(p => {
-                const linha = {};
-                
-                colunasModelo.forEach(col => {
-                    let val = p[col];
+                // Cria uma cópia rasa para não estragar os dados originais na memória
+                const copia = { ...p };
 
-                    // Formatação de números (trocar ponto por vírgula) para colunas específicas do app
-                    if (['preco', 'estoque', 'pesoLiquido', 'pesoBruto', 'largura', 'altura', 'profundidade'].includes(col)) {
-                        if (val !== undefined && val !== null && val !== "") {
-                            // Se for número, formata. Se string numérica, troca ponto
-                            val = val.toString().replace('.', ',');
-                        } else {
-                            // Valores padrão se estiver vazio
-                            val = (col === 'estoque' || col === 'preco') ? "0,00" : "0,00"; 
-                        }
-                    }
-                    
-                    // Se a coluna não existe no objeto (undefined), retorna vazio para manter a estrutura
+                // ========================================================
+                // ESPELHAMENTO: Garante que o valor editado vá para as colunas do Bling
+                // ========================================================
+                
+                // Formatação de números
+                const fmt = (n) => (n !== undefined && n !== null) ? n.toString().replace('.', ',') : "0,00";
+                
+                // 1. CODIGO / SKU
+                copia['c_digo'] = p.codigo;
+                
+                // 2. NOME / DESCRIÇÃO
+                copia['descri__o'] = p.nome;
+                copia['descri__o_do_produto_no_fornecedor'] = p.nome;
+
+                // 3. PREÇO
+                copia['preco'] = fmt(p.preco);
+                copia['pre_o'] = fmt(p.preco); // Coluna Crítica do Bling
+                
+                // 4. ESTOQUE
+                copia['estoque'] = fmt(p.estoque);
+
+                // 5. LOCALIZAÇÃO
+                copia['localiza__o'] = p.localizacao;
+
+                // 6. GTIN
+                copia['gtin_ean'] = p.gtin;
+
+                // 7. PESOS E MEDIDAS
+                copia['peso_l_quido__kg_'] = fmt(p.pesoLiquido);
+                copia['peso_bruto__kg_'] = fmt(p.pesoBruto);
+                copia['largura_do_produto'] = fmt(p.largura);
+                copia['altura_do_produto'] = fmt(p.altura);
+                copia['profundidade_do_produto'] = fmt(p.profundidade);
+
+                // 8. OBSERVAÇÕES
+                copia['observa__es'] = p.observacoes;
+
+                // ========================================================
+                // PREENCHIMENTO FINAL DA LINHA
+                // ========================================================
+                const linha = {};
+                colunasModelo.forEach(col => {
+                    // Pega o valor (já espelhado ou original)
+                    let val = copia[col];
+                    // Se não tiver valor, string vazia
                     linha[col] = (val !== undefined && val !== null) ? val : "";
                 });
-
                 return linha;
             });
 
-            // Geramos o CSV usando a lista de colunas forçada
             const csv = Papa.unparse({
                 fields: colunasModelo,
                 data: dadosParaExportar
             }, {
-                quotes: false, 
+                quotes: false, // Força não usar aspas para ficar igual ao exemplo
                 delimiter: ";"
             });
 
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-            l.download = "produtos.csv"; 
+            l.download = "produtos_bling_corrigido.csv"; 
             l.click();
         }
         
@@ -1026,7 +1058,6 @@
             
             document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
 
-            // REMOVIDO: .slice(0, 100) para mostrar todos
             filtered.forEach(p => {
                 const card = document.createElement('div');
                 card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
@@ -1094,18 +1125,13 @@
                 finalVal = parseFloat(value.replace(',','.')) || 0;
             }
 
-            // Log history
             if(p[field] != finalVal) {
                 addToHistory(sku, p.nome, `Alterou ${field}: ${p[field]} -> ${finalVal}`);
                 p[field] = finalVal;
                 p._changed = true;
                 p._lastChange = new Date().toLocaleString();
                 saveData();
-                
-                // Se não for edição de nome (que seria irritante recarregar), atualiza a grid ou busca
-                if(field !== 'nome') {
-                    // Atualiza suavemente sem perder foco se possível, mas renderGrid é mais seguro
-                }
+                if(field !== 'nome') {} 
             }
         }
 
@@ -1113,7 +1139,6 @@
             return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
         }
 
-        // --- SISTEMA DE LOGIN ---
         function attemptLogin() {
             const pass = document.getElementById('login-pass').value;
             if(USERS[pass]) {
@@ -1128,7 +1153,6 @@
             }
         }
 
-        // --- MODAIS ---
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 
@@ -1187,7 +1211,6 @@
             closeModal('modal-details');
         }
 
-        // --- CONFIG ---
         function openConfigModal() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             document.getElementById('cfg-token').value = cfg.token||'';
@@ -1284,17 +1307,15 @@
                 const zoom = parseFloat(document.getElementById('zoomRange').value);
                 const bright = parseFloat(document.getElementById('brightnessRange').value);
                 
-                // Filtro Brilho
                 ctx.filter = `brightness(${bright})`;
                 
-                // Desenha Imagem Centralizada com Zoom
                 const w = loadedImage.width * zoom;
                 const h = loadedImage.height * zoom;
                 const x = (canvas.width - w) / 2;
                 const y = (canvas.height - h) / 2;
                 
                 ctx.drawImage(loadedImage, x, y, w, h);
-                ctx.filter = 'none'; // reset
+                ctx.filter = 'none'; 
             } else {
                 ctx.font = "20px Inter";
                 ctx.fillStyle = "#94a3b8";
@@ -1302,7 +1323,6 @@
                 ctx.fillText("Sem imagem", canvas.width/2, canvas.height/2);
             }
 
-            // Stickers
             if(activeSticker) {
                 ctx.font = "bold 40px Inter";
                 ctx.fillStyle = "#ef4444";
@@ -1340,14 +1360,12 @@
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
 
             try {
-                // 1. Check if exists (to get SHA)
                 let sha = null;
                 try {
                     const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
                     if(check.ok) { const json = await check.json(); sha = json.sha; }
                 } catch(e) {}
 
-                // 2. Upload
                 const body = {
                     message: `Alt: ${currentEditingId} via Painel`,
                     content: base64
@@ -1365,13 +1383,9 @@
 
                 if(!res.ok) throw new Error(await res.text());
 
-                // 3. Update Product Link
                 const p = products.find(x => x.codigo === currentEditingId);
-                // Gera link raw do github ou usa padrao relativo se for mesmo repo do site
-                // Aqui vamos forçar o link relativo padrão com timestamp
                 p.url_imagem = `../site/img/produtos/${fileName}?v=${Date.now()}`;
                 
-                // Add Log
                 const logMsg = `[Alt: ${currentUser} em ${new Date().toLocaleString()} - Alt: Imagem (Upload)]`;
                 p.observacoes = (p.observacoes || "") + " | " + logMsg;
                 
@@ -1388,14 +1402,11 @@
             }
         }
 
-        // --- SYNC ---
         function syncSingle(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            
             if(!confirm(`Confirmar envio de ${p.nome}?`)) return;
-            
-            const payload = [p]; // Array com 1 item
+            const payload = [p];
             sendToWebhook(payload, () => {
                 p._changed = false;
                 saveData();
@@ -1420,7 +1431,6 @@
             .finally(() => toggleLoader(false));
         }
 
-        // --- HISTORY ---
         function addToHistory(sku, name, action) {
             if(!currentUser) return;
             const log = {
@@ -1455,7 +1465,6 @@
                 renderHistory();
             }
         }
-
     </script>
 </body>
 </html>
