@@ -92,12 +92,15 @@
 
         <div id="importTab" class="tab-content active p-4 gap-4 overflow-hidden">
             <div class="w-80 bg-white rounded-xl border border-slate-200 overflow-y-auto custom-scrollbar shadow-sm">
-                <div class="p-3 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center">
+                <div class="p-3 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center flex-wrap gap-2">
                     <label class="flex items-center gap-2 cursor-pointer select-none">
                         <input type="checkbox" id="checkAllXml" class="w-4 h-4 accent-blue-600" checked onclick="toggleAllXML(this)">
-                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">SELECIONAR TODOS</span>
+                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">TODOS</span>
                     </label>
-                    <button id="btnExport" class="hidden bg-emerald-600 text-white px-3 py-1 rounded font-bold text-[10px]">EXPORTAR</button>
+                    <div class="flex gap-1">
+                        <button id="btnExport" class="hidden bg-emerald-600 text-white px-2 py-1 rounded font-bold text-[10px]" title="Exportar Selecionados">EXP. SEL.</button>
+                        <button id="btnExportAll" class="hidden bg-blue-600 text-white px-2 py-1 rounded font-bold text-[10px]" title="Exportar Todos">EXP. TUDO</button>
+                    </div>
                 </div>
                 <div id="productList" class="divide-y divide-slate-100">
                     <p class="p-8 text-center text-slate-400 italic text-xs">Aguardando arquivos...</p>
@@ -129,9 +132,14 @@
                         <h3 class="font-bold text-slate-700">Produtos no Cadastro Bling</h3>
                         <p class="text-xs text-slate-500">Clique nos títulos das colunas para ordenar</p>
                     </div>
-                    <button onclick="imprimirEtiquetas()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold text-xs hover:bg-slate-900 flex items-center gap-2">
-                        <i class="fas fa-print"></i> IMPRIMIR SELECIONADOS
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="exportarBaseBling()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 flex items-center gap-2">
+                            <i class="fas fa-file-export"></i> EXPORTAR LISTA COMPLETA
+                        </button>
+                        <button onclick="imprimirEtiquetas()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold text-xs hover:bg-slate-900 flex items-center gap-2">
+                            <i class="fas fa-print"></i> IMPRIMIR SELECIONADOS
+                        </button>
+                    </div>
                 </div>
                 <div class="overflow-y-auto flex-1 custom-scrollbar">
                     <table class="w-full text-left text-sm" id="labelsTable">
@@ -160,9 +168,22 @@
     let produtosCarregados = [];
     let categoriasBling = new Set();
     let produtoSelecionadoIdx = null;
-    let ultimoSeqCodigo = 0; // Variável para controlar a sequência de código
+    let ultimoSeqCodigo = 0; 
+    let listaCompletaBling = [];
 
-    const colunasModelo = ['ID', 'Código', 'Descrição', 'Unidade', 'NCM', 'Origem', 'Preço', 'Valor IPI fixo', 'Observações', 'Situação', 'Estoque', 'Preço de custo', 'Cód. no fornecedor', 'Fornecedor', 'Localização', 'Estoque máximo', 'Estoque mínimo', 'Peso líquido (Kg)', 'Peso bruto (Kg)', 'GTIN/EAN', 'GTIN/EAN da Embalagem', 'Largura do produto', 'Altura do Produto', 'Profundidade do produto', 'Data Validade', 'Descrição do Produto no Fornecedor', 'Descrição Complementar', 'Itens p/ caixa', 'Produto Variação', 'Tipo Produção', 'Classe de enquadramento do IPI', 'Código na Lista de Serviços', 'Tipo do item', 'Grupo de Tags/Tags', 'Tributos', 'Código Pai', 'Código Integração', 'Grupo de produtos', 'Marca', 'CEST', 'Volumes', 'Descrição Curta', 'Cross-Docking', 'URL Imagens Externas', 'Link Externo', 'Meses Garantia no Fornecedor', 'Clonar dados do pai', 'Condição do Produto', 'Frete Grátis', 'Número FCI', 'Vídeo', 'Departamento', 'Unidade de Medida', 'Preço de Compra', 'Valor base ICMS ST para retenção', 'Valor ICMS ST para retenção', 'Valor ICMS próprio do substituto', 'Categoria do produto', 'Informações Adicionais'];
+    // Lista exata de colunas conforme o CSV modelo fornecido
+    const colunasModelo = [
+        "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", 
+        "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", 
+        "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", 
+        "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", 
+        "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", 
+        "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", 
+        "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", 
+        "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", 
+        "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", 
+        "Categoria do produto", "Informações Adicionais"
+    ];
 
     function switchTab(tab) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -172,339 +193,272 @@
         if(tab === 'labels') document.getElementById('headerBtnLabels').classList.add('active');
     }
 
+    // Leitura Perfeita do CSV
     document.getElementById('blingCsvInput').addEventListener('change', function(e) {
         const reader = new FileReader();
         reader.onload = function(ev) {
             let content = ev.target.result.replace(/^\ufeff/, "");
             const rows = content.split(/\r?\n/);
-            const sep = rows[0].includes(';') ? ';' : ',';
-            const headers = rows[0].split(sep).map(h => h.replace(/"/g, '').trim().toUpperCase());
+            const sep = ';'; // Forçado para CSV Bling padrão
             
-            // Mapear índices
+            // Assume que a primeira linha é o cabeçalho idêntico ao colunasModelo
+            const headers = rows[0].split(sep).map(h => h.replace(/"/g, '').trim());
+            
+            // Mapear índices para a aba de etiquetas
             const idxID = headers.indexOf('ID');
-            const idxEAN = headers.findIndex(h => h.includes('EAN') || h.includes('GTIN'));
-            const idxEstoque = headers.indexOf('ESTOQUE');
-            const idxDesc = headers.indexOf('DESCRIÇÃO');
-            const idxPreco = headers.indexOf('PREÇO');
-            const idxCat = headers.findIndex(h => h.includes('CATEGORIA'));
-            const idxCodigo = headers.indexOf('CÓDIGO') > -1 ? headers.indexOf('CÓDIGO') : headers.indexOf('CODIGO');
-            const idxLoc = headers.findIndex(h => h.includes('LOCALIZA'));
+            const idxEAN = headers.indexOf('GTIN/EAN');
+            const idxDesc = headers.indexOf('Descrição');
+            const idxCodigo = headers.indexOf('Código');
+            const idxLoc = headers.indexOf('Localização');
 
             baseBling = {};
             categoriasBling.clear();
-            ultimoSeqCodigo = 0; // Reinicia o contador
-
+            listaCompletaBling = [];
+            ultimoSeqCodigo = 0;
+            
             const tbody = document.getElementById('labelsTableBody');
             tbody.innerHTML = "";
 
             for(let i = 1; i < rows.length; i++) {
                 if(!rows[i].trim()) continue;
+                
+                // Regex para splitar respeitando aspas
                 const cols = rows[i].split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
-                const ean = cols[idxEAN]?.replace(/"/g, '').trim(); 
-                const desc = cols[idxDesc]?.replace(/"/g, '').trim() || "SEM NOME";
-                const cat = (idxCat > -1 && cols[idxCat]) ? cols[idxCat].replace(/"/g, '').trim() : "";
-                const codigo = (idxCodigo > -1 && cols[idxCodigo]) ? cols[idxCodigo].replace(/"/g, '').trim() : "";
-                const loc = (idxLoc > -1 && cols[idxLoc]) ? cols[idxLoc].replace(/"/g, '').trim() : "";
+                
+                // Criar objeto completo do produto mantendo integridade
+                let prodObj = {};
+                headers.forEach((h, index) => {
+                    let val = cols[index] ? cols[index].replace(/^"|"$/g, '') : "";
+                    prodObj[h] = val;
+                });
 
-                if(cat) categoriasBling.add(cat);
+                listaCompletaBling.push(prodObj);
 
-                // Lógica para encontrar o maior código numérico
-                const codigoNum = parseInt(codigo);
-                if(!isNaN(codigoNum) && codigoNum > ultimoSeqCodigo) {
-                    ultimoSeqCodigo = codigoNum;
+                // Armazenar na baseBling para consulta (usando EAN ou ID como chave se necessário, ou apenas guardando)
+                const ean = prodObj['GTIN/EAN']?.trim();
+                const codigo = prodObj['Código']?.trim();
+                const desc = prodObj['Descrição'] || "SEM NOME";
+                
+                if (ean) baseBling[ean] = prodObj;
+                if (codigo) {
+                    baseBling[codigo] = prodObj;
+                    // Detectar sequencia de código P
+                    const match = codigo.match(/^P(\d+)$/i);
+                    if(match) {
+                        const num = parseInt(match[1], 10);
+                        if(num > ultimoSeqCodigo) ultimoSeqCodigo = num;
+                    }
                 }
 
-                if(ean) {
-                    baseBling[ean] = { 
-                        id: cols[idxID]?.replace(/"/g, '').trim() || "", 
-                        estoqueAtual: parseFloat(cols[idxEstoque]?.replace(/"/g, '').replace(',', '.') || 0),
-                        descricao: desc, 
-                        preco: cols[idxPreco]?.replace(/"/g, '').replace(',', '.') || "0.00",
-                        categoria: cat,
-                        codigo: codigo,
-                        localizacao: loc
-                    };
-
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50 border-b border-slate-100";
-                    tr.innerHTML = `
-                        <td class="p-4"><input type="checkbox" class="label-check" data-nome="${desc}" data-ean="${ean}"></td>
-                        <td class="p-4 font-medium">${desc}</td>
-                        <td class="p-4 text-slate-500 font-mono">${ean}</td>
-                        <td class="p-4 text-slate-600 font-bold">${codigo}</td>
-                        <td class="p-4 text-slate-400 text-xs">${loc}</td>
-                    `;
-                    tbody.appendChild(tr);
-                }
+                // Renderizar Tabela de Etiquetas
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50 transition-colors border-b border-slate-50";
+                tr.innerHTML = `
+                    <td class="p-4"><input type="checkbox" class="label-check w-4 h-4 accent-slate-800" data-ean="${ean || ''}" data-nome="${desc}"></td>
+                    <td class="p-4 font-bold text-slate-700">${desc}</td>
+                    <td class="p-4 font-mono text-slate-500">${ean || '-'}</td>
+                    <td class="p-4 text-slate-500">${codigo || '-'}</td>
+                    <td class="p-4"><span class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold">${prodObj['Localização'] || '-'}</span></td>
+                `;
+                tbody.appendChild(tr);
             }
-            alert("Base Bling carregada! " + categoriasBling.size + " categorias. Último Código Seq: " + ultimoSeqCodigo);
+            alert(`CSV Carregado! ${rows.length - 1} produtos processados. Último código P detectado: P${ultimoSeqCodigo}`);
         };
-        reader.readAsText(e.target.files[0], "UTF-8");
+        reader.readAsText(e.target.files[0], 'ISO-8859-1');
     });
 
     document.getElementById('xmlInput').addEventListener('change', function(e) {
-        Array.from(e.target.files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const xml = new DOMParser().parseFromString(ev.target.result, "text/xml");
-                processarXML(xml, file.name);
-            };
-            reader.readAsText(file);
-        });
+        produtosCarregados = [];
+        document.getElementById('productList').innerHTML = "";
+        Array.from(e.target.files).forEach((file, i) => lerXML(file, i));
+        document.getElementById('btnExport').classList.remove('hidden');
+        document.getElementById('btnExportAll').classList.remove('hidden');
     });
 
-    function processarXML(xml, fileName) {
-        const emit = xml.getElementsByTagName('emit')[0];
-        const nomeForn = emit?.getElementsByTagName('xNome')[0]?.textContent || "Desconhecido";
-        const itens = xml.getElementsByTagName('det');
-        
-        for (let i = 0; i < itens.length; i++) {
-            const prod = itens[i].getElementsByTagName('prod')[0];
-            const ean = prod.getElementsByTagName('cEAN')[0]?.textContent || "";
-            const vUnCom = parseFloat(prod.getElementsByTagName('vUnCom')[0]?.textContent || 0);
-            const qCom = parseFloat(prod.getElementsByTagName('qCom')[0]?.textContent || 0);
+    function lerXML(file, idx) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const parser = new DOMParser();
+            const xml = parser.parseFromString(e.target.result, "text/xml");
+            const emitente = xml.querySelector('emit > xNome')?.textContent || "";
+            const nfe = xml.querySelector('ide > nNF')?.textContent || "";
             
-            const infoBling = baseBling[ean];
-            const vinculado = !!infoBling;
-            
-            let precoAntigoBling = vinculado ? infoBling.preco : null;
+            const dets = xml.querySelectorAll('det');
+            dets.forEach((det, i) => {
+                const prod = det.querySelector('prod');
+                const imposto = det.querySelector('imposto');
+                
+                // Inicializa objeto com chaves do modelo vazias
+                let novoProd = {};
+                colunasModelo.forEach(key => novoProd[key] = "");
 
-            let obj = { 
-                _xmlSource: fileName, 
-                _selected: true, 
-                _original: {}, 
-                _vinculado: vinculado, 
-                _estoqueBling: infoBling?.estoqueAtual || 0,
-                _precoBlingOriginal: precoAntigoBling
-            };
-            
-            colunasModelo.forEach(col => {
-                let val = "";
-                
-                if(col === 'ID') val = infoBling?.id || "";
-                else if(col === 'Código') {
-                    // SE NÃO TIVER VINCULADO, GERA PRÓXIMO CÓDIGO DA SEQUÊNCIA
-                    if(vinculado && infoBling.codigo) {
-                        val = infoBling.codigo;
-                    } else {
-                        ultimoSeqCodigo++; // Incrementa a sequência global
-                        val = ultimoSeqCodigo;
-                    }
+                // Mapeamento XML -> Modelo CSV
+                novoProd["Código"] = prod.querySelector('cProd')?.textContent || "";
+                novoProd["Descrição"] = prod.querySelector('xProd')?.textContent || "";
+                novoProd["Unidade"] = prod.querySelector('uCom')?.textContent || "";
+                novoProd["NCM"] = prod.querySelector('NCM')?.textContent || "";
+                novoProd["Origem"] = imposto?.querySelector('ICMS orig')?.textContent || "0";
+                novoProd["Preço"] = prod.querySelector('vUnCom')?.textContent || "0,00";
+                novoProd["Preço de custo"] = prod.querySelector('vUnCom')?.textContent || "0,00"; // Assume custo inicial igual valor un
+                novoProd["Cód. no fornecedor"] = prod.querySelector('cProd')?.textContent || "";
+                novoProd["Fornecedor"] = emitente;
+                novoProd["GTIN/EAN"] = prod.querySelector('cEAN')?.textContent || "";
+                novoProd["GTIN/EAN da Embalagem"] = prod.querySelector('cEANTrib')?.textContent || "";
+                novoProd["CEST"] = prod.querySelector('CEST')?.textContent || "";
+                novoProd["Peso líquido (Kg)"] = "0,000"; // Padrão se não houver
+                novoProd["Peso bruto (Kg)"] = "0,000";
+                novoProd["Situação"] = "Ativo";
+                novoProd["Condição do Produto"] = "Novo";
+                novoProd["Itens p/ caixa"] = "1"; // Default
+
+                // Flags internas de controle do sistema
+                novoProd._id = `prod-${idx}-${i}-${Date.now()}`;
+                novoProd._selected = true;
+                novoProd._custoOriginal = parseFloat(novoProd["Preço de custo"].replace(',', '.')); // Auxiliar
+
+                // Verificar vinculo
+                const ean = novoProd["GTIN/EAN"];
+                if(baseBling[ean]) {
+                    novoProd._vinculado = true;
+                    // Preencher campos faltantes com dados do Bling se quiser, ou manter XML. 
+                    // Regra: XML preenche o que tem.
+                } else {
+                    // Produto NOVO: Gerar código sequencial se não vinculado
+                    ultimoSeqCodigo++;
+                    novoProd["Código"] = "P" + ultimoSeqCodigo;
                 }
-                else if(col === 'Descrição') val = (vinculado && infoBling.descricao) ? infoBling.descricao : prod.getElementsByTagName('xProd')[0]?.textContent;
-                else if(col === 'Preço') val = (vUnCom * 1.5).toFixed(2);
-                else if(col === 'Unidade') val = "UN";
-                else if(col === 'Estoque mínimo') val = "3";
-                else if(col === 'Localização') val = (vinculado && infoBling.localizacao) ? infoBling.localizacao : "";
-                else if(col === 'Categoria do produto') val = (vinculado && infoBling.categoria) ? infoBling.categoria : "";
-                else if(col === 'GTIN/EAN') val = ean;
-                else if(col === 'Estoque') val = ((infoBling?.estoqueAtual || 0) + qCom).toFixed(2);
-                else if(['Preço de custo', 'Preço de Compra'].includes(col)) val = vUnCom.toFixed(2);
-                else if(col === 'Fornecedor') val = nomeForn;
-                else if(col === 'Situação') val = "Ativo";
-                else val = prod.getElementsByTagName(col === 'Código' ? 'cProd' : col)?.[0]?.textContent || "";
-                
-                obj[col] = val;
-                
-                if(['Estoque', 'Preço', 'Preço de custo', 'Preço de Compra'].includes(col)) {
-                    obj._original[col] = (col === 'Estoque') ? qCom : val; 
-                }
+
+                produtosCarregados.push(novoProd);
+                renderizarItemLista(novoProd);
             });
-            produtosCarregados.push(obj);
-        }
-        renderLista();
-        document.getElementById('btnExport').classList.remove('hidden');
+        };
+        reader.readAsText(file);
     }
 
-    function renderLista() {
-        const list = document.getElementById('productList');
-        list.innerHTML = "";
-        const grupos = {};
-        produtosCarregados.forEach((p, idx) => {
-            if(!grupos[p._xmlSource]) grupos[p._xmlSource] = [];
-            grupos[p._xmlSource].push({p, idx});
-        });
-        for(const fileName in grupos) {
-            const div = document.createElement('div');
-            div.className = "xml-divider"; div.innerText = fileName;
-            list.appendChild(div);
-            grupos[fileName].forEach(({p, idx}) => {
-                const item = document.createElement('div');
-                item.className = `p-3 flex items-center gap-3 cursor-pointer border-l-4 ${produtoSelecionadoIdx === idx ? 'selected-item' : 'hover:bg-slate-50'}`;
-                item.onclick = () => selecionarProduto(idx);
-                
-                let priceChangeHtml = '';
-                if(p._vinculado && p._precoBlingOriginal) {
-                    priceChangeHtml = `<span class="price-change">💰 De R$ ${p._precoBlingOriginal} ➔ R$ ${p['Preço']}</span>`;
-                }
+    function renderizarItemLista(p) {
+        const div = document.createElement('div');
+        div.className = `p-3 hover:bg-blue-50 cursor-pointer transition-colors ${p._selected ? 'bg-blue-50' : ''}`;
+        div.id = `row-${p._id}`;
+        div.onclick = (e) => {
+            if(e.target.type !== 'checkbox') carregarEditor(p);
+        };
+        
+        let statusHtml = p._vinculado ? 
+            `<span class="status-vinc">VINCULADO</span>` : 
+            `<span class="status-novo">NOVO (${p["Código"]})</span>`;
 
-                item.innerHTML = `
-                    <input type="checkbox" ${p._selected ? 'checked' : ''} onclick="event.stopPropagation(); p._selected=!p._selected">
-                    <div class="flex-1 overflow-hidden">
-                        <p class="text-[10px] font-bold truncate uppercase name-ref-${idx}">${p.Descrição}</p>
-                        <div class="mt-1 flex flex-wrap gap-2 items-center">
-                            ${p._vinculado ? '<span class="status-vinc">VINCULADO ('+p['Código']+')</span>' : '<span class="status-novo">NOVO: '+p['Código']+'</span>'}
+        div.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div class="flex gap-2 items-start overflow-hidden">
+                    <input type="checkbox" class="mt-1 w-4 h-4 accent-blue-600" ${p._selected ? 'checked' : ''} onchange="toggleSel('${p._id}', this)">
+                    <div class="overflow-hidden">
+                        <div class="text-[10px] font-bold text-slate-500 truncate w-40">${p["GTIN/EAN"] || 'SEM EAN'}</div>
+                        <div class="font-bold text-xs truncate w-48 text-slate-800" title="${p["Descrição"]}">${p["Descrição"]}</div>
+                        <div class="flex gap-2 mt-1">
+                            ${statusHtml}
+                            <span class="text-[9px] bg-slate-200 px-1 rounded text-slate-600 font-bold">${p["Unidade"]}</span>
                         </div>
-                        ${priceChangeHtml}
-                    </div>`;
-                list.appendChild(item);
-            });
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-xs font-black text-emerald-600">R$ ${parseFloat(p["Preço"]).toFixed(2)}</div>
+                </div>
+            </div>
+        `;
+        document.getElementById('productList').appendChild(div);
+    }
+
+    function toggleSel(id, cb) {
+        const p = produtosCarregados.find(x => x._id === id);
+        if(p) {
+            p._selected = cb.checked;
+            // Atualiza visual do fundo
+            const row = document.getElementById(`row-${id}`);
+            if(row) {
+                if(p._selected) row.classList.add('bg-blue-50');
+                else row.classList.remove('bg-blue-50');
+            }
         }
     }
 
-    function selecionarProduto(idx) {
-        produtoSelecionadoIdx = idx;
-        const p = produtosCarregados[idx];
-        document.getElementById('editorContent').classList.remove('hidden');
-        document.getElementById('editMainName').value = p.Descrição;
-        
-        document.getElementById('editMainName').readOnly = p._vinculado;
-        if(p._vinculado) document.getElementById('editMainName').classList.add('opacity-50', 'cursor-not-allowed');
-        else document.getElementById('editMainName').classList.remove('opacity-50', 'cursor-not-allowed');
+    function toggleAllXML(cb) {
+        produtosCarregados.forEach(p => p._selected = cb.checked);
+        document.getElementById('productList').innerHTML = "";
+        produtosCarregados.forEach(p => renderizarItemLista(p));
+    }
 
+    function carregarEditor(p) {
+        produtoSelecionadoIdx = produtosCarregados.findIndex(x => x._id === p._id);
+        const area = document.getElementById('editorContent');
         const grid = document.getElementById('fieldsGrid');
+        
+        area.classList.remove('hidden');
+        document.getElementById('editMainName').value = p["Descrição"];
+        document.getElementById('fatorInput').value = p["Itens p/ caixa"] || 1;
+        
         grid.innerHTML = "";
-        colunasModelo.forEach(col => {
+        
+        // Campos editáveis principais (filtrados para não poluir, ou todos se quiser)
+        const camposPrincipais = ["Código", "GTIN/EAN", "NCM", "Preço", "Preço de custo", "Unidade", "Marca", "Peso líquido (Kg)", "Peso bruto (Kg)"];
+        
+        camposPrincipais.forEach(key => {
             const div = document.createElement('div');
-            div.className = "flex flex-col gap-1";
-            let inputHtml = "";
-            let isReadOnly = false;
-            let extraClass = "";
-
-            if(col === 'Categoria do produto') {
-                let options = `<option value="">Selecione...</option>`;
-                categoriasBling.forEach(cat => {
-                    const selected = p[col] === cat ? 'selected' : '';
-                    options += `<option value="${cat}" ${selected}>${cat}</option>`;
-                });
-                inputHtml = `<select data-col="${col}" onchange="atualizarCampo(this)" class="p-2 border border-slate-200 rounded-lg text-[11px] outline-none focus:border-blue-500 bg-white">${options}</select>`;
-            } else {
-                if(p._vinculado && ['Descrição', 'GTIN/EAN', 'ID', 'Código'].includes(col)) {
-                    isReadOnly = true;
-                    extraClass = "bg-slate-100 text-slate-400 cursor-not-allowed";
-                }
-                inputHtml = `<input type="text" value="${p[col]}" data-col="${col}" ${isReadOnly ? 'readonly' : ''} oninput="atualizarCampo(this)" class="p-2 border border-slate-200 rounded-lg text-[11px] outline-none focus:border-blue-500 ${p[col]?'field-filled':''} ${extraClass}">`;
-            }
-            div.innerHTML = `<label class="text-[9px] font-black text-slate-500 uppercase">${col}</label>${inputHtml}`;
+            div.innerHTML = `
+                <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">${key}</label>
+                <input type="text" value="${p[key] || ''}" oninput="atualizarCampo('${key}', this.value)" 
+                    class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs font-bold text-slate-700 focus:border-blue-500 outline-none transition-all ${p[key] ? 'field-filled' : ''}">
+            `;
             grid.appendChild(div);
         });
-        document.getElementById('fatorInput').value = 1;
-        atualizarDisplayCalculo();
+
+        // Evento para fator
+        document.getElementById('fatorInput').oninput = function() {
+            const fator = parseFloat(this.value) || 1;
+            p["Itens p/ caixa"] = this.value;
+            const custoUnit = p._custoOriginal / fator;
+            p["Preço de custo"] = custoUnit.toFixed(4).replace('.', ',');
+            // Atualiza input visualmente se existir
+            carregarEditor(p); 
+        };
     }
 
-    document.getElementById('fatorInput').oninput = function() {
-        const fator = parseFloat(this.value) || 1;
-        const p = produtosCarregados[produtoSelecionadoIdx];
-        
-        const qtdNota = parseFloat(p._original.Estoque);
-        const custoNota = parseFloat(p._original['Preço de custo']);
-
-        const novoCusto = (custoNota / fator);
-        const estoqueFinal = p._estoqueBling + (qtdNota * fator);
-        const novoPrecoVenda = novoCusto * 1.5;
-
-        p['Preço de custo'] = novoCusto.toFixed(4);
-        p['Preço de Compra'] = novoCusto.toFixed(4);
-        p['Estoque'] = estoqueFinal.toFixed(2);
-        p['Preço'] = novoPrecoVenda.toFixed(2);
-
-        const inputCusto = document.querySelector(`input[data-col="Preço de custo"]`);
-        if(inputCusto) inputCusto.value = novoCusto.toFixed(4);
-        
-        const inputEstoque = document.querySelector(`input[data-col="Estoque"]`);
-        if(inputEstoque) inputEstoque.value = estoqueFinal.toFixed(2);
-
-        const inputVenda = document.querySelector(`input[data-col="Preço"]`);
-        if(inputVenda) inputVenda.value = novoPrecoVenda.toFixed(2);
-
-        atualizarDisplayCalculo();
-        renderLista();
-    };
-
-    function atualizarDisplayCalculo() {
-        const p = produtosCarregados[produtoSelecionadoIdx];
-        const f = parseFloat(document.getElementById('fatorInput').value) || 1;
-        const qNota = parseFloat(p._original.Estoque);
-        const vNota = parseFloat(p._original['Preço de custo']);
-        
-        document.getElementById('calcInfo').innerHTML = `
-            <div class="estoque-highlight flex flex-col gap-1">
-                <div>📦 Estoque: ${p._estoqueBling} (Atual) + (${qNota} cx * ${f}) = <strong>${p.Estoque} un</strong></div>
-                <div>💲 Custo: R$ ${vNota.toFixed(2)} (cx) ÷ ${f} = <strong>R$ ${p['Preço de custo']} (un)</strong></div>
-                <div>🏷️ Venda (+50%): <strong>R$ ${p['Preço']}</strong></div>
-            </div>`;
-    }
-
-    function atualizarCampo(el) {
-        produtosCarregados[produtoSelecionadoIdx][el.dataset.col] = el.value;
-        if(el.dataset.col === 'Descrição') {
-            document.querySelector(`.name-ref-${produtoSelecionadoIdx}`).innerText = el.value;
-            document.getElementById('editMainName').value = el.value;
+    function atualizarCampo(key, val) {
+        if(produtoSelecionadoIdx !== null) {
+            produtosCarregados[produtoSelecionadoIdx][key] = val;
         }
     }
 
     function sincronizarNome(el) {
-        if(!produtosCarregados[produtoSelecionadoIdx]._vinculado) {
-            produtosCarregados[produtoSelecionadoIdx].Descrição = el.value;
-            document.querySelector(`.name-ref-${produtoSelecionadoIdx}`).innerText = el.value;
-            const inp = document.querySelector(`input[data-col="Descrição"]`);
-            if(inp) inp.value = el.value;
+        if(produtoSelecionadoIdx !== null) {
+            produtosCarregados[produtoSelecionadoIdx]["Descrição"] = el.value.toUpperCase();
+            // Atualiza lista visual
+            // Simplificação: Re-renderizar lista seria ideal, mas pesado.
         }
     }
 
-    function toggleAllXML(source) {
-        produtosCarregados.forEach(p => p._selected = source.checked);
-        renderLista();
-    }
-    
-    function toggleAllLabels(source) {
-        document.querySelectorAll('.label-check').forEach(cb => cb.checked = source.checked);
-    }
-
-    // Função de Ordenação
+    // Ordenação da Tabela
+    let dir = "asc";
     function ordenarTabela(n) {
-        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-        table = document.getElementById("labelsTable");
-        switching = true;
-        dir = "asc"; 
+        const table = document.getElementById("labelsTable");
+        let switching = true, shouldSwitch, switchcount = 0;
         
         while (switching) {
             switching = false;
-            rows = table.rows;
-            // Loop começa em 1 para pular o thead
-            for (i = 1; i < (rows.length - 1); i++) {
+            const rows = table.rows;
+            for (let i = 1; i < (rows.length - 1); i++) {
                 shouldSwitch = false;
-                x = rows[i].getElementsByTagName("TD")[n];
-                y = rows[i + 1].getElementsByTagName("TD")[n];
-                
-                let valX = x.innerHTML.toLowerCase();
-                let valY = y.innerHTML.toLowerCase();
-                
-                // Tenta converter para número para ordenação correta de códigos
-                let numX = parseFloat(valX);
-                let numY = parseFloat(valY);
-                
-                if(!isNaN(numX) && !isNaN(numY)) {
-                     valX = numX;
-                     valY = numY;
-                }
-
+                const x = rows[i].getElementsByTagName("TD")[n];
+                const y = rows[i + 1].getElementsByTagName("TD")[n];
                 if (dir == "asc") {
-                    if (valX > valY) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                } else if (dir == "desc") {
-                    if (valX < valY) {
-                        shouldSwitch = true;
-                        break;
-                    }
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
+                } else {
+                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
                 }
             }
             if (shouldSwitch) {
                 rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
                 switching = true;
-                switchcount ++;      
+                switchcount++;
             } else {
                 if (switchcount == 0 && dir == "asc") {
                     dir = "desc";
@@ -528,17 +482,55 @@
         setTimeout(() => { window.print(); area.classList.add('hidden'); }, 100);
     }
 
+    function toggleAllLabels(source) {
+        document.querySelectorAll('.label-check').forEach(cb => cb.checked = source.checked);
+    }
+
+    // Função genérica de exportação CSV
+    function gerarCSV(listaProdutos, nomeArquivo) {
+        if(listaProdutos.length === 0) return alert("Sem produtos para exportar!");
+        
+        // Cabeçalho CSV
+        let csvContent = "\ufeff" + colunasModelo.map(c => `"${c}"`).join(";") + "\r\n";
+
+        listaProdutos.forEach(p => {
+            let row = colunasModelo.map(col => {
+                let val = p[col] === undefined || p[col] === null ? "" : String(p[col]);
+                return `"${val.replace(/"/g, '""')}"`;
+            }).join(";");
+            csvContent += row + "\r\n";
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `${nomeArquivo || 'exportacao_bling'}_${new Date().toISOString().slice(0,19).replace(/:/g,"-")}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Botão Exportar Selecionados (Import XML Tab)
     document.getElementById('btnExport').onclick = () => {
         const sel = produtosCarregados.filter(p => p._selected);
-        if(sel.length === 0) return alert("Selecione produtos!");
-        let csv = ["\ufeff" + colunasModelo.join(";")];
-        sel.forEach(p => csv.push(colunasModelo.map(col => `"${String(p[col]).replace(/"/g, '""')}"`).join(";")));
-        const blob = new Blob([csv.join("\r\n")], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `IMPORT_BLING_ATUALIZADO.csv`;
-        a.click();
+        if(sel.length === 0) return alert("Selecione produtos na lista!");
+        gerarCSV(sel, "exportacao_selecionados");
     };
+
+    // Botão Exportar Tudo (Import XML Tab)
+    document.getElementById('btnExportAll').onclick = () => {
+        if(produtosCarregados.length === 0) return alert("Nenhum produto carregado!");
+        gerarCSV(produtosCarregados, "exportacao_xml_todos");
+    };
+    
+    // Botão Exportar Base Completa (Labels Tab)
+    function exportarBaseBling() {
+        if(listaCompletaBling.length === 0) return alert("Carregue o CSV do Bling primeiro!");
+        gerarCSV(listaCompletaBling, "backup_completo_bling");
+    }
+
 </script>
 </body>
 </html>
