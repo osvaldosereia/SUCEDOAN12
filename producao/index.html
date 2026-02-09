@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v41 (Auto Categoria & EAN Search)</title>
+    <title>Sucedoan Painel - v42 (Light Mode & Categorias)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
-        /* --- 1. VARIÁVEIS E RESET --- */
+        /* --- 1. VARIÁVEIS E RESET (MODO CLARO) --- */
         :root {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent: #3b82f6;
-            --success: #22c55e;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --border: #334155;
+            --bg-body: #f8fafc;       /* Fundo claro */
+            --bg-card: #ffffff;       /* Card branco */
+            --text-primary: #1e293b;  /* Texto escuro */
+            --text-secondary: #64748b;
+            --accent: #2563eb;        /* Azul vibrante */
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --border: #cbd5e1;        /* Borda cinza claro */
         }
 
         * { box-sizing: border-box; }
@@ -38,7 +38,7 @@
 
         /* --- 2. CABEÇALHO (HEADER) --- */
         header {
-            background: #020617;
+            background: #ffffff;
             height: 60px;
             display: flex;
             align-items: center;
@@ -51,16 +51,16 @@
         .brand {
             font-weight: 900;
             font-size: 18px;
-            color: white;
+            color: #0f172a;
             margin-right: auto;
             letter-spacing: -0.5px;
         }
         .brand span { color: var(--accent); }
 
         .nav-btn {
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: #cbd5e1;
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
             padding: 8px 16px;
             border-radius: 6px;
             font-weight: 600;
@@ -80,7 +80,8 @@
 
         .nav-btn.config {
             color: var(--warning);
-            border-color: rgba(245, 158, 11, 0.3);
+            border-color: #fcd34d;
+            background: #fffbeb;
         }
 
         /* --- 3. ÁREAS DE VISUALIZAÇÃO (ABAS) --- */
@@ -99,7 +100,7 @@
             padding: 12px 24px;
             display: flex;
             gap: 12px;
-            background: #0f172a;
+            background: #f1f5f9;
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
             align-items: center;
@@ -112,9 +113,9 @@
 
         .search-input {
             width: 100%;
-            background: #1e293b;
-            border: 1px solid #334155;
-            color: white;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-primary);
             padding: 10px 10px 10px 36px;
             border-radius: 8px;
             font-size: 14px;
@@ -126,13 +127,13 @@
             position: absolute;
             left: 10px;
             top: 10px;
-            color: #64748b;
+            color: #94a3b8;
             width: 16px;
         }
 
         #total-count {
             font-size: 11px;
-            color: #94a3b8;
+            color: var(--text-secondary);
             font-weight: bold;
             min-width: 80px;
             text-align: right;
@@ -143,10 +144,27 @@
             flex-grow: 1;
             overflow-y: auto;
             padding: 20px;
+            display: block; /* Alterado de grid para block para permitir headers */
+        }
+        
+        .category-header {
+            width: 100%;
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--accent);
+            border-bottom: 2px solid var(--border);
+            margin: 20px 0 10px 0;
+            padding-bottom: 5px;
+            text-transform: uppercase;
+        }
+        .category-header:first-child { margin-top: 0; }
+
+        .category-items-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 16px;
             align-content: start;
+            margin-bottom: 20px;
         }
 
         .card {
@@ -159,13 +177,14 @@
             border: 1px solid var(--border);
             transition: transform 0.2s;
             min-height: 420px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .card:hover {
             transform: translateY(-2px);
             border-color: var(--accent);
             z-index: 10;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
 
         .card.status-synced { border-top: 3px solid var(--success); }
@@ -174,7 +193,7 @@
         /* Imagem do Card */
         .card-img-area {
             height: 160px;
-            background: #000;
+            background: #f8fafc;
             position: relative;
             display: flex;
             justify-content: center;
@@ -194,7 +213,7 @@
         .img-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.4);
             opacity: 0;
             display: flex;
             justify-content: center;
@@ -216,7 +235,7 @@
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             transition: 0.2s;
         }
         .overlay-btn:hover {
@@ -242,21 +261,27 @@
             letter-spacing: 0.5px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
         
-        .card-cat-badge {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--accent);
-            padding: 2px 6px;
+        .cat-select {
+            background: #f1f5f9;
+            border: 1px solid var(--border);
             border-radius: 4px;
             font-size: 9px;
+            color: var(--accent);
+            font-weight: bold;
+            padding: 2px;
+            max-width: 120px;
+            cursor: pointer;
+            outline: none;
         }
 
         .card-title-input {
             width: 100%;
             background: transparent;
             border: 1px solid transparent;
-            color: #ffffff;
+            color: var(--text-primary);
             font-family: 'Inter', sans-serif;
             font-size: 13px;
             font-weight: 600;
@@ -268,7 +293,7 @@
             padding: 2px;
         }
         .card-title-input:focus {
-            background: #0f172a;
+            background: #f1f5f9;
             border-color: var(--accent);
             outline: none;
         }
@@ -298,16 +323,16 @@
             border-radius: 4px;
             font-size: 12px;
             font-weight: 600;
-            color: white;
-            background: #0f172a;
+            color: var(--text-primary);
+            background: #f8fafc;
             text-align: center;
         }
-        .stat-input:focus { border-color: var(--accent); outline: none; }
+        .stat-input:focus { border-color: var(--accent); background: white; outline: none; }
 
         /* Rodapé do Card */
         .card-footer {
             padding: 8px 12px;
-            background: #0f172a;
+            background: #f8fafc;
             border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
@@ -325,7 +350,7 @@
             align-items: center;
             gap: 4px;
         }
-        .btn-text:hover { color: white; }
+        .btn-text:hover { color: var(--accent); }
 
         .btn-sync-mini {
             background: var(--success);
@@ -344,7 +369,7 @@
         .icon-btn-mini {
             background: transparent;
             border: 1px solid var(--border);
-            color: #94a3b8;
+            color: var(--text-secondary);
             width: 20px;
             height: 20px;
             border-radius: 4px;
@@ -373,7 +398,7 @@
         .history-table th {
             text-align: left;
             padding: 12px;
-            background: #020617;
+            background: #e2e8f0;
             border-bottom: 2px solid var(--border);
             color: var(--accent);
             text-transform: uppercase;
@@ -385,33 +410,24 @@
         .history-table td {
             padding: 12px;
             border-bottom: 1px solid var(--border);
-            color: #cbd5e1;
+            color: var(--text-primary);
         }
-        .history-table tr:hover { background: #1e293b; }
-
-        .badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-        }
-        .badge.success { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .badge.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .history-table tr:hover { background: #f1f5f9; }
 
         /* --- 7. MODAIS --- */
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.5);
             z-index: 2000;
             display: none;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(2px);
         }
 
         .modal-card {
-            background: #1e293b;
+            background: #ffffff;
             padding: 0;
             border-radius: 12px;
             width: 600px;
@@ -420,19 +436,19 @@
             display: flex;
             flex-direction: column;
             border: 1px solid var(--border);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
             overflow: hidden;
         }
         .modal-card.login { width: 350px; }
 
         .modal-header {
             padding: 12px 16px;
-            background: #020617;
+            background: #f1f5f9;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: white;
+            color: var(--text-primary);
             font-weight: bold;
             font-size: 14px;
         }
@@ -440,13 +456,13 @@
         .modal-body {
             padding: 16px;
             overflow-y: auto;
-            color: #cbd5e1;
+            color: var(--text-primary);
         }
 
         .close-btn {
             background: none;
             border: none;
-            color: #64748b;
+            color: var(--text-secondary);
             cursor: pointer;
         }
 
@@ -462,11 +478,11 @@
 
         .form-group input, .form-group select {
             width: 100%;
-            background: #0f172a;
+            background: #ffffff;
             border: 1px solid var(--border);
             padding: 8px;
             border-radius: 4px;
-            color: white;
+            color: var(--text-primary);
             font-size: 12px;
         }
 
@@ -488,7 +504,7 @@
             padding: 10px;
             border-radius: 6px;
             border: 1px solid var(--danger);
-            background: rgba(239, 68, 68, 0.1);
+            background: #fef2f2;
             color: var(--danger);
             font-weight: bold;
             cursor: pointer;
@@ -499,7 +515,7 @@
             gap: 8px;
             align-items: center;
         }
-        .btn-danger:hover { background: rgba(239, 68, 68, 0.2); }
+        .btn-danger:hover { background: #fee2e2; }
         
         /* Checkbox Customizado */
         .checkbox-wrapper {
@@ -509,7 +525,7 @@
             font-size: 12px;
             margin-top: 10px;
             justify-content: center;
-            color: #94a3b8;
+            color: var(--text-secondary);
         }
         .checkbox-wrapper input { accent-color: var(--accent); }
 
@@ -527,7 +543,7 @@
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             margin-top: 15px;
-            background: #0f172a;
+            background: #f1f5f9;
             padding: 10px;
             border-radius: 6px;
         }
@@ -543,21 +559,21 @@
             flex: 1;
             padding: 6px;
             border: 1px solid var(--border);
-            background: #1e293b;
-            color: #cbd5e1;
+            background: #ffffff;
+            color: var(--text-secondary);
             border-radius: 4px;
             font-size: 10px;
             cursor: pointer;
             text-align: center;
         }
-        .sticker-btn:hover { background: #334155; }
+        .sticker-btn:hover { background: #e2e8f0; }
         .sticker-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
 
         .tool-group label {
             display: flex;
             justify-content: space-between;
             font-size: 10px;
-            color: #94a3b8;
+            color: var(--text-secondary);
             margin-bottom: 4px;
         }
 
@@ -568,7 +584,7 @@
         }
 
         .file-info {
-            background: #020617;
+            background: #f1f5f9;
             padding: 8px;
             border-radius: 4px;
             margin-top: 10px;
@@ -590,8 +606,8 @@
             padding: 10px;
             border-radius: 6px;
             border: 1px solid var(--border);
-            background: #0f172a;
-            color: white;
+            background: #ffffff;
+            color: var(--text-primary);
             font-size: 11px;
             font-weight: bold;
             cursor: pointer;
@@ -600,19 +616,19 @@
             align-items: center;
             gap: 6px;
         }
-        .btn-act:hover { background: #1e293b; border-color: #64748b; }
-        .btn-act.primary { background: var(--accent); border: none; }
+        .btn-act:hover { background: #f1f5f9; border-color: var(--accent); }
+        .btn-act.primary { background: var(--accent); border: none; color: white; }
 
         /* --- 9. LOADER --- */
         #loader {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(255,255,255,0.9);
             z-index: 3000;
             display: none;
             justify-content: center;
             align-items: center;
-            color: white;
+            color: var(--text-primary);
             flex-direction: column;
             gap: 15px;
         }
@@ -620,7 +636,7 @@
         .spinner {
             width: 40px;
             height: 40px;
-            border: 4px solid #334155;
+            border: 4px solid #cbd5e1;
             border-top-color: var(--accent);
             border-radius: 50%;
             animation: spin 1s infinite linear;
@@ -648,8 +664,7 @@
         const LOGIN_KEY = 'sucedoan_saved_login'; 
 
         // --- NOVA CONFIGURAÇÃO DE CATEGORIAS ---
-        // A Ordem das palavras importa! Compostos ("CREME DE LEITE") devem ser definidos
-        // para serem encontrados antes de simples ("CREME").
+        // EDITE AQUI PARA ADICIONAR OU REMOVER CATEGORIAS E PALAVRAS-CHAVE
         const CONFIG_CATEGORIAS = {
             "ALIMENTOS": [
                 "ARROZ", "FEIJAO", "ACUCAR", "OLEO", "AZEITE", "MACARRAO", 
@@ -706,7 +721,10 @@
             </div>
             
             <button class="nav-btn" onclick="exportarCSV()">
-                <i data-lucide="download" size="14"></i> Exportar
+                <i data-lucide="download" size="14"></i> CSV
+            </button>
+            <button class="nav-btn" onclick="exportarJSONCategorias()">
+                <i data-lucide="file-json" size="14"></i> JSON CAT
             </button>
             <div id="total-count">0</div>
         </div>
@@ -716,7 +734,7 @@
 
     <div id="section-history" class="view-section">
         <div class="toolbar">
-            <h3 style="margin:0; font-size:14px; color:white;">Histórico de Alterações</h3>
+            <h3 style="margin:0; font-size:14px; color:var(--text-primary);">Histórico de Alterações</h3>
             <button class="nav-btn" onclick="clearHistory()">
                 <i data-lucide="trash-2" size="14"></i> Limpar
             </button>
@@ -831,7 +849,7 @@
                 <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" onkeydown="if(event.key==='Enter') saveConfig()"></div>
                 <button class="btn-full" onclick="saveConfig()">SALVAR</button>
                 
-                <hr style="margin:20px 0; border:0; border-top:1px solid #334155;">
+                <hr style="margin:20px 0; border:0; border-top:1px solid #e2e8f0;">
                 <button class="btn-danger" onclick="restaurarLinksPadraoSite()">
                     <i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE
                 </button>
@@ -1024,8 +1042,8 @@
                 p['URL Imagens Externas'] = ""; 
                 p['NCM'] = p.ncm; 
                 
-                // Força categoria calculada na exportação também
-                p['Categoria do produto'] = p.categoria || autoCategorizar(p.nome);
+                // NOTA: CATEGORIA REMOVIDA DA EXPORTAÇÃO CSV CONFORME SOLICITADO
+                // p['Categoria do produto'] = p.categoria;
 
                 p['Origem'] = '0'; 
                 p['Unidade'] = 'un';
@@ -1048,6 +1066,31 @@
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
             l.download = "produtos_export_identico.csv"; 
+            l.click();
+        }
+
+        // ----------------------------------------------------
+        // EXPORTAÇÃO JSON CATEGORIAS
+        // ----------------------------------------------------
+        function exportarJSONCategorias() {
+            if (products.length === 0) return alert("Nada para exportar.");
+            
+            const grupos = {};
+            products.forEach(p => {
+                const cat = p.categoria || "OUTROS";
+                if(!grupos[cat]) grupos[cat] = [];
+                grupos[cat].push(p.codigo);
+            });
+
+            const resultado = Object.keys(grupos).map(k => ({
+                categoria: k,
+                produtos: grupos[k]
+            }));
+
+            const jsonStr = JSON.stringify(resultado, null, 2);
+            const l = document.createElement("a");
+            l.href = URL.createObjectURL(new Blob([jsonStr], { type: 'application/json' }));
+            l.download = "categorias_produtos.json";
             l.click();
         }
         
@@ -1108,8 +1151,8 @@
         }
 
         function renderGrid(filter = "") {
-            const grid = document.getElementById('product-grid');
-            grid.innerHTML = "";
+            const gridContainer = document.getElementById('product-grid');
+            gridContainer.innerHTML = "";
             
             let filtered = products;
             if(filter) {
@@ -1124,78 +1167,103 @@
             
             document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
 
-            filtered.forEach(p => {
-                const card = document.createElement('div');
-                card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
-                
-                const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
-                
-                // Calcula categoria se não tiver (compatibilidade retroativa)
-                if(!p.categoria) p.categoria = autoCategorizar(p.nome);
+            // Pega todas as categorias configuradas + OUTROS
+            const categoriasDisponiveis = Object.keys(CONFIG_CATEGORIAS).concat(["OUTROS"]);
 
-                card.innerHTML = `
-                    <div class="card-img-area" onclick="openEditor('${p.codigo}')">
-                        <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
-                        <div class="img-overlay">
-                            <button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button>
-                            <button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="card-sku">
-                            <span>${p.codigo}</span>
-                            <span class="card-cat-badge">${p.categoria}</span>
-                        </div>
-                        
-                        <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
+            // Loop para agrupar visualmente
+            categoriasDisponiveis.forEach(catNome => {
+                const prodsDaCat = filtered.filter(p => p.categoria === catNome);
+                if(prodsDaCat.length === 0) return;
 
-                        <div style="font-size:10px; color:#64748b; margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:2px;">
-                            <span style="display:flex; align-items:center;">EAN: <strong style="color:#cbd5e1; margin-left:4px;">${p.gtin || '-'}</strong>
-                                ${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN no Google"><i data-lucide="search" size="10"></i></button>` : ''}
-                            </span>
-                            <span>NCM: <strong style="color:#cbd5e1">${p.ncm || '-'}</strong></span>
-                            <span style="grid-column: span 2">VAL: <strong style="color:${p.validade ? '#f59e0b' : '#cbd5e1'}">${p.validade || '-'}</strong></span>
-                        </div>
-                        
-                        <div class="card-stats">
-                            <div class="stat-box">
-                                <span class="stat-label">Preço (R$)</span>
-                                <input class="stat-input" value="${formatNum(p.preco)}" 
-                                    onchange="updateProduct('${p.codigo}', 'preco', this.value)">
-                            </div>
-                            <div class="stat-box">
-                                <span class="stat-label">Estoque</span>
-                                <input class="stat-input" value="${formatNum(p.estoque)}" 
-                                    onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
+                // Título da Seção
+                const header = document.createElement('div');
+                header.className = 'category-header';
+                header.innerText = `${catNome} (${prodsDaCat.length})`;
+                gridContainer.appendChild(header);
+
+                // Grid Interno
+                const subGrid = document.createElement('div');
+                subGrid.className = 'category-items-container';
+
+                prodsDaCat.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
+                    
+                    const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
+                    
+                    // Gera opções do seletor
+                    let options = "";
+                    categoriasDisponiveis.forEach(c => {
+                        options += `<option value="${c}" ${c === p.categoria ? 'selected' : ''}>${c}</option>`;
+                    });
+
+                    card.innerHTML = `
+                        <div class="card-img-area" onclick="openEditor('${p.codigo}')">
+                            <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
+                            <div class="img-overlay">
+                                <button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button>
+                                <button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button>
                             </div>
                         </div>
+                        <div class="card-body">
+                            <div class="card-sku">
+                                <span>${p.codigo}</span>
+                                <select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">
+                                    ${options}
+                                </select>
+                            </div>
+                            
+                            <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
 
-                        <div style="margin-top:8px;">
-                            <div class="stat-box">
-                                <span class="stat-label">Localização</span>
-                                <input class="stat-input" value="${p.localizacao||''}" 
-                                    onchange="updateProduct('${p.codigo}', 'localizacao', this.value)"
-                                    style="text-align:left;">
+                            <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:2px;">
+                                <span style="display:flex; align-items:center;">EAN: <strong style="color:var(--text-primary); margin-left:4px;">${p.gtin || '-'}</strong>
+                                    ${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN no Google"><i data-lucide="search" size="10"></i></button>` : ''}
+                                </span>
+                                <span>NCM: <strong style="color:var(--text-primary)">${p.ncm || '-'}</strong></span>
+                                <span style="grid-column: span 2">VAL: <strong style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}">${p.validade || '-'}</strong></span>
+                            </div>
+                            
+                            <div class="card-stats">
+                                <div class="stat-box">
+                                    <span class="stat-label">Preço (R$)</span>
+                                    <input class="stat-input" value="${formatNum(p.preco)}" 
+                                        onchange="updateProduct('${p.codigo}', 'preco', this.value)">
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Estoque</span>
+                                    <input class="stat-input" value="${formatNum(p.estoque)}" 
+                                        onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
+                                </div>
+                            </div>
+
+                            <div style="margin-top:8px;">
+                                <div class="stat-box">
+                                    <span class="stat-label">Localização</span>
+                                    <input class="stat-input" value="${p.localizacao||''}" 
+                                        onchange="updateProduct('${p.codigo}', 'localizacao', this.value)"
+                                        style="text-align:left;">
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="card-footer">
-                        <button class="btn-text" onclick="openDetails('${p.codigo}')">
-                            <i data-lucide="list-plus" size="14"></i> DETALHES
-                        </button>
-                        <button class="btn-text" onclick="printLabel('${p.codigo}')" title="Imprimir Etiqueta" style="margin-left:10px;">
-                            <i data-lucide="printer" size="14"></i>
-                        </button>
-                        <div style="flex-grow:1"></div>
-                        ${p._changed ? 
-                            `<button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')">
-                                <i data-lucide="refresh-cw" size="12"></i> SYNC
-                            </button>` : 
-                            `<i data-lucide="check-circle" size="16" color="var(--success)"></i>`
-                        }
-                    </div>
-                `;
-                grid.appendChild(card);
+                        <div class="card-footer">
+                            <button class="btn-text" onclick="openDetails('${p.codigo}')">
+                                <i data-lucide="list-plus" size="14"></i> DETALHES
+                            </button>
+                            <button class="btn-text" onclick="printLabel('${p.codigo}')" title="Imprimir Etiqueta" style="margin-left:10px;">
+                                <i data-lucide="printer" size="14"></i>
+                            </button>
+                            <div style="flex-grow:1"></div>
+                            ${p._changed ? 
+                                `<button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')">
+                                    <i data-lucide="refresh-cw" size="12"></i> SYNC
+                                </button>` : 
+                                `<i data-lucide="check-circle" size="16" color="var(--success)"></i>`
+                            }
+                        </div>
+                    `;
+                    subGrid.appendChild(card);
+                });
+                gridContainer.appendChild(subGrid);
             });
             lucide.createIcons();
         }
@@ -1252,8 +1320,8 @@
                 // Atualiza também o campo original do CSV se existir mapeamento direto
                 if(field === 'nome') {
                     p['Descrição'] = finalVal;
-                    // Recalcula categoria se o nome mudar
-                    p.categoria = autoCategorizar(finalVal);
+                    // Recalcula categoria se o nome mudar, a menos que o usuário tenha mudado manualmente antes
+                    // Mas como mudou o nome, é bom reavaliar ou manter. Aqui manteremos a atual.
                 }
                 if(field === 'preco') p['Preço'] = value; // Mantém string original
                 if(field === 'estoque') p['Estoque'] = value;
@@ -1262,7 +1330,9 @@
                 p._changed = true;
                 p._lastChange = new Date().toLocaleString();
                 saveData();
-                if(field === 'nome') renderGrid(); // Re-renderiza para mostrar nova categoria
+                
+                // Se alterar categoria ou nome, re-renderiza a grid para mover de seção
+                if(field === 'categoria' || field === 'nome') renderGrid(); 
             }
         }
 
