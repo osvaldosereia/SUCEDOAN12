@@ -1489,11 +1489,34 @@ const newUrl = `../site/img/produtos/${cleanSku}.webp?v=${Date.now()}`;
         
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
-        function exportarCSV() {
-            const csv = Papa.unparse(products, {quotes:true, delimiter:";"});
+       function exportarCSV() {
+            // Criamos uma cópia dos produtos para não estragar os dados originais do sistema
+            const dadosParaExportar = products.map(p => {
+                const copia = { ...p };
+                
+                // Se o preço existir, transformamos em string com vírgula
+                if (copia.preco !== undefined && copia.preco !== null) {
+                    copia.preco = copia.preco.toString().replace('.', ',');
+                }
+                
+                // Fazemos o mesmo para o estoque, caso queira vírgula em decimais de estoque também
+                if (copia.estoque !== undefined && copia.estoque !== null) {
+                    copia.estoque = copia.estoque.toString().replace('.', ',');
+                }
+
+                return copia;
+            });
+
+            // Geramos o CSV usando a cópia formatada
+            const csv = Papa.unparse(dadosParaExportar, {
+                quotes: true, 
+                delimiter: ";"
+            });
+
             const l = document.createElement("a"); 
-            l.href = URL.createObjectURL(new Blob(["\ufeff"+csv],{type:'text/csv;charset=utf-8;'}));
-            l.download = "produtos.csv"; l.click();
+            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
+            l.download = "produtos.csv"; 
+            l.click();
         }
         
         function importarBling() {
