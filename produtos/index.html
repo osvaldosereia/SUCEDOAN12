@@ -243,7 +243,7 @@
                 if (codigo) {
                     baseBling[codigo] = prodObj;
                     // Detectar sequencia de código P
-                    const match = codigo.match(/^P(\d+)$/i);
+                    const match = codigo.match(/^P(\d+)/i);
                     if(match) {
                         const num = parseInt(match[1], 10);
                         if(num > ultimoSeqCodigo) ultimoSeqCodigo = num;
@@ -281,55 +281,74 @@
             const parser = new DOMParser();
             const xml = parser.parseFromString(e.target.result, "text/xml");
             const emitente = xml.querySelector('emit > xNome')?.textContent || "";
-            const nfe = xml.querySelector('ide > nNF')?.textContent || "";
             
             const dets = xml.querySelectorAll('det');
             dets.forEach((det, i) => {
                 const prod = det.querySelector('prod');
                 const imposto = det.querySelector('imposto');
                 
-                // Inicializa objeto com chaves do modelo vazias
-                let novoProd = {};
-                colunasModelo.forEach(key => novoProd[key] = "");
+                // Extração dos dados
+                const xmlEan = prod.querySelector('cEAN')?.textContent || "";
+                const xmlEanTrib = prod.querySelector('cEANTrib')?.textContent || "";
+                const xmlDesc = prod.querySelector('xProd')?.textContent || "";
+                const xmlNcm = prod.querySelector('NCM')?.textContent || "";
+                const xmlCest = prod.querySelector('CEST')?.textContent || "";
+                const xmlCprod = prod.querySelector('cProd')?.textContent || "";
+                const xmlUcom = prod.querySelector('uCom')?.textContent || "";
+                const xmlVuncom = (prod.querySelector('vUnCom')?.textContent || "0.00").replace('.', ',');
+                const xmlOrig = imposto?.querySelector('ICMS orig')?.textContent || "0";
 
-                // Mapeamento XML -> Modelo CSV
-                novoProd["Código"] = prod.querySelector('cProd')?.textContent || "";
-                novoProd["Descrição"] = prod.querySelector('xProd')?.textContent || "";
-                novoProd["Unidade"] = prod.querySelector('uCom')?.textContent || "";
-                novoProd["NCM"] = prod.querySelector('NCM')?.textContent || "";
-                novoProd["Origem"] = imposto?.querySelector('ICMS orig')?.textContent || "0";
-                novoProd["Preço"] = prod.querySelector('vUnCom')?.textContent || "0,00";
-                novoProd["Preço de custo"] = prod.querySelector('vUnCom')?.textContent || "0,00"; // Assume custo inicial igual valor un
-                novoProd["Cód. no fornecedor"] = prod.querySelector('cProd')?.textContent || "";
-                novoProd["Fornecedor"] = emitente;
-                novoProd["GTIN/EAN"] = prod.querySelector('cEAN')?.textContent || "";
-                novoProd["GTIN/EAN da Embalagem"] = prod.querySelector('cEANTrib')?.textContent || "";
-                novoProd["CEST"] = prod.querySelector('CEST')?.textContent || "";
-                novoProd["Peso líquido (Kg)"] = "0,000"; // Padrão se não houver
-                novoProd["Peso bruto (Kg)"] = "0,000";
-                novoProd["Situação"] = "Ativo";
-                novoProd["Condição do Produto"] = "Novo";
-                novoProd["Itens p/ caixa"] = "1"; // Default
+                let item;
+                const searchEan = xmlEan.trim();
 
-                // Flags internas de controle do sistema
-                novoProd._id = `prod-${idx}-${i}-${Date.now()}`;
-                novoProd._selected = true;
-                novoProd._custoOriginal = parseFloat(novoProd["Preço de custo"].replace(',', '.')); // Auxiliar
-
-                // Verificar vinculo
-                const ean = novoProd["GTIN/EAN"];
-                if(baseBling[ean]) {
-                    novoProd._vinculado = true;
-                    // Preencher campos faltantes com dados do Bling se quiser, ou manter XML. 
-                    // Regra: XML preenche o que tem.
+                if (baseBling[searchEan]) {
+                    // MODO ATUALIZAÇÃO: Preserva dados originais (incluindo tabs e formatação)
+                    item = { ...baseBling[searchEan] };
+                    item._vinculado = true;
+                    
+                    // Atualiza apenas campos novos/alterados
+                    item["Preço"] = xmlVuncom;
+                    item["Preço de custo"] = xmlVuncom;
+                    item["Cód. no fornecedor"] = xmlCprod;
+                    item["Fornecedor"] = emitente;
+                    item["NCM"] = xmlNcm;
+                    item["Origem"] = xmlOrig;
+                    if(xmlCest) item["CEST"] = xmlCest;
                 } else {
-                    // Produto NOVO: Gerar código sequencial se não vinculado
+                    // MODO NOVO: Cria estrutura
+                    item = {};
+                    colunasModelo.forEach(key => item[key] = "");
+                    
+                    item["Descrição"] = xmlDesc;
+                    item["Unidade"] = xmlUcom;
+                    item["NCM"] = xmlNcm;
+                    item["Origem"] = xmlOrig;
+                    item["Preço"] = xmlVuncom;
+                    item["Preço de custo"] = xmlVuncom;
+                    item["Cód. no fornecedor"] = xmlCprod;
+                    item["Fornecedor"] = emitente;
+                    
+                    // Formatação para Excel (Tabs para evitar notação científica)
+                    item["GTIN/EAN"] = xmlEan ? `\t${xmlEan}` : "";
+                    item["GTIN/EAN da Embalagem"] = xmlEanTrib ? `\t${xmlEanTrib}` : "";
+                    
+                    item["CEST"] = xmlCest;
+                    item["Peso líquido (Kg)"] = "0,000";
+                    item["Peso bruto (Kg)"] = "0,000";
+                    item["Situação"] = "Ativo";
+                    item["Condição do Produto"] = "Novo";
+                    item["Itens p/ caixa"] = "1";
+
                     ultimoSeqCodigo++;
-                    novoProd["Código"] = "P" + ultimoSeqCodigo;
+                    item["Código"] = `P${ultimoSeqCodigo}\t`; // Padrão com tab no final
                 }
 
-                produtosCarregados.push(novoProd);
-                renderizarItemLista(novoProd);
+                item._id = `prod-${idx}-${i}-${Date.now()}`;
+                item._selected = true;
+                item._custoOriginal = parseFloat(item["Preço de custo"].replace(',', '.') || 0);
+
+                produtosCarregados.push(item);
+                renderizarItemLista(item);
             });
         };
         reader.readAsText(file);
