@@ -296,6 +296,7 @@
                 const xmlCprod = prod.querySelector('cProd')?.textContent || "";
                 const xmlUcom = prod.querySelector('uCom')?.textContent || "";
                 const xmlVuncom = (prod.querySelector('vUnCom')?.textContent || "0.00").replace('.', ',');
+                const xmlQcom = (prod.querySelector('qCom')?.textContent || "0").replace('.', ',');
                 const xmlOrig = imposto?.querySelector('ICMS orig')?.textContent || "0";
 
                 let item;
@@ -309,6 +310,7 @@
                     // Atualiza apenas campos novos/alterados
                     item["Preço"] = xmlVuncom;
                     item["Preço de custo"] = xmlVuncom;
+                    item["Estoque"] = xmlQcom;
                     item["Cód. no fornecedor"] = xmlCprod;
                     item["Fornecedor"] = emitente;
                     item["NCM"] = xmlNcm;
@@ -325,6 +327,7 @@
                     item["Origem"] = xmlOrig;
                     item["Preço"] = xmlVuncom;
                     item["Preço de custo"] = xmlVuncom;
+                    item["Estoque"] = xmlQcom;
                     item["Cód. no fornecedor"] = xmlCprod;
                     item["Fornecedor"] = emitente;
                     
@@ -346,6 +349,8 @@
                 item._id = `prod-${idx}-${i}-${Date.now()}`;
                 item._selected = true;
                 item._custoOriginal = parseFloat(item["Preço de custo"].replace(',', '.') || 0);
+                item._precoOriginal = parseFloat(item["Preço"].replace(',', '.') || 0);
+                item._estoqueOriginal = parseFloat(item["Estoque"].replace(',', '.') || 0);
 
                 produtosCarregados.push(item);
                 renderizarItemLista(item);
@@ -417,10 +422,8 @@
         
         grid.innerHTML = "";
         
-        // Campos editáveis principais (filtrados para não poluir, ou todos se quiser)
-        const camposPrincipais = ["Código", "GTIN/EAN", "NCM", "Preço", "Preço de custo", "Unidade", "Marca", "Peso líquido (Kg)", "Peso bruto (Kg)"];
-        
-        camposPrincipais.forEach(key => {
+        // Show ALL fields from colunasModelo
+        colunasModelo.forEach(key => {
             const div = document.createElement('div');
             div.innerHTML = `
                 <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">${key}</label>
@@ -434,8 +437,15 @@
         document.getElementById('fatorInput').oninput = function() {
             const fator = parseFloat(this.value) || 1;
             p["Itens p/ caixa"] = this.value;
+            
             const custoUnit = p._custoOriginal / fator;
+            const precoUnit = p._precoOriginal / fator;
+            const estoqueTotal = p._estoqueOriginal * fator;
+
             p["Preço de custo"] = custoUnit.toFixed(4).replace('.', ',');
+            p["Preço"] = precoUnit.toFixed(4).replace('.', ',');
+            p["Estoque"] = estoqueTotal;
+
             // Atualiza input visualmente se existir
             carregarEditor(p); 
         };
