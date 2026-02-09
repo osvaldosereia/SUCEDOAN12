@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v36 (Correção Bling)</title>
+    <title>Sucedoan Painel - v37 (Sharpen & CSV Fix)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -835,7 +835,7 @@
             Papa.parse(e.target.files[0], {
                 header: true,
                 skipEmptyLines: true,
-                encoding: "ISO-8859-1",
+                encoding: "UTF-8",
                 delimiter: ";", 
                 transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
@@ -898,37 +898,41 @@
         function exportarCSV() {
             if (products.length === 0) return alert("Nada para exportar.");
 
-            // Identifica colunas internas para removê-las da exportação
-            const internalKeys = ['codigo', 'nome', 'preco', 'estoque', 'localizacao', 'gtin', 'url_imagem', 'ncm', 'cest', 'unidade', 'pesoLiquido', 'pesoBruto', 'largura', 'altura', 'profundidade', 'origem', 'observacoes', 'situacao', 'formato', '_changed', '_lastChange'];
-            
-            // Pega as chaves que vieram do CSV (excluindo as internas)
-            // Usa o primeiro produto como modelo
-            const colunasModelo = Object.keys(products[0]).filter(k => !internalKeys.includes(k) && !k.startsWith('_'));
+            // Lista EXATA de colunas do arquivo modelo (UTF-8 Headers)
+            const colunasModelo = [
+                "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
+                "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", 
+                "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", 
+                "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", 
+                "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", 
+                "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", 
+                "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", 
+                "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", 
+                "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", 
+                "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", 
+                "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", 
+                "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", 
+                "Categoria do produto", "Informações Adicionais"
+            ];
 
-            // Prepara os dados, SINCROZINANDO as edições internas com as colunas originais
             const dadosParaExportar = products.map(p => {
                 const linha = {};
-                
-                // Formatação BR para exportação
                 const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
 
-                // Antes de exportar, atualiza as colunas do CSV com os valores editados no sistema
-                // Se a coluna existir no CSV original, atualiza o valor
-                if(colunasModelo.includes('Descrição')) p['Descrição'] = p.nome;
-                if(colunasModelo.includes('Preço')) p['Preço'] = fmt(p.preco);
-                if(colunasModelo.includes('Estoque')) p['Estoque'] = fmt(p.estoque);
-                if(colunasModelo.includes('Localização')) p['Localização'] = p.localizacao;
-                if(colunasModelo.includes('GTIN/EAN')) p['GTIN/EAN'] = p.gtin;
-                if(colunasModelo.includes('URL Imagens Externas')) p['URL Imagens Externas'] = p.url_imagem;
-
-                // CORREÇÃO FORÇADA DE ERROS BLING NA EXPORTAÇÃO
-                if(colunasModelo.includes('Origem')) p['Origem'] = '0';
-                if(colunasModelo.includes('Unidade')) p['Unidade'] = 'un';
-                if(colunasModelo.includes('Grupo de produtos')) p['Grupo de produtos'] = '';
+                // Atualiza campos editados no sistema
+                p['Descrição'] = p.nome;
+                p['Preço'] = fmt(p.preco);
+                p['Estoque'] = fmt(p.estoque);
+                p['Localização'] = p.localizacao;
+                p['GTIN/EAN'] = p.gtin;
+                p['URL Imagens Externas'] = p.url_imagem;
+                // Mantém sanitização anterior (já aplicada no import, mas garante consistência)
+                p['Origem'] = '0'; 
+                p['Unidade'] = 'un';
+                p['Grupo de produtos'] = '';
 
                 colunasModelo.forEach(col => {
-                    let val = p[col];
-                    linha[col] = (val !== undefined && val !== null) ? val : "";
+                    linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : "";
                 });
                 return linha;
             });
@@ -1303,12 +1307,42 @@
             drawCanvas();
         }
 
+        function applySharpen(ctx, w, h, mix) {
+            if (mix <= 0) return;
+            try {
+                const imageData = ctx.getImageData(0, 0, w, h);
+                const data = imageData.data;
+                const w4 = w * 4;
+                const copy = new Uint8ClampedArray(data);
+
+                // Convolution Kernel for Sharpening
+                for (let y = 1; y < h - 1; y++) {
+                    for (let x = 1; x < w - 1; x++) {
+                        const i = (y * w + x) * 4;
+                        for (let c = 0; c < 3; c++) {
+                            const val = 
+                                copy[i + c] * (1 + 4 * mix) +
+                                copy[i + c - 4] * (-mix) +
+                                copy[i + c + 4] * (-mix) +
+                                copy[i + c - w4] * (-mix) +
+                                copy[i + c + w4] * (-mix);
+                            data[i + c] = val;
+                        }
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            } catch(e) {
+                console.warn("Sharpen not possible (CORS?)", e);
+            }
+        }
+
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             if(loadedImage) {
                 const zoom = parseFloat(document.getElementById('zoomRange').value);
                 const bright = parseFloat(document.getElementById('brightnessRange').value);
+                const sharpen = parseFloat(document.getElementById('sharpenRange').value);
                 
                 ctx.filter = `brightness(${bright})`;
                 
@@ -1319,6 +1353,10 @@
                 
                 ctx.drawImage(loadedImage, x, y, w, h);
                 ctx.filter = 'none'; 
+                
+                // Aplica Nitidez após desenhar
+                if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
+
             } else {
                 ctx.font = "20px Inter";
                 ctx.fillStyle = "#94a3b8";
@@ -1329,14 +1367,14 @@
             if(activeSticker) {
                 ctx.save();
                 ctx.translate(canvas.width, 0); // Canto superior direito
+                ctx.rotate(45 * Math.PI / 180);
                 
                 // Configuração da Faixa/Banner
                 ctx.fillStyle = (activeSticker === 'offer') ? "#ef4444" : (activeSticker === 'best' ? "#f59e0b" : "#3b82f6");
                 
-                // Desenha Banner (Faixa Diagonal)
+                // Ajuste de Coordenadas para aparecer dentro da imagem
                 ctx.beginPath();
-                ctx.rotate(45 * Math.PI / 180);
-                ctx.rect(0, 0, 300, 50); // retângulo grande girado
+                ctx.rect(-150, 40, 300, 50); 
                 ctx.fill();
                 
                 // Texto
@@ -1345,12 +1383,13 @@
                 if(activeSticker === 'best') text = "MELHOR PREÇO";
                 if(activeSticker === 'today') text = "SÓ HOJE";
 
-                ctx.font = "900 22px Inter";
+                ctx.font = "900 24px Inter";
                 ctx.fillStyle = "white";
                 ctx.textAlign = "center";
                 ctx.shadowColor = "rgba(0,0,0,0.5)";
                 ctx.shadowBlur = 4;
-                ctx.fillText(text, 120, 32);
+                // Texto centralizado na faixa
+                ctx.fillText(text, 0, 75);
 
                 ctx.restore();
             }
