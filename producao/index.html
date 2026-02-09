@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v40 (Card Info & Blank URL Export)</title>
+    <title>Sucedoan Painel - v41 (Auto Categoria & EAN Search)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -240,6 +240,16 @@
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .card-cat-badge {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
         }
 
         .card-title-input {
@@ -330,6 +340,22 @@
             align-items: center;
             gap: 4px;
         }
+        
+        .icon-btn-mini {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: #94a3b8;
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .icon-btn-mini:hover { background: var(--accent); color: white; border-color: var(--accent); }
 
         /* --- 6. TABELA DE HISTÓRICO --- */
         .history-container {
@@ -620,6 +646,33 @@
         const CONFIG_KEY = 'sucedoan_config';
         const HISTORY_KEY = 'sucedoan_history';
         const LOGIN_KEY = 'sucedoan_saved_login'; 
+
+        // --- NOVA CONFIGURAÇÃO DE CATEGORIAS ---
+        // A Ordem das palavras importa! Compostos ("CREME DE LEITE") devem ser definidos
+        // para serem encontrados antes de simples ("CREME").
+        const CONFIG_CATEGORIAS = {
+            "ALIMENTOS": [
+                "ARROZ", "FEIJAO", "ACUCAR", "OLEO", "AZEITE", "MACARRAO", 
+                "CREME DE LEITE", "LEITE", "CAFE", "BISCOITO", "BOLACHA", 
+                "CHOCOLATE", "MOLHO", "SAL", "FARINHA"
+            ],
+            "BEBIDAS": [
+                "REFRIGERANTE", "SUCO", "AGUA", "CERVEJA", "VODKA", "WHISKY", 
+                "VINHO", "ENERGETICO", "CHA"
+            ],
+            "LIMPEZA": [
+                "SABAO", "DETERGENTE", "AGUA SANITARIA", "DESINFETANTE", "AMACIANTE",
+                "ESPONJA", "ALCOOL", "MULTI USO", "LIMPA VIDROS"
+            ],
+            "HIGIENE": [
+                "SHAMPOO", "CONDICIONADOR", "SABONETE", "CREME DENTAL", "ESCOVA",
+                "PAPEL HIGIENICO", "FRALDA", "ABSORVENTE", "CREME PARA PELE", "CREME HIDRATANTE",
+                "DESODORANTE", "LAMINAS"
+            ],
+            "BAZAR": [
+                "COPO", "PRATO", "TALHER", "PANELA", "POTE", "VASSOURA", "RODO"
+            ]
+        };
     </script>
 
     <header>
@@ -826,6 +879,48 @@
         }
 
         // ----------------------------------------------------
+        // LÓGICA DE CATEGORIZAÇÃO INTELIGENTE
+        // ----------------------------------------------------
+        function autoCategorizar(nome) {
+            if (!nome) return "OUTROS";
+            
+            // Limpa o nome: Remove acentos e joga para maiúsculo
+            let limpo = nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            
+            // Divide em palavras (removendo espaços extras)
+            let palavras = limpo.trim().split(/\s+/);
+
+            // Pega as 3 primeiras palavras (ou vazio se não existir)
+            let p1 = palavras[0] || "";
+            let p2 = palavras[1] || "";
+            let p3 = palavras[2] || "";
+
+            // Tenta combinar em ordem de especificidade:
+            // 1. Três palavras (Máxima precisão)
+            // 2. Duas palavras (Alta precisão - ex: "Creme de Leite")
+            // 3. Uma palavra (Baixa precisão - ex: "Creme")
+            let tentativas = [
+                `${p1} ${p2} ${p3}`.trim(),
+                `${p1} ${p2}`.trim(),
+                p1
+            ];
+
+            // Percorre as tentativas
+            for (let termo of tentativas) {
+                if (!termo) continue;
+                
+                // Verifica em cada categoria
+                for (let [cat, keywords] of Object.entries(CONFIG_CATEGORIAS)) {
+                    if (keywords.includes(termo)) {
+                        return cat;
+                    }
+                }
+            }
+
+            return "OUTROS";
+        }
+
+        // ----------------------------------------------------
         // IMPORTAÇÃO CSV (DADOS COMPLETOS COM NOMES EXATOS)
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
@@ -848,7 +943,6 @@
                         };
 
                         // 1. Definição Base para o App (Card Principal)
-                        // Mapeia os cabeçalhos exatos do CSV para o sistema interno
                         const base = {
                             codigo: getVal('Código'),
                             nome: getVal('Descrição'),
@@ -856,9 +950,13 @@
                             estoque: getNum('Estoque'),
                             localizacao: getVal('Localização'),
                             gtin: getVal('GTIN/EAN'),
-                            url_imagem: getVal('URL Imagens Externas'), // Se existir no CSV
-                            ncm: getVal('NCM'), // IMPORTANTE: Mapear NCM
-                            validade: getVal('Data Validade'), // NOVO: Mapear Validade
+                            url_imagem: getVal('URL Imagens Externas'),
+                            ncm: getVal('NCM'), 
+                            validade: getVal('Data Validade'),
+                            
+                            // NOVA LÓGICA DE CATEGORIA APLICADA AQUI
+                            categoria: autoCategorizar(getVal('Descrição')),
+
                             // Controle Interno
                             situacao: 'A',
                             formato: 'S',
@@ -866,17 +964,14 @@
                             _lastChange: "Importação CSV"
                         };
 
-                        // 2. IMPORTAÇÃO TOTAL: Copia TODAS as colunas do CSV para o objeto
+                        // 2. IMPORTAÇÃO TOTAL: Copia TODAS as colunas do CSV
                         Object.keys(d).forEach(k => {
-                            // Se a chave ainda não existe (não é uma das internas acima), copia igual
-                            // Mesmo se já existir (ex: 'Código'), sobrescreve ou mantém para garantir
-                            // que temos os dados brutos acessíveis no modal.
                             if(base[k] === undefined) {
                                 base[k] = d[k];
                             }
                         });
 
-                        // 3. HIGIENIZAÇÃO OBRIGATÓRIA (CORREÇÃO DE ERROS BLING)
+                        // 3. HIGIENIZAÇÃO OBRIGATÓRIA
                         base['Origem'] = '0';
                         base['Unidade'] = 'un';
                         base['Grupo de produtos'] = '';
@@ -895,12 +990,11 @@
         });
 
         // ----------------------------------------------------
-        // EXPORTAÇÃO CSV (IDENTICO AO IMPORTADO)
+        // EXPORTAÇÃO CSV
         // ----------------------------------------------------
         function exportarCSV() {
             if (products.length === 0) return alert("Nada para exportar.");
 
-            // Lista EXATA de colunas do arquivo modelo (UTF-8 Headers)
             const colunasModelo = [
                 "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
                 "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", 
@@ -927,10 +1021,12 @@
                 p['Estoque'] = fmt(p.estoque);
                 p['Localização'] = p.localizacao;
                 p['GTIN/EAN'] = p.gtin;
-                p['URL Imagens Externas'] = ""; // FORÇADO EM BRANCO
+                p['URL Imagens Externas'] = ""; 
                 p['NCM'] = p.ncm; 
                 
-                // Mantém sanitização anterior (já aplicada no import, mas garante consistência)
+                // Força categoria calculada na exportação também
+                p['Categoria do produto'] = p.categoria || autoCategorizar(p.nome);
+
                 p['Origem'] = '0'; 
                 p['Unidade'] = 'un';
                 p['Grupo de produtos'] = '';
@@ -961,7 +1057,11 @@
             toggleLoader(true, "Baixando do Bling...");
             fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d => {
                 if(Array.isArray(d)) { 
-                    products = d.map(x => ({...x, _changed: false})); 
+                    products = d.map(x => {
+                        // Aplica categoria também na importação via API
+                        const cat = autoCategorizar(x.nome || x.descricao);
+                        return {...x, categoria: cat, _changed: false};
+                    }); 
                     saveData(); renderGrid(); toggleLoader(false); 
                 }
             }).catch(e => { toggleLoader(false); alert("Erro: "+e); });
@@ -1030,6 +1130,9 @@
                 
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
                 
+                // Calcula categoria se não tiver (compatibilidade retroativa)
+                if(!p.categoria) p.categoria = autoCategorizar(p.nome);
+
                 card.innerHTML = `
                     <div class="card-img-area" onclick="openEditor('${p.codigo}')">
                         <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
@@ -1039,12 +1142,17 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="card-sku">${p.codigo}</div>
+                        <div class="card-sku">
+                            <span>${p.codigo}</span>
+                            <span class="card-cat-badge">${p.categoria}</span>
+                        </div>
                         
                         <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
 
                         <div style="font-size:10px; color:#64748b; margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:2px;">
-                            <span>EAN: <strong style="color:#cbd5e1">${p.gtin || '-'}</strong></span>
+                            <span style="display:flex; align-items:center;">EAN: <strong style="color:#cbd5e1; margin-left:4px;">${p.gtin || '-'}</strong>
+                                ${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN no Google"><i data-lucide="search" size="10"></i></button>` : ''}
+                            </span>
                             <span>NCM: <strong style="color:#cbd5e1">${p.ncm || '-'}</strong></span>
                             <span style="grid-column: span 2">VAL: <strong style="color:${p.validade ? '#f59e0b' : '#cbd5e1'}">${p.validade || '-'}</strong></span>
                         </div>
@@ -1142,7 +1250,11 @@
                 addToHistory(sku, p.nome, `Alterou ${field}: ${p[field]} -> ${finalVal}`);
                 p[field] = finalVal;
                 // Atualiza também o campo original do CSV se existir mapeamento direto
-                if(field === 'nome') p['Descrição'] = finalVal;
+                if(field === 'nome') {
+                    p['Descrição'] = finalVal;
+                    // Recalcula categoria se o nome mudar
+                    p.categoria = autoCategorizar(finalVal);
+                }
                 if(field === 'preco') p['Preço'] = value; // Mantém string original
                 if(field === 'estoque') p['Estoque'] = value;
                 if(field === 'localizacao') p['Localização'] = finalVal;
@@ -1150,7 +1262,7 @@
                 p._changed = true;
                 p._lastChange = new Date().toLocaleString();
                 saveData();
-                if(field !== 'nome') {} 
+                if(field === 'nome') renderGrid(); // Re-renderiza para mostrar nova categoria
             }
         }
 
@@ -1188,7 +1300,7 @@
             const keys = Object.keys(p).filter(k => !k.startsWith('_') && k !== 'formato' && k !== 'situacao');
             
             // Ordena: Prioritários primeiro, depois alfabético
-            const priorities = ['codigo', 'nome', 'gtin', 'ncm', 'cest', 'preco', 'estoque'];
+            const priorities = ['codigo', 'nome', 'categoria', 'gtin', 'ncm', 'cest', 'preco', 'estoque'];
             keys.sort((a,b) => {
                 const ia = priorities.indexOf(a);
                 const ib = priorities.indexOf(b);
