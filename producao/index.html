@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v37 (Sharpen & CSV Fix)</title>
+    <title>Sucedoan Painel - v38 (Etiquetas & Print)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -857,6 +857,7 @@
                             localizacao: getVal('Localização'),
                             gtin: getVal('GTIN/EAN'),
                             url_imagem: getVal('URL Imagens Externas'), // Se existir no CSV
+                            ncm: getVal('NCM'), // IMPORTANTE: Mapear NCM
                             // Controle Interno
                             situacao: 'A',
                             formato: 'S',
@@ -926,6 +927,8 @@
                 p['Localização'] = p.localizacao;
                 p['GTIN/EAN'] = p.gtin;
                 p['URL Imagens Externas'] = p.url_imagem;
+                p['NCM'] = p.ncm; // Preenche NCM corretamente
+                
                 // Mantém sanitização anterior (já aplicada no import, mas garante consistência)
                 p['Origem'] = '0'; 
                 p['Unidade'] = 'un';
@@ -1065,6 +1068,10 @@
                         <button class="btn-text" onclick="openDetails('${p.codigo}')">
                             <i data-lucide="list-plus" size="14"></i> DETALHES
                         </button>
+                        <button class="btn-text" onclick="printLabel('${p.codigo}')" title="Imprimir Etiqueta" style="margin-left:10px;">
+                            <i data-lucide="printer" size="14"></i>
+                        </button>
+                        <div style="flex-grow:1"></div>
                         ${p._changed ? 
                             `<button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')">
                                 <i data-lucide="refresh-cw" size="12"></i> SYNC
@@ -1076,6 +1083,43 @@
                 grid.appendChild(card);
             });
             lucide.createIcons();
+        }
+
+        function printLabel(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if (!p) return;
+
+            const w = window.open('', '', 'width=400,height=300');
+            w.document.write(`
+                <html>
+                <head>
+                    <style>
+                        @page { size: 80mm 40mm; margin: 0; }
+                        body { 
+                            width: 80mm; height: 40mm; 
+                            margin: 0; padding: 2mm; 
+                            display: flex; flex-direction: column; 
+                            justify-content: center; align-items: center; 
+                            font-family: sans-serif; text-align: center; 
+                        }
+                        .name { font-size: 14px; font-weight: 900; margin-bottom: 4px; line-height: 1.1; max-height: 28px; overflow: hidden; text-transform: uppercase; }
+                        .sku { font-size: 18px; font-weight: bold; margin: 4px 0; border: 2px solid #000; padding: 2px 8px; border-radius: 4px; }
+                        .meta { font-size: 12px; display: flex; gap: 10px; font-weight: bold; margin-top: 4px; }
+                        .loc { background: #000; color: #fff; padding: 2px 6px; border-radius: 3px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="name">${p.nome}</div>
+                    <div class="sku">${p.codigo}</div>
+                    <div class="meta">
+                        <span>NCM: ${p.ncm || '---'}</span>
+                        <span class="loc">${p.localizacao || 'SEM LOC'}</span>
+                    </div>
+                    <script>window.onload = function() { window.print(); window.close(); }<\/script>
+                </body>
+                </html>
+            `);
+            w.document.close();
         }
 
         function updateProduct(sku, field, value) {
@@ -1366,16 +1410,14 @@
 
             if(activeSticker) {
                 ctx.save();
-                ctx.translate(canvas.width, 0); // Canto superior direito
-                ctx.rotate(45 * Math.PI / 180);
+                // Removida rotação e ajustadas coordenadas para horizontal topo-esquerdo
+                const bannerW = 280;
+                const bannerH = 60;
+                const padTop = 30; // Respiro do topo
                 
-                // Configuração da Faixa/Banner
+                // Desenha Banner (Retângulo Horizontal)
                 ctx.fillStyle = (activeSticker === 'offer') ? "#ef4444" : (activeSticker === 'best' ? "#f59e0b" : "#3b82f6");
-                
-                // Ajuste de Coordenadas para aparecer dentro da imagem
-                ctx.beginPath();
-                ctx.rect(-150, 40, 300, 50); 
-                ctx.fill();
+                ctx.fillRect(0, padTop, bannerW, bannerH);
                 
                 // Texto
                 let text = "";
@@ -1383,13 +1425,14 @@
                 if(activeSticker === 'best') text = "MELHOR PREÇO";
                 if(activeSticker === 'today') text = "SÓ HOJE";
 
-                ctx.font = "900 24px Inter";
+                ctx.font = "900 30px Inter";
                 ctx.fillStyle = "white";
-                ctx.textAlign = "center";
+                ctx.textAlign = "left";
                 ctx.shadowColor = "rgba(0,0,0,0.5)";
                 ctx.shadowBlur = 4;
-                // Texto centralizado na faixa
-                ctx.fillText(text, 0, 75);
+                
+                // Texto alinhado à esquerda dentro do banner
+                ctx.fillText(text, 20, padTop + 40);
 
                 ctx.restore();
             }
