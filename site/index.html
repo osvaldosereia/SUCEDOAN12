@@ -39,6 +39,7 @@
             font-size: 16px;
             line-height: 1.4;
             -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility; /* Performance de fonte */
         }
 
         h1, h2, h3 { margin: 0; font-weight: 700; color: var(--cor-text-main); letter-spacing: -0.5px; }
@@ -54,6 +55,7 @@
             border-bottom: 1px solid var(--cor-divider);
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             transition: transform 0.3s ease; /* Animação para esconder */
+            will-change: transform; /* Performance Hint */
         }
 
         header {
@@ -124,27 +126,54 @@
         .scroll-btn.left { left: 5px; }
         .scroll-btn.right { right: 5px; }
 
-        /* Grid de Cestas */
-        .grid-cestas { display: flex; flex-direction: column; gap: 0; }
-        
-        .cesta-card { 
-            background: white; padding: 20px;
-            display: flex; flex-direction: row; align-items: center; gap: 20px;
-            border-bottom: 1px solid var(--cor-divider); position: relative;
+        /* --- GRID DE CESTAS (HOME) - MODIFICADO --- */
+        .grid-cestas { 
+            display: grid; 
+            grid-template-columns: 1fr; /* Mobile 1 coluna */
+            gap: 20px; 
+            padding: 20px; 
         }
         
-        .cesta-img-wrap { width: 100px; height: 100px; flex-shrink: 0; }
+        .cesta-card { 
+            background: white; 
+            padding: 0; /* Remove padding interno para foto pegar ponta a ponta */
+            display: flex; 
+            flex-direction: column; /* Foto em cima, texto embaixo */
+            align-items: center; 
+            gap: 10px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--cor-divider); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        
+        .cesta-img-wrap { 
+            width: 100%; 
+            height: auto; 
+            aspect-ratio: 1 / 1; /* Garante quadrado */
+            flex-shrink: 0; 
+            background: #fff;
+        }
         .cesta-img { width: 100%; height: 100%; object-fit: contain; }
         
-        .cesta-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-        .cesta-name { font-size: 1.1rem; font-weight: 700; color: var(--cor-text-main); margin-bottom: 5px; }
-        .cesta-info { font-size: 0.85rem; color: var(--cor-text-light); margin-bottom: 8px; }
-        .cesta-price { font-size: 1.3rem; font-weight: 800; color: var(--cor-primary); }
+        .cesta-content { 
+            width: 100%; 
+            padding: 15px 20px 20px 20px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; /* Centralizado */
+            text-align: center;
+        }
+        .cesta-name { font-size: 1.3rem; font-weight: 700; color: var(--cor-text-main); margin-bottom: 5px; }
+        .cesta-info { font-size: 0.9rem; color: var(--cor-text-light); margin-bottom: 12px; }
+        .cesta-price { font-size: 1.6rem; font-weight: 800; color: var(--cor-primary); margin-bottom: 10px; }
         
-        .cesta-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .cesta-actions { display: flex; gap: 10px; width: 100%; justify-content: center; }
         .btn-card { 
-            padding: 8px 16px; border-radius: 4px; font-weight: 600; font-size: 0.85rem; 
+            padding: 12px 20px; border-radius: 6px; font-weight: 600; font-size: 0.95rem; 
             border: 1px solid #ddd; background: white; color: var(--cor-text-main);
+            flex: 1;
         }
         .btn-primary { border-color: var(--cor-primary); background: var(--cor-primary); color: white; }
 
@@ -181,7 +210,9 @@
         .prod-card.hidden { display: none !important; } 
         
         .prod-img-box { 
-            width: 100%; height: 120px;
+            width: 100%; 
+            height: auto;
+            aspect-ratio: 1/1; /* Performance CLS */
             margin-bottom: 10px; 
             display: flex; align-items: center; justify-content: center; 
         }
@@ -216,18 +247,21 @@
         .btn-q { width: 28px; height: 28px; font-size: 1.1rem; display: grid; place-items: center; color: var(--cor-primary); font-weight: bold; }
         .val-q { font-weight: 700; font-size: 1rem; color: var(--cor-primary); }
 
-        /* --- NOVO: GRID DE CATEGORIAS (APENAS FOTO) --- */
+        /* --- GRID DE CATEGORIAS (PERSONALIZAÇÃO) - MODIFICADO --- */
+        /* Estratégia "Lines": Gap cria as linhas com a cor de fundo */
         .prod-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            padding: 10px 20px;
+            grid-template-columns: repeat(3, 1fr); /* 3 Colunas Mobile */
+            gap: 1px; /* Espaço para a linha */
+            background-color: #E0E0E0; /* Cor da linha */
+            padding: 1px; /* Borda externa */
+            border-bottom: 1px solid #E0E0E0;
         }
 
         .prod-grid-item {
             background: white;
-            border: 1px solid #eee;
-            border-radius: 8px;
+            border: none; /* Remove bordas individuais */
+            border-radius: 0; /* Remove arredondamento */
             overflow: hidden;
             aspect-ratio: 1; /* Mantém quadrado */
             display: flex;
@@ -235,12 +269,14 @@
             justify-content: center;
             position: relative;
             cursor: pointer;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: none; /* Remove sombra para leveza */
+            padding: 5px; /* Respiro mínimo */
         }
         .prod-grid-item img {
-            width: 90%;
-            height: 90%;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
+            aspect-ratio: 1; /* PageSpeed */
         }
         .prod-grid-item.hidden { display: none !important; }
         
@@ -387,10 +423,13 @@
         .ans { padding: 20px; color: #555; line-height: 1.6; background: #fbfbfb; font-size: 0.95rem; }
 
         @media (min-width: 900px) {
-            .grid-cestas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
+            /* Desktop Home: Max 4 colunas */
+            .grid-cestas { grid-template-columns: repeat(4, 1fr); }
+            /* Desktop Personalização: Max 7 colunas */
+            .prod-grid { grid-template-columns: repeat(7, 1fr); }
+            
             .cesta-card { border: 1px solid #eee; border-radius: 8px; }
             .prod-card { flex: 0 0 180px; }
-            .prod-grid { grid-template-columns: repeat(6, 1fr); }
         }
     </style>
 </head>
@@ -476,8 +515,8 @@
             <h3>Detalhes</h3>
             <button onclick="document.getElementById('modal-prod-view').close()" style="font-size:1.5rem;">✕</button>
         </div>
-        <div class="modal-body" style="display: flex; justify-content: center; background: #fff;">
-            <div id="prod-view-content" style="width: 100%; max-width: 300px;"></div>
+        <div class="modal-body" style="display: flex; justify-content: center; background: #fff; padding: 0;">
+            <div id="prod-view-content" style="width: 100%; max-width: 400px; padding: 20px;"></div>
         </div>
     </dialog>
 
@@ -860,8 +899,8 @@
             const content = document.getElementById('prod-view-content');
             // Reutiliza buildProductCard para gerar o card completo dentro do modal
             let cardHtml = buildProductCard(p);
-            // Remove classes extras que podem quebrar o layout no modal
-            cardHtml = cardHtml.replace('margin-right: 15px;', 'margin-right: 0; width: 100%; box-shadow: none; border: none;');
+            // Remove classes extras que podem quebrar o layout no modal e ajusta para foto grande
+            cardHtml = cardHtml.replace('margin-right: 15px;', 'margin-right: 0; width: 100%; box-shadow: none; border: none; padding:0;');
             content.innerHTML = cardHtml;
             document.getElementById('modal-prod-view').showModal();
         }
