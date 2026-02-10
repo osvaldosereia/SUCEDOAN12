@@ -167,7 +167,7 @@
         }
         .cesta-name { font-size: 1.3rem; font-weight: 700; color: var(--cor-text-main); margin-bottom: 5px; }
         .cesta-info { font-size: 0.9rem; color: var(--cor-text-light); margin-bottom: 12px; }
-        .cesta-price { font-size: 1.6rem; font-weight: 800; color: var(--cor-primary); margin-bottom: 10px; }
+        .cesta-price { font-size: 1.6rem; font-weight: 900; color: var(--cor-primary); margin-bottom: 10px; }
         
         .cesta-actions { display: flex; gap: 10px; width: 100%; justify-content: center; }
         .btn-card { 
@@ -233,7 +233,7 @@
             -webkit-box-orient: vertical;
         }
         
-        .prod-price { font-size: var(--font-size-price); font-weight: 800; color: var(--cor-primary); margin-bottom: 10px; }
+        .prod-price { font-size: var(--font-size-price); font-weight: 900; color: var(--cor-primary); margin-bottom: 10px; }
         
         .action-area { width: 100%; margin-top: auto; }
         .btn-add-simple { 
@@ -297,7 +297,7 @@
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 0.75rem;
-            font-weight: 400; /* Sem negrito */
+            font-weight: 700; /* Mais pesado conforme pedido */
             color: var(--cor-primary);
             z-index: 2;
             box-shadow: 0 1px 2px rgba(0,0,0,0.15);
@@ -533,8 +533,8 @@
         @media (min-width: 900px) {
             /* Desktop Home: Max 4 colunas */
             .grid-cestas { grid-template-columns: repeat(4, 1fr); }
-            /* Desktop Personalização: Max 7 colunas */
-            .prod-grid { grid-template-columns: repeat(7, 1fr); }
+            /* Desktop Personalização: Max 6 colunas (AJUSTADO) */
+            .prod-grid { grid-template-columns: repeat(6, 1fr); }
             
             .cesta-card { border: 1px solid #eee; border-radius: 8px; }
             .prod-card { flex: 0 0 180px; }
@@ -1001,6 +1001,12 @@
             // 3. Categorias (TRANSFORMAR EM GRID)
             const cats = {};
             DB_PROD.forEach(p => { if(!cats[p.cat]) cats[p.cat] = []; cats[p.cat].push(p); });
+            
+            // Ordenar produtos alfabeticamente dentro de cada categoria
+            for(let key in cats) {
+                cats[key].sort((a, b) => a.name.localeCompare(b.name));
+            }
+
             const sortedKeys = Object.keys(cats).sort();
 
             sortedKeys.forEach((c, index) => {
