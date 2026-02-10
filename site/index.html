@@ -1028,8 +1028,10 @@
                     const clickAction = p.variations && p.variations.length > 1 
                         ? `openGroupView('${p.variations.map(v=>v.id).join(',')}')` 
                         : `openProdView('${p.id}')`;
+                    
+                    const searchName = p.variations ? p.variations.map(v=>v.name).join(" ").toLowerCase() : p.name.toLowerCase();
 
-                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${gridId}" data-name="${p.name.toLowerCase()}" onclick="${clickAction}">
+                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${gridId}" data-name="${searchName}" onclick="${clickAction}">
                         <img src="${img}" loading="lazy">
                         <div class="grid-price-tag">${fmt(p.price)}</div>
                         <div class="grid-indicator"></div>
@@ -1071,7 +1073,9 @@
                         ? `openGroupView('${p.variations.map(v=>v.id).join(',')}')` 
                         : `openProdView('${p.id}')`;
 
-                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${gridId}" data-name="${p.name.toLowerCase()}" onclick="${clickAction}">
+                    const searchName = p.variations ? p.variations.map(v=>v.name).join(" ").toLowerCase() : p.name.toLowerCase();
+
+                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${gridId}" data-name="${searchName}" onclick="${clickAction}">
                         <img src="${img}" loading="lazy">
                         <div class="grid-price-tag">${fmt(p.price)}</div>
                         <div class="grid-indicator"></div>
