@@ -958,6 +958,34 @@
 
         function warnNoBasket() { showToast("Primeiro escolha uma Cesta Básica para personalizar."); }
 
+        function groupProducts(list) {
+            const groups = {};
+            list.forEach(p => {
+                const words = p.name.trim().split(/\s+/);
+                // Precisa ter pelo menos 2 palavras para agrupar
+                if (words.length < 2) {
+                    groups[p.id] = { ...p, variations: [p] };
+                    return;
+                }
+                const key = p.price.toFixed(2) + "_" + words.slice(0, 2).join(" ").toUpperCase();
+
+                if (!groups[key]) {
+                    groups[key] = {
+                        ...p,
+                        name: words.slice(0, 2).join(" ") + " (Vários)",
+                        isVirtual: true,
+                        variations: [p]
+                    };
+                } else {
+                    groups[key].variations.push(p);
+                }
+            });
+            return Object.values(groups).map(g => {
+                if (g.variations.length === 1) return g.variations[0];
+                return g;
+            });
+        }
+
         function renderCatalog() {
             const div = document.getElementById('catalog-content');
             const navDiv = document.getElementById('cat-nav');
@@ -986,13 +1014,22 @@
                 html += `<div id="${safeId}" class="cat-section">
                          <h3 class="section-header" style="color:var(--cor-accent)">🔥 Ofertas Especiais</h3>
                          <div class="prod-grid">`;
-                offers.forEach(p => {
+                
+                const groupedOffers = groupProducts(offers);
+                groupedOffers.forEach(p => {
                     const img = p.img || svgPlace();
-                    const isActive = CART[p.id] > 0;
-                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${p.id}" data-name="${p.name.toLowerCase()}" onclick="openProdView('${p.id}')">
+                    const isActive = p.variations ? false : (CART[p.id] > 0);
+                    // Para grupos, usamos a primeira variação para ID do grid item se for virtual
+                    const gridId = p.variations ? p.variations[0].id : p.id;
+                    const clickAction = p.variations && p.variations.length > 1 
+                        ? `openGroupView('${p.variations.map(v=>v.id).join(',')}')` 
+                        : `openProdView('${p.id}')`;
+
+                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${gridId}" data-name="${p.name.toLowerCase()}" onclick="${clickAction}">
                         <img src="${img}" loading="lazy">
                         <div class="grid-price-tag">${fmt(p.price)}</div>
                         <div class="grid-indicator"></div>
+                        ${p.variations && p.variations.length > 1 ? `<div class="offer-badge" style="background:#444; font-size:0.65rem; top:auto; bottom:30px; left:5px;">${p.variations.length} OPÇÕES</div>` : ''}
                     </div>`;
                 });
                 html += `</div></div>`;
@@ -1020,13 +1057,21 @@
                          <h3 class="section-header" style="color:${titleColor}">${c}</h3>
                          <div class="prod-grid">`;
                 
-                cats[c].forEach(p => {
+                const groupedCatList = groupProducts(cats[c]);
+                
+                groupedCatList.forEach(p => {
                     const img = p.img || svgPlace();
-                    const isActive = CART[p.id] > 0;
-                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${p.id}" data-name="${p.name.toLowerCase()}" onclick="openProdView('${p.id}')">
+                    const isActive = p.variations ? false : (CART[p.id] > 0);
+                    const gridId = p.variations ? p.variations[0].id : p.id;
+                    const clickAction = p.variations && p.variations.length > 1 
+                        ? `openGroupView('${p.variations.map(v=>v.id).join(',')}')` 
+                        : `openProdView('${p.id}')`;
+
+                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${gridId}" data-name="${p.name.toLowerCase()}" onclick="${clickAction}">
                         <img src="${img}" loading="lazy">
                         <div class="grid-price-tag">${fmt(p.price)}</div>
                         <div class="grid-indicator"></div>
+                        ${p.variations && p.variations.length > 1 ? `<div class="offer-badge" style="background:#444; font-size:0.65rem; top:auto; bottom:30px; left:5px;">${p.variations.length} OPÇÕES</div>` : ''}
                     </div>`;
                 });
                 html += `</div></div>`; 
@@ -1063,6 +1108,18 @@
             renderModalContent();
             
             // Setup Touch Events
+            const modalBody = document.getElementById('modal-body-carousel');
+            modalBody.addEventListener('touchstart', handleTouchStart, false);
+            modalBody.addEventListener('touchend', handleTouchEnd, false);
+            
+            document.getElementById('modal-prod-view').showModal();
+        }
+
+        function openGroupView(idsStr) {
+            currentModalIndices = idsStr.split(',');
+            currentModalIdx = 0;
+            renderModalContent();
+            
             const modalBody = document.getElementById('modal-body-carousel');
             modalBody.addEventListener('touchstart', handleTouchStart, false);
             modalBody.addEventListener('touchend', handleTouchEnd, false);
@@ -1120,6 +1177,20 @@
             const semEstoque = p.stock <= 0;
             const isOffer = p.name.toUpperCase().startsWith("OFERTA -");
             const imgSrc = p.img || svgPlace();
+            
+            // Lógica para Produto Agrupado
+            if (p.variations && p.variations.length > 1) {
+                const btnGroupHtml = `<button class="btn-add-simple" onclick="openGroupView('${p.variations.map(v=>v.id).join(',')}')">ESCOLHER</button>`;
+                return `
+                <div class="prod-card prod-search-item" id="card-${p.variations[0].id}" data-name="${p.name.toLowerCase()}">
+                    ${isOffer ? '<div class="offer-badge">OFERTA</div>' : ''}
+                    <div class="offer-badge" style="background:#444; top:25px;">${p.variations.length} OPÇÕES</div>
+                    <div class="prod-img-box"><img src="${imgSrc}" class="prod-img" loading="lazy"></div>
+                    <div class="prod-name">${p.name}</div>
+                    <div class="prod-price">${fmt(p.price)}</div>
+                    <div class="action-area">${btnGroupHtml}</div>
+                </div>`;
+            }
             
             let btnHtml = getBtnHtml(p.id, q, semEstoque);
 
