@@ -248,20 +248,20 @@
         .val-q { font-weight: 700; font-size: 1rem; color: var(--cor-primary); }
 
         /* --- GRID DE CATEGORIAS (PERSONALIZAÇÃO) - MODIFICADO --- */
-        /* Estratégia "Lines": Gap cria as linhas com a cor de fundo */
+        /* Estilo limpo sem linhas e com respiro */
         .prod-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr); /* 3 Colunas Mobile */
-            gap: 1px; /* Espaço para a linha */
-            background-color: #E0E0E0; /* Cor da linha */
-            padding: 1px; /* Borda externa */
-            border-bottom: 1px solid #E0E0E0;
+            gap: 10px; /* Respiro entre itens */
+            background-color: transparent;
+            padding: 10px;
+            border-bottom: none;
         }
 
         .prod-grid-item {
             background: white;
-            border: none; /* Remove bordas individuais */
-            border-radius: 0; /* Remove arredondamento */
+            border: none; 
+            border-radius: 8px; /* Arredondamento */
             overflow: hidden;
             aspect-ratio: 1; /* Mantém quadrado */
             display: flex;
@@ -269,8 +269,8 @@
             justify-content: center;
             position: relative;
             cursor: pointer;
-            box-shadow: none; /* Remove sombra para leveza */
-            padding: 5px; /* Respiro mínimo */
+            box-shadow: none;
+            padding: 5px; /* Respiro interno */
         }
         .prod-grid-item img {
             width: 100%;
@@ -461,6 +461,14 @@
             padding: 0 0 20px 0;
             margin-bottom: 20px;
         }
+        .checkout-basket-title {
+            font-weight: 700;
+            color: var(--cor-primary);
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #eee;
+            font-size: 1rem;
+        }
         .checkout-item-row {
             display: flex; justify-content: space-between; align-items: center;
             padding: 10px 0; border-bottom: 1px dashed #eee;
@@ -484,6 +492,43 @@
             transition: all 0.2s;
         }
         .checkout-form .input-box:focus { border-color: var(--cor-primary); background: #fff; box-shadow: 0 0 0 3px rgba(0,86,179,0.05); }
+
+        /* CUPOM STYLE */
+        .coupon-box {
+            border: 1px dashed #ccc;
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .coupon-label {
+            font-size: 0.8rem; font-weight: 700; color: #555; margin-bottom: 8px; display: block; text-transform: uppercase;
+        }
+        .coupon-row {
+            display: flex; gap: 0; 
+        }
+        .coupon-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-right: none;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            outline: none;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+        .coupon-input:focus { border-color: var(--cor-primary); }
+        .coupon-btn {
+            padding: 0 20px;
+            background: #333;
+            color: white;
+            font-weight: 600;
+            border: 1px solid #333;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            font-size: 0.85rem;
+        }
 
         @media (min-width: 900px) {
             /* Desktop Home: Max 4 colunas */
@@ -605,11 +650,11 @@
                 </div>
             </div>
 
-            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px;">
-                <label style="font-size:0.75rem; font-weight:700; color:#888; margin-bottom:5px; display:block;">POSSUI CUPOM?</label>
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="coupon-code" class="input-box" style="margin:0; text-transform:uppercase; font-size:0.9rem; padding:8px;" placeholder="Digite o código">
-                    <button type="button" class="btn-finish" style="padding:0 20px; background:#444; font-size:0.8rem;" onclick="applyCoupon()">APLICAR</button>
+            <div class="coupon-box">
+                <label class="coupon-label">POSSUI CUPOM?</label>
+                <div class="coupon-row">
+                    <input type="text" id="coupon-code" class="coupon-input" placeholder="CÓDIGO">
+                    <button type="button" class="coupon-btn" onclick="applyCoupon()">APLICAR</button>
                 </div>
             </div>
             
@@ -1218,7 +1263,9 @@
             ACTIVE_COUPON = null; document.getElementById('coupon-code').value = "";
             updateTotals(); // Reseta visual
             
-            const l = document.getElementById('checkout-list'); l.innerHTML = "";
+            const l = document.getElementById('checkout-list'); 
+            l.innerHTML = `<div class="checkout-basket-title">Cesta Básica ${CURR_CESTA.nome} com alterações:</div>`;
+            
             for(let k in CART) if(CART[k]>0) {
                 const p = DB_PROD.find(x=>x.id===k);
                 l.innerHTML += `
@@ -1227,7 +1274,6 @@
                         <span class="checkout-item-qty">${CART[k]}x</span>
                         <span class="checkout-item-name">${p.name}</span>
                     </div>
-                    <div style="font-weight:600; color:#555;">${fmt(p.price * CART[k])}</div>
                 </div>`;
             }
             document.getElementById('modal-checkout').showModal();
