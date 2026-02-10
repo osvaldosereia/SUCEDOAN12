@@ -436,6 +436,28 @@
         details[open] summary::after { content: '-'; transform: rotate(180deg); color: var(--cor-accent); }
         details[open] summary { color: var(--cor-primary); border-bottom: 1px solid #eee; }
         .ans { padding: 20px; color: #555; line-height: 1.6; background: #fbfbfb; font-size: 0.95rem; }
+        
+        /* --- MODAL CARROSSEL --- */
+        #modal-prod-view .modal-body {
+            position: relative; display: flex; align-items: center; justify-content: center;
+            padding: 0; overflow: hidden; background: #fff; height: 100%;
+        }
+        .modal-nav-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 45px; height: 45px; border-radius: 50%;
+            background: rgba(255,255,255,0.9); border: 1px solid #ddd;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: grid; place-items: center; font-size: 1.5rem; color: var(--cor-primary);
+            cursor: pointer; z-index: 10; transition: all 0.2s;
+        }
+        .modal-nav-btn:active { background: #eee; transform: translateY(-50%) scale(0.95); }
+        .modal-nav-btn.left { left: 10px; }
+        .modal-nav-btn.right { right: 10px; }
+
+        #prod-view-content {
+            width: 100%; max-width: 400px; padding: 20px;
+            animation: fadeIn 0.3s ease;
+        }
 
         @media (min-width: 900px) {
             /* Desktop Home: Max 4 colunas */
@@ -530,8 +552,10 @@
             <h3>Detalhes</h3>
             <button onclick="document.getElementById('modal-prod-view').close()" style="font-size:1.5rem;">✕</button>
         </div>
-        <div class="modal-body" style="display: flex; justify-content: center; background: #fff; padding: 0;">
-            <div id="prod-view-content" style="width: 100%; max-width: 400px; padding: 20px;"></div>
+        <div class="modal-body" id="modal-body-carousel">
+            <button class="modal-nav-btn left" onclick="navModal(-1)">❮</button>
+            <div id="prod-view-content"></div>
+            <button class="modal-nav-btn right" onclick="navModal(1)">❯</button>
         </div>
     </dialog>
 
@@ -650,6 +674,12 @@
 
         let DB_PROD = [], DB_CESTAS = [], CART = {}, CURR_CESTA = null, ORIG_COUNTS = {}, ORIG_TOTAL = 0;
         let ACTIVE_COUPON = null;
+        
+        // VARIÁVEIS DO CARROSSEL MODAL
+        let currentModalIndices = [];
+        let currentModalIdx = 0;
+        let touchStartX = 0;
+        let touchEndX = 0;
 
         // SCROLL LISTENER PARA HEADER
         let lastScroll = 0;
@@ -909,17 +939,76 @@
             div.innerHTML = html;
         }
 
-        // NOVA FUNÇÃO PARA ABRIR MODAL
+        // --- FUNÇÕES DO CARROSSEL MODAL ---
+        
         function openProdView(id) {
+            // Identifica todos os IDs visíveis atualmente para criar a lista de navegação
+            const visibleItems = document.querySelectorAll('.prod-search-item:not(.hidden)');
+            currentModalIndices = [];
+            
+            visibleItems.forEach(item => {
+                // Recupera ID do atributo onclick ou id. Formato esperado: card-{id} ou grid-item-{id}
+                const domId = item.id;
+                let prodId = null;
+                if(domId.startsWith('card-')) prodId = domId.replace('card-', '');
+                else if(domId.startsWith('grid-item-')) prodId = domId.replace('grid-item-', '');
+                
+                if(prodId) currentModalIndices.push(prodId);
+            });
+            
+            // Se não achou na lista visível (ex: clicou direto de um contexto não listado), usa apenas o ID atual
+            if(currentModalIndices.length === 0) currentModalIndices = [id];
+
+            currentModalIdx = currentModalIndices.indexOf(id);
+            if(currentModalIdx === -1) {
+                currentModalIndices.push(id);
+                currentModalIdx = 0;
+            }
+
+            renderModalContent();
+            
+            // Setup Touch Events
+            const modalBody = document.getElementById('modal-body-carousel');
+            modalBody.addEventListener('touchstart', handleTouchStart, false);
+            modalBody.addEventListener('touchend', handleTouchEnd, false);
+            
+            document.getElementById('modal-prod-view').showModal();
+        }
+
+        function navModal(direction) {
+            currentModalIdx += direction;
+            if (currentModalIdx < 0) currentModalIdx = currentModalIndices.length - 1;
+            if (currentModalIdx >= currentModalIndices.length) currentModalIdx = 0;
+            renderModalContent();
+        }
+
+        function renderModalContent() {
+            const id = currentModalIndices[currentModalIdx];
             const p = DB_PROD.find(x => x.id === id);
             if(!p) return;
+            
             const content = document.getElementById('prod-view-content');
             // Reutiliza buildProductCard para gerar o card completo dentro do modal
             let cardHtml = buildProductCard(p);
-            // Remove classes extras que podem quebrar o layout no modal e ajusta para foto grande
+            // Ajusta estilos para o modal
             cardHtml = cardHtml.replace('margin-right: 15px;', 'margin-right: 0; width: 100%; box-shadow: none; border: none; padding:0;');
             content.innerHTML = cardHtml;
-            document.getElementById('modal-prod-view').showModal();
+        }
+
+        // Swipe Logic
+        function handleTouchStart(evt) {
+            touchStartX = evt.changedTouches[0].screenX;
+        }
+
+        function handleTouchEnd(evt) {
+            touchEndX = evt.changedTouches[0].screenX;
+            handleSwipe();
+        }
+
+        function handleSwipe() {
+            const threshold = 50; // pixels
+            if (touchEndX < touchStartX - threshold) navModal(1); // Swipe Left -> Next
+            if (touchEndX > touchStartX + threshold) navModal(-1); // Swipe Right -> Prev
         }
 
         function scrollCat(btn, val) {
