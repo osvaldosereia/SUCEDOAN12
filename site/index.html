@@ -252,9 +252,9 @@
         .prod-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr); /* 2 Colunas Mobile */
-            gap: 8px; /* Respiro bem pequeno */
+            gap: 18px; /* Respiro bem pequeno */
             background-color: transparent;
-            padding: 10px;
+            padding: 18px;
             border-bottom: none;
         }
 
@@ -733,18 +733,19 @@
         const CAT_COLORS = ["#0056b3", "#D32F2F", "#F57C00", "#388E3C", "#7B1FA2", "#C2185B", "#0097A7"];
 
         const CONFIG_CATEGORIAS = {
+            "Mercearia Básica": ["SARDINHA", "ARROZ KOBLENZ", "FEIJAO", "ACUCAR", "OLEO", "MILHARINA", "CUZ CUZ", "FARINHA", "FUBA", "MILHO VERDE", "SARDINHA", "SAL", "TRIGO",],
             "Bebê e Infantil": ["FRALDA", "LENCO UMEDECIDO", "HUGGIES", "POMADA", "MUCILON"],
-            "Cabelos": ["SHAMPOO", "CONDICIONADOR", "SEDA", "SKALA", "CREME", "PENTE"],
-            "Higiene Pessoal": ["SABONETE", "DESODORANTE", "ABSORVENTE", "ALGODAO", "COTONETE", "GILETTE"],
-            "Higiene Bucal": ["CREME DENTAL", "ESCOVA DENTAL", "FIO DENTAL", "COLGATE"],
-            "Lavanderia": ["SABAO", "OMO", "YPE", "AMACIANTE", "Q BOA", "PRENDEDOR"],
-            "Limpeza da Casa": ["DESINFETANTE", "VEJA", "DETERGENTE", "ESPONJA", "BOMBRIL", "PANO", "INSETICIDA", "VASSOURA", "SACO LIXO"],
-            "Mercearia Básica": ["ARROZ", "FEIJAO", "ACUCAR", "OLEO", "MILHARINA", "CUZ CUZ", "FARINHA", "FUBA", "MILHO VERDE", "SARDINHA", "SAL"],
-            "Massas e Molhos": ["MACARRAO", "EXTRATO", "MOLHO", "QUEIJO RALADO"],
-             "Café da Manhã": ["CAFE", "FILTRO", "LEITE", "ACHOCOLATADO", "CEREAL", "AVEIA", "SUCO", "CHA", "ERVA TERERE"],            
+            "Cabelo, Unha e Maquiagem": ["ESPONJA DE MAQUIAGEM", "LIXA DE UNHA", "CORTADOR DE UNHA", "SHAMPOO", "CONDICIONADOR", "PENTE", "ESCOVA DE CABELO", "CREME DE PENTEAR"],
+            "Higiene Pessoal": ["ESPONJA DE BANHO", "SABONETE", "DESODORANTE", "ABSORVENTE", "ALGODAO", "COTONETE", "GILETTE"],
+            "Absorventes": ["ABSORVENTE"],
+            "Higiene Bucal": ["CREME DENTAL", "ESCOVA DENTAL", "FIO DENTAL"],
+            "Lavanderia": ["ESCOVA LAVANDERIA", "SABAO", "OMO", "YPE", "AMACIANTE", "AGUA SANITARIA", "VARAL", "PREGADOR", "PRENDEDOR"],
+            "Limpeza da Casa": ["ESCOVA DE LIMPEZA", "ESPONJA MAGICA", "DESINFETANTE", "VEJA", "DETERGENTE", "ESPONJA DE AÇO", "BUCHA DE LAVAR LOUÇA", "PANO DE CHÃO", "INSETICIDA", "VASSOURA", "SACO DE LIXO", "RODO"],
+            "Massas e Molhos": ["MACARRAO", "EXTRATO DE TOMATE", "MOLHO DE TOMATE", "QUEIJO RALADO"],
+            "Café da Manhã": ["CAFE", "FILTRO DE CAFE", "LEITE INTEGRAL", "LEITE DESNATADO", "ACHOCOLATADO", "CEREAL", "AVEIA", "SUCO", "CHA", "ERVA DE TERERE"],            
             "Biscoitos e Lanches": ["BISCOITO", "BOLACHA", "WAFER", "TORRADA", "ROSQUINHA"],
-            "Doces e Sobremesas": ["LEITE CONDENSADO", "CREME LEITE", "GELATINA", "BOLO", "MISTURA PRA BOLO", "CREME DE LEITE"],
-            "Temperos": ["CALDO", "SAL", "TEMPERO", "PIMENTA", "MAIONESE", "KETCHUP", "VINAGRE"],
+            "Doces e Sobremesas": ["LEITE CONDENSADO", "GELATINA", "BOLO", "MISTURA PRA BOLO", "CREME DE LEITE"],
+            "Temperos": ["azeite", "CALDO", "TEMPERO", "PIMENTA", "MAIONESE", "KETCHUP", "VINAGRE", "CONDIMENTO"],
             "Cozinha": ["COPO", "PANELA", "DESCANSO DE PANELA", "PRATO", "GARFO", "FACA", "COLHER", "TABUA DE CARNE", "TALHER", "PAPEL ALUMINIO", "COPO", "PRATO", "TALHER", "TIGELA", "TRAVESSA", "CANECA", "PETISQUEIRA", "JARRA", "POTE", "CUMBUCA", "SOCADOR", "DESCASCADOR", "PENEIRA"],
             "Utilidades": ["LAMPADA", "PILHA", "FOSFORO", "RALO", "SUPORTE", "PREGO", "PARAFUSO", "VARAL", "PROTETOR DE RALO"],
             "Papelaria": ["CANETA", "LAPIS", "CADERNO", "BORRACHA", "APONTADOR", "CLIPS", "REGUA", "GRAMPEADOR", "GRAFITE", "LAPISEIRA", "LIVRO"]
@@ -787,10 +788,19 @@
 
         function detectingCategory(nomeProduto) {
             if (!nomeProduto) return CATEGORIA_PADRAO;
-            const nomeLimpo = nomeProduto.replace(/^OFERTA\s-\s/i, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            
+            // Limpeza básica
+            let nomeLimpo = nomeProduto.replace(/^OFERTA\s-\s/i, "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+            
+            // Lógica solicitada: Considerar apenas as 3 primeiras palavras para categorização
+            const palavras = nomeLimpo.split(/\s+/);
+            const escopoBusca = palavras.slice(0, 3).join(" "); // Pega até a 3ª palavra e recria string
+            
             for (const [categoria, keywords] of Object.entries(CONFIG_CATEGORIAS)) {
                 for (const keyword of keywords) {
-                    if (nomeLimpo.includes(keyword.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase())) return categoria;
+                    const kwLimpa = keyword.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+                    // Verifica se a keyword está presente nas primeiras 3 palavras
+                    if (escopoBusca.includes(kwLimpa)) return categoria;
                 }
             }
             return CATEGORIA_PADRAO;
