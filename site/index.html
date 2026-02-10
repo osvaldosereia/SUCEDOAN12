@@ -216,6 +216,42 @@
         .btn-q { width: 28px; height: 28px; font-size: 1.1rem; display: grid; place-items: center; color: var(--cor-primary); font-weight: bold; }
         .val-q { font-weight: 700; font-size: 1rem; color: var(--cor-primary); }
 
+        /* --- NOVO: GRID DE CATEGORIAS (APENAS FOTO) --- */
+        .prod-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding: 10px 20px;
+        }
+
+        .prod-grid-item {
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            overflow: hidden;
+            aspect-ratio: 1; /* Mantém quadrado */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .prod-grid-item img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+        }
+        .prod-grid-item.hidden { display: none !important; }
+        
+        /* Pequeno indicador se já tem no carrinho (opcional, mas útil para o modal atualizar) */
+        .grid-indicator {
+            position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+            background: var(--cor-primary); border-radius: 50%; margin: 5px;
+            display: none;
+        }
+        .prod-grid-item.active .grid-indicator { display: block; }
+
         /* --- BARRA FLUTUANTE --- */
         .float-bar { 
             position: fixed; bottom: 0; left: 0; right: 0; 
@@ -354,6 +390,7 @@
             .grid-cestas { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; }
             .cesta-card { border: 1px solid #eee; border-radius: 8px; }
             .prod-card { flex: 0 0 180px; }
+            .prod-grid { grid-template-columns: repeat(6, 1fr); }
         }
     </style>
 </head>
@@ -431,6 +468,16 @@
             <div style="padding:20px 0; text-align:center;">
                 <button class="btn-finish" style="width:100%" onclick="orderDirect()">PEDIR ESSA CESTA</button>
             </div>
+        </div>
+    </dialog>
+    
+    <dialog id="modal-prod-view">
+        <div class="modal-head">
+            <h3>Detalhes</h3>
+            <button onclick="document.getElementById('modal-prod-view').close()" style="font-size:1.5rem;">✕</button>
+        </div>
+        <div class="modal-body" style="display: flex; justify-content: center; background: #fff;">
+            <div id="prod-view-content" style="width: 100%; max-width: 300px;"></div>
         </div>
     </dialog>
 
@@ -743,7 +790,7 @@
             const navDiv = document.getElementById('cat-nav');
             div.innerHTML = ""; navDiv.innerHTML = "";
             
-            // 1. Área: Itens da Cesta
+            // 1. Área: Itens da Cesta (MANTER CARROSSEL)
             let html = `<div style="padding:0;">
                 <h3 class="section-header" style="color:var(--cor-text-main);">Itens da Cesta</h3>
                 <div class="carousel-container">
@@ -758,21 +805,26 @@
             html += `</div><button class="scroll-btn right" onclick="scrollCat(this, 200)">❯</button></div></div>`;
             html += `<div class="basket-separator"></div>`;
 
-            // 2. Ofertas
+            // 2. Ofertas (TRANSFORMAR EM GRID)
             const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA -"));
             if (offers.length > 0) {
                 const safeId = 'cat-offers';
                 navDiv.innerHTML += `<button class="cat-chip" onclick="scrollToCat('${safeId}')" style="color:var(--cor-accent); border-color:var(--cor-accent);">🔥 OFERTAS</button>`;
                 html += `<div id="${safeId}" class="cat-section">
                          <h3 class="section-header" style="color:var(--cor-accent)">🔥 Ofertas Especiais</h3>
-                         <div class="carousel-container">
-                            <button class="scroll-btn left" onclick="scrollCat(this, -200)">❮</button>
-                            <div class="products-carousel">`;
-                offers.forEach(p => html += buildProductCard(p));
-                html += `</div><button class="scroll-btn right" onclick="scrollCat(this, 200)">❯</button></div></div>`;
+                         <div class="prod-grid">`;
+                offers.forEach(p => {
+                    const img = p.img || svgPlace();
+                    const isActive = CART[p.id] > 0;
+                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${p.id}" data-name="${p.name.toLowerCase()}" onclick="openProdView('${p.id}')">
+                        <img src="${img}" loading="lazy">
+                        <div class="grid-indicator"></div>
+                    </div>`;
+                });
+                html += `</div></div>`;
             }
 
-            // 3. Categorias
+            // 3. Categorias (TRANSFORMAR EM GRID)
             const cats = {};
             DB_PROD.forEach(p => { if(!cats[p.cat]) cats[p.cat] = []; cats[p.cat].push(p); });
             const sortedKeys = Object.keys(cats).sort();
@@ -786,13 +838,32 @@
 
                 html += `<div id="${safeId}" class="cat-section">
                          <h3 class="section-header" style="color:${titleColor}">${c}</h3>
-                         <div class="carousel-container">
-                             <button class="scroll-btn left" onclick="scrollCat(this, -200)">❮</button>
-                             <div class="products-carousel">`;
-                cats[c].forEach(p => html += buildProductCard(p));
-                html += `</div><button class="scroll-btn right" onclick="scrollCat(this, 200)">❯</button></div></div>`; 
+                         <div class="prod-grid">`;
+                
+                cats[c].forEach(p => {
+                    const img = p.img || svgPlace();
+                    const isActive = CART[p.id] > 0;
+                    html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${p.id}" data-name="${p.name.toLowerCase()}" onclick="openProdView('${p.id}')">
+                        <img src="${img}" loading="lazy">
+                        <div class="grid-indicator"></div>
+                    </div>`;
+                });
+                html += `</div></div>`; 
             });
             div.innerHTML = html;
+        }
+
+        // NOVA FUNÇÃO PARA ABRIR MODAL
+        function openProdView(id) {
+            const p = DB_PROD.find(x => x.id === id);
+            if(!p) return;
+            const content = document.getElementById('prod-view-content');
+            // Reutiliza buildProductCard para gerar o card completo dentro do modal
+            let cardHtml = buildProductCard(p);
+            // Remove classes extras que podem quebrar o layout no modal
+            cardHtml = cardHtml.replace('margin-right: 15px;', 'margin-right: 0; width: 100%; box-shadow: none; border: none;');
+            content.innerHTML = cardHtml;
+            document.getElementById('modal-prod-view').showModal();
         }
 
         function scrollCat(btn, val) {
@@ -897,13 +968,19 @@
         }
 
         function updateCardVisuals(id, q, semEstoque) {
+            // Atualiza o Card se ele estiver visível (no modal ou no carrossel do topo)
             const card = document.getElementById(`card-${id}`);
-            if(!card) return; 
+            if(card) {
+                if(q > 0) card.classList.add('active'); else card.classList.remove('active');
+                const actArea = document.getElementById(`act-${id}`);
+                if(actArea) actArea.innerHTML = getBtnHtml(id, q, semEstoque);
+            }
 
-            if(q > 0) card.classList.add('active'); else card.classList.remove('active');
-
-            const actArea = document.getElementById(`act-${id}`);
-            actArea.innerHTML = getBtnHtml(id, q, semEstoque);
+            // Atualiza o Grid Item (apenas a bolinha indicadora)
+            const gridItem = document.getElementById(`grid-item-${id}`);
+            if(gridItem) {
+                if(q > 0) gridItem.classList.add('active'); else gridItem.classList.remove('active');
+            }
         }
 
         function updateTotals() {
@@ -972,7 +1049,7 @@
             const hist = JSON.parse(localStorage.getItem('da_history')||'[]');
             hist.push({date:new Date().toLocaleDateString(), total:total, basketName:CURR_CESTA.nome, cart:CART, orig:ORIG_COUNTS});
             localStorage.setItem('da_history', JSON.stringify(hist));
-            localStorage.removeItem('da_cesta_id'); localStorage.removeItem('da_cart'); localStorage.removeItem('da_orig');
+            localStorage.removeItem('da_cesta_id'); localStorage.removeItem('da_cesta_id'); localStorage.removeItem('da_cart'); localStorage.removeItem('da_orig');
 
             try {
                 fetch(MAKE_WEBHOOK, { method:"POST", headers:{"Content-Type":"application/json"}, 
