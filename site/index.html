@@ -394,11 +394,6 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         
-        dialog#zoom-modal { background: #fff; width: 100%; height: 100%; border-radius: 0; }
-        .zoom-close { position: absolute; top: 10px; right: 10px; font-size: 2rem; padding: 10px; z-index: 10; background:none; }
-        .zoom-content { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        .zoom-img-full { max-width: 100%; max-height: 100%; object-fit: contain; }
-
         .offer-badge {
             position: absolute; top: 0; left: 0; 
             background: var(--cor-accent); color: white; 
@@ -458,6 +453,37 @@
             width: 100%; max-width: 400px; padding: 20px;
             animation: fadeIn 0.3s ease;
         }
+
+        /* --- CHECKOUT MINIMALISTA --- */
+        .checkout-summary {
+            background: #fff;
+            border-bottom: 1px solid #eee;
+            padding: 0 0 20px 0;
+            margin-bottom: 20px;
+        }
+        .checkout-item-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px dashed #eee;
+            font-size: 0.9rem; color: #444;
+        }
+        .checkout-item-name { font-weight: 500; }
+        .checkout-item-qty { background: #f0f0f0; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; color: #666; margin-right: 8px; }
+        .checkout-total-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 20px; font-size: 1.2rem; 
+        }
+        .checkout-lbl { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: #888; }
+        .checkout-val { font-weight: 800; color: var(--cor-primary); font-size: 1.5rem; }
+        
+        .checkout-form label {
+            display: block; font-size: 0.8rem; font-weight: 600; color: #777; 
+            margin-bottom: 4px; text-transform: uppercase;
+        }
+        .checkout-form .input-box {
+            background: #fdfdfd; border: 1px solid #e0e0e0;
+            transition: all 0.2s;
+        }
+        .checkout-form .input-box:focus { border-color: var(--cor-primary); background: #fff; box-shadow: 0 0 0 3px rgba(0,86,179,0.05); }
 
         @media (min-width: 900px) {
             /* Desktop Home: Max 4 colunas */
@@ -565,44 +591,57 @@
             <button onclick="document.getElementById('modal-checkout').close()" style="font-size:1.5rem;">✕</button>
         </div>
         <div class="modal-body">
-            <h4 style="margin-bottom:15px; color:#666; font-size:0.9rem;">ITENS DO PEDIDO</h4>
-            <div id="checkout-list" style="margin-bottom:20px;"></div>
-            
-            <label style="display:block; margin-bottom:5px;">Cupom de Desconto</label>
-            <div style="display:flex; gap:10px; margin-bottom:15px;">
-                <input type="text" id="coupon-code" class="input-box" style="margin:0; text-transform:uppercase;" placeholder="CÓDIGO">
-                <button type="button" class="btn-finish" style="padding:0 20px; background:#333;" onclick="applyCoupon()">OK</button>
-            </div>
-            
-            <div id="discount-display" style="display:none; justify-content:space-between; color:green; font-weight:bold; margin-bottom:10px;">
-                <span>Desconto:</span>
-                <span id="discount-value">- R$ 0,00</span>
+            <div class="checkout-summary">
+                <div id="checkout-list"></div>
+                
+                <div id="discount-display" style="display:none; justify-content:space-between; color:green; font-weight:bold; margin-top:10px; padding-top:10px; border-top:1px dashed #eee;">
+                    <span>Desconto Aplicado</span>
+                    <span id="discount-value">- R$ 0,00</span>
+                </div>
+
+                <div class="checkout-total-row">
+                    <span class="checkout-lbl">Total a Pagar</span>
+                    <span class="checkout-val" id="checkout-total">R$ 0,00</span>
+                </div>
             </div>
 
-            <div style="background: #FFFDE7; padding: 20px; border-radius: 4px; text-align: center; margin-bottom: 25px; border:1px solid #FFF9C4;">
-                <span style="display:block; font-size:0.8rem; color:#888; text-transform:uppercase;">Valor Total a Pagar</span>
-                <span id="checkout-total" style="font-size:2rem; font-weight:700; color:var(--cor-accent);">R$ 0,00</span>
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:20px;">
+                <label style="font-size:0.75rem; font-weight:700; color:#888; margin-bottom:5px; display:block;">POSSUI CUPOM?</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="coupon-code" class="input-box" style="margin:0; text-transform:uppercase; font-size:0.9rem; padding:8px;" placeholder="Digite o código">
+                    <button type="button" class="btn-finish" style="padding:0 20px; background:#444; font-size:0.8rem;" onclick="applyCoupon()">APLICAR</button>
+                </div>
             </div>
             
-           <form onsubmit="sendWhatsapp(event)">
-            <label>Nome Completo</label><input type="text" id="cust-name" class="input-box" required placeholder="Seu nome">
-            <label>CPF (Obrigatório)</label><input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
-            <label>WhatsApp</label><input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999" maxlength="15" oninput="mascaraTelefone(this)">
-            <label>Endereço de Entrega</label><input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro">
-            <label>Forma de Pagamento</label>
-            <select id="cust-pay" class="input-box">
-                <option>PIX (Na entrega)</option>
-                <option>Dinheiro (Levar troco?)</option>
-                <option>Cartão de Crédito</option>
-                <option>Cartão de Débito</option>
-                <option>Cartão Alimentação</option>
-                <option>Cartão Refeição</option>
-            </select>
-            <p style="font-size:0.8rem; color:#666; text-align:center; margin-top:-10px; margin-bottom:20px;">
-                💳 Parcelamos em até 3x sem juros no Cartão de Crédito.
-            </p>
-            <button type="submit" class="btn-finish" style="width:100%;">ENVIAR PEDIDO</button>
-        </form>
+            <form onsubmit="sendWhatsapp(event)" class="checkout-form">
+                <label>Nome Completo</label>
+                <input type="text" id="cust-name" class="input-box" required placeholder="Ex: Maria da Silva">
+                
+                <label>CPF (Nota Fiscal)</label>
+                <input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
+                
+                <label>WhatsApp para Contato</label>
+                <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999" maxlength="15" oninput="mascaraTelefone(this)">
+                
+                <label>Endereço de Entrega</label>
+                <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro, Complemento">
+                
+                <label>Forma de Pagamento</label>
+                <select id="cust-pay" class="input-box">
+                    <option>PIX (Na entrega)</option>
+                    <option>Dinheiro (Levar troco?)</option>
+                    <option>Cartão de Crédito</option>
+                    <option>Cartão de Débito</option>
+                    <option>Cartão Alimentação</option>
+                    <option>Cartão Refeição</option>
+                </select>
+                
+                <p style="font-size:0.8rem; color:#666; text-align:center; margin-bottom:20px; background:#e8f5e9; padding:10px; border-radius:4px; color:#2e7d32;">
+                    💳 Parcelamos em até 3x sem juros no Cartão de Crédito.
+                </p>
+                
+                <button type="submit" class="btn-finish" style="width:100%; padding:15px; font-size:1rem; box-shadow: 0 4px 10px rgba(46, 125, 50, 0.3);">ENVIAR PEDIDO NO WHATSAPP</button>
+            </form>
         </div>
     </dialog>
 
@@ -629,11 +668,6 @@
                 </div>
             </div>
         </div>
-    </dialog>
-
-    <dialog id="zoom-modal">
-        <button class="zoom-close" onclick="document.getElementById('zoom-modal').close()">✕</button>
-        <div class="zoom-content"><img id="zoom-img" class="zoom-img-full"></div>
     </dialog>
 
     <script>
@@ -990,8 +1024,9 @@
             const content = document.getElementById('prod-view-content');
             // Reutiliza buildProductCard para gerar o card completo dentro do modal
             let cardHtml = buildProductCard(p);
-            // Ajusta estilos para o modal
+            // Ajusta estilos para o modal e remove click para não abrir o modal dentro do modal
             cardHtml = cardHtml.replace('margin-right: 15px;', 'margin-right: 0; width: 100%; box-shadow: none; border: none; padding:0;');
+            cardHtml = cardHtml.replace(/onclick="zoom\('[^']+'\)"/g, ''); // Garante que o zoom não exista
             content.innerHTML = cardHtml;
         }
 
@@ -1027,10 +1062,11 @@
             
             let btnHtml = getBtnHtml(p.id, q, semEstoque);
 
+            // Removido onclick="zoom"
             return `
             <div class="prod-card prod-search-item ${q>0?'active':''}" id="card-${p.id}" data-name="${p.name.toLowerCase()}">
                 ${isOffer ? '<div class="offer-badge">OFERTA</div>' : ''}
-                <div class="prod-img-box"><img src="${imgSrc}" class="prod-img" loading="lazy" onclick="zoom('${imgSrc}')"></div>
+                <div class="prod-img-box"><img src="${imgSrc}" class="prod-img" loading="lazy"></div>
                 <div class="prod-name">${p.name}</div>
                 <div class="prod-price">${fmt(p.price)}</div>
                 <div class="action-area" id="act-${p.id}">${btnHtml}</div>
@@ -1113,18 +1149,26 @@
         }
 
         function updateCardVisuals(id, q, semEstoque) {
-            // Atualiza o Card se ele estiver visível (no modal ou no carrossel do topo)
+            // 1. Atualiza Card da Lista (Carousel)
+            // Como IDs podem estar duplicados no HTML (modal + lista), usamos querySelectorAll para garantir
+            // que atualizamos a parte visual da lista.
+            const cardAct = document.querySelector(`.prod-card[id="card-${id}"] .action-area`);
+            if(cardAct) cardAct.innerHTML = getBtnHtml(id, q, semEstoque);
+            
             const card = document.getElementById(`card-${id}`);
-            if(card) {
-                if(q > 0) card.classList.add('active'); else card.classList.remove('active');
-                const actArea = document.getElementById(`act-${id}`);
-                if(actArea) actArea.innerHTML = getBtnHtml(id, q, semEstoque);
-            }
+            if(card) { if(q > 0) card.classList.add('active'); else card.classList.remove('active'); }
 
-            // Atualiza o Grid Item (apenas a bolinha indicadora)
+            // 2. Atualiza Grid
             const gridItem = document.getElementById(`grid-item-${id}`);
-            if(gridItem) {
-                if(q > 0) gridItem.classList.add('active'); else gridItem.classList.remove('active');
+            if(gridItem) { if(q > 0) gridItem.classList.add('active'); else gridItem.classList.remove('active'); }
+
+            // 3. Atualiza Modal Aberto (Correção do erro de não atualizar número)
+            const modalContent = document.getElementById('prod-view-content');
+            if(modalContent) {
+                 const modalAct = modalContent.querySelector(`#act-${id}`);
+                 if(modalAct) {
+                     modalAct.innerHTML = getBtnHtml(id, q, semEstoque);
+                 }
             }
         }
 
@@ -1134,10 +1178,26 @@
             for(let k in ORIG_COUNTS) o += (DB_PROD.find(x=>x.id===k)?.price||0) * ORIG_COUNTS[k];
             let t = CURR_CESTA.preco + (u - o);
             window.finalTotal = t;
+            
+            // Atualiza barra inferior
             document.getElementById('total-display').innerText = fmt(t);
             const btn = document.getElementById('btn-finish');
             if(t < CURR_CESTA.preco) { btn.innerText = `Mínimo: ${fmt(CURR_CESTA.preco)}`; btn.disabled = true; }
             else { btn.innerText = "CONCLUIR PEDIDO"; btn.disabled = false; }
+            
+            // Atualiza Modal Checkout se estiver aberto
+            const coTotal = document.getElementById('checkout-total');
+            if(coTotal) {
+                let finalT = t;
+                if(ACTIVE_COUPON) {
+                    finalT -= (finalT * ACTIVE_COUPON.percent / 100);
+                    document.getElementById('discount-display').style.display = 'flex';
+                    document.getElementById('discount-value').innerText = `- ${fmt(t * ACTIVE_COUPON.percent / 100)}`;
+                } else {
+                    document.getElementById('discount-display').style.display = 'none';
+                }
+                coTotal.innerText = fmt(finalT);
+            }
         }
 
         function details(id) {
@@ -1156,17 +1216,18 @@
 
         function openCheckout() {
             ACTIVE_COUPON = null; document.getElementById('coupon-code').value = "";
-            document.getElementById('discount-display').style.display='none';
-            const t = window.finalTotal;
-            document.getElementById('checkout-total').innerText = fmt(t);
+            updateTotals(); // Reseta visual
             
             const l = document.getElementById('checkout-list'); l.innerHTML = "";
             for(let k in CART) if(CART[k]>0) {
                 const p = DB_PROD.find(x=>x.id===k);
-                // FORMATADO EM 2 LINHAS CONFORME PEDIDO
-                l.innerHTML += `<div style="border-bottom:1px dashed #eee; padding:8px 0; font-size:0.85rem;">
-                    <div style="font-weight:700; color:#555;">${CART[k]} unidades de:</div>
-                    <div style="color:#333;">${p.name}</div>
+                l.innerHTML += `
+                <div class="checkout-item-row">
+                    <div style="flex:1">
+                        <span class="checkout-item-qty">${CART[k]}x</span>
+                        <span class="checkout-item-name">${p.name}</span>
+                    </div>
+                    <div style="font-weight:600; color:#555;">${fmt(p.price * CART[k])}</div>
                 </div>`;
             }
             document.getElementById('modal-checkout').showModal();
@@ -1213,7 +1274,7 @@
         function fmt(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
         function showToast(m) { const t=document.getElementById('status-toast'); t.innerText=m; t.style.display='block'; setTimeout(()=>t.style.display='none',3000); }
         function svgPlace() { return "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjRjZGNkY2Ij48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjwvc3ZnPg=="; }
-        function zoom(src) { document.getElementById('zoom-img').src = src; document.getElementById('zoom-modal').showModal(); }
+        
         function mascaraTelefone(o) { let v=o.value.replace(/\D/g,"");v=v.replace(/^(\d{2})(\d)/g,"($1) $2");v=v.replace(/(\d)(\d{4})$/,"$1-$2");o.value=v.substring(0,15); }
         function mascaraCPF(o) { let v=o.value.replace(/\D/g,"");v=v.replace(/(\d{3})(\d)/,"$1.$2");v=v.replace(/(\d{3})(\d)/,"$1.$2");v=v.replace(/(\d{3})(\d{1,2})$/,"$1-$2");o.value=v.substring(0,14); }
 
