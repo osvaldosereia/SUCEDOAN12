@@ -17,7 +17,7 @@
             --cor-action: #FF6D00;
             --cor-success: #008037; 
             --cor-warning: #FFAB00;
-            --cor-danger: #D32F2F; /* Adicionado para ofertas */
+            --cor-danger: #D32F2F; 
             --cor-bg: #F1F5F9;
             --cor-surface: #FFFFFF; 
             --cor-text-main: #1E293B;
@@ -72,22 +72,31 @@
 
         header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 16px; height: 64px;
+            padding: 10px 24px; /* Aumentado o padding para não encostar */
+            min-height: 70px;
             width: 100%;
         }
         
-        .header-left { display: flex; align-items: center; gap: 12px; }
-        .logo { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; object-fit: cover; }
-        .page-title { font-size: 1rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .header-left { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .logo { width: 44px; height: 44px; border-radius: 50%; border: 2px solid white; object-fit: cover; flex-shrink: 0; }
+        
+        .page-title { 
+            font-size: 1rem; font-weight: 700; color: white; 
+            white-space: normal; /* Permite quebra de linha */
+            line-height: 1.2;
+            overflow: visible;
+        }
         
         .btn-whatsapp-header {
             background: #25D366; color: white;
-            border-radius: 50%; padding: 8px; 
+            border-radius: 50%; padding: 0; 
             display: flex; align-items: center; justify-content: center;
-            width: 40px; height: 40px;
+            width: 44px; height: 44px; /* Botão maior */
             font-size: 0.85rem; font-weight: 700;
             text-decoration: none;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            flex-shrink: 0;
+            margin-left: 10px;
         }
 
         /* --- STICKY BARS --- */
@@ -130,8 +139,12 @@
             background: white; padding: 30px 20px; text-align: center;
             border-bottom: 1px solid var(--cor-divider); margin-bottom: 20px;
         }
-        .hero-title { font-size: 1.5rem; margin-bottom: 10px; color: var(--cor-primary); line-height: 1.2; }
-        .hero-subtitle { font-size: 0.95rem; color: var(--cor-text-light); }
+        .hero-title { font-size: 1.4rem; margin-bottom: 8px; color: var(--cor-primary); line-height: 1.2; font-weight: 800; }
+        .hero-subtitle { font-size: 0.9rem; color: var(--cor-text-light); margin-bottom: 5px; }
+        .hero-tag { 
+            display: inline-block; background: #E0F2F1; color: #00695C; 
+            padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; margin-top: 5px;
+        }
 
         /* --- CARDS CESTA --- */
         .grid-cestas { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 0 20px 20px; }
@@ -195,6 +208,9 @@
             padding: 10px; display: flex; flex-direction: column;
             position: relative;
         }
+        /* Bloqueio visual para ofertas na home */
+        .prod-card.disabled { opacity: 0.8; }
+
         .prod-img { 
             width: 100%; aspect-ratio: 1; object-fit: contain; 
             margin-bottom: 10px; background: white; cursor: zoom-in;
@@ -230,8 +246,8 @@
             padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
             background: white;
         }
-        dialog:not([open]) { display: none; } /* Correção do X perdido */
-        dialog::backdrop { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(2px); }
+        dialog:not([open]) { display: none; }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(4px); }
         
         .modal-body { padding: 24px; text-align: center; }
         .modal-title { font-size: 1.25rem; margin-bottom: 12px; color: var(--cor-primary); font-weight: 800; }
@@ -242,16 +258,17 @@
         .btn-modal.secondary { background: white; border: 2px solid var(--cor-action); color: var(--cor-action); }
         .btn-modal.ghost { color: var(--cor-text-light); font-weight: 400; margin-top: 10px; }
 
-        /* Modal Imagem Grande */
-        #modal-image { background: transparent; box-shadow: none; max-width: 100%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        #modal-image::backdrop { background: rgba(0,0,0,0.9); }
-        .img-modal-content { position: relative; max-width: 95%; max-height: 90vh; }
-        .img-modal-src { max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        /* Modal Imagem Grande - CORREÇÃO DO X */
+        #modal-image { background: transparent; box-shadow: none; max-width: 100%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: none; }
+        .img-modal-content { position: relative; max-width: 90%; max-height: 80vh; display: flex; flex-direction: column; align-items: center; }
+        .img-modal-src { max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        
         .btn-close-img { 
-            position: absolute; top: -40px; right: 0; color: white; font-size: 2rem; 
-            background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%;
+            position: absolute; top: -50px; right: 0; color: white; font-size: 1.5rem; 
+            background: rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            z-index: 100; cursor: pointer;
+            z-index: 10000; cursor: pointer; backdrop-filter: blur(4px);
+            border: 2px solid rgba(255,255,255,0.3);
         }
 
         /* Desktop Adjustments */
@@ -260,7 +277,7 @@
             .prod-card { flex: 0 0 180px; }
             .checkout-bar { 
                 max-width: 1200px; 
-                left: 50%; transform: translateX(-50%); /* Centraliza barra fixa */
+                left: 50%; transform: translateX(-50%); 
             }
         }
     </style>
@@ -270,11 +287,11 @@
     <div class="header-wrapper" id="header-wrapper">
         <header class="limit-container">
             <div class="header-left">
-                <img src="img/logo.webp" class="logo" alt="Logo Dona Antônia" width="40" height="40">
-                <div class="page-title">Super Cestas Dona Antônia</div>
+                <img src="img/logo.webp" class="logo" alt="Logo Dona Antônia" width="44" height="44">
+                <div class="page-title">Super Cestas<br>Dona Antônia</div>
             </div>
             <a href="https://wa.me/5565996813588" target="_blank" class="btn-whatsapp-header" aria-label="Falar no WhatsApp">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 8.259C3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
                 </svg>
             </a>
@@ -314,12 +331,17 @@
     <main class="limit-container">
         <div id="view-home" class="view active">
             <div class="hero-section">
-                <h2 class="hero-title">Cestas Básicas de Qualidade</h2>
-                <p class="hero-subtitle">Entregamos sem taxa em Cuiabá e Várzea Grande.<br>Pagamento na entrega.</p>
+                <h2 class="hero-title">Mercado Online<br>Dona Antônia</h2>
+                <p class="hero-subtitle">Encomendou, Chegou! 🚚💨</p>
+                <div class="hero-tag">PAGUE SÓ NA ENTREGA</div>
             </div>
+            
+            <h3 style="margin: 0 20px 15px; font-size: 1.1rem;">Escolha sua Cesta Base:</h3>
             <div class="grid-cestas" id="cestas-list">
                 <p style="text-align:center; padding: 20px;">Carregando cestas...</p>
             </div>
+            
+            <div id="home-offers-container"></div>
         </div>
 
         <div id="view-custom" class="view">
@@ -461,6 +483,34 @@
                     </div>
                 </div>
             `).join('');
+            
+            renderHomeOffers();
+        }
+
+        function renderHomeOffers() {
+            const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
+            if (offers.length === 0) return;
+            
+            const html = `
+            <div class="carousel-container" style="border-top:none; margin-top:10px;">
+                <div class="carousel-header">
+                    <div class="carousel-title" style="color:var(--cor-danger)">🔥 OFERTAS DA SEMANA</div>
+                </div>
+                <div class="carousel-track">
+                    ${offers.map(p => {
+                        const displayName = p.name.replace(/(OFERTA)/i, '<span style="color:var(--cor-danger); font-weight:800">$1</span>');
+                        return `
+                            <div class="prod-card disabled" onclick="alert('Por favor, primeiro escolha uma Cesta Base acima para começar seu pedido.')">
+                                <img src="${p.img}" class="prod-img" loading="lazy" alt="${p.name}" width="150" height="150">
+                                <div class="prod-name">${displayName}</div>
+                                <div class="prod-price">${fmt(p.price)}</div>
+                                <div style="margin-top:auto; font-size:0.75rem; color:#999; text-align:center;">Escolha uma cesta</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>`;
+            document.getElementById('home-offers-container').innerHTML = html;
         }
 
         // --- LOGIC ---
