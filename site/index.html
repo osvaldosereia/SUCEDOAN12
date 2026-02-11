@@ -575,20 +575,18 @@
             max-height: 60vh; /* Permite rolagem */
             overflow-y: auto;
         }
-        .quick-cart-item {
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            padding: 15px; 
-            gap: 10px;
-            background: white;
-            border-bottom: 1px solid #eee;
+        /* ESTILO PARA OS CARDS DENTRO DO MODAL QUICK CART - IDÊNTICO AO PADRÃO MAS AJUSTADO AO GRID */
+        .quick-cart-grid .prod-card {
+            flex: none;
+            width: 100%;
+            margin: 0;
+            border: none;
             border-right: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            border-radius: 0;
+            box-shadow: none;
         }
-        .quick-cart-item:nth-child(2n) {
-            border-right: 1px solid #eee; /* Mantém a borda para grid consistente */
-        }
-        
+
         /* --- MEDIA QUERIES CONSOLIDADAS --- */
         @media (min-width: 900px) {
             /* Desktop Home: Max 4 colunas */
@@ -1240,7 +1238,6 @@
             let cardHtml = buildProductCard(p);
             // Ajusta estilos para o modal e remove click para não abrir o modal dentro do modal
             cardHtml = cardHtml.replace('margin-right: 15px;', 'margin-right: 0; width: 100%; box-shadow: none; border: none; padding:0;');
-            // CODIGO MORTO REMOVIDO: Linha de replace onclick="zoom" retirada
             content.innerHTML = cardHtml;
             
             const display = currentModalIndices.length > 1 ? 'grid' : 'none';
@@ -1249,7 +1246,6 @@
 
         function openQuickCart() {
             const list = document.getElementById('quick-cart-list');
-            // FIX: Usar variável acumuladora para construir o HTML corretamente
             let htmlContent = '<div class="prod-grid quick-cart-grid">';
             
             let hasItems = false;
@@ -1259,28 +1255,20 @@
                     const p = DB_PROD.find(x => x.id === k);
                     if(!p) continue;
                     
-                    const img = p.img || svgPlace();
+                    // REVISÃO RESPONSÁVEL: Reutilizar buildProductCard para garantir identidade visual
+                    let card = buildProductCard(p);
                     
-                    htmlContent += `
-                    <div class="prod-grid-item active quick-cart-item">
-                        <div style="position:relative; width:100%; aspect-ratio:1;">
-                           <img src="${img}" style="width:100%; height:100%; object-fit:contain;">
-                        </div>
-                        <div style="font-size:0.8rem; font-weight:600; text-align:center; margin:5px 0; line-height:1.2; height:2.4em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${p.name}</div>
-                        <div style="font-size:0.9rem; font-weight:700; color:var(--cor-primary);">${fmt(p.price)}</div>
-                        <div class="qty-control" style="width:100%; margin-top:auto;">
-                            <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
-                            <span class="val-q">${CART[k]}</span>
-                            <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
-                        </div>
-                    </div>`;
+                    // Ajuste de IDs para evitar conflitos no DOM
+                    card = card.replace(`id="card-${p.id}"`, `id="qc-card-${p.id}"`);
+                    
+                    htmlContent += card;
                 }
             }
             htmlContent += '</div>';
             
             if(!hasItems) htmlContent = '<p style="text-align:center; padding:20px; color:#999;">Carrinho vazio.</p>';
             
-            list.innerHTML = htmlContent; // Aplica o HTML de uma vez só
+            list.innerHTML = htmlContent;
             
             updateTotals(); 
             document.getElementById('modal-quick-cart').showModal();
