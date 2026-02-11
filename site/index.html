@@ -66,10 +66,10 @@
             position: sticky; top: 0; z-index: 1000;
             background: var(--cor-primary);
             box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            transition: transform 0.3s ease;
+            /* transition removida pois não vai mais esconder */
             width: 100%;
         }
-        .header-hidden { transform: translateY(-100%); }
+        /* .header-hidden removido */
 
         header {
             display: flex; align-items: center; justify-content: space-between;
@@ -257,6 +257,7 @@
             position: absolute; top: -40px; right: 0; color: white; font-size: 2rem; 
             background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
+            z-index: 100; cursor: pointer;
         }
 
         /* Desktop Adjustments */
@@ -280,7 +281,9 @@
                 <div class="page-title">Super Cestas Dona Antônia</div>
             </div>
             <a href="https://wa.me/5565996813588" target="_blank" class="btn-whatsapp-header" aria-label="Falar no WhatsApp">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.592 2.654-.696c1.001.574 1.973.891 3.287.891 3.181 0 5.767-2.587 5.767-5.766.001-3.185-2.584-5.774-5.765-5.774zm10.234 5.726c0 5.526-4.499 10.024-10.024 10.024-2.029 0-3.902-.601-5.5-1.636l-6.741 1.766 1.799-6.569c-1.12-1.666-1.782-3.666-1.782-5.811 0-5.525 4.499-10.025 10.024-10.025 5.524 0 10.024 4.5 10.024 10.025zm-3.522 2.866c-.167-.084-.988-.488-1.141-.544-.153-.056-.264-.084-.376.084-.111.168-.432.544-.53.655-.098.111-.196.125-.363.041-.167-.084-.705-.26-1.343-.828-.494-.44-0.828-.984-.925-1.151-.098-.168-.011-.258.073-.341.076-.075.168-.196.252-.294.084-.098.111-.167.167-.279.056-.111.028-.209-.014-.293-.042-.084-.376-0.906-.516-1.24-.136-.326-.275-.282-.376-.287-.093-.005-.199-.005-.306-.005-.107 0-.28.04-.426.199-.146.159-.56.548-.56 1.336 0 .788.574 1.547.654 1.658.08.111 1.128 1.722 2.733 2.415 1.605.693 1.605.462 1.896.434.291-.028.932-.381 1.064-.749.132-.367.132-.682.093-.749-.039-.067-.144-.111-.311-.195z"/></svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 8.259C3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
+                </svg>
             </a>
         </header>
     </div>
@@ -371,9 +374,9 @@
         </div>
     </dialog>
 
-    <dialog id="modal-image" onclick="this.close()">
+    <dialog id="modal-image" onclick="closeImage()">
         <div class="img-modal-content" onclick="event.stopPropagation()">
-            <button class="btn-close-img" onclick="document.getElementById('modal-image').close()">✕</button>
+            <button class="btn-close-img" onclick="closeImage()">✕</button>
             <img id="img-zoom-src" class="img-modal-src" src="">
         </div>
     </dialog>
@@ -550,6 +553,12 @@
             document.getElementById('img-zoom-src').src = src;
             document.getElementById('modal-image').showModal();
         }
+        
+        function closeImage() {
+            const m = document.getElementById('modal-image');
+            m.close();
+            document.getElementById('img-zoom-src').src = "";
+        }
 
         // --- RENDERING ---
         function renderBaseList() {
@@ -691,17 +700,6 @@
 
         function fmt(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
         
-        let lastScrollY = window.scrollY;
-        window.addEventListener('scroll', () => {
-            const header = document.getElementById('header-wrapper');
-            if (window.scrollY > 100 && window.scrollY > lastScrollY) {
-                header.classList.add('header-hidden');
-            } else {
-                header.classList.remove('header-hidden');
-            }
-            lastScrollY = window.scrollY;
-        });
-
         init();
     </script>
 </body>
