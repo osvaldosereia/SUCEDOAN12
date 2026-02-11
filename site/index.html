@@ -10,720 +10,514 @@
     <meta name="theme-color" content="#0F172A"> <title>Super Cestas Dona Antônia</title>
 
     <style>
-        /* --- DESIGN SYSTEM "TECH-POPULAR" --- */
+        /* --- DESIGN SYSTEM MINIMALISTA --- */
         :root {
-            /* Paleta de Cores Estratégica */
-            --cor-primary: #0F172A;     /* Navy Profissional (Confiança) */
-            --cor-action: #FF6D00;      /* Laranja Varejo (Ação/Fome) */
-            --cor-success: #00C853;     /* Verde Dinheiro (Crédito/Sucesso) */
-            --cor-warning: #FFAB00;     /* Amarelo Atenção */
-            --cor-danger: #D32F2F;      /* Vermelho Alerta */
-            
-            --cor-bg: #F4F6F8;          /* Fundo Off-White Moderno */
+            --cor-primary: #0F172A;
+            --cor-action: #FF6D00;
+            --cor-success: #00C853;
+            --cor-warning: #FFAB00;
+            --cor-bg: #F8FAFC;
             --cor-surface: #FFFFFF; 
-            --cor-text-main: #1E293B;
-            --cor-text-light: #64748B;
-            --cor-divider: #E2E8F0;
+            --cor-text-main: #334155;
+            --cor-text-light: #94A3B8;
+            --cor-divider: #F1F5F9;
             
-            /* Tipografia */
-            --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --font-size-name: 0.85rem; 
-            --font-size-price: 1.1rem;
-            
-            /* Sombras e Bordas */
-            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-float: 0 -4px 20px rgba(0,0,0,0.1);
+            --font-stack: 'Inter', -apple-system, sans-serif;
+            --radius-sm: 8px;
             --radius-md: 12px;
-            --radius-lg: 16px;
+            --shadow-soft: 0 2px 15px rgba(0,0,0,0.04);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         
         body {
             font-family: var(--font-stack);
             background-color: var(--cor-bg);
             color: var(--cor-text-main);
             margin: 0;
-            padding-bottom: 140px; /* Espaço extra para FAB e totais */
-            font-size: 16px;
-            line-height: 1.4;
-            -webkit-font-smoothing: antialiased;
+            padding-bottom: 120px;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: hidden;
         }
 
-        h1, h2, h3 { margin: 0; font-weight: 800; color: var(--cor-primary); letter-spacing: -0.5px; }
-        button { cursor: pointer; border: none; outline: none; background: none; font-family: inherit; font-weight: 700; }
-
-        /* --- HEADER --- */
+        /* --- HEADER & NAVIGATION --- */
         .header-wrapper {
-            position: sticky; top: 0; z-index: 100;
+            position: sticky; top: 0; z-index: 1000;
             background: var(--cor-primary);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-            color: white;
             transition: transform 0.3s ease;
         }
+        .header-hidden { transform: translateY(-64px); }
 
         header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 20px;
-            height: 64px;
+            padding: 0 20px; height: 64px;
             max-width: 1200px; margin: 0 auto;
         }
         
-        .header-left { display: flex; align-items: center; gap: 12px; }
-        .logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
-        .page-title { font-size: 1.1rem; font-weight: 700; color: white; }
-        .btn-back { display: none; font-size: 1.5rem; color: white; padding: 0 10px; }
-        .btn-help { width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 50%; color: white; display: grid; place-items: center; font-size: 1.1rem; }
+        .logo { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid white; }
+        .page-title { font-size: 0.9rem; font-weight: 600; color: white; letter-spacing: 0.5px; }
+        .btn-back { font-size: 1.2rem; color: white; padding: 10px; margin-left: -10px; }
 
-        /* --- BARRA DE SALDO INTELIGENTE (O COFRE) --- */
+        /* --- STICKY BARS --- */
+        .sticky-container {
+            position: sticky; top: 0; z-index: 999;
+            background: var(--cor-bg);
+        }
+
         .balance-bar {
-            position: sticky; top: 64px; z-index: 99;
-            background: var(--cor-primary); /* Default */
-            color: white;
-            padding: 15px 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: none; /* Só aparece na personalização */
-            justify-content: space-between; align-items: center;
-            transition: background-color 0.3s ease;
+            background: var(--cor-primary); color: white;
+            padding: 12px 20px;
+            display: none; justify-content: space-between; align-items: center;
         }
-        .balance-bar.credit { background: var(--cor-warning); color: #333; } /* Laranja: Atenção/Oportunidade */
-        .balance-bar.success { background: var(--cor-success); } /* Verde: Sucesso/Ganho */
+        .balance-bar.credit { background: var(--cor-warning); color: #000; }
+        .balance-bar.success { background: var(--cor-success); }
         
-        .balance-info { display: flex; flex-direction: column; }
-        .balance-label { font-size: 0.75rem; text-transform: uppercase; opacity: 0.9; font-weight: 700; }
-        .balance-val { font-size: 1.4rem; font-weight: 900; }
-        
+        .balance-val { font-size: 1.1rem; font-weight: 800; }
+        .balance-label { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; opacity: 0.8; }
+
+        .search-container {
+            padding: 10px 20px;
+            background: var(--cor-bg);
+            display: none;
+        }
+        .search-box {
+            width: 100%; padding: 12px 16px;
+            border: none; border-radius: var(--radius-md);
+            background: white; box-shadow: var(--shadow-soft);
+            font-size: 0.9rem; color: var(--cor-text-main);
+        }
+
         /* --- VIEWS --- */
-        main { display: block; width: 100%; max-width: 1200px; margin: 0 auto; }
-        .view { display: none; padding: 10px 0; animation: fadeIn 0.3s ease; }
+        .view { display: none; animation: fadeIn 0.4s ease; }
         .view.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- HOME HERO --- */
-        .hero-section {
-            background: white; padding: 25px 20px; margin-bottom: 20px;
-            text-align: center; border-bottom: 1px solid var(--cor-divider);
-        }
-        .hero-title { font-size: 1.5rem; color: var(--cor-primary); margin-bottom: 10px; line-height: 1.2; }
-        .hero-subtitle { color: var(--cor-text-light); font-size: 0.95rem; margin-bottom: 0; }
+        /* --- HOME --- */
+        .hero-section { padding: 40px 20px; text-align: center; }
+        .hero-title { font-size: 1.3rem; font-weight: 800; margin-bottom: 8px; color: var(--cor-primary); }
+        .hero-subtitle { font-size: 0.8rem; color: var(--cor-text-light); }
 
-        /* --- CESTAS (LISTA) --- */
-        .grid-cestas { 
-            display: grid; grid-template-columns: 1fr; gap: 20px; padding: 0 20px 20px 20px; 
-        }
+        .grid-cestas { display: grid; grid-template-columns: 1fr; gap: 15px; padding: 20px; }
         .cesta-card { 
-            background: white; border-radius: var(--radius-lg); overflow: hidden;
-            box-shadow: var(--shadow-card); display: flex; flex-direction: column;
+            background: white; border-radius: var(--radius-md); overflow: hidden;
+            box-shadow: var(--shadow-soft); transition: transform 0.2s;
         }
-        .cesta-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #eee; }
-        .cesta-content { padding: 20px; text-align: center; }
-        .cesta-name { font-size: 1.4rem; margin-bottom: 5px; color: var(--cor-primary); }
-        .cesta-desc { font-size: 0.9rem; color: var(--cor-text-light); margin-bottom: 15px; }
-        .cesta-price { font-size: 1.8rem; font-weight: 900; color: var(--cor-action); margin-bottom: 15px; }
-        
-        .btn-main-action {
-            width: 100%; padding: 14px; border-radius: 8px;
-            background: var(--cor-action); color: white;
-            font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;
-            box-shadow: 0 4px 10px rgba(255, 109, 0, 0.3);
-        }
-        .btn-main-action:active { transform: scale(0.98); }
+        .cesta-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+        .cesta-content { padding: 15px; text-align: center; }
+        .cesta-price { font-size: 1.2rem; font-weight: 800; color: var(--cor-action); margin: 10px 0; }
 
-        /* --- PERSONALIZAÇÃO: LISTA CESTA BASE --- */
-        .basket-base-list {
-            background: white; padding: 20px; margin-bottom: 10px;
-        }
+        /* --- PERSONALIZAÇÃO --- */
+        .basket-base-list { background: white; padding: 20px; margin-bottom: 10px; }
         .base-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-bottom: 1px solid #eee;
+            padding: 10px 0; border-bottom: 1px solid var(--cor-divider);
         }
-        .base-item-info { flex: 1; }
-        .base-item-name { font-weight: 600; font-size: 0.95rem; color: var(--cor-text-main); }
-        .base-item-price { font-size: 0.85rem; color: var(--cor-text-light); }
+        .base-item-name { font-size: 0.8rem; font-weight: 500; }
         
         .qty-control {
-            display: flex; align-items: center; gap: 10px;
-            background: #f0f7ff; padding: 5px 10px; border-radius: 6px;
+            display: flex; align-items: center; gap: 12px;
+            background: #F8FAFC; padding: 4px 8px; border-radius: 20px;
         }
-        .btn-q { width: 30px; height: 30px; font-size: 1.2rem; color: var(--cor-primary); display: grid; place-items: center; }
-        .val-q { font-weight: 800; font-size: 1rem; color: var(--cor-primary); min-width: 20px; text-align: center; }
+        .btn-q { width: 28px; height: 28px; font-size: 1rem; color: var(--cor-primary); }
+        .val-q { font-weight: 700; font-size: 0.85rem; min-width: 15px; text-align: center; }
 
-        /* --- ABAS DE NAVEGAÇÃO (CHIPS) --- */
-        .cat-tabs-wrapper {
-            position: sticky; top: 134px; /* Abaixo do header e da barra de saldo */
-            z-index: 95; background: var(--cor-bg);
-            padding: 10px 0;
-            overflow-x: auto; white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
-            border-bottom: 1px solid #ddd;
+        /* --- CARROSSEL --- */
+        .section-price-title { 
+            padding: 30px 20px 10px; font-size: 0.75rem; 
+            text-transform: uppercase; letter-spacing: 1px; color: var(--cor-text-light);
+            border-top: 6px solid var(--cor-divider);
         }
-        .cat-tabs-container { padding: 0 20px; display: inline-flex; gap: 10px; }
-        
-        .cat-tab {
-            padding: 10px 20px; border-radius: 25px;
-            background: white; border: 1px solid #ddd;
-            color: var(--cor-text-light); font-weight: 600; font-size: 0.9rem;
-            transition: all 0.2s;
+        .carousel-container { margin-bottom: 25px; }
+        .carousel-title { padding: 0 20px 10px; font-size: 0.95rem; font-weight: 700; }
+        .carousel-track {
+            display: flex; overflow-x: auto; padding: 0 20px 10px; gap: 12px;
+            scroll-snap-type: x mandatory; scrollbar-width: none;
         }
-        .cat-tab.active {
-            background: var(--cor-primary); color: white; border-color: var(--cor-primary);
-            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.3);
-        }
-        .cat-tab.credit-tab {
-            background: var(--cor-warning); border-color: var(--cor-warning); color: #333;
-            animation: pulse 2s infinite; display: none; /* Escondido por padrão */
-        }
-        .cat-tab.credit-tab.active {
-            background: #FFD600; color: black; border-color: #FFD600;
-        }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .carousel-track::-webkit-scrollbar { display: none; }
 
-        /* --- SUBMENU DE PREÇO --- */
-        .price-filters {
-            display: flex; gap: 8px; padding: 0 20px 10px 20px; overflow-x: auto;
-        }
-        .price-chip {
-            padding: 6px 12px; border-radius: 15px; background: #eee; font-size: 0.75rem; color: #666; white-space: nowrap;
-        }
-        .price-chip.active { background: var(--cor-action); color: white; }
-
-        /* --- GRID DE PRODUTOS --- */
-        .catalog-section { padding: 20px; }
-        .prod-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
-        }
         .prod-card {
+            flex: 0 0 140px; scroll-snap-align: start;
             background: white; border-radius: var(--radius-md);
-            box-shadow: var(--shadow-card); overflow: hidden;
+            padding: 10px; box-shadow: var(--shadow-soft);
             display: flex; flex-direction: column;
-            position: relative; border: 1px solid transparent;
         }
-        .prod-card.active { border-color: var(--cor-success); }
-        
-        .prod-img-box { width: 100%; aspect-ratio: 1; padding: 10px; display: flex; align-items: center; justify-content: center; }
-        .prod-img { width: 100%; height: 100%; object-fit: contain; }
-        
-        .prod-info { padding: 10px; flex: 1; display: flex; flex-direction: column; }
-        .prod-name { font-size: 0.85rem; font-weight: 600; line-height: 1.3; margin-bottom: 5px; color: var(--cor-text-main); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.3em; }
-        .prod-price { font-size: 1.1rem; font-weight: 800; color: var(--cor-action); margin-top: auto; }
-        
-        .prod-btn {
-            width: 100%; padding: 8px; margin-top: 8px;
-            background: white; border: 1px solid var(--cor-action); color: var(--cor-action);
-            border-radius: 6px; font-size: 0.8rem; text-transform: uppercase;
+        .prod-img { width: 100%; aspect-ratio: 1; object-fit: contain; margin-bottom: 8px; }
+        .prod-name { 
+            font-size: 0.75rem; line-height: 1.3; height: 3.9em; 
+            overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+            color: var(--cor-text-main); margin-bottom: 5px;
         }
-        .prod-btn.use-credit { background: var(--cor-success); color: white; border-color: var(--cor-success); }
-        
-        /* Badges */
-        .badge { position: absolute; top: 0; left: 0; font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-bottom-right-radius: 8px; color: white; z-index: 2; }
-        .badge.promo { background: var(--cor-danger); }
-        .badge.qty { background: var(--cor-primary); right: 0; left: auto; border-bottom-left-radius: 8px; border-bottom-right-radius: 0; }
+        .prod-price { font-size: 0.9rem; font-weight: 800; color: var(--cor-action); }
 
-        /* --- BOTÃO FLUTUANTE (FAB) --- */
+        /* --- BUTTONS --- */
+        .btn-main-action {
+            width: 100%; padding: 14px; border-radius: var(--radius-sm);
+            background: var(--cor-action); color: white; font-weight: 700;
+            font-size: 0.85rem; text-transform: uppercase;
+        }
+        
+        /* --- FAB & CHECKOUT --- */
         .fab-cart {
-            position: fixed; bottom: 90px; right: 20px;
-            width: 60px; height: 60px; border-radius: 50%;
+            position: fixed; bottom: 85px; right: 20px;
+            width: 56px; height: 56px; border-radius: 50%;
             background: var(--cor-action); color: white;
-            box-shadow: 0 4px 20px rgba(255, 109, 0, 0.4);
-            z-index: 98; display: flex; align-items: center; justify-content: center;
-            font-size: 1.8rem; cursor: pointer; border: 3px solid white;
-            transition: transform 0.2s;
+            box-shadow: 0 4px 20px rgba(255, 109, 0, 0.3);
+            display: flex; align-items: center; justify-content: center; z-index: 1001;
         }
-        .fab-cart:active { transform: scale(0.9); }
         .fab-badge {
-            position: absolute; top: -5px; right: -5px;
-            background: var(--cor-danger); color: white;
-            font-size: 0.8rem; padding: 2px 8px; border-radius: 10px; border: 2px solid white;
+            position: absolute; top: -2px; right: -2px;
+            background: var(--cor-danger); font-size: 0.7rem;
+            padding: 2px 6px; border-radius: 10px; border: 2px solid white;
         }
-        
-        /* --- MODAL DECISÃO (BIFURCAÇÃO) --- */
-        dialog { border: none; border-radius: 16px; width: 90%; max-width: 400px; padding: 0; box-shadow: 0 20px 80px rgba(0,0,0,0.4); }
-        dialog::backdrop { background: rgba(0,0,0,0.7); }
-        
-        .decision-modal-body { padding: 30px 20px; text-align: center; }
-        .decision-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin-bottom: 20px; border: 4px solid #f0f0f0; }
-        .decision-title { font-size: 1.3rem; margin-bottom: 10px; color: var(--cor-primary); }
-        .decision-text { color: #666; margin-bottom: 25px; font-size: 0.95rem; }
-        
-        .btn-decision { width: 100%; padding: 15px; border-radius: 10px; font-size: 1rem; margin-bottom: 10px; text-transform: uppercase; font-weight: 800; }
-        .btn-decision.direct { background: var(--cor-success); color: white; box-shadow: 0 4px 10px rgba(0, 200, 83, 0.3); }
-        .btn-decision.custom { background: white; border: 2px solid var(--cor-action); color: var(--cor-action); }
 
-        /* --- CHECKOUT & QUICK CART --- */
         .checkout-bar {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; border-top: 1px solid #eee;
-            padding: 15px 20px; z-index: 100;
+            background: white; padding: 15px 20px; z-index: 1000;
             display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 -5px 20px rgba(0,0,0,0.05);
+            box-shadow: 0 -2px 15px rgba(0,0,0,0.05);
         }
-        .chk-total-lbl { font-size: 0.8rem; color: #999; text-transform: uppercase; }
-        .chk-total-val { font-size: 1.4rem; font-weight: 900; color: var(--cor-primary); }
-        
-        .modal-header { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
-        .modal-close { font-size: 1.5rem; color: #999; padding: 5px; }
 
-        /* Desktop Adjustments */
+        /* --- DIALOGS --- */
+        dialog { border: none; border-radius: 16px; width: 90%; max-width: 400px; padding: 25px; }
+        dialog::backdrop { background: rgba(15, 23, 42, 0.8); }
+
         @media (min-width: 900px) {
-            .grid-cestas { grid-template-columns: repeat(3, 1fr); }
-            .prod-grid { grid-template-columns: repeat(5, 1fr); }
-            .balance-bar { top: 64px; }
-            .cat-tabs-wrapper { top: 138px; }
+            .grid-cestas { grid-template-columns: repeat(3, 1fr); max-width: 1200px; margin: 0 auto; }
+            .prod-card { flex: 0 0 180px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="header-wrapper">
+    <div class="header-wrapper" id="header-wrapper">
         <header>
-            <div class="header-left">
-                <button class="btn-back" id="btn-back" onclick="goHome()">❮</button>
-                <img src="img/logo.webp" class="logo" alt="Logo">
-                <div class="page-title" id="page-title">Super Cestas</div>
+            <div style="display:flex; align-items:center; gap:12px">
+                <button class="btn-back" id="btn-back" onclick="goHome()" style="display:none">←</button>
+                <img src="img/logo.webp" class="logo">
+                <div class="page-title">Super Cestas</div>
             </div>
-            <button class="btn-help" onclick="window.open(`https://wa.me/${CONFIG_WHATSAPP}`, '_blank')">?</button>
         </header>
     </div>
 
-    <div id="balance-bar" class="balance-bar">
-        <div class="balance-info">
-            <span class="balance-label" id="balance-label">Total da Cesta</span>
-            <span class="balance-val" id="balance-val">R$ 0,00</span>
+    <div class="sticky-container">
+        <div id="balance-bar" class="balance-bar">
+            <div class="balance-info">
+                <span class="balance-label" id="balance-label">Cofre</span>
+                <div class="balance-val" id="balance-val">R$ 0,00</div>
+            </div>
+            <div id="balance-sub" style="font-size:0.7rem; opacity:0.8"></div>
         </div>
-        <div style="text-align:right">
-            <div style="font-size:0.8rem; opacity:0.8" id="balance-sub"></div>
+
+        <div id="search-container" class="search-container">
+            <input type="text" id="search-input" class="search-box" placeholder="O que você deseja adicionar?" oninput="renderCatalogo()">
         </div>
     </div>
 
-    <div id="cat-tabs-wrapper" class="cat-tabs-wrapper" style="display:none;">
-        <div class="cat-tabs-container" id="cat-tabs-container"></div>
-        <div class="price-filters" id="price-filters">
-            <button class="price-chip active" onclick="setPriceRange('all')">Todos</button>
-            <button class="price-chip" onclick="setPriceRange('0-5')">Até R$ 5</button>
-            <button class="price-chip" onclick="setPriceRange('5-10')">R$ 5 - 10</button>
-            <button class="price-chip" onclick="setPriceRange('10-20')">R$ 10 - 20</button>
-            <button class="price-chip" onclick="setPriceRange('20+')">Acima de 20</button>
-        </div>
-    </div>
-
-    <main id="main-content">
+    <main>
         <div id="view-home" class="view active">
             <div class="hero-section">
-                <h2 class="hero-title">Sua compra do mês,<br>garantida e sem sair de casa.</h2>
-                <p class="hero-subtitle">🚚 Entrega Grátis em Cuiabá e VG • 🔒 Pague na entrega</p>
+                <h2 class="hero-title">Sua compra do mês pronta.</h2>
+                <p class="hero-subtitle">Entrega Grátis em Cuiabá e VG</p>
             </div>
-            
-            <h3 style="padding: 0 20px; margin-bottom: 15px;">Escolha sua Cesta Base:</h3>
-            <div class="grid-cestas" id="cestas-list">
-                <p style="text-align:center; padding: 30px; color:#999;">Carregando...</p>
-            </div>
+            <div class="grid-cestas" id="cestas-list"></div>
         </div>
 
         <div id="view-custom" class="view">
             <div class="basket-base-list" id="basket-base-list"></div>
             
-            <div id="btn-calculate-box" style="padding: 0 20px 20px 20px;">
-                <button class="btn-main-action" style="background:var(--cor-success)" onclick="calculateAndUnlock()">CALCULAR CRÉDITO E VER EXTRAS</button>
+            <div id="btn-calculate-box" style="padding: 20px;">
+                <button class="btn-main-action" style="background:var(--cor-primary)" onclick="unlockCatalogo()">REVISÃO CONCLUÍDA →</button>
             </div>
 
-            <div class="catalog-section" id="catalog-section" style="display:none;">
-                <h3 id="catalog-title" style="margin-bottom:15px; font-size:1.1rem;">Adicionar Extras</h3>
-                <div class="prod-grid" id="prod-grid"></div>
-                <div id="load-more-box" style="text-align:center; padding: 20px;">
-                    <button class="btn-main-action" style="width:auto; background:white; color:var(--cor-primary); border:1px solid var(--cor-primary);" onclick="loadMore()">MOSTRAR MAIS PRODUTOS</button>
-                </div>
-            </div>
+            <div id="catalogo-content"></div>
         </div>
     </main>
 
-    <div id="fab-cart" class="fab-cart" onclick="openCheckoutModal()" style="display:none;">
-        🛒
-        <div class="fab-badge" id="fab-count">0</div>
+    <div id="fab-cart" class="fab-cart" onclick="openCheckoutModal()" style="display:none">
+        🛒 <div class="fab-badge" id="fab-count">0</div>
     </div>
 
-    <div id="checkout-bar" class="checkout-bar" style="display:none;">
+    <div id="checkout-bar" class="checkout-bar" style="display:none">
         <div>
-            <div class="chk-total-lbl">Total Final</div>
-            <div class="chk-total-val" id="chk-total-val">R$ 0,00</div>
+            <div class="balance-label">Total Final</div>
+            <div class="balance-val" id="chk-total-val" style="color:var(--cor-primary)">R$ 0,00</div>
         </div>
-        <button class="btn-main-action" id="btn-finish-action" style="width:auto; padding: 12px 25px;" onclick="openCheckoutModal()">
-            CONCLUIR PEDIDO
-        </button>
+        <button class="btn-main-action" style="width:auto; padding: 12px 25px;" onclick="openCheckoutModal()">CONCLUIR</button>
     </div>
 
     <dialog id="modal-decision">
-        <div class="decision-modal-body">
-            <img id="decision-img" class="decision-img" src="">
-            <h3 class="decision-title" id="decision-title"></h3>
-            <p class="decision-text">O que deseja fazer?</p>
-            
-            <button class="btn-decision direct" onclick="orderFast()">
-                PEDIR NO WHATSAPP AGORA<br><span style="font-size:0.7rem; font-weight:400;">(Sem alterações)</span>
-            </button>
-            <button class="btn-decision custom" onclick="startCustomization()">
-                MUDAR ITENS / PERSONALIZAR<br><span style="font-size:0.7rem; font-weight:400;">(Trocar produtos)</span>
-            </button>
-            
-            <div style="margin-top:15px;">
-                <button style="color:#999; text-decoration:underline; font-size:0.9rem;" onclick="document.getElementById('modal-decision').close()">Cancelar</button>
-            </div>
+        <div style="text-align:center">
+            <h3 id="decision-title" style="margin-bottom:20px"></h3>
+            <button class="btn-main-action" style="background:var(--cor-success); margin-bottom:12px" onclick="orderFast()">PEDIR AGORA VIA WHATSAPP</button>
+            <button class="btn-main-action" style="background:white; color:var(--cor-action); border:1px solid var(--cor-action)" onclick="startCustomization()">PERSONALIZAR ITENS</button>
+            <button onclick="this.closest('dialog').close()" style="margin-top:20px; color:var(--cor-text-light); font-size:0.8rem">Voltar</button>
         </div>
     </dialog>
 
     <dialog id="modal-checkout">
-        <div class="modal-header">
-            <h3>Finalizar Pedido</h3>
-            <button class="modal-close" onclick="document.getElementById('modal-checkout').close()">✕</button>
-        </div>
-        <div style="padding:20px; max-height:70vh; overflow-y:auto;">
-            <div id="checkout-summary" style="margin-bottom:20px; background:#f9f9f9; padding:15px; border-radius:8px;"></div>
-            
-            <label style="display:block; font-size:0.8rem; color:#666; margin-bottom:5px;">Seu Nome:</label>
-            <input type="text" id="cust-name" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; margin-bottom:15px;" placeholder="Digite seu nome">
-            
-            <label style="display:block; font-size:0.8rem; color:#666; margin-bottom:5px;">Forma de Pagamento:</label>
-            <select id="cust-pay" style="width:100%; padding:12px; border:1px solid #ddd; border-radius:6px; margin-bottom:20px; background:white;">
-                <option>PIX (Na entrega)</option>
-                <option>Dinheiro</option>
-                <option>Cartão de Crédito</option>
-                <option>Cartão de Débito</option>
-                <option>Cartão Alimentação</option>
-            </select>
-            
-            <button class="btn-main-action" onclick="sendOrder()">ENVIAR PEDIDO NO WHATSAPP</button>
-        </div>
+        <h3 style="margin-bottom:20px">Finalizar</h3>
+        <div id="checkout-summary" style="margin-bottom:20px; font-size:0.85rem"></div>
+        <input type="text" id="cust-name" class="search-box" placeholder="Seu Nome" style="margin-bottom:12px; border:1px solid #eee">
+        <select id="cust-pay" class="search-box" style="margin-bottom:20px; border:1px solid #eee">
+            <option>PIX (Na entrega)</option>
+            <option>Cartão Crédito/Débito</option>
+            <option>Dinheiro</option>
+            <option>Alimentação</option>
+        </select>
+        <button class="btn-main-action" onclick="sendOrder()">ENVIAR NO WHATSAPP</button>
     </dialog>
 
     <script>
-        // --- CONFIGURAÇÃO ---
-        const CONFIG_WHATSAPP = "5565984491018"; 
-        
-        const CAT_MAP = {
-            "ALIMENTOS E BEBIDAS": ["MERCEARIA BASICA", "MASSAS E MOLHOS", "CAFE DA MANHA", "BISCOITOS E LANCHES", "DOCES E SOBREMESAS", "TEMPEROS"],
-            "CUIDADOS PESSOAIS": ["BEBE E INFANTIL", "CABELO, UNHA, CORPO E MAQUIAGEM", "HIGIENE PESSOAL", "HIGIENE BUCAL"],
-            "LIMPEZA": ["LAVANDERIA", "LIMPEZA DA CASA"],
-            "CASA E UTILIDADES": ["COZINHA", "UTILIDADES", "PAPELARIA", "CALÇADOS"]
+        const CONFIG_WHATSAPP = "5565984491018";
+        const CONFIG_CATEGORIAS = {
+            "Mercearia Básica": ["AMIDO", "SARDINHA", "ARROZ", "FEIJAO", "ACUCAR", "OLEO", "MILHARINA", "CUZ CUZ", "FARINHA", "FUBA", "MILHO VERDE", "SAL", "TRIGO"],
+            "Bebê e Infantil": ["FRALDA", "LENCO UMEDECIDO", "HUGGIES", "POMADA", "MUCILON"],
+            "Cabelo, Unha, Corpo e Maquiagem": ["LOCAO", "LOÇÃO", "ELASTICO DE CABELO", "Necessaire", "PINÇA", "AGUA OXIGENADA", "ACETONA", "PIRANHA", "PRESILHA", "XUXINHA", "LAÇO", "RABICO", "ESPONJA DE MAQUIAGEM", "LIXA DE UNHA", "CORTADOR DE UNHA", "SHAMPOO", "CONDICIONADOR", "PENTE", "ESCOVA DE CABELO", "CREME DE PENTEAR"],
+            "Higiene Pessoal": ["TALCO", "APARELHO BARBEAR", "LAMINAS DE BARBEAR", "ESPONJA DE BANHO", "SABONETE", "DESODORANTE", "ABSORVENTE", "ALGODAO", "COTONETE", "GILETTE"],
+            "Higiene Bucal": ["CREME DENTAL", "ESCOVA DENTAL", "FIO DENTAL"],
+            "Lavanderia": ["LAVA ROUPA", "ESCOVA LAVANDERIA", "SABAO", "OMO", "YPE", "AMACIANTE", "AGUA SANITARIA", "VARAL", "PREGADOR", "PRENDEDOR"],
+            "Limpeza da Casa": ["PEDRA SAINARIA", "ESCOVA DE LIMPEZA", "ESPONJA MAGICA", "DESINFETANTE", "VEJA", "DETERGENTE", "ESPONJA DE AÇO", "BUCHA DE LAVAR LOUÇA", "PANO DE CHÃO", "INSETICIDA", "VASSOURA", "SACO DE LIXO", "RODO"],
+            "Massas e Molhos": ["KETCHUP", "MAIONESE", "MOSTARDA", "MACARRAO", "EXTRATO DE TOMATE", "MOLHO DE TOMATE", "QUEIJO RALADO"],
+            "Café da Manhã": ["CAFE", "FILTRO DE CAFE", "LEITE INTEGRAL", "LEITE DESNATADO", "ACHOCOLATADO", "CEREAL", "AVEIA", "SUCO", "CHA", "ERVA DE TERERE"],
+            "Biscoitos e Lanches": ["BATATA PRINGLES", "BOLACHA WAFER", "BOLACHA SHOW", "BISCOITO", "BOLACHA", "WAFER", "TORRADA", "ROSQUINHA"],
+            "Doces e Sobremesas": ["COCO RALADO", "DROPS", "TRIDENT", "LEITE CONDENSADO", "GELATINA", "BOLO", "MISTURA PRA BOLO", "CREME DE LEITE"],
+            "Temperos": ["AZEITE", "CALDO", "TEMPERO", "PIMENTA", "MAIONESE", "KETCHUP", "VINAGRE", "CONDIMENTO"],
+            "Cozinha": ["PALITO DENTAL", "ABRIDOR DE GARRAFA", "BALDE DE PIPOCA", "FORMA DE GELO", "JOGO AMERICANO", "PROCESSADOR", "TABUA DE CORTE", "CAPA PARA BOTIJAO", "CORTINA", "LUVA TERMICA", "PRATINHO", "LAVA LOUÇA", "ISQUEIRO", "COPO", "PANELA", "DESCANSO DE PANELA", "PRATO", "GARFO", "FACA", "COLHER", "TABUA DE CARNE", "TALHER", "PAPEL ALUMINIO", "TIGELA", "TRAVESSA", "CANECA", "PETISQUEIRA", "JARRA", "POTE", "CUMBUCA", "SOCADOR", "DESCASCADOR", "PENEIRA"],
+            "Utilidades": ["BALAO", "ABRACADEIRA", "CANTONEIRA", "FITA ADESIVA", "PORTA COMPRIMIDOS", "PORTA OBJETOS", "PROTETOR VEDA", "RELOGIO", "LACRE", "CESTO", "AGULHEIRO", "ALFINETE", "LINHA", "CHAVEIRO", "LAMPADA", "PILHA", "FOSFORO", "RALO", "SUPORTE", "PREGO", "PARAFUSO", "PROTETOR DE RALO"],
+            "Papelaria": ["ESTILETE", "CANETA", "LAPIS", "CADERNO", "BORRACHA", "APONTADOR", "CLIPS", "REGUA", "GRAMPEADOR", "GRAFITE", "LAPISEIRA", "LIVRO"],
+            "Calçados": ["CHINELO"]
         };
 
-        // --- ESTADO ---
         let DB_PROD = [];
         let DB_CESTAS = [];
         let STATE = {
-            cesta: null,
-            cart: {}, 
-            basePrice: 0,
-            currentTotal: 0,
-            creditMode: false,
-            activeTab: 'ALIMENTOS E BEBIDAS',
-            activePriceRange: 'all',
-            isUnlocked: false,
-            itemsLimit: 10
+            cesta: null, cart: {}, basePrice: 0, currentTotal: 0, 
+            isUnlocked: false, lastScroll: 0
         };
 
-        // --- INICIALIZAÇÃO ---
         async function init() {
             try {
-                const [r1, r2] = await Promise.all([
-                    fetch('produtos-cesta-basica.json'),
-                    fetch('produtos.json')
-                ]);
-                
+                const [r1, r2] = await Promise.all([fetch('produtos-cesta-basica.json'), fetch('produtos.json')]);
                 if (r1.ok) DB_CESTAS = await r1.json();
                 if (r2.ok) {
                     let txt = await r2.text();
-                    txt = txt.trim().replace(/,(\s+)?$/, ""); 
+                    txt = txt.trim().replace(/,(\s+)?$/, "");
                     if (!txt.startsWith('[')) txt = '[' + txt + ']';
-                    const raw = JSON.parse(txt);
-                    DB_PROD = raw.filter(x => x.situacao === "A").map(p => ({
-                        id: String(p.id),
-                        name: p.nome,
-                        price: parseFloat(p.preco),
-                        cat: detectCategory(p.nome),
-                        img: `img/produtos/${p.codigo || p.id}.webp`,
-                        stock: p.estoque || 0
+                    DB_PROD = JSON.parse(txt).filter(x => x.situacao === "A").map(p => ({
+                        id: String(p.id), name: p.nome, price: parseFloat(p.preco),
+                        img: `img/produtos/${p.codigo || p.id}.webp`
                     }));
                 }
-                
                 renderHome();
-            } catch (e) {
-                console.error("Erro carregando dados", e);
-                document.getElementById('cestas-list').innerHTML = "<p>Erro ao carregar produtos. Recarregue a página.</p>";
-            }
+            } catch (e) { console.error(e); }
         }
 
-        function detectCategory(name) {
-            name = name.toUpperCase();
-            if (name.includes("ARROZ") || name.includes("FEIJAO") || name.includes("ACUCAR") || name.includes("CAFE") || name.includes("LEITE") || name.includes("OLEO")) return "ALIMENTOS E BEBIDAS";
-            if (name.includes("SABONETE") || name.includes("SHAMPOO") || name.includes("CREME") || name.includes("DENTAL") || name.includes("ABSORVENTE")) return "CUIDADOS PESSOAIS";
-            if (name.includes("SABAO") || name.includes("DETERGENTE") || name.includes("AGUA SANITARIA") || name.includes("AMACIANTE") || name.includes("DESINFETANTE")) return "LIMPEZA";
-            return "CASA E UTILIDADES"; 
-        }
-
-        // --- NAVEGAÇÃO ---
+        // --- NAVIGATION ---
         function goHome() {
+            STATE.cart = {}; STATE.isUnlocked = false; STATE.cesta = null;
             document.getElementById('view-home').classList.add('active');
             document.getElementById('view-custom').classList.remove('active');
             document.getElementById('btn-back').style.display = 'none';
             document.getElementById('balance-bar').style.display = 'none';
-            document.getElementById('cat-tabs-wrapper').style.display = 'none';
+            document.getElementById('search-container').style.display = 'none';
             document.getElementById('fab-cart').style.display = 'none';
             document.getElementById('checkout-bar').style.display = 'none';
-            document.getElementById('catalog-section').style.display = 'none';
             document.getElementById('btn-calculate-box').style.display = 'block';
-            
-            STATE.cesta = null;
-            STATE.cart = {};
-            STATE.isUnlocked = false;
-            STATE.itemsLimit = 10;
+            document.getElementById('catalogo-content').innerHTML = "";
         }
 
         function renderHome() {
             const el = document.getElementById('cestas-list');
-            el.innerHTML = "";
-            DB_CESTAS.forEach(c => {
-                const img = c.imagem || "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIiBmaWxsPSIjRjZGNkY2Ij48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIvPjwvc3ZnPg==";
-                el.innerHTML += `
-                <div class="cesta-card">
-                    <img src="${img}" class="cesta-img" loading="lazy">
+            el.innerHTML = DB_CESTAS.map(c => `
+                <div class="cesta-card" onclick="openDecision('${c.id}')">
+                    <img src="${c.imagem || ''}" class="cesta-img">
                     <div class="cesta-content">
-                        <div class="cesta-name">${c.nome}</div>
-                        <div class="cesta-desc">Itens essenciais para sua família.</div>
+                        <div style="font-weight:700">${c.nome}</div>
                         <div class="cesta-price">${fmt(c.preco)}</div>
-                        <button class="btn-main-action" onclick="openDecision('${c.id}')">ESCOLHER ESTA BASE</button>
                     </div>
-                </div>`;
-            });
+                </div>
+            `).join('');
         }
 
-        // --- MODAL DECISÃO ---
+        // --- FLOW ---
         function openDecision(id) {
-            const c = DB_CESTAS.find(x => x.id === id);
-            STATE.cesta = c;
-            document.getElementById('decision-img').src = c.imagem || "";
-            document.getElementById('decision-title').innerText = c.nome;
+            STATE.cesta = DB_CESTAS.find(x => x.id === id);
+            document.getElementById('decision-title').innerText = STATE.cesta.nome;
             document.getElementById('modal-decision').showModal();
         }
 
         function orderFast() {
-            const msg = `Olá! Quero encomendar a *${STATE.cesta.nome}* no valor original de *${fmt(STATE.cesta.preco)}*, sem alterações.`;
+            const msg = `Olá! Quero a ${STATE.cesta.nome} original (${fmt(STATE.cesta.preco)}).`;
             window.location.href = `https://wa.me/${CONFIG_WHATSAPP}?text=${encodeURIComponent(msg)}`;
         }
 
         function startCustomization() {
             document.getElementById('modal-decision').close();
-            STATE.cart = {};
             STATE.basePrice = STATE.cesta.preco;
-            STATE.isUnlocked = false;
-            STATE.itemsLimit = 10;
-            
             STATE.cesta.produtos.forEach(itemStr => {
-                const parts = itemStr.split('x ');
-                const qtd = parseInt(parts[0]);
-                const pid = parts[1].trim();
-                if (DB_PROD.find(p => p.id === pid)) {
-                    STATE.cart[pid] = (STATE.cart[pid] || 0) + qtd;
-                }
+                const [q, id] = itemStr.split('x ');
+                if (DB_PROD.find(p => p.id === id.trim())) STATE.cart[id.trim()] = parseInt(q);
             });
-
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-custom').classList.add('active');
             document.getElementById('btn-back').style.display = 'block';
             document.getElementById('balance-bar').style.display = 'flex';
-            document.getElementById('catalog-section').style.display = 'none';
-            document.getElementById('cat-tabs-wrapper').style.display = 'none';
-            
-            renderBalanceBar();
+            updateUI();
             renderBaseList();
         }
 
-        function calculateAndUnlock() {
+        function unlockCatalogo() {
             STATE.isUnlocked = true;
             document.getElementById('btn-calculate-box').style.display = 'none';
-            document.getElementById('catalog-section').style.display = 'block';
-            document.getElementById('cat-tabs-wrapper').style.display = 'block';
+            document.getElementById('search-container').style.display = 'block';
             document.getElementById('fab-cart').style.display = 'flex';
             document.getElementById('checkout-bar').style.display = 'flex';
-            
-            renderBalanceBar();
-            renderTabs();
-            renderGrid();
-            
-            window.scrollTo({ top: document.getElementById('catalog-section').offsetTop - 200, behavior: 'smooth' });
+            renderCatalogo();
         }
 
-        function renderBalanceBar() {
-            let total = 0;
-            for (let pid in STATE.cart) {
-                const p = DB_PROD.find(x => x.id === pid);
-                if (p) total += p.price * STATE.cart[pid];
-            }
-            STATE.currentTotal = total;
-            
-            const diff = STATE.basePrice - total;
+        // --- CORE LOGIC ---
+        function upd(pid, d) {
+            STATE.cart[pid] = (STATE.cart[pid] || 0) + d;
+            if (STATE.cart[pid] <= 0) delete STATE.cart[pid];
+            updateUI();
+            if (!STATE.isUnlocked) renderBaseList(); else renderCatalogo();
+        }
+
+        function updateUI() {
+            STATE.currentTotal = Object.entries(STATE.cart).reduce((acc, [id, q]) => {
+                const p = DB_PROD.find(x => x.id === id);
+                return acc + (p ? p.price * q : 0);
+            }, 0);
+
+            const diff = STATE.basePrice - STATE.currentTotal;
             const bar = document.getElementById('balance-bar');
-            const lbl = document.getElementById('balance-label');
-            const val = document.getElementById('balance-val');
-            const sub = document.getElementById('balance-sub');
-            
             if (diff > 0.01) {
-                STATE.creditMode = true;
                 bar.className = 'balance-bar credit';
-                lbl.innerText = "VOCÊ TEM CRÉDITO!";
-                val.innerText = fmt(diff);
-                sub.innerText = "Escolha itens abaixo para completar";
+                document.getElementById('balance-label').innerText = "Você tem Crédito";
+                document.getElementById('balance-val').innerText = fmt(diff);
             } else {
-                STATE.creditMode = false;
-                bar.className = (Math.abs(diff) < 0.1) ? 'balance-bar success' : 'balance-bar';
-                lbl.innerText = diff < -0.01 ? "TOTAL (COM EXTRAS)" : "CESTA COMPLETA";
-                val.innerText = fmt(total);
-                sub.innerText = diff < -0.01 ? `Extras: ${fmt(Math.abs(diff))}` : "Valor atingido";
+                bar.className = 'balance-bar success';
+                document.getElementById('balance-label').innerText = "Total";
+                document.getElementById('balance-val').innerText = fmt(STATE.currentTotal);
             }
-            
-            document.getElementById('chk-total-val').innerText = fmt(total);
+            document.getElementById('chk-total-val').innerText = fmt(STATE.currentTotal);
             document.getElementById('fab-count').innerText = Object.values(STATE.cart).reduce((a,b)=>a+b,0);
         }
 
         function renderBaseList() {
             const el = document.getElementById('basket-base-list');
-            el.innerHTML = "<h4 style='margin-bottom:10px; color:#666;'>1. Ajuste sua Cesta Base:</h4>";
-            
-            STATE.cesta.produtos.forEach(itemStr => {
-                const parts = itemStr.split('x ');
-                const pid = parts[1].trim();
+            el.innerHTML = `<div style="font-size:0.7rem; color:var(--cor-text-light); margin-bottom:15px; text-transform:uppercase">Passo 1: Retire o que não quer</div>` + 
+            STATE.cesta.produtos.map(itemStr => {
+                const pid = itemStr.split('x ')[1].trim();
                 const p = DB_PROD.find(x => x.id === pid);
-                if (!p) return;
-                
-                const currentQty = STATE.cart[pid] || 0;
-                
-                el.innerHTML += `
+                if (!p) return '';
+                return `
                 <div class="base-item">
-                    <div class="base-item-info">
-                        <div class="base-item-name">${p.name}</div>
-                        <div class="base-item-price">${fmt(p.price)}</div>
-                    </div>
+                    <span class="base-item-name">${p.name}</span>
                     <div class="qty-control">
                         <button class="btn-q" onclick="upd('${pid}', -1)">-</button>
-                        <span class="val-q">${currentQty}</span>
+                        <span class="val-q">${STATE.cart[pid] || 0}</span>
                         <button class="btn-q" onclick="upd('${pid}', 1)">+</button>
                     </div>
                 </div>`;
+            }).join('');
+        }
+
+        function renderCatalogo() {
+            const query = document.getElementById('search-input').value.toUpperCase();
+            const ranges = [
+                { label: "Até R$ 5", min: 0, max: 5 },
+                { label: "Entre R$ 5 e 15", min: 5.01, max: 15 },
+                { label: "Acima de R$ 15", min: 15.01, max: 9999 }
+            ];
+
+            let html = "";
+            ranges.forEach(range => {
+                let filtered = DB_PROD.filter(p => p.price >= range.min && p.price <= range.max);
+                if (query) filtered = filtered.filter(p => p.name.toUpperCase().includes(query));
+                
+                if (filtered.length > 0) {
+                    html += `<div class="section-price-title">${range.label}</div>`;
+                    
+                    const cats = Object.keys(CONFIG_CATEGORIAS);
+                    let allocatedIds = new Set();
+
+                    cats.forEach(cat => {
+                        const catProds = filtered.filter(p => {
+                            const first3 = p.name.toUpperCase().split(' ').slice(0, 3).join(' ');
+                            return CONFIG_CATEGORIAS[cat].some(key => first3.includes(key));
+                        });
+
+                        if (catProds.length > 0) {
+                            html += renderCarousel(cat, catProds);
+                            catProds.forEach(p => allocatedIds.add(p.id));
+                        }
+                    });
+
+                    const outros = filtered.filter(p => !allocatedIds.has(p.id));
+                    if (outros.length > 0) html += renderCarousel("Outros", outros);
+                }
             });
+            document.getElementById('catalogo-content').innerHTML = html;
         }
 
-        function renderTabs() {
-            const el = document.getElementById('cat-tabs-container');
-            let html = '';
-            
-            const cats = ["ALIMENTOS E BEBIDAS", "CUIDADOS PESSOAIS", "LIMPEZA", "CASA E UTILIDADES"];
-            cats.forEach(c => {
-                const active = STATE.activeTab === c ? 'active' : '';
-                html += `<button class="cat-tab ${active}" onclick="setTab('${c}')">${c}</button>`;
-            });
-            el.innerHTML = html;
-
-            // Update Price Chips
-            document.querySelectorAll('.price-chip').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${STATE.activePriceRange}'`));
-            });
-        }
-
-        function setTab(t) {
-            STATE.activeTab = t;
-            STATE.itemsLimit = 10;
-            renderTabs();
-            renderGrid();
-        }
-
-        function setPriceRange(r) {
-            STATE.activePriceRange = r;
-            STATE.itemsLimit = 10;
-            renderTabs();
-            renderGrid();
-        }
-
-        function renderGrid() {
-            if (!STATE.isUnlocked) return;
-            const el = document.getElementById('prod-grid');
-            el.innerHTML = "";
-            
-            let filtered = DB_PROD.filter(p => p.cat === STATE.activeTab);
-            
-            // Filtro de preço
-            if (STATE.activePriceRange === '0-5') filtered = filtered.filter(p => p.price <= 5);
-            else if (STATE.activePriceRange === '5-10') filtered = filtered.filter(p => p.price > 5 && p.price <= 10);
-            else if (STATE.activePriceRange === '10-20') filtered = filtered.filter(p => p.price > 10 && p.price <= 20);
-            else if (STATE.activePriceRange === '20+') filtered = filtered.filter(p => p.price > 20);
-
-            const toShow = filtered.slice(0, STATE.itemsLimit);
-            
-            toShow.forEach(p => {
-                const qtd = STATE.cart[p.id] || 0;
-                el.innerHTML += `
-                <div class="prod-card ${qtd>0 ? 'active':''}">
-                    ${qtd > 0 ? `<div class="badge qty">${qtd}</div>` : ''}
-                    <div class="prod-img-box"><img src="${p.img}" class="prod-img" loading="lazy"></div>
-                    <div class="prod-info">
-                        <div class="prod-name">${p.name}</div>
-                        <div class="prod-price">${fmt(p.price)}</div>
-                        <div class="qty-control" style="margin-top:auto; width:100%; justify-content:space-between;">
-                            <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
-                            <span class="val-q" style="font-size:0.9rem">${qtd}</span>
-                            <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
+        function renderCarousel(title, prods) {
+            return `
+            <div class="carousel-container">
+                <div class="carousel-title">${title}</div>
+                <div class="carousel-track">
+                    ${prods.map(p => `
+                        <div class="prod-card">
+                            <img src="${p.img}" class="prod-img">
+                            <div class="prod-name">${p.name}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto">
+                                <span class="prod-price">${fmt(p.price)}</span>
+                                <div class="qty-control" style="background:var(--cor-bg); padding:2px 5px">
+                                    <button onclick="upd('${p.id}', -1)" style="font-size:0.8rem">-</button>
+                                    <span style="font-size:0.7rem; font-weight:700">${STATE.cart[p.id] || 0}</span>
+                                    <button onclick="upd('${p.id}', 1)" style="font-size:0.8rem">+</button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>`;
-            });
-            
-            document.getElementById('load-more-box').style.display = filtered.length > STATE.itemsLimit ? 'block' : 'none';
-            if (filtered.length === 0) el.innerHTML = "<p style='grid-column:span 2; text-align:center; color:#999; padding:20px;'>Nenhum produto nesta faixa.</p>";
+                    `).join('')}
+                </div>
+            </div>`;
         }
 
-        function loadMore() {
-            STATE.itemsLimit += 10;
-            renderGrid();
-        }
+        // --- SCROLL BEHAVIOR ---
+        window.addEventListener('scroll', () => {
+            const current = window.pageYOffset;
+            const header = document.getElementById('header-wrapper');
+            if (current > 100 && current > STATE.lastScroll) header.classList.add('header-hidden');
+            else header.classList.remove('header-hidden');
+            STATE.lastScroll = current;
+        });
 
-        function upd(pid, d) {
-            if (!STATE.cart[pid]) STATE.cart[pid] = 0;
-            const newQ = STATE.cart[pid] + d;
-            if (newQ <= 0) delete STATE.cart[pid];
-            else STATE.cart[pid] = newQ;
-            
-            renderBalanceBar();
-            if(!STATE.isUnlocked) renderBaseList();
-            else renderGrid();
-        }
-
+        // --- CHECKOUT ---
         function openCheckoutModal() {
             if (STATE.currentTotal < (STATE.basePrice - 0.5)) {
-                alert(`Você ainda tem ${fmt(STATE.basePrice - STATE.currentTotal)} de crédito disponível. Aproveite para adicionar mais produtos!`);
-                return;
+                alert("Use todo seu crédito antes de finalizar!"); return;
             }
-            
-            let html = `<h4>Resumo do Pedido:</h4><ul style="padding-left:20px; font-size:0.9rem; color:#444;">`;
-            for (let pid in STATE.cart) {
-                const p = DB_PROD.find(x => x.id === pid);
-                html += `<li>${STATE.cart[pid]}x ${p.name}</li>`;
-            }
-            html += `</ul><div style="margin-top:10px; font-weight:bold; text-align:right">Total: ${fmt(STATE.currentTotal)}</div>`;
-            document.getElementById('checkout-summary').innerHTML = html;
-            const saved = JSON.parse(localStorage.getItem('da_user') || '{}');
-            if (saved.name) document.getElementById('cust-name').value = saved.name;
+            let res = Object.entries(STATE.cart).map(([id, q]) => {
+                const p = DB_PROD.find(x => x.id === id);
+                return `• ${q}x ${p.name}`;
+            }).join('<br>');
+            document.getElementById('checkout-summary').innerHTML = res + `<br><br><b>Total: ${fmt(STATE.currentTotal)}</b>`;
             document.getElementById('modal-checkout').showModal();
         }
 
         function sendOrder() {
-            const nome = document.getElementById('cust-name').value;
-            const pag = document.getElementById('cust-pay').value;
-            if (!nome) return alert("Por favor, digite seu nome.");
-            localStorage.setItem('da_user', JSON.stringify({name: nome}));
-            let itensTxt = "";
-            for (let pid in STATE.cart) {
-                const p = DB_PROD.find(x => x.id === pid);
-                itensTxt += `${STATE.cart[pid]}x ${p.name}\n`;
-            }
-            let msg = `*NOVO PEDIDO (PERSONALIZADO)*\n👤 Cliente: ${nome}\n💰 Pagamento: ${pag}\n📦 Cesta Base: ${STATE.cesta.nome}\n\n*ITENS:*\n${itensTxt}\n*VALOR TOTAL: ${fmt(STATE.currentTotal)}*`;
-            window.location.href = `https://wa.me/${CONFIG_WHATSAPP}?text=${encodeURIComponent(msg)}`;
+            const n = document.getElementById('cust-name').value;
+            const p = document.getElementById('cust-pay').value;
+            if (!n) return alert("Nome?");
+            let txt = `*NOVO PEDIDO*\nCliente: ${n}\nPagamento: ${p}\nCesta: ${STATE.cesta.nome}\n\n*ITENS:*\n`;
+            Object.entries(STATE.cart).forEach(([id, q]) => {
+                const prod = DB_PROD.find(x => x.id === id);
+                txt += `${q}x ${prod.name}\n`;
+            });
+            txt += `\n*TOTAL: ${fmt(STATE.currentTotal)}*`;
+            window.location.href = `https://wa.me/${CONFIG_WHATSAPP}?text=${encodeURIComponent(txt)}`;
         }
 
         function fmt(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
