@@ -201,7 +201,6 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .cesta-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        /* ALTERAÇÃO: Imagem quadrada 1:1 */
         .cesta-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #eee; }
         .cesta-content { padding: 16px; }
         .cesta-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; color: var(--cor-primary); }
@@ -251,9 +250,9 @@
         }
         .carousel-track::-webkit-scrollbar { display: none; }
 
-        /* ALTERAÇÃO: Tamanho aumentado de 150px para 190px (+ ~25%) */
+        /* ALTERAÇÃO: Tamanho diminuído 15% (190px -> 160px) */
         .prod-card {
-            flex: 0 0 190px; scroll-snap-align: start;
+            flex: 0 0 160px; scroll-snap-align: start;
             background: white; border: 1px solid var(--cor-divider); border-radius: var(--radius-md);
             padding: 10px; display: flex; flex-direction: column;
             position: relative;
@@ -265,7 +264,7 @@
             width: 100%; aspect-ratio: 1; object-fit: contain; 
             margin-bottom: 10px; background: white;
         }
-        /* ALTERAÇÃO: Caixa alta nos nomes */
+        
         .prod-name { 
             font-size: 0.75rem; 
             line-height: 1.3; height: 3.9em; 
@@ -493,7 +492,8 @@
         let DB_CESTAS = [];
         let STATE = {
             cesta: null, cart: {}, basePrice: 0, currentTotal: 0, 
-            isUnlocked: false, lastScroll: 0, sortType: 'name'
+            isUnlocked: false, lastScroll: 0, sortType: 'name',
+            initialGap: 0
         };
 
         // --- INIT ---
@@ -519,7 +519,7 @@
 
         // --- NAVIGATION ---
         function goHome() {
-            STATE.cart = {}; STATE.isUnlocked = false; STATE.cesta = null;
+            STATE.cart = {}; STATE.isUnlocked = false; STATE.cesta = null; STATE.initialGap = 0;
             document.getElementById('view-home').classList.add('active');
             document.getElementById('view-custom').classList.remove('active');
             
@@ -597,10 +597,21 @@
             STATE.basePrice = STATE.cesta.preco;
             STATE.cart = {}; 
             
+            // Calculate initial sum to handle drift
+            let initialSum = 0;
+
             STATE.cesta.produtos.forEach(itemStr => {
                 const [q, id] = itemStr.split('x ');
-                if (DB_PROD.find(p => p.id === id.trim())) STATE.cart[id.trim()] = parseInt(q);
+                const pid = id.trim();
+                const product = DB_PROD.find(p => p.id === pid);
+                if (product) {
+                    STATE.cart[pid] = parseInt(q);
+                    initialSum += product.price * parseInt(q);
+                }
             });
+
+            // Adjust gap so total starts at basket price
+            STATE.initialGap = STATE.cesta.preco - initialSum;
 
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-custom').classList.add('active');
@@ -624,10 +635,13 @@
         }
 
         function updateUI() {
-            STATE.currentTotal = Object.entries(STATE.cart).reduce((acc, [id, q]) => {
+            const sumCart = Object.entries(STATE.cart).reduce((acc, [id, q]) => {
                 const p = DB_PROD.find(x => x.id === id);
                 return acc + (p ? p.price * q : 0);
             }, 0);
+            
+            // Apply initial gap
+            STATE.currentTotal = sumCart + (STATE.initialGap || 0);
 
             const diff = STATE.basePrice - STATE.currentTotal;
             const bar = document.getElementById('balance-bar');
@@ -655,7 +669,7 @@
             updateUI();
             
             if (STATE.isUnlocked) {
-                // CORREÇÃO: Atualizar TODOS os contadores com a classe específica (evita problema de IDs duplicados)
+                // Atualizar TODOS os contadores com a classe específica
                 const els = document.querySelectorAll(`.qty-${pid}`);
                 if (els.length > 0) {
                     els.forEach(el => el.innerText = STATE.cart[pid] || 0);
@@ -853,7 +867,7 @@
                     <span style="flex:1; padding-right:10px; font-size:0.9rem">${p.name}</span>
                     <div class="qty-control" style="background:#fff; border:1px solid #ddd">
                         <button class="btn-q" style="width:28px; height:28px; font-size:1rem" onclick="upd('${p.id}', -1)">-</button>
-                        <span class="val-q" style="font-size:0.9rem; min-width:20px">${q}</span>
+                        <span class="val-q qty-${p.id}" style="font-size:0.9rem; min-width:20px">${q}</span>
                         <button class="btn-q" style="width:28px; height:28px; font-size:1rem" onclick="upd('${p.id}', 1)">+</button>
                     </div>
                 </div>`;
