@@ -989,6 +989,46 @@
             });
             
             msg += `\n*VALOR TOTAL: ${fmt(STATE.currentTotal)}*`;
+
+            // --- CÁLCULO DE DIFERENÇAS (Adicionado) ---
+            let originalMap = {};
+            STATE.cesta.produtos.forEach(itemStr => {
+                const [q, id] = itemStr.split('x ');
+                originalMap[id.trim()] = parseInt(q);
+            });
+
+            let removedList = [];
+            let addedList = [];
+
+            // Identificar removidos
+            for (let [id, origQty] of Object.entries(originalMap)) {
+                const currQty = STATE.cart[id] || 0;
+                if (currQty < origQty) {
+                    const p = DB_PROD.find(x => x.id === id);
+                    if (p) removedList.push(`- ${origQty - currQty}x ${p.name}`);
+                }
+            }
+
+            // Identificar adicionados
+            for (let [id, currQty] of Object.entries(STATE.cart)) {
+                const origQty = originalMap[id] || 0;
+                if (currQty > origQty) {
+                    const p = DB_PROD.find(x => x.id === id);
+                    if (p) addedList.push(`+ ${currQty - origQty}x ${p.name}`);
+                }
+            }
+
+            msg += `\n________________________________\n`;
+            
+            if (removedList.length > 0) {
+                msg += `\n*-- O que foi retirado da cesta normal:*\n`;
+                msg += removedList.join('\n') + `\n`;
+            }
+
+            if (addedList.length > 0) {
+                msg += `\n*-- O que foi acrescentado na cesta:*\n`;
+                msg += addedList.join('\n');
+            }
             
             window.location.href = `https://wa.me/${CONFIG_WHATSAPP}?text=${encodeURIComponent(msg)}`;
         }
