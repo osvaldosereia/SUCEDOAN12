@@ -337,6 +337,21 @@
             box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
         }
 
+        .btn-scroll-top {
+            position: fixed; bottom: 80px; right: 20px;
+            width: 40px; height: 40px; background: var(--cor-primary); color: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 998;
+            font-size: 1.5rem; cursor: pointer; border: 2px solid white;
+            display: none;
+        }
+        
+        .btn-mini-diff {
+             background: transparent; border: 1px solid #CBD5E1; border-radius: 8px;
+             padding: 0 12px; margin-left: 8px; color: var(--cor-text-main); font-size: 1.2rem;
+             height: 100%; cursor: pointer;
+        }
+
         /* --- MODAIS --- */
         dialog { 
             border: none; border-radius: 16px; width: 90%; max-width: 400px; 
@@ -465,10 +480,15 @@
             <div class="balance-label" style="color:#64748B">Total do Pedido</div>
             <div class="balance-val" id="chk-total-val" style="color:var(--cor-primary)">R$ 0,00</div>
         </div>
-        <button class="btn-main-action" style="width:auto; padding: 12px 24px; font-size:0.9rem" onclick="openCheckoutModal()">
-            CONCLUIR PEDIDO
-        </button>
+        <div style="display:flex; align-items:center;">
+            <button class="btn-main-action" style="width:auto; padding: 12px 24px; font-size:0.9rem" onclick="openCheckoutModal()">
+                CONCLUIR PEDIDO
+            </button>
+            <button class="btn-mini-diff" onclick="openDiffModal()" aria-label="Ver alterações">📝</button>
+        </div>
     </div>
+    
+    <button class="btn-scroll-top" onclick="window.scrollTo({top:0, behavior:'smooth'})" id="btn-scroll-top">⬆</button>
 
     <dialog id="modal-decision">
         <div class="modal-body">
@@ -488,6 +508,14 @@
             <div id="items-summary" style="margin-bottom:15px; font-size:0.9rem; background:#F8FAFC; padding:10px 15px; border-radius:8px; border:1px solid #eee; max-height: 50vh; overflow-y:auto;"></div>
             
             <button class="btn-modal primary" onclick="document.getElementById('modal-items').close()">FECHAR</button>
+        </div>
+    </dialog>
+    
+    <dialog id="modal-diff">
+        <div class="modal-body">
+            <h3 class="modal-title">Alterações na Cesta</h3>
+            <div id="diff-content" style="text-align: left; background: #F8FAFC; padding: 15px; border-radius: 8px; font-size: 0.9rem; max-height: 50vh; overflow-y: auto;"></div>
+            <button class="btn-modal primary" onclick="document.getElementById('modal-diff').close()" style="margin-top:15px">FECHAR</button>
         </div>
     </dialog>
 
@@ -582,6 +610,7 @@
             document.getElementById('search-container').style.display = 'none';
             document.getElementById('filters-container').style.display = 'none';
             document.getElementById('checkout-bar').style.display = 'none';
+            document.getElementById('btn-scroll-top').style.display = 'none';
             
             document.getElementById('catalogo-content').innerHTML = "";
             document.getElementById('search-input').value = ""; // Limpa busca
@@ -709,6 +738,7 @@
             document.getElementById('search-container').style.display = 'block';
             document.getElementById('filters-container').style.display = 'flex'; // Usamos flex pelo layout interno
             document.getElementById('checkout-bar').style.display = 'flex';
+            document.getElementById('btn-scroll-top').style.display = 'flex';
             
             STATE.isUnlocked = true;
             document.getElementById('search-input').value = ""; // Limpa busca
@@ -790,12 +820,27 @@
         // --- RENDERING ---
         function renderBaseList() {
             const el = document.getElementById('basket-base-list');
-            let itemsHtml = STATE.cesta.produtos.map(itemStr => {
-                const pid = itemStr.split('x ')[1].trim();
+            
+            // Pega as chaves do carrinho atual
+            const cartIds = Object.keys(STATE.cart);
+            
+            // Se estiver vazio
+            if(cartIds.length === 0) {
+                 el.innerHTML = '<p style="text-align:center; padding:10px; color:#64748B">Sua cesta está vazia.</p>';
+                 return;
+            }
+
+            // Ordenação alfabética para consistência visual
+            cartIds.sort((a,b) => {
+                const pa = DB_PROD.find(x => x.id === a);
+                const pb = DB_PROD.find(x => x.id === b);
+                return (pa && pb) ? pa.name.localeCompare(pb.name) : 0;
+            });
+            
+            let itemsHtml = cartIds.map(pid => {
                 const p = DB_PROD.find(x => x.id === pid);
                 if (!p) return '';
-                const qty = STATE.cart[pid] || 0;
-                if(qty === 0 && STATE.isUnlocked) return ''; 
+                const qty = STATE.cart[pid];
                 
                 return `
                 <div class="base-item">
@@ -949,6 +994,48 @@
             document.getElementById('catalogo-content').innerHTML = html;
         }
 
+        function openDiffModal() {
+            let originalMap = {};
+            STATE.cesta.produtos.forEach(itemStr => {
+                const [q, id] = itemStr.split('x ');
+                originalMap[id.trim()] = parseInt(q);
+            });
+
+            let removedList = [];
+            let addedList = [];
+
+            for (let [id, origQty] of Object.entries(originalMap)) {
+                const currQty = STATE.cart[id] || 0;
+                if (currQty < origQty) {
+                    const p = DB_PROD.find(x => x.id === id);
+                    if (p) removedList.push(`<div style="color:#D32F2F"><strong>- ${origQty - currQty}x</strong> ${p.name}</div>`);
+                }
+            }
+
+            for (let [id, currQty] of Object.entries(STATE.cart)) {
+                const origQty = originalMap[id] || 0;
+                if (currQty > origQty) {
+                    const p = DB_PROD.find(x => x.id === id);
+                    if (p) addedList.push(`<div style="color:#008037"><strong>+ ${currQty - origQty}x</strong> ${p.name}</div>`);
+                }
+            }
+
+            let content = "";
+            if (removedList.length === 0 && addedList.length === 0) {
+                content = "<p style='color:#64748B'>Nenhuma alteração realizada na cesta original.</p>";
+            } else {
+                if (removedList.length > 0) {
+                    content += `<div style="margin-bottom:15px"><h4 style="margin:0 0 5px 0; color:#D32F2F">Itens Retirados:</h4>${removedList.join('')}</div>`;
+                }
+                if (addedList.length > 0) {
+                    content += `<div><h4 style="margin:0 0 5px 0; color:#008037">Itens Adicionados:</h4>${addedList.join('')}</div>`;
+                }
+            }
+            
+            document.getElementById('diff-content').innerHTML = content;
+            document.getElementById('modal-diff').showModal();
+        }
+
         // --- CHECKOUT ---
         function openCheckoutModal() {
             if (STATE.currentTotal < (STATE.basePrice - 0.5)) {
@@ -990,7 +1077,7 @@
             
             msg += `\n*VALOR TOTAL: ${fmt(STATE.currentTotal)}*`;
 
-            // --- CÁLCULO DE DIFERENÇAS (Adicionado) ---
+            // --- CÁLCULO DE DIFERENÇAS ---
             let originalMap = {};
             STATE.cesta.produtos.forEach(itemStr => {
                 const [q, id] = itemStr.split('x ');
