@@ -388,7 +388,7 @@
             </div>
             <a href="https://wa.me/5565996813588" target="_blank" class="btn-whatsapp-header" aria-label="Falar no WhatsApp">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 8.259C3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
+                    <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
                     </svg>
                 </a>
             </div>
@@ -1040,8 +1040,8 @@
                 if(s.length > 20) s = s.substring(0, 17) + '...';
                 return s;
             };
-
-            // --- CÁLCULO DE DIFERENÇAS (Movido para o topo para usar no Payload) ---
+            
+            // --- CÁLCULO DE DIFERENÇAS E CHECKLIST ---
             let originalMap = {};
             STATE.cesta.produtos.forEach(itemStr => {
                 const [q, id] = itemStr.split('x ');
@@ -1056,7 +1056,7 @@
                 const currQty = STATE.cart[id] || 0;
                 if (currQty < origQty) {
                     const p = DB_PROD.find(x => x.id === id);
-                    if (p) removedText.push(`${origQty - currQty}x ${fmtName(p.name)}`);
+                    if (p) removedText.push(`- ${origQty - currQty}x ${fmtName(p.name)}`);
                 }
             }
 
@@ -1065,15 +1065,27 @@
                 const origQty = originalMap[id] || 0;
                 if (currQty > origQty) {
                     const p = DB_PROD.find(x => x.id === id);
-                    if (p) addedText.push(`${currQty - origQty}x ${fmtName(p.name)}`);
+                    if (p) addedText.push(`+ ${currQty - origQty}x ${fmtName(p.name)}`);
                 }
             }
 
-            // Montar String do Checklist
-            let checklist = `NOME DA CESTA BASE ESCOLHIA: ${STATE.cesta.nome}`;
-            if (removedText.length > 0) checklist += ` | PRODUTOS E QUANTIDADES RETIRARDAS: ${removedText.join(', ')}`;
-            if (addedText.length > 0) checklist += ` | PRODUTOS E QUANTIDADES INCLUIDAS: ${addedText.join(', ')}`;
+            // Construir Texto do Checklist para Observações (Com ID para evitar duplicação)
+            let checklist = `NOME DA CESTA BASE ESCOLHIDA: ${STATE.cesta.nome}`;
             
+            if (removedText.length > 0) {
+                checklist += ` | PRODUTOS RETIRADOS: ${removedText.join(', ')}`;
+            } else {
+                checklist += ` | PRODUTOS RETIRADOS: Nenhum`;
+            }
+
+            if (addedText.length > 0) {
+                checklist += ` | PRODUTOS INCLUÍDOS: ${addedText.join(', ')}`;
+            } else {
+                checklist += ` | PRODUTOS INCLUÍDOS: Nenhum`;
+            }
+            
+            checklist += ` | PROTOCOLO: #${orderId}`; // Garante unicidade
+
             // 1. DISPARAR WEBHOOK PARA O MAKE
             try {
                 // Montar array de itens para o payload e calcular soma real dos produtos
@@ -1097,7 +1109,7 @@
                 const finalTotal = STATE.currentTotal;
                 const gap = finalTotal - sumProducts;
 
-                // Construir objeto com estrutura exata do Blueprint + Arredondamento + Observações
+                // Construir objeto com estrutura exata do Blueprint + Arredondamento
                 const payload = {
                     cliente: {
                         nome: name,
@@ -1111,8 +1123,8 @@
                         soma_produtos: Number(sumProducts.toFixed(2)),
                         diferenca_ajuste: Number(gap.toFixed(2)),
                         forma_pagamento: pay,
-                        cesta_origem: `${STATE.cesta.nome} #${orderId}`,
-                        observacoes: checklist // Novo campo adicionado
+                        cesta_origem: `${STATE.cesta.nome}`,
+                        observacoes: checklist // Envia o checklist formatado
                     }
                 };
 
