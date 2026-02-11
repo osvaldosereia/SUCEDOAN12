@@ -568,9 +568,12 @@
         /* QUICK CART MODAL SPECIFICS */
         .quick-cart-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(2, 1fr); /* Mobile: 2 colunas */
             gap: 0;
             border-top: 1px solid #eee;
+            border-left: 1px solid #eee; /* Fecha borda esquerda */
+            max-height: 60vh; /* Permite rolagem */
+            overflow-y: auto;
         }
         .quick-cart-item {
             display: flex; 
@@ -583,10 +586,10 @@
             border-right: 1px solid #eee;
         }
         .quick-cart-item:nth-child(2n) {
-            border-right: none;
+            border-right: 1px solid #eee; /* Mantém a borda para grid consistente */
         }
         @media (min-width: 900px) {
-            .quick-cart-grid { grid-template-columns: 1fr 1fr; }
+            .quick-cart-grid { grid-template-columns: repeat(3, 1fr); } /* Desktop: 3 colunas */
         }
 
         @media (min-width: 900px) {
