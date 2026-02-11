@@ -588,15 +588,15 @@
         .quick-cart-item:nth-child(2n) {
             border-right: 1px solid #eee; /* Mantém a borda para grid consistente */
         }
-        @media (min-width: 900px) {
-            .quick-cart-grid { grid-template-columns: repeat(3, 1fr); } /* Desktop: 3 colunas */
-        }
-
+        
+        /* --- MEDIA QUERIES CONSOLIDADAS --- */
         @media (min-width: 900px) {
             /* Desktop Home: Max 4 colunas */
             .grid-cestas { grid-template-columns: repeat(4, 1fr); }
             /* Desktop Personalização: Max 6 colunas (AJUSTADO) */
             .prod-grid { grid-template-columns: repeat(6, 1fr); }
+            /* Desktop Quick Cart: 3 colunas */
+            .quick-cart-grid { grid-template-columns: repeat(3, 1fr); }
             
             .cesta-card { border: 1px solid #eee; border-radius: 8px; }
             .prod-card { flex: 0 0 180px; }
@@ -1240,7 +1240,7 @@
             let cardHtml = buildProductCard(p);
             // Ajusta estilos para o modal e remove click para não abrir o modal dentro do modal
             cardHtml = cardHtml.replace('margin-right: 15px;', 'margin-right: 0; width: 100%; box-shadow: none; border: none; padding:0;');
-            cardHtml = cardHtml.replace(/onclick="zoom\('[^']+'\)"/g, ''); // Garante que o zoom não exista
+            // CODIGO MORTO REMOVIDO: Linha de replace onclick="zoom" retirada
             content.innerHTML = cardHtml;
             
             const display = currentModalIndices.length > 1 ? 'grid' : 'none';
