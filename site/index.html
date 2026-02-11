@@ -962,11 +962,19 @@
             let removedList = [];
             let addedList = [];
 
+            // Helper de Formatação
+            const fmtName = (n) => {
+                let s = n.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                s = s.charAt(0).toUpperCase() + s.slice(1);
+                if(s.length > 20) s = s.substring(0, 17) + '...';
+                return s;
+            };
+
             for (let [id, origQty] of Object.entries(originalMap)) {
                 const currQty = STATE.cart[id] || 0;
                 if (currQty < origQty) {
                     const p = DB_PROD.find(x => x.id === id);
-                    if (p) removedList.push(`<div style="color:#D32F2F"><strong>- ${origQty - currQty}x</strong> ${p.name}</div>`);
+                    if (p) removedList.push(`<div style="color:#D32F2F"><strong>- ${origQty - currQty}x</strong> ${fmtName(p.name)}</div>`);
                 }
             }
 
@@ -974,7 +982,7 @@
                 const origQty = originalMap[id] || 0;
                 if (currQty > origQty) {
                     const p = DB_PROD.find(x => x.id === id);
-                    if (p) addedList.push(`<div style="color:#008037"><strong>+ ${currQty - origQty}x</strong> ${p.name}</div>`);
+                    if (p) addedList.push(`<div style="color:#008037"><strong>+ ${currQty - origQty}x</strong> ${fmtName(p.name)}</div>`);
                 }
             }
 
@@ -1016,7 +1024,7 @@
             document.getElementById('modal-checkout').showModal();
         }
 
-        function sendOrder() {
+        async function sendOrder() {
             const name = document.getElementById('cust-name').value;
             const pay = document.getElementById('cust-pay').value;
             
@@ -1030,6 +1038,52 @@
                 return s;
             };
             
+            // 1. DISPARAR WEBHOOK PARA O MAKE
+            try {
+                // Montar array de itens para o payload
+                const itensPayload = [];
+                Object.entries(STATE.cart).forEach(([id, q]) => {
+                     const p = DB_PROD.find(x => x.id === id);
+                     if(p) {
+                         itensPayload.push({
+                             id: p.id,
+                             nome: p.name,
+                             quantidade: q,
+                             preco_unitario: p.price
+                         });
+                     }
+                });
+
+                // Construir objeto com estrutura exata do Blueprint
+                const payload = {
+                    cliente: {
+                        nome: name,
+                        cpf: "", 
+                        celular: "",
+                        endereco: ""
+                    },
+                    pedido: {
+                        itens: itensPayload,
+                        total_site: STATE.currentTotal,
+                        soma_produtos: STATE.currentTotal,
+                        diferenca_ajuste: STATE.currentTotal - STATE.basePrice,
+                        forma_pagamento: pay,
+                        cesta_origem: STATE.cesta.nome
+                    }
+                };
+
+                // Enviar para o Webhook do Make
+                await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+            } catch (e) {
+                console.error("Erro ao enviar integração:", e);
+                // Não paramos o fluxo se der erro, o cliente ainda vai pro zap
+            }
+
+            // 2. REDIRECIONAR PARA WHATSAPP
             let msg = `*NOVO PEDIDO (PERSONALIZADO)*\n`;
             msg += `👤 Cliente: ${name}\n`;
             msg += `💰 Pagamento: ${pay}\n`;
