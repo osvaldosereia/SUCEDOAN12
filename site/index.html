@@ -66,10 +66,8 @@
             position: sticky; top: 0; z-index: 1000;
             background: var(--cor-primary);
             box-shadow: 0 2px 10px rgba(0,0,0,0.15);
-            /* transition removida pois não vai mais esconder */
             width: 100%;
         }
-        /* .header-hidden removido */
 
         header {
             display: flex; align-items: center; justify-content: space-between;
@@ -80,12 +78,6 @@
         .header-left { display: flex; align-items: center; gap: 12px; }
         .logo { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; object-fit: cover; }
         .page-title { font-size: 1rem; font-weight: 700; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-        
-        .btn-back { 
-            color: white; font-size: 1.5rem; padding: 10px; margin-left: -10px; 
-            display: none; align-items: center; justify-content: center;
-            min-width: 44px; min-height: 44px; 
-        }
         
         .btn-whatsapp-header {
             background: #25D366; color: white;
@@ -102,16 +94,16 @@
 
         .balance-bar {
             background: var(--cor-primary); color: white;
-            padding: 12px 16px;
-            display: none; justify-content: space-between; align-items: center;
+            padding: 8px 16px; /* Altura ajustada para caber tudo */
+            display: none; /* Flex display controlado via JS */
             border-top: 1px solid rgba(255,255,255,0.1);
         }
         .balance-bar.credit { background: var(--cor-warning); color: #1a1a1a; }
         .balance-bar.success { background: var(--cor-success); }
         
-        .balance-info { display: flex; flex-direction: column; }
-        .balance-val { font-size: 1.25rem; font-weight: 800; }
-        .balance-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; }
+        .balance-info { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .balance-val { font-size: 1.1rem; font-weight: 800; line-height: 1.1; }
+        .balance-label { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; line-height: 1.2; }
 
         .search-container {
             padding: 12px 16px;
@@ -207,7 +199,7 @@
             margin-bottom: 10px; background: white; cursor: zoom-in;
         }
         .prod-name { 
-            font-size: 0.75rem; /* Fonte diminuída */
+            font-size: 0.75rem; 
             line-height: 1.3; height: 3.9em; 
             overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
             color: var(--cor-text-main); margin-bottom: 8px;
@@ -226,7 +218,7 @@
         
         .checkout-bar {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; padding: 15px 20px; z-index: 1001; /* Fixo e acima de tudo */
+            background: white; padding: 15px 20px; z-index: 1001; 
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
         }
@@ -276,7 +268,6 @@
     <div class="header-wrapper" id="header-wrapper">
         <header class="limit-container">
             <div class="header-left">
-                <button class="btn-back" id="btn-back" onclick="goHome()" aria-label="Voltar">❮</button>
                 <img src="img/logo.webp" class="logo" alt="Logo Dona Antônia" width="40" height="40">
                 <div class="page-title">Super Cestas Dona Antônia</div>
             </div>
@@ -290,12 +281,24 @@
 
     <div class="sticky-stack">
         <div id="balance-bar" class="balance-bar">
-            <div class="limit-container" style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+            <div class="limit-container" style="display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:10px; width:100%;">
+                
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button onclick="goHome()" style="color:white; font-size:1.4rem; padding:5px; line-height:1;" aria-label="Voltar">❮</button>
+                    <img src="img/logo.webp" style="width:36px; height:36px; border-radius:50%; border:2px solid white; object-fit:cover;">
+                </div>
+
                 <div class="balance-info">
                     <span class="balance-label" id="balance-label">Seu Cofre</span>
                     <div class="balance-val" id="balance-val">R$ 0,00</div>
+                    <div id="balance-sub" style="font-size:0.7rem; font-weight:400; opacity:0.9; text-align:center; line-height:1.1"></div>
                 </div>
-                <div id="balance-sub" style="font-size:0.8rem; font-weight:500; opacity:0.9"></div>
+
+                <a href="https://wa.me/5565996813588" target="_blank" class="btn-whatsapp-header" aria-label="Falar no WhatsApp" style="width:36px; height:36px; padding:0;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 8.259C3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
+                    </svg>
+                </a>
             </div>
         </div>
 
@@ -439,7 +442,9 @@
             document.getElementById('view-home').classList.add('active');
             document.getElementById('view-custom').classList.remove('active');
             
-            document.getElementById('btn-back').style.display = 'none';
+            // Show Header on Home
+            document.getElementById('header-wrapper').style.display = 'block';
+            
             document.getElementById('balance-bar').style.display = 'none';
             document.getElementById('search-container').style.display = 'none';
             document.getElementById('checkout-bar').style.display = 'none';
@@ -487,8 +492,12 @@
 
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-custom').classList.add('active');
-            document.getElementById('btn-back').style.display = 'flex';
-            document.getElementById('balance-bar').style.display = 'block'; // Block para acomodar o flex interno
+            
+            // Hide Header on Customization
+            document.getElementById('header-wrapper').style.display = 'none';
+            
+            // Show Balance Bar (which now contains navigation)
+            document.getElementById('balance-bar').style.display = 'block'; 
             
             updateUI();
             renderBaseList();
