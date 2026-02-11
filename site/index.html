@@ -1022,6 +1022,14 @@
             
             if (!name) return alert("Por favor, digite seu nome.");
             
+            // Helper de Formatação
+            const fmtName = (n) => {
+                let s = n.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                s = s.charAt(0).toUpperCase() + s.slice(1);
+                if(s.length > 20) s = s.substring(0, 17) + '...';
+                return s;
+            };
+            
             let msg = `*NOVO PEDIDO (PERSONALIZADO)*\n`;
             msg += `👤 Cliente: ${name}\n`;
             msg += `💰 Pagamento: ${pay}\n`;
@@ -1030,7 +1038,7 @@
             
             Object.entries(STATE.cart).forEach(([id, q]) => {
                 const p = DB_PROD.find(x => x.id === id);
-                msg += `${q}x ${p.name}\n`;
+                msg += `${q}x ${fmtName(p.name)}\n`;
             });
             
             msg += `\n*VALOR TOTAL: ${fmt(STATE.currentTotal)}*`;
@@ -1050,7 +1058,7 @@
                 const currQty = STATE.cart[id] || 0;
                 if (currQty < origQty) {
                     const p = DB_PROD.find(x => x.id === id);
-                    if (p) removedList.push(`- ${origQty - currQty}x ${p.name}`);
+                    if (p) removedList.push(`- ${origQty - currQty}x ${fmtName(p.name)}`);
                 }
             }
 
@@ -1059,19 +1067,20 @@
                 const origQty = originalMap[id] || 0;
                 if (currQty > origQty) {
                     const p = DB_PROD.find(x => x.id === id);
-                    if (p) addedList.push(`+ ${currQty - origQty}x ${p.name}`);
+                    if (p) addedList.push(`+ ${currQty - origQty}x ${fmtName(p.name)}`);
                 }
             }
 
             msg += `\n________________________________\n`;
+            msg += `*Para a sua conferência*\n`;
             
             if (removedList.length > 0) {
-                msg += `\n*-- O que foi retirado da cesta normal:*\n`;
+                msg += `\n*-- O que foi retirado:*\n`;
                 msg += removedList.join('\n') + `\n`;
             }
 
             if (addedList.length > 0) {
-                msg += `\n*-- O que foi acrescentado na cesta:*\n`;
+                msg += `\n*-- O que foi acrescentado:*\n`;
                 msg += addedList.join('\n');
             }
             
