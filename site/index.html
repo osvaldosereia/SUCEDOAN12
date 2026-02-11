@@ -17,6 +17,7 @@
             --cor-action: #FF6D00;
             --cor-success: #008037; 
             --cor-warning: #FFAB00;
+            --cor-danger: #D32F2F; /* Adicionado para ofertas */
             --cor-bg: #F1F5F9;
             --cor-surface: #FFFFFF; 
             --cor-text-main: #1E293B;
@@ -34,14 +35,14 @@
         
         body {
             font-family: var(--font-stack);
-            background-color: #F1F5F9; /* Fundo geral */
+            background-color: #F1F5F9; 
             color: var(--cor-text-main);
             margin: 0;
             padding-bottom: 100px;
             font-size: 16px; 
             line-height: 1.5;
             min-height: 100vh;
-            overflow-x: hidden; /* Evita estouro lateral no mobile */
+            overflow-x: hidden; 
             width: 100%;
         }
 
@@ -81,7 +82,7 @@
         
         .btn-whatsapp-header {
             background: #25D366; color: white;
-            border-radius: 50%; padding: 8px; /* Redondo, só ícone */
+            border-radius: 50%; padding: 8px; 
             display: flex; align-items: center; justify-content: center;
             width: 40px; height: 40px;
             font-size: 0.85rem; font-weight: 700;
@@ -94,8 +95,8 @@
 
         .balance-bar {
             background: var(--cor-primary); color: white;
-            padding: 8px 16px; /* Altura ajustada para caber tudo */
-            display: none; /* Flex display controlado via JS */
+            padding: 8px 16px; 
+            display: none; 
             border-top: 1px solid rgba(255,255,255,0.1);
         }
         .balance-bar.credit { background: var(--cor-warning); color: #1a1a1a; }
@@ -229,6 +230,7 @@
             padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
             background: white;
         }
+        dialog:not([open]) { display: none; } /* Correção do X perdido */
         dialog::backdrop { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(2px); }
         
         .modal-body { padding: 24px; text-align: center; }
@@ -323,12 +325,6 @@
         <div id="view-custom" class="view">
             <div class="basket-base-list" id="basket-base-list"></div>
             
-            <div id="btn-calculate-box" style="padding: 20px;">
-                <button class="btn-main-action" style="background:var(--cor-success)" onclick="unlockCatalogo()">
-                    CALCULAR CRÉDITO E VER PRODUTOS
-                </button>
-            </div>
-
             <div id="catalogo-content"></div>
         </div>
     </main>
@@ -449,7 +445,6 @@
             document.getElementById('search-container').style.display = 'none';
             document.getElementById('checkout-bar').style.display = 'none';
             
-            document.getElementById('btn-calculate-box').style.display = 'block';
             document.getElementById('catalogo-content').innerHTML = "";
             window.scrollTo(0,0);
         }
@@ -498,18 +493,15 @@
             
             // Show Balance Bar (which now contains navigation)
             document.getElementById('balance-bar').style.display = 'block'; 
+            document.getElementById('search-container').style.display = 'block';
+            document.getElementById('checkout-bar').style.display = 'flex';
+            
+            STATE.isUnlocked = true;
             
             updateUI();
             renderBaseList();
-            window.scrollTo(0,0);
-        }
-
-        function unlockCatalogo() {
-            STATE.isUnlocked = true;
-            document.getElementById('btn-calculate-box').style.display = 'none';
-            document.getElementById('search-container').style.display = 'block';
-            document.getElementById('checkout-bar').style.display = 'flex';
             renderCatalogo();
+            window.scrollTo(0,0);
         }
 
         function updateUI() {
@@ -543,14 +535,11 @@
             if (STATE.cart[pid] <= 0) delete STATE.cart[pid];
             updateUI();
             
-            // Lógica para não rolar o carrossel (Atualização direta no DOM)
             if (STATE.isUnlocked) {
-                // Tenta atualizar apenas o número no card se ele existir na tela
                 const qtyEl = document.getElementById(`qty-${pid}`);
                 if (qtyEl) {
                     qtyEl.innerText = STATE.cart[pid] || 0;
                 } else {
-                    // Se não achar (ex: busca mudou), renderiza tudo (fallback)
                     renderCatalogo(); 
                 }
             } else {
@@ -597,6 +586,35 @@
             let html = "";
             const sortAlpha = (a, b) => a.name.localeCompare(b.name);
 
+            // 1. Renderizar OFERTAS (se existirem)
+            const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
+            if (offers.length > 0) {
+                html += `
+                <div class="carousel-container">
+                    <div class="carousel-header">
+                        <div class="carousel-title" style="color:var(--cor-danger)">🔥 SUPER OFERTAS</div>
+                    </div>
+                    <div class="carousel-track">
+                        ${offers.map(p => {
+                            const displayName = p.name.replace(/(OFERTA)/i, '<span style="color:var(--cor-danger); font-weight:800">$1</span>');
+                            return `
+                                <div class="prod-card">
+                                    <img src="${p.img}" class="prod-img" loading="lazy" alt="${p.name}" width="150" height="150" onclick="openImage('${p.img}')">
+                                    <div class="prod-name">${displayName}</div>
+                                    <div class="prod-price">${fmt(p.price)}</div>
+                                    <div class="qty-control" style="margin-top:auto; justify-content:space-between; width:100%; padding:2px 4px;">
+                                        <button class="btn-q" style="width:28px; height:28px" onclick="upd('${p.id}', -1)">-</button>
+                                        <span class="val-q" style="font-size:0.9rem" id="qty-${p.id}">${STATE.cart[p.id] || 0}</span>
+                                        <button class="btn-q" style="width:28px; height:28px" onclick="upd('${p.id}', 1)">+</button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>`;
+            }
+
+            // 2. Renderizar Categorias Normais
             Object.keys(CONFIG_CATEGORIAS).forEach(catName => {
                 let catProds = DB_PROD.filter(p => {
                     const first3 = p.name.toUpperCase().split(' ').slice(0, 3).join(' ');
@@ -630,6 +648,7 @@
                 }
             });
             
+            // 3. Renderizar Outros (Busca)
             if (query) {
                 const allCatKeywords = Object.values(CONFIG_CATEGORIAS).flat();
                 const others = DB_PROD.filter(p => {
