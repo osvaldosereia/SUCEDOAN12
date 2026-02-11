@@ -7,7 +7,7 @@
     
     <meta name="geo.region" content="BR-MT" />
     <meta name="geo.placename" content="Cuiabá" />
-    <meta name="theme-color" content="#F3F4F6"> <title>Super Cestas Dona Antônia</title>
+    <meta name="theme-color" content="#2c3e50"> <title>Super Cestas Dona Antônia</title>
 
     <style>
         /* --- CONFIGURAÇÕES GERAIS "CLEAN & SUPERMARKET" --- */
@@ -17,7 +17,7 @@
             --cor-accent: #D32F2F;  /* Vermelho (Ofertas/Atenção) */
             --cor-bg: #F5F7FA;      /* Fundo Cinza Gelo (Respiro) */
             --cor-surface: #FFFFFF; 
-            --cor-bar-bg: #FFFFFF;  /* Barra branca para limpeza */
+            --cor-bar-bg: #2c3e50;  /* CONTRASTE ALTO: Azul Petróleo Escuro */
             --cor-text-main: #212121;
             --cor-text-light: #757575;
             --cor-divider: #E0E0E0; 
@@ -53,9 +53,10 @@
             position: sticky; top: 0; z-index: 100;
             background: var(--cor-bar-bg);
             border-bottom: 1px solid var(--cor-divider);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
             transition: transform 0.3s ease; /* Animação para esconder */
             will-change: transform; /* Performance Hint */
+            color: white; /* Contraste */
         }
 
         header {
@@ -71,14 +72,14 @@
             width: 45px; height: 45px; 
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid var(--cor-primary);
+            border: 2px solid white;
             flex-shrink: 0; /* IMPEDE A LOGO DE ACHATAR */
         }
         
         /* Fonte reduzida conforme pedido */
-        .page-title { font-size: 1.0rem; font-weight: 700; color: var(--cor-primary); }
-        .btn-back { display: none; font-size: 1.2rem; color: var(--cor-text-main); padding: 5px; }
-        .btn-help { width: 32px; height: 32px; background: white; border: 1px solid #ddd; border-radius: 50%; color: var(--cor-primary); font-weight: 700; font-size: 1rem; }
+        .page-title { font-size: 1.0rem; font-weight: 700; color: white; }
+        .btn-back { display: none; font-size: 1.2rem; color: white; padding: 5px; }
+        .btn-help { width: 32px; height: 32px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 50%; color: white; font-weight: 700; font-size: 1rem; }
 
         /* --- VISUALIZAÇÃO (VIEWS) --- */
         main { display: block; width: 100%; max-width: 1200px; margin: 0 auto; }
@@ -287,6 +288,15 @@
             display: none;
         }
         .prod-grid-item.active .grid-indicator { display: block; }
+        
+        /* BANNER DE QUANTIDADE SUPERIOR DIREITO */
+        .qty-corner-badge {
+            position: absolute; top: 0; right: 0; 
+            background: #2E7D32; color: white; 
+            padding: 4px 8px; border-bottom-left-radius: 8px; 
+            font-size: 0.8rem; font-weight: bold; 
+            z-index: 5; box-shadow: -2px 2px 5px rgba(0,0,0,0.1);
+        }
 
         /* Etiqueta de Preço no Grid */
         .grid-price-tag {
@@ -306,22 +316,23 @@
         /* --- BARRA FLUTUANTE --- */
         .float-bar { 
             position: fixed; bottom: 0; left: 0; right: 0; 
-            background: white;
-            border-top: 1px solid #ddd;
+            background: var(--cor-bar-bg); /* CONTRASTE ALTO */
+            border-top: 1px solid #555;
             padding: 15px 20px; 
             display: none; justify-content: space-between; align-items: center; 
             z-index: 90; 
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+            color: white;
         }
-        .total-lbl { font-size: 0.75rem; color: #666; text-transform: uppercase; }
-        .total-val { font-size: 1.3rem; font-weight: 800; color: var(--cor-primary); }
+        .total-lbl { font-size: 0.75rem; color: #ccc; text-transform: uppercase; }
+        .total-val { font-size: 1.3rem; font-weight: 800; color: white; }
         .btn-finish { 
-            background: #2E7D32; 
+            background: #27ae60; 
             color: white; 
             padding: 12px 25px; border-radius: 4px; 
             font-weight: 700; font-size: 0.95rem; text-transform: uppercase;
         }
-        .btn-finish:disabled { background: #ccc; }
+        .btn-finish:disabled { background: #555; color: #999; }
 
         /* --- FILTRO / CATEGORIAS --- */
         .catalog-tools { 
@@ -488,8 +499,8 @@
         .checkout-val { font-weight: 800; color: var(--cor-primary); font-size: 1.5rem; }
         
         .checkout-form label {
-            display: block; font-size: 0.8rem; font-weight: 600; color: #777; 
-            margin-bottom: 4px; text-transform: uppercase;
+            display: block; font-size: 0.8rem; font-weight: 400; color: #666; /* Mais discreto */
+            margin-bottom: 4px; /* Sem uppercase */
         }
         .checkout-form .input-box {
             background: #fdfdfd; border: 1px solid #e0e0e0;
@@ -664,16 +675,16 @@
             
             <form onsubmit="sendWhatsapp(event)" class="checkout-form">
                 <label>Nome Completo</label>
-                <input type="text" id="cust-name" class="input-box" required placeholder="Ex: Maria da Silva">
+                <input type="text" id="cust-name" class="input-box" placeholder="Digite seu nome (Opcional)">
                 
                 <label>CPF (Nota Fiscal)</label>
-                <input type="tel" id="cust-cpf" class="input-box" required placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
+                <input type="tel" id="cust-cpf" class="input-box" placeholder="000.000.000-00 (Opcional)" maxlength="14" oninput="mascaraCPF(this)">
                 
                 <label>WhatsApp para Contato</label>
-                <input type="tel" id="cust-phone" class="input-box" required placeholder="(65) 99999-9999" maxlength="15" oninput="mascaraTelefone(this)">
+                <input type="tel" id="cust-phone" class="input-box" placeholder="(65) 99999-9999 (Opcional)" maxlength="15" oninput="mascaraTelefone(this)">
                 
                 <label>Endereço de Entrega</label>
-                <input type="text" id="cust-addr" class="input-box" required placeholder="Rua, Número, Bairro, Complemento">
+                <input type="text" id="cust-addr" class="input-box" placeholder="Rua, Número, Bairro... (Opcional)">
                 
                 <label>Forma de Pagamento</label>
                 <select id="cust-pay" class="input-box">
@@ -1021,7 +1032,14 @@
                 
                 const groupedOffers = groupProducts(offers);
                 groupedOffers.forEach(p => {
-                    const img = p.img || svgPlace();
+                    let displayP = p;
+                    // Se for um grupo, verifica se alguma variação já está no carrinho
+                    if (p.variations) {
+                        const activeVar = p.variations.find(v => CART[v.id] > 0);
+                        if (activeVar) displayP = activeVar;
+                    }
+                    
+                    const img = displayP.img || svgPlace();
                     const isActive = p.variations ? false : (CART[p.id] > 0);
                     // Para grupos, usamos a primeira variação para ID do grid item se for virtual
                     const gridId = p.variations ? p.variations[0].id : p.id;
@@ -1030,12 +1048,14 @@
                         : `openProdView('${p.id}')`;
                     
                     const searchName = p.variations ? p.variations.map(v=>v.name).join(" ").toLowerCase() : p.name.toLowerCase();
+                    const qtyInCart = CART[displayP.id] || 0;
 
                     html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${gridId}" data-name="${searchName}" onclick="${clickAction}">
+                        ${qtyInCart > 0 ? `<div class="qty-corner-badge">${qtyInCart} un</div>` : ''}
                         <img src="${img}" loading="lazy">
-                        <div class="grid-price-tag">${fmt(p.price)}</div>
+                        <div class="grid-price-tag">${fmt(displayP.price)}</div>
                         <div class="grid-indicator"></div>
-                        ${p.variations && p.variations.length > 1 ? `<div class="offer-badge" style="background:#444; font-size:0.65rem; top:auto; bottom:30px; left:5px;">${p.variations.length} OPÇÕES</div>` : ''}
+                        ${p.variations && p.variations.length > 1 && qtyInCart === 0 ? `<div class="offer-badge" style="background:#444; font-size:0.65rem; top:auto; bottom:30px; left:5px;">${p.variations.length} OPÇÕES</div>` : ''}
                     </div>`;
                 });
                 html += `</div></div>`;
@@ -1066,7 +1086,13 @@
                 const groupedCatList = groupProducts(cats[c]);
                 
                 groupedCatList.forEach(p => {
-                    const img = p.img || svgPlace();
+                    let displayP = p;
+                    if (p.variations) {
+                        const activeVar = p.variations.find(v => CART[v.id] > 0);
+                        if (activeVar) displayP = activeVar;
+                    }
+
+                    const img = displayP.img || svgPlace();
                     const isActive = p.variations ? false : (CART[p.id] > 0);
                     const gridId = p.variations ? p.variations[0].id : p.id;
                     const clickAction = p.variations && p.variations.length > 1 
@@ -1074,12 +1100,14 @@
                         : `openProdView('${p.id}')`;
 
                     const searchName = p.variations ? p.variations.map(v=>v.name).join(" ").toLowerCase() : p.name.toLowerCase();
+                    const qtyInCart = CART[displayP.id] || 0;
 
                     html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${gridId}" data-name="${searchName}" onclick="${clickAction}">
+                        ${qtyInCart > 0 ? `<div class="qty-corner-badge">${qtyInCart} un</div>` : ''}
                         <img src="${img}" loading="lazy">
-                        <div class="grid-price-tag">${fmt(p.price)}</div>
+                        <div class="grid-price-tag">${fmt(displayP.price)}</div>
                         <div class="grid-indicator"></div>
-                        ${p.variations && p.variations.length > 1 ? `<div class="offer-badge" style="background:#444; font-size:0.65rem; top:auto; bottom:30px; left:5px;">${p.variations.length} OPÇÕES</div>` : ''}
+                        ${p.variations && p.variations.length > 1 && qtyInCart === 0 ? `<div class="offer-badge" style="background:#444; font-size:0.65rem; top:auto; bottom:30px; left:5px;">${p.variations.length} OPÇÕES</div>` : ''}
                     </div>`;
                 });
                 html += `</div></div>`; 
@@ -1187,6 +1215,7 @@
             // Removido onclick="zoom"
             return `
             <div class="prod-card prod-search-item ${q>0?'active':''}" id="card-${p.id}" data-name="${p.name.toLowerCase()}">
+                ${q > 0 ? `<div class="qty-corner-badge">${q} un</div>` : ''}
                 ${isOffer ? '<div class="offer-badge">OFERTA</div>' : ''}
                 <div class="prod-img-box"><img src="${imgSrc}" class="prod-img" loading="lazy"></div>
                 <div class="prod-name">${p.name}</div>
@@ -1355,6 +1384,18 @@
                     </div>
                 </div>`;
             }
+
+            // LOAD SAVED USER
+            try {
+                const u = JSON.parse(localStorage.getItem('da_user_info'));
+                if(u) {
+                    document.getElementById('cust-name').value = u.name || "";
+                    document.getElementById('cust-cpf').value = u.cpf || "";
+                    document.getElementById('cust-phone').value = u.phone || "";
+                    document.getElementById('cust-addr').value = u.addr || "";
+                }
+            } catch(e){}
+
             document.getElementById('modal-checkout').showModal();
         }
 
@@ -1363,6 +1404,9 @@
             const n=document.getElementById('cust-name').value, cpf=document.getElementById('cust-cpf').value,
                   ph=document.getElementById('cust-phone').value, ad=document.getElementById('cust-addr').value,
                   pay=document.getElementById('cust-pay').value;
+
+            // SAVE USER
+            localStorage.setItem('da_user_info', JSON.stringify({name:n, cpf:cpf, phone:ph, addr:ad}));
 
             let total = window.finalTotal;
             if(ACTIVE_COUPON) total -= (total * ACTIVE_COUPON.percent / 100);
