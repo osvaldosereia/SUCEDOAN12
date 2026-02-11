@@ -220,7 +220,7 @@
         .val-q { font-weight: 700; font-size: 1rem; min-width: 24px; text-align: center; }
 
         /* --- CARROSSEL --- */
-        .carousel-container { margin-bottom: 30px; background: white; padding-bottom: 15px; border-top: 1px solid var(--cor-divider); }
+        .carousel-container { margin-bottom: 30px; background: white; padding-bottom: 15px; border-top: 1px solid var(--cor-divider); position: relative; }
         .carousel-header { 
             padding: 15px 20px 10px; 
             display: flex; justify-content: space-between; align-items: center;
@@ -232,6 +232,7 @@
             scroll-snap-type: x mandatory; 
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
+            scroll-behavior: smooth;
         }
         .carousel-track::-webkit-scrollbar { display: none; }
 
@@ -255,6 +256,19 @@
             color: var(--cor-text-main); margin-bottom: 8px;
         }
         .prod-price { font-size: 1rem; font-weight: 800; color: var(--cor-action); margin-top: auto; }
+        
+        /* SETAS CARROSSEL DESKTOP */
+        .carousel-arrow {
+            display: none; position: absolute; top: 55%; transform: translateY(-50%);
+            width: 40px; height: 40px; background: white; border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10;
+            align-items: center; justify-content: center; font-size: 1.2rem;
+            cursor: pointer; color: var(--cor-primary);
+            border: 1px solid #eee;
+        }
+        .carousel-arrow:hover { background: #f8f8f8; }
+        .arrow-left { left: 10px; }
+        .arrow-right { right: 10px; }
 
         /* --- BOTOES E AÇOES --- */
         .btn-main-action {
@@ -291,17 +305,25 @@
         .btn-modal.secondary { background: white; border: 2px solid var(--cor-action); color: var(--cor-action); }
         .btn-modal.ghost { color: var(--cor-text-light); font-weight: 400; margin-top: 10px; }
 
-        /* Modal Imagem Grande - CORREÇÃO DO X */
+        /* Modal Imagem Grande - CORREÇÃO DO X (FIXED -> ABSOLUTE) */
         #modal-image { background: transparent; box-shadow: none; max-width: 100%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: none; }
-        .img-modal-content { position: relative; max-width: 90%; max-height: 80vh; display: flex; flex-direction: column; align-items: center; }
+        .img-modal-content { 
+            position: relative; /* Mudado para relative para segurar o botão absolute */
+            max-width: 90%; max-height: 80vh; 
+            display: flex; flex-direction: column; align-items: center; 
+            overflow: visible; /* Permite o botão sair um pouco pra fora se precisar */
+        }
         .img-modal-src { max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         
         .btn-close-img { 
-            position: fixed; top: 15px; right: 15px; color: white; font-size: 1.5rem; 
+            position: absolute; /* Mudado de fixed para absolute */
+            top: -20px; right: -20px; /* Posicionado no canto da imagem */
+            color: white; font-size: 1.5rem; 
             background: rgba(0,0,0,0.5); width: 44px; height: 44px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             z-index: 10001; cursor: pointer; backdrop-filter: blur(4px);
             border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
         /* Desktop Adjustments */
@@ -312,6 +334,13 @@
                 max-width: 1200px; 
                 left: 50%; transform: translateX(-50%); 
             }
+            .carousel-track::-webkit-scrollbar { 
+                display: block; height: 8px; 
+            }
+            .carousel-track::-webkit-scrollbar-thumb {
+                background: #ccc; border-radius: 4px;
+            }
+            .carousel-arrow { display: flex; }
         }
     </style>
 </head>
@@ -326,12 +355,12 @@
             <a href="https://wa.me/5565996813588" target="_blank" class="btn-whatsapp-header" aria-label="Falar no WhatsApp">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 8.259C3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
-                </svg>
-            </a>
-        </header>
-    </div>
+                    </svg>
+                </a>
+            </div>
+        </div>
 
-    <div class="sticky-stack">
+        <div class="sticky-stack">
         <div id="balance-bar" class="balance-bar">
             <div class="limit-container" style="display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:10px; width:100%;">
                 
@@ -377,12 +406,12 @@
                 <div class="hero-tag">PAGUE SÓ NA ENTREGA</div>
             </div>
             
+            <div id="home-offers-container"></div>
+
             <h3 style="margin: 0 20px 15px; font-size: 1.1rem;">Escolha sua Cesta Base:</h3>
             <div class="grid-cestas" id="cestas-list">
                 <p style="text-align:center; padding: 20px;">Carregando cestas...</p>
             </div>
-            
-            <div id="home-offers-container"></div>
         </div>
 
         <div id="view-custom" class="view">
@@ -414,16 +443,18 @@
     </dialog>
 
     <dialog id="modal-checkout">
-        <div class="modal-body" style="text-align:left">
-            <h3 class="modal-title" style="margin-bottom:20px; text-align:center">Finalizar Pedido</h3>
+        <div class="modal-body" style="text-align:left; padding: 15px 20px;">
+            <h3 class="modal-title" style="margin-bottom:15px; text-align:center">Finalizar Pedido</h3>
             
-            <div id="checkout-summary" style="margin-bottom:20px; font-size:0.9rem; background:#F8FAFC; padding:15px; border-radius:8px; border:1px solid #eee; max-height: 30vh; overflow-y:auto;"></div>
+            <div id="checkout-summary" style="margin-bottom:15px; font-size:0.9rem; background:#F8FAFC; padding:10px 15px; border-radius:8px; border:1px solid #eee; max-height: 40vh; overflow-y:auto;"></div>
             
-            <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:5px">Seu Nome:</label>
-            <input type="text" id="cust-name" class="search-box" style="margin-bottom:15px; padding:12px;" placeholder="Digite seu nome completo">
+            <div style="font-size:1.1rem; font-weight:800; text-align:right; margin-bottom:15px; color:var(--cor-primary)" id="checkout-total-display"></div>
             
-            <label style="display:block; font-size:0.85rem; font-weight:700; color:#334155; margin-bottom:5px">Forma de Pagamento:</label>
-            <select id="cust-pay" class="search-box" style="margin-bottom:25px; padding:12px;">
+            <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:2px">Seu Nome:</label>
+            <input type="text" id="cust-name" class="search-box" style="margin-bottom:10px; padding:10px; font-size:0.95rem" placeholder="Digite seu nome completo">
+            
+            <label style="display:block; font-size:0.8rem; font-weight:700; color:#334155; margin-bottom:2px">Forma de Pagamento:</label>
+            <select id="cust-pay" class="search-box" style="margin-bottom:20px; padding:10px; font-size:0.95rem">
                 <option>PIX (Na entrega)</option>
                 <option>Dinheiro</option>
                 <option>Cartão de Crédito</option>
@@ -539,6 +570,7 @@
                 <div class="carousel-header">
                     <div class="carousel-title" style="color:var(--cor-danger)">🔥 OFERTAS DA SEMANA</div>
                 </div>
+                <button class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</button>
                 <div class="carousel-track">
                     ${offers.map(p => {
                         const displayName = p.name.replace(/(OFERTA)/i, '<span style="color:var(--cor-danger); font-weight:800">$1</span>');
@@ -552,6 +584,7 @@
                         `;
                     }).join('')}
                 </div>
+                <button class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</button>
             </div>`;
             document.getElementById('home-offers-container').innerHTML = html;
         }
@@ -637,6 +670,10 @@
                 } else {
                     renderCatalogo(); 
                 }
+                // Se o modal de checkout estiver aberto, atualiza a lista lá também
+                if (document.getElementById('modal-checkout').open) {
+                    openCheckoutModal();
+                }
             } else {
                 renderBaseList(); 
             }
@@ -698,7 +735,6 @@
             const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
             if (offers.length > 0) {
                 // Ofertas sempre mantêm destaque, mas aplicamos ordenação interna se desejar, ou deixamos padrão.
-                // Geralmente ofertas queremos mostrar em ordem de relevância, mas vamos aplicar o sort aqui também.
                 offers.sort(sorter);
                 
                 html += `
@@ -706,6 +742,7 @@
                     <div class="carousel-header">
                         <div class="carousel-title" style="color:var(--cor-danger)">🔥 SUPER OFERTAS</div>
                     </div>
+                    <button class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</button>
                     <div class="carousel-track">
                         ${offers.map(p => {
                             const displayName = p.name.replace(/(OFERTA)/i, '<span style="color:var(--cor-danger); font-weight:800">$1</span>');
@@ -723,6 +760,7 @@
                             `;
                         }).join('')}
                     </div>
+                    <button class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</button>
                 </div>`;
             }
 
@@ -744,6 +782,7 @@
                         <div class="carousel-header">
                             <div class="carousel-title">${catName}</div>
                         </div>
+                        <button class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</button>
                         <div class="carousel-track">
                             ${catProds.map(p => `
                                 <div class="prod-card">
@@ -758,6 +797,7 @@
                                 </div>
                             `).join('')}
                         </div>
+                        <button class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</button>
                     </div>`;
                 }
             });
@@ -778,6 +818,7 @@
                     html += `
                     <div class="carousel-container">
                         <div class="carousel-header"><div class="carousel-title">Outros Resultados</div></div>
+                        <button class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</button>
                         <div class="carousel-track">
                             ${others.map(p => `
                                 <div class="prod-card">
@@ -792,6 +833,7 @@
                                 </div>
                             `).join('')}
                         </div>
+                        <button class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</button>
                     </div>`;
                 }
             }
@@ -810,14 +852,19 @@
             let html = "";
             Object.entries(STATE.cart).forEach(([id, q]) => {
                 const p = DB_PROD.find(x => x.id === id);
-                html += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee">
-                    <span>${q}x ${p.name}</span>
-                    <span>${fmt(p.price * q)}</span>
+                html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee">
+                    <span style="flex:1; padding-right:10px; font-size:0.9rem">${p.name}</span>
+                    <div class="qty-control" style="background:#fff; border:1px solid #ddd">
+                        <button class="btn-q" style="width:28px; height:28px; font-size:1rem" onclick="upd('${p.id}', -1)">-</button>
+                        <span class="val-q" style="font-size:0.9rem; min-width:20px">${q}</span>
+                        <button class="btn-q" style="width:28px; height:28px; font-size:1rem" onclick="upd('${p.id}', 1)">+</button>
+                    </div>
                 </div>`;
             });
-            html += `<div style="margin-top:15px; font-weight:800; text-align:right; font-size:1.1rem">Total: ${fmt(STATE.currentTotal)}</div>`;
             
             document.getElementById('checkout-summary').innerHTML = html;
+            document.getElementById('checkout-total-display').innerText = `Total: ${fmt(STATE.currentTotal)}`;
             document.getElementById('modal-checkout').showModal();
         }
 
