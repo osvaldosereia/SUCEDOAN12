@@ -568,12 +568,25 @@
         /* QUICK CART MODAL SPECIFICS */
         .quick-cart-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            padding: 10px 0;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border-top: 1px solid #eee;
+        }
+        .quick-cart-item {
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            padding: 15px; 
+            gap: 10px;
+            background: white;
+            border-bottom: 1px solid #eee;
+            border-right: 1px solid #eee;
+        }
+        .quick-cart-item:nth-child(2n) {
+            border-right: none;
         }
         @media (min-width: 900px) {
-            .quick-cart-grid { grid-template-columns: repeat(4, 1fr); }
+            .quick-cart-grid { grid-template-columns: 1fr 1fr; }
         }
 
         @media (min-width: 900px) {
@@ -1242,14 +1255,10 @@
                     const p = DB_PROD.find(x => x.id === k);
                     if(!p) continue;
                     
-                    // Renderiza o card simples, mas com estilo de grid
                     const img = p.img || svgPlace();
-                    const isActive = true; // sempre ativo pois está no carrinho
                     
-                    // Estrutura adaptada para o modal quick cart (Imagem + controles abaixo)
-                    // Usando uma div wrapper para manter o layout
                     list.innerHTML += `
-                    <div class="prod-grid-item active" style="flex-direction:column; height:auto; padding:10px; gap:5px;">
+                    <div class="prod-grid-item active quick-cart-item">
                         <div style="position:relative; width:100%; aspect-ratio:1;">
                            <img src="${img}" style="width:100%; height:100%; object-fit:contain;">
                         </div>
