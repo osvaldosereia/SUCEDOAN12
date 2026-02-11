@@ -104,16 +104,20 @@
 
         .balance-bar {
             background: var(--cor-primary); color: white;
-            padding: 8px 16px; 
+            padding: 10px 16px; 
             display: none; 
             border-top: 1px solid rgba(255,255,255,0.1);
         }
         .balance-bar.credit { background: var(--cor-warning); color: #1a1a1a; }
         .balance-bar.success { background: var(--cor-success); }
         
-        .balance-info { display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .balance-val { font-size: 1.1rem; font-weight: 800; line-height: 1.1; }
-        .balance-label { font-size: 0.65rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; line-height: 1.2; }
+        /* Ajuste Layout Top Bar */
+        .balance-info { 
+            display: flex; flex-direction: row; align-items: baseline; justify-content: center; gap: 8px; flex-wrap: wrap;
+        }
+        .balance-val { font-size: 1.3rem; font-weight: 900; line-height: 1; }
+        .balance-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; }
+        .balance-sub-text { font-size: 0.8rem; font-weight: 600; opacity: 0.9; }
 
         .search-container {
             padding: 12px 16px;
@@ -197,23 +201,55 @@
         .grid-cestas { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 0 20px 20px; }
         .cesta-card { 
             background: white; border-radius: var(--radius-md); overflow: hidden;
-            box-shadow: var(--shadow-soft); cursor: pointer; border: 1px solid transparent;
+            box-shadow: var(--shadow-soft); border: 1px solid transparent;
             transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; flex-direction: column;
         }
         .cesta-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .cesta-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #eee; }
-        .cesta-content { padding: 16px; }
+        .cesta-content { padding: 16px; flex: 1; display: flex; flex-direction: column; }
         .cesta-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; color: var(--cor-primary); }
-        .cesta-price { font-size: 1.4rem; font-weight: 800; color: var(--cor-action); margin-top: 8px; }
+        .cesta-price { font-size: 1.4rem; font-weight: 800; color: var(--cor-action); margin-top: 5px; margin-bottom: 10px; }
         
+        .cesta-actions { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
         .btn-choose {
-            width: 100%; padding: 12px; margin-top: 12px;
+            width: 100%; padding: 10px 5px;
             background: var(--cor-primary); color: white;
-            border-radius: 6px; font-size: 0.9rem; text-transform: uppercase;
+            border-radius: 6px; font-size: 0.8rem; text-transform: uppercase;
+            font-weight: 700;
         }
+        .btn-choose.outline { background: white; border: 1px solid var(--cor-primary); color: var(--cor-primary); }
+
+        /* --- TITULOS E LISTA --- */
+        .intro-title-custom {
+            padding: 10px 20px;
+            background: #E0F2F1; color: #00695C;
+            border-bottom: 1px solid #B2DFDB;
+            font-size: 0.95rem; font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        
+        .section-separator {
+            margin: 20px 20px 10px;
+            padding-top: 15px;
+            border-top: 2px dashed #CBD5E1;
+        }
+        .separator-title {
+            font-size: 1.1rem; color: var(--cor-primary); font-weight: 800;
+        }
+        .separator-sub { font-size: 0.9rem; color: var(--cor-text-light); }
 
         /* --- LISTA BASE --- */
         .basket-base-list { background: white; padding: 16px; margin-bottom: 20px; box-shadow: var(--shadow-soft); }
+        
+        .list-header-row {
+            display: flex; justify-content: space-between; 
+            font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+            margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9;
+        }
+
         .base-item {
             display: flex; justify-content: space-between; align-items: center;
             padding: 12px 0; border-bottom: 1px solid var(--cor-divider);
@@ -250,14 +286,12 @@
         }
         .carousel-track::-webkit-scrollbar { display: none; }
 
-        /* ALTERAÇÃO: Tamanho diminuído 15% (190px -> 160px) */
         .prod-card {
             flex: 0 0 160px; scroll-snap-align: start;
             background: white; border: 1px solid var(--cor-divider); border-radius: var(--radius-md);
             padding: 10px; display: flex; flex-direction: column;
             position: relative;
         }
-        /* Bloqueio visual para ofertas na home */
         .prod-card.disabled { opacity: 0.8; }
 
         .prod-img { 
@@ -274,7 +308,6 @@
         }
         .prod-price { font-size: 1rem; font-weight: 800; color: var(--cor-action); margin-top: auto; }
         
-        /* SETAS CARROSSEL DESKTOP */
         .carousel-arrow {
             display: none; position: absolute; top: 55%; transform: translateY(-50%);
             width: 40px; height: 40px; background: white; border-radius: 50%;
@@ -366,9 +399,11 @@
                 </div>
 
                 <div class="balance-info">
-                    <span class="balance-label" id="balance-label">Seu Cofre</span>
                     <div class="balance-val" id="balance-val">R$ 0,00</div>
-                    <div id="balance-sub" style="font-size:0.7rem; font-weight:400; opacity:0.9; text-align:center; line-height:1.1"></div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-start">
+                        <span class="balance-label" id="balance-label">Seu Crédito</span>
+                        <div id="balance-sub" class="balance-sub-text">Disponível</div>
+                    </div>
                 </div>
 
                 <a href="https://wa.me/5565996813588" target="_blank" class="btn-whatsapp-header" aria-label="Falar no WhatsApp" style="width:36px; height:36px; padding:0;">
@@ -412,8 +447,15 @@
         </div>
 
         <div id="view-custom" class="view">
+            <div id="custom-intro-text"></div>
+
             <div class="basket-base-list" id="basket-base-list"></div>
             
+            <div class="section-separator">
+                <h3 class="separator-title">Agora fique a vontade para repor o que quiser.</h3>
+                <p class="separator-sub">Boas Compras!</p>
+            </div>
+
             <div id="catalogo-content"></div>
         </div>
     </main>
@@ -431,11 +473,21 @@
     <dialog id="modal-decision">
         <div class="modal-body">
             <h3 class="modal-title" id="decision-title"></h3>
-            <p class="modal-text">Você pode pedir a cesta original agora ou personalizar trocando itens.</p>
+            <p class="modal-text">Deseja Personalizar a sua Cesta?</p>
             
-            <button class="btn-modal primary" onclick="orderFast()">PEDIR AGORA NO WHATSAPP</button>
-            <button class="btn-modal secondary" onclick="startCustomization()">PERSONALIZAR CESTA</button>
+            <button class="btn-modal primary" onclick="startCustomization()">SIM, PERSONALIZAR</button>
+            <button class="btn-modal secondary" onclick="orderFast()">NÃO, ENCOMENDAR DIRETO</button>
             <button class="btn-modal ghost" onclick="document.getElementById('modal-decision').close()">Cancelar</button>
+        </div>
+    </dialog>
+
+    <dialog id="modal-items">
+        <div class="modal-body" style="text-align:left; padding: 15px 20px;">
+            <h3 class="modal-title" style="margin-bottom:15px; text-align:center" id="items-title">Itens da Cesta</h3>
+            
+            <div id="items-summary" style="margin-bottom:15px; font-size:0.9rem; background:#F8FAFC; padding:10px 15px; border-radius:8px; border:1px solid #eee; max-height: 50vh; overflow-y:auto;"></div>
+            
+            <button class="btn-modal primary" onclick="document.getElementById('modal-items').close()">FECHAR</button>
         </div>
     </dialog>
 
@@ -539,12 +591,16 @@
         function renderHome() {
             const el = document.getElementById('cestas-list');
             el.innerHTML = DB_CESTAS.map(c => `
-                <div class="cesta-card" onclick="openDecision('${c.id}')" tabindex="0" role="button" aria-label="Escolher ${c.nome}">
-                    <img src="${c.imagem || ''}" class="cesta-img" alt="${c.nome}" loading="lazy" width="300" height="300">
+                <div class="cesta-card" tabindex="0">
+                    <img src="${c.imagem || ''}" class="cesta-img" alt="${c.nome}" loading="lazy" width="300" height="300" onclick="openDecision('${c.id}')">
                     <div class="cesta-content">
                         <div class="cesta-name">${c.nome}</div>
                         <div class="cesta-price">${fmt(c.preco)}</div>
-                        <button class="btn-choose">VER DETALHES</button>
+                        
+                        <div class="cesta-actions">
+                            <button class="btn-choose" onclick="openDecision('${c.id}')">Encomendar</button>
+                            <button class="btn-choose outline" onclick="openItems('${c.id}')">Ver Itens</button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -587,6 +643,29 @@
             document.getElementById('modal-decision').showModal();
         }
 
+        function openItems(id) {
+            const cesta = DB_CESTAS.find(x => x.id === id);
+            if(!cesta) return;
+            
+            let html = "";
+            cesta.produtos.forEach(itemStr => {
+                const [q, id] = itemStr.split('x ');
+                const pid = id.trim();
+                const product = DB_PROD.find(p => p.id === pid);
+                if (product) {
+                    html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee">
+                        <span style="flex:1; padding-right:10px; font-size:0.9rem; font-weight:600">${product.name}</span>
+                        <span style="font-weight:700; font-size:1rem; background:#eee; padding:4px 10px; border-radius:4px">${q}x</span>
+                    </div>`;
+                }
+            });
+            
+            document.getElementById('items-title').innerText = `Itens: ${cesta.nome}`;
+            document.getElementById('items-summary').innerHTML = html;
+            document.getElementById('modal-items').showModal();
+        }
+
         function orderFast() {
             const msg = `Olá! Quero encomendar a *${STATE.cesta.nome}* no valor de *${fmt(STATE.cesta.preco)}*, sem alterações.`;
             window.location.href = `https://wa.me/${CONFIG_WHATSAPP}?text=${encodeURIComponent(msg)}`;
@@ -615,6 +694,12 @@
 
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-custom').classList.add('active');
+            
+            // Set Intro Title
+            document.getElementById('custom-intro-text').innerHTML = `
+                <div class="intro-title-custom">
+                    Você escolheu a <strong>${STATE.cesta.nome}</strong>. <br>Primeiro retire os produtos que não quer.
+                </div>`;
             
             // Hide Header on Customization
             document.getElementById('header-wrapper').style.display = 'none';
@@ -649,16 +734,24 @@
             const val = document.getElementById('balance-val');
             const sub = document.getElementById('balance-sub');
 
+            // Lógica de Display Atualizada para a Top Bar Melhorada
             if (diff > 0.01) {
                 bar.className = 'balance-bar credit';
                 lbl.innerText = "VOCÊ AINDA TEM";
                 val.innerText = fmt(diff);
-                sub.innerText = "em crédito para gastar";
+                sub.innerText = "em crédito";
             } else {
                 bar.className = 'balance-bar success';
                 lbl.innerText = "TOTAL DA CESTA";
                 val.innerText = fmt(STATE.currentTotal);
-                sub.innerText = diff < -0.01 ? `Você excedeu ${fmt(Math.abs(diff))}` : "Valor exato atingido";
+                
+                if (diff < -0.01) {
+                     sub.innerText = `+${fmt(Math.abs(diff))} extra`;
+                     sub.style.color = "#DC2626"; // Vermelho escuro p/ alerta visual leve
+                } else {
+                     sub.innerText = "Valor exato";
+                     sub.style.color = "inherit";
+                }
             }
             document.getElementById('chk-total-val').innerText = fmt(STATE.currentTotal);
         }
@@ -697,8 +790,7 @@
         // --- RENDERING ---
         function renderBaseList() {
             const el = document.getElementById('basket-base-list');
-            el.innerHTML = `<h3 style="font-size:1rem; margin-bottom:15px; color:var(--cor-text-light)">Itens da Cesta Base</h3>` + 
-            STATE.cesta.produtos.map(itemStr => {
+            let itemsHtml = STATE.cesta.produtos.map(itemStr => {
                 const pid = itemStr.split('x ')[1].trim();
                 const p = DB_PROD.find(x => x.id === pid);
                 if (!p) return '';
@@ -715,6 +807,15 @@
                     </div>
                 </div>`;
             }).join('');
+
+            // Adiciona o cabeçalho antes dos itens
+            el.innerHTML = `
+                <div class="list-header-row">
+                    <span>Produtos</span>
+                    <span>Qtd na cesta</span>
+                </div>
+                ${itemsHtml}
+            `;
         }
 
         function renderCatalogo() {
