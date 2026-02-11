@@ -1030,6 +1030,9 @@
             
             if (!name) return alert("Por favor, digite seu nome.");
             
+            // Gerar ID de Pedido Único (Previne erro VALIDATION_ERROR)
+            const orderId = new Date().getTime().toString().slice(-6);
+            
             // Helper de Formatação
             const fmtName = (n) => {
                 let s = n.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -1037,11 +1040,46 @@
                 if(s.length > 20) s = s.substring(0, 17) + '...';
                 return s;
             };
+
+            // --- CÁLCULO DE DIFERENÇAS (Movido para o topo para usar no Payload) ---
+            let originalMap = {};
+            STATE.cesta.produtos.forEach(itemStr => {
+                const [q, id] = itemStr.split('x ');
+                originalMap[id.trim()] = parseInt(q);
+            });
+
+            let removedText = [];
+            let addedText = [];
+
+            // Identificar removidos
+            for (let [id, origQty] of Object.entries(originalMap)) {
+                const currQty = STATE.cart[id] || 0;
+                if (currQty < origQty) {
+                    const p = DB_PROD.find(x => x.id === id);
+                    if (p) removedText.push(`${origQty - currQty}x ${fmtName(p.name)}`);
+                }
+            }
+
+            // Identificar adicionados
+            for (let [id, currQty] of Object.entries(STATE.cart)) {
+                const origQty = originalMap[id] || 0;
+                if (currQty > origQty) {
+                    const p = DB_PROD.find(x => x.id === id);
+                    if (p) addedText.push(`${currQty - origQty}x ${fmtName(p.name)}`);
+                }
+            }
+
+            // Montar String do Checklist
+            let checklist = `NOME DA CESTA BASE ESCOLHIA: ${STATE.cesta.nome}`;
+            if (removedText.length > 0) checklist += ` | PRODUTOS E QUANTIDADES RETIRARDAS: ${removedText.join(', ')}`;
+            if (addedText.length > 0) checklist += ` | PRODUTOS E QUANTIDADES INCLUIDAS: ${addedText.join(', ')}`;
             
             // 1. DISPARAR WEBHOOK PARA O MAKE
             try {
-                // Montar array de itens para o payload
+                // Montar array de itens para o payload e calcular soma real dos produtos
                 const itensPayload = [];
+                let sumProducts = 0;
+                
                 Object.entries(STATE.cart).forEach(([id, q]) => {
                      const p = DB_PROD.find(x => x.id === id);
                      if(p) {
@@ -1051,10 +1089,15 @@
                              quantidade: q,
                              preco_unitario: p.price
                          });
+                         sumProducts += p.price * q;
                      }
                 });
 
-                // Construir objeto com estrutura exata do Blueprint
+                // Calcular valores finais garantidos
+                const finalTotal = STATE.currentTotal;
+                const gap = finalTotal - sumProducts;
+
+                // Construir objeto com estrutura exata do Blueprint + Arredondamento + Observações
                 const payload = {
                     cliente: {
                         nome: name,
@@ -1064,11 +1107,12 @@
                     },
                     pedido: {
                         itens: itensPayload,
-                        total_site: STATE.currentTotal,
-                        soma_produtos: STATE.currentTotal,
-                        diferenca_ajuste: STATE.currentTotal - STATE.basePrice,
+                        total_site: Number(finalTotal.toFixed(2)),
+                        soma_produtos: Number(sumProducts.toFixed(2)),
+                        diferenca_ajuste: Number(gap.toFixed(2)),
                         forma_pagamento: pay,
-                        cesta_origem: STATE.cesta.nome
+                        cesta_origem: `${STATE.cesta.nome} #${orderId}`,
+                        observacoes: checklist // Novo campo adicionado
                     }
                 };
 
@@ -1087,7 +1131,7 @@
             let msg = `*NOVO PEDIDO (PERSONALIZADO)*\n`;
             msg += `👤 Cliente: ${name}\n`;
             msg += `💰 Pagamento: ${pay}\n`;
-            msg += `📦 Cesta Base: ${STATE.cesta.nome}\n\n`;
+            msg += `📦 Cesta Base: ${STATE.cesta.nome} #${orderId}\n\n`;
             msg += `*ITENS DO PEDIDO:*\n`;
             
             Object.entries(STATE.cart).forEach(([id, q]) => {
@@ -1097,45 +1141,17 @@
             
             msg += `\n*VALOR TOTAL: ${fmt(STATE.currentTotal)}*`;
 
-            // --- CÁLCULO DE DIFERENÇAS ---
-            let originalMap = {};
-            STATE.cesta.produtos.forEach(itemStr => {
-                const [q, id] = itemStr.split('x ');
-                originalMap[id.trim()] = parseInt(q);
-            });
-
-            let removedList = [];
-            let addedList = [];
-
-            // Identificar removidos
-            for (let [id, origQty] of Object.entries(originalMap)) {
-                const currQty = STATE.cart[id] || 0;
-                if (currQty < origQty) {
-                    const p = DB_PROD.find(x => x.id === id);
-                    if (p) removedList.push(`- ${origQty - currQty}x ${fmtName(p.name)}`);
-                }
-            }
-
-            // Identificar adicionados
-            for (let [id, currQty] of Object.entries(STATE.cart)) {
-                const origQty = originalMap[id] || 0;
-                if (currQty > origQty) {
-                    const p = DB_PROD.find(x => x.id === id);
-                    if (p) addedList.push(`+ ${currQty - origQty}x ${fmtName(p.name)}`);
-                }
-            }
-
             msg += `\n________________________________\n`;
             msg += `*Para a sua conferência*\n`;
             
-            if (removedList.length > 0) {
+            if (removedText.length > 0) {
                 msg += `\n*-- O que foi retirado:*\n`;
-                msg += removedList.join('\n') + `\n`;
+                msg += removedText.join('\n') + `\n`;
             }
 
-            if (addedList.length > 0) {
+            if (addedText.length > 0) {
                 msg += `\n*-- O que foi acrescentado:*\n`;
-                msg += addedList.join('\n');
+                msg += addedText.join('\n');
             }
             
             window.location.href = `https://wa.me/${CONFIG_WHATSAPP}?text=${encodeURIComponent(msg)}`;
