@@ -123,11 +123,25 @@
         }
         .search-box {
             width: 100%; padding: 14px 16px;
+            padding-right: 40px; /* Espaço para o botão X */
             border: 1px solid var(--cor-divider); border-radius: var(--radius-md);
             background: white;
             font-size: 1rem; color: var(--cor-text-main);
             box-shadow: var(--shadow-soft);
         }
+
+        .btn-clear-search {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1.1rem;
+            padding: 5px;
+            display: none; /* Oculto por padrão */
+            z-index: 10;
+        }
+        .btn-clear-search:hover { color: var(--cor-danger); }
 
         /* FILTROS (CHIPS) */
         .filters-container {
@@ -247,7 +261,7 @@
 
         .prod-img { 
             width: 100%; aspect-ratio: 1; object-fit: contain; 
-            margin-bottom: 10px; background: white; cursor: zoom-in;
+            margin-bottom: 10px; background: white;
         }
         .prod-name { 
             font-size: 0.75rem; 
@@ -304,27 +318,6 @@
         .btn-modal.primary { background: var(--cor-success); color: white; }
         .btn-modal.secondary { background: white; border: 2px solid var(--cor-action); color: var(--cor-action); }
         .btn-modal.ghost { color: var(--cor-text-light); font-weight: 400; margin-top: 10px; }
-
-        /* Modal Imagem Grande - CORREÇÃO DO X (FIXED -> ABSOLUTE) */
-        #modal-image { background: transparent; box-shadow: none; max-width: 100%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: none; }
-        .img-modal-content { 
-            position: relative; /* Mudado para relative para segurar o botão absolute */
-            max-width: 90%; max-height: 80vh; 
-            display: flex; flex-direction: column; align-items: center; 
-            overflow: visible; /* Permite o botão sair um pouco pra fora se precisar */
-        }
-        .img-modal-src { max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        
-        .btn-close-img { 
-            position: absolute; /* Mudado de fixed para absolute */
-            top: -20px; right: -20px; /* Posicionado no canto da imagem */
-            color: white; font-size: 1.5rem; 
-            background: rgba(0,0,0,0.5); width: 44px; height: 44px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            z-index: 10001; cursor: pointer; backdrop-filter: blur(4px);
-            border: 2px solid rgba(255,255,255,0.3);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
 
         /* Desktop Adjustments */
         @media (min-width: 900px) {
@@ -384,8 +377,9 @@
         </div>
 
         <div id="search-container" class="search-container">
-            <div class="limit-container">
+            <div class="limit-container" style="position:relative">
                 <input type="text" id="search-input" class="search-box" placeholder="🔍 Buscar produto (ex: arroz, sabão)..." aria-label="Buscar produtos" oninput="renderCatalogo()">
+                <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
             </div>
         </div>
         
@@ -464,13 +458,6 @@
             
             <button class="btn-modal primary" onclick="sendOrder()">ENVIAR PEDIDO</button>
             <button class="btn-modal ghost" onclick="document.getElementById('modal-checkout').close()">Voltar</button>
-        </div>
-    </dialog>
-
-    <dialog id="modal-image" onclick="closeImage()">
-        <div class="img-modal-content" onclick="event.stopPropagation()">
-            <button class="btn-close-img" onclick="closeImage()">✕</button>
-            <img id="img-zoom-src" class="img-modal-src" src="">
         </div>
     </dialog>
 
@@ -679,22 +666,16 @@
             }
         }
 
-        function openImage(src) {
-            document.getElementById('img-zoom-src').src = src;
-            document.getElementById('modal-image').showModal();
-        }
-        
-        function closeImage() {
-            const m = document.getElementById('modal-image');
-            m.close();
-            document.getElementById('img-zoom-src').src = "";
-        }
-
         function setSort(type) {
             STATE.sortType = type;
             // Atualiza botões
             document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
             document.getElementById(`sort-${type}`).classList.add('active');
+            renderCatalogo();
+        }
+
+        function clearSearch() {
+            document.getElementById('search-input').value = "";
             renderCatalogo();
         }
 
@@ -723,6 +704,9 @@
 
         function renderCatalogo() {
             const query = document.getElementById('search-input').value.toUpperCase();
+            const btnClear = document.getElementById('btn-clear-search');
+            if(btnClear) btnClear.style.display = query ? 'block' : 'none';
+
             let html = "";
             
             // Define função de ordenação
@@ -731,12 +715,59 @@
             else if (STATE.sortType === 'price_desc') sorter = (a, b) => b.price - a.price;
             else sorter = (a, b) => a.name.localeCompare(b.name); // Padrão A-Z
 
+            if (query) {
+                // MODO BUSCA: Único Carrossel com todos os resultados
+                let results = DB_PROD.filter(p => p.name.toUpperCase().includes(query));
+                results.sort(sorter);
+
+                if (results.length > 0) {
+                    html = `
+                    <div class="carousel-container" id="search-results-carousel">
+                        <div class="carousel-header"><div class="carousel-title">Resultados da Busca</div></div>
+                        <button class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</button>
+                        <div class="carousel-track">
+                            ${results.map(p => `
+                                <div class="prod-card">
+                                    <img src="${p.img}" class="prod-img" loading="lazy" alt="${p.name}" width="150" height="150">
+                                    <div class="prod-name">${p.name}</div>
+                                    <div class="prod-price">${fmt(p.price)}</div>
+                                    <div class="qty-control" style="margin-top:auto; justify-content:space-between; width:100%">
+                                        <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
+                                        <span class="val-q" id="qty-${p.id}">${STATE.cart[p.id] || 0}</span>
+                                        <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</button>
+                    </div>`;
+                    
+                    document.getElementById('catalogo-content').innerHTML = html;
+                    
+                    // Rolar a página para que os resultados fiquem visíveis logo abaixo dos chips
+                    const catalogo = document.getElementById('catalogo-content');
+                    const stickyHeight = document.querySelector('.sticky-stack').offsetHeight + document.querySelector('.header-wrapper').offsetHeight;
+                    
+                    // Usa setTimeout para garantir que a renderização ocorreu antes do scroll
+                    setTimeout(() => {
+                        window.scrollTo({
+                            top: catalogo.offsetTop - stickyHeight - 20,
+                            behavior: 'smooth'
+                        });
+                    }, 50);
+
+                } else {
+                    document.getElementById('catalogo-content').innerHTML = `<p style="text-align:center; padding:30px; color:#666">Nenhum produto encontrado para "${query}".</p>`;
+                }
+                
+                return; // Encerra aqui se houver busca
+            }
+
+            // MODO NORMAL (Categorias)
             // 1. Renderizar OFERTAS (se existirem)
             const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
             if (offers.length > 0) {
-                // Ofertas sempre mantêm destaque, mas aplicamos ordenação interna se desejar, ou deixamos padrão.
                 offers.sort(sorter);
-                
                 html += `
                 <div class="carousel-container">
                     <div class="carousel-header">
@@ -748,7 +779,7 @@
                             const displayName = p.name.replace(/(OFERTA)/i, '<span style="color:var(--cor-danger); font-weight:800">$1</span>');
                             return `
                                 <div class="prod-card">
-                                    <img src="${p.img}" class="prod-img" loading="lazy" alt="${p.name}" width="150" height="150" onclick="openImage('${p.img}')">
+                                    <img src="${p.img}" class="prod-img" loading="lazy" alt="${p.name}" width="150" height="150">
                                     <div class="prod-name">${displayName}</div>
                                     <div class="prod-price">${fmt(p.price)}</div>
                                     <div class="qty-control" style="margin-top:auto; justify-content:space-between; width:100%; padding:2px 4px;">
@@ -770,10 +801,7 @@
                     const first3 = p.name.toUpperCase().split(' ').slice(0, 3).join(' ');
                     return CONFIG_CATEGORIAS[catName].some(key => first3.includes(key));
                 });
-
-                if (query) catProds = catProds.filter(p => p.name.toUpperCase().includes(query));
                 
-                // Aplicar ordenação
                 catProds.sort(sorter);
 
                 if (catProds.length > 0) {
@@ -786,7 +814,7 @@
                         <div class="carousel-track">
                             ${catProds.map(p => `
                                 <div class="prod-card">
-                                    <img src="${p.img}" class="prod-img" loading="lazy" alt="${p.name}" width="150" height="150" onclick="openImage('${p.img}')">
+                                    <img src="${p.img}" class="prod-img" loading="lazy" alt="${p.name}" width="150" height="150">
                                     <div class="prod-name">${p.name}</div>
                                     <div class="prod-price">${fmt(p.price)}</div>
                                     <div class="qty-control" style="margin-top:auto; justify-content:space-between; width:100%; padding:2px 4px;">
@@ -802,43 +830,6 @@
                 }
             });
             
-            // 3. Renderizar Outros (Busca)
-            if (query) {
-                const allCatKeywords = Object.values(CONFIG_CATEGORIAS).flat();
-                const others = DB_PROD.filter(p => {
-                    const first3 = p.name.toUpperCase().split(' ').slice(0, 3).join(' ');
-                    const matchesCat = allCatKeywords.some(key => first3.includes(key));
-                    return !matchesCat && p.name.toUpperCase().includes(query);
-                });
-                
-                // Aplicar ordenação
-                others.sort(sorter);
-
-                if (others.length > 0) {
-                    html += `
-                    <div class="carousel-container">
-                        <div class="carousel-header"><div class="carousel-title">Outros Resultados</div></div>
-                        <button class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</button>
-                        <div class="carousel-track">
-                            ${others.map(p => `
-                                <div class="prod-card">
-                                    <img src="${p.img}" class="prod-img" loading="lazy" onclick="openImage('${p.img}')">
-                                    <div class="prod-name">${p.name}</div>
-                                    <div class="prod-price">${fmt(p.price)}</div>
-                                    <div class="qty-control" style="margin-top:auto; justify-content:space-between; width:100%">
-                                        <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
-                                        <span class="val-q" id="qty-${p.id}">${STATE.cart[p.id] || 0}</span>
-                                        <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <button class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</button>
-                    </div>`;
-                }
-            }
-            
-            if (html === "") html = `<p style="text-align:center; padding:30px; color:#666">Nenhum produto encontrado para "${query}".</p>`;
             document.getElementById('catalogo-content').innerHTML = html;
         }
 
