@@ -178,6 +178,15 @@
         }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
+        /* --- SUBMENU DE PREÇO --- */
+        .price-filters {
+            display: flex; gap: 8px; padding: 0 20px 10px 20px; overflow-x: auto;
+        }
+        .price-chip {
+            padding: 6px 12px; border-radius: 15px; background: #eee; font-size: 0.75rem; color: #666; white-space: nowrap;
+        }
+        .price-chip.active { background: var(--cor-action); color: white; }
+
         /* --- GRID DE PRODUTOS --- */
         .catalog-section { padding: 20px; }
         .prod-grid {
@@ -287,8 +296,14 @@
     </div>
 
     <div id="cat-tabs-wrapper" class="cat-tabs-wrapper" style="display:none;">
-        <div class="cat-tabs-container" id="cat-tabs-container">
-            </div>
+        <div class="cat-tabs-container" id="cat-tabs-container"></div>
+        <div class="price-filters" id="price-filters">
+            <button class="price-chip active" onclick="setPriceRange('all')">Todos</button>
+            <button class="price-chip" onclick="setPriceRange('0-5')">Até R$ 5</button>
+            <button class="price-chip" onclick="setPriceRange('5-10')">R$ 5 - 10</button>
+            <button class="price-chip" onclick="setPriceRange('10-20')">R$ 10 - 20</button>
+            <button class="price-chip" onclick="setPriceRange('20+')">Acima de 20</button>
+        </div>
     </div>
 
     <main id="main-content">
@@ -307,9 +322,16 @@
         <div id="view-custom" class="view">
             <div class="basket-base-list" id="basket-base-list"></div>
             
-            <div class="catalog-section">
+            <div id="btn-calculate-box" style="padding: 0 20px 20px 20px;">
+                <button class="btn-main-action" style="background:var(--cor-success)" onclick="calculateAndUnlock()">CALCULAR CRÉDITO E VER EXTRAS</button>
+            </div>
+
+            <div class="catalog-section" id="catalog-section" style="display:none;">
                 <h3 id="catalog-title" style="margin-bottom:15px; font-size:1.1rem;">Adicionar Extras</h3>
                 <div class="prod-grid" id="prod-grid"></div>
+                <div id="load-more-box" style="text-align:center; padding: 20px;">
+                    <button class="btn-main-action" style="width:auto; background:white; color:var(--cor-primary); border:1px solid var(--cor-primary);" onclick="loadMore()">MOSTRAR MAIS PRODUTOS</button>
+                </div>
             </div>
         </div>
     </main>
@@ -374,14 +396,13 @@
 
     <script>
         // --- CONFIGURAÇÃO ---
-        const CONFIG_WHATSAPP = "5565984491018"; // Seu número
+        const CONFIG_WHATSAPP = "5565984491018"; 
         
-        // Mapeamento de Categorias Universais (Simplificação para o usuário)
         const CAT_MAP = {
-            "Alimentos": ["MERCEARIA BASICA", "MASSAS E MOLHOS", "CAFE DA MANHA", "BISCOITOS E LANCHES", "DOCES E SOBREMESAS", "TEMPEROS"],
-            "Higiene": ["BEBE E INFANTIL", "CABELO, UNHA, CORPO E MAQUIAGEM", "HIGIENE PESSOAL", "HIGIENE BUCAL"],
-            "Limpeza": ["LAVANDERIA", "LIMPEZA DA CASA"],
-            "Casa e Útil": ["COZINHA", "UTILIDADES", "PAPELARIA", "CALÇADOS"]
+            "ALIMENTOS E BEBIDAS": ["MERCEARIA BASICA", "MASSAS E MOLHOS", "CAFE DA MANHA", "BISCOITOS E LANCHES", "DOCES E SOBREMESAS", "TEMPEROS"],
+            "CUIDADOS PESSOAIS": ["BEBE E INFANTIL", "CABELO, UNHA, CORPO E MAQUIAGEM", "HIGIENE PESSOAL", "HIGIENE BUCAL"],
+            "LIMPEZA": ["LAVANDERIA", "LIMPEZA DA CASA"],
+            "CASA E UTILIDADES": ["COZINHA", "UTILIDADES", "PAPELARIA", "CALÇADOS"]
         };
 
         // --- ESTADO ---
@@ -389,11 +410,14 @@
         let DB_CESTAS = [];
         let STATE = {
             cesta: null,
-            cart: {}, // {id: qtd}
+            cart: {}, 
             basePrice: 0,
             currentTotal: 0,
-            creditMode: false, // Se true, usuário tem saldo sobrando
-            activeTab: 'credit' // credit, alimentos, higiene, limpeza, casa
+            creditMode: false,
+            activeTab: 'ALIMENTOS E BEBIDAS',
+            activePriceRange: 'all',
+            isUnlocked: false,
+            itemsLimit: 10
         };
 
         // --- INICIALIZAÇÃO ---
@@ -407,10 +431,9 @@
                 if (r1.ok) DB_CESTAS = await r1.json();
                 if (r2.ok) {
                     let txt = await r2.text();
-                    txt = txt.trim().replace(/,(\s+)?$/, ""); // Fix JSON trailing comma
+                    txt = txt.trim().replace(/,(\s+)?$/, ""); 
                     if (!txt.startsWith('[')) txt = '[' + txt + ']';
                     const raw = JSON.parse(txt);
-                    // Processa produtos
                     DB_PROD = raw.filter(x => x.situacao === "A").map(p => ({
                         id: String(p.id),
                         name: p.nome,
@@ -430,19 +453,10 @@
 
         function detectCategory(name) {
             name = name.toUpperCase();
-            // Lógica simples de mapeamento reverso
-            for (let broadCat in CAT_MAP) {
-                for (let subCat of CAT_MAP[broadCat]) {
-                    // Verifica se keywords da subcategoria batem (simplificado)
-                    // Aqui vamos assumir que o produto tem categoria no JSON ou inferir pelo nome
-                    // Para este MVP, vamos usar keywords hardcoded simples
-                }
-            }
-            // Fallback: Tenta achar keywords no nome
-            if (name.includes("ARROZ") || name.includes("FEIJAO") || name.includes("ACUCAR") || name.includes("CAFE")) return "Alimentos";
-            if (name.includes("SABONETE") || name.includes("SHAMPOO") || name.includes("CREME")) return "Higiene";
-            if (name.includes("SABAO") || name.includes("DETERGENTE") || name.includes("AGUA SANITARIA")) return "Limpeza";
-            return "Casa e Útil"; // Default
+            if (name.includes("ARROZ") || name.includes("FEIJAO") || name.includes("ACUCAR") || name.includes("CAFE") || name.includes("LEITE") || name.includes("OLEO")) return "ALIMENTOS E BEBIDAS";
+            if (name.includes("SABONETE") || name.includes("SHAMPOO") || name.includes("CREME") || name.includes("DENTAL") || name.includes("ABSORVENTE")) return "CUIDADOS PESSOAIS";
+            if (name.includes("SABAO") || name.includes("DETERGENTE") || name.includes("AGUA SANITARIA") || name.includes("AMACIANTE") || name.includes("DESINFETANTE")) return "LIMPEZA";
+            return "CASA E UTILIDADES"; 
         }
 
         // --- NAVEGAÇÃO ---
@@ -454,7 +468,13 @@
             document.getElementById('cat-tabs-wrapper').style.display = 'none';
             document.getElementById('fab-cart').style.display = 'none';
             document.getElementById('checkout-bar').style.display = 'none';
+            document.getElementById('catalog-section').style.display = 'none';
+            document.getElementById('btn-calculate-box').style.display = 'block';
+            
             STATE.cesta = null;
+            STATE.cart = {};
+            STATE.isUnlocked = false;
+            STATE.itemsLimit = 10;
         }
 
         function renderHome() {
@@ -479,7 +499,6 @@
         function openDecision(id) {
             const c = DB_CESTAS.find(x => x.id === id);
             STATE.cesta = c;
-            
             document.getElementById('decision-img').src = c.imagem || "";
             document.getElementById('decision-title').innerText = c.nome;
             document.getElementById('modal-decision').showModal();
@@ -492,41 +511,47 @@
 
         function startCustomization() {
             document.getElementById('modal-decision').close();
-            
-            // Setup State
             STATE.cart = {};
             STATE.basePrice = STATE.cesta.preco;
+            STATE.isUnlocked = false;
+            STATE.itemsLimit = 10;
             
-            // Popula carrinho inicial com itens da cesta
             STATE.cesta.produtos.forEach(itemStr => {
-                const [qtdStr, id] = itemStr.split('x ');
-                const qtd = parseInt(qtdStr);
-                const pid = id.trim();
+                const parts = itemStr.split('x ');
+                const qtd = parseInt(parts[0]);
+                const pid = parts[1].trim();
                 if (DB_PROD.find(p => p.id === pid)) {
                     STATE.cart[pid] = (STATE.cart[pid] || 0) + qtd;
                 }
             });
 
-            // UI Setup
             document.getElementById('view-home').classList.remove('active');
             document.getElementById('view-custom').classList.add('active');
             document.getElementById('btn-back').style.display = 'block';
             document.getElementById('balance-bar').style.display = 'flex';
+            document.getElementById('catalog-section').style.display = 'none';
+            document.getElementById('cat-tabs-wrapper').style.display = 'none';
+            
+            renderBalanceBar();
+            renderBaseList();
+        }
+
+        function calculateAndUnlock() {
+            STATE.isUnlocked = true;
+            document.getElementById('btn-calculate-box').style.display = 'none';
+            document.getElementById('catalog-section').style.display = 'block';
             document.getElementById('cat-tabs-wrapper').style.display = 'block';
             document.getElementById('fab-cart').style.display = 'flex';
             document.getElementById('checkout-bar').style.display = 'flex';
             
-            // Renders
             renderBalanceBar();
-            renderBaseList();
             renderTabs();
             renderGrid();
+            
+            window.scrollTo({ top: document.getElementById('catalog-section').offsetTop - 200, behavior: 'smooth' });
         }
 
-        // --- RENDERIZADORES DA PERSONALIZAÇÃO ---
-        
         function renderBalanceBar() {
-            // Calcula total
             let total = 0;
             for (let pid in STATE.cart) {
                 const p = DB_PROD.find(x => x.id === pid);
@@ -540,68 +565,48 @@
             const val = document.getElementById('balance-val');
             const sub = document.getElementById('balance-sub');
             
-            // Lógica do "Cofre"
             if (diff > 0.01) {
-                // Tem crédito!
                 STATE.creditMode = true;
-                STATE.activeTab = 'credit'; // Força aba crédito
                 bar.className = 'balance-bar credit';
                 lbl.innerText = "VOCÊ TEM CRÉDITO!";
                 val.innerText = fmt(diff);
                 sub.innerText = "Escolha itens abaixo para completar";
-                
-                // Atualiza texto do FAB/Checkout
-                document.getElementById('btn-finish-action').innerText = `Falta R$ ${fmt(diff)}`;
-                document.getElementById('btn-finish-action').style.background = '#999'; // Desabilita visualmente
             } else {
-                // Pagando extra ou igual
                 STATE.creditMode = false;
-                if (STATE.activeTab === 'credit') STATE.activeTab = 'Alimentos'; // Sai da aba crédito
-                
                 bar.className = (Math.abs(diff) < 0.1) ? 'balance-bar success' : 'balance-bar';
                 lbl.innerText = diff < -0.01 ? "TOTAL (COM EXTRAS)" : "CESTA COMPLETA";
                 val.innerText = fmt(total);
-                sub.innerText = diff < -0.01 ? `Você adicionou ${fmt(Math.abs(diff))} em extras` : "Valor original atingido";
-                
-                document.getElementById('btn-finish-action').innerText = "CONCLUIR PEDIDO";
-                document.getElementById('btn-finish-action').style.background = 'var(--cor-action)';
+                sub.innerText = diff < -0.01 ? `Extras: ${fmt(Math.abs(diff))}` : "Valor atingido";
             }
             
             document.getElementById('chk-total-val').innerText = fmt(total);
             document.getElementById('fab-count').innerText = Object.values(STATE.cart).reduce((a,b)=>a+b,0);
-            
-            renderTabs(); // Re-renderiza abas para mostrar/esconder a de crédito
-            renderGrid(); // Atualiza grid baseado na aba e saldo
         }
 
         function renderBaseList() {
             const el = document.getElementById('basket-base-list');
-            el.innerHTML = "<h4 style='margin-bottom:10px; color:#666;'>Itens da Cesta (Toque no - para trocar)</h4>";
+            el.innerHTML = "<h4 style='margin-bottom:10px; color:#666;'>1. Ajuste sua Cesta Base:</h4>";
             
-            // Mostra apenas itens que ESTAVAM na cesta original
             STATE.cesta.produtos.forEach(itemStr => {
-                const [_, id] = itemStr.split('x ');
-                const pid = id.trim();
+                const parts = itemStr.split('x ');
+                const pid = parts[1].trim();
                 const p = DB_PROD.find(x => x.id === pid);
                 if (!p) return;
                 
                 const currentQty = STATE.cart[pid] || 0;
                 
-                // Só mostra se ainda tiver > 0 ou se quisermos mostrar que foi removido (aqui ocultamos removidos para limpar)
-                if (currentQty > 0) {
-                    el.innerHTML += `
-                    <div class="base-item">
-                        <div class="base-item-info">
-                            <div class="base-item-name">${p.name}</div>
-                            <div class="base-item-price">${fmt(p.price)}</div>
-                        </div>
-                        <div class="qty-control">
-                            <button class="btn-q" onclick="upd('${pid}', -1)">-</button>
-                            <span class="val-q">${currentQty}</span>
-                            <button class="btn-q" onclick="upd('${pid}', 1)">+</button>
-                        </div>
-                    </div>`;
-                }
+                el.innerHTML += `
+                <div class="base-item">
+                    <div class="base-item-info">
+                        <div class="base-item-name">${p.name}</div>
+                        <div class="base-item-price">${fmt(p.price)}</div>
+                    </div>
+                    <div class="qty-control">
+                        <button class="btn-q" onclick="upd('${pid}', -1)">-</button>
+                        <span class="val-q">${currentQty}</span>
+                        <button class="btn-q" onclick="upd('${pid}', 1)">+</button>
+                    </div>
+                </div>`;
             });
         }
 
@@ -609,60 +614,50 @@
             const el = document.getElementById('cat-tabs-container');
             let html = '';
             
-            // Aba Crédito (Só se tiver crédito)
-            if (STATE.creditMode) {
-                const active = STATE.activeTab === 'credit' ? 'active' : '';
-                html += `<button class="cat-tab credit-tab ${active}" style="display:inline-block" onclick="setTab('credit')">🤑 Gastar meu Crédito</button>`;
-            }
-            
-            // Abas Universais
-            const cats = ["Alimentos", "Higiene", "Limpeza", "Casa e Útil"];
+            const cats = ["ALIMENTOS E BEBIDAS", "CUIDADOS PESSOAIS", "LIMPEZA", "CASA E UTILIDADES"];
             cats.forEach(c => {
                 const active = STATE.activeTab === c ? 'active' : '';
-                html += `<button class="cat-tab ${active}" onclick="setTab('${c}')">${getEmoji(c)} ${c}</button>`;
+                html += `<button class="cat-tab ${active}" onclick="setTab('${c}')">${c}</button>`;
             });
-            
             el.innerHTML = html;
-        }
 
-        function getEmoji(c) {
-            if(c==='Alimentos') return '🍛';
-            if(c==='Higiene') return '🛁';
-            if(c==='Limpeza') return '🧹';
-            return '🏠';
+            // Update Price Chips
+            document.querySelectorAll('.price-chip').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('onclick').includes(`'${STATE.activePriceRange}'`));
+            });
         }
 
         function setTab(t) {
             STATE.activeTab = t;
+            STATE.itemsLimit = 10;
+            renderTabs();
+            renderGrid();
+        }
+
+        function setPriceRange(r) {
+            STATE.activePriceRange = r;
+            STATE.itemsLimit = 10;
             renderTabs();
             renderGrid();
         }
 
         function renderGrid() {
+            if (!STATE.isUnlocked) return;
             const el = document.getElementById('prod-grid');
-            const title = document.getElementById('catalog-title');
             el.innerHTML = "";
             
-            let filtered = [];
+            let filtered = DB_PROD.filter(p => p.cat === STATE.activeTab);
             
-            if (STATE.activeTab === 'credit') {
-                title.innerText = `Aproveite seus ${fmt(STATE.basePrice - STATE.currentTotal)} de crédito:`;
-                const diff = STATE.basePrice - STATE.currentTotal;
-                // Lógica Inteligente: Produtos até o valor do crédito + 20% (upsell leve)
-                filtered = DB_PROD.filter(p => p.price <= (diff * 1.2)).sort((a,b) => b.price - a.price);
-            } else {
-                title.innerText = `Produtos de ${STATE.activeTab}`;
-                // Filtro por Categoria Mapeada
-                filtered = DB_PROD.filter(p => detectCategory(p.name) === STATE.activeTab);
-            }
+            // Filtro de preço
+            if (STATE.activePriceRange === '0-5') filtered = filtered.filter(p => p.price <= 5);
+            else if (STATE.activePriceRange === '5-10') filtered = filtered.filter(p => p.price > 5 && p.price <= 10);
+            else if (STATE.activePriceRange === '10-20') filtered = filtered.filter(p => p.price > 10 && p.price <= 20);
+            else if (STATE.activePriceRange === '20+') filtered = filtered.filter(p => p.price > 20);
+
+            const toShow = filtered.slice(0, STATE.itemsLimit);
             
-            // Renderiza Cards
-            filtered.forEach(p => {
+            toShow.forEach(p => {
                 const qtd = STATE.cart[p.id] || 0;
-                // Botão muda se for aba de crédito
-                const btnText = (STATE.activeTab === 'credit' && qtd === 0) ? "USAR CRÉDITO" : (qtd > 0 ? "ADICIONADO" : "ADICIONAR");
-                const btnClass = (STATE.activeTab === 'credit') ? "prod-btn use-credit" : "prod-btn";
-                
                 el.innerHTML += `
                 <div class="prod-card ${qtd>0 ? 'active':''}">
                     ${qtd > 0 ? `<div class="badge qty">${qtd}</div>` : ''}
@@ -670,87 +665,68 @@
                     <div class="prod-info">
                         <div class="prod-name">${p.name}</div>
                         <div class="prod-price">${fmt(p.price)}</div>
-                        ${qtd === 0 ? 
-                            `<button class="${btnClass}" onclick="upd('${p.id}', 1)">${btnText}</button>` :
-                            `<div class="qty-control" style="margin-top:auto; width:100%; justify-content:space-between;">
-                                <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
-                                <span class="val-q" style="font-size:0.9rem">${qtd}</span>
-                                <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
-                            </div>`
-                        }
+                        <div class="qty-control" style="margin-top:auto; width:100%; justify-content:space-between;">
+                            <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
+                            <span class="val-q" style="font-size:0.9rem">${qtd}</span>
+                            <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
+                        </div>
                     </div>
                 </div>`;
             });
             
-            if (filtered.length === 0) el.innerHTML = "<p style='grid-column:span 2; text-align:center; color:#999; padding:20px;'>Nenhum produto encontrado nesta categoria.</p>";
+            document.getElementById('load-more-box').style.display = filtered.length > STATE.itemsLimit ? 'block' : 'none';
+            if (filtered.length === 0) el.innerHTML = "<p style='grid-column:span 2; text-align:center; color:#999; padding:20px;'>Nenhum produto nesta faixa.</p>";
         }
 
-        // --- LÓGICA DE CARRINHO ---
+        function loadMore() {
+            STATE.itemsLimit += 10;
+            renderGrid();
+        }
+
         function upd(pid, d) {
             if (!STATE.cart[pid]) STATE.cart[pid] = 0;
             const newQ = STATE.cart[pid] + d;
-            
             if (newQ <= 0) delete STATE.cart[pid];
             else STATE.cart[pid] = newQ;
             
             renderBalanceBar();
-            renderBaseList(); // Atualiza lista base se item for removido/adicionado
+            if(!STATE.isUnlocked) renderBaseList();
+            else renderGrid();
         }
 
-        // --- CHECKOUT ---
         function openCheckoutModal() {
-            // Validação de Mínimo
-            if (STATE.currentTotal < STATE.basePrice) {
-                alert(`O valor mínimo para esta cesta é ${fmt(STATE.basePrice)}. Por favor, escolha mais produtos para completar seu crédito de ${fmt(STATE.basePrice - STATE.currentTotal)}.`);
+            if (STATE.currentTotal < (STATE.basePrice - 0.5)) {
+                alert(`Você ainda tem ${fmt(STATE.basePrice - STATE.currentTotal)} de crédito disponível. Aproveite para adicionar mais produtos!`);
                 return;
             }
             
-            // Monta Resumo
             let html = `<h4>Resumo do Pedido:</h4><ul style="padding-left:20px; font-size:0.9rem; color:#444;">`;
             for (let pid in STATE.cart) {
                 const p = DB_PROD.find(x => x.id === pid);
                 html += `<li>${STATE.cart[pid]}x ${p.name}</li>`;
             }
             html += `</ul><div style="margin-top:10px; font-weight:bold; text-align:right">Total: ${fmt(STATE.currentTotal)}</div>`;
-            
             document.getElementById('checkout-summary').innerHTML = html;
-            
-            // Preenche dados salvos
             const saved = JSON.parse(localStorage.getItem('da_user') || '{}');
             if (saved.name) document.getElementById('cust-name').value = saved.name;
-            
             document.getElementById('modal-checkout').showModal();
         }
 
         function sendOrder() {
             const nome = document.getElementById('cust-name').value;
             const pag = document.getElementById('cust-pay').value;
-            
             if (!nome) return alert("Por favor, digite seu nome.");
-            
             localStorage.setItem('da_user', JSON.stringify({name: nome}));
-            
-            // Monta Mensagem Inteligente
             let itensTxt = "";
             for (let pid in STATE.cart) {
                 const p = DB_PROD.find(x => x.id === pid);
                 itensTxt += `${STATE.cart[pid]}x ${p.name}\n`;
             }
-            
-            let msg = `*NOVO PEDIDO (PERSONALIZADO)*\n`;
-            msg += `👤 Cliente: ${nome}\n`;
-            msg += `💰 Pagamento: ${pag}\n`;
-            msg += `📦 Cesta Base: ${STATE.cesta.nome}\n\n`;
-            msg += `*ITENS ESCOLHIDOS:*\n${itensTxt}\n`;
-            msg += `*VALOR TOTAL: ${fmt(STATE.currentTotal)}*`;
-            
+            let msg = `*NOVO PEDIDO (PERSONALIZADO)*\n👤 Cliente: ${nome}\n💰 Pagamento: ${pag}\n📦 Cesta Base: ${STATE.cesta.nome}\n\n*ITENS:*\n${itensTxt}\n*VALOR TOTAL: ${fmt(STATE.currentTotal)}*`;
             window.location.href = `https://wa.me/${CONFIG_WHATSAPP}?text=${encodeURIComponent(msg)}`;
         }
 
-        // --- UTIL ---
         function fmt(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
-
-        // Boot
         init();
     </script>
 </body>
