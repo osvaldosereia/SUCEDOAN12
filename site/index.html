@@ -201,7 +201,8 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .cesta-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .cesta-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #eee; }
+        /* ALTERAÇÃO: Imagem quadrada 1:1 */
+        .cesta-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #eee; }
         .cesta-content { padding: 16px; }
         .cesta-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; color: var(--cor-primary); }
         .cesta-price { font-size: 1.4rem; font-weight: 800; color: var(--cor-action); margin-top: 8px; }
@@ -250,8 +251,9 @@
         }
         .carousel-track::-webkit-scrollbar { display: none; }
 
+        /* ALTERAÇÃO: Tamanho aumentado de 150px para 190px (+ ~25%) */
         .prod-card {
-            flex: 0 0 150px; scroll-snap-align: start;
+            flex: 0 0 190px; scroll-snap-align: start;
             background: white; border: 1px solid var(--cor-divider); border-radius: var(--radius-md);
             padding: 10px; display: flex; flex-direction: column;
             position: relative;
@@ -263,11 +265,13 @@
             width: 100%; aspect-ratio: 1; object-fit: contain; 
             margin-bottom: 10px; background: white;
         }
+        /* ALTERAÇÃO: Caixa alta nos nomes */
         .prod-name { 
             font-size: 0.75rem; 
             line-height: 1.3; height: 3.9em; 
             overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
             color: var(--cor-text-main); margin-bottom: 8px;
+            text-transform: uppercase;
         }
         .prod-price { font-size: 1rem; font-weight: 800; color: var(--cor-action); margin-top: auto; }
         
@@ -536,7 +540,7 @@
             const el = document.getElementById('cestas-list');
             el.innerHTML = DB_CESTAS.map(c => `
                 <div class="cesta-card" onclick="openDecision('${c.id}')" tabindex="0" role="button" aria-label="Escolher ${c.nome}">
-                    <img src="${c.imagem || ''}" class="cesta-img" alt="${c.nome}" loading="lazy" width="300" height="169">
+                    <img src="${c.imagem || ''}" class="cesta-img" alt="${c.nome}" loading="lazy" width="300" height="300">
                     <div class="cesta-content">
                         <div class="cesta-name">${c.nome}</div>
                         <div class="cesta-price">${fmt(c.preco)}</div>
@@ -651,9 +655,10 @@
             updateUI();
             
             if (STATE.isUnlocked) {
-                const qtyEl = document.getElementById(`qty-${pid}`);
-                if (qtyEl) {
-                    qtyEl.innerText = STATE.cart[pid] || 0;
+                // CORREÇÃO: Atualizar TODOS os contadores com a classe específica (evita problema de IDs duplicados)
+                const els = document.querySelectorAll(`.qty-${pid}`);
+                if (els.length > 0) {
+                    els.forEach(el => el.innerText = STATE.cart[pid] || 0);
                 } else {
                     renderCatalogo(); 
                 }
@@ -733,7 +738,7 @@
                                     <div class="prod-price">${fmt(p.price)}</div>
                                     <div class="qty-control" style="margin-top:auto; justify-content:space-between; width:100%">
                                         <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
-                                        <span class="val-q" id="qty-${p.id}">${STATE.cart[p.id] || 0}</span>
+                                        <span class="val-q qty-${p.id}">${STATE.cart[p.id] || 0}</span>
                                         <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
                                     </div>
                                 </div>
@@ -784,7 +789,7 @@
                                     <div class="prod-price">${fmt(p.price)}</div>
                                     <div class="qty-control" style="margin-top:auto; justify-content:space-between; width:100%; padding:2px 4px;">
                                         <button class="btn-q" style="width:28px; height:28px" onclick="upd('${p.id}', -1)">-</button>
-                                        <span class="val-q" style="font-size:0.9rem" id="qty-${p.id}">${STATE.cart[p.id] || 0}</span>
+                                        <span class="val-q qty-${p.id}" style="font-size:0.9rem">${STATE.cart[p.id] || 0}</span>
                                         <button class="btn-q" style="width:28px; height:28px" onclick="upd('${p.id}', 1)">+</button>
                                     </div>
                                 </div>
@@ -819,7 +824,7 @@
                                     <div class="prod-price">${fmt(p.price)}</div>
                                     <div class="qty-control" style="margin-top:auto; justify-content:space-between; width:100%; padding:2px 4px;">
                                         <button class="btn-q" style="width:28px; height:28px" onclick="upd('${p.id}', -1)">-</button>
-                                        <span class="val-q" style="font-size:0.9rem" id="qty-${p.id}">${STATE.cart[p.id] || 0}</span>
+                                        <span class="val-q qty-${p.id}" style="font-size:0.9rem">${STATE.cart[p.id] || 0}</span>
                                         <button class="btn-q" style="width:28px; height:28px" onclick="upd('${p.id}', 1)">+</button>
                                     </div>
                                 </div>
