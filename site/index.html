@@ -1249,7 +1249,8 @@
 
         function openQuickCart() {
             const list = document.getElementById('quick-cart-list');
-            list.innerHTML = '<div class="prod-grid quick-cart-grid">';
+            // FIX: Usar variável acumuladora para construir o HTML corretamente
+            let htmlContent = '<div class="prod-grid quick-cart-grid">';
             
             let hasItems = false;
             for(let k in CART) {
@@ -1260,7 +1261,7 @@
                     
                     const img = p.img || svgPlace();
                     
-                    list.innerHTML += `
+                    htmlContent += `
                     <div class="prod-grid-item active quick-cart-item">
                         <div style="position:relative; width:100%; aspect-ratio:1;">
                            <img src="${img}" style="width:100%; height:100%; object-fit:contain;">
@@ -1275,11 +1276,13 @@
                     </div>`;
                 }
             }
-            list.innerHTML += '</div>';
+            htmlContent += '</div>';
             
-            if(!hasItems) list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">Carrinho vazio.</p>';
+            if(!hasItems) htmlContent = '<p style="text-align:center; padding:20px; color:#999;">Carrinho vazio.</p>';
             
-            updateTotals(); // Atualiza o total exibido no modal
+            list.innerHTML = htmlContent; // Aplica o HTML de uma vez só
+            
+            updateTotals(); 
             document.getElementById('modal-quick-cart').showModal();
         }
 
