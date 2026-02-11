@@ -333,6 +333,26 @@
             font-weight: 700; font-size: 0.95rem; text-transform: uppercase;
         }
         .btn-finish:disabled { background: #555; color: #999; }
+        
+        /* BOTÃO FLUTUANTE DE CARRINHO (FAB) */
+        .fab-cart {
+            position: fixed; bottom: 90px; right: 20px; 
+            width: 55px; height: 55px; border-radius: 50%;
+            background: var(--cor-primary); color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 92; display: none; align-items: center; justify-content: center;
+            font-size: 1.8rem; cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid white;
+        }
+        .fab-cart:active { transform: scale(0.95); }
+        .fab-badge {
+            position: absolute; top: -5px; right: -5px;
+            background: var(--cor-accent); color: white;
+            font-size: 0.8rem; font-weight: bold;
+            padding: 4px 8px; border-radius: 12px;
+            border: 2px solid white;
+        }
 
         /* --- FILTRO / CATEGORIAS --- */
         .catalog-tools { 
@@ -544,6 +564,17 @@
             border-bottom-right-radius: 4px;
             font-size: 0.85rem;
         }
+        
+        /* QUICK CART MODAL SPECIFICS */
+        .quick-cart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 10px 0;
+        }
+        @media (min-width: 900px) {
+            .quick-cart-grid { grid-template-columns: repeat(4, 1fr); }
+        }
 
         @media (min-width: 900px) {
             /* Desktop Home: Max 4 colunas */
@@ -611,6 +642,11 @@
             <div id="catalog-content"></div>
         </div>
     </main>
+    
+    <button id="btn-quick-cart" class="fab-cart" onclick="openQuickCart()">
+        🛒
+        <span id="fab-qty" class="fab-badge">0</span>
+    </button>
 
     <div class="float-bar" id="cart-bar">
         <div class="total-info">
@@ -642,6 +678,23 @@
             <button class="modal-nav-btn left" onclick="navModal(-1)">❮</button>
             <div id="prod-view-content"></div>
             <button class="modal-nav-btn right" onclick="navModal(1)">❯</button>
+        </div>
+    </dialog>
+    
+    <dialog id="modal-quick-cart">
+        <div class="modal-head">
+            <h3>Itens no Carrinho</h3>
+            <button onclick="document.getElementById('modal-quick-cart').close()" style="font-size:1.5rem;">✕</button>
+        </div>
+        <div class="modal-body">
+             <div id="quick-cart-list"></div>
+             <div style="padding-top:20px; margin-top:20px; border-top:1px solid #eee;">
+                 <div class="checkout-total-row" style="margin-bottom:15px;">
+                    <span class="checkout-lbl">Total</span>
+                    <span class="checkout-val" id="quick-cart-total">R$ 0,00</span>
+                </div>
+                 <button class="btn-finish" style="width:100%" onclick="openCheckout()">CONCLUIR PEDIDO</button>
+             </div>
         </div>
     </dialog>
 
@@ -875,6 +928,7 @@
             document.getElementById('view-catalogo').classList.add('active');
             document.getElementById('btn-back').style.display = 'block';
             document.getElementById('cart-bar').style.display = 'flex';
+            document.getElementById('btn-quick-cart').style.display = 'flex';
             document.getElementById('page-title').innerText = CURR_CESTA.nome;
             renderCatalog();
             updateTotals();
@@ -896,6 +950,7 @@
                 document.getElementById('view-catalogo').classList.remove('active');
                 document.getElementById('btn-back').style.display = 'none';
                 document.getElementById('cart-bar').style.display = 'none';
+                document.getElementById('btn-quick-cart').style.display = 'none';
                 document.getElementById('page-title').innerText = "Super Cestas";
             }
         }
@@ -1006,19 +1061,30 @@
             const navDiv = document.getElementById('cat-nav');
             div.innerHTML = ""; navDiv.innerHTML = "";
             
-            // 1. Área: Itens da Cesta (MANTER CARROSSEL)
+            // 1. Área: Itens da Cesta (TRANSFORMADO EM GRID)
             let html = `<div style="padding:0;">
                 <h3 class="section-header" style="color:var(--cor-text-main);">Itens da Cesta</h3>
-                <div class="carousel-container">
-                    <button class="scroll-btn left" onclick="scrollCat(this, -200)">❮</button>
-                    <div class="products-carousel">`;
+                <div class="prod-grid">`; // Grid container ao invés de carrossel
             
             Object.keys(ORIG_COUNTS).forEach(id => {
                 const p = DB_PROD.find(x => x.id === id);
                 if(!p) return;
-                html += buildProductCard(p); 
+                
+                // Usando o mesmo estilo de item do grid das categorias
+                const img = p.img || svgPlace();
+                const isActive = (CART[p.id] > 0);
+                const clickAction = `openProdView('${p.id}')`;
+                const searchName = p.name.toLowerCase();
+                const qtyInCart = CART[p.id] || 0;
+                
+                html += `<div class="prod-grid-item prod-search-item ${isActive?'active':''}" id="grid-item-${p.id}" data-name="${searchName}" onclick="${clickAction}">
+                        ${qtyInCart > 0 ? `<div class="qty-corner-badge">${qtyInCart} un</div>` : ''}
+                        <img src="${img}" loading="lazy">
+                        <div class="grid-price-tag">${fmt(p.price)}</div>
+                        <div class="grid-indicator"></div>
+                    </div>`; 
             });
-            html += `</div><button class="scroll-btn right" onclick="scrollCat(this, 200)">❯</button></div></div>`;
+            html += `</div></div>`;
             html += `<div class="basket-separator"></div>`;
 
             // 2. Ofertas (TRANSFORMAR EM GRID)
@@ -1165,6 +1231,46 @@
             document.querySelectorAll('.modal-nav-btn').forEach(b => b.style.display = display);
         }
 
+        function openQuickCart() {
+            const list = document.getElementById('quick-cart-list');
+            list.innerHTML = '<div class="prod-grid quick-cart-grid">';
+            
+            let hasItems = false;
+            for(let k in CART) {
+                if(CART[k] > 0) {
+                    hasItems = true;
+                    const p = DB_PROD.find(x => x.id === k);
+                    if(!p) continue;
+                    
+                    // Renderiza o card simples, mas com estilo de grid
+                    const img = p.img || svgPlace();
+                    const isActive = true; // sempre ativo pois está no carrinho
+                    
+                    // Estrutura adaptada para o modal quick cart (Imagem + controles abaixo)
+                    // Usando uma div wrapper para manter o layout
+                    list.innerHTML += `
+                    <div class="prod-grid-item active" style="flex-direction:column; height:auto; padding:10px; gap:5px;">
+                        <div style="position:relative; width:100%; aspect-ratio:1;">
+                           <img src="${img}" style="width:100%; height:100%; object-fit:contain;">
+                        </div>
+                        <div style="font-size:0.8rem; font-weight:600; text-align:center; margin:5px 0; line-height:1.2; height:2.4em; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">${p.name}</div>
+                        <div style="font-size:0.9rem; font-weight:700; color:var(--cor-primary);">${fmt(p.price)}</div>
+                        <div class="qty-control" style="width:100%; margin-top:auto;">
+                            <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
+                            <span class="val-q">${CART[k]}</span>
+                            <button class="btn-q" onclick="upd('${p.id}', 1)">+</button>
+                        </div>
+                    </div>`;
+                }
+            }
+            list.innerHTML += '</div>';
+            
+            if(!hasItems) list.innerHTML = '<p style="text-align:center; padding:20px; color:#999;">Carrinho vazio.</p>';
+            
+            updateTotals(); // Atualiza o total exibido no modal
+            document.getElementById('modal-quick-cart').showModal();
+        }
+
         // Swipe Logic
         function handleTouchStart(evt) {
             touchStartX = evt.changedTouches[0].screenX;
@@ -1297,6 +1403,11 @@
             saveState(); 
             updateCardVisuals(id, nq, p.stock <= 0);
             updateTotals();
+            
+            // Se o modal Quick Cart estiver aberto, atualiza-o
+            if(document.getElementById('modal-quick-cart').open) {
+                openQuickCart(); // Re-renderiza para atualizar quantidades ou remover itens zerados
+            }
         }
 
         function updateCardVisuals(id, q, semEstoque) {
@@ -1307,11 +1418,37 @@
             if(cardAct) cardAct.innerHTML = getBtnHtml(id, q, semEstoque);
             
             const card = document.getElementById(`card-${id}`);
-            if(card) { if(q > 0) card.classList.add('active'); else card.classList.remove('active'); }
+            if(card) { 
+                if(q > 0) {
+                     card.classList.add('active');
+                     if(!card.querySelector('.qty-corner-badge')) {
+                         card.insertAdjacentHTML('afterbegin', `<div class="qty-corner-badge">${q} un</div>`);
+                     } else {
+                         card.querySelector('.qty-corner-badge').innerText = `${q} un`;
+                     }
+                } else { 
+                    card.classList.remove('active'); 
+                    const badge = card.querySelector('.qty-corner-badge');
+                    if(badge) badge.remove();
+                } 
+            }
 
             // 2. Atualiza Grid
             const gridItem = document.getElementById(`grid-item-${id}`);
-            if(gridItem) { if(q > 0) gridItem.classList.add('active'); else gridItem.classList.remove('active'); }
+            if(gridItem) { 
+                if(q > 0) {
+                    gridItem.classList.add('active'); 
+                    if(!gridItem.querySelector('.qty-corner-badge')) {
+                         gridItem.insertAdjacentHTML('afterbegin', `<div class="qty-corner-badge">${q} un</div>`);
+                     } else {
+                         gridItem.querySelector('.qty-corner-badge').innerText = `${q} un`;
+                     }
+                } else { 
+                    gridItem.classList.remove('active'); 
+                    const badge = gridItem.querySelector('.qty-corner-badge');
+                    if(badge) badge.remove();
+                }
+            }
 
             // 3. Atualiza Modal Aberto (Correção do erro de não atualizar número)
             const modalContent = document.getElementById('prod-view-content');
@@ -1325,7 +1462,11 @@
 
         function updateTotals() {
             let u=0, o=0;
-            for(let k in CART) u += (DB_PROD.find(x=>x.id===k)?.price||0) * CART[k];
+            let totalQty = 0;
+            for(let k in CART) {
+                u += (DB_PROD.find(x=>x.id===k)?.price||0) * CART[k];
+                totalQty += CART[k];
+            }
             for(let k in ORIG_COUNTS) o += (DB_PROD.find(x=>x.id===k)?.price||0) * ORIG_COUNTS[k];
             let t = CURR_CESTA.preco + (u - o);
             window.finalTotal = t;
@@ -1335,6 +1476,13 @@
             const btn = document.getElementById('btn-finish');
             if(t < CURR_CESTA.preco) { btn.innerText = `Mínimo: ${fmt(CURR_CESTA.preco)}`; btn.disabled = true; }
             else { btn.innerText = "CONCLUIR PEDIDO"; btn.disabled = false; }
+            
+            // Atualiza FAB Badge
+            document.getElementById('fab-qty').innerText = totalQty;
+            
+            // Atualiza Total Quick Cart
+            const qcTotal = document.getElementById('quick-cart-total');
+            if(qcTotal) qcTotal.innerText = fmt(t);
             
             // Atualiza Modal Checkout se estiver aberto
             const coTotal = document.getElementById('checkout-total');
