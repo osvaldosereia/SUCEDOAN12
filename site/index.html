@@ -129,6 +129,39 @@
             box-shadow: var(--shadow-soft);
         }
 
+        /* FILTROS (CHIPS) */
+        .filters-container {
+            padding: 0 16px 12px;
+            background: var(--cor-bg);
+            border-bottom: 1px solid var(--cor-divider);
+            display: none; 
+            gap: 8px;
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .filters-container::-webkit-scrollbar { display: none; }
+        
+        .filter-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid #CBD5E1;
+            background: white;
+            font-size: 0.85rem;
+            color: var(--cor-text-light);
+            font-weight: 600;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .filter-chip:active { transform: scale(0.95); }
+        .filter-chip.active {
+            background: var(--cor-primary);
+            color: white;
+            border-color: var(--cor-primary);
+            box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
+        }
+
         /* --- LAYOUT --- */
         .view { display: none; padding-bottom: 20px; animation: fadeIn 0.3s ease; }
         .view.active { display: block; }
@@ -326,6 +359,14 @@
                 <input type="text" id="search-input" class="search-box" placeholder="🔍 Buscar produto (ex: arroz, sabão)..." aria-label="Buscar produtos" oninput="renderCatalogo()">
             </div>
         </div>
+        
+        <div id="filters-container" class="filters-container">
+            <div class="limit-container" style="display:flex; gap:8px;">
+                <button class="filter-chip active" onclick="setSort('name')" id="sort-name">A-Z</button>
+                <button class="filter-chip" onclick="setSort('price_asc')" id="sort-price_asc">Menor Preço</button>
+                <button class="filter-chip" onclick="setSort('price_desc')" id="sort-price_desc">Maior Preço</button>
+            </div>
+        </div>
     </div>
 
     <main class="limit-container">
@@ -430,7 +471,7 @@
         let DB_CESTAS = [];
         let STATE = {
             cesta: null, cart: {}, basePrice: 0, currentTotal: 0, 
-            isUnlocked: false, lastScroll: 0
+            isUnlocked: false, lastScroll: 0, sortType: 'name'
         };
 
         // --- INIT ---
@@ -465,6 +506,7 @@
             
             document.getElementById('balance-bar').style.display = 'none';
             document.getElementById('search-container').style.display = 'none';
+            document.getElementById('filters-container').style.display = 'none';
             document.getElementById('checkout-bar').style.display = 'none';
             
             document.getElementById('catalogo-content').innerHTML = "";
@@ -545,6 +587,7 @@
             // Show Balance Bar (which now contains navigation)
             document.getElementById('balance-bar').style.display = 'block'; 
             document.getElementById('search-container').style.display = 'block';
+            document.getElementById('filters-container').style.display = 'flex'; // Usamos flex pelo layout interno
             document.getElementById('checkout-bar').style.display = 'flex';
             
             STATE.isUnlocked = true;
@@ -610,6 +653,14 @@
             document.getElementById('img-zoom-src').src = "";
         }
 
+        function setSort(type) {
+            STATE.sortType = type;
+            // Atualiza botões
+            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+            document.getElementById(`sort-${type}`).classList.add('active');
+            renderCatalogo();
+        }
+
         // --- RENDERING ---
         function renderBaseList() {
             const el = document.getElementById('basket-base-list');
@@ -636,11 +687,20 @@
         function renderCatalogo() {
             const query = document.getElementById('search-input').value.toUpperCase();
             let html = "";
-            const sortAlpha = (a, b) => a.name.localeCompare(b.name);
+            
+            // Define função de ordenação
+            let sorter;
+            if (STATE.sortType === 'price_asc') sorter = (a, b) => a.price - b.price;
+            else if (STATE.sortType === 'price_desc') sorter = (a, b) => b.price - a.price;
+            else sorter = (a, b) => a.name.localeCompare(b.name); // Padrão A-Z
 
             // 1. Renderizar OFERTAS (se existirem)
             const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
             if (offers.length > 0) {
+                // Ofertas sempre mantêm destaque, mas aplicamos ordenação interna se desejar, ou deixamos padrão.
+                // Geralmente ofertas queremos mostrar em ordem de relevância, mas vamos aplicar o sort aqui também.
+                offers.sort(sorter);
+                
                 html += `
                 <div class="carousel-container">
                     <div class="carousel-header">
@@ -674,7 +734,9 @@
                 });
 
                 if (query) catProds = catProds.filter(p => p.name.toUpperCase().includes(query));
-                catProds.sort(sortAlpha);
+                
+                // Aplicar ordenação
+                catProds.sort(sorter);
 
                 if (catProds.length > 0) {
                     html += `
@@ -707,7 +769,10 @@
                     const first3 = p.name.toUpperCase().split(' ').slice(0, 3).join(' ');
                     const matchesCat = allCatKeywords.some(key => first3.includes(key));
                     return !matchesCat && p.name.toUpperCase().includes(query);
-                }).sort(sortAlpha);
+                });
+                
+                // Aplicar ordenação
+                others.sort(sorter);
 
                 if (others.length > 0) {
                     html += `
