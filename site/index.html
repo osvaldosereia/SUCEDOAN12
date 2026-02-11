@@ -676,10 +676,6 @@
                 } else {
                     renderCatalogo(); 
                 }
-                // Se o modal de checkout estiver aberto, atualiza a lista lá também
-                if (document.getElementById('modal-checkout').open) {
-                    openCheckoutModal();
-                }
             } else {
                 renderBaseList(); 
             }
@@ -863,13 +859,9 @@
             Object.entries(STATE.cart).forEach(([id, q]) => {
                 const p = DB_PROD.find(x => x.id === id);
                 html += `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid #eee">
-                    <span style="flex:1; padding-right:10px; font-size:0.9rem">${p.name}</span>
-                    <div class="qty-control" style="background:#fff; border:1px solid #ddd">
-                        <button class="btn-q" style="width:28px; height:28px; font-size:1rem" onclick="upd('${p.id}', -1)">-</button>
-                        <span class="val-q qty-${p.id}" style="font-size:0.9rem; min-width:20px">${q}</span>
-                        <button class="btn-q" style="width:28px; height:28px; font-size:1rem" onclick="upd('${p.id}', 1)">+</button>
-                    </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee">
+                    <span style="flex:1; padding-right:10px; font-size:0.9rem; font-weight:600">${p.name}</span>
+                    <span style="font-weight:700; font-size:1rem; background:#eee; padding:4px 10px; border-radius:4px">${q}x</span>
                 </div>`;
             });
             
