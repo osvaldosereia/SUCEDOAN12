@@ -264,10 +264,10 @@
         .img-modal-src { max-width: 100%; max-height: 80vh; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         
         .btn-close-img { 
-            position: absolute; top: -50px; right: 0; color: white; font-size: 1.5rem; 
-            background: rgba(255,255,255,0.2); width: 44px; height: 44px; border-radius: 50%;
+            position: fixed; top: 15px; right: 15px; color: white; font-size: 1.5rem; 
+            background: rgba(0,0,0,0.5); width: 44px; height: 44px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            z-index: 10000; cursor: pointer; backdrop-filter: blur(4px);
+            z-index: 10001; cursor: pointer; backdrop-filter: blur(4px);
             border: 2px solid rgba(255,255,255,0.3);
         }
 
@@ -468,6 +468,7 @@
             document.getElementById('checkout-bar').style.display = 'none';
             
             document.getElementById('catalogo-content').innerHTML = "";
+            document.getElementById('search-input').value = ""; // Limpa busca
             window.scrollTo(0,0);
         }
 
@@ -547,6 +548,7 @@
             document.getElementById('checkout-bar').style.display = 'flex';
             
             STATE.isUnlocked = true;
+            document.getElementById('search-input').value = ""; // Limpa busca
             
             updateUI();
             renderBaseList();
