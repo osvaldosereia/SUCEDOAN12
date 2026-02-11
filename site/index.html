@@ -102,23 +102,8 @@
         /* --- STICKY BARS --- */
         .sticky-stack { position: sticky; top: 0; z-index: 999; width: 100%; background: var(--cor-bg); }
 
-        .balance-bar {
-            background: var(--cor-primary); color: white;
-            padding: 10px 16px; 
-            display: none; 
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .balance-bar.credit { background: var(--cor-warning); color: #1a1a1a; }
-        .balance-bar.success { background: var(--cor-success); }
+        /* Balance Bar removido daqui para limpar o topo */
         
-        /* Ajuste Layout Top Bar */
-        .balance-info { 
-            display: flex; flex-direction: row; align-items: baseline; justify-content: center; gap: 8px; flex-wrap: wrap;
-        }
-        .balance-val { font-size: 1.3rem; font-weight: 900; line-height: 1; }
-        .balance-label { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; opacity: 0.9; }
-        .balance-sub-text { font-size: 0.8rem; font-weight: 600; opacity: 0.9; }
-
         .search-container {
             padding: 12px 16px;
             background: var(--cor-bg);
@@ -322,23 +307,24 @@
 
         /* --- BOTOES E AÇOES --- */
         .btn-main-action {
-            width: 100%; padding: 16px; border-radius: var(--radius-md);
+            width: 100%; padding: 12px 16px; border-radius: var(--radius-md);
             background: var(--cor-action); color: white; font-weight: 700;
-            font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;
+            font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: background 0.2s;
+            height: 48px; display: flex; align-items: center; justify-content: center;
         }
         .btn-main-action:active { background: #E65100; transform: scale(0.98); }
         
         .checkout-bar {
             position: fixed; bottom: 0; left: 0; width: 100%;
-            background: white; padding: 15px 20px; z-index: 1001; 
-            display: flex; justify-content: space-between; align-items: center;
+            background: white; padding: 10px 16px; z-index: 1001; 
+            display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px;
             box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
         }
 
         .btn-scroll-top {
-            position: fixed; bottom: 80px; right: 20px;
+            position: fixed; bottom: 85px; right: 20px;
             width: 40px; height: 40px; background: var(--cor-primary); color: white;
             border-radius: 50%; display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 998;
@@ -347,10 +333,12 @@
         }
         
         .btn-mini-diff {
-             background: transparent; border: 1px solid #CBD5E1; border-radius: 8px;
-             padding: 0 12px; margin-left: 8px; color: var(--cor-text-main); font-size: 1.2rem;
-             height: 100%; cursor: pointer;
+             background: white; border: 1px solid #CBD5E1; border-radius: 8px;
+             width: 48px; height: 48px; color: var(--cor-text-main); font-size: 1.4rem;
+             cursor: pointer; display: flex; align-items: center; justify-content: center;
+             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
+        .btn-mini-diff:active { background: #f1f5f9; transform: scale(0.95); }
 
         /* --- MODAIS --- */
         dialog { 
@@ -393,6 +381,8 @@
     <div class="header-wrapper" id="header-wrapper">
         <header class="limit-container">
             <div class="header-left">
+                <button onclick="goHome()" id="btn-back-home" style="color:white; font-size:1.4rem; padding:5px; line-height:1; display:none; margin-right:5px" aria-label="Voltar">❮</button>
+                
                 <img src="img/logo.webp" class="logo" alt="Logo Dona Antônia" width="44" height="44">
                 <div class="page-title">Super Cestas<br>Dona Antônia</div>
             </div>
@@ -405,42 +395,19 @@
         </div>
 
         <div class="sticky-stack">
-        <div id="balance-bar" class="balance-bar">
-            <div class="limit-container" style="display:grid; grid-template-columns: auto 1fr auto; align-items:center; gap:10px; width:100%;">
-                
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button onclick="goHome()" style="color:white; font-size:1.4rem; padding:5px; line-height:1;" aria-label="Voltar">❮</button>
-                    <img src="img/logo.webp" style="width:36px; height:36px; border-radius:50%; border:2px solid white; object-fit:cover;">
+            <div id="search-container" class="search-container">
+                <div class="limit-container" style="position:relative">
+                    <input type="text" id="search-input" class="search-box" placeholder="🔍 Buscar produto (ex: arroz, sabão)..." aria-label="Buscar produtos" oninput="renderCatalogo()">
+                    <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
                 </div>
-
-                <div class="balance-info">
-                    <div class="balance-val" id="balance-val">R$ 0,00</div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-start">
-                        <span class="balance-label" id="balance-label">Seu Crédito</span>
-                        <div id="balance-sub" class="balance-sub-text">Disponível</div>
-                    </div>
+            </div>
+            
+            <div id="filters-container" class="filters-container">
+                <div class="limit-container" style="display:flex; gap:8px;">
+                    <button class="filter-chip active" onclick="setSort('name')" id="sort-name">A-Z</button>
+                    <button class="filter-chip" onclick="setSort('price_asc')" id="sort-price_asc">Menor Preço</button>
+                    <button class="filter-chip" onclick="setSort('price_desc')" id="sort-price_desc">Maior Preço</button>
                 </div>
-
-                <a href="https://wa.me/5565996813588" target="_blank" class="btn-whatsapp-header" aria-label="Falar no WhatsApp" style="width:36px; height:36px; padding:0;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 8.259C3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
-                    </svg>
-                </a>
-            </div>
-        </div>
-
-        <div id="search-container" class="search-container">
-            <div class="limit-container" style="position:relative">
-                <input type="text" id="search-input" class="search-box" placeholder="🔍 Buscar produto (ex: arroz, sabão)..." aria-label="Buscar produtos" oninput="renderCatalogo()">
-                <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
-            </div>
-        </div>
-        
-        <div id="filters-container" class="filters-container">
-            <div class="limit-container" style="display:flex; gap:8px;">
-                <button class="filter-chip active" onclick="setSort('name')" id="sort-name">A-Z</button>
-                <button class="filter-chip" onclick="setSort('price_asc')" id="sort-price_asc">Menor Preço</button>
-                <button class="filter-chip" onclick="setSort('price_desc')" id="sort-price_desc">Maior Preço</button>
             </div>
         </div>
     </div>
@@ -476,15 +443,15 @@
     </main>
 
     <div id="checkout-bar" class="checkout-bar" style="display:none">
-        <div>
-            <div class="balance-label" style="color:#64748B">Total do Pedido</div>
-            <div class="balance-val" id="chk-total-val" style="color:var(--cor-primary)">R$ 0,00</div>
+        <div style="display:flex; flex-direction:column; justify-content:center;">
+            <div id="chk-status-text" style="font-size:0.8rem; font-weight:700; color:var(--cor-success); line-height:1.2"></div>
+            <div class="balance-val" id="chk-total-val" style="color:var(--cor-primary); font-size:1.2rem; font-weight:800">R$ 0,00</div>
         </div>
-        <div style="display:flex; align-items:center;">
-            <button class="btn-main-action" style="width:auto; padding: 12px 24px; font-size:0.9rem" onclick="openCheckoutModal()">
-                CONCLUIR PEDIDO
-            </button>
+        <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end">
             <button class="btn-mini-diff" onclick="openDiffModal()" aria-label="Ver alterações">📝</button>
+            <button class="btn-main-action" onclick="openCheckoutModal()">
+                CONCLUIR
+            </button>
         </div>
     </div>
     
@@ -605,8 +572,8 @@
             
             // Show Header on Home
             document.getElementById('header-wrapper').style.display = 'block';
+            document.getElementById('btn-back-home').style.display = 'none';
             
-            document.getElementById('balance-bar').style.display = 'none';
             document.getElementById('search-container').style.display = 'none';
             document.getElementById('filters-container').style.display = 'none';
             document.getElementById('checkout-bar').style.display = 'none';
@@ -730,14 +697,13 @@
                     Você escolheu a <strong>${STATE.cesta.nome}</strong>. <br>Primeiro retire os produtos que não quer.
                 </div>`;
             
-            // Hide Header on Customization
-            document.getElementById('header-wrapper').style.display = 'none';
+            // Show Header on Customization but hide specific parts if needed
+            document.getElementById('header-wrapper').style.display = 'block';
+            document.getElementById('btn-back-home').style.display = 'block';
             
-            // Show Balance Bar (which now contains navigation)
-            document.getElementById('balance-bar').style.display = 'block'; 
             document.getElementById('search-container').style.display = 'block';
             document.getElementById('filters-container').style.display = 'flex'; // Usamos flex pelo layout interno
-            document.getElementById('checkout-bar').style.display = 'flex';
+            document.getElementById('checkout-bar').style.display = 'grid'; // Grid agora
             document.getElementById('btn-scroll-top').style.display = 'flex';
             
             STATE.isUnlocked = true;
@@ -759,31 +725,23 @@
             STATE.currentTotal = sumCart + (STATE.initialGap || 0);
 
             const diff = STATE.basePrice - STATE.currentTotal;
-            const bar = document.getElementById('balance-bar');
-            const lbl = document.getElementById('balance-label');
-            const val = document.getElementById('balance-val');
-            const sub = document.getElementById('balance-sub');
-
-            // Lógica de Display Atualizada para a Top Bar Melhorada
+            
+            const statusText = document.getElementById('chk-status-text');
+            const totalVal = document.getElementById('chk-total-val');
+            
             if (diff > 0.01) {
-                bar.className = 'balance-bar credit';
-                lbl.innerText = "VOCÊ AINDA TEM";
-                val.innerText = fmt(diff);
-                sub.innerText = "em crédito";
+                statusText.innerText = `CRÉDITO: ${fmt(diff)}`;
+                statusText.style.color = "var(--cor-success)";
             } else {
-                bar.className = 'balance-bar success';
-                lbl.innerText = "TOTAL DA CESTA";
-                val.innerText = fmt(STATE.currentTotal);
-                
-                if (diff < -0.01) {
-                     sub.innerText = `+${fmt(Math.abs(diff))} extra`;
-                     sub.style.color = "#DC2626"; // Vermelho escuro p/ alerta visual leve
+                 if (diff < -0.01) {
+                     statusText.innerText = `EXTRA: +${fmt(Math.abs(diff))}`;
+                     statusText.style.color = "#D32F2F";
                 } else {
-                     sub.innerText = "Valor exato";
-                     sub.style.color = "inherit";
+                     statusText.innerText = "CESTA COMPLETA";
+                     statusText.style.color = "#64748B";
                 }
             }
-            document.getElementById('chk-total-val').innerText = fmt(STATE.currentTotal);
+            totalVal.innerText = fmt(STATE.currentTotal);
         }
 
         function upd(pid, d) {
