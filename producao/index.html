@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v45 (Label Update)</title>
+    <title>Sucedoan Painel - v46 (Label 80x80)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -686,8 +686,8 @@
         // Cria array ["01", "02" ... "15"]
         const GONDOLAS = Array.from({length: 15}, (_, i) => String(i + 1).padStart(2, '0'));
         
-        // Cria array ["A", "B", "C", "D", "E", "F", "G", "H"]
-        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F', "G", "H"];
+        // Cria array ["A", "B", "C", "D", "E", "F"]
+        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F'];
         
         const SEM_LOCAL = "SEM LOCAL";
     </script>
@@ -1272,11 +1272,14 @@
                 <html>
                 <head>
                     <style>
-                        @page { size: 80mm auto; margin: 0; }
+                        @page { size: 80mm 80mm; margin: 0; }
                         body { 
-                            width: 78mm; 
-                            margin: 0; padding: 2mm 1mm; 
+                            width: 80mm; 
+                            height: 80mm;
+                            margin: 0; padding: 2mm; 
+                            box-sizing: border-box;
                             display: flex; flex-direction: column; 
+                            justify-content: flex-end; 
                             align-items: center; 
                             font-family: sans-serif; text-align: center; 
                         }
@@ -1287,9 +1290,9 @@
                             margin-bottom: 5px;
                             display: flex; justify-content: space-around;
                         }
-                        .name { font-size: 14px; font-weight: 700; margin-bottom: 5px; line-height: 1.1; text-transform: uppercase; max-height: 40px; overflow:hidden; }
+                        .name { font-size: 18px; font-weight: 900; margin-bottom: 5px; line-height: 1.1; text-transform: uppercase; max-height: 44px; overflow:hidden; }
                         .sku { font-size: 26px; font-weight: 900; margin: 2px 0; }
-                        .ean { font-size: 12px; margin-top: 2px; }
+                        .ean { font-size: 14px; margin-top: 2px; font-weight: bold; }
                     </style>
                 </head>
                 <body>
