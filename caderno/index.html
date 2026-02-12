@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Conexão e Transcrição</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+        .box { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        button { padding: 10px 15px; cursor: pointer; margin-right: 5px; }
+        
+        /* Cores de status */
+        .status-ok { color: green; font-weight: bold; }
+        .status-error { color: red; font-weight: bold; background-color: #ffe6e6; padding: 10px; border-radius: 4px; }
+        .log { margin-top: 10px; font-family: monospace; font-size: 0.9em; color: #555; white-space: pre-wrap; }
+
+        /* Desabilitar área de áudio até conectar */
+        #audioSection.disabled { opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h3>1. Configuração de Conexão</h3>
+        <input type="text" id="apiUrl" value="https://jsonplaceholder.typicode.com/posts/1" style="width: 100%; margin-bottom: 10px; padding: 8px;" placeholder="URL da API">
+        
+        <button onclick="testarConexao()">🔌 Testar Conexão</button>
+        <div id="connectionStatus" class="log"></div>
+    </div>
+
+    <div id="audioSection" class="box disabled">
+        <h3>2. Gravação e Transcrição</h3>
+        <p>O fluxo será: Gravar -> Salvar Arquivo -> Transcrever.</p>
+        
+        <button id="btnGravar" onclick="iniciarGravacao()">🎤 Gravar</button>
+        <button id="btnParar" onclick="pararESalvar()" disabled>⏹️ Parar & Processar</button>
+        
+        <div id="audioStatus" class="log"></div>
+        <audio id="audioPlayer" controls style="display:none; margin-top: 10px; width: 100%;"></audio>
+    </div>
+
+    <script>
+        // Variáveis Globais
+        let mediaRecorder;
+        let audioChunks = [];
+        let isConnected = false;
+
+        // --- FUNÇÃO 1: TESTAR CONEXÃO ---
+        async function testarConexao() {
+            const url = document.getElementById('apiUrl').value;
+            const statusDiv = document.getElementById('connectionStatus');
+            const audioSection = document.getElementById('audioSection');
+
+            statusDiv.innerHTML = "Tentando conectar...";
+            statusDiv.className = "log";
+
+            try {
+                // Tenta fazer um fetch simples (HEAD ou GET) para ver se responde
+                const response = await fetch(url, { method: 'GET' });
+
+                if (!response.ok) {
+                    // Se o servidor respondeu, mas com erro (ex: 404, 500, 401)
+                    throw new Error(`Erro do Servidor: ${response.status} - ${response.statusText}`);
+                }
+
+                // SUCESSO
+                statusDiv.innerHTML = "✅ Conexão estabelecida com sucesso!";
+                statusDiv.className = "log status-ok";
+                
+                // Habilita a seção de áudio
+                isConnected = true;
+                audioSection.classList.remove('disabled');
+
+            } catch (error) {
+                // ERRO DE REDE OU OUTROS
+                console.error(error);
+                let mensagemErro = error.message;
+
+                // Tenta identificar erros comuns de conexão
+                if (error.message.includes('Failed to fetch')) {
+                    mensagemErro = "Falha na conexão de rede. Verifique se a URL está correta, se o servidor está online ou se há bloqueio de CORS.";
+                }
+
+                statusDiv.innerHTML = `❌ FALHA NA CONEXÃO:\n${mensagemErro}`;
+                statusDiv.className = "log status-error";
+                
+                // Bloqueia áudio novamente se falhar
+                isConnected = false;
+                audioSection.classList.add('disabled');
+            }
+        }
+
+        // --- FUNÇÃO 2: GRAVAÇÃO ---
+        async function iniciarGravacao() {
+            if (!isConnected) return alert("Conecte primeiro!");
+
+            audioChunks = []; // Limpa gravações anteriores
+            const statusDiv = document.getElementById('audioStatus');
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.start();
+                
+                // Evento: quando houver dados de áudio disponíveis
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                // Evento: quando a gravação parar (AQUI ACONTECE A MÁGICA)
+                mediaRecorder.onstop = async () => {
+                    statusDiv.innerText += "\n💾 Salvando áudio...";
+                    
+                    // 1. CRIA O ARQUIVO (SALVA)
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    
+                    // Toca o áudio para o usuário confirmar que salvou
+                    const audioPlayer = document.getElementById('audioPlayer');
+                    audioPlayer.src = audioUrl;
+                    audioPlayer.style.display = 'block';
+
+                    // 2. CHAMA A TRANSCRIÇÃO (Só depois de ter o blob pronto)
+                    await executarTranscricao(audioBlob);
+                };
+
+                document.getElementById('btnGravar').disabled = true;
+                document.getElementById('btnParar').disabled = false;
+                statusDiv.innerText = "🔴 Gravando...";
+
+            } catch (err) {
+                statusDiv.innerHTML = "Erro ao acessar microfone: " + err.message;
+            }
+        }
+
+        function pararESalvar() {
+            mediaRecorder.stop(); // Isso dispara o evento 'onstop' definido acima
+            document.getElementById('btnGravar').disabled = false;
+            document.getElementById('btnParar').disabled = true;
+        }
+
+        // --- FUNÇÃO 3: TRANSCRIÇÃO (SIMULADA) ---
+        async function executarTranscricao(audioBlob) {
+            const statusDiv = document.getElementById('audioStatus');
+            statusDiv.innerText += "\n🚀 Enviando para transcrição...";
+
+            try {
+                // AQUI VOCÊ COLOCA SUA LÓGICA REAL DE UPLOAD/TRANSCRIÇÃO
+                // Exemplo com FormData (como se fosse enviar para OpenAI Whisper ou servidor próprio)
+                
+                /* const formData = new FormData();
+                formData.append("file", audioBlob, "gravacao.wav");
+                formData.append("model", "whisper-1");
+
+                const response = await fetch("SEU_ENDPOINT_DE_TRANSCRICAO", {
+                    method: "POST",
+                    body: formData,
+                    headers: { "Authorization": "Bearer SUA_CHAVE" } // Se necessário
+                });
+                */
+
+                // Simulando um tempo de espera (remover no código real)
+                await new Promise(r => setTimeout(r, 2000));
+
+                // Simulando resposta
+                const textoTranscrito = "Esta é uma simulação. O áudio foi salvo e processado com sucesso.";
+
+                statusDiv.innerHTML += `\n✅ Transcrição Concluída:\n"${textoTranscrito}"`;
+
+            } catch (error) {
+                statusDiv.innerHTML += `\n❌ Erro na transcrição: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
