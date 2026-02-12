@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v44 (Location Layout)</title>
+    <title>Sucedoan Painel - v45 (Label Update)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -686,8 +686,8 @@
         // Cria array ["01", "02" ... "15"]
         const GONDOLAS = Array.from({length: 15}, (_, i) => String(i + 1).padStart(2, '0'));
         
-        // Cria array ["A", "B", "C", "D", "E", "F"]
-        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F'];
+        // Cria array ["A", "B", "C", "D", "E", "F", "G", "H"]
+        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F', "G", "H"];
         
         const SEM_LOCAL = "SEM LOCAL";
     </script>
@@ -1234,6 +1234,9 @@
                             <button class="btn-text" onclick="openDetails('${p.codigo}')">
                                 <i data-lucide="list-plus" size="14"></i> DETALHES
                             </button>
+                            <button class="btn-text" onclick="printLabel('${p.codigo}')" style="margin-left: 5px;" title="Imprimir Etiqueta">
+                                <i data-lucide="printer" size="14"></i>
+                            </button>
                             <button class="btn-toggle-active ${isInactive ? 'inactive' : ''}" onclick="toggleActive('${p.codigo}')">
                                 ${isInactive ? 'INATIVO' : 'ATIVO'}
                             </button>
@@ -1255,32 +1258,48 @@
             const p = products.find(x => x.codigo === sku);
             if (!p) return;
 
-            const w = window.open('', '', 'width=400,height=300');
+            // Parser de localização para a etiqueta
+            let gondola = "---";
+            let prateleira = "---";
+            if(p.localizacao && p.localizacao.includes('-')) {
+                const parts = p.localizacao.split('-');
+                gondola = parts[0];
+                prateleira = parts[1];
+            }
+
+            const w = window.open('', '', 'width=400,height=400');
             w.document.write(`
                 <html>
                 <head>
                     <style>
-                        @page { size: 80mm 40mm; margin: 0; }
+                        @page { size: 80mm auto; margin: 0; }
                         body { 
-                            width: 80mm; height: 40mm; 
-                            margin: 0; padding: 2mm; 
+                            width: 78mm; 
+                            margin: 0; padding: 2mm 1mm; 
                             display: flex; flex-direction: column; 
-                            justify-content: center; align-items: center; 
+                            align-items: center; 
                             font-family: sans-serif; text-align: center; 
                         }
-                        .name { font-size: 14px; font-weight: 900; margin-bottom: 4px; line-height: 1.1; max-height: 28px; overflow: hidden; text-transform: uppercase; }
-                        .sku { font-size: 18px; font-weight: bold; margin: 4px 0; border: 2px solid #000; padding: 2px 8px; border-radius: 4px; }
-                        .meta { font-size: 12px; display: flex; gap: 10px; font-weight: bold; margin-top: 4px; }
-                        .loc { background: #000; color: #fff; padding: 2px 6px; border-radius: 3px; }
+                        .loc-row { 
+                            font-size: 20px; font-weight: 900; 
+                            border-bottom: 2px solid #000; 
+                            width: 100%;
+                            margin-bottom: 5px;
+                            display: flex; justify-content: space-around;
+                        }
+                        .name { font-size: 14px; font-weight: 700; margin-bottom: 5px; line-height: 1.1; text-transform: uppercase; max-height: 40px; overflow:hidden; }
+                        .sku { font-size: 26px; font-weight: 900; margin: 2px 0; }
+                        .ean { font-size: 12px; margin-top: 2px; }
                     </style>
                 </head>
                 <body>
+                    <div class="loc-row">
+                        <span>GON: ${gondola}</span>
+                        <span>PRAT: ${prateleira}</span>
+                    </div>
                     <div class="name">${p.nome}</div>
                     <div class="sku">${p.codigo}</div>
-                    <div class="meta">
-                        <span>NCM: ${p.ncm || '---'}</span>
-                        <span class="loc">${p.localizacao || 'SEM LOC'}</span>
-                    </div>
+                    <div class="ean">EAN: ${p.gtin || ''}</div>
                     <script>window.onload = function() { window.print(); }<\/script>
                 </body>
                 </html>
