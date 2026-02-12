@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v43 (Export Exact Layout)</title>
+    <title>Sucedoan Painel - v44 (Location Layout)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -189,6 +189,7 @@
 
         .card.status-synced { border-top: 3px solid var(--success); }
         .card.status-changed { border-top: 3px solid var(--warning); }
+        .card.status-inactive { opacity: 0.6; background: #f1f5f9; border-top: 3px solid #94a3b8; }
 
         /* Imagem do Card */
         .card-img-area {
@@ -264,15 +265,20 @@
             align-items: center;
         }
         
-        .cat-select {
+        /* Nova área de localização */
+        .loc-controls {
+            display: flex;
+            gap: 4px;
+        }
+
+        .loc-select {
             background: #f1f5f9;
             border: 1px solid var(--border);
             border-radius: 4px;
-            font-size: 9px;
-            color: var(--accent);
+            font-size: 10px;
+            color: var(--text-primary);
             font-weight: bold;
             padding: 2px;
-            max-width: 120px;
             cursor: pointer;
             outline: none;
         }
@@ -337,6 +343,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 8px;
         }
 
         .btn-text {
@@ -365,6 +372,7 @@
             align-items: center;
             gap: 4px;
         }
+        .btn-sync-mini:hover { background: #15803d; }
         
         .icon-btn-mini {
             background: transparent;
@@ -381,6 +389,17 @@
             vertical-align: middle;
         }
         .icon-btn-mini:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+        .btn-toggle-active {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 4px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .btn-toggle-active.inactive { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
 
         /* --- 6. TABELA DE HISTÓRICO --- */
         .history-container {
@@ -663,31 +682,14 @@
         const HISTORY_KEY = 'sucedoan_history';
         const LOGIN_KEY = 'sucedoan_saved_login'; 
 
-        // --- NOVA CONFIGURAÇÃO DE CATEGORIAS ---
-        // EDITE AQUI PARA ADICIONAR OU REMOVER CATEGORIAS E PALAVRAS-CHAVE
-        const CONFIG_CATEGORIAS = {
-            "ALIMENTOS": [
-                "ARROZ", "FEIJAO", "ACUCAR", "OLEO", "AZEITE", "MACARRAO", 
-                "CREME DE LEITE", "LEITE", "CAFE", "BISCOITO", "BOLACHA", 
-                "CHOCOLATE", "MOLHO", "SAL", "FARINHA"
-            ],
-            "BEBIDAS": [
-                "REFRIGERANTE", "SUCO", "AGUA", "CERVEJA", "VODKA", "WHISKY", 
-                "VINHO", "ENERGETICO", "CHA"
-            ],
-            "LIMPEZA": [
-                "SABAO", "DETERGENTE", "AGUA SANITARIA", "DESINFETANTE", "AMACIANTE",
-                "ESPONJA", "ALCOOL", "MULTI USO", "LIMPA VIDROS"
-            ],
-            "HIGIENE": [
-                "SHAMPOO", "CONDICIONADOR", "SABONETE", "CREME DENTAL", "ESCOVA",
-                "PAPEL HIGIENICO", "FRALDA", "ABSORVENTE", "CREME PARA PELE", "CREME HIDRATANTE",
-                "DESODORANTE", "LAMINAS"
-            ],
-            "BAZAR": [
-                "COPO", "PRATO", "TALHER", "PANELA", "POTE", "VASSOURA", "RODO"
-            ]
-        };
+        // --- NOVA CONFIGURAÇÃO DE LOCALIZAÇÃO (GONDOLAS E PRATELEIRAS) ---
+        // Cria array ["01", "02" ... "15"]
+        const GONDOLAS = Array.from({length: 15}, (_, i) => String(i + 1).padStart(2, '0'));
+        
+        // Cria array ["A", "B", "C", "D", "E", "F"]
+        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F'];
+        
+        const SEM_LOCAL = "SEM LOCAL";
     </script>
 
     <header>
@@ -724,7 +726,7 @@
                 <i data-lucide="download" size="14"></i> CSV
             </button>
             <button class="nav-btn" onclick="exportarJSONCategorias()">
-                <i data-lucide="file-json" size="14"></i> JSON CAT
+                <i data-lucide="file-json" size="14"></i> JSON LOC
             </button>
             <div id="total-count">0</div>
         </div>
@@ -897,48 +899,6 @@
         }
 
         // ----------------------------------------------------
-        // LÓGICA DE CATEGORIZAÇÃO INTELIGENTE
-        // ----------------------------------------------------
-        function autoCategorizar(nome) {
-            if (!nome) return "OUTROS";
-            
-            // Limpa o nome: Remove acentos e joga para maiúsculo
-            let limpo = nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
-            
-            // Divide em palavras (removendo espaços extras)
-            let palavras = limpo.trim().split(/\s+/);
-
-            // Pega as 3 primeiras palavras (ou vazio se não existir)
-            let p1 = palavras[0] || "";
-            let p2 = palavras[1] || "";
-            let p3 = palavras[2] || "";
-
-            // Tenta combinar em ordem de especificidade:
-            // 1. Três palavras (Máxima precisão)
-            // 2. Duas palavras (Alta precisão - ex: "Creme de Leite")
-            // 3. Uma palavra (Baixa precisão - ex: "Creme")
-            let tentativas = [
-                `${p1} ${p2} ${p3}`.trim(),
-                `${p1} ${p2}`.trim(),
-                p1
-            ];
-
-            // Percorre as tentativas
-            for (let termo of tentativas) {
-                if (!termo) continue;
-                
-                // Verifica em cada categoria
-                for (let [cat, keywords] of Object.entries(CONFIG_CATEGORIAS)) {
-                    if (keywords.includes(termo)) {
-                        return cat;
-                    }
-                }
-            }
-
-            return "OUTROS";
-        }
-
-        // ----------------------------------------------------
         // IMPORTAÇÃO CSV (DADOS COMPLETOS COM NOMES EXATOS)
         // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
@@ -966,17 +926,14 @@
                             nome: getVal('Descrição'),
                             preco: getNum('Preço'),
                             estoque: getNum('Estoque'),
-                            localizacao: getVal('Localização'),
+                            localizacao: getVal('Localização'), // Ex: "01-A"
                             gtin: getVal('GTIN/EAN'),
                             url_imagem: getVal('URL Imagens Externas'),
                             ncm: getVal('NCM'), 
                             validade: getVal('Data Validade'),
                             
-                            // NOVA LÓGICA DE CATEGORIA APLICADA AQUI
-                            categoria: autoCategorizar(getVal('Descrição')),
-
                             // Controle Interno
-                            situacao: 'A',
+                            situacao: 'A', // Padrão Ativo na importação
                             formato: 'S',
                             _changed: true,
                             _lastChange: "Importação CSV"
@@ -1013,6 +970,11 @@
         function exportarCSV() {
             if (products.length === 0) return alert("Nada para exportar.");
 
+            // FILTRO: Apenas produtos ativos (situacao != 'I')
+            const produtosAtivos = products.filter(p => p.situacao !== 'I');
+            
+            if (produtosAtivos.length === 0) return alert("Nenhum produto ativo para exportar.");
+
             const colunasModelo = [
                 "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
                 "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", 
@@ -1029,7 +991,7 @@
                 "Categoria do produto", "Informações Adicionais"
             ];
 
-            const dadosParaExportar = products.map(p => {
+            const dadosParaExportar = produtosAtivos.map(p => {
                 const linha = {};
                 const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
 
@@ -1037,13 +999,11 @@
                 p['Descrição'] = p.nome;
                 p['Preço'] = fmt(p.preco);
                 p['Estoque'] = fmt(p.estoque);
-                p['Localização'] = p.localizacao;
+                p['Localização'] = p.localizacao; // Ex: "01-A"
                 p['GTIN/EAN'] = p.gtin;
                 p['URL Imagens Externas'] = ""; 
                 p['NCM'] = p.ncm; 
-                
-                // NOTA: CATEGORIA REMOVIDA DA EXPORTAÇÃO CSV CONFORME SOLICITADO
-                // p['Categoria do produto'] = p.categoria;
+                p['Situação'] = p.situacao;
 
                 p['Origem'] = '0'; 
                 p['Unidade'] = 'un';
@@ -1065,32 +1025,32 @@
 
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-            l.download = "produtos_export_identico.csv"; 
+            l.download = "produtos_export_ativos.csv"; 
             l.click();
         }
 
         // ----------------------------------------------------
-        // EXPORTAÇÃO JSON CATEGORIAS
+        // EXPORTAÇÃO JSON CATEGORIAS (AGORA POR LOCAL)
         // ----------------------------------------------------
         function exportarJSONCategorias() {
             if (products.length === 0) return alert("Nada para exportar.");
             
             const grupos = {};
-            products.forEach(p => {
-                const cat = p.categoria || "OUTROS";
-                if(!grupos[cat]) grupos[cat] = [];
-                grupos[cat].push(p.codigo);
+            products.filter(p => p.situacao !== 'I').forEach(p => {
+                const loc = p.localizacao || "SEM LOCAL";
+                if(!grupos[loc]) grupos[loc] = [];
+                grupos[loc].push(p.codigo);
             });
 
             const resultado = Object.keys(grupos).map(k => ({
-                categoria: k,
+                localizacao: k,
                 produtos: grupos[k]
             }));
 
             const jsonStr = JSON.stringify(resultado, null, 2);
             const l = document.createElement("a");
             l.href = URL.createObjectURL(new Blob([jsonStr], { type: 'application/json' }));
-            l.download = "categorias_produtos.json";
+            l.download = "produtos_por_local.json";
             l.click();
         }
         
@@ -1101,9 +1061,7 @@
             fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d => {
                 if(Array.isArray(d)) { 
                     products = d.map(x => {
-                        // Aplica categoria também na importação via API
-                        const cat = autoCategorizar(x.nome || x.descricao);
-                        return {...x, categoria: cat, _changed: false};
+                        return {...x, _changed: false, situacao: x.situacao || 'A'};
                     }); 
                     saveData(); renderGrid(); toggleLoader(false); 
                 }
@@ -1167,47 +1125,65 @@
             
             document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
 
-            // Define categorias principais
-            const catsKeys = Object.keys(CONFIG_CATEGORIAS);
+            // Define grupos para renderizar: Gondolas + Sem Local
+            const gruposParaRenderizar = [...GONDOLAS, SEM_LOCAL];
             
-            // Cria lista de iteração: Categorias Config + "OUTROS" (que servirá de catch-all)
-            const gruposParaRenderizar = [...catsKeys, "OUTROS"];
-            
-            // Pega todas as categorias para o select (Visual apenas)
-            const categoriasDisponiveis = [...catsKeys, "OUTROS"];
+            // Loop para agrupar visualmente por Gôndola
+            gruposParaRenderizar.forEach(gondolaNome => {
+                let prodsDaSecao;
 
-            // Loop para agrupar visualmente
-            gruposParaRenderizar.forEach(catNome => {
-                let prodsDaCat;
-                if (catNome === "OUTROS") {
-                    // CATCH-ALL: Pega qualquer coisa que não seja uma das categorias configuradas (inclui "OUTROS", null, undefined, vazios)
-                    prodsDaCat = filtered.filter(p => !catsKeys.includes(p.categoria));
+                if (gondolaNome === SEM_LOCAL) {
+                    prodsDaSecao = filtered.filter(p => {
+                        if(!p.localizacao) return true;
+                        const parts = p.localizacao.split('-');
+                        return !parts[0] || !GONDOLAS.includes(parts[0]);
+                    });
                 } else {
-                    prodsDaCat = filtered.filter(p => p.categoria === catNome);
+                    prodsDaSecao = filtered.filter(p => {
+                        if(!p.localizacao) return false;
+                        const parts = p.localizacao.split('-');
+                        return parts[0] === gondolaNome;
+                    });
                 }
 
-                if(prodsDaCat.length === 0) return;
+                if(prodsDaSecao.length === 0) return;
 
                 // Título da Seção
                 const header = document.createElement('div');
                 header.className = 'category-header';
-                header.innerText = `${catNome} (${prodsDaCat.length})`;
+                header.innerText = gondolaNome === SEM_LOCAL ? "SEM LOCALIZAÇÃO / OUTROS" : `GÔNDOLA ${gondolaNome}`;
                 gridContainer.appendChild(header);
 
                 // Grid Interno
                 const subGrid = document.createElement('div');
                 subGrid.className = 'category-items-container';
 
-                prodsDaCat.forEach(p => {
+                prodsDaSecao.forEach(p => {
+                    // Parser da localização atual do produto (Ex: "01-A" -> g="01", pr="A")
+                    let currentG = "";
+                    let currentP = "";
+                    if(p.localizacao && p.localizacao.includes('-')) {
+                        const parts = p.localizacao.split('-');
+                        currentG = parts[0];
+                        currentP = parts[1];
+                    }
+
+                    const isInactive = p.situacao === 'I';
                     const card = document.createElement('div');
-                    card.className = `card ${p._changed ? 'status-changed' : 'status-synced'}`;
+                    card.className = `card ${p._changed ? 'status-changed' : 'status-synced'} ${isInactive ? 'status-inactive' : ''}`;
                     
                     const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
                     
-                    // Gera opções do seletor
-                    let options = "";
-                    categoriasDisponiveis.forEach(c => {
-                        options += `<option value="${c}" ${c === p.categoria ? 'selected' : ''}>${c}</option>`;
+                    // Gera opções das Gôndolas
+                    let optionsG = `<option value="">--</option>`;
+                    GONDOLAS.forEach(g => {
+                        optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>GON ${g}</option>`;
+                    });
+
+                    // Gera opções das Prateleiras
+                    let optionsP = `<option value="">--</option>`;
+                    PRATELEIRAS.forEach(pr => {
+                        optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`;
                     });
 
                     card.innerHTML = `
@@ -1221,9 +1197,14 @@
                         <div class="card-body">
                             <div class="card-sku">
                                 <span>${p.codigo}</span>
-                                <select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">
-                                    ${options}
-                                </select>
+                                <div class="loc-controls">
+                                    <select class="loc-select" onchange="updateProduct('${p.codigo}', 'gondola', this.value)">
+                                        ${optionsG}
+                                    </select>
+                                    <select class="loc-select" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)">
+                                        ${optionsP}
+                                    </select>
+                                </div>
                             </div>
                             
                             <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
@@ -1248,30 +1229,19 @@
                                         onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
                                 </div>
                             </div>
-
-                            <div style="margin-top:8px;">
-                                <div class="stat-box">
-                                    <span class="stat-label">Localização</span>
-                                    <input class="stat-input" value="${p.localizacao||''}" 
-                                        onchange="updateProduct('${p.codigo}', 'localizacao', this.value)"
-                                        style="text-align:left;">
-                                </div>
-                            </div>
                         </div>
                         <div class="card-footer">
                             <button class="btn-text" onclick="openDetails('${p.codigo}')">
                                 <i data-lucide="list-plus" size="14"></i> DETALHES
                             </button>
-                            <button class="btn-text" onclick="printLabel('${p.codigo}')" title="Imprimir Etiqueta" style="margin-left:10px;">
-                                <i data-lucide="printer" size="14"></i>
+                            <button class="btn-toggle-active ${isInactive ? 'inactive' : ''}" onclick="toggleActive('${p.codigo}')">
+                                ${isInactive ? 'INATIVO' : 'ATIVO'}
                             </button>
                             <div style="flex-grow:1"></div>
-                            ${p._changed ? 
-                                `<button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')">
-                                    <i data-lucide="refresh-cw" size="12"></i> SYNC
-                                </button>` : 
-                                `<i data-lucide="check-circle" size="16" color="var(--success)"></i>`
-                            }
+                            
+                            <button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')" style="${p._changed ? '' : 'background:#64748b; opacity:0.8;'}">
+                                <i data-lucide="${p._changed ? 'refresh-cw' : 'check'}" size="12"></i> ${p._changed ? 'SYNC' : 'OK'}
+                            </button>
                         </div>
                     `;
                     subGrid.appendChild(card);
@@ -1322,6 +1292,28 @@
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
 
+            // Lógica Especial para Localização Combinada
+            if(field === 'gondola' || field === 'prateleira') {
+                let currentParts = (p.localizacao || "-").split('-');
+                let g = currentParts[0] || "";
+                let pr = currentParts[1] || "";
+                
+                if(field === 'gondola') g = value;
+                if(field === 'prateleira') pr = value;
+
+                const newLoc = `${g}-${pr}`;
+                if(p.localizacao !== newLoc) {
+                    addToHistory(sku, p.nome, `Localização: ${p.localizacao} -> ${newLoc}`);
+                    p.localizacao = newLoc;
+                    p['Localização'] = newLoc; // Mantém sync com campo export
+                    p._changed = true;
+                    p._lastChange = new Date().toLocaleString();
+                    saveData();
+                    renderGrid(); // Re-renderiza para mudar de seção se necessário
+                }
+                return;
+            }
+
             let finalVal = value;
             if(field === 'preco' || field === 'estoque') {
                 finalVal = parseFloat(value.replace(',','.')) || 0;
@@ -1331,22 +1323,25 @@
                 addToHistory(sku, p.nome, `Alterou ${field}: ${p[field]} -> ${finalVal}`);
                 p[field] = finalVal;
                 // Atualiza também o campo original do CSV se existir mapeamento direto
-                if(field === 'nome') {
-                    p['Descrição'] = finalVal;
-                    // Recalcula categoria se o nome mudar, a menos que o usuário tenha mudado manualmente antes
-                    // Mas como mudou o nome, é bom reavaliar ou manter. Aqui manteremos a atual.
-                }
+                if(field === 'nome') p['Descrição'] = finalVal;
                 if(field === 'preco') p['Preço'] = value; // Mantém string original
                 if(field === 'estoque') p['Estoque'] = value;
-                if(field === 'localizacao') p['Localização'] = finalVal;
 
                 p._changed = true;
                 p._lastChange = new Date().toLocaleString();
                 saveData();
-                
-                // Se alterar categoria ou nome, re-renderiza a grid para mover de seção
-                if(field === 'categoria' || field === 'nome') renderGrid(); 
             }
+        }
+        
+        function toggleActive(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            const newState = p.situacao === 'I' ? 'A' : 'I';
+            p.situacao = newState;
+            p['Situação'] = newState;
+            p._changed = true; // Alterar status conta como mudança para sync
+            saveData();
+            renderGrid();
         }
 
         function formatNum(n) {
@@ -1380,10 +1375,10 @@
             form.innerHTML = '';
             
             // Filtra chaves internas
-            const keys = Object.keys(p).filter(k => !k.startsWith('_') && k !== 'formato' && k !== 'situacao');
+            const keys = Object.keys(p).filter(k => !k.startsWith('_') && k !== 'formato');
             
             // Ordena: Prioritários primeiro, depois alfabético
-            const priorities = ['codigo', 'nome', 'categoria', 'gtin', 'ncm', 'cest', 'preco', 'estoque'];
+            const priorities = ['codigo', 'nome', 'localizacao', 'situacao', 'gtin', 'ncm', 'cest', 'preco', 'estoque'];
             keys.sort((a,b) => {
                 const ia = priorities.indexOf(a);
                 const ib = priorities.indexOf(b);
