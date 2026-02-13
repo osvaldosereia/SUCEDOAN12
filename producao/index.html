@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v48 (Category & JSON Sync)</title>
+    <title>Sucedoan Painel - v49 (Fixed Layout & Cost)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -176,7 +176,7 @@
             position: relative;
             border: 1px solid var(--border);
             transition: transform 0.2s;
-            min-height: 540px; /* Aumentado para caber custo e categoria */
+            min-height: 540px; 
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
@@ -346,72 +346,44 @@
             text-align: center;
         }
 
-        /* Rodapé do Card */
+        /* Rodapé do Card (BOTÕES QUADRADOS) */
         .card-footer {
             padding: 8px 12px;
             background: #f8fafc;
             border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
             gap: 8px;
+            align-items: center;
         }
 
-        .btn-text {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 10px;
-            font-weight: 600;
-            cursor: pointer;
+        .btn-sq {
+            aspect-ratio: 1/1;
             display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-text:hover { color: var(--accent); }
-
-        .btn-sync-mini {
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-sync-mini:hover { background: #15803d; }
-        
-        .icon-btn-mini {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            display: inline-flex;
             justify-content: center;
             align-items: center;
-            cursor: pointer;
-            margin-left: 6px;
-            vertical-align: middle;
-        }
-        .icon-btn-mini:hover { background: var(--accent); color: white; border-color: var(--accent); }
-
-        .btn-toggle-active {
-            background: transparent;
+            border-radius: 6px;
             border: 1px solid var(--border);
+            background: white;
             color: var(--text-secondary);
-            padding: 4px 6px;
-            border-radius: 4px;
-            font-size: 10px;
             cursor: pointer;
+            transition: 0.2s;
+            padding: 0;
+            width: 100%;
         }
-        .btn-toggle-active.inactive { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
-
+        .btn-sq:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: #f1f5f9;
+        }
+        
+        /* Cores Específicas dos Botões */
+        .btn-sq.sync { background: var(--success); color: white; border-color: var(--success); }
+        .btn-sq.sync:hover { background: #15803d; }
+        
+        .btn-sq.inactive-state { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
+        .btn-sq.offer-active { background: #dc2626; color: white; border-color: #dc2626; }
+        
         /* --- 6. TABELA DE HISTÓRICO --- */
         .history-container {
             padding: 20px;
@@ -953,6 +925,9 @@
                             return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0;
                         };
 
+                        // 1. Sanitização do Código (remover TAB)
+                        const codigoLimpo = getVal('Código').trim();
+
                         // Normalização da Localização (Ex: "3-D" -> "03-D")
                         let rawLoc = getVal('Localização');
                         
@@ -969,12 +944,13 @@
                         }
                         
                         // Garante leitura de custo e categoria
+                        // Prioriza "Preço de custo" (Coluna 11) conforme solicitado
                         const cost = getNum('Preço de custo') || getNum('Preço de Compra');
                         const cat = getVal('Categoria do produto');
 
                         // 1. Definição Base para o App (Card Principal)
                         const base = {
-                            codigo: getVal('Código'),
+                            codigo: codigoLimpo,
                             nome: getVal('Descrição'),
                             preco: getNum('Preço'),
                             preco_custo: cost, // Garante que pegou o correto
@@ -1001,6 +977,7 @@
                         });
                         
                         // Garante persistência dos campos normalizados/mapeados
+                        base['Código'] = codigoLimpo;
                         base['Localização'] = rawLoc;
                         base['Preço de custo'] = cost;
                         base['Categoria do produto'] = cat;
@@ -1328,23 +1305,26 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <button class="btn-text" onclick="openDetails('${p.codigo}')">
-                                <i data-lucide="list-plus" size="14"></i> DETALHES
+                            <button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes">
+                                <i data-lucide="list-plus" size="18"></i>
                             </button>
-                            <button class="btn-text" onclick="printLabel('${p.codigo}')" style="margin-left: 5px;" title="Imprimir Etiqueta">
-                                <i data-lucide="printer" size="14"></i>
+                            <button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta">
+                                <i data-lucide="printer" size="18"></i>
                             </button>
-                            <button class="icon-btn-mini" onclick="updateCategoryJson('${p.codigo}')" title="Salvar Categoria no JSON"><i data-lucide="database" size="14"></i></button>
-                            <div style="flex-grow:1"></div>
-
-                            <button style="background:#dc2626; color:white; border:none; padding:4px 6px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer; margin-right:5px;" onclick="toggleOffer('${p.codigo}')">OFERTA</button>
-
-                            <button class="btn-toggle-active ${isInactive ? 'inactive' : ''}" onclick="toggleActive('${p.codigo}')">
-                                ${isInactive ? 'INATIVO' : 'ATIVO'}
+                            <button class="btn-sq" onclick="updateCategoryJson('${p.codigo}')" title="Salvar Categoria no JSON">
+                                <i data-lucide="database" size="18"></i>
                             </button>
                             
-                            <button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')" style="${p._changed ? '' : 'background:#64748b; opacity:0.8;'}">
-                                <i data-lucide="${p._changed ? 'refresh-cw' : 'check'}" size="12"></i> ${p._changed ? 'SYNC' : 'OK'}
+                            <button class="btn-sq ${p.nome.startsWith('OFERTA') ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta">
+                                <i data-lucide="tag" size="18"></i>
+                            </button>
+
+                            <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}">
+                                <i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i>
+                            </button>
+                            
+                            <button class="btn-sq sync" onclick="syncSingle('${p.codigo}')" title="Sincronizar" style="${p._changed ? '' : 'background:white; border-color:var(--border); color:var(--text-secondary); opacity:0.6'}">
+                                <i data-lucide="${p._changed ? 'refresh-cw' : 'check'}" size="18"></i>
                             </button>
                         </div>
                     `;
