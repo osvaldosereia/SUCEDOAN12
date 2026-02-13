@@ -100,7 +100,15 @@
         }
 
         /* --- STICKY BARS --- */
-        .sticky-stack { position: sticky; top: 0; z-index: 999; width: 100%; background: var(--cor-bg); }
+        /* Ajustado para colar abaixo do header */
+        .sticky-stack { 
+            position: sticky; 
+            top: 70px; /* Altura aproximada do header */
+            z-index: 999; 
+            width: 100%; 
+            background: var(--cor-bg); 
+            padding-top: 10px; /* Espaço visual */
+        }
 
         /* Balance Bar removido daqui para limpar o topo */
         
@@ -172,9 +180,29 @@
 
         /* --- HOME HERO --- */
         .hero-section {
-            background: white; padding: 30px 20px; text-align: center;
+            background: white; padding: 20px 20px; text-align: center;
             border-bottom: 1px solid var(--cor-divider); margin-bottom: 20px;
         }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .hero-banner-mini {
+            background: #E0F2F1;
+            color: #00695C;
+            padding: 12px 8px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+            box-shadow: var(--shadow-soft);
+        }
+        .hero-banner-mini strong { font-size: 0.9rem; font-weight: 800; display: block; margin-bottom: 4px; }
+        .hero-banner-mini span { font-size: 0.8rem; }
+        
         .hero-title { font-size: 1.4rem; margin-bottom: 8px; color: var(--cor-primary); line-height: 1.2; font-weight: 800; }
         .hero-subtitle { font-size: 0.9rem; color: var(--cor-text-light); margin-bottom: 5px; }
         .hero-tag { 
@@ -229,12 +257,15 @@
 
         /* --- TITULOS E LISTA --- */
         .intro-title-custom {
-            padding: 10px 20px;
+            padding: 20px;
             background: #E0F2F1; color: #00695C;
-            border-bottom: 1px solid #B2DFDB;
-            font-size: 0.95rem; font-weight: 600;
+            border: 2px solid #00695C;
+            border-radius: 8px;
+            font-size: 1.1rem; font-weight: 700;
             line-height: 1.4;
-            margin-bottom: 10px;
+            margin: 10px 20px 20px;
+            text-align: center;
+            box-shadow: var(--shadow-soft);
         }
         
         .section-separator {
@@ -415,30 +446,19 @@
             </div>
         </div>
 
-        <div class="sticky-stack">
-            <div id="search-container" class="search-container">
-                <div class="limit-container" style="position:relative">
-                    <input type="text" id="search-input" class="search-box" placeholder="🔍 Buscar produto (ex: arroz, sabão)..." aria-label="Buscar produtos" oninput="renderCatalogo()">
-                    <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
-                </div>
-            </div>
-            
-            <div id="filters-container" class="filters-container">
-                <div class="limit-container" style="display:flex; gap:8px;">
-                    <button class="filter-chip active" onclick="setSort('name')" id="sort-name">A-Z</button>
-                    <button class="filter-chip" onclick="setSort('price_asc')" id="sort-price_asc">Menor Preço</button>
-                    <button class="filter-chip" onclick="setSort('price_desc')" id="sort-price_desc">Maior Preço</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <main class="limit-container">
+        <main class="limit-container">
         <div id="view-home" class="view active">
             <div class="hero-section">
-                <h2 class="hero-title">Mercado Online<br>Dona Antônia</h2>
-                <p class="hero-subtitle">Encomendou, Chegou! 🚚💨</p>
-                <div class="hero-tag">PAGUE SÓ NA ENTREGA</div>
+                <div class="hero-grid">
+                    <div class="hero-banner-mini">
+                        <strong>Entrega Grátis</strong>
+                        <span>em Cuiabá e VG</span>
+                    </div>
+                    <div class="hero-banner-mini">
+                        <strong>Pague somente</strong>
+                        <span>na entrega</span>
+                    </div>
+                </div>
             </div>
             
             <div id="home-offers-container"></div>
@@ -463,6 +483,23 @@
             <div class="section-separator">
                 <h3 class="separator-title" id="sep-title">Agora fique a vontade para repor o que quiser.</h3>
                 <p class="separator-sub">Boas Compras!</p>
+            </div>
+
+            <div class="sticky-stack">
+                <div id="search-container" class="search-container">
+                    <div class="limit-container" style="position:relative">
+                        <input type="text" id="search-input" class="search-box" placeholder="🔍 Buscar produto (ex: arroz, sabão)..." aria-label="Buscar produtos" oninput="renderCatalogo()">
+                        <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
+                    </div>
+                </div>
+                
+                <div id="filters-container" class="filters-container">
+                    <div class="limit-container" style="display:flex; gap:8px;">
+                        <button class="filter-chip active" onclick="setSort('name')" id="sort-name">A-Z</button>
+                        <button class="filter-chip" onclick="setSort('price_asc')" id="sort-price_asc">Menor Preço</button>
+                        <button class="filter-chip" onclick="setSort('price_desc')" id="sort-price_desc">Maior Preço</button>
+                    </div>
+                </div>
             </div>
 
             <div id="catalogo-content"></div>
