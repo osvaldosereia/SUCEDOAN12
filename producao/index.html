@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v46 (Label 80x80)</title>
+    <title>Sucedoan Painel - v47 (Cost & Scroll)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -161,7 +161,7 @@
 
         .category-items-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 16px;
             align-content: start;
             margin-bottom: 20px;
@@ -176,7 +176,7 @@
             position: relative;
             border: 1px solid var(--border);
             transition: transform 0.2s;
-            min-height: 420px;
+            min-height: 480px; /* Aumentado para caber custo */
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
@@ -334,6 +334,17 @@
             text-align: center;
         }
         .stat-input:focus { border-color: var(--accent); background: white; outline: none; }
+        
+        .stat-readonly {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid transparent;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            background: transparent;
+            text-align: center;
+        }
 
         /* Rodapé do Card */
         .card-footer {
@@ -879,6 +890,7 @@
         let currentEditingId = null;
         let pendingSyncSku = null;
         let currentUser = null;
+        let productScrollPos = 0; // Armazena a posição da rolagem da grid
 
         // Variáveis do Editor
         const canvas = document.getElementById('imageCanvas');
@@ -894,6 +906,13 @@
         };
 
         function showSection(id, btn) {
+            // Salva a rolagem se estiver saindo da tela de produtos
+            const prodSection = document.getElementById('section-products');
+            if (prodSection.classList.contains('active')) {
+                 const grid = document.getElementById('product-grid');
+                 productScrollPos = grid.scrollTop;
+            }
+
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.getElementById('section-' + id).classList.add('active');
             
@@ -902,6 +921,14 @@
                 btn.classList.add('active');
             }
             if(id === 'history') renderHistory();
+
+            // Restaura a rolagem se estiver voltando para produtos
+            if (id === 'products') {
+                const grid = document.getElementById('product-grid');
+                requestAnimationFrame(() => {
+                    grid.scrollTop = productScrollPos;
+                });
+            }
         }
 
         // ----------------------------------------------------
@@ -926,13 +953,20 @@
                             return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0;
                         };
 
+                        // Normalização da Localização (Ex: "3-D" -> "03-D")
+                        let rawLoc = getVal('Localização');
+                        if(rawLoc.match(/^\d-[A-Z]$/)) {
+                            rawLoc = '0' + rawLoc;
+                        }
+
                         // 1. Definição Base para o App (Card Principal)
                         const base = {
                             codigo: getVal('Código'),
                             nome: getVal('Descrição'),
                             preco: getNum('Preço'),
+                            preco_custo: getNum('Preço de custo'), // Novo campo
                             estoque: getNum('Estoque'),
-                            localizacao: getVal('Localização'), // Ex: "01-A"
+                            localizacao: rawLoc, // Usa a versão normalizada
                             gtin: getVal('GTIN/EAN'),
                             url_imagem: getVal('URL Imagens Externas'),
                             ncm: getVal('NCM'), 
@@ -951,6 +985,9 @@
                                 base[k] = d[k];
                             }
                         });
+                        
+                        // Garante que a localização normalizada persista
+                        base['Localização'] = rawLoc;
 
                         // 3. HIGIENIZAÇÃO OBRIGATÓRIA
                         base['Origem'] = '0';
@@ -1004,6 +1041,7 @@
                 // Atualiza campos editados no sistema
                 p['Descrição'] = p.nome;
                 p['Preço'] = fmt(p.preco);
+                p['Preço de custo'] = fmt(p.preco_custo);
                 p['Estoque'] = fmt(p.estoque);
                 p['Localização'] = p.localizacao; // Ex: "01-A"
                 p['GTIN/EAN'] = p.gtin;
@@ -1203,6 +1241,18 @@
                         optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`;
                     });
 
+                    // Cálculo da Margem de Lucro (%) = (Venda - Custo) / Venda * 100
+                    // Ajuste: usando Markup simples ou Margem bruta. Vou usar Margem Bruta % aqui.
+                    // Se custo = 0 ou não definido, exibe -
+                    let lucroStr = "-";
+                    let lucroClass = "";
+                    if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
+                        const margin = ((p.preco - p.preco_custo) / p.preco) * 100;
+                        lucroStr = margin.toFixed(1) + "%";
+                        if(margin < 20) lucroClass = "color: #dc2626;"; // Vermelho se margem baixa
+                        else if(margin > 40) lucroClass = "color: #16a34a;"; // Verde se margem boa
+                    }
+
                     card.innerHTML = `
                         <div class="card-img-area" onclick="openEditor('${p.codigo}')">
                             <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
@@ -1236,7 +1286,7 @@
                             
                             <div class="card-stats">
                                 <div class="stat-box">
-                                    <span class="stat-label">Preço (R$)</span>
+                                    <span class="stat-label">Venda (R$)</span>
                                     <input class="stat-input" value="${formatNum(p.preco)}" 
                                         onchange="updateProduct('${p.codigo}', 'preco', this.value)">
                                 </div>
@@ -1244,6 +1294,15 @@
                                     <span class="stat-label">Estoque</span>
                                     <input class="stat-input" value="${formatNum(p.estoque)}" 
                                         onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Custo (R$)</span>
+                                    <input class="stat-input" value="${formatNum(p.preco_custo)}" 
+                                        onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)">
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Margem %</span>
+                                    <div class="stat-readonly" style="${lucroClass}">${lucroStr}</div>
                                 </div>
                             </div>
                         </div>
@@ -1357,7 +1416,7 @@
             }
 
             let finalVal = value;
-            if(field === 'preco' || field === 'estoque') {
+            if(field === 'preco' || field === 'estoque' || field === 'preco_custo') {
                 finalVal = parseFloat(value.replace(',','.')) || 0;
             }
 
@@ -1366,12 +1425,18 @@
                 p[field] = finalVal;
                 // Atualiza também o campo original do CSV se existir mapeamento direto
                 if(field === 'nome') p['Descrição'] = finalVal;
-                if(field === 'preco') p['Preço'] = value; // Mantém string original
+                if(field === 'preco') p['Preço'] = value; 
+                if(field === 'preco_custo') p['Preço de custo'] = value;
                 if(field === 'estoque') p['Estoque'] = value;
 
                 p._changed = true;
                 p._lastChange = new Date().toLocaleString();
                 saveData();
+                
+                // Se for preço de custo ou venda, re-renderiza para atualizar a margem
+                if(field === 'preco' || field === 'preco_custo') {
+                    renderGrid(document.getElementById('search-input').value);
+                }
             }
         }
         
@@ -1435,7 +1500,7 @@
             const keys = Object.keys(p).filter(k => !k.startsWith('_') && k !== 'formato');
             
             // Ordena: Prioritários primeiro, depois alfabético
-            const priorities = ['codigo', 'nome', 'localizacao', 'situacao', 'gtin', 'ncm', 'cest', 'preco', 'estoque'];
+            const priorities = ['codigo', 'nome', 'localizacao', 'situacao', 'gtin', 'ncm', 'cest', 'preco', 'preco_custo', 'estoque'];
             keys.sort((a,b) => {
                 const ia = priorities.indexOf(a);
                 const ib = priorities.indexOf(b);
@@ -1477,7 +1542,7 @@
                 let val = inp.value;
 
                 // Tenta manter consistência numérica nos campos vitais
-                if(['preco','estoque','pesoLiquido','pesoBruto','largura','altura','profundidade'].includes(k)) {
+                if(['preco','preco_custo','estoque','pesoLiquido','pesoBruto','largura','altura','profundidade'].includes(k)) {
                      const num = parseFloat(val.replace(',','.'));
                      if(!isNaN(num)) val = num; // Atualiza para número se for campo interno
                 }
