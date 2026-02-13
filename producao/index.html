@@ -721,6 +721,12 @@
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
             </div>
+
+            <select id="filter-type" class="nav-btn" style="margin-left: 15px; border-color: var(--border); outline:none; height: 38px;" onchange="renderGrid(document.getElementById('search-input').value)">
+                <option value="all">TODOS</option>
+                <option value="gondola">GÔNDOLA</option>
+                <option value="prateleira">PRATELEIRA</option>
+            </select>
             
             <button class="nav-btn" onclick="exportarCSV()">
                 <i data-lucide="download" size="14"></i> CSV
@@ -808,7 +814,7 @@
                 <div class="editor-tools">
                     <div class="tool-group">
                         <label><span>Zoom</span></label>
-                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.1" value="1">
+                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1">
                     </div>
                     <div class="tool-group">
                         <label><span>Nitidez</span></label>
@@ -1115,12 +1121,23 @@
             let filtered = products;
             if(filter) {
                 const term = filter.toLowerCase();
-                filtered = products.filter(p => 
-                    (p.nome||"").toLowerCase().includes(term) ||
+                const type = document.getElementById('filter-type').value;
+
+                filtered = products.filter(p => {
+                    if (type === 'gondola') {
+                         const parts = (p.localizacao || "").split('-');
+                         return (parts[0] || "").toLowerCase().includes(term);
+                    }
+                    if (type === 'prateleira') {
+                         const parts = (p.localizacao || "").split('-');
+                         return (parts[1] || "").toLowerCase().includes(term);
+                    }
+                    // Default 'all'
+                    return (p.nome||"").toLowerCase().includes(term) ||
                     (p.codigo||"").toLowerCase().includes(term) ||
                     (p.gtin||"").includes(term) ||
-                    (p.localizacao||"").toLowerCase().includes(term)
-                );
+                    (p.localizacao||"").toLowerCase().includes(term);
+                });
             }
             
             document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
@@ -1237,10 +1254,13 @@
                             <button class="btn-text" onclick="printLabel('${p.codigo}')" style="margin-left: 5px;" title="Imprimir Etiqueta">
                                 <i data-lucide="printer" size="14"></i>
                             </button>
+                            <div style="flex-grow:1"></div>
+
+                            <button style="background:#dc2626; color:white; border:none; padding:4px 6px; border-radius:4px; font-size:10px; font-weight:bold; cursor:pointer; margin-right:5px;" onclick="toggleOffer('${p.codigo}')">OFERTA</button>
+
                             <button class="btn-toggle-active ${isInactive ? 'inactive' : ''}" onclick="toggleActive('${p.codigo}')">
                                 ${isInactive ? 'INATIVO' : 'ATIVO'}
                             </button>
-                            <div style="flex-grow:1"></div>
                             
                             <button class="btn-sync-mini" onclick="syncSingle('${p.codigo}')" style="${p._changed ? '' : 'background:#64748b; opacity:0.8;'}">
                                 <i data-lucide="${p._changed ? 'refresh-cw' : 'check'}" size="12"></i> ${p._changed ? 'SYNC' : 'OK'}
@@ -1364,6 +1384,21 @@
             p._changed = true; // Alterar status conta como mudança para sync
             saveData();
             renderGrid();
+        }
+        
+        function toggleOffer(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            if(p.nome.startsWith("OFERTA - ")) {
+                p.nome = p.nome.replace("OFERTA - ", "");
+            } else {
+                p.nome = "OFERTA - " + p.nome;
+            }
+            p['Descrição'] = p.nome;
+            addToHistory(sku, p.nome, `Alterou status OFERTA`);
+            p._changed = true;
+            saveData();
+            renderGrid(document.getElementById('search-input').value);
         }
 
         function formatNum(n) {
