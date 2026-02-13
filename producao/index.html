@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v49 (Fixed Layout & Cost)</title>
+    <title>Sucedoan Painel - v50 (Categories Select & GitHub)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -334,6 +334,19 @@
             text-align: center;
         }
         .stat-input:focus { border-color: var(--accent); background: white; outline: none; }
+
+        .cat-select {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            background: #f8fafc;
+            cursor: pointer;
+        }
+        .cat-select:focus { border-color: var(--accent); background: white; outline: none; }
         
         .stat-readonly {
             width: 100%;
@@ -656,6 +669,9 @@
             "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL",
             "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
         };
+        
+        // Array global para categorias vindas do GitHub
+        let availableCategories = []; 
 
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
@@ -700,6 +716,13 @@
                 <i data-lucide="file-spreadsheet" size="14"></i> IMPORTAR CSV
             </button>
             
+            <div style="display:flex; gap:5px; align-items:center; border-left:1px solid #cbd5e1; padding-left:15px; margin-left:15px;">
+                <input type="text" id="new-cat-input" placeholder="Nova Categoria..." style="width:120px; padding:8px; border-radius:4px; border:1px solid #cbd5e1; font-size:12px;">
+                <button class="nav-btn" onclick="addNewCategory()" title="Adicionar Categoria ao GitHub">
+                    <i data-lucide="plus-circle" size="14"></i>
+                </button>
+            </div>
+
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
@@ -873,6 +896,7 @@
         window.onload = function() {
             lucide.createIcons();
             loadData();
+            loadCategoriesFromGithub(); // Carrega as categorias do GitHub ao iniciar
             setupEditorEvents();
             document.getElementById('search-input').addEventListener('input', (e) => renderGrid(e.target.value));
         };
@@ -1137,6 +1161,102 @@
             renderGrid();
         }
 
+        // ==========================================
+        // GESTÃO DE CATEGORIAS NO GITHUB
+        // ==========================================
+        async function loadCategoriesFromGithub() {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) {
+                console.log("GitHub não configurado, usando categorias locais/vazias.");
+                return;
+            }
+
+            // Caminho para o arquivo de categorias padrão
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/categorias-padrao.json`;
+            
+            try {
+                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                if(res.ok) {
+                    const json = await res.json();
+                    const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
+                    availableCategories = JSON.parse(decodedStr);
+                    // Ordena alfabeticamente
+                    availableCategories.sort((a,b) => a.localeCompare(b));
+                    renderGrid(document.getElementById('search-input').value);
+                } else {
+                    console.log("Arquivo categorias-padrao.json não encontrado no GitHub.");
+                }
+            } catch(e) {
+                console.error("Erro ao carregar categorias:", e);
+            }
+        }
+
+        async function addNewCategory() {
+            const input = document.getElementById('new-cat-input');
+            const newCat = input.value.trim().toUpperCase();
+            
+            if(!newCat) return alert("Digite o nome da categoria.");
+            if(availableCategories.includes(newCat)) return alert("Categoria já existe!");
+
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
+
+            toggleLoader(true, "Salvando Categoria...");
+
+            // Adiciona localmente
+            availableCategories.push(newCat);
+            availableCategories.sort((a,b) => a.localeCompare(b));
+
+            // Prepara para salvar no GitHub
+            const path = `site/categorias-padrao.json`;
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+            
+            try {
+                // 1. Get SHA (se arquivo existir)
+                let sha = null;
+                try {
+                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                    if(check.ok) {
+                        const json = await check.json();
+                        sha = json.sha;
+                    }
+                } catch(e) {}
+
+                // 2. Encode
+                const contentStr = JSON.stringify(availableCategories, null, 2);
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+
+                // 3. PUT Request
+                const body = {
+                    message: `Add Cat: ${newCat} via Painel`,
+                    content: base64
+                };
+                if(sha) body.sha = sha;
+
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        "Authorization": `token ${cfg.token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if(!res.ok) throw new Error(await res.text());
+                
+                input.value = "";
+                alert("Categoria criada com sucesso!");
+                renderGrid(document.getElementById('search-input').value);
+
+            } catch(err) {
+                alert("Erro GitHub: " + err.message);
+                // Reverte local em caso de erro
+                availableCategories = availableCategories.filter(c => c !== newCat);
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
         function saveData() {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
         }
@@ -1235,6 +1355,18 @@
                         optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`;
                     });
 
+                    // Gera opções de Categoria (NOVO)
+                    let optionsCat = `<option value="">-- SELECIONE --</option>`;
+                    // Se o produto tem uma categoria que não está na lista oficial, adicione-a temporariamente
+                    const catList = [...availableCategories];
+                    if(p.categoria && !catList.includes(p.categoria)) {
+                        catList.push(p.categoria);
+                    }
+                    catList.forEach(c => {
+                        const selected = (p.categoria === c) ? 'selected' : '';
+                        optionsCat += `<option value="${c}" ${selected}>${c}</option>`;
+                    });
+
                     // Cálculo da Margem de Lucro (%) = (Venda - Custo) / Custo * 100
                     // Alterado para mostrar Markup conforme solicitado: "percentual que foi adicionado"
                     let lucroStr = "-";
@@ -1271,7 +1403,9 @@
 
                              <div style="margin-top:4px;">
                                 <label style="font-size:9px; color:var(--accent); font-weight:bold;">CATEGORIA</label>
-                                <input class="stat-input" style="text-align:left; width:100%" value="${p.categoria||''}" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">
+                                <select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">
+                                    ${optionsCat}
+                                </select>
                             </div>
 
                             <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:2px;">
