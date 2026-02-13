@@ -161,7 +161,7 @@
 
         .category-items-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 16px;
             align-content: start;
             margin-bottom: 20px;
@@ -955,8 +955,17 @@
 
                         // Normalização da Localização (Ex: "3-D" -> "03-D")
                         let rawLoc = getVal('Localização');
-                        if(rawLoc.match(/^\d-[A-Z]$/)) {
-                            rawLoc = '0' + rawLoc;
+                        
+                        // Garante que "03-D", "3-D", "03 - D" virem "03-D"
+                        if(rawLoc) {
+                             rawLoc = rawLoc.trim().toUpperCase();
+                             // Remove espaços extras ao redor do traço
+                             rawLoc = rawLoc.replace(/\s*-\s*/, '-');
+                             
+                             // Se for "3-D", adiciona zero à esquerda
+                             if(rawLoc.match(/^\d-[A-Z0-9]+$/)) {
+                                 rawLoc = '0' + rawLoc;
+                             }
                         }
 
                         // 1. Definição Base para o App (Card Principal)
