@@ -1250,13 +1250,12 @@
                         optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`;
                     });
 
-                    // Cálculo da Margem de Lucro (%) = (Venda - Custo) / Venda * 100
-                    // Ajuste: usando Markup simples ou Margem bruta. Vou usar Margem Bruta % aqui.
-                    // Se custo = 0 ou não definido, exibe -
+                    // Cálculo da Margem de Lucro (%) = (Venda - Custo) / Custo * 100
+                    // Alterado conforme solicitado para mostrar o Markup (percentual adicionado sobre o custo)
                     let lucroStr = "-";
                     let lucroClass = "";
                     if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
-                        const margin = ((p.preco - p.preco_custo) / p.preco) * 100;
+                        const margin = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
                         lucroStr = margin.toFixed(1) + "%";
                         if(margin < 20) lucroClass = "color: #dc2626;"; // Vermelho se margem baixa
                         else if(margin > 40) lucroClass = "color: #16a34a;"; // Verde se margem boa
