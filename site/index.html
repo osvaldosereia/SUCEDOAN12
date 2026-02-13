@@ -579,45 +579,45 @@
         // --- CONFIG ---
         const CONFIG_WHATSAPP = "5565996813588"; 
         
-        const CONFIG_CATEGORIAS = {
-            "Mercearia Básica": ["AMIDO", "SARDINHA", "ARROZ", "FEIJAO", "ACUCAR", "OLEO", "MILHARINA", "CUZ CUZ", "FARINHA", "FUBA", "MILHO VERDE", "SAL", "TRIGO"],
-            "Bebê e Infantil": ["FRALDA", "LENCO UMEDECIDO", "HUGGIES", "POMADA", "MUCILON"],
-            "Cabelo, Unha, Corpo e Maquiagem": ["PIRANHA", "CURATIVO", "LOCAO", "LOÇÃO", "ELASTICO DE CABELO", "Necessaire", "PINÇA", "AGUA OXIGENADA", "ACETONA", "PIRANHA", "PRESILHA", "XUXINHA", "LAÇO", "RABICO", "ESPONJA DE MAQUIAGEM", "LIXA DE UNHA", "CORTADOR DE UNHA", "SHAMPOO", "CONDICIONADOR", "PENTE", "ESCOVA DE CABELO", "CREME DE PENTEAR"],
-            "Higiene Pessoal": ["TALCO", "APARELHO BARBEAR", "LAMINAS DE BARBEAR", "ESPONJA DE BANHO", "SABONETE", "DESODORANTE", "ABSORVENTE", "ALGODAO", "COTONETE", "GILETTE"],
-            "Higiene Bucal": ["CREME DENTAL", "ESCOVA DENTAL", "FIO DENTAL"],
-            "Lavanderia": ["LAVA ROUPA", "ESCOVA LAVANDERIA", "SABAO", "OMO", "YPE", "AMACIANTE", "AGUA SANITARIA", "VARAL", "PREGADOR", "PRENDEDOR"],
-            "Limpeza da Casa": ["PEDRA SAINARIA", "ESCOVA DE LIMPEZA", "ESPONJA MAGICA", "DESINFETANTE", "VEJA", "DETERGENTE", "ESPONJA DE AÇO", "BUCHA DE LAVAR LOUÇA", "PANO DE CHÃO", "INSETICIDA", "VASSOURA", "SACO DE LIXO", "RODO"],
-            "Massas e Molhos": ["KETCHUP", "MAIONESE", "MOSTARDA", "MACARRAO", "EXTRATO DE TOMATE", "MOLHO DE TOMATE", "QUEIJO RALADO"],
-            "Café da Manhã": ["MUCILON", "CAFE", "FILTRO DE CAFE", "LEITE INTEGRAL", "LEITE DESNATADO", "ACHOCOLATADO", "CEREAL", "AVEIA", "SUCO", "CHA", "ERVA DE TERERE"],
-            "Biscoitos e Lanches": ["BATATA PRINGLES", "BOLACHA WAFER", "BOLACHA SHOW", "BISCOITO", "BOLACHA", "WAFER", "TORRADA", "ROSQUINHA"],
-            "Doces e Sobremesas": ["COCO RALADO", "DROPS", "TRIDENT", "LEITE CONDENSADO", "GELATINA", "BOLO", "MISTURA PRA BOLO", "CREME DE LEITE"],
-            "Temperos": ["AZEITE", "CALDO", "TEMPERO", "PIMENTA", "VINAGRE", "CONDIMENTO"],
-            "Cozinha": ["SALEIRO", "RALADOR", "PALITO DENTAL", "ABRIDOR DE GARRAFA", "BALDE DE PIPOCA", "FORMA DE GELO", "JOGO AMERICANO", "PROCESSADOR", "TABUA DE CORTE", "CAPA PARA BOTIJAO", "CORTINA", "LUVA TERMICA", "PRATINHO", "LAVA LOUÇA", "ISQUEIRO", "COPO", "PANELA", "DESCANSO DE PANELA", "PRATO", "GARFO", "FACA", "COLHER", "TABUA DE CARNE", "TALHER", "PAPEL ALUMINIO", "TIGELA", "TRAVESSA", "CANECA", "PETISQUEIRA", "JARRA", "POTE", "CUMBUCA", "SOCADOR", "DESCASCADOR", "PENEIRA"],
-            "Utilidades": ["BALAO", "ABRACADEIRA", "CANTONEIRA", "FITA ADESIVA", "PORTA COMPRIMIDOS", "PORTA OBJETOS", "PROTETOR VEDA", "RELOGIO", "LACRE", "CESTO", "AGULHEIRO", "ALFINETE", "LINHA", "CHAVEIRO", "LAMPADA", "PILHA", "FOSFORO", "RALO", "SUPORTE", "PREGO", "PARAFUSO", "PROTETOR DE RALO"],
-            "Papelaria": ["ESTILETE", "CANETA", "LAPIS", "CADERNO", "BORRACHA", "APONTADOR", "CLIPS", "REGUA", "GRAMPEADOR", "GRAFITE", "LAPISEIRA", "LIVRO"],
-            "Calçados": ["CHINELO"]
-        };
-
         // --- STATE ---
         let DB_PROD = [];
         let DB_CESTAS = [];
         let STATE = {
             cesta: null, cart: {}, basePrice: 0, currentTotal: 0, 
             isUnlocked: false, lastScroll: 0, sortType: 'name',
-            initialGap: 0, mode: 'custom' // custom, standard, zero
+            initialGap: 0, mode: 'custom', // custom, standard, zero
+            catMap: {} // Mapeamento Codigo -> Categoria
         };
 
         // --- INIT ---
         async function init() {
             try {
-                const [r1, r2] = await Promise.all([fetch('produtos-cesta-basica.json'), fetch('produtos.json')]);
+                const [r1, r2, r3] = await Promise.all([
+                    fetch('produtos-cesta-basica.json'), 
+                    fetch('produtos.json'),
+                    fetch('categorias.json')
+                ]);
+                
                 if (r1.ok) DB_CESTAS = await r1.json();
+                
+                if (r3.ok) {
+                    const catsRaw = await r3.json();
+                    catsRaw.forEach(c => {
+                        if(c.codigo && c.categoria) {
+                            STATE.catMap[c.codigo.trim()] = c.categoria.trim();
+                        }
+                    });
+                }
+
                 if (r2.ok) {
                     let txt = await r2.text();
                     txt = txt.trim().replace(/,(\s+)?$/, "");
                     if (!txt.startsWith('[')) txt = '[' + txt + ']';
                     DB_PROD = JSON.parse(txt).filter(x => x.situacao === "A").map(p => ({
-                        id: String(p.id), name: p.nome, price: parseFloat(p.preco),
+                        id: String(p.id), 
+                        code: String(p.codigo || p.id), // Salva o codigo para match de categoria
+                        name: p.nome, 
+                        price: parseFloat(p.preco),
                         img: `img/produtos/${p.codigo || p.id}.webp`
                     }));
                 }
@@ -1000,7 +1000,8 @@
                 return; // Encerra aqui se houver busca
             }
 
-            // MODO NORMAL (Categorias)
+            // MODO NORMAL (Categorias Dinâmicas via JSON)
+            
             // 1. Renderizar OFERTAS (se existirem)
             const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
             if (offers.length > 0) {
@@ -1032,13 +1033,26 @@
                 </div>`;
             }
 
-            // 2. Renderizar Categorias Normais
-            Object.keys(CONFIG_CATEGORIAS).forEach(catName => {
-                let catProds = DB_PROD.filter(p => {
-                    const first3 = p.name.toUpperCase().split(' ').slice(0, 3).join(' ');
-                    return CONFIG_CATEGORIAS[catName].some(key => first3.includes(key));
-                });
-                
+            // 2. Agrupar produtos por Categoria
+            const productsByCategory = {};
+            
+            DB_PROD.forEach(p => {
+                // Tenta achar categoria pelo codigo, depois pelo id, senão vai para "Outros"
+                let cat = STATE.catMap[p.code] || "Outros";
+                if(!productsByCategory[cat]) productsByCategory[cat] = [];
+                productsByCategory[cat].push(p);
+            });
+            
+            // Ordenar Categorias (Alfabética, mas "Outros" no fim)
+            let sortedCats = Object.keys(productsByCategory).sort();
+            if(sortedCats.includes("Outros")) {
+                sortedCats = sortedCats.filter(c => c !== "Outros");
+                sortedCats.push("Outros");
+            }
+            
+            // Renderizar cada categoria
+            sortedCats.forEach(catName => {
+                let catProds = productsByCategory[catName];
                 catProds.sort(sorter);
 
                 if (catProds.length > 0) {
