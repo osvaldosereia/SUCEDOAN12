@@ -1513,7 +1513,18 @@
                             margin-bottom: 5px;
                             display: flex; justify-content: space-around;
                         }
-                        .name { font-size: 18px; font-weight: 900; margin-bottom: 5px; line-height: 1.1; text-transform: uppercase; max-height: 44px; overflow:hidden; }
+                        .name { 
+                            font-size: 18px; 
+                            font-weight: 900; 
+                            margin-bottom: 5px; 
+                            line-height: 1.1; 
+                            text-transform: uppercase; 
+                            max-height: 88px; 
+                            overflow:hidden; 
+                            display: -webkit-box;
+                            -webkit-line-clamp: 4;
+                            -webkit-box-orient: vertical;
+                        }
                         .sku { font-size: 26px; font-weight: 900; margin: 2px 0; }
                         .ean { font-size: 14px; margin-top: 2px; font-weight: bold; }
                     </style>
@@ -2095,7 +2106,16 @@
                 
                 p._changed = true;
                 saveData();
-                renderGrid();
+                
+                // renderGrid(); // REMOVIDO PARA MANTER O ESTADO DA TELA
+                
+                // Atualiza imagem no DOM sem recarregar grid
+                const card = document.getElementById('card-' + currentEditingId);
+                if(card) {
+                    const img = card.querySelector('.card-img');
+                    if(img) img.src = p.url_imagem;
+                }
+                
                 closeModal('modal-editor');
                 alert("Sucesso! Imagem atualizada.");
                 
