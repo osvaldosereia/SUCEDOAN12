@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v50 (Categories Select & GitHub)</title>
+    <title>Sucedoan Painel - v51 (AutoSync & Fixed Grid)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -397,6 +397,11 @@
         .btn-sq.inactive-state { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
         .btn-sq.offer-active { background: #dc2626; color: white; border-color: #dc2626; }
         
+        /* Spin animation for auto sync pending */
+        @keyframes spin-slow { to { transform: rotate(360deg); } }
+        .btn-sq.sync.pending i { animation: spin-slow 2s linear infinite; opacity: 0.8; }
+        .btn-sq.sync.pending { background: #f59e0b; border-color: #f59e0b; }
+
         /* --- 6. TABELA DE HISTÓRICO --- */
         .history-container {
             padding: 20px;
@@ -672,6 +677,7 @@
         
         // Array global para categorias vindas do GitHub
         let availableCategories = []; 
+        let autoSyncTimers = {}; // Armazena timers de sincronização automática
 
         const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
         const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
@@ -1339,6 +1345,8 @@
 
                     const isInactive = p.situacao === 'I';
                     const card = document.createElement('div');
+                    // Adicionado ID para atualização pontual sem re-render
+                    card.id = `card-${p.codigo}`;
                     card.className = `card ${p._changed ? 'status-changed' : 'status-synced'} ${isInactive ? 'status-inactive' : ''}`;
                     
                     const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
@@ -1525,6 +1533,36 @@
             w.document.close();
         }
 
+        // --- FUNÇÃO PARA AGENDAR SYNC AUTOMÁTICO (DEBOUNCE 15s) ---
+        function scheduleAutoSync(sku) {
+            // Se já existe um timer para esse SKU, cancela (reseta o tempo)
+            if(autoSyncTimers[sku]) clearTimeout(autoSyncTimers[sku]);
+            
+            // Visual feedback: botão de sync fica em estado de espera
+            const card = document.getElementById(`card-${sku}`);
+            if(card) {
+                const btnSync = card.querySelector('.btn-sq.sync');
+                if(btnSync) {
+                    btnSync.classList.add('pending');
+                    const icon = btnSync.querySelector('i') || btnSync.querySelector('svg');
+                    if(icon) {
+                        // Força o ícone para loading se possível, ou apenas mantem a animação css
+                        // Se usar lucide, pode alterar atributo
+                        if(icon.getAttribute('data-lucide')) {
+                             icon.setAttribute('data-lucide', 'loader-2');
+                             lucide.createIcons({attrs:{class:"lucide lucide-loader-2"}}); // Refresh pontual seria complexo, confiar CSS
+                        }
+                    }
+                }
+            }
+
+            // Define novo timer de 15 segundos
+            autoSyncTimers[sku] = setTimeout(() => {
+                syncSingle(sku, true); // true = silent mode
+                delete autoSyncTimers[sku];
+            }, 15000);
+        }
+
         function updateProduct(sku, field, value) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
@@ -1546,7 +1584,24 @@
                     p._changed = true;
                     p._lastChange = new Date().toLocaleString();
                     saveData();
-                    renderGrid(); // Re-renderiza para mudar de seção se necessário
+                    // REMOVIDO renderGrid() para evitar que o card pule
+                    
+                    // Adiciona marcação visual que mudou
+                    const card = document.getElementById('card-' + sku);
+                    if(card) {
+                        card.classList.remove('status-synced');
+                        card.classList.add('status-changed');
+                        // Atualiza botão de sync visualmente
+                        const btnSync = card.querySelector('.btn-sq.sync');
+                        if(btnSync) {
+                             btnSync.style.background = ''; // volta ao css padrao
+                             btnSync.style.opacity = '1';
+                             const icon = btnSync.querySelector('i, svg');
+                             // Não recriamos o icone aqui para não quebrar layout, apenas css changes
+                        }
+                    }
+                    
+                    scheduleAutoSync(sku);
                 }
                 return;
             }
@@ -1570,10 +1625,24 @@
                 p._lastChange = new Date().toLocaleString();
                 saveData();
                 
-                // Se for preço de custo ou venda, re-renderiza para atualizar a margem
-                if(field === 'preco' || field === 'preco_custo') {
-                    renderGrid(document.getElementById('search-input').value);
+                // Atualiza visual do card sem re-renderizar grid inteira
+                const card = document.getElementById('card-' + sku);
+                if(card) {
+                    card.classList.remove('status-synced');
+                    card.classList.add('status-changed');
+                    
+                    // Se mudou preço ou custo, atualiza Markup via DOM
+                    if(field === 'preco' || field === 'preco_custo') {
+                         const markupEl = card.querySelector('.stat-readonly');
+                         if(markupEl && p.preco > 0 && p.preco_custo > 0) {
+                             const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
+                             markupEl.innerText = markup.toFixed(1) + "%";
+                             markupEl.style.color = markup < 20 ? '#dc2626' : (markup > 40 ? '#16a34a' : '');
+                         }
+                    }
                 }
+
+                scheduleAutoSync(sku);
             }
         }
         
@@ -1648,12 +1717,17 @@
         function toggleActive(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
+            // SEM CONFIRM - Ação rápida
             const newState = p.situacao === 'I' ? 'A' : 'I';
             p.situacao = newState;
             p['Situação'] = newState;
             p._changed = true; // Alterar status conta como mudança para sync
             saveData();
+            
+            // Aqui mantemos o renderGrid pois muda drasticamente o visual (opacidade)
+            // e geralmente não é feito em massa rapidamente no mesmo card
             renderGrid();
+            scheduleAutoSync(sku);
         }
         
         function toggleOffer(sku) {
@@ -1668,7 +1742,9 @@
             addToHistory(sku, p.nome, `Alterou status OFERTA`);
             p._changed = true;
             saveData();
+            // Aqui mantemos renderGrid para atualizar o nome no textarea
             renderGrid(document.getElementById('search-input').value);
+            scheduleAutoSync(sku);
         }
 
         function formatNum(n) {
@@ -1762,7 +1838,12 @@
                 }
             });
 
-            if(changed) { p._changed = true; saveData(); renderGrid(); }
+            if(changed) { 
+                p._changed = true; 
+                saveData(); 
+                renderGrid(); 
+                scheduleAutoSync(p.codigo);
+            }
             closeModal('modal-details');
         }
 
@@ -1797,6 +1878,7 @@
                     p.url_imagem = novoLink;
                     p._changed = true;
                     count++;
+                    scheduleAutoSync(p.codigo); // Agenda sync também
                 }
             });
             saveData();
@@ -2016,6 +2098,9 @@
                 renderGrid();
                 closeModal('modal-editor');
                 alert("Sucesso! Imagem atualizada.");
+                
+                // Agendar sync? Sim, mudou obs e url.
+                scheduleAutoSync(p.codigo);
 
             } catch(err) {
                 alert("Erro GitHub: " + err.message);
@@ -2024,20 +2109,40 @@
             }
         }
 
-        function syncSingle(sku) {
+        // --- SYNC MODIFICADO: SEM CONFIRM E COM MODO SILENCIOSO ---
+        function syncSingle(sku, isAuto = false) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            if(!confirm(`Confirmar envio de ${p.nome}?`)) return;
+            
+            // REMOVIDO confirm()
+            // if(!confirm(`Confirmar envio de ${p.nome}?`)) return;
+            
             const payload = [p];
             sendToWebhook(payload, () => {
                 p._changed = false;
                 saveData();
-                renderGrid();
-            });
+                
+                // Se for manual, pode renderizar. Se for auto, geralmente não precisa
+                // mas é bom para atualizar o icone de verde (synced)
+                // Usamos manipulação de DOM para não pular a grid
+                const card = document.getElementById('card-' + sku);
+                if(card) {
+                    card.classList.remove('status-changed');
+                    card.classList.add('status-synced');
+                    const btnSync = card.querySelector('.btn-sq.sync');
+                    if(btnSync) {
+                        btnSync.classList.remove('pending');
+                        const icon = btnSync.querySelector('i, svg');
+                        if(icon) icon.setAttribute('data-lucide', 'check');
+                        if(window.lucide) lucide.createIcons();
+                    }
+                }
+            }, isAuto);
         }
 
-        function sendToWebhook(data, callback) {
-            toggleLoader(true, "Enviando...");
+        function sendToWebhook(data, callback, isSilent) {
+            if(!isSilent) toggleLoader(true, "Enviando...");
+            
             fetch(MAKE_WEBHOOK_UPDATE, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -2045,12 +2150,16 @@
             }).then(r => {
                 if(r.ok) {
                     callback();
-                    alert("Sincronizado!");
+                    if(!isSilent) alert("Sincronizado!");
                 } else {
-                    alert("Erro ao enviar.");
+                    if(!isSilent) alert("Erro ao enviar.");
                 }
-            }).catch(e => alert("Erro: " + e))
-            .finally(() => toggleLoader(false));
+            }).catch(e => {
+                if(!isSilent) alert("Erro: " + e);
+            })
+            .finally(() => {
+                if(!isSilent) toggleLoader(false);
+            });
         }
 
         function addToHistory(sku, name, action) {
