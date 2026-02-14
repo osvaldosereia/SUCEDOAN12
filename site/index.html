@@ -586,28 +586,21 @@
             cesta: null, cart: {}, basePrice: 0, currentTotal: 0, 
             isUnlocked: false, lastScroll: 0, sortType: 'name',
             initialGap: 0, mode: 'custom', // custom, standard, zero
-            catMap: {} // Mapeamento Codigo -> Categoria
+            // catMap removido pois não é mais necessário
         };
 
         // --- INIT ---
         async function init() {
             try {
-                const [r1, r2, r3] = await Promise.all([
+                // Removida a requisição de categorias.json
+                const [r1, r2] = await Promise.all([
                     fetch('produtos-cesta-basica.json'), 
-                    fetch('produtos.json'),
-                    fetch('categorias.json')
+                    fetch('produtos.json')
                 ]);
                 
                 if (r1.ok) DB_CESTAS = await r1.json();
                 
-                if (r3.ok) {
-                    const catsRaw = await r3.json();
-                    catsRaw.forEach(c => {
-                        if(c.codigo && c.categoria) {
-                            STATE.catMap[c.codigo.trim()] = c.categoria.trim();
-                        }
-                    });
-                }
+                // Lógica de categorias.json removida completamente
 
                 if (r2.ok) {
                     let txt = await r2.text();
@@ -615,9 +608,10 @@
                     if (!txt.startsWith('[')) txt = '[' + txt + ']';
                     DB_PROD = JSON.parse(txt).filter(x => x.situacao === "A").map(p => ({
                         id: String(p.id), 
-                        code: String(p.codigo || p.id), // Salva o codigo para match de categoria
+                        code: String(p.codigo || p.id), 
                         name: p.nome, 
                         price: parseFloat(p.preco),
+                        category: p.categoria ? p.categoria.trim() : "Outros", // Lê a categoria diretamente do JSON
                         img: `img/produtos/${p.codigo || p.id}.webp`
                     }));
                 }
@@ -1000,7 +994,7 @@
                 return; // Encerra aqui se houver busca
             }
 
-            // MODO NORMAL (Categorias Dinâmicas via JSON)
+            // MODO NORMAL (Categorias Dinâmicas via PROPRIEDADE do produto)
             
             // 1. Renderizar OFERTAS (se existirem)
             const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
@@ -1037,8 +1031,8 @@
             const productsByCategory = {};
             
             DB_PROD.forEach(p => {
-                // Tenta achar categoria pelo codigo, depois pelo id, senão vai para "Outros"
-                let cat = STATE.catMap[p.code] || "Outros";
+                // Usa a categoria que veio do JSON ou "Outros"
+                let cat = p.category || "Outros"; 
                 if(!productsByCategory[cat]) productsByCategory[cat] = [];
                 productsByCategory[cat].push(p);
             });
