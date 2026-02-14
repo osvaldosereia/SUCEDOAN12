@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v53 (No-Sync / Single CSV)</title>
+    <title>Sucedoan Painel - v54 (JSON Prod Sync & UI Tweaks)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -712,6 +712,10 @@
                 <i data-lucide="save" size="14"></i> SALVAR DADOS
             </button>
             
+            <button class="nav-btn" onclick="syncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)">
+                <i data-lucide="globe" size="14"></i> ATUALIZAR SITE
+            </button>
+
             <button class="nav-btn" onclick="syncAllCategoriesToGithub()" title="Enviar todas as categorias para o GitHub">
                 <i data-lucide="layers" size="14"></i> ATUALIZAR CATEGORIAS
             </button>
@@ -1410,7 +1414,10 @@
                                     <span style="font-weight:bold;">NCM:</span>
                                     <input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-">
                                 </div>
-                                <span style="grid-column: span 2">VAL: <strong style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}">${p.validade || '-'}</strong></span>
+                                <div style="grid-column: span 2; display:flex; align-items:center; gap:4px;">
+                                    <span style="font-weight:bold; color:var(--accent)">VAL:</span>
+                                    <input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}">
+                                </div>
                             </div>
                             
                             <div class="card-stats">
@@ -1425,11 +1432,16 @@
                                         onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
                                 </div>
                                 <div class="stat-box">
-                                    <span class="stat-label">Custo (R$)</span>
+                                    <span class="stat-label">P. Compra</span>
+                                    <input class="stat-input" value="${formatNum(p['Preço de Compra'] || 0)}" 
+                                        onchange="updateProduct('${p.codigo}', 'Preço de Compra', this.value)">
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">P. Custo</span>
                                     <input class="stat-input" value="${formatNum(p.preco_custo)}" 
                                         onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)">
                                 </div>
-                                <div class="stat-box">
+                                <div class="stat-box" style="grid-column: span 2">
                                     <span class="stat-label">Markup %</span>
                                     <div class="stat-readonly" style="${lucroClass}">${lucroStr}</div>
                                 </div>
@@ -1454,6 +1466,10 @@
                                 <i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i>
                             </button>
                             
+                            <button class="btn-sq" onclick="updateSingleProductJson('${p.codigo}')" title="Atualizar este produto no site">
+                                <i data-lucide="globe" size="18"></i>
+                            </button>
+
                             <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto">
                                 <i data-lucide="download" size="18"></i>
                             </button>
@@ -1566,7 +1582,7 @@
             }
 
             let finalVal = value;
-            if(field === 'preco' || field === 'estoque' || field === 'preco_custo') {
+            if(field === 'preco' || field === 'estoque' || field === 'preco_custo' || field === 'Preço de Compra') {
                 finalVal = parseFloat(value.replace(',','.')) || 0;
             }
 
@@ -1580,6 +1596,7 @@
                 if(field === 'categoria') p['Categoria do produto'] = value;
                 if(field === 'gtin') p['GTIN/EAN'] = value;
                 if(field === 'ncm') p['NCM'] = value;
+                if(field === 'validade') p['Data Validade'] = value;
 
                 p._changed = true;
                 p._lastChange = new Date().toLocaleString();
@@ -1740,6 +1757,149 @@
             }
         }
         
+        async function syncProductsToGithub() {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
+
+            if(!confirm("Isso atualizará o arquivo produtos.json no GitHub com todos os produtos ATIVOS. Continuar?")) return;
+
+            toggleLoader(true, "Enviando Produtos...");
+
+            const payload = products
+                .filter(p => p.situacao !== 'I')
+                .map(p => ({
+                    id: Number(p['ID'] || 0),
+                    nome: p.nome,
+                    preco: Number(p.preco),
+                    codigo: p.codigo,
+                    situacao: p.situacao,
+                    estoque: Number(p.estoque)
+                }));
+
+            if(payload.length === 0) {
+                toggleLoader(false);
+                return alert("Nenhum produto ativo encontrado.");
+            }
+
+            const path = `../site/produtos.json`;
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+
+            try {
+                let sha = null;
+                try {
+                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                    if(check.ok) {
+                        const json = await check.json();
+                        sha = json.sha;
+                    }
+                } catch(e) {}
+
+                // Sort by ID or Code just to be tidy
+                payload.sort((a,b) => a.nome.localeCompare(b.nome));
+
+                const contentStr = JSON.stringify(payload, null, 2);
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+
+                const body = {
+                    message: `Bulk Upd Prods via Painel (${payload.length} items)`,
+                    content: base64
+                };
+                if(sha) body.sha = sha;
+
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        "Authorization": `token ${cfg.token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if(!res.ok) throw new Error(await res.text());
+
+                alert(`Sucesso! Arquivo produtos.json atualizado.`);
+
+            } catch(err) {
+                alert("Erro GitHub: " + err.message);
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        async function updateSingleProductJson(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
+
+            toggleLoader(true, "Atualizando Produto no JSON...");
+
+            const path = `site/produtos.json`;
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+
+            try {
+                let sha = null;
+                let currentData = [];
+                try {
+                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                    if(check.ok) {
+                        const json = await check.json();
+                        sha = json.sha;
+                        const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
+                        currentData = JSON.parse(decodedStr);
+                    }
+                } catch(e) {
+                    console.log("File not found or empty, creating new.");
+                }
+
+                // Prepare object
+                const itemObj = {
+                    id: Number(p['ID'] || 0),
+                    nome: p.nome,
+                    preco: Number(p.preco),
+                    codigo: p.codigo,
+                    situacao: p.situacao,
+                    estoque: Number(p.estoque)
+                };
+
+                // Update logic
+                const index = currentData.findIndex(item => item.codigo === sku);
+                if(index >= 0) {
+                    currentData[index] = itemObj;
+                } else {
+                    currentData.push(itemObj);
+                }
+
+                const contentStr = JSON.stringify(currentData, null, 2);
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+
+                const body = {
+                    message: `Upd Prod: ${sku} via Painel`,
+                    content: base64
+                };
+                if(sha) body.sha = sha;
+
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        "Authorization": `token ${cfg.token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if(!res.ok) throw new Error(await res.text());
+
+                alert("Produto atualizado no GitHub!");
+
+            } catch(err) {
+                alert("Erro GitHub: " + err.message);
+            } finally {
+                toggleLoader(false);
+            }
+        }
+        
         function toggleActive(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
@@ -1861,6 +2021,15 @@
                 p._changed = true; 
                 saveData(); 
                 renderGrid(); 
+                
+                // Volta o scroll para o produto em questão
+                setTimeout(() => {
+                    const card = document.getElementById('card-' + p.codigo);
+                    if(card) {
+                        card.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        card.classList.add('status-changed'); // Feedback visual extra
+                    }
+                }, 100);
             }
             closeModal('modal-details');
         }
