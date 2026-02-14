@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v54 (JSON Prod Sync & UI Tweaks)</title>
+    <title>Sucedoan Painel - v55 (Prod JSON with Cat)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -716,8 +716,187 @@
                 <i data-lucide="globe" size="14"></i> ATUALIZAR SITE
             </button>
 
-            <button class="nav-btn" onclick="syncAllCategoriesToGithub()" title="Enviar todas as categorias para o GitHub">
-                <i data-lucide="layers" size="14"></i> ATUALIZAR CATEGORIAS
+            <button class="nav-btn" onclick="exportarCSV()">
+                <i data-lucide="download" size="14"></i> CSV
+            </button>
+            <button class="nav-btn" onclick="exportarJSONCategorias()">
+                <i data-lucide="file-json" size="14"></i> JSON LOC
+            </button>
+            <div id="total-count">0</div>
+        </div>
+        
+        <div class="product-grid" id="product-grid"></div>
+    </div>
+
+    <div id="modal-login" class="modal-overlay">
+        <div class="modal-card login">
+            <div class="modal-header">
+                <span>AUTENTICAÇÃO</span>
+                <button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align:center; margin-bottom:15px; color: var(--warning);">
+                    <i data-lucide="lock" size="32"></i>
+                    <p style="font-size:12px; margin-top:5px;">Digite sua senha pessoal</p>
+                </div>
+                <div class="form-group">
+                    <label>Senha de Acesso</label>
+                    <input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;" onkeydown="if(event.key==='Enter') attemptLogin()">
+                </div>
+                
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="save-login">
+                    <label for="save-login">Salvar senha neste dispositivo</label>
+                </div>
+
+                <button class="btn-full" onclick="attemptLogin()">CONFIRMAR</button>
+                <div id="login-error" style="color:var(--danger); font-size:11px; text-align:center; margin-top:10px; display:none;">Senha incorreta!</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editor" class="modal-overlay">
+        <div class="modal-card" style="width:450px;">
+            <div class="modal-header">
+                <span>Editor de Imagem (Ctrl+V para Colar)</span>
+                <button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <canvas id="imageCanvas" width="450" height="450"></canvas>
+                
+                <div class="file-info">
+                    <span id="file-name-preview" style="color:var(--accent)">img.webp</span>
+                    <span id="file-size-preview">0kb</span>
+                </div>
+
+                <div class="sticker-tools">
+                    <div class="sticker-btn" id="stk-offer" onclick="toggleSticker('offer')">OFERTA</div>
+                    <div class="sticker-btn" id="stk-best" onclick="toggleSticker('best')">MELHOR PREÇO</div>
+                    <div class="sticker-btn" id="stk-today" onclick="toggleSticker('today')">SÓ HOJE</div>
+                </div>
+
+                <div class="editor-tools">
+                    <div class="tool-group">
+                        <label><span>Zoom</span></label>
+                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1">
+                    </div>
+                    <div class="tool-group">
+                        <label><span>Nitidez</span></label>
+                        <input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0">
+                    </div>
+                    <div class="tool-group" style="grid-column: span 2;">
+                        <label><span>Brilho</span></label>
+                        <input type="range" id="brightnessRange" min="0" max="2" step="0.1" value="1">
+                    </div>
+                </div>
+
+                <div class="action-row">
+                    <button class="btn-act" onclick="document.getElementById('fileInput').click()">PC</button>
+                    <input type="file" id="fileInput" style="display:none" accept="image/*">
+                    
+                    <button class="btn-act" onclick="downloadImage()">BAIXAR</button>
+                    <button class="btn-act primary" style="flex:2" onclick="uploadToGithub()">GITHUB & SYNC</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-details" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header"><span>Detalhes Técnicos</span><button class="close-btn" onclick="saveDetails()"><i data-lucide="check"></i></button></div>
+            <div class="modal-body">
+                <div class="form-grid" id="details-form"></div>
+                <button class="btn-full" onclick="saveDetails()">SALVAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-config" class="modal-overlay">
+        <div class="modal-card" style="width:400px">
+            <div class="modal-header"><span>Configuração</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x"></i></button></div>
+            <div class="modal-body">
+                <div class="form-group"><label>Token GitHub</label><input type="password" id="cfg-token" onkeydown="if(event.key==='Enter') saveConfig()"></div>
+                <div class="form-group"><label>Usuário GitHub</label><input type="text" id="cfg-user" onkeydown="if(event.key==='Enter') saveConfig()"></div>
+                <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo" onkeydown="if(event.key==='Enter') saveConfig()"></div>
+                <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" onkeydown="if(event.key==='Enter') saveConfig()"></div>
+                <button class="btn-full" onclick="saveConfig()">SALVAR</button>
+                
+                <hr style="margin:20px 0; border:0; border-top:1px solid #e2e8f0;">
+                <button class="btn-danger" onclick="restaurarLinksPadraoSite()">
+                    <i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE
+                </button>
+                <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">
+                    Força o uso de "i/..site/img/produtos/CODIGO.webp" em tudo.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
+
+    <script>
+        // ==========================================
+        // 1. CONFIGURAÇÕES E DADOS GERAIS
+        // ==========================================
+        const USERS = {
+            "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL",
+            "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
+        };
+        
+        // Array global para categorias vindas do GitHub
+        let availableCategories = []; 
+        
+        const STORAGE_KEY = 'sucedoan_data_v26';
+        const CONFIG_KEY = 'sucedoan_config';
+        const LOGIN_KEY = 'sucedoan_saved_login'; 
+
+        // --- NOVA CONFIGURAÇÃO DE LOCALIZAÇÃO (GONDOLAS E PRATELEIRAS) ---
+        // Cria array ["01", "02" ... "15"]
+        const GONDOLAS = Array.from({length: 15}, (_, i) => String(i + 1).padStart(2, '0'));
+        
+        // Cria array ["A", "B", "C", "D", "E", "F"]
+        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F'];
+        
+        const SEM_LOCAL = "SEM LOCAL";
+    </script>
+
+    <header>
+        <div class="brand">SUCEDOAN <span>PRO</span></div>
+        <button class="nav-btn active" onclick="showSection('products', this)">
+            <i data-lucide="package" size="14"></i> PRODUTOS
+        </button>
+        <div style="flex-grow:1"></div>
+        <button class="nav-btn config" onclick="openConfigModal()">
+            <i data-lucide="settings" size="14"></i>
+        </button>
+    </header>
+
+    <div id="section-products" class="view-section active">
+        <div class="toolbar">
+            
+            <input type="file" id="csv-file" accept=".csv" style="display:none">
+            <button class="nav-btn" onclick="document.getElementById('csv-file').click()">
+                <i data-lucide="file-spreadsheet" size="14"></i> IMPORTAR CSV
+            </button>
+            
+            <div style="display:flex; gap:5px; align-items:center; border-left:1px solid #cbd5e1; padding-left:15px; margin-left:15px;">
+                <input type="text" id="new-cat-input" placeholder="Nova Categoria..." style="width:120px; padding:8px; border-radius:4px; border:1px solid #cbd5e1; font-size:12px;">
+                <button class="nav-btn" onclick="addNewCategory()" title="Adicionar Categoria ao GitHub">
+                    <i data-lucide="plus-circle" size="14"></i>
+                </button>
+            </div>
+
+            <div class="search-container" style="margin-left: 15px;">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
+            </div>
+            
+            <button class="nav-btn" onclick="saveDataManual()">
+                <i data-lucide="save" size="14"></i> SALVAR DADOS
+            </button>
+            
+            <button class="nav-btn" onclick="syncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)">
+                <i data-lucide="globe" size="14"></i> ATUALIZAR SITE
             </button>
 
             <button class="nav-btn" onclick="exportarCSV()">
@@ -1454,9 +1633,6 @@
                             <button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta">
                                 <i data-lucide="printer" size="18"></i>
                             </button>
-                            <button class="btn-sq" onclick="updateCategoryJson('${p.codigo}')" title="Salvar Categoria no JSON">
-                                <i data-lucide="database" size="18"></i>
-                            </button>
                             
                             <button class="btn-sq ${p.nome.startsWith('OFERTA') ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta">
                                 <i data-lucide="tag" size="18"></i>
@@ -1621,142 +1797,6 @@
             }
         }
         
-        async function updateCategoryJson(sku) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p || !p.categoria) return alert("Preencha a categoria primeiro!");
-
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-
-            toggleLoader(true, "Atualizando JSON...");
-
-            const path = `site/categorias.json`;
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-
-            try {
-                // 1. Get current file
-                let sha = null;
-                let currentData = [];
-                try {
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) {
-                        const json = await check.json();
-                        sha = json.sha;
-                        // Decode content (handle UTF-8)
-                        const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                        currentData = JSON.parse(decodedStr);
-                    }
-                } catch(e) {
-                    console.log("File not found or empty, creating new.");
-                }
-
-                // 2. Update logic
-                const index = currentData.findIndex(item => item.codigo === sku);
-                if(index >= 0) {
-                    currentData[index].categoria = p.categoria;
-                } else {
-                    currentData.push({ codigo: sku, categoria: p.categoria });
-                }
-
-                // 3. Encode back (handle UTF-8)
-                const contentStr = JSON.stringify(currentData, null, 2);
-                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-
-                // 4. PUT Request
-                const body = {
-                    message: `Upd Cat: ${sku} via Painel`,
-                    content: base64
-                };
-                if(sha) body.sha = sha;
-
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        "Authorization": `token ${cfg.token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-
-                if(!res.ok) throw new Error(await res.text());
-
-                alert("Categoria sincronizada no GitHub!");
-
-            } catch(err) {
-                alert("Erro GitHub: " + err.message);
-            } finally {
-                toggleLoader(false);
-            }
-        }
-
-        async function syncAllCategoriesToGithub() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-
-            if(!confirm("Isso sobrescreverá o arquivo categorias.json no GitHub com as categorias atuais do painel. Continuar?")) return;
-
-            toggleLoader(true, "Enviando Categorias...");
-
-            // Preparar dados: Array de objetos {codigo, categoria}
-            // Filtra apenas quem tem categoria definida
-            const payload = products
-                .filter(p => p.categoria)
-                .map(p => ({ codigo: p.codigo, categoria: p.categoria }));
-
-            if(payload.length === 0) {
-                toggleLoader(false);
-                return alert("Nenhuma categoria encontrada nos produtos.");
-            }
-
-            const path = `site/categorias.json`;
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-
-            try {
-                // 1. Get SHA
-                let sha = null;
-                try {
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) {
-                        const json = await check.json();
-                        sha = json.sha;
-                    }
-                } catch(e) {}
-
-                // 2. Prepare Body
-                // Ordenar por código para ficar bonito no JSON
-                payload.sort((a,b) => a.codigo.localeCompare(b.codigo));
-                
-                const contentStr = JSON.stringify(payload, null, 2);
-                // UTF-8 safe encoding
-                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-
-                const body = {
-                    message: `Bulk Upd Cats via Painel (${payload.length} items)`,
-                    content: base64
-                };
-                if(sha) body.sha = sha;
-
-                // 3. PUT
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        "Authorization": `token ${cfg.token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-
-                if(!res.ok) throw new Error(await res.text());
-
-                alert(`Sucesso! ${payload.length} categorizações enviadas.`);
-
-            } catch(err) {
-                alert("Erro GitHub: " + err.message);
-            } finally {
-                toggleLoader(false);
-            }
-        }
-        
         async function syncProductsToGithub() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
@@ -1773,6 +1813,7 @@
                     preco: Number(p.preco),
                     codigo: p.codigo,
                     situacao: p.situacao,
+                    categoria: p.categoria,
                     estoque: Number(p.estoque)
                 }));
 
@@ -1860,6 +1901,7 @@
                     preco: Number(p.preco),
                     codigo: p.codigo,
                     situacao: p.situacao,
+                    categoria: p.categoria,
                     estoque: Number(p.estoque)
                 };
 
