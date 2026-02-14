@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v51 (AutoSync & Fixed Grid)</title>
+    <title>Sucedoan Painel - v52 (Bulk Cats Sync)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -740,6 +740,10 @@
                 <option value="prateleira">PRATELEIRA</option>
             </select>
             
+            <button class="nav-btn" onclick="syncAllCategoriesToGithub()" title="Enviar todas as categorias para o GitHub">
+                <i data-lucide="layers" size="14"></i> ATUALIZAR CATEGORIAS
+            </button>
+
             <button class="nav-btn" onclick="exportarCSV()">
                 <i data-lucide="download" size="14"></i> CSV
             </button>
@@ -1717,6 +1721,74 @@
                 if(!res.ok) throw new Error(await res.text());
 
                 alert("Categoria sincronizada no GitHub!");
+
+            } catch(err) {
+                alert("Erro GitHub: " + err.message);
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        async function syncAllCategoriesToGithub() {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
+
+            if(!confirm("Isso sobrescreverá o arquivo categorias.json no GitHub com as categorias atuais do painel. Continuar?")) return;
+
+            toggleLoader(true, "Enviando Categorias...");
+
+            // Preparar dados: Array de objetos {codigo, categoria}
+            // Filtra apenas quem tem categoria definida
+            const payload = products
+                .filter(p => p.categoria)
+                .map(p => ({ codigo: p.codigo, categoria: p.categoria }));
+
+            if(payload.length === 0) {
+                toggleLoader(false);
+                return alert("Nenhuma categoria encontrada nos produtos.");
+            }
+
+            const path = `site/categorias.json`;
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+
+            try {
+                // 1. Get SHA
+                let sha = null;
+                try {
+                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                    if(check.ok) {
+                        const json = await check.json();
+                        sha = json.sha;
+                    }
+                } catch(e) {}
+
+                // 2. Prepare Body
+                // Ordenar por código para ficar bonito no JSON
+                payload.sort((a,b) => a.codigo.localeCompare(b.codigo));
+                
+                const contentStr = JSON.stringify(payload, null, 2);
+                // UTF-8 safe encoding
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+
+                const body = {
+                    message: `Bulk Upd Cats via Painel (${payload.length} items)`,
+                    content: base64
+                };
+                if(sha) body.sha = sha;
+
+                // 3. PUT
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        "Authorization": `token ${cfg.token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                if(!res.ok) throw new Error(await res.text());
+
+                alert(`Sucesso! ${payload.length} categorizações enviadas.`);
 
             } catch(err) {
                 alert("Erro GitHub: " + err.message);
