@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v52 (Bulk Cats Sync)</title>
+    <title>Sucedoan Painel - v53 (No-Sync / Single CSV)</title>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -304,6 +304,23 @@
             outline: none;
         }
 
+        /* Inputs de EAN e NCM pequenos */
+        .card-input-small {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--text-primary);
+            font-size: 10px;
+            font-weight: bold;
+            padding: 2px;
+            border-radius: 2px;
+            width: 100%;
+        }
+        .card-input-small:focus {
+            background: #f1f5f9;
+            border-color: var(--accent);
+            outline: none;
+        }
+
         .card-stats {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -401,38 +418,6 @@
         @keyframes spin-slow { to { transform: rotate(360deg); } }
         .btn-sq.sync.pending i { animation: spin-slow 2s linear infinite; opacity: 0.8; }
         .btn-sq.sync.pending { background: #f59e0b; border-color: #f59e0b; }
-
-        /* --- 6. TABELA DE HISTÓRICO --- */
-        .history-container {
-            padding: 20px;
-            overflow-y: auto;
-            flex-grow: 1;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        .history-table th {
-            text-align: left;
-            padding: 12px;
-            background: #e2e8f0;
-            border-bottom: 2px solid var(--border);
-            color: var(--accent);
-            text-transform: uppercase;
-            font-size: 11px;
-            position: sticky;
-            top: 0;
-        }
-
-        .history-table td {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-primary);
-        }
-        .history-table tr:hover { background: #f1f5f9; }
 
         /* --- 7. MODAIS --- */
         .modal-overlay {
@@ -677,14 +662,9 @@
         
         // Array global para categorias vindas do GitHub
         let availableCategories = []; 
-        let autoSyncTimers = {}; // Armazena timers de sincronização automática
-
-        const MAKE_WEBHOOK_GET = "COLE_AQUI_SEU_WEBHOOK_DE_BUSCA"; 
-        const MAKE_WEBHOOK_UPDATE = "https://hook.eu1.make.com/kvi7j1d7wsmrskoemdn86ykscenumt67";
         
         const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
-        const HISTORY_KEY = 'sucedoan_history';
         const LOGIN_KEY = 'sucedoan_saved_login'; 
 
         // --- NOVA CONFIGURAÇÃO DE LOCALIZAÇÃO (GONDOLAS E PRATELEIRAS) ---
@@ -702,9 +682,6 @@
         <button class="nav-btn active" onclick="showSection('products', this)">
             <i data-lucide="package" size="14"></i> PRODUTOS
         </button>
-        <button class="nav-btn" onclick="showSection('history', this)">
-            <i data-lucide="scroll-text" size="14"></i> HISTÓRICO
-        </button>
         <div style="flex-grow:1"></div>
         <button class="nav-btn config" onclick="openConfigModal()">
             <i data-lucide="settings" size="14"></i>
@@ -713,9 +690,6 @@
 
     <div id="section-products" class="view-section active">
         <div class="toolbar">
-            <button class="nav-btn primary" onclick="importarBling()">
-                <i data-lucide="cloud-download" size="14"></i> BAIXAR BLING
-            </button>
             
             <input type="file" id="csv-file" accept=".csv" style="display:none">
             <button class="nav-btn" onclick="document.getElementById('csv-file').click()">
@@ -733,12 +707,10 @@
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
             </div>
-
-            <select id="filter-type" class="nav-btn" style="margin-left: 15px; border-color: var(--border); outline:none; height: 38px;" onchange="renderGrid(document.getElementById('search-input').value)">
-                <option value="all">TODOS</option>
-                <option value="gondola">GÔNDOLA</option>
-                <option value="prateleira">PRATELEIRA</option>
-            </select>
+            
+            <button class="nav-btn" onclick="saveDataManual()">
+                <i data-lucide="save" size="14"></i> SALVAR DADOS
+            </button>
             
             <button class="nav-btn" onclick="syncAllCategoriesToGithub()" title="Enviar todas as categorias para o GitHub">
                 <i data-lucide="layers" size="14"></i> ATUALIZAR CATEGORIAS
@@ -754,30 +726,6 @@
         </div>
         
         <div class="product-grid" id="product-grid"></div>
-    </div>
-
-    <div id="section-history" class="view-section">
-        <div class="toolbar">
-            <h3 style="margin:0; font-size:14px; color:var(--text-primary);">Histórico de Alterações</h3>
-            <button class="nav-btn" onclick="clearHistory()">
-                <i data-lucide="trash-2" size="14"></i> Limpar
-            </button>
-        </div>
-        <div class="history-container">
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th width="150">DATA / HORA</th>
-                        <th width="120">USUÁRIO</th>
-                        <th width="100">SKU</th>
-                        <th>PRODUTO</th>
-                        <th>AÇÃO / DETALHE</th>
-                    </tr>
-                </thead>
-                <tbody id="history-tbody">
-                    </tbody>
-            </table>
-        </div>
     </div>
 
     <div id="modal-login" class="modal-overlay">
@@ -891,9 +839,7 @@
         // 2. LÓGICA DO SISTEMA (JAVASCRIPT)
         // ==========================================
         let products = [];
-        let historyLog = [];
         let currentEditingId = null;
-        let pendingSyncSku = null;
         let currentUser = null;
         let productScrollPos = 0; // Armazena a posição da rolagem da grid
 
@@ -926,7 +872,6 @@
                 document.querySelectorAll('header .nav-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             }
-            if(id === 'history') renderHistory();
 
             // Restaura a rolagem se estiver voltando para produtos
             if (id === 'products') {
@@ -1101,6 +1046,63 @@
             l.click();
         }
 
+        function exportSingleCSV(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if (!p) return;
+
+            const colunasModelo = [
+                "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
+                "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", 
+                "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", 
+                "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", 
+                "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", 
+                "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", 
+                "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", 
+                "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", 
+                "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", 
+                "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", 
+                "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", 
+                "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", 
+                "Categoria do produto", "Informações Adicionais"
+            ];
+
+            const linha = {};
+            const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
+
+            // Atualiza campos
+            p['Descrição'] = p.nome;
+            p['Preço'] = fmt(p.preco);
+            p['Preço de custo'] = fmt(p.preco_custo);
+            p['Estoque'] = fmt(p.estoque);
+            p['Localização'] = p.localizacao; 
+            p['GTIN/EAN'] = p.gtin;
+            p['URL Imagens Externas'] = ""; 
+            p['NCM'] = p.ncm; 
+            p['Situação'] = p.situacao;
+            p['Categoria do produto'] = p.categoria;
+
+            p['Origem'] = '0'; 
+            p['Unidade'] = 'un';
+            p['Grupo de produtos'] = '';
+
+            colunasModelo.forEach(col => {
+                linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : "";
+            });
+
+            const csv = Papa.unparse({
+                fields: colunasModelo,
+                data: [linha]
+            }, {
+                quotes: true, 
+                delimiter: ";"
+            });
+
+            const l = document.createElement("a"); 
+            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
+            l.download = `produto_${sku}.csv`; 
+            l.click();
+        }
+
         // ----------------------------------------------------
         // EXPORTAÇÃO JSON CATEGORIAS (AGORA POR LOCAL)
         // ----------------------------------------------------
@@ -1126,23 +1128,14 @@
             l.click();
         }
         
-        function importarBling() {
-            if(MAKE_WEBHOOK_GET.includes("COLE")) return alert("Configure Webhook GET no topo do código!");
-            if(!confirm("Isso substituirá a lista atual. Continuar?")) return;
-            toggleLoader(true, "Baixando do Bling...");
-            fetch(MAKE_WEBHOOK_GET).then(r=>r.json()).then(d => {
-                if(Array.isArray(d)) { 
-                    products = d.map(x => {
-                        return {...x, _changed: false, situacao: x.situacao || 'A'};
-                    }); 
-                    saveData(); renderGrid(); toggleLoader(false); 
-                }
-            }).catch(e => { toggleLoader(false); alert("Erro: "+e); });
-        }
-
         function toggleLoader(show, msg) {
             document.getElementById('loader').style.display = show ? 'flex' : 'none';
             if(msg) document.getElementById('loader-msg').innerText = msg;
+        }
+
+        function saveDataManual() {
+            saveData();
+            alert("Dados salvos localmente!");
         }
     </script>
 
@@ -1151,9 +1144,6 @@
             const saved = localStorage.getItem(STORAGE_KEY);
             if(saved) products = JSON.parse(saved);
             
-            const hist = localStorage.getItem(HISTORY_KEY);
-            if(hist) historyLog = JSON.parse(hist);
-
             const savedLogin = localStorage.getItem(LOGIN_KEY);
             if(savedLogin) currentUser = savedLogin;
             
@@ -1283,18 +1273,8 @@
             let filtered = products;
             if(filter) {
                 const term = filter.toLowerCase();
-                const type = document.getElementById('filter-type').value;
-
+                
                 filtered = products.filter(p => {
-                    if (type === 'gondola') {
-                         const parts = (p.localizacao || "").split('-');
-                         return (parts[0] || "").toLowerCase().includes(term);
-                    }
-                    if (type === 'prateleira') {
-                         const parts = (p.localizacao || "").split('-');
-                         return (parts[1] || "").toLowerCase().includes(term);
-                    }
-                    // Default 'all'
                     return (p.nome||"").toLowerCase().includes(term) ||
                     (p.codigo||"").toLowerCase().includes(term) ||
                     (p.gtin||"").includes(term) ||
@@ -1420,11 +1400,16 @@
                                 </select>
                             </div>
 
-                            <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:2px;">
-                                <span style="display:flex; align-items:center;">EAN: <strong style="color:var(--text-primary); margin-left:4px;">${p.gtin || '-'}</strong>
-                                    ${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN no Google"><i data-lucide="search" size="10"></i></button>` : ''}
-                                </span>
-                                <span>NCM: <strong style="color:var(--text-primary)">${p.ncm || '-'}</strong></span>
+                            <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span style="font-weight:bold;">EAN:</span>
+                                    <input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-">
+                                    ${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN" style="border:none; background:none; cursor:pointer;"><i data-lucide="search" size="10" color="#64748b"></i></button>` : ''}
+                                </div>
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span style="font-weight:bold;">NCM:</span>
+                                    <input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-">
+                                </div>
                                 <span style="grid-column: span 2">VAL: <strong style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}">${p.validade || '-'}</strong></span>
                             </div>
                             
@@ -1469,8 +1454,8 @@
                                 <i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i>
                             </button>
                             
-                            <button class="btn-sq sync" onclick="syncSingle('${p.codigo}')" title="Sincronizar" style="${p._changed ? '' : 'background:white; border-color:var(--border); color:var(--text-secondary); opacity:0.6'}">
-                                <i data-lucide="${p._changed ? 'refresh-cw' : 'check'}" size="18"></i>
+                            <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto">
+                                <i data-lucide="download" size="18"></i>
                             </button>
                         </div>
                     `;
@@ -1548,36 +1533,6 @@
             w.document.close();
         }
 
-        // --- FUNÇÃO PARA AGENDAR SYNC AUTOMÁTICO (DEBOUNCE 15s) ---
-        function scheduleAutoSync(sku) {
-            // Se já existe um timer para esse SKU, cancela (reseta o tempo)
-            if(autoSyncTimers[sku]) clearTimeout(autoSyncTimers[sku]);
-            
-            // Visual feedback: botão de sync fica em estado de espera
-            const card = document.getElementById(`card-${sku}`);
-            if(card) {
-                const btnSync = card.querySelector('.btn-sq.sync');
-                if(btnSync) {
-                    btnSync.classList.add('pending');
-                    const icon = btnSync.querySelector('i') || btnSync.querySelector('svg');
-                    if(icon) {
-                        // Força o ícone para loading se possível, ou apenas mantem a animação css
-                        // Se usar lucide, pode alterar atributo
-                        if(icon.getAttribute('data-lucide')) {
-                             icon.setAttribute('data-lucide', 'loader-2');
-                             lucide.createIcons({attrs:{class:"lucide lucide-loader-2"}}); // Refresh pontual seria complexo, confiar CSS
-                        }
-                    }
-                }
-            }
-
-            // Define novo timer de 15 segundos
-            autoSyncTimers[sku] = setTimeout(() => {
-                syncSingle(sku, true); // true = silent mode
-                delete autoSyncTimers[sku];
-            }, 15000);
-        }
-
         function updateProduct(sku, field, value) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
@@ -1593,7 +1548,6 @@
 
                 const newLoc = `${g}-${pr}`;
                 if(p.localizacao !== newLoc) {
-                    addToHistory(sku, p.nome, `Localização: ${p.localizacao} -> ${newLoc}`);
                     p.localizacao = newLoc;
                     p['Localização'] = newLoc; // Mantém sync com campo export
                     p._changed = true;
@@ -1606,17 +1560,7 @@
                     if(card) {
                         card.classList.remove('status-synced');
                         card.classList.add('status-changed');
-                        // Atualiza botão de sync visualmente
-                        const btnSync = card.querySelector('.btn-sq.sync');
-                        if(btnSync) {
-                             btnSync.style.background = ''; // volta ao css padrao
-                             btnSync.style.opacity = '1';
-                             const icon = btnSync.querySelector('i, svg');
-                             // Não recriamos o icone aqui para não quebrar layout, apenas css changes
-                        }
                     }
-                    
-                    scheduleAutoSync(sku);
                 }
                 return;
             }
@@ -1627,7 +1571,6 @@
             }
 
             if(p[field] != finalVal) {
-                addToHistory(sku, p.nome, `Alterou ${field}: ${p[field]} -> ${finalVal}`);
                 p[field] = finalVal;
                 // Atualiza também o campo original do CSV se existir mapeamento direto
                 if(field === 'nome') p['Descrição'] = finalVal;
@@ -1635,6 +1578,8 @@
                 if(field === 'preco_custo') p['Preço de custo'] = value;
                 if(field === 'estoque') p['Estoque'] = value;
                 if(field === 'categoria') p['Categoria do produto'] = value;
+                if(field === 'gtin') p['GTIN/EAN'] = value;
+                if(field === 'ncm') p['NCM'] = value;
 
                 p._changed = true;
                 p._lastChange = new Date().toLocaleString();
@@ -1656,8 +1601,6 @@
                          }
                     }
                 }
-
-                scheduleAutoSync(sku);
             }
         }
         
@@ -1810,7 +1753,6 @@
             // Aqui mantemos o renderGrid pois muda drasticamente o visual (opacidade)
             // e geralmente não é feito em massa rapidamente no mesmo card
             renderGrid();
-            scheduleAutoSync(sku);
         }
         
         function toggleOffer(sku) {
@@ -1822,12 +1764,10 @@
                 p.nome = "OFERTA - " + p.nome;
             }
             p['Descrição'] = p.nome;
-            addToHistory(sku, p.nome, `Alterou status OFERTA`);
             p._changed = true;
             saveData();
             // Aqui mantemos renderGrid para atualizar o nome no textarea
             renderGrid(document.getElementById('search-input').value);
-            scheduleAutoSync(sku);
         }
 
         function formatNum(n) {
@@ -1912,10 +1852,6 @@
                 }
 
                 if(p[k] != val) {
-                    // Log apenas de campos principais para evitar spam
-                    if(['preco','estoque','nome'].includes(k)) {
-                        addToHistory(p.codigo, p.nome, `Alterou ${k}`);
-                    }
                     p[k] = val;
                     changed = true;
                 }
@@ -1925,7 +1861,6 @@
                 p._changed = true; 
                 saveData(); 
                 renderGrid(); 
-                scheduleAutoSync(p.codigo);
             }
             closeModal('modal-details');
         }
@@ -1961,7 +1896,6 @@
                     p.url_imagem = novoLink;
                     p._changed = true;
                     count++;
-                    scheduleAutoSync(p.codigo); // Agenda sync também
                 }
             });
             saveData();
@@ -2191,101 +2125,10 @@
                 closeModal('modal-editor');
                 alert("Sucesso! Imagem atualizada.");
                 
-                // Agendar sync? Sim, mudou obs e url.
-                scheduleAutoSync(p.codigo);
-
             } catch(err) {
                 alert("Erro GitHub: " + err.message);
             } finally {
                 toggleLoader(false);
-            }
-        }
-
-        // --- SYNC MODIFICADO: SEM CONFIRM E COM MODO SILENCIOSO ---
-        function syncSingle(sku, isAuto = false) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return;
-            
-            // REMOVIDO confirm()
-            // if(!confirm(`Confirmar envio de ${p.nome}?`)) return;
-            
-            const payload = [p];
-            sendToWebhook(payload, () => {
-                p._changed = false;
-                saveData();
-                
-                // Se for manual, pode renderizar. Se for auto, geralmente não precisa
-                // mas é bom para atualizar o icone de verde (synced)
-                // Usamos manipulação de DOM para não pular a grid
-                const card = document.getElementById('card-' + sku);
-                if(card) {
-                    card.classList.remove('status-changed');
-                    card.classList.add('status-synced');
-                    const btnSync = card.querySelector('.btn-sq.sync');
-                    if(btnSync) {
-                        btnSync.classList.remove('pending');
-                        const icon = btnSync.querySelector('i, svg');
-                        if(icon) icon.setAttribute('data-lucide', 'check');
-                        if(window.lucide) lucide.createIcons();
-                    }
-                }
-            }, isAuto);
-        }
-
-        function sendToWebhook(data, callback, isSilent) {
-            if(!isSilent) toggleLoader(true, "Enviando...");
-            
-            fetch(MAKE_WEBHOOK_UPDATE, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            }).then(r => {
-                if(r.ok) {
-                    callback();
-                    if(!isSilent) alert("Sincronizado!");
-                } else {
-                    if(!isSilent) alert("Erro ao enviar.");
-                }
-            }).catch(e => {
-                if(!isSilent) alert("Erro: " + e);
-            })
-            .finally(() => {
-                if(!isSilent) toggleLoader(false);
-            });
-        }
-
-        function addToHistory(sku, name, action) {
-            if(!currentUser) return;
-            const log = {
-                date: new Date().toLocaleString(),
-                user: currentUser,
-                sku: sku,
-                name: name,
-                action: action
-            };
-            historyLog.unshift(log);
-            if(historyLog.length > 200) historyLog.pop();
-            localStorage.setItem(HISTORY_KEY, JSON.stringify(historyLog));
-        }
-
-        function renderHistory() {
-            const tbody = document.getElementById('history-tbody');
-            tbody.innerHTML = historyLog.map(h => `
-                <tr>
-                    <td>${h.date}</td>
-                    <td>${h.user}</td>
-                    <td style="font-weight:bold; color:var(--accent)">${h.sku}</td>
-                    <td>${h.name}</td>
-                    <td>${h.action}</td>
-                </tr>
-            `).join('');
-        }
-
-        function clearHistory() {
-            if(confirm("Apagar todo o histórico?")) {
-                historyLog = [];
-                localStorage.setItem(HISTORY_KEY, '[]');
-                renderHistory();
             }
         }
     </script>
