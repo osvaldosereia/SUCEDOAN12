@@ -6,6 +6,7 @@
     <title>Sucedoan Painel - v55 (Prod JSON with Cat)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -60,6 +61,11 @@
         .card-title-input:focus { background: #f1f5f9; border-color: var(--accent); outline: none; }
         .card-input-small { background: transparent; border: 1px solid transparent; color: var(--text-primary); font-size: 10px; font-weight: bold; padding: 2px; border-radius: 2px; width: 100%; }
         .card-input-small:focus { background: #f1f5f9; border-color: var(--accent); outline: none; }
+        /* Nova classe para botoes do EAN */
+        .ean-controls { display: flex; gap: 4px; margin-top: 4px; }
+        .btn-mini-action { flex: 1; border: 1px solid var(--border); background: #f1f5f9; color: var(--text-secondary); border-radius: 4px; font-size: 9px; padding: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: bold; }
+        .btn-mini-action:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        
         .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 8px; }
         .stat-box { display: flex; flex-direction: column; }
         .stat-label { font-size: 9px; color: var(--accent); margin-bottom: 3px; font-weight: bold; text-transform: uppercase; }
@@ -136,6 +142,7 @@
             <div style="display:flex; gap:5px; align-items:center; border-left:1px solid #cbd5e1; padding-left:15px; margin-left:15px;">
                 <input type="text" id="new-cat-input" placeholder="Nova Categoria..." style="width:120px; padding:8px; border-radius:4px; border:1px solid #cbd5e1; font-size:12px;">
                 <button class="nav-btn" onclick="addNewCategory()" title="Adicionar Categoria ao GitHub"><i data-lucide="plus-circle" size="14"></i></button>
+                <button class="nav-btn" onclick="createNewProduct()" style="margin-left:5px; background:#dcfce7; border-color:#86efac; color:#166534;"><i data-lucide="plus-square" size="14"></i> NOVO PRODUTO</button>
             </div>
             <div style="display:flex; gap:5px; align-items:center; margin-left:15px;">
                 <select id="filter-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value)">
@@ -454,6 +461,122 @@
                 renderGrid(document.getElementById('search-input').value);
             } catch(err) { alert("Erro GitHub: " + err.message); availableCategories = availableCategories.filter(c => c !== newCat); } finally { toggleLoader(false); }
         }
+        
+        // --- FUNÇÕES DE NOVO PRODUTO E CÓDIGO INTERNO ---
+        function createNewProduct() {
+            const timestamp = Date.now().toString();
+            const sku = timestamp.slice(-8); // SKU numérico baseado em tempo
+            const internalEan = "2" + timestamp.slice(-11); // Gera código EAN-like iniciando com 2
+            
+            const newProd = {
+                codigo: sku,
+                nome: "NOVO PRODUTO",
+                preco: 0,
+                preco_custo: 0,
+                categoria: "",
+                estoque: 0,
+                localizacao: "SEM LOCAL",
+                gtin: internalEan,
+                url_imagem: "",
+                ncm: "",
+                validade: "",
+                situacao: 'A',
+                formato: 'S',
+                _changed: true,
+                _lastChange: "Criação Manual",
+                // Campos de compatibilidade
+                'Código': sku,
+                'Descrição': "NOVO PRODUTO",
+                'Preço': 0,
+                'Preço de custo': 0,
+                'Preço de Compra': 0,
+                'Categoria do produto': "",
+                'Estoque': 0,
+                'Localização': "SEM LOCAL",
+                'GTIN/EAN': internalEan
+            };
+            
+            products.unshift(newProd); // Adiciona no início da lista
+            saveData();
+            renderGrid();
+            alert("Produto criado com código: " + sku);
+            // Scroll para o topo onde está o novo produto
+            document.getElementById('product-grid').scrollTop = 0;
+        }
+
+        function generateInternalEan(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            const timestamp = Date.now().toString();
+            const internalEan = "2" + timestamp.slice(-11);
+            updateProduct(sku, 'gtin', internalEan);
+            // Atualiza o input visualmente
+            const card = document.getElementById('card-' + sku);
+            if(card) {
+                const input = card.querySelector('.card-input-small');
+                if(input) input.value = internalEan;
+                // Re-renderizar o card para mostrar os botões corretos
+                renderGrid(document.getElementById('search-input').value);
+            }
+        }
+        
+        function printBarcode50mm(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            const code = p.gtin || p.codigo; // Usa GTIN se tiver, senão SKU
+            
+            const w = window.open('', '', 'width=200,height=200');
+            w.document.write(`
+                <html>
+                <head>
+                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+                    <style>
+                        @page { size: 50mm 30mm; margin: 0; }
+                        body { 
+                            margin: 0; 
+                            width: 50mm; 
+                            height: 30mm;
+                            display: flex; 
+                            flex-direction: column; 
+                            align-items: center; 
+                            justify-content: center;
+                            overflow: hidden;
+                        }
+                        .prod-name {
+                            font-family: sans-serif;
+                            font-size: 10px;
+                            font-weight: bold;
+                            text-align: center;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            width: 95%;
+                            margin-bottom: 2px;
+                        }
+                        #barcode { width: 95%; height: auto; }
+                    </style>
+                </head>
+                <body>
+                    <div class="prod-name">${p.nome}</div>
+                    <svg id="barcode"></svg>
+                    <script>
+                        window.onload = function() {
+                            JsBarcode("#barcode", "${code}", {
+                                format: "CODE128",
+                                width: 1.5,
+                                height: 50,
+                                displayValue: true,
+                                fontSize: 10,
+                                margin: 0
+                            });
+                            setTimeout(() => { window.print(); }, 300);
+                        }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            w.document.close();
+        }
 
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
@@ -531,6 +654,21 @@
                 lucroStr = markup.toFixed(1) + "%";
                 if(markup < 20) lucroClass = "color: #dc2626;"; else if(markup > 40) lucroClass = "color: #16a34a;";
             }
+            
+            // Lógica dos botões EAN
+            const hasEan = p.gtin && p.gtin.length > 0;
+            const searchBtn = `<button class="btn-mini-action" onclick="searchGoogle('${p.gtin || p.nome}')" title="Pesquisar"><i data-lucide="search" size="12"></i> BUSCAR</button>`;
+            const printBtn = `<button class="btn-mini-action" onclick="printBarcode50mm('${p.codigo}')" title="Imprimir 50mm"><i data-lucide="printer" size="12"></i> IMPRIMIR</button>`;
+            const generateBtn = `<button class="btn-mini-action" onclick="generateInternalEan('${p.codigo}')" style="background:#fffbeb; color:#d97706; border-color:#fcd34d;" title="Gerar Código 2..."><i data-lucide="wand-2" size="12"></i> GERAR</button>`;
+            
+            const eanButtons = `
+                <div class="ean-controls">
+                    ${searchBtn}
+                    ${printBtn}
+                    ${!hasEan ? generateBtn : ''}
+                </div>
+            `;
+
             card.innerHTML = `
                 <div class="card-img-area" onclick="openEditor('${p.codigo}')">
                     <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
@@ -544,9 +682,12 @@
                     <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
                     <div style="margin-top:4px;"><label style="font-size:9px; color:var(--accent); font-weight:bold;">CATEGORIA</label><select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">${optionsCat}</select></div>
                     <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
-                        <div style="display:flex; align-items:center; gap:4px;"><span style="font-weight:bold;">EAN:</span><input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-">${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN" style="border:none; background:none; cursor:pointer;"><i data-lucide="search" size="10" color="#64748b"></i></button>` : ''}</div>
-                        <div style="display:flex; align-items:center; gap:4px;"><span style="font-weight:bold;">NCM:</span><input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-"></div>
-                        <div style="grid-column: span 2; display:flex; align-items:center; gap:4px;"><span style="font-weight:bold; color:var(--accent)">VAL:</span><input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}"></div>
+                        <div style="grid-column: span 2;">
+                            <div style="display:flex; align-items:center; gap:4px;"><span style="font-weight:bold;">EAN:</span><input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-"></div>
+                            ${eanButtons}
+                        </div>
+                        <div style="display:flex; align-items:center; gap:4px; margin-top:4px;"><span style="font-weight:bold;">NCM:</span><input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-"></div>
+                        <div style="display:flex; align-items:center; gap:4px; margin-top:4px;"><span style="font-weight:bold; color:var(--accent)">VAL:</span><input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}"></div>
                     </div>
                     <div class="card-stats">
                         <div class="stat-box"><span class="stat-label">Venda (R$)</span><input class="stat-input" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)"></div>
