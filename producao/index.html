@@ -1722,7 +1722,7 @@
                 prateleira = parts[1];
             }
 
-            const w = window.open('', '', 'width=400,height=400');
+            const w = window.open('', '', 'width=900,height=6    00');
             w.document.write(`
                 <html>
                 <head>
@@ -1746,19 +1746,30 @@
                             display: flex; justify-content: space-around;
                         }
                         .name { 
-                            font-size: 18px; 
+                            font-size: 16px; /* Reduzi levemente */
                             font-weight: 900; 
-                            margin-bottom: 5px; 
+                            margin-bottom: 2px; 
                             line-height: 1.1; 
                             text-transform: uppercase; 
-                            max-height: 88px; 
+                            max-height: 55px; /* Reduzi altura máxima para caber a data */
                             overflow:hidden; 
                             display: -webkit-box;
-                            -webkit-line-clamp: 4;
+                            -webkit-line-clamp: 3; /* Max 3 linhas */
                             -webkit-box-orient: vertical;
                         }
-                        .sku { font-size: 26px; font-weight: 900; margin: 2px 0; }
-                        .ean { font-size: 14px; margin-top: 2px; font-weight: bold; }
+                        .sku { font-size: 24px; font-weight: 900; margin: 2px 0; }
+                        .ean { font-size: 12px; font-weight: bold; }
+                        
+                        /* Estilo da Validade */
+                        .val-box {
+                            margin-top: 5px;
+                            border: 2px solid #000;
+                            border-radius: 6px;
+                            padding: 2px 8px;
+                            font-weight: 900;
+                            font-size: 14px;
+                            width: 90%;
+                        }
                     </style>
                 </head>
                 <body>
@@ -1766,9 +1777,15 @@
                         <span>GON: ${gondola}</span>
                         <span>PRAT: ${prateleira}</span>
                     </div>
+                    
                     <div class="name">${p.nome}</div>
                     <div class="sku">${p.codigo}</div>
                     <div class="ean">EAN: ${p.gtin || ''}</div>
+                    
+                    <div class="val-box">
+                        VAL: ${p.validade || '---'}
+                    </div>
+
                     <script>window.onload = function() { window.print(); }<\/script>
                 </body>
                 </html>
