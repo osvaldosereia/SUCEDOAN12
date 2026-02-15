@@ -4,721 +4,139 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sucedoan Painel - v55 (Prod JSON with Cat)</title>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-
     <style>
-        /* --- 1. VARIÁVEIS E RESET (MODO CLARO) --- */
         :root {
-            --bg-body: #f8fafc;       /* Fundo claro */
-            --bg-card: #ffffff;       /* Card branco */
-            --text-primary: #1e293b;  /* Texto escuro */
-            --text-seconda00ry: #64748b;
-            --accent: #2563eb;        /* Azul vibrante */
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent: #2563eb;
             --success: #16a34a;
             --warning: #d97706;
             --danger: #dc2626;
-            --border: #cbd5e1;        /* Borda cinza claro */
+            --border: #cbd5e1;
         }
-
         * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-body);
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            color: var(--text-primary);
-            overflow: hidden;
-        }
-
-        /* --- 2. CABEÇALHO (HEADER) --- */
-        header {
-            background: #ffffff;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            border-bottom: 1px solid var(--border);
-            gap: 15px;
-            flex-shrink: 0;
-        }
-
-        .brand {
-            font-weight: 900;
-            font-size: 18px;
-            color: #0f172a;
-            margin-right: auto;
-            letter-spacing: -0.5px;
-        }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; }
+        header { background: #ffffff; height: 60px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 15px; flex-shrink: 0; }
+        .brand { font-weight: 900; font-size: 18px; color: #0f172a; margin-right: auto; letter-spacing: -0.5px; }
         .brand span { color: var(--accent); }
-
-        .nav-btn {
-            background: #f1f5f9;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-        }
-
-        .nav-btn:hover, .nav-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .nav-btn.config {
-            color: var(--warning);
-            border-color: #fcd34d;
-            background: #fffbeb;
-        }
-
-        /* --- 3. ÁREAS DE VISUALIZAÇÃO (ABAS) --- */
-        .view-section {
-            display: none;
-            flex-grow: 1;
-            overflow: hidden;
-            flex-direction: column;
-        }
-        .view-section.active {
-            display: flex;
-        }
-
-        /* --- 4. BARRA DE FERRAMENTAS --- */
-        .toolbar {
-            padding: 12px 24px;
-            display: flex;
-            gap: 12px;
-            background: #f1f5f9;
-            border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
-            align-items: center;
-            flex-wrap: wrap; /* Permitir quebra em telas menores */
-        }
-
-        .search-container {
-            flex-grow: 1;
-            position: relative;
-        }
-
-        .search-input {
-            width: 100%;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            color: var(--text-primary);
-            padding: 10px 10px 10px 36px;
-            border-radius: 8px;
-            font-size: 14px;
-            outline: none;
-        }
+        .nav-btn { background: #f1f5f9; border: 1px solid var(--border); color: var(--text-secondary); padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .nav-btn:hover, .nav-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .nav-btn.config { color: var(--warning); border-color: #fcd34d; background: #fffbeb; }
+        .view-section { display: none; flex-grow: 1; overflow: hidden; flex-direction: column; }
+        .view-section.active { display: flex; }
+        .toolbar { padding: 12px 24px; display: flex; gap: 12px; background: #f1f5f9; border-bottom: 1px solid var(--border); flex-shrink: 0; align-items: center; flex-wrap: wrap; }
+        .search-container { flex-grow: 1; position: relative; }
+        .search-input { width: 100%; background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 14px; outline: none; }
         .search-input:focus { border-color: var(--accent); }
-
-        .search-icon {
-            position: absolute;
-            left: 10px;
-            top: 10px;
-            color: #94a3b8;
-            width: 16px;
-        }
-
-        #total-count {
-            font-size: 11px;
-            color: var(--text-secondary);
-            font-weight: bold;
-            min-width: 80px;
-            text-align: right;
-        }
-
-        /* Selects de Filtro na Toolbar */
-        .toolbar-select {
-            background: #ffffff;
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-            padding: 8px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 11px;
-            outline: none;
-            height: 34px;
-        }
+        .search-icon { position: absolute; left: 10px; top: 10px; color: #94a3b8; width: 16px; }
+        #total-count { font-size: 11px; color: var(--text-secondary); font-weight: bold; min-width: 80px; text-align: right; }
+        .toolbar-select { background: #ffffff; border: 1px solid var(--border); color: var(--text-secondary); padding: 8px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11px; outline: none; height: 34px; }
         .toolbar-select:focus { border-color: var(--accent); }
-
-        /* --- 5. GRID DE PRODUTOS --- */
-        .product-grid {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 20px;
-            display: block; /* Alterado de grid para block para permitir headers */
-        }
-        
-        .category-header {
-            width: 100%;
-            font-size: 14px;
-            font-weight: 800;
-            color: var(--accent);
-            border-bottom: 2px solid var(--border);
-            margin: 20px 0 10px 0;
-            padding-bottom: 5px;
-            text-transform: uppercase;
-        }
+        .product-grid { flex-grow: 1; overflow-y: auto; padding: 20px; display: block; }
+        .category-header { width: 100%; font-size: 14px; font-weight: 800; color: var(--accent); border-bottom: 2px solid var(--border); margin: 20px 0 10px 0; padding-bottom: 5px; text-transform: uppercase; }
         .category-header:first-child { margin-top: 0; }
-
-        .category-items-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 16px;
-            align-content: start;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background: var(--bg-card);
-            border-radius: 8px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            border: 1px solid var(--border);
-            transition: transform 0.2s;
-            min-height: 540px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            border-color: var(--accent);
-            z-index: 10;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
+        .category-items-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-content: start; margin-bottom: 20px; }
+        .card { background: var(--bg-card); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; position: relative; border: 1px solid var(--border); transition: transform 0.2s; min-height: 540px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card:hover { transform: translateY(-2px); border-color: var(--accent); z-index: 10; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .card.status-synced { border-top: 3px solid var(--success); }
         .card.status-changed { border-top: 3px solid var(--warning); }
         .card.status-inactive { opacity: 0.6; background: #f1f5f9; border-top: 3px solid #94a3b8; }
-
-        /* Imagem do Card */
-        .card-img-area {
-            height: 160px;
-            background: #f8fafc;
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            border-bottom: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .card-img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            background: white;
-        }
-
-        .img-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            opacity: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            transition: 0.2s;
-            backdrop-filter: blur(2px);
-        }
+        .card-img-area { height: 160px; background: #f8fafc; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; border-bottom: 1px solid var(--border); overflow: hidden; }
+        .card-img { width: 100%; height: 100%; object-fit: contain; background: white; }
+        .img-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); opacity: 0; display: flex; justify-content: center; align-items: center; gap: 8px; transition: 0.2s; backdrop-filter: blur(2px); }
         .card-img-area:hover .img-overlay { opacity: 1; }
-
-        .overlay-btn {
-            background: white;
-            color: #0f172a;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transition: 0.2s;
-        }
-        .overlay-btn:hover {
-            transform: scale(1.1);
-            background: var(--accent);
-            color: white;
-        }
-
-        /* Corpo do Card */
-        .card-body {
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            flex-grow: 1;
-        }
-
-        .card-sku {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        /* Nova área de localização */
-        .loc-controls {
-            display: flex;
-            gap: 4px;
-        }
-
-        .loc-select {
-            background: #f1f5f9;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 10px;
-            color: var(--text-primary);
-            font-weight: bold;
-            padding: 2px;
-            cursor: pointer;
-            outline: none;
-        }
-
-        .card-title-input {
-            width: 100%;
-            background: transparent;
-            border: 1px solid transparent;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            font-size: 13px;
-            font-weight: 600;
-            resize: none;
-            overflow: hidden;
-            min-height: 40px;
-            line-height: 1.3;
-            border-radius: 4px;
-            padding: 2px;
-        }
-        .card-title-input:focus {
-            background: #f1f5f9;
-            border-color: var(--accent);
-            outline: none;
-        }
-
-        /* Inputs de EAN e NCM pequenos */
-        .card-input-small {
-            background: transparent;
-            border: 1px solid transparent;
-            color: var(--text-primary);
-            font-size: 10px;
-            font-weight: bold;
-            padding: 2px;
-            border-radius: 2px;
-            width: 100%;
-        }
-        .card-input-small:focus {
-            background: #f1f5f9;
-            border-color: var(--accent);
-            outline: none;
-        }
-
-        .card-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-top: auto;
-            padding-top: 8px;
-        }
-
+        .overlay-btn { background: white; color: #0f172a; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s; }
+        .overlay-btn:hover { transform: scale(1.1); background: var(--accent); color: white; }
+        .card-body { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex-grow: 1; }
+        .card-sku { font-size: 10px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
+        .loc-controls { display: flex; gap: 4px; }
+        .loc-select { background: #f1f5f9; border: 1px solid var(--border); border-radius: 4px; font-size: 10px; color: var(--text-primary); font-weight: bold; padding: 2px; cursor: pointer; outline: none; }
+        .card-title-input { width: 100%; background: transparent; border: 1px solid transparent; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; resize: none; overflow: hidden; min-height: 40px; line-height: 1.3; border-radius: 4px; padding: 2px; }
+        .card-title-input:focus { background: #f1f5f9; border-color: var(--accent); outline: none; }
+        .card-input-small { background: transparent; border: 1px solid transparent; color: var(--text-primary); font-size: 10px; font-weight: bold; padding: 2px; border-radius: 2px; width: 100%; }
+        .card-input-small:focus { background: #f1f5f9; border-color: var(--accent); outline: none; }
+        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 8px; }
         .stat-box { display: flex; flex-direction: column; }
-        
-        .stat-label {
-            font-size: 9px;
-            color: var(--accent);
-            margin-bottom: 3px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .stat-input {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-primary);
-            background: #f8fafc;
-            text-align: center;
-        }
+        .stat-label { font-size: 9px; color: var(--accent); margin-bottom: 3px; font-weight: bold; text-transform: uppercase; }
+        .stat-input { width: 100%; padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px; font-weight: 600; color: var(--text-primary); background: #f8fafc; text-align: center; }
         .stat-input:focus { border-color: var(--accent); background: white; outline: none; }
-
-        .cat-select {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-primary);
-            background: #f8fafc;
-            cursor: pointer;
-        }
+        .cat-select { width: 100%; padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; font-weight: 600; color: var(--text-primary); background: #f8fafc; cursor: pointer; }
         .cat-select:focus { border-color: var(--accent); background: white; outline: none; }
-        
-        .stat-readonly {
-            width: 100%;
-            padding: 5px;
-            border: 1px solid transparent;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-secondary);
-            background: transparent;
-            text-align: center;
-        }
-
-        /* Rodapé do Card (BOTÕES QUADRADOS) */
-        .card-footer {
-            padding: 8px 12px;
-            background: #f8fafc;
-            border-top: 1px solid var(--border);
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 8px;
-            align-items: center;
-        }
-
-        .btn-sq {
-            aspect-ratio: 1/1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: white;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: 0.2s;
-            padding: 0;
-            width: 100%;
-        }
-        .btn-sq:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-            background: #f1f5f9;
-        }
-        
-        /* Cores Específicas dos Botões */
+        .stat-readonly { width: 100%; padding: 5px; border: 1px solid transparent; font-size: 11px; font-weight: 700; color: var(--text-secondary); background: transparent; text-align: center; }
+        .card-footer { padding: 8px 12px; background: #f8fafc; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; align-items: center; }
+        .btn-sq { aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; border-radius: 6px; border: 1px solid var(--border); background: white; color: var(--text-secondary); cursor: pointer; transition: 0.2s; padding: 0; width: 100%; }
+        .btn-sq:hover { border-color: var(--accent); color: var(--accent); background: #f1f5f9; }
         .btn-sq.sync { background: var(--success); color: white; border-color: var(--success); }
         .btn-sq.sync:hover { background: #15803d; }
-        
         .btn-sq.inactive-state { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
         .btn-sq.offer-active { background: #dc2626; color: white; border-color: #dc2626; }
-        
-        /* Spin animation for auto sync pending */
         @keyframes spin-slow { to { transform: rotate(360deg); } }
         .btn-sq.sync.pending i { animation: spin-slow 2s linear infinite; opacity: 0.8; }
         .btn-sq.sync.pending { background: #f59e0b; border-color: #f59e0b; }
-
-        /* --- 7. MODAIS --- */
-        .modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.5);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            backdrop-filter: blur(2px);
-        }
-
-        .modal-card {
-            background: #ffffff;
-            padding: 0;
-            border-radius: 12px;
-            width: 600px;
-            max-width: 95%;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid var(--border);
-            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
-            overflow: hidden;
-        }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        .modal-card { background: #ffffff; padding: 0; border-radius: 12px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border); box-shadow: 0 25px 50px rgba(0,0,0,0.2); overflow: hidden; }
         .modal-card.login { width: 350px; }
-
-        .modal-header {
-            padding: 12px 16px;
-            background: #f1f5f9;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: var(--text-primary);
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .modal-body {
-            padding: 16px;
-            overflow-y: auto;
-            color: var(--text-primary);
-        }
-
-        .close-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-        }
-
+        .modal-header { padding: 12px 16px; background: #f1f5f9; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: var(--text-primary); font-weight: bold; font-size: 14px; }
+        .modal-body { padding: 16px; overflow-y: auto; color: var(--text-primary); }
+        .close-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
-        .form-group label {
-            display: block;
-            font-size: 10px;
-            color: var(--accent);
-            margin-bottom: 4px;
-            text-transform: uppercase;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            background: #ffffff;
-            border: 1px solid var(--border);
-            padding: 8px;
-            border-radius: 4px;
-            color: var(--text-primary);
-            font-size: 12px;
-        }
-
-        .btn-full {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            background: var(--accent);
-            color: white;
-            font-size: 13px;
-        }
-        
-        .btn-danger {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--danger);
-            background: #fef2f2;
-            color: var(--danger);
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 15px;
-            font-size: 12px;
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            align-items: center;
-        }
+        .form-group label { display: block; font-size: 10px; color: var(--accent); margin-bottom: 4px; text-transform: uppercase; }
+        .form-group input, .form-group select { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 8px; border-radius: 4px; color: var(--text-primary); font-size: 12px; }
+        .btn-full { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; background: var(--accent); color: white; font-size: 13px; }
+        .btn-danger { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--danger); background: #fef2f2; color: var(--danger); font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 12px; display: flex; justify-content: center; gap: 8px; align-items: center; }
         .btn-danger:hover { background: #fee2e2; }
-        
-        /* Checkbox Customizado */
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            margin-top: 10px;
-            justify-content: center;
-            color: var(--text-secondary);
-        }
+        .checkbox-wrapper { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-top: 10px; justify-content: center; color: var(--text-secondary); }
         .checkbox-wrapper input { accent-color: var(--accent); }
-
-        /* --- 8. EDITOR DE IMAGEM --- */
-        canvas {
-            background: #fff;
-            max-width: 100%;
-            border: 1px solid var(--border);
-            margin: 0 auto;
-            display: block;
-        }
-
-        .editor-tools {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-            background: #f1f5f9;
-            padding: 10px;
-            border-radius: 6px;
-        }
-        
-        .sticker-tools {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: space-between;
-        }
-
-        .sticker-btn {
-            flex: 1;
-            padding: 6px;
-            border: 1px solid var(--border);
-            background: #ffffff;
-            color: var(--text-secondary);
-            border-radius: 4px;
-            font-size: 10px;
-            cursor: pointer;
-            text-align: center;
-        }
+        canvas { background: #fff; max-width: 100%; border: 1px solid var(--border); margin: 0 auto; display: block; }
+        .editor-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; background: #f1f5f9; padding: 10px; border-radius: 6px; }
+        .sticker-tools { display: flex; gap: 10px; margin-top: 10px; justify-content: space-between; }
+        .sticker-btn { flex: 1; padding: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-secondary); border-radius: 4px; font-size: 10px; cursor: pointer; text-align: center; }
         .sticker-btn:hover { background: #e2e8f0; }
         .sticker-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-
-        .tool-group label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 10px;
-            color: var(--text-secondary);
-            margin-bottom: 4px;
-        }
-
-        input[type=range] {
-            width: 100%;
-            accent-color: var(--accent);
-            height: 4px;
-        }
-
-        .file-info {
-            background: #f1f5f9;
-            padding: 8px;
-            border-radius: 4px;
-            margin-top: 10px;
-            font-size: 11px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px dashed var(--border);
-        }
-
-        .action-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 15px;
-        }
-
-        .btn-act {
-            flex: 1;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border);
-            background: #ffffff;
-            color: var(--text-primary);
-            font-size: 11px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-        }
+        .tool-group label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); margin-bottom: 4px; }
+        input[type=range] { width: 100%; accent-color: var(--accent); height: 4px; }
+        .file-info { background: #f1f5f9; padding: 8px; border-radius: 4px; margin-top: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; border: 1px dashed var(--border); }
+        .action-row { display: flex; gap: 8px; margin-top: 15px; }
+        .btn-act { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-primary); font-size: 11px; font-weight: bold; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; }
         .btn-act:hover { background: #f1f5f9; border-color: var(--accent); }
         .btn-act.primary { background: var(--accent); border: none; color: white; }
-
-        /* --- 9. LOADER --- */
-        #loader {
-            position: fixed;
-            inset: 0;
-            background: rgba(255,255,255,0.9);
-            z-index: 3000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            color: var(--text-primary);
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #cbd5e1;
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s infinite linear;
-        }
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 3000; display: none; justify-content: center; align-items: center; color: var(--text-primary); flex-direction: column; gap: 15px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
     <script>
-        // ==========================================
-        // 1. CONFIGURAÇÕES E DADOS GERAIS
-        // ==========================================
-        const USERS = {
-            "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL",
-            "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
-        };
-        
-        // Array global para categorias vindas do GitHub
+        const USERS = { "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL", "567890": "KELY", "121212": "JOSE", "123456": "ROSINA" };
         let availableCategories = []; 
-        
         const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
         const LOGIN_KEY = 'sucedoan_saved_login'; 
-
-        // --- NOVA CONFIGURAÇÃO DE LOCALIZAÇÃO (GONDOLAS E PRATELEIRAS) ---
-        // Cria array ["01", "02" ... "15"]
         const GONDOLAS = Array.from({length: 15}, (_, i) => String(i + 1).padStart(2, '0'));
-        
-        // Cria array ["A", "B", "C", "D", "E", "F"]
         const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F'];
-        
         const SEM_LOCAL = "SEM LOCAL";
     </script>
 
     <header>
         <div class="brand">SUCEDOAN <span>PRO</span></div>
-        <button class="nav-btn active" onclick="showSection('products', this)">
-            <i data-lucide="package" size="14"></i> PRODUTOS
-        </button>
+        <button class="nav-btn active" onclick="showSection('products', this)"><i data-lucide="package" size="14"></i> PRODUTOS</button>
         <div style="flex-grow:1"></div>
-        <button class="nav-btn config" onclick="openConfigModal()">
-            <i data-lucide="settings" size="14"></i>
-        </button>
+        <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings" size="14"></i></button>
     </header>
 
     <div id="section-products" class="view-section active">
         <div class="toolbar">
-            
             <input type="file" id="csv-file" accept=".csv" style="display:none">
-            <button class="nav-btn" onclick="document.getElementById('csv-file').click()">
-                <i data-lucide="file-spreadsheet" size="14"></i> IMPORTAR CSV
-            </button>
-            
+            <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet" size="14"></i> IMPORTAR CSV</button>
             <div style="display:flex; gap:5px; align-items:center; border-left:1px solid #cbd5e1; padding-left:15px; margin-left:15px;">
                 <input type="text" id="new-cat-input" placeholder="Nova Categoria..." style="width:120px; padding:8px; border-radius:4px; border:1px solid #cbd5e1; font-size:12px;">
-                <button class="nav-btn" onclick="addNewCategory()" title="Adicionar Categoria ao GitHub">
-                    <i data-lucide="plus-circle" size="14"></i>
-                </button>
+                <button class="nav-btn" onclick="addNewCategory()" title="Adicionar Categoria ao GitHub"><i data-lucide="plus-circle" size="14"></i></button>
             </div>
-
             <div style="display:flex; gap:5px; align-items:center; margin-left:15px;">
                 <select id="filter-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value)">
                     <option value="all">Todos</option>
@@ -732,53 +150,26 @@
                     <option value="validity">Validade (Próxima)</option>
                 </select>
             </div>
-
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
             </div>
-            
-            <button class="nav-btn" onclick="saveDataManual()">
-                <i data-lucide="save" size="14"></i> SALVAR DADOS
-            </button>
-            
-            <button class="nav-btn" onclick="syncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)">
-                <i data-lucide="globe" size="14"></i> ATUALIZAR SITE
-            </button>
-
-            <button class="nav-btn" onclick="exportarCSV()">
-                <i data-lucide="download" size="14"></i> CSV
-            </button>
-            <button class="nav-btn" onclick="openPrintListModal()">
-                <i data-lucide="printer" size="14"></i> LISTAS
-            </button>
+            <button class="nav-btn" onclick="saveDataManual()"><i data-lucide="save" size="14"></i> SALVAR DADOS</button>
+            <button class="nav-btn" onclick="syncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)"><i data-lucide="globe" size="14"></i> ATUALIZAR SITE</button>
+            <button class="nav-btn" onclick="exportarCSV()"><i data-lucide="download" size="14"></i> CSV</button>
+            <button class="nav-btn" onclick="openPrintListModal()"><i data-lucide="printer" size="14"></i> LISTAS</button>
             <div id="total-count">0</div>
         </div>
-        
         <div class="product-grid" id="product-grid"></div>
     </div>
 
     <div id="modal-login" class="modal-overlay">
         <div class="modal-card login">
-            <div class="modal-header">
-                <span>AUTENTICAÇÃO</span>
-                <button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button>
-            </div>
+            <div class="modal-header"><span>AUTENTICAÇÃO</span><button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button></div>
             <div class="modal-body">
-                <div style="text-align:center; margin-bottom:15px; color: var(--warning);">
-                    <i data-lucide="lock" size="32"></i>
-                    <p style="font-size:12px; margin-top:5px;">Digite sua senha pessoal</p>
-                </div>
-                <div class="form-group">
-                    <label>Senha de Acesso</label>
-                    <input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;" onkeydown="if(event.key==='Enter') attemptLogin()">
-                </div>
-                
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="save-login">
-                    <label for="save-login">Salvar senha neste dispositivo</label>
-                </div>
-
+                <div style="text-align:center; margin-bottom:15px; color: var(--warning);"><i data-lucide="lock" size="32"></i><p style="font-size:12px; margin-top:5px;">Digite sua senha pessoal</p></div>
+                <div class="form-group"><label>Senha de Acesso</label><input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;" onkeydown="if(event.key==='Enter') attemptLogin()"></div>
+                <div class="checkbox-wrapper"><input type="checkbox" id="save-login"><label for="save-login">Salvar senha neste dispositivo</label></div>
                 <button class="btn-full" onclick="attemptLogin()">CONFIRMAR</button>
                 <div id="login-error" style="color:var(--danger); font-size:11px; text-align:center; margin-top:10px; display:none;">Senha incorreta!</div>
             </div>
@@ -787,43 +178,23 @@
 
     <div id="modal-editor" class="modal-overlay">
         <div class="modal-card" style="width:450px;">
-            <div class="modal-header">
-                <span>Editor de Imagem (Ctrl+V para Colar)</span>
-                <button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x"></i></button>
-            </div>
+            <div class="modal-header"><span>Editor de Imagem (Ctrl+V para Colar)</span><button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x"></i></button></div>
             <div class="modal-body">
-                <canvas id="imageCanvas" width="400" height="400"></canvas>
-                
-                <div class="file-info">
-                    <span id="file-name-preview" style="color:var(--accent)">img.webp</span>
-                    <span id="file-size-preview">0kb</span>
-                </div>
-
+                <canvas id="imageCanvas" width="450" height="450"></canvas>
+                <div class="file-info"><span id="file-name-preview" style="color:var(--accent)">img.webp</span><span id="file-size-preview">0kb</span></div>
                 <div class="sticker-tools">
                     <div class="sticker-btn" id="stk-offer" onclick="toggleSticker('offer')">OFERTA</div>
                     <div class="sticker-btn" id="stk-best" onclick="toggleSticker('best')">MELHOR PREÇO</div>
                     <div class="sticker-btn" id="stk-today" onclick="toggleSticker('today')">SÓ HOJE</div>
                 </div>
-
                 <div class="editor-tools">
-                    <div class="tool-group">
-                        <label><span>Zoom</span></label>
-                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1">
-                    </div>
-                    <div class="tool-group">
-                        <label><span>Nitidez</span></label>
-                        <input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0">
-                    </div>
-                    <div class="tool-group" style="grid-column: span 2;">
-                        <label><span>Brilho</span></label>
-                        <input type="range" id="brightnessRange" min="0" max="2" step="0.1" value="1">
-                    </div>
+                    <div class="tool-group"><label><span>Zoom</span></label><input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1"></div>
+                    <div class="tool-group"><label><span>Nitidez</span></label><input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0"></div>
+                    <div class="tool-group" style="grid-column: span 2;"><label><span>Brilho</span></label><input type="range" id="brightnessRange" min="0" max="2" step="0.1" value="1"></div>
                 </div>
-
                 <div class="action-row">
                     <button class="btn-act" onclick="document.getElementById('fileInput').click()">PC</button>
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
-                    
                     <button class="btn-act" onclick="downloadImage()">BAIXAR</button>
                     <button class="btn-act primary" style="flex:2" onclick="uploadToGithub()">GITHUB & SYNC</button>
                 </div>
@@ -850,14 +221,9 @@
                 <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo" onkeydown="if(event.key==='Enter') saveConfig()"></div>
                 <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" onkeydown="if(event.key==='Enter') saveConfig()"></div>
                 <button class="btn-full" onclick="saveConfig()">SALVAR</button>
-                
                 <hr style="margin:20px 0; border:0; border-top:1px solid #e2e8f0;">
-                <button class="btn-danger" onclick="restaurarLinksPadraoSite()">
-                    <i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE
-                </button>
-                <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">
-                    Força o uso de "i/..site/img/produtos/CODIGO.webp" em tudo.
-                </div>
+                <button class="btn-danger" onclick="restaurarLinksPadraoSite()"><i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE</button>
+                <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">Força o uso de "i/..site/img/produtos/CODIGO.webp" em tudo.</div>
             </div>
         </div>
     </div>
@@ -866,18 +232,8 @@
         <div class="modal-card" style="width:400px">
             <div class="modal-header"><span>Imprimir Lista de Estoque (80mm)</span><button class="close-btn" onclick="closeModal('modal-print-list')"><i data-lucide="x"></i></button></div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label>Selecione a Gôndola</label>
-                    <select id="print-gondola" onchange="updatePrintShelves()">
-                        <option value="ALL">TODAS</option>
-                        </select>
-                </div>
-                <div class="form-group" style="margin-top:10px;">
-                    <label>Selecione a Prateleira</label>
-                    <select id="print-shelf">
-                        <option value="ALL">TODAS</option>
-                        </select>
-                </div>
+                <div class="form-group"><label>Selecione a Gôndola</label><select id="print-gondola" onchange="updatePrintShelves()"><option value="ALL">TODAS</option></select></div>
+                <div class="form-group" style="margin-top:10px;"><label>Selecione a Prateleira</label><select id="print-shelf"><option value="ALL">TODAS</option></select></div>
                 <button class="btn-full" onclick="printStockList()">GERAR IMPRESSÃO</button>
             </div>
         </div>
@@ -886,15 +242,10 @@
     <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
 
     <script>
-        // ==========================================
-        // 2. LÓGICA DO SISTEMA (JAVASCRIPT)
-        // ==========================================
         let products = [];
         let currentEditingId = null;
         let currentUser = null;
-        let productScrollPos = 0; // Armazena a posição da rolagem da grid
-
-        // Variáveis do Editor
+        let productScrollPos = 0;
         const canvas = document.getElementById('imageCanvas');
         const ctx = canvas.getContext('2d');
         let loadedImage = null;
@@ -903,285 +254,100 @@
         window.onload = function() {
             lucide.createIcons();
             loadData();
-            loadCategoriesFromGithub(); // Carrega as categorias do GitHub ao iniciar
+            loadCategoriesFromGithub();
             setupEditorEvents();
             document.getElementById('search-input').addEventListener('input', (e) => renderGrid(e.target.value));
         };
 
         function showSection(id, btn) {
-            // Salva a rolagem se estiver saindo da tela de produtos
             const prodSection = document.getElementById('section-products');
             if (prodSection.classList.contains('active')) {
                  const grid = document.getElementById('product-grid');
                  productScrollPos = grid.scrollTop;
             }
-
             document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
             document.getElementById('section-' + id).classList.add('active');
-            
             if(btn) {
                 document.querySelectorAll('header .nav-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
             }
-
-            // Restaura a rolagem se estiver voltando para produtos
             if (id === 'products') {
                 const grid = document.getElementById('product-grid');
-                requestAnimationFrame(() => {
-                    grid.scrollTop = productScrollPos;
-                });
+                requestAnimationFrame(() => { grid.scrollTop = productScrollPos; });
             }
         }
 
-        // ----------------------------------------------------
-        // IMPORTAÇÃO CSV (DADOS COMPLETOS COM NOMES EXATOS)
-        // ----------------------------------------------------
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
             toggleLoader(true, "Lendo CSV...");
-            
             Papa.parse(e.target.files[0], {
-                header: true,
-                skipEmptyLines: true,
-                encoding: "UTF-8",
-                delimiter: ";", 
-                transformHeader: h => h.replace(/"/g, '').trim(),
+                header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
                     const novos = results.data.map(d => {
-                        // Função auxiliar para mapear para o App (Card)
                         const getVal = (key) => d[key] ? d[key] : "";
-                        const getNum = (key) => {
-                            const v = getVal(key);
-                            return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0;
-                        };
-
-                        // 1. Sanitização do Código (remover TAB)
+                        const getNum = (key) => { const v = getVal(key); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
                         const codigoLimpo = getVal('Código').trim();
-
-                        // Normalização da Localização (Ex: "3-D" -> "03-D")
                         let rawLoc = getVal('Localização');
-                        
-                        // Garante que "03-D", "3-D", "03 - D" virem "03-D"
                         if(rawLoc) {
-                             rawLoc = rawLoc.trim().toUpperCase();
-                             // Remove espaços extras ao redor do traço
-                             rawLoc = rawLoc.replace(/\s*-\s*/, '-');
-                             
-                             // Se for "3-D", adiciona zero à esquerda
-                             if(rawLoc.match(/^\d-[A-Z0-9]+$/)) {
-                                 rawLoc = '0' + rawLoc;
-                             }
+                             rawLoc = rawLoc.trim().toUpperCase().replace(/\s*-\s*/, '-');
+                             if(rawLoc.match(/^\d-[A-Z0-9]+$/)) rawLoc = '0' + rawLoc;
                         }
-                        
-                        // Garante leitura de custo e categoria
-                        // Prioriza "Preço de custo" (Coluna 11) conforme solicitado
                         const cost = getNum('Preço de custo') || getNum('Preço de Compra');
                         const cat = getVal('Categoria do produto');
-
-                        // 1. Definição Base para o App (Card Principal)
                         const base = {
-                            codigo: codigoLimpo,
-                            nome: getVal('Descrição'),
-                            preco: getNum('Preço'),
-                            preco_custo: cost, // Garante que pegou o correto
-                            categoria: cat,
-                            estoque: getNum('Estoque'),
-                            localizacao: rawLoc, // Usa a versão normalizada
-                            gtin: getVal('GTIN/EAN'),
-                            url_imagem: getVal('URL Imagens Externas'),
-                            ncm: getVal('NCM'), 
-                            validade: getVal('Data Validade'),
-                            
-                            // Controle Interno
-                            situacao: 'A', // Padrão Ativo na importação
-                            formato: 'S',
-                            _changed: true,
-                            _lastChange: "Importação CSV"
+                            codigo: codigoLimpo, nome: getVal('Descrição'), preco: getNum('Preço'), preco_custo: cost, categoria: cat, estoque: getNum('Estoque'),
+                            localizacao: rawLoc, gtin: getVal('GTIN/EAN'), url_imagem: getVal('URL Imagens Externas'), ncm: getVal('NCM'), validade: getVal('Data Validade'),
+                            situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
                         };
-
-                        // 2. IMPORTAÇÃO TOTAL: Copia TODAS as colunas do CSV
-                        Object.keys(d).forEach(k => {
-                            if(base[k] === undefined) {
-                                base[k] = d[k];
-                            }
-                        });
-                        
-                        // Garante persistência dos campos normalizados/mapeados
-                        base['Código'] = codigoLimpo;
-                        base['Localização'] = rawLoc;
-                        base['Preço de custo'] = cost;
-                        base['Preço de Compra'] = cost; // SYNC NA IMPORTAÇÃO
-                        base['Categoria do produto'] = cat;
-
-                        // 3. HIGIENIZAÇÃO OBRIGATÓRIA
-                        base['Origem'] = '0';
-                        base['Unidade'] = 'un';
-                        base['Grupo de produtos'] = '';
-
+                        Object.keys(d).forEach(k => { if(base[k] === undefined) base[k] = d[k]; });
+                        base['Código'] = codigoLimpo; base['Localização'] = rawLoc; base['Preço de custo'] = cost; base['Preço de Compra'] = cost; base['Categoria do produto'] = cat;
+                        base['Origem'] = '0'; base['Unidade'] = 'un'; base['Grupo de produtos'] = '';
                         return base;
                     });
-
-                    if(novos.length > 0) {
-                        products = novos;
-                        saveData();
-                        renderGrid();
-                    }
+                    if(novos.length > 0) { products = novos; saveData(); renderGrid(); }
                     toggleLoader(false);
                 }
             });
         });
 
-        // ----------------------------------------------------
-        // EXPORTAÇÃO CSV
-        // ----------------------------------------------------
         function exportarCSV() {
             if (products.length === 0) return alert("Nada para exportar.");
-
-            // FILTRO: Apenas produtos ativos (situacao != 'I')
             const produtosAtivos = products.filter(p => p.situacao !== 'I');
-            
             if (produtosAtivos.length === 0) return alert("Nenhum produto ativo para exportar.");
-
-            const colunasModelo = [
-                "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
-                "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", 
-                "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", 
-                "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", 
-                "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", 
-                "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", 
-                "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", 
-                "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", 
-                "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", 
-                "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", 
-                "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", 
-                "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", 
-                "Categoria do produto", "Informações Adicionais"
-            ];
-
+            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
             const dadosParaExportar = produtosAtivos.map(p => {
                 const linha = {};
                 const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-
-                // Atualiza campos editados no sistema
-                p['Descrição'] = p.nome;
-                p['Preço'] = fmt(p.preco);
-                p['Preço de custo'] = fmt(p.preco_custo);
-                p['Estoque'] = fmt(p.estoque);
-                p['Localização'] = p.localizacao; // Ex: "01-A"
-                p['GTIN/EAN'] = p.gtin;
-                p['URL Imagens Externas'] = ""; 
-                p['NCM'] = p.ncm; 
-                p['Situação'] = p.situacao;
-                p['Categoria do produto'] = p.categoria;
-
-                p['Origem'] = '0'; 
-                p['Unidade'] = 'un';
-                p['Grupo de produtos'] = '';
-
-                colunasModelo.forEach(col => {
-                    linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : "";
-                });
+                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque);
+                p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = ""; p['NCM'] = p.ncm; p['Situação'] = p.situacao; p['Categoria do produto'] = p.categoria;
+                p['Origem'] = '0'; p['Unidade'] = 'un'; p['Grupo de produtos'] = '';
+                colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
                 return linha;
             });
-
-            const csv = Papa.unparse({
-                fields: colunasModelo,
-                data: dadosParaExportar
-            }, {
-                quotes: true, 
-                delimiter: ";"
-            });
-
-            const l = document.createElement("a"); 
-            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-            l.download = "produtos_export_ativos.csv"; 
-            l.click();
+            const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
+            l.download = "produtos_export_ativos.csv"; l.click();
         }
 
         function exportSingleCSV(sku) {
             const p = products.find(x => x.codigo === sku);
             if (!p) return;
-
-            const colunasModelo = [
-                "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
-                "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", 
-                "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", 
-                "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", 
-                "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", 
-                "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", 
-                "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", 
-                "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", 
-                "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", 
-                "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", 
-                "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", 
-                "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", 
-                "Categoria do produto", "Informações Adicionais"
-            ];
-
-            const linha = {};
-            const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-
-            // Atualiza campos
-            p['Descrição'] = p.nome;
-            p['Preço'] = fmt(p.preco);
-            p['Preço de custo'] = fmt(p.preco_custo);
-            p['Estoque'] = fmt(p.estoque);
-            p['Localização'] = p.localizacao; 
-            p['GTIN/EAN'] = p.gtin;
-            p['URL Imagens Externas'] = ""; 
-            p['NCM'] = p.ncm; 
-            p['Situação'] = p.situacao;
-            p['Categoria do produto'] = p.categoria;
-
-            p['Origem'] = '0'; 
-            p['Unidade'] = 'un';
-            p['Grupo de produtos'] = '';
-
-            colunasModelo.forEach(col => {
-                linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : "";
-            });
-
-            const csv = Papa.unparse({
-                fields: colunasModelo,
-                data: [linha]
-            }, {
-                quotes: true, 
-                delimiter: ";"
-            });
-
-            const l = document.createElement("a"); 
-            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-            l.download = `produto_${sku}.csv`; 
-            l.click();
+            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
+            const linha = {}; const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
+            p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = ""; p['NCM'] = p.ncm; p['Situação'] = p.situacao; p['Categoria do produto'] = p.categoria; p['Origem'] = '0'; p['Unidade'] = 'un'; p['Grupo de produtos'] = '';
+            colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
+            const csv = Papa.unparse({ fields: colunasModelo, data: [linha] }, { quotes: true, delimiter: ";" });
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `produto_${sku}.csv`; l.click();
         }
 
-        // ----------------------------------------------------
-        // IMPRESSÃO DE LISTAS (80MM)
-        // ----------------------------------------------------
         function openPrintListModal() {
-            // Popula os selects
             const gondolaSelect = document.getElementById('print-gondola');
             const shelfSelect = document.getElementById('print-shelf');
-            
-            // Limpa
             gondolaSelect.innerHTML = '<option value="ALL">TODAS</option>';
             shelfSelect.innerHTML = '<option value="ALL">TODAS</option>';
-
-            // Encontra Gôndolas Únicas nos produtos
             const uniqueGondolas = new Set();
-            products.forEach(p => {
-                if(p.localizacao && p.localizacao.includes('-')) {
-                    uniqueGondolas.add(p.localizacao.split('-')[0]);
-                }
-            });
-            const sortedG = Array.from(uniqueGondolas).sort();
-            sortedG.forEach(g => {
-                const opt = document.createElement('option');
-                opt.value = g;
-                opt.innerText = "Gôndola " + g;
-                gondolaSelect.appendChild(opt);
-            });
-
+            products.forEach(p => { if(p.localizacao && p.localizacao.includes('-')) uniqueGondolas.add(p.localizacao.split('-')[0]); });
+            Array.from(uniqueGondolas).sort().forEach(g => { const opt = document.createElement('option'); opt.value = g; opt.innerText = "Gôndola " + g; gondolaSelect.appendChild(opt); });
             openModal('modal-print-list');
         }
 
@@ -1189,110 +355,36 @@
             const gondola = document.getElementById('print-gondola').value;
             const shelfSelect = document.getElementById('print-shelf');
             shelfSelect.innerHTML = '<option value="ALL">TODAS</option>';
-            
             if(gondola === 'ALL') return;
-
             const uniqueShelves = new Set();
-            products.forEach(p => {
-                if(p.localizacao && p.localizacao.startsWith(gondola + '-')) {
-                    uniqueShelves.add(p.localizacao.split('-')[1]);
-                }
-            });
-            const sortedS = Array.from(uniqueShelves).sort();
-            sortedS.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s;
-                opt.innerText = "Prateleira " + s;
-                shelfSelect.appendChild(opt);
-            });
+            products.forEach(p => { if(p.localizacao && p.localizacao.startsWith(gondola + '-')) uniqueShelves.add(p.localizacao.split('-')[1]); });
+            Array.from(uniqueShelves).sort().forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.innerText = "Prateleira " + s; shelfSelect.appendChild(opt); });
         }
 
         function printStockList() {
             const gondola = document.getElementById('print-gondola').value;
             const shelf = document.getElementById('print-shelf').value;
-
-            // Filtra produtos
             const filtered = products.filter(p => {
-                if(p.situacao === 'I') return false;
-                if(!p.localizacao) return false;
+                if(p.situacao === 'I' || !p.localizacao) return false;
                 const parts = p.localizacao.split('-');
-                const g = parts[0];
-                const s = parts[1];
-                
-                if(gondola !== 'ALL' && g !== gondola) return false;
-                if(shelf !== 'ALL' && s !== shelf) return false;
+                if(gondola !== 'ALL' && parts[0] !== gondola) return false;
+                if(shelf !== 'ALL' && parts[1] !== shelf) return false;
                 return true;
             });
-
-            // Ordena por Localização
             filtered.sort((a,b) => a.localizacao.localeCompare(b.localizacao));
-
             const w = window.open('', '', 'width=400,height=600');
-            
             let itemsHtml = '';
             filtered.forEach(p => {
-                // Checa validade < 30 dias
                 let isExpiring = false;
                 if(p.validade) {
                     const dt = parseDate(p.validade);
-                    if(dt) {
-                         const diffTime = dt - new Date();
-                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                         if(diffDays < 30) isExpiring = true;
-                    }
+                    if(dt) { const diffDays = Math.ceil((dt - new Date()) / (1000 * 60 * 60 * 24)); if(diffDays < 30) isExpiring = true; }
                 }
-                
                 const styleExp = isExpiring ? 'font-weight:bold; text-decoration:underline;' : '';
                 const mark = isExpiring ? ' ***' : '';
-
-                itemsHtml += `
-                    <div class="item">
-                        <div class="line1">
-                            <span class="loc">[${p.localizacao}]</span>
-                            <span class="name">${p.nome.substring(0, 30)}</span>
-                        </div>
-                        <div class="line2">
-                            <span>SKU: ${p.codigo}</span>
-                            <span>EST: ${formatNum(p.estoque)}</span>
-                        </div>
-                        <div class="line3" style="${styleExp}">
-                            VAL: ${p.validade || '---'}${mark}
-                        </div>
-                    </div>
-                `;
+                itemsHtml += `<div class="item"><div class="line1"><span class="loc">[${p.localizacao}]</span><span class="name">${p.nome.substring(0, 30)}</span></div><div class="line2"><span>SKU: ${p.codigo}</span><span>EST: ${formatNum(p.estoque)}</span></div><div class="line3" style="${styleExp}">VAL: ${p.validade || '---'}${mark}</div></div>`;
             });
-
-            w.document.write(`
-                <html>
-                <head>
-                    <style>
-                        @page { size: 80mm auto; margin: 0; }
-                        body { 
-                            width: 80mm; 
-                            margin: 0; padding: 5mm; 
-                            box-sizing: border-box;
-                            font-family: monospace;
-                            font-size: 12px;
-                        }
-                        .header { text-align: center; font-weight: bold; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
-                        .item { margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
-                        .line1 { display: flex; gap: 5px; font-weight: bold; }
-                        .loc { white-space: nowrap; }
-                        .line2 { display: flex; justify-content: space-between; font-size: 11px; }
-                        .line3 { font-size: 11px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        RELATÓRIO DE ESTOQUE<br>
-                        G: ${gondola} | P: ${shelf}<br>
-                        Data: ${new Date().toLocaleDateString()}
-                    </div>
-                    ${itemsHtml}
-                    <script>window.onload = function() { window.print(); }<\/script>
-                </body>
-                </html>
-            `);
+            w.document.write(`<html><head><style>@page { size: 80mm auto; margin: 0; } body { width: 80mm; margin: 0; padding: 5mm; box-sizing: border-box; font-family: monospace; font-size: 12px; } .header { text-align: center; font-weight: bold; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; } .item { margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; } .line1 { display: flex; gap: 5px; font-weight: bold; } .loc { white-space: nowrap; } .line2 { display: flex; justify-content: space-between; font-size: 11px; } .line3 { font-size: 11px; }</style></head><body><div class="header">RELATÓRIO DE ESTOQUE<br>G: ${gondola} | P: ${shelf}<br>Data: ${new Date().toLocaleDateString()}</div>${itemsHtml}<script>window.onload = function() { window.print(); }<\/script></body></html>`);
             w.document.close();
             closeModal('modal-print-list');
         }
@@ -1302,312 +394,143 @@
             if(msg) document.getElementById('loader-msg').innerText = msg;
         }
 
-        function saveDataManual() {
-            saveData();
-            alert("Dados salvos localmente!");
-        }
-    </script>
+        function saveDataManual() { saveData(); alert("Dados salvos localmente!"); }
 
-    <script>
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if(saved) products = JSON.parse(saved);
-            
             const savedLogin = localStorage.getItem(LOGIN_KEY);
             if(savedLogin) currentUser = savedLogin;
-            
             if(!currentUser) openModal('modal-login');
-            
-            // Config
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             if(cfg.token) {
-                document.getElementById('cfg-token').value = cfg.token;
-                document.getElementById('cfg-user').value = cfg.user;
-                document.getElementById('cfg-repo').value = cfg.repo;
-                document.getElementById('cfg-path').value = cfg.path;
+                document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user;
+                document.getElementById('cfg-repo').value = cfg.repo; document.getElementById('cfg-path').value = cfg.path;
             }
-
             renderGrid();
         }
 
-        // ==========================================
-        // GESTÃO DE CATEGORIAS NO GITHUB
-        // ==========================================
         async function loadCategoriesFromGithub() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) {
-                console.log("GitHub não configurado, usando categorias locais/vazias.");
-                return;
-            }
-
-            // Caminho para o arquivo de categorias padrão
+            if(!cfg || !cfg.token) return;
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/categorias-padrao.json`;
-            
             try {
                 const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
                 if(res.ok) {
                     const json = await res.json();
                     const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
                     availableCategories = JSON.parse(decodedStr);
-                    // Ordena alfabeticamente
                     availableCategories.sort((a,b) => a.localeCompare(b));
                     renderGrid(document.getElementById('search-input').value);
-                } else {
-                    console.log("Arquivo categorias-padrao.json não encontrado no GitHub.");
                 }
-            } catch(e) {
-                console.error("Erro ao carregar categorias:", e);
-            }
+            } catch(e) { console.error("Erro ao carregar categorias:", e); }
         }
 
         async function addNewCategory() {
             const input = document.getElementById('new-cat-input');
             const newCat = input.value.trim().toUpperCase();
-            
             if(!newCat) return alert("Digite o nome da categoria.");
             if(availableCategories.includes(newCat)) return alert("Categoria já existe!");
-
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-
             toggleLoader(true, "Salvando Categoria...");
-
-            // Adiciona localmente
             availableCategories.push(newCat);
             availableCategories.sort((a,b) => a.localeCompare(b));
-
-            // Prepara para salvar no GitHub
             const path = `site/categorias-padrao.json`;
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-            
             try {
-                // 1. Get SHA (se arquivo existir)
                 let sha = null;
                 try {
                     const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) {
-                        const json = await check.json();
-                        sha = json.sha;
-                    }
+                    if(check.ok) { const json = await check.json(); sha = json.sha; }
                 } catch(e) {}
-
-                // 2. Encode
                 const contentStr = JSON.stringify(availableCategories, null, 2);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-
-                // 3. PUT Request
-                const body = {
-                    message: `Add Cat: ${newCat} via Painel`,
-                    content: base64
-                };
+                const body = { message: `Add Cat: ${newCat} via Painel`, content: base64 };
                 if(sha) body.sha = sha;
-
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        "Authorization": `token ${cfg.token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 if(!res.ok) throw new Error(await res.text());
-                
-                input.value = "";
-                alert("Categoria criada com sucesso!");
+                input.value = ""; alert("Categoria criada com sucesso!");
                 renderGrid(document.getElementById('search-input').value);
-
-            } catch(err) {
-                alert("Erro GitHub: " + err.message);
-                // Reverte local em caso de erro
-                availableCategories = availableCategories.filter(c => c !== newCat);
-            } finally {
-                toggleLoader(false);
-            }
+            } catch(err) { alert("Erro GitHub: " + err.message); availableCategories = availableCategories.filter(c => c !== newCat); } finally { toggleLoader(false); }
         }
 
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-        }
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
-        function searchGoogle(term) {
-            const query = encodeURIComponent(term);
-            window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
-        }
+        function searchGoogle(term) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(term)}`, '_blank'); }
 
         function parseDate(str) {
             if(!str) return null;
             const parts = str.split('/');
-            if(parts.length === 3) {
-                return new Date(parts[2], parts[1]-1, parts[0]);
-            }
+            if(parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]);
             return null;
         }
 
         function renderGrid(filter = "") {
             const gridContainer = document.getElementById('product-grid');
             gridContainer.innerHTML = "";
-            
             const filterMode = document.getElementById('filter-select').value;
             const sortMode = document.getElementById('sort-select').value;
-
             let filtered = products;
-            
-            // 1. Filtro de Texto (Search Input)
             if(filter) {
                 const term = filter.toLowerCase();
-                filtered = filtered.filter(p => {
-                    return (p.nome||"").toLowerCase().includes(term) ||
-                    (p.codigo||"").toLowerCase().includes(term) ||
-                    (p.gtin||"").includes(term) ||
-                    (p.localizacao||"").toLowerCase().includes(term);
-                });
+                filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term) || (p.gtin||"").includes(term) || (p.localizacao||"").toLowerCase().includes(term));
             }
-
-            // 2. Filtro Avançado (Select)
             if(filterMode === 'validity60') {
-                const now = new Date();
-                const limit = new Date();
-                limit.setDate(now.getDate() + 60);
-                
-                filtered = filtered.filter(p => {
-                    if(!p.validade) return false;
-                    const dt = parseDate(p.validade);
-                    return dt && dt <= limit; // Vence em menos de 60 dias ou já venceu
-                });
+                const limit = new Date(); limit.setDate(limit.getDate() + 60);
+                filtered = filtered.filter(p => { if(!p.validade) return false; const dt = parseDate(p.validade); return dt && dt <= limit; });
             } else if (filterMode === 'errors') {
-                filtered = filtered.filter(p => {
-                    return !p.gtin || !p.ncm || !p.preco || p.preco === 0;
-                });
+                filtered = filtered.filter(p => !p.gtin || !p.ncm || !p.preco || p.preco === 0);
             } else if (filterMode === 'margin_error') {
-                filtered = filtered.filter(p => {
-                    const price = p.preco || 0;
-                    const cost = p.preco_custo || 0;
-                    return price <= cost;
-                });
+                filtered = filtered.filter(p => (p.preco || 0) <= (p.preco_custo || 0));
             }
-
-            // 3. Ordenação
-            if(sortMode === 'name') {
-                filtered.sort((a,b) => a.nome.localeCompare(b.nome));
-            } else if (sortMode === 'validity') {
-                filtered.sort((a,b) => {
-                    const da = parseDate(a.validade);
-                    const db = parseDate(b.validade);
-                    // Sem data vai pro final
-                    if(!da) return 1; 
-                    if(!db) return -1;
-                    return da - db;
-                });
-            }
-            // Se sortMode == 'gondola', mantemos a ordem original ou ordenamos por localizacao
+            if(sortMode === 'name') { filtered.sort((a,b) => a.nome.localeCompare(b.nome)); }
+            else if (sortMode === 'validity') { filtered.sort((a,b) => { const da = parseDate(a.validade); const db = parseDate(b.validade); if(!da) return 1; if(!db) return -1; return da - db; }); }
             
             document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
-
-            // Se ordenação NÃO for Gôndola, mostrar Flat Grid (sem agrupamento)
             if(sortMode !== 'gondola') {
-                const subGrid = document.createElement('div');
-                subGrid.className = 'category-items-container';
+                const subGrid = document.createElement('div'); subGrid.className = 'category-items-container';
                 filtered.forEach(p => subGrid.appendChild(createCard(p)));
-                gridContainer.appendChild(subGrid);
-                lucide.createIcons();
-                return;
+                gridContainer.appendChild(subGrid); lucide.createIcons(); return;
             }
-
-            // Se for agrupado por Gôndola (Padrão)
             const gruposParaRenderizar = [...GONDOLAS, SEM_LOCAL];
-            
-            // Loop para agrupar visualmente por Gôndola
             gruposParaRenderizar.forEach(gondolaNome => {
                 let prodsDaSecao;
-
                 if (gondolaNome === SEM_LOCAL) {
-                    prodsDaSecao = filtered.filter(p => {
-                        if(!p.localizacao) return true;
-                        const parts = p.localizacao.split('-');
-                        return !parts[0] || !GONDOLAS.includes(parts[0]);
-                    });
+                    prodsDaSecao = filtered.filter(p => { if(!p.localizacao) return true; const parts = p.localizacao.split('-'); return !parts[0] || !GONDOLAS.includes(parts[0]); });
                 } else {
-                    prodsDaSecao = filtered.filter(p => {
-                        if(!p.localizacao) return false;
-                        const parts = p.localizacao.split('-');
-                        return parts[0] === gondolaNome;
-                    });
+                    prodsDaSecao = filtered.filter(p => { if(!p.localizacao) return false; const parts = p.localizacao.split('-'); return parts[0] === gondolaNome; });
                 }
-
                 if(prodsDaSecao.length === 0) return;
-
-                // Título da Seção
-                const header = document.createElement('div');
-                header.className = 'category-header';
+                const header = document.createElement('div'); header.className = 'category-header';
                 header.innerText = gondolaNome === SEM_LOCAL ? "SEM LOCALIZAÇÃO / OUTROS" : `GÔNDOLA ${gondolaNome}`;
                 gridContainer.appendChild(header);
-
-                // Grid Interno
-                const subGrid = document.createElement('div');
-                subGrid.className = 'category-items-container';
-
-                prodsDaSecao.forEach(p => {
-                    subGrid.appendChild(createCard(p));
-                });
+                const subGrid = document.createElement('div'); subGrid.className = 'category-items-container';
+                prodsDaSecao.forEach(p => { subGrid.appendChild(createCard(p)); });
                 gridContainer.appendChild(subGrid);
             });
             lucide.createIcons();
         }
 
         function createCard(p) {
-            // Parser da localização atual do produto (Ex: "01-A" -> g="01", pr="A")
-            let currentG = "";
-            let currentP = "";
-            if(p.localizacao && p.localizacao.includes('-')) {
-                const parts = p.localizacao.split('-');
-                currentG = parts[0];
-                currentP = parts[1];
-            }
-
+            let currentG = "", currentP = "";
+            if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); currentG = parts[0]; currentP = parts[1]; }
             const isInactive = p.situacao === 'I';
             const card = document.createElement('div');
-            // Adicionado ID para atualização pontual sem re-render
             card.id = `card-${p.codigo}`;
             card.className = `card ${p._changed ? 'status-changed' : 'status-synced'} ${isInactive ? 'status-inactive' : ''}`;
-            
             const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
-            
-            // Gera opções das Gôndolas
-            let optionsG = `<option value="">--</option>`;
-            GONDOLAS.forEach(g => {
-                optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>GON ${g}</option>`;
-            });
-
-            // Gera opções das Prateleiras
-            let optionsP = `<option value="">--</option>`;
-            PRATELEIRAS.forEach(pr => {
-                optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`;
-            });
-
-            // Gera opções de Categoria (NOVO)
+            let optionsG = `<option value="">--</option>`; GONDOLAS.forEach(g => { optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>GON ${g}</option>`; });
+            let optionsP = `<option value="">--</option>`; PRATELEIRAS.forEach(pr => { optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`; });
             let optionsCat = `<option value="">-- SELECIONE --</option>`;
-            // Se o produto tem uma categoria que não está na lista oficial, adicione-a temporariamente
-            const catList = [...availableCategories];
-            if(p.categoria && !catList.includes(p.categoria)) {
-                catList.push(p.categoria);
-            }
-            catList.forEach(c => {
-                const selected = (p.categoria === c) ? 'selected' : '';
-                optionsCat += `<option value="${c}" ${selected}>${c}</option>`;
-            });
-
-            // Cálculo da Margem de Lucro (%) = (Venda - Custo) / Custo * 100
-            // Alterado para mostrar Markup conforme solicitado: "percentual que foi adicionado"
-            let lucroStr = "-";
-            let lucroClass = "";
+            const catList = [...availableCategories]; if(p.categoria && !catList.includes(p.categoria)) catList.push(p.categoria);
+            catList.forEach(c => { optionsCat += `<option value="${c}" ${p.categoria === c ? 'selected' : ''}>${c}</option>`; });
+            let lucroStr = "-", lucroClass = "";
             if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
                 const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
                 lucroStr = markup.toFixed(1) + "%";
-                if(markup < 20) lucroClass = "color: #dc2626;"; // Vermelho se margem baixa
-                else if(markup > 40) lucroClass = "color: #16a34a;"; // Verde se margem boa
+                if(markup < 20) lucroClass = "color: #dc2626;"; else if(markup > 40) lucroClass = "color: #16a34a;";
             }
-
             card.innerHTML = `
                 <div class="card-img-area" onclick="openEditor('${p.codigo}')">
                     <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
@@ -1617,274 +540,87 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="card-sku">
-                        <span>${p.codigo}</span>
-                        <div class="loc-controls">
-                            <select class="loc-select" onchange="updateProduct('${p.codigo}', 'gondola', this.value)">
-                                ${optionsG}
-                            </select>
-                            <select class="loc-select" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)">
-                                ${optionsP}
-                            </select>
-                        </div>
-                    </div>
-                    
+                    <div class="card-sku"><span>${p.codigo}</span><div class="loc-controls"><select class="loc-select" onchange="updateProduct('${p.codigo}', 'gondola', this.value)">${optionsG}</select><select class="loc-select" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)">${optionsP}</select></div></div>
                     <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
-
-                        <div style="margin-top:4px;">
-                        <label style="font-size:9px; color:var(--accent); font-weight:bold;">CATEGORIA</label>
-                        <select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">
-                            ${optionsCat}
-                        </select>
-                    </div>
-
+                    <div style="margin-top:4px;"><label style="font-size:9px; color:var(--accent); font-weight:bold;">CATEGORIA</label><select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">${optionsCat}</select></div>
                     <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
-                        <div style="display:flex; align-items:center; gap:4px;">
-                            <span style="font-weight:bold;">EAN:</span>
-                            <input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-">
-                            ${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN" style="border:none; background:none; cursor:pointer;"><i data-lucide="search" size="10" color="#64748b"></i></button>` : ''}
-                        </div>
-                        <div style="display:flex; align-items:center; gap:4px;">
-                            <span style="font-weight:bold;">NCM:</span>
-                            <input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-">
-                        </div>
-                        <div style="grid-column: span 2; display:flex; align-items:center; gap:4px;">
-                            <span style="font-weight:bold; color:var(--accent)">VAL:</span>
-                            <input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}">
-                        </div>
+                        <div style="display:flex; align-items:center; gap:4px;"><span style="font-weight:bold;">EAN:</span><input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-">${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN" style="border:none; background:none; cursor:pointer;"><i data-lucide="search" size="10" color="#64748b"></i></button>` : ''}</div>
+                        <div style="display:flex; align-items:center; gap:4px;"><span style="font-weight:bold;">NCM:</span><input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-"></div>
+                        <div style="grid-column: span 2; display:flex; align-items:center; gap:4px;"><span style="font-weight:bold; color:var(--accent)">VAL:</span><input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}"></div>
                     </div>
-                    
                     <div class="card-stats">
-                        <div class="stat-box">
-                            <span class="stat-label">Venda (R$)</span>
-                            <input class="stat-input" value="${formatNum(p.preco)}" 
-                                onchange="updateProduct('${p.codigo}', 'preco', this.value)">
-                        </div>
-                        <div class="stat-box">
-                            <span class="stat-label">Estoque</span>
-                            <input class="stat-input" value="${formatNum(p.estoque)}" 
-                                onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
-                        </div>
-                        <div class="stat-box">
-                            <span class="stat-label">P. Compra</span>
-                            <input class="stat-input" value="${formatNum(p['Preço de Compra'] || 0)}" 
-                                onchange="updateProduct('${p.codigo}', 'Preço de Compra', this.value)">
-                        </div>
-                        <div class="stat-box">
-                            <span class="stat-label">P. Custo</span>
-                            <input class="stat-input" value="${formatNum(p.preco_custo)}" 
-                                onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)">
-                        </div>
-                        <div class="stat-box" style="grid-column: span 2">
-                            <span class="stat-label">Markup %</span>
-                            <div class="stat-readonly" style="${lucroClass}">${lucroStr}</div>
-                        </div>
+                        <div class="stat-box"><span class="stat-label">Venda (R$)</span><input class="stat-input" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)"></div>
+                        <div class="stat-box"><span class="stat-label">Estoque</span><input class="stat-input" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)"></div>
+                        <div class="stat-box"><span class="stat-label">P. Compra</span><input class="stat-input" value="${formatNum(p['Preço de Compra'] || 0)}" onchange="updateProduct('${p.codigo}', 'Preço de Compra', this.value)"></div>
+                        <div class="stat-box"><span class="stat-label">P. Custo</span><input class="stat-input" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)"></div>
+                        <div class="stat-box" style="grid-column: span 2"><span class="stat-label">Markup %</span><div class="stat-readonly" style="${lucroClass}">${lucroStr}</div></div>
                     </div>
                 </div>
                 <div class="card-footer">
-                    <button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes">
-                        <i data-lucide="list-plus" size="18"></i>
-                    </button>
-                    <button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta">
-                        <i data-lucide="printer" size="18"></i>
-                    </button>
-                    
-                    <button class="btn-sq ${p.nome.startsWith('OFERTA') ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta">
-                        <i data-lucide="tag" size="18"></i>
-                    </button>
-
-                    <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}">
-                        <i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i>
-                    </button>
-                    
-                    <button class="btn-sq" onclick="updateSingleProductJson('${p.codigo}')" title="Atualizar este produto no site">
-                        <i data-lucide="globe" size="18"></i>
-                    </button>
-
-                    <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto">
-                        <i data-lucide="download" size="18"></i>
-                    </button>
-                </div>
-            `;
+                    <button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes"><i data-lucide="list-plus" size="18"></i></button>
+                    <button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta"><i data-lucide="printer" size="18"></i></button>
+                    <button class="btn-sq ${p.nome.startsWith('OFERTA') ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta"><i data-lucide="tag" size="18"></i></button>
+                    <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}"><i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i></button>
+                    <button class="btn-sq" onclick="updateSingleProductJson('${p.codigo}')" title="Atualizar este produto no site"><i data-lucide="globe" size="18"></i></button>
+                    <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto"><i data-lucide="download" size="18"></i></button>
+                </div>`;
             return card;
         }
 
         function printLabel(sku) {
             const p = products.find(x => x.codigo === sku);
             if (!p) return;
-
-            // Parser de localização para a etiqueta
-            let gondola = "---";
-            let prateleira = "---";
-            if(p.localizacao && p.localizacao.includes('-')) {
-                const parts = p.localizacao.split('-');
-                gondola = parts[0];
-                prateleira = parts[1];
-            }
-
-            const w = window.open('', '', 'width=900,height=6    00');
-            w.document.write(`
-                <html>
-                <head>
-                    <style>
-                        @page { size: 80mm 80mm; margin: 0; }
-                        body { 
-                            width: 80mm; 
-                            height: 80mm;
-                            margin: 0; padding: 2mm; 
-                            box-sizing: border-box;
-                            display: flex; flex-direction: column; 
-                            justify-content: flex-end; 
-                            align-items: center; 
-                            font-family: sans-serif; text-align: center; 
-                        }
-                        .loc-row { 
-                            font-size: 20px; font-weight: 900; 
-                            border-bottom: 2px solid #000; 
-                            width: 100%;
-                            margin-bottom: 5px;
-                            display: flex; justify-content: space-around;
-                        }
-                        .name { 
-                            font-size: 16px; /* Reduzi levemente */
-                            font-weight: 900; 
-                            margin-bottom: 2px; 
-                            line-height: 1.1; 
-                            text-transform: uppercase; 
-                            max-height: 55px; /* Reduzi altura máxima para caber a data */
-                            overflow:hidden; 
-                            display: -webkit-box;
-                            -webkit-line-clamp: 3; /* Max 3 linhas */
-                            -webkit-box-orient: vertical;
-                        }
-                        .sku { font-size: 24px; font-weight: 900; margin: 2px 0; }
-                        .ean { font-size: 12px; font-weight: bold; }
-                        
-                        /* Estilo da Validade */
-                        .val-box {
-                            margin-top: 5px;
-                            border: 2px solid #000;
-                            border-radius: 6px;
-                            padding: 2px 8px;
-                            font-weight: 900;
-                            font-size: 14px;
-                            width: 90%;
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="loc-row">
-                        <span>GON: ${gondola}</span>
-                        <span>PRAT: ${prateleira}</span>
-                    </div>
-                    
-                    <div class="name">${p.nome}</div>
-                    <div class="sku">${p.codigo}</div>
-                    <div class="ean">EAN: ${p.gtin || ''}</div>
-                    
-                    <div class="val-box">
-                        VAL: ${p.validade || '---'}
-                    </div>
-
-                    <script>window.onload = function() { window.print(); }<\/script>
-                </body>
-                </html>
-            `);
+            let gondola = "---", prateleira = "---";
+            if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); gondola = parts[0]; prateleira = parts[1]; }
+            const w = window.open('', '', 'width=400,height=400');
+            w.document.write(`<html><head><style>@page { size: 80mm 80mm; margin: 0; } body { width: 80mm; height: 80mm; margin: 0; padding: 2mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; font-family: sans-serif; text-align: center; } .loc-row { font-size: 20px; font-weight: 900; border-bottom: 2px solid #000; width: 100%; margin-bottom: 5px; display: flex; justify-content: space-around; } .name { font-size: 16px; font-weight: 900; margin-bottom: 2px; line-height: 1.1; text-transform: uppercase; max-height: 55px; overflow:hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; } .sku { font-size: 24px; font-weight: 900; margin: 2px 0; } .ean { font-size: 12px; font-weight: bold; } .val-box { margin-top: 5px; border: 2px solid #000; border-radius: 6px; padding: 2px 8px; font-weight: 900; font-size: 14px; width: 90%; } </style></head><body><div class="loc-row"><span>GON: ${gondola}</span><span>PRAT: ${prateleira}</span></div><div class="name">${p.nome}</div><div class="sku">${p.codigo}</div><div class="ean">EAN: ${p.gtin || ''}</div><div class="val-box">VAL: ${p.validade || '---'}</div><script>window.onload = function() { window.print(); }<\/script></body></html>`);
             w.document.close();
         }
 
         function updateProduct(sku, field, value) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-
-            // Lógica Especial para Localização Combinada
             if(field === 'gondola' || field === 'prateleira') {
-                let currentParts = (p.localizacao || "-").split('-');
-                let g = currentParts[0] || "";
-                let pr = currentParts[1] || "";
-                
-                if(field === 'gondola') g = value;
-                if(field === 'prateleira') pr = value;
-
+                let parts = (p.localizacao || "-").split('-');
+                let g = field === 'gondola' ? value : (parts[0] || "");
+                let pr = field === 'prateleira' ? value : (parts[1] || "");
                 const newLoc = `${g}-${pr}`;
                 if(p.localizacao !== newLoc) {
-                    p.localizacao = newLoc;
-                    p['Localização'] = newLoc; // Mantém sync com campo export
-                    p._changed = true;
-                    p._lastChange = new Date().toLocaleString();
+                    p.localizacao = newLoc; p['Localização'] = newLoc; p._changed = true; p._lastChange = new Date().toLocaleString();
                     saveData();
-                    // REMOVIDO renderGrid() para evitar que o card pule
-                    
-                    // Adiciona marcação visual que mudou
-                    const card = document.getElementById('card-' + sku);
-                    if(card) {
-                        card.classList.remove('status-synced');
-                        card.classList.add('status-changed');
+                    const card = document.getElementById('card-' + sku); if(card) { card.classList.remove('status-synced'); card.classList.add('status-changed'); }
+                }
+                return;
+            }
+            let finalVal = value;
+            if(['preco','estoque','preco_custo','Preço de Compra'].includes(field)) finalVal = parseFloat(value.replace(',','.')) || 0;
+            if(field === 'preco_custo' || field === 'Preço de Compra') {
+                p['preco_custo'] = finalVal; p['Preço de custo'] = finalVal; p['Preço de Compra'] = finalVal;
+                p._changed = true; p._lastChange = new Date().toLocaleString(); saveData();
+                const card = document.getElementById('card-' + sku);
+                if(card) {
+                    const inputs = card.querySelectorAll('.stat-input');
+                    if(inputs[2]) inputs[2].value = formatNum(finalVal);
+                    if(inputs[3]) inputs[3].value = formatNum(finalVal);
+                    card.classList.remove('status-synced'); card.classList.add('status-changed');
+                    const markupEl = card.querySelector('.stat-readonly');
+                    if(markupEl && p.preco > 0 && finalVal > 0) {
+                        const markup = ((p.preco - finalVal) / finalVal) * 100;
+                        markupEl.innerText = markup.toFixed(1) + "%";
+                        markupEl.style.color = markup < 20 ? '#dc2626' : (markup > 40 ? '#16a34a' : '');
                     }
                 }
                 return;
             }
-
-            let finalVal = value;
-            if(field === 'preco' || field === 'estoque' || field === 'preco_custo' || field === 'Preço de Compra') {
-                finalVal = parseFloat(value.replace(',','.')) || 0;
-            }
-
-            // SYNC P. Custo e P. Compra
-            if(field === 'preco_custo' || field === 'Preço de Compra') {
-                p['preco_custo'] = finalVal;
-                p['Preço de custo'] = finalVal;
-                p['Preço de Compra'] = finalVal;
-                
-                p._changed = true;
-                p._lastChange = new Date().toLocaleString();
-                saveData();
-
-                // Atualiza visual
-                const card = document.getElementById('card-' + sku);
-                if(card) {
-                    // Atualiza ambos inputs para garantir consistência visual
-                    const inputs = card.querySelectorAll('.stat-input');
-                    // Assumindo ordem: Venda, Estoque, P. Compra (2), P. Custo (3)
-                    if(inputs[2]) inputs[2].value = formatNum(finalVal);
-                    if(inputs[3]) inputs[3].value = formatNum(finalVal);
-                    
-                    card.classList.remove('status-synced');
-                    card.classList.add('status-changed');
-
-                    // Atualiza Markup
-                    const markupEl = card.querySelector('.stat-readonly');
-                     if(markupEl && p.preco > 0 && finalVal > 0) {
-                         const markup = ((p.preco - finalVal) / finalVal) * 100;
-                         markupEl.innerText = markup.toFixed(1) + "%";
-                         markupEl.style.color = markup < 20 ? '#dc2626' : (markup > 40 ? '#16a34a' : '');
-                     }
-                }
-                return; // Fim do sync especial
-            }
-
             if(p[field] != finalVal) {
                 p[field] = finalVal;
-                // Atualiza também o campo original do CSV se existir mapeamento direto
-                if(field === 'nome') p['Descrição'] = finalVal;
-                if(field === 'preco') p['Preço'] = value; 
-                if(field === 'estoque') p['Estoque'] = value;
-                if(field === 'categoria') p['Categoria do produto'] = value;
-                if(field === 'gtin') p['GTIN/EAN'] = value;
-                if(field === 'ncm') p['NCM'] = value;
-                if(field === 'validade') p['Data Validade'] = value;
-
-                p._changed = true;
-                p._lastChange = new Date().toLocaleString();
-                saveData();
-                
-                // Atualiza visual do card sem re-renderizar grid inteira
+                if(field === 'nome') p['Descrição'] = finalVal; if(field === 'preco') p['Preço'] = value;
+                if(field === 'estoque') p['Estoque'] = value; if(field === 'categoria') p['Categoria do produto'] = value;
+                if(field === 'gtin') p['GTIN/EAN'] = value; if(field === 'ncm') p['NCM'] = value; if(field === 'validade') p['Data Validade'] = value;
+                p._changed = true; p._lastChange = new Date().toLocaleString(); saveData();
                 const card = document.getElementById('card-' + sku);
                 if(card) {
-                    card.classList.remove('status-synced');
-                    card.classList.add('status-changed');
-                    
-                    // Se mudou preço, atualiza Markup via DOM
+                    card.classList.remove('status-synced'); card.classList.add('status-changed');
                     if(field === 'preco') {
                          const markupEl = card.querySelector('.stat-readonly');
                          if(markupEl && p.preco > 0 && p.preco_custo > 0) {
@@ -1900,374 +636,163 @@
         async function syncProductsToGithub() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-
             if(!confirm("Isso atualizará o arquivo produtos.json no GitHub com todos os produtos ATIVOS. Continuar?")) return;
-
             toggleLoader(true, "Enviando Produtos...");
-
-            const payload = products
-                .filter(p => p.situacao !== 'I')
-                .map(p => ({
-                    id: Number(p['ID'] || 0),
-                    nome: p.nome,
-                    preco: Number(p.preco),
-                    codigo: p.codigo,
-                    situacao: p.situacao,
-                    categoria: p.categoria,
-                    estoque: Number(p.estoque)
-                }));
-
-            if(payload.length === 0) {
-                toggleLoader(false);
-                return alert("Nenhum produto ativo encontrado.");
-            }
-
+            const payload = products.filter(p => p.situacao !== 'I').map(p => ({ id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, estoque: Number(p.estoque) }));
+            if(payload.length === 0) { toggleLoader(false); return alert("Nenhum produto ativo encontrado."); }
             const path = `site/produtos.json`;
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-
             try {
                 let sha = null;
-                try {
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) {
-                        const json = await check.json();
-                        sha = json.sha;
-                    }
-                } catch(e) {}
-
-                // Sort by ID or Code just to be tidy
+                try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
                 payload.sort((a,b) => a.nome.localeCompare(b.nome));
-
                 const contentStr = JSON.stringify(payload, null, 2);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-
-                const body = {
-                    message: `Bulk Upd Prods via Painel (${payload.length} items)`,
-                    content: base64
-                };
+                const body = { message: `Bulk Upd Prods via Painel (${payload.length} items)`, content: base64 };
                 if(sha) body.sha = sha;
-
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        "Authorization": `token ${cfg.token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 if(!res.ok) throw new Error(await res.text());
-
                 alert(`Sucesso! Arquivo produtos.json atualizado.`);
-
-            } catch(err) {
-                alert("Erro GitHub: " + err.message);
-            } finally {
-                toggleLoader(false);
-            }
+            } catch(err) { alert("Erro GitHub: " + err.message); } finally { toggleLoader(false); }
         }
 
         async function updateSingleProductJson(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-
             toggleLoader(true, "Atualizando Produto no JSON...");
-
             const path = `site/produtos.json`;
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-
             try {
-                let sha = null;
-                let currentData = [];
-                try {
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) {
-                        const json = await check.json();
-                        sha = json.sha;
-                        const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                        currentData = JSON.parse(decodedStr);
-                    }
-                } catch(e) {
-                    console.log("File not found or empty, creating new.");
-                }
-
-                // Prepare object
-                const itemObj = {
-                    id: Number(p['ID'] || 0),
-                    nome: p.nome,
-                    preco: Number(p.preco),
-                    codigo: p.codigo,
-                    situacao: p.situacao,
-                    categoria: p.categoria,
-                    estoque: Number(p.estoque)
-                };
-
-                // Update logic
+                let sha = null; let currentData = [];
+                try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, '')))); currentData = JSON.parse(decodedStr); } } catch(e) {}
+                const itemObj = { id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, estoque: Number(p.estoque) };
                 const index = currentData.findIndex(item => item.codigo === sku);
-                if(index >= 0) {
-                    currentData[index] = itemObj;
-                } else {
-                    currentData.push(itemObj);
-                }
-
+                if(index >= 0) currentData[index] = itemObj; else currentData.push(itemObj);
                 const contentStr = JSON.stringify(currentData, null, 2);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-
-                const body = {
-                    message: `Upd Prod: ${sku} via Painel`,
-                    content: base64
-                };
+                const body = { message: `Upd Prod: ${sku} via Painel`, content: base64 };
                 if(sha) body.sha = sha;
-
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        "Authorization": `token ${cfg.token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 if(!res.ok) throw new Error(await res.text());
-
                 alert("Produto atualizado no GitHub!");
-
-            } catch(err) {
-                alert("Erro GitHub: " + err.message);
-            } finally {
-                toggleLoader(false);
-            }
+            } catch(err) { alert("Erro GitHub: " + err.message); } finally { toggleLoader(false); }
         }
         
         function toggleActive(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            // SEM CONFIRM - Ação rápida
-            const newState = p.situacao === 'I' ? 'A' : 'I';
-            p.situacao = newState;
-            p['Situação'] = newState;
-            p._changed = true; // Alterar status conta como mudança para sync
-            saveData();
-            
-            // Aqui mantemos o renderGrid pois muda drasticamente o visual (opacidade)
-            // e geralmente não é feito em massa rapidamente no mesmo card
+            const newState = p.situacao === 'I' ? 'A' : 'I'; p.situacao = newState; p['Situação'] = newState; p._changed = true; saveData();
             renderGrid();
         }
         
         function toggleOffer(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            if(p.nome.startsWith("OFERTA - ")) {
-                p.nome = p.nome.replace("OFERTA - ", "");
-            } else {
-                p.nome = "OFERTA - " + p.nome;
-            }
-            p['Descrição'] = p.nome;
-            p._changed = true;
-            saveData();
-            // Aqui mantemos renderGrid para atualizar o nome no textarea
+            p.nome = p.nome.startsWith("OFERTA - ") ? p.nome.replace("OFERTA - ", "") : "OFERTA - " + p.nome;
+            p['Descrição'] = p.nome; p._changed = true; saveData();
             renderGrid(document.getElementById('search-input').value);
         }
 
-        function formatNum(n) {
-            return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00';
-        }
+        function formatNum(n) { return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'; }
 
         function attemptLogin() {
             const pass = document.getElementById('login-pass').value;
-            if(USERS[pass]) {
-                currentUser = USERS[pass];
-                if(document.getElementById('save-login').checked) {
-                    localStorage.setItem(LOGIN_KEY, currentUser);
-                }
-                closeModal('modal-login');
-                alert(`Bem-vindo, ${currentUser}!`);
-            } else {
-                document.getElementById('login-error').style.display = 'block';
-            }
+            if(USERS[pass]) { currentUser = USERS[pass]; if(document.getElementById('save-login').checked) localStorage.setItem(LOGIN_KEY, currentUser); closeModal('modal-login'); alert(`Bem-vindo, ${currentUser}!`); } 
+            else document.getElementById('login-error').style.display = 'block';
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 
-        // --- NOVO SISTEMA DE DETALHES DINÂMICO ---
         function openDetails(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
             currentEditingId = sku;
-            
             const form = document.getElementById('details-form');
             form.innerHTML = '';
-            
-            // Filtra chaves internas
             const keys = Object.keys(p).filter(k => !k.startsWith('_') && k !== 'formato');
-            
-            // Ordena: Prioritários primeiro, depois alfabético
             const priorities = ['codigo', 'nome', 'localizacao', 'situacao', 'gtin', 'ncm', 'cest', 'preco', 'preco_custo', 'estoque'];
-            keys.sort((a,b) => {
-                const ia = priorities.indexOf(a);
-                const ib = priorities.indexOf(b);
-                if(ia !== -1 && ib !== -1) return ia - ib;
-                if(ia !== -1) return -1;
-                if(ib !== -1) return 1;
-                return a.localeCompare(b);
-            });
-
+            keys.sort((a,b) => { const ia = priorities.indexOf(a), ib = priorities.indexOf(b); if(ia !== -1 && ib !== -1) return ia - ib; if(ia !== -1) return -1; if(ib !== -1) return 1; return a.localeCompare(b); });
             keys.forEach(k => {
-                const div = document.createElement('div');
-                div.className = 'form-group';
-                
-                // Campos longos ocupam 2 colunas
+                const div = document.createElement('div'); div.className = 'form-group';
                 const valStr = String(p[k]||'');
-                if(valStr.length > 30 || k === 'nome' || k === 'Descrição' || k.includes('URL') || k.includes('Obs')) {
-                    div.style.gridColumn = "span 2";
-                }
-                
-                div.innerHTML = `
-                    <label>${k}</label>
-                    <input type="text" value="${p[k]!==undefined && p[k]!==null ? p[k] : ''}" data-key="${k}" class="detail-input">
-                `;
+                if(valStr.length > 30 || k === 'nome' || k === 'Descrição' || k.includes('URL') || k.includes('Obs')) div.style.gridColumn = "span 2";
+                div.innerHTML = `<label>${k}</label><input type="text" value="${p[k]!==undefined && p[k]!==null ? p[k] : ''}" data-key="${k}" class="detail-input">`;
                 form.appendChild(div);
             });
-            
             openModal('modal-details');
         }
 
         function saveDetails() {
             const p = products.find(x => x.codigo === currentEditingId);
             if(!p) return;
-            
             let changed = false;
-            const inputs = document.querySelectorAll('.detail-input');
-
-            inputs.forEach(inp => {
-                const k = inp.getAttribute('data-key');
-                let val = inp.value;
-
-                // Tenta manter consistência numérica nos campos vitais
-                if(['preco','preco_custo','estoque','pesoLiquido','pesoBruto','largura','altura','profundidade'].includes(k)) {
-                     const num = parseFloat(val.replace(',','.'));
-                     if(!isNaN(num)) val = num; // Atualiza para número se for campo interno
-                }
-
-                if(p[k] != val) {
-                    p[k] = val;
-                    changed = true;
-                }
+            document.querySelectorAll('.detail-input').forEach(inp => {
+                const k = inp.getAttribute('data-key'); let val = inp.value;
+                if(['preco','preco_custo','estoque','pesoLiquido','pesoBruto','largura','altura','profundidade'].includes(k)) { const num = parseFloat(val.replace(',','.')); if(!isNaN(num)) val = num; }
+                if(p[k] != val) { p[k] = val; changed = true; }
             });
-
             if(changed) { 
-                p._changed = true; 
-                saveData(); 
-                renderGrid(); 
-                
-                // Volta o scroll para o produto em questão
-                setTimeout(() => {
-                    const card = document.getElementById('card-' + p.codigo);
-                    if(card) {
-                        card.scrollIntoView({behavior: 'smooth', block: 'center'});
-                        card.classList.add('status-changed'); // Feedback visual extra
-                    }
-                }, 100);
+                p._changed = true; saveData(); renderGrid(); 
+                setTimeout(() => { const card = document.getElementById('card-' + p.codigo); if(card) { card.scrollIntoView({behavior: 'smooth', block: 'center'}); card.classList.add('status-changed'); } }, 100);
             }
             closeModal('modal-details');
         }
 
         function openConfigModal() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            document.getElementById('cfg-token').value = cfg.token||'';
-            document.getElementById('cfg-user').value = cfg.user||'';
-            document.getElementById('cfg-repo').value = cfg.repo||'';
-            document.getElementById('cfg-path').value = cfg.path||'';
+            document.getElementById('cfg-token').value = cfg.token||''; document.getElementById('cfg-user').value = cfg.user||'';
+            document.getElementById('cfg-repo').value = cfg.repo||''; document.getElementById('cfg-path').value = cfg.path||'';
             openModal('modal-config');
         }
 
         function saveConfig() {
-            const cfg = {
-                token: document.getElementById('cfg-token').value,
-                user: document.getElementById('cfg-user').value,
-                repo: document.getElementById('cfg-repo').value,
-                path: document.getElementById('cfg-path').value
-            };
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
-            closeModal('modal-config');
-            alert("Configurações Salvas!");
+            const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value, path: document.getElementById('cfg-path').value };
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeModal('modal-config'); alert("Configurações Salvas!");
         }
 
         function restaurarLinksPadraoSite() {
             if(!confirm("Isso mudará TODAS as imagens para 'i/..site/img/produtos/CODIGO.webp'. Continuar?")) return;
-            
             let count = 0;
             products.forEach(p => {
                 const novoLink = `../site/img/produtos/${p.codigo}.webp?v=${Date.now()}`;
-                if(p.url_imagem !== novoLink) {
-                    p.url_imagem = novoLink;
-                    p._changed = true;
-                    count++;
-                }
+                if(p.url_imagem !== novoLink) { p.url_imagem = novoLink; p._changed = true; count++; }
             });
-            saveData();
-            renderGrid();
-            alert(`${count} produtos atualizados para o padrão do site!`);
+            saveData(); renderGrid(); alert(`${count} produtos atualizados para o padrão do site!`);
         }
 
-        // --- EDITOR ---
         function openEditor(sku) {
             const p = products.find(x => x.codigo === sku);
             currentEditingId = sku;
             document.getElementById('file-name-preview').innerText = sku + ".webp";
-            
-            const img = new Image();
-            img.crossOrigin = "Anonymous";
-            img.src = p.url_imagem || "";
-            img.onload = () => {
-                loadedImage = img;
-                drawCanvas();
-                openModal('modal-editor');
-            };
-            img.onerror = () => {
-                loadedImage = null;
-                drawCanvas(); // limpa
-                openModal('modal-editor');
-            };
+            const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p.url_imagem || "";
+            img.onload = () => { loadedImage = img; drawCanvas(); openModal('modal-editor'); };
+            img.onerror = () => { loadedImage = null; drawCanvas(); openModal('modal-editor'); };
         }
 
         function setupEditorEvents() {
-            ['zoomRange','sharpenRange','brightnessRange'].forEach(id => {
-                document.getElementById(id).addEventListener('input', drawCanvas);
-            });
-            
+            ['zoomRange','sharpenRange','brightnessRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
             document.getElementById('fileInput').addEventListener('change', (e) => {
                 if(e.target.files && e.target.files[0]) {
                     const reader = new FileReader();
                     reader.onload = (evt) => {
-                        const img = new Image();
-                        img.onload = () => { loadedImage = img; drawCanvas(); };
-                        img.src = evt.target.result;
-                        
-                        document.getElementById('file-size-preview').innerText = 
-                            Math.round(e.target.files[0].size/1024) + "kb";
+                        const img = new Image(); img.onload = () => { loadedImage = img; drawCanvas(); }; img.src = evt.target.result;
+                        document.getElementById('file-size-preview').innerText = Math.round(e.target.files[0].size/1024) + "kb";
                     };
                     reader.readAsDataURL(e.target.files[0]);
                 }
             });
-
-            // PASTE EVENT (CTRL+V)
             window.addEventListener('paste', e => {
                 if(document.getElementById('modal-editor').style.display === 'none') return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
                 for (let index in items) {
                     const item = items[index];
                     if (item.kind === 'file' && item.type.includes('image/')) {
-                        const blob = item.getAsFile();
-                        const reader = new FileReader();
+                        const blob = item.getAsFile(); const reader = new FileReader();
                         reader.onload = (event) => {
-                            const img = new Image();
-                            img.onload = () => { loadedImage = img; drawCanvas(); };
-                            img.src = event.target.result;
+                            const img = new Image(); img.onload = () => { loadedImage = img; drawCanvas(); }; img.src = event.target.result;
                             document.getElementById('file-size-preview').innerText = "Colado da Área de Transf.";
                         };
                         reader.readAsDataURL(blob);
@@ -2277,9 +802,7 @@
         }
 
         function toggleSticker(type) {
-            if(activeSticker === type) activeSticker = null;
-            else activeSticker = type;
-            
+            if(activeSticker === type) activeSticker = null; else activeSticker = type;
             document.querySelectorAll('.sticker-btn').forEach(b => b.classList.remove('active'));
             if(activeSticker) document.getElementById('stk-'+type).classList.add('active');
             drawCanvas();
@@ -2288,159 +811,77 @@
         function applySharpen(ctx, w, h, mix) {
             if (mix <= 0) return;
             try {
-                const imageData = ctx.getImageData(0, 0, w, h);
-                const data = imageData.data;
-                const w4 = w * 4;
-                const copy = new Uint8ClampedArray(data);
-
-                // Convolution Kernel for Sharpening
+                const imageData = ctx.getImageData(0, 0, w, h); const data = imageData.data; const w4 = w * 4; const copy = new Uint8ClampedArray(data);
                 for (let y = 1; y < h - 1; y++) {
                     for (let x = 1; x < w - 1; x++) {
                         const i = (y * w + x) * 4;
                         for (let c = 0; c < 3; c++) {
-                            const val = 
-                                copy[i + c] * (1 + 4 * mix) +
-                                copy[i + c - 4] * (-mix) +
-                                copy[i + c + 4] * (-mix) +
-                                copy[i + c - w4] * (-mix) +
-                                copy[i + c + w4] * (-mix);
+                            const val = copy[i + c] * (1 + 4 * mix) + copy[i + c - 4] * (-mix) + copy[i + c + 4] * (-mix) + copy[i + c - w4] * (-mix) + copy[i + c + w4] * (-mix);
                             data[i + c] = val;
                         }
                     }
                 }
                 ctx.putImageData(imageData, 0, 0);
-            } catch(e) {
-                console.warn("Sharpen not possible (CORS?)", e);
-            }
+            } catch(e) { console.warn("Sharpen not possible (CORS?)", e); }
         }
 
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
             if(loadedImage) {
                 const zoom = parseFloat(document.getElementById('zoomRange').value);
                 const bright = parseFloat(document.getElementById('brightnessRange').value);
                 const sharpen = parseFloat(document.getElementById('sharpenRange').value);
-                
                 ctx.filter = `brightness(${bright})`;
-                
-                const w = loadedImage.width * zoom;
-                const h = loadedImage.height * zoom;
-                const x = (canvas.width - w) / 2;
-                const y = (canvas.height - h) / 2;
-                
-                ctx.drawImage(loadedImage, x, y, w, h);
+                const w = loadedImage.width * zoom, h = loadedImage.height * zoom;
+                ctx.drawImage(loadedImage, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
                 ctx.filter = 'none'; 
-                
-                // Aplica Nitidez após desenhar
                 if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
-
             } else {
-                ctx.font = "20px Inter";
-                ctx.fillStyle = "#94a3b8";
-                ctx.textAlign = "center";
-                ctx.fillText("Sem imagem", canvas.width/2, canvas.height/2);
+                ctx.font = "20px Inter"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center"; ctx.fillText("Sem imagem", canvas.width/2, canvas.height/2);
             }
-
             if(activeSticker) {
                 ctx.save();
-                // Removida rotação e ajustadas coordenadas para horizontal topo-esquerdo
-                const bannerW = 280;
-                const bannerH = 60;
-                const padTop = 30; // Respiro do topo
-                
-                // Desenha Banner (Retângulo Horizontal)
+                const bannerW = 280, bannerH = 60, padTop = 30;
                 ctx.fillStyle = (activeSticker === 'offer') ? "#ef4444" : (activeSticker === 'best' ? "#f59e0b" : "#3b82f6");
                 ctx.fillRect(0, padTop, bannerW, bannerH);
-                
-                // Texto
-                let text = "";
-                if(activeSticker === 'offer') text = "OFERTA";
-                if(activeSticker === 'best') text = "MELHOR PREÇO";
-                if(activeSticker === 'today') text = "SÓ HOJE";
-
-                ctx.font = "900 30px Inter";
-                ctx.fillStyle = "white";
-                ctx.textAlign = "left";
-                ctx.shadowColor = "rgba(0,0,0,0.5)";
-                ctx.shadowBlur = 4;
-                
-                // Texto alinhado à esquerda dentro do banner
-                ctx.fillText(text, 20, padTop + 40);
-
-                ctx.restore();
+                let text = (activeSticker === 'offer') ? "OFERTA" : (activeSticker === 'best' ? "MELHOR PREÇO" : "SÓ HOJE");
+                ctx.font = "900 30px Inter"; ctx.fillStyle = "white"; ctx.textAlign = "left"; ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4;
+                ctx.fillText(text, 20, padTop + 40); ctx.restore();
             }
         }
 
         function downloadImage() {
-            const link = document.createElement('a');
-            link.download = currentEditingId + '.webp';
-            link.href = canvas.toDataURL('image/webp', 0.9);
-            link.click();
+            const link = document.createElement('a'); link.download = currentEditingId + '.webp';
+            link.href = canvas.toDataURL('image/webp', 0.9); link.click();
         }
 
         async function uploadToGithub() {
             if(!currentEditingId) return;
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-
-            toggleLoader(true, "Enviando pro GitHub...");
-            
-            const base64 = canvas.toDataURL('image/webp', 0.9).split(',')[1];
-            const fileName = currentEditingId + ".webp";
-            const path = `${cfg.path}/${fileName}`.replace('//','/');
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-
+            toggleLoader(true, "Processando imagem...");
             try {
+                const base64 = canvas.toDataURL('image/webp', 0.9).split(',')[1];
+                const fileName = currentEditingId + ".webp";
+                const folderPath = cfg.path || "site/img/produtos"; 
+                const fullPath = `${folderPath}/${fileName}`.replace('//','/');
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${fullPath}`;
                 let sha = null;
-                try {
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) { const json = await check.json(); sha = json.sha; }
-                } catch(e) {}
-
-                const body = {
-                    message: `Alt: ${currentEditingId} via Painel`,
-                    content: base64
-                };
+                try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
+                const body = { message: `Alt: ${currentEditingId} via Painel`, content: base64 };
                 if(sha) body.sha = sha;
-
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        "Authorization": `token ${cfg.token}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(body)
-                });
-
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 if(!res.ok) throw new Error(await res.text());
-
                 const p = products.find(x => x.codigo === currentEditingId);
-                p.url_imagem = `../site/img/produtos/${fileName}?v=${Date.now()}`;
-                
-                const logMsg = `[Alt: ${currentUser} em ${new Date().toLocaleString()} - Alt: Imagem (Upload)]`;
-                p.observacoes = (p.observacoes || "") + " | " + logMsg;
-                
-                p._changed = true;
-                saveData();
-                
-                // renderGrid(); // REMOVIDO PARA MANTER O ESTADO DA TELA
-                
-                // Atualiza imagem no DOM sem recarregar grid
-                const card = document.getElementById('card-' + currentEditingId);
-                if(card) {
-                    const img = card.querySelector('.card-img');
-                    if(img) img.src = p.url_imagem;
+                if(p) {
+                    p.url_imagem = `../${folderPath}/${fileName}?v=${Date.now()}`;
+                    p.observacoes = (p.observacoes || "") + ` [UpdImg: ${currentUser||"Sistema"} em ${new Date().toLocaleDateString()}]`;
+                    p._changed = true; saveData();
+                    const card = document.getElementById('card-' + currentEditingId);
+                    if(card) { const img = card.querySelector('.card-img'); if(img) img.src = p.url_imagem; card.classList.add('status-changed'); }
                 }
-                
-                closeModal('modal-editor');
-                alert("Sucesso! Imagem atualizada.");
-                
-            } catch(err) {
-                alert("Erro GitHub: " + err.message);
-            } finally {
-                toggleLoader(false);
-            }
+                closeModal('modal-editor'); alert("Sucesso! Imagem enviada para o GitHub.");
+            } catch(err) { console.error(err); alert("Erro ao enviar: " + err.message); } finally { toggleLoader(false); }
         }
     </script>
 </body>
