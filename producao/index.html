@@ -104,6 +104,7 @@
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
             align-items: center;
+            flex-wrap: wrap; /* Permitir quebra em telas menores */
         }
 
         .search-container {
@@ -138,6 +139,21 @@
             min-width: 80px;
             text-align: right;
         }
+
+        /* Selects de Filtro na Toolbar */
+        .toolbar-select {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 11px;
+            outline: none;
+            height: 34px;
+        }
+        .toolbar-select:focus { border-color: var(--accent); }
 
         /* --- 5. GRID DE PRODUTOS --- */
         .product-grid {
@@ -703,6 +719,20 @@
                 </button>
             </div>
 
+            <div style="display:flex; gap:5px; align-items:center; margin-left:15px;">
+                <select id="filter-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value)">
+                    <option value="all">Todos</option>
+                    <option value="validity60">Vence < 60 dias</option>
+                    <option value="errors">Erros de Cadastro (GTIN/NCM/Preço)</option>
+                    <option value="margin_error">Preço Venda <= Custo</option>
+                </select>
+                <select id="sort-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value)">
+                    <option value="gondola">Gôndola</option>
+                    <option value="name">Nome (A-Z)</option>
+                    <option value="validity">Validade (Próxima)</option>
+                </select>
+            </div>
+
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
@@ -719,8 +749,8 @@
             <button class="nav-btn" onclick="exportarCSV()">
                 <i data-lucide="download" size="14"></i> CSV
             </button>
-            <button class="nav-btn" onclick="exportarJSONCategorias()">
-                <i data-lucide="file-json" size="14"></i> JSON LOC
+            <button class="nav-btn" onclick="openPrintListModal()">
+                <i data-lucide="printer" size="14"></i> LISTAS
             </button>
             <div id="total-count">0</div>
         </div>
@@ -831,186 +861,24 @@
             </div>
         </div>
     </div>
-
-    <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
-
-    <script>
-        // ==========================================
-        // 1. CONFIGURAÇÕES E DADOS GERAIS
-        // ==========================================
-        const USERS = {
-            "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL",
-            "567890": "KELY", "121212": "JOSE", "123456": "ROSINA"
-        };
-        
-        // Array global para categorias vindas do GitHub
-        let availableCategories = []; 
-        
-        const STORAGE_KEY = 'sucedoan_data_v26';
-        const CONFIG_KEY = 'sucedoan_config';
-        const LOGIN_KEY = 'sucedoan_saved_login'; 
-
-        // --- NOVA CONFIGURAÇÃO DE LOCALIZAÇÃO (GONDOLAS E PRATELEIRAS) ---
-        // Cria array ["01", "02" ... "15"]
-        const GONDOLAS = Array.from({length: 15}, (_, i) => String(i + 1).padStart(2, '0'));
-        
-        // Cria array ["A", "B", "C", "D", "E", "F"]
-        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F'];
-        
-        const SEM_LOCAL = "SEM LOCAL";
-    </script>
-
-    <header>
-        <div class="brand">SUCEDOAN <span>PRO</span></div>
-        <button class="nav-btn active" onclick="showSection('products', this)">
-            <i data-lucide="package" size="14"></i> PRODUTOS
-        </button>
-        <div style="flex-grow:1"></div>
-        <button class="nav-btn config" onclick="openConfigModal()">
-            <i data-lucide="settings" size="14"></i>
-        </button>
-    </header>
-
-    <div id="section-products" class="view-section active">
-        <div class="toolbar">
-            
-            <input type="file" id="csv-file" accept=".csv" style="display:none">
-            <button class="nav-btn" onclick="document.getElementById('csv-file').click()">
-                <i data-lucide="file-spreadsheet" size="14"></i> IMPORTAR CSV
-            </button>
-            
-            <div style="display:flex; gap:5px; align-items:center; border-left:1px solid #cbd5e1; padding-left:15px; margin-left:15px;">
-                <input type="text" id="new-cat-input" placeholder="Nova Categoria..." style="width:120px; padding:8px; border-radius:4px; border:1px solid #cbd5e1; font-size:12px;">
-                <button class="nav-btn" onclick="addNewCategory()" title="Adicionar Categoria ao GitHub">
-                    <i data-lucide="plus-circle" size="14"></i>
-                </button>
-            </div>
-
-            <div class="search-container" style="margin-left: 15px;">
-                <i data-lucide="search" class="search-icon"></i>
-                <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
-            </div>
-            
-            <button class="nav-btn" onclick="saveDataManual()">
-                <i data-lucide="save" size="14"></i> SALVAR DADOS
-            </button>
-            
-            <button class="nav-btn" onclick="syncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)">
-                <i data-lucide="globe" size="14"></i> ATUALIZAR SITE
-            </button>
-
-            <button class="nav-btn" onclick="exportarCSV()">
-                <i data-lucide="download" size="14"></i> CSV
-            </button>
-            <button class="nav-btn" onclick="exportarJSONCategorias()">
-                <i data-lucide="file-json" size="14"></i> JSON LOC
-            </button>
-            <div id="total-count">0</div>
-        </div>
-        
-        <div class="product-grid" id="product-grid"></div>
-    </div>
-
-    <div id="modal-login" class="modal-overlay">
-        <div class="modal-card login">
-            <div class="modal-header">
-                <span>AUTENTICAÇÃO</span>
-                <button class="close-btn" onclick="closeModal('modal-login')"><i data-lucide="x" size="16"></i></button>
-            </div>
-            <div class="modal-body">
-                <div style="text-align:center; margin-bottom:15px; color: var(--warning);">
-                    <i data-lucide="lock" size="32"></i>
-                    <p style="font-size:12px; margin-top:5px;">Digite sua senha pessoal</p>
-                </div>
-                <div class="form-group">
-                    <label>Senha de Acesso</label>
-                    <input type="password" id="login-pass" placeholder="******" style="text-align:center; letter-spacing: 3px; font-weight:bold; font-size:16px;" onkeydown="if(event.key==='Enter') attemptLogin()">
-                </div>
-                
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="save-login">
-                    <label for="save-login">Salvar senha neste dispositivo</label>
-                </div>
-
-                <button class="btn-full" onclick="attemptLogin()">CONFIRMAR</button>
-                <div id="login-error" style="color:var(--danger); font-size:11px; text-align:center; margin-top:10px; display:none;">Senha incorreta!</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-editor" class="modal-overlay">
-        <div class="modal-card" style="width:450px;">
-            <div class="modal-header">
-                <span>Editor de Imagem (Ctrl+V para Colar)</span>
-                <button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <canvas id="imageCanvas" width="450" height="450"></canvas>
-                
-                <div class="file-info">
-                    <span id="file-name-preview" style="color:var(--accent)">img.webp</span>
-                    <span id="file-size-preview">0kb</span>
-                </div>
-
-                <div class="sticker-tools">
-                    <div class="sticker-btn" id="stk-offer" onclick="toggleSticker('offer')">OFERTA</div>
-                    <div class="sticker-btn" id="stk-best" onclick="toggleSticker('best')">MELHOR PREÇO</div>
-                    <div class="sticker-btn" id="stk-today" onclick="toggleSticker('today')">SÓ HOJE</div>
-                </div>
-
-                <div class="editor-tools">
-                    <div class="tool-group">
-                        <label><span>Zoom</span></label>
-                        <input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1">
-                    </div>
-                    <div class="tool-group">
-                        <label><span>Nitidez</span></label>
-                        <input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0">
-                    </div>
-                    <div class="tool-group" style="grid-column: span 2;">
-                        <label><span>Brilho</span></label>
-                        <input type="range" id="brightnessRange" min="0" max="2" step="0.1" value="1">
-                    </div>
-                </div>
-
-                <div class="action-row">
-                    <button class="btn-act" onclick="document.getElementById('fileInput').click()">PC</button>
-                    <input type="file" id="fileInput" style="display:none" accept="image/*">
-                    
-                    <button class="btn-act" onclick="downloadImage()">BAIXAR</button>
-                    <button class="btn-act primary" style="flex:2" onclick="uploadToGithub()">GITHUB & SYNC</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-details" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header"><span>Detalhes Técnicos</span><button class="close-btn" onclick="saveDetails()"><i data-lucide="check"></i></button></div>
-            <div class="modal-body">
-                <div class="form-grid" id="details-form"></div>
-                <button class="btn-full" onclick="saveDetails()">SALVAR</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-config" class="modal-overlay">
+    
+    <div id="modal-print-list" class="modal-overlay">
         <div class="modal-card" style="width:400px">
-            <div class="modal-header"><span>Configuração</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x"></i></button></div>
+            <div class="modal-header"><span>Imprimir Lista de Estoque (80mm)</span><button class="close-btn" onclick="closeModal('modal-print-list')"><i data-lucide="x"></i></button></div>
             <div class="modal-body">
-                <div class="form-group"><label>Token GitHub</label><input type="password" id="cfg-token" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                <div class="form-group"><label>Usuário GitHub</label><input type="text" id="cfg-user" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                <div class="form-group"><label>Pasta</label><input type="text" id="cfg-path" onkeydown="if(event.key==='Enter') saveConfig()"></div>
-                <button class="btn-full" onclick="saveConfig()">SALVAR</button>
-                
-                <hr style="margin:20px 0; border:0; border-top:1px solid #e2e8f0;">
-                <button class="btn-danger" onclick="restaurarLinksPadraoSite()">
-                    <i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE
-                </button>
-                <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">
-                    Força o uso de "i/..site/img/produtos/CODIGO.webp" em tudo.
+                <div class="form-group">
+                    <label>Selecione a Gôndola</label>
+                    <select id="print-gondola" onchange="updatePrintShelves()">
+                        <option value="ALL">TODAS</option>
+                        </select>
                 </div>
+                <div class="form-group" style="margin-top:10px;">
+                    <label>Selecione a Prateleira</label>
+                    <select id="print-shelf">
+                        <option value="ALL">TODAS</option>
+                        </select>
+                </div>
+                <button class="btn-full" onclick="printStockList()">GERAR IMPRESSÃO</button>
             </div>
         </div>
     </div>
@@ -1142,6 +1010,7 @@
                         base['Código'] = codigoLimpo;
                         base['Localização'] = rawLoc;
                         base['Preço de custo'] = cost;
+                        base['Preço de Compra'] = cost; // SYNC NA IMPORTAÇÃO
                         base['Categoria do produto'] = cat;
 
                         // 3. HIGIENIZAÇÃO OBRIGATÓRIA
@@ -1287,28 +1156,145 @@
         }
 
         // ----------------------------------------------------
-        // EXPORTAÇÃO JSON CATEGORIAS (AGORA POR LOCAL)
+        // IMPRESSÃO DE LISTAS (80MM)
         // ----------------------------------------------------
-        function exportarJSONCategorias() {
-            if (products.length === 0) return alert("Nada para exportar.");
+        function openPrintListModal() {
+            // Popula os selects
+            const gondolaSelect = document.getElementById('print-gondola');
+            const shelfSelect = document.getElementById('print-shelf');
             
-            const grupos = {};
-            products.filter(p => p.situacao !== 'I').forEach(p => {
-                const loc = p.localizacao || "SEM LOCAL";
-                if(!grupos[loc]) grupos[loc] = [];
-                grupos[loc].push(p.codigo);
+            // Limpa
+            gondolaSelect.innerHTML = '<option value="ALL">TODAS</option>';
+            shelfSelect.innerHTML = '<option value="ALL">TODAS</option>';
+
+            // Encontra Gôndolas Únicas nos produtos
+            const uniqueGondolas = new Set();
+            products.forEach(p => {
+                if(p.localizacao && p.localizacao.includes('-')) {
+                    uniqueGondolas.add(p.localizacao.split('-')[0]);
+                }
+            });
+            const sortedG = Array.from(uniqueGondolas).sort();
+            sortedG.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.innerText = "Gôndola " + g;
+                gondolaSelect.appendChild(opt);
             });
 
-            const resultado = Object.keys(grupos).map(k => ({
-                localizacao: k,
-                produtos: grupos[k]
-            }));
+            openModal('modal-print-list');
+        }
 
-            const jsonStr = JSON.stringify(resultado, null, 2);
-            const l = document.createElement("a");
-            l.href = URL.createObjectURL(new Blob([jsonStr], { type: 'application/json' }));
-            l.download = "produtos_por_local.json";
-            l.click();
+        function updatePrintShelves() {
+            const gondola = document.getElementById('print-gondola').value;
+            const shelfSelect = document.getElementById('print-shelf');
+            shelfSelect.innerHTML = '<option value="ALL">TODAS</option>';
+            
+            if(gondola === 'ALL') return;
+
+            const uniqueShelves = new Set();
+            products.forEach(p => {
+                if(p.localizacao && p.localizacao.startsWith(gondola + '-')) {
+                    uniqueShelves.add(p.localizacao.split('-')[1]);
+                }
+            });
+            const sortedS = Array.from(uniqueShelves).sort();
+            sortedS.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.innerText = "Prateleira " + s;
+                shelfSelect.appendChild(opt);
+            });
+        }
+
+        function printStockList() {
+            const gondola = document.getElementById('print-gondola').value;
+            const shelf = document.getElementById('print-shelf').value;
+
+            // Filtra produtos
+            const filtered = products.filter(p => {
+                if(p.situacao === 'I') return false;
+                if(!p.localizacao) return false;
+                const parts = p.localizacao.split('-');
+                const g = parts[0];
+                const s = parts[1];
+                
+                if(gondola !== 'ALL' && g !== gondola) return false;
+                if(shelf !== 'ALL' && s !== shelf) return false;
+                return true;
+            });
+
+            // Ordena por Localização
+            filtered.sort((a,b) => a.localizacao.localeCompare(b.localizacao));
+
+            const w = window.open('', '', 'width=400,height=600');
+            
+            let itemsHtml = '';
+            filtered.forEach(p => {
+                // Checa validade < 30 dias
+                let isExpiring = false;
+                if(p.validade) {
+                    const dt = parseDate(p.validade);
+                    if(dt) {
+                         const diffTime = dt - new Date();
+                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                         if(diffDays < 30) isExpiring = true;
+                    }
+                }
+                
+                const styleExp = isExpiring ? 'font-weight:bold; text-decoration:underline;' : '';
+                const mark = isExpiring ? ' ***' : '';
+
+                itemsHtml += `
+                    <div class="item">
+                        <div class="line1">
+                            <span class="loc">[${p.localizacao}]</span>
+                            <span class="name">${p.nome.substring(0, 30)}</span>
+                        </div>
+                        <div class="line2">
+                            <span>SKU: ${p.codigo}</span>
+                            <span>EST: ${formatNum(p.estoque)}</span>
+                        </div>
+                        <div class="line3" style="${styleExp}">
+                            VAL: ${p.validade || '---'}${mark}
+                        </div>
+                    </div>
+                `;
+            });
+
+            w.document.write(`
+                <html>
+                <head>
+                    <style>
+                        @page { size: 80mm auto; margin: 0; }
+                        body { 
+                            width: 80mm; 
+                            margin: 0; padding: 5mm; 
+                            box-sizing: border-box;
+                            font-family: monospace;
+                            font-size: 12px;
+                        }
+                        .header { text-align: center; font-weight: bold; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; }
+                        .item { margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; }
+                        .line1 { display: flex; gap: 5px; font-weight: bold; }
+                        .loc { white-space: nowrap; }
+                        .line2 { display: flex; justify-content: space-between; font-size: 11px; }
+                        .line3 { font-size: 11px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        RELATÓRIO DE ESTOQUE<br>
+                        G: ${gondola} | P: ${shelf}<br>
+                        Data: ${new Date().toLocaleDateString()}
+                    </div>
+                    ${itemsHtml}
+                    <script>window.onload = function() { window.print(); }<\/script>
+                </body>
+                </html>
+            `);
+            w.document.close();
+            closeModal('modal-print-list');
         }
         
         function toggleLoader(show, msg) {
@@ -1449,25 +1435,86 @@
             window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
         }
 
+        function parseDate(str) {
+            if(!str) return null;
+            const parts = str.split('/');
+            if(parts.length === 3) {
+                return new Date(parts[2], parts[1]-1, parts[0]);
+            }
+            return null;
+        }
+
         function renderGrid(filter = "") {
             const gridContainer = document.getElementById('product-grid');
             gridContainer.innerHTML = "";
             
+            const filterMode = document.getElementById('filter-select').value;
+            const sortMode = document.getElementById('sort-select').value;
+
             let filtered = products;
+            
+            // 1. Filtro de Texto (Search Input)
             if(filter) {
                 const term = filter.toLowerCase();
-                
-                filtered = products.filter(p => {
+                filtered = filtered.filter(p => {
                     return (p.nome||"").toLowerCase().includes(term) ||
                     (p.codigo||"").toLowerCase().includes(term) ||
                     (p.gtin||"").includes(term) ||
                     (p.localizacao||"").toLowerCase().includes(term);
                 });
             }
+
+            // 2. Filtro Avançado (Select)
+            if(filterMode === 'validity60') {
+                const now = new Date();
+                const limit = new Date();
+                limit.setDate(now.getDate() + 60);
+                
+                filtered = filtered.filter(p => {
+                    if(!p.validade) return false;
+                    const dt = parseDate(p.validade);
+                    return dt && dt <= limit; // Vence em menos de 60 dias ou já venceu
+                });
+            } else if (filterMode === 'errors') {
+                filtered = filtered.filter(p => {
+                    return !p.gtin || !p.ncm || !p.preco || p.preco === 0;
+                });
+            } else if (filterMode === 'margin_error') {
+                filtered = filtered.filter(p => {
+                    const price = p.preco || 0;
+                    const cost = p.preco_custo || 0;
+                    return price <= cost;
+                });
+            }
+
+            // 3. Ordenação
+            if(sortMode === 'name') {
+                filtered.sort((a,b) => a.nome.localeCompare(b.nome));
+            } else if (sortMode === 'validity') {
+                filtered.sort((a,b) => {
+                    const da = parseDate(a.validade);
+                    const db = parseDate(b.validade);
+                    // Sem data vai pro final
+                    if(!da) return 1; 
+                    if(!db) return -1;
+                    return da - db;
+                });
+            }
+            // Se sortMode == 'gondola', mantemos a ordem original ou ordenamos por localizacao
             
             document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
 
-            // Define grupos para renderizar: Gondolas + Sem Local
+            // Se ordenação NÃO for Gôndola, mostrar Flat Grid (sem agrupamento)
+            if(sortMode !== 'gondola') {
+                const subGrid = document.createElement('div');
+                subGrid.className = 'category-items-container';
+                filtered.forEach(p => subGrid.appendChild(createCard(p)));
+                gridContainer.appendChild(subGrid);
+                lucide.createIcons();
+                return;
+            }
+
+            // Se for agrupado por Gôndola (Padrão)
             const gruposParaRenderizar = [...GONDOLAS, SEM_LOCAL];
             
             // Loop para agrupar visualmente por Gôndola
@@ -1501,161 +1548,165 @@
                 subGrid.className = 'category-items-container';
 
                 prodsDaSecao.forEach(p => {
-                    // Parser da localização atual do produto (Ex: "01-A" -> g="01", pr="A")
-                    let currentG = "";
-                    let currentP = "";
-                    if(p.localizacao && p.localizacao.includes('-')) {
-                        const parts = p.localizacao.split('-');
-                        currentG = parts[0];
-                        currentP = parts[1];
-                    }
-
-                    const isInactive = p.situacao === 'I';
-                    const card = document.createElement('div');
-                    // Adicionado ID para atualização pontual sem re-render
-                    card.id = `card-${p.codigo}`;
-                    card.className = `card ${p._changed ? 'status-changed' : 'status-synced'} ${isInactive ? 'status-inactive' : ''}`;
-                    
-                    const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
-                    
-                    // Gera opções das Gôndolas
-                    let optionsG = `<option value="">--</option>`;
-                    GONDOLAS.forEach(g => {
-                        optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>GON ${g}</option>`;
-                    });
-
-                    // Gera opções das Prateleiras
-                    let optionsP = `<option value="">--</option>`;
-                    PRATELEIRAS.forEach(pr => {
-                        optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`;
-                    });
-
-                    // Gera opções de Categoria (NOVO)
-                    let optionsCat = `<option value="">-- SELECIONE --</option>`;
-                    // Se o produto tem uma categoria que não está na lista oficial, adicione-a temporariamente
-                    const catList = [...availableCategories];
-                    if(p.categoria && !catList.includes(p.categoria)) {
-                        catList.push(p.categoria);
-                    }
-                    catList.forEach(c => {
-                        const selected = (p.categoria === c) ? 'selected' : '';
-                        optionsCat += `<option value="${c}" ${selected}>${c}</option>`;
-                    });
-
-                    // Cálculo da Margem de Lucro (%) = (Venda - Custo) / Custo * 100
-                    // Alterado para mostrar Markup conforme solicitado: "percentual que foi adicionado"
-                    let lucroStr = "-";
-                    let lucroClass = "";
-                    if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
-                        const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
-                        lucroStr = markup.toFixed(1) + "%";
-                        if(markup < 20) lucroClass = "color: #dc2626;"; // Vermelho se margem baixa
-                        else if(markup > 40) lucroClass = "color: #16a34a;"; // Verde se margem boa
-                    }
-
-                    card.innerHTML = `
-                        <div class="card-img-area" onclick="openEditor('${p.codigo}')">
-                            <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
-                            <div class="img-overlay">
-                                <button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button>
-                                <button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="card-sku">
-                                <span>${p.codigo}</span>
-                                <div class="loc-controls">
-                                    <select class="loc-select" onchange="updateProduct('${p.codigo}', 'gondola', this.value)">
-                                        ${optionsG}
-                                    </select>
-                                    <select class="loc-select" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)">
-                                        ${optionsP}
-                                    </select>
-                                </div>
-                            </div>
-                            
-                            <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
-
-                             <div style="margin-top:4px;">
-                                <label style="font-size:9px; color:var(--accent); font-weight:bold;">CATEGORIA</label>
-                                <select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">
-                                    ${optionsCat}
-                                </select>
-                            </div>
-
-                            <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
-                                <div style="display:flex; align-items:center; gap:4px;">
-                                    <span style="font-weight:bold;">EAN:</span>
-                                    <input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-">
-                                    ${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN" style="border:none; background:none; cursor:pointer;"><i data-lucide="search" size="10" color="#64748b"></i></button>` : ''}
-                                </div>
-                                <div style="display:flex; align-items:center; gap:4px;">
-                                    <span style="font-weight:bold;">NCM:</span>
-                                    <input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-">
-                                </div>
-                                <div style="grid-column: span 2; display:flex; align-items:center; gap:4px;">
-                                    <span style="font-weight:bold; color:var(--accent)">VAL:</span>
-                                    <input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}">
-                                </div>
-                            </div>
-                            
-                            <div class="card-stats">
-                                <div class="stat-box">
-                                    <span class="stat-label">Venda (R$)</span>
-                                    <input class="stat-input" value="${formatNum(p.preco)}" 
-                                        onchange="updateProduct('${p.codigo}', 'preco', this.value)">
-                                </div>
-                                <div class="stat-box">
-                                    <span class="stat-label">Estoque</span>
-                                    <input class="stat-input" value="${formatNum(p.estoque)}" 
-                                        onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
-                                </div>
-                                <div class="stat-box">
-                                    <span class="stat-label">P. Compra</span>
-                                    <input class="stat-input" value="${formatNum(p['Preço de Compra'] || 0)}" 
-                                        onchange="updateProduct('${p.codigo}', 'Preço de Compra', this.value)">
-                                </div>
-                                <div class="stat-box">
-                                    <span class="stat-label">P. Custo</span>
-                                    <input class="stat-input" value="${formatNum(p.preco_custo)}" 
-                                        onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)">
-                                </div>
-                                <div class="stat-box" style="grid-column: span 2">
-                                    <span class="stat-label">Markup %</span>
-                                    <div class="stat-readonly" style="${lucroClass}">${lucroStr}</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes">
-                                <i data-lucide="list-plus" size="18"></i>
-                            </button>
-                            <button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta">
-                                <i data-lucide="printer" size="18"></i>
-                            </button>
-                            
-                            <button class="btn-sq ${p.nome.startsWith('OFERTA') ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta">
-                                <i data-lucide="tag" size="18"></i>
-                            </button>
-
-                            <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}">
-                                <i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i>
-                            </button>
-                            
-                            <button class="btn-sq" onclick="updateSingleProductJson('${p.codigo}')" title="Atualizar este produto no site">
-                                <i data-lucide="globe" size="18"></i>
-                            </button>
-
-                            <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto">
-                                <i data-lucide="download" size="18"></i>
-                            </button>
-                        </div>
-                    `;
-                    subGrid.appendChild(card);
+                    subGrid.appendChild(createCard(p));
                 });
                 gridContainer.appendChild(subGrid);
             });
             lucide.createIcons();
+        }
+
+        function createCard(p) {
+            // Parser da localização atual do produto (Ex: "01-A" -> g="01", pr="A")
+            let currentG = "";
+            let currentP = "";
+            if(p.localizacao && p.localizacao.includes('-')) {
+                const parts = p.localizacao.split('-');
+                currentG = parts[0];
+                currentP = parts[1];
+            }
+
+            const isInactive = p.situacao === 'I';
+            const card = document.createElement('div');
+            // Adicionado ID para atualização pontual sem re-render
+            card.id = `card-${p.codigo}`;
+            card.className = `card ${p._changed ? 'status-changed' : 'status-synced'} ${isInactive ? 'status-inactive' : ''}`;
+            
+            const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
+            
+            // Gera opções das Gôndolas
+            let optionsG = `<option value="">--</option>`;
+            GONDOLAS.forEach(g => {
+                optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>GON ${g}</option>`;
+            });
+
+            // Gera opções das Prateleiras
+            let optionsP = `<option value="">--</option>`;
+            PRATELEIRAS.forEach(pr => {
+                optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`;
+            });
+
+            // Gera opções de Categoria (NOVO)
+            let optionsCat = `<option value="">-- SELECIONE --</option>`;
+            // Se o produto tem uma categoria que não está na lista oficial, adicione-a temporariamente
+            const catList = [...availableCategories];
+            if(p.categoria && !catList.includes(p.categoria)) {
+                catList.push(p.categoria);
+            }
+            catList.forEach(c => {
+                const selected = (p.categoria === c) ? 'selected' : '';
+                optionsCat += `<option value="${c}" ${selected}>${c}</option>`;
+            });
+
+            // Cálculo da Margem de Lucro (%) = (Venda - Custo) / Custo * 100
+            // Alterado para mostrar Markup conforme solicitado: "percentual que foi adicionado"
+            let lucroStr = "-";
+            let lucroClass = "";
+            if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
+                const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
+                lucroStr = markup.toFixed(1) + "%";
+                if(markup < 20) lucroClass = "color: #dc2626;"; // Vermelho se margem baixa
+                else if(markup > 40) lucroClass = "color: #16a34a;"; // Verde se margem boa
+            }
+
+            card.innerHTML = `
+                <div class="card-img-area" onclick="openEditor('${p.codigo}')">
+                    <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
+                    <div class="img-overlay">
+                        <button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button>
+                        <button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-sku">
+                        <span>${p.codigo}</span>
+                        <div class="loc-controls">
+                            <select class="loc-select" onchange="updateProduct('${p.codigo}', 'gondola', this.value)">
+                                ${optionsG}
+                            </select>
+                            <select class="loc-select" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)">
+                                ${optionsP}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
+
+                        <div style="margin-top:4px;">
+                        <label style="font-size:9px; color:var(--accent); font-weight:bold;">CATEGORIA</label>
+                        <select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">
+                            ${optionsCat}
+                        </select>
+                    </div>
+
+                    <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <span style="font-weight:bold;">EAN:</span>
+                            <input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-">
+                            ${p.gtin ? `<button class="icon-btn-mini" onclick="searchGoogle('${p.gtin}')" title="Buscar EAN" style="border:none; background:none; cursor:pointer;"><i data-lucide="search" size="10" color="#64748b"></i></button>` : ''}
+                        </div>
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <span style="font-weight:bold;">NCM:</span>
+                            <input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-">
+                        </div>
+                        <div style="grid-column: span 2; display:flex; align-items:center; gap:4px;">
+                            <span style="font-weight:bold; color:var(--accent)">VAL:</span>
+                            <input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}">
+                        </div>
+                    </div>
+                    
+                    <div class="card-stats">
+                        <div class="stat-box">
+                            <span class="stat-label">Venda (R$)</span>
+                            <input class="stat-input" value="${formatNum(p.preco)}" 
+                                onchange="updateProduct('${p.codigo}', 'preco', this.value)">
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">Estoque</span>
+                            <input class="stat-input" value="${formatNum(p.estoque)}" 
+                                onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">P. Compra</span>
+                            <input class="stat-input" value="${formatNum(p['Preço de Compra'] || 0)}" 
+                                onchange="updateProduct('${p.codigo}', 'Preço de Compra', this.value)">
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">P. Custo</span>
+                            <input class="stat-input" value="${formatNum(p.preco_custo)}" 
+                                onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)">
+                        </div>
+                        <div class="stat-box" style="grid-column: span 2">
+                            <span class="stat-label">Markup %</span>
+                            <div class="stat-readonly" style="${lucroClass}">${lucroStr}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes">
+                        <i data-lucide="list-plus" size="18"></i>
+                    </button>
+                    <button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta">
+                        <i data-lucide="printer" size="18"></i>
+                    </button>
+                    
+                    <button class="btn-sq ${p.nome.startsWith('OFERTA') ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta">
+                        <i data-lucide="tag" size="18"></i>
+                    </button>
+
+                    <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}">
+                        <i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i>
+                    </button>
+                    
+                    <button class="btn-sq" onclick="updateSingleProductJson('${p.codigo}')" title="Atualizar este produto no site">
+                        <i data-lucide="globe" size="18"></i>
+                    </button>
+
+                    <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto">
+                        <i data-lucide="download" size="18"></i>
+                    </button>
+                </div>
+            `;
+            return card;
         }
 
         function printLabel(sku) {
@@ -1762,12 +1813,44 @@
                 finalVal = parseFloat(value.replace(',','.')) || 0;
             }
 
+            // SYNC P. Custo e P. Compra
+            if(field === 'preco_custo' || field === 'Preço de Compra') {
+                p['preco_custo'] = finalVal;
+                p['Preço de custo'] = finalVal;
+                p['Preço de Compra'] = finalVal;
+                
+                p._changed = true;
+                p._lastChange = new Date().toLocaleString();
+                saveData();
+
+                // Atualiza visual
+                const card = document.getElementById('card-' + sku);
+                if(card) {
+                    // Atualiza ambos inputs para garantir consistência visual
+                    const inputs = card.querySelectorAll('.stat-input');
+                    // Assumindo ordem: Venda, Estoque, P. Compra (2), P. Custo (3)
+                    if(inputs[2]) inputs[2].value = formatNum(finalVal);
+                    if(inputs[3]) inputs[3].value = formatNum(finalVal);
+                    
+                    card.classList.remove('status-synced');
+                    card.classList.add('status-changed');
+
+                    // Atualiza Markup
+                    const markupEl = card.querySelector('.stat-readonly');
+                     if(markupEl && p.preco > 0 && finalVal > 0) {
+                         const markup = ((p.preco - finalVal) / finalVal) * 100;
+                         markupEl.innerText = markup.toFixed(1) + "%";
+                         markupEl.style.color = markup < 20 ? '#dc2626' : (markup > 40 ? '#16a34a' : '');
+                     }
+                }
+                return; // Fim do sync especial
+            }
+
             if(p[field] != finalVal) {
                 p[field] = finalVal;
                 // Atualiza também o campo original do CSV se existir mapeamento direto
                 if(field === 'nome') p['Descrição'] = finalVal;
                 if(field === 'preco') p['Preço'] = value; 
-                if(field === 'preco_custo') p['Preço de custo'] = value;
                 if(field === 'estoque') p['Estoque'] = value;
                 if(field === 'categoria') p['Categoria do produto'] = value;
                 if(field === 'gtin') p['GTIN/EAN'] = value;
@@ -1784,8 +1867,8 @@
                     card.classList.remove('status-synced');
                     card.classList.add('status-changed');
                     
-                    // Se mudou preço ou custo, atualiza Markup via DOM
-                    if(field === 'preco' || field === 'preco_custo') {
+                    // Se mudou preço, atualiza Markup via DOM
+                    if(field === 'preco') {
                          const markupEl = card.querySelector('.stat-readonly');
                          if(markupEl && p.preco > 0 && p.preco_custo > 0) {
                              const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
