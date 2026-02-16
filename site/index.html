@@ -211,7 +211,7 @@
 
         .basket-base-list { 
             background: white; padding: 0 20px 15px; 
-            max-height: 350px; overflow-y: auto; /* Scroll se ficar muito grande */
+            /* MODIFICADO: Scrollbar removida para mostrar tudo */
         }
         
         .list-header-row {
@@ -418,6 +418,13 @@
                 </div>
         </div>
 
+        <div style="padding: 0 20px 15px;">
+            <div class="hero-banner-mini" style="width:100%; padding: 15px;">
+                <strong>Você pode montar a sua cesta como quiser.</strong>
+                <span>Pedido mínimo R$ 85,00</span>
+            </div>
+        </div>
+
         <div id="selected-basket-area" style="display:none;">
             <div class="intro-title-custom" id="basket-intro-msg"></div>
             <div class="basket-base-list" id="basket-list-content"></div>
@@ -517,7 +524,7 @@
             <div class="faq-item" onclick="this.classList.toggle('active')"><div class="faq-q">Como funciona a entrega? <span>▼</span></div><div class="faq-a">Entregamos gratuitamente em Cuiabá e Várzea Grande. O prazo geralmente é de até 24h úteis após o pedido.</div></div>
             <div class="faq-item" onclick="this.classList.toggle('active')"><div class="faq-q">Quais as formas de pagamento? <span>▼</span></div><div class="faq-a">Aceitamos PIX, Dinheiro, Cartão de Crédito, Débito e Cartão Alimentação na hora da entrega.</div></div>
             <div class="faq-item" onclick="this.classList.toggle('active')"><div class="faq-q">Posso personalizar a cesta? <span>▼</span></div><div class="faq-a">Sim! Você pode escolher uma cesta base e retirar ou adicionar qualquer produto que desejar.</div></div>
-            <div class="faq-item" onclick="this.classList.toggle('active')"><div class="faq-q">Tem pedido mínimo? <span>▼</span></div><div class="faq-a">Para cestas montadas do zero, o mínimo é R$ 120,00 e 8 itens. Para cestas prontas, não há mínimo.</div></div>
+            <div class="faq-item" onclick="this.classList.toggle('active')"><div class="faq-q">Tem pedido mínimo? <span>▼</span></div><div class="faq-a">Para cestas montadas do zero, o mínimo é R$ 85,00 e 10 itens. Para cestas prontas, não há mínimo.</div></div>
             <div class="faq-item" onclick="this.classList.toggle('active')"><div class="faq-q">Os produtos são de qualidade? <span>▼</span></div><div class="faq-a">Sim, trabalhamos apenas com marcas reconhecidas e produtos selecionados com data de validade longa.</div></div>
             
             <div class="faq-info">
@@ -910,7 +917,10 @@
 
         function openCheckoutModal() {
             if (STATE.mode === 'custom' && STATE.currentTotal < (STATE.basePrice - 0.5)) return alert(`Faltam ${fmt(STATE.basePrice - STATE.currentTotal)} para completar o valor da cesta.`);
-            if (STATE.mode === 'zero' && STATE.currentTotal < 120) return alert(`Mínimo R$ 120,00 para cestas do zero.`);
+            if (STATE.mode === 'zero') {
+                if (STATE.currentTotal < 85) return alert(`O valor mínimo para montar uma cesta do zero é R$ 85,00. Faltam ${fmt(85 - STATE.currentTotal)}.`);
+                if (Object.keys(STATE.cart).length < 10) return alert(`Você precisa escolher pelo menos 10 itens diferentes. Atualmente: ${Object.keys(STATE.cart).length}.`);
+            }
             
             let html = Object.entries(STATE.cart).map(([id, q]) => {
                 const p = DB_PROD.find(x => x.id === id);
