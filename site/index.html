@@ -192,6 +192,48 @@
             padding: 8px; border-radius: 6px; font-size: 0.85rem; text-transform: uppercase;
         }
 
+        /* --- ÁREA DE LISTA DA CESTA SELECIONADA (ESTILO RECUPERADO) --- */
+        #selected-basket-area {
+            background: white;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #E2E8F0;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .intro-title-custom {
+            padding: 15px 20px;
+            background: #E0F2F1; color: #00695C;
+            border-bottom: 1px solid #B2DFDB;
+            font-size: 1rem; font-weight: 700;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .basket-base-list { 
+            background: white; padding: 0 20px 15px; 
+            max-height: 350px; overflow-y: auto; /* Scroll se ficar muito grande */
+        }
+        
+        .list-header-row {
+            display: flex; justify-content: space-between; 
+            font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;
+            margin: 15px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9;
+        }
+
+        .base-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid var(--cor-divider);
+        }
+        .base-item:last-child { border-bottom: none; }
+        .base-item-name { font-size: 0.9rem; font-weight: 600; color: var(--cor-text-main); flex: 1; padding-right: 10px; }
+
+        .section-separator {
+            padding: 15px 20px; background: #f8fafc;
+            border-top: 1px solid #e2e8f0; text-align: center;
+        }
+        .separator-title { font-size: 1rem; color: var(--cor-primary); font-weight: 800; }
+        .separator-sub { font-size: 0.85rem; color: var(--cor-text-light); }
+
         /* --- CATALOGO GERAL --- */
         .catalog-section { padding-top: 10px; }
         
@@ -374,6 +416,15 @@
             <div class="section-title">Escolha uma Cesta Pronta (Atalho)</div>
             <div class="cestas-scroll-container" id="cestas-scroll-list">
                 </div>
+        </div>
+
+        <div id="selected-basket-area" style="display:none;">
+            <div class="intro-title-custom" id="basket-intro-msg"></div>
+            <div class="basket-base-list" id="basket-list-content"></div>
+            <div class="section-separator">
+                <h3 class="separator-title">Adicionar mais itens?</h3>
+                <p class="separator-sub">Navegue pelo catálogo abaixo</p>
+            </div>
         </div>
 
         <div class="sticky-stack">
@@ -599,11 +650,60 @@
             STATE.initialGap = STATE.cesta.preco - initialSum;
             
             document.getElementById('modal-basket-preview').close();
+            
+            // ATIVA A AREA DA CESTA E RENDERIZA A LISTA
+            document.getElementById('selected-basket-area').style.display = 'block';
+            document.getElementById('basket-intro-msg').innerHTML = `Você selecionou a <strong>${STATE.cesta.nome}</strong>.<br>Edite os itens abaixo se quiser.`;
+            renderActiveBasketList();
+
             updateUI();
             renderCatalogo(); // Re-renderiza para mostrar quantidades
             
             document.getElementById('btn-view-diff-float').style.display = 'flex';
             showToast(`Cesta ${STATE.cesta.nome} carregada!`, 'success');
+            
+            // Scroll suave até a área de edição
+            document.getElementById('selected-basket-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function renderActiveBasketList() {
+             const el = document.getElementById('basket-list-content');
+             const cartIds = Object.keys(STATE.cart);
+             
+             if(cartIds.length === 0) {
+                 el.innerHTML = '<p style="text-align:center;color:#64748B;padding:10px;">Cesta vazia.</p>';
+                 return;
+             }
+             
+             // Sort A-Z
+             cartIds.sort((a,b) => {
+                 const pa = DB_PROD.find(x => x.id === a);
+                 const pb = DB_PROD.find(x => x.id === b);
+                 return (pa && pb) ? pa.name.localeCompare(pb.name) : 0;
+             });
+
+             let itemsHtml = cartIds.map(pid => {
+                 const p = DB_PROD.find(x => x.id === pid);
+                 if(!p) return '';
+                 const qty = STATE.cart[pid];
+                 return `
+                 <div class="base-item">
+                     <span class="base-item-name">${p.name}</span>
+                     <div class="qty-control">
+                         <button class="btn-q" onclick="upd('${pid}', -1)">-</button>
+                         <span class="val-q qty-${pid}">${qty}</span>
+                         <button class="btn-q" onclick="upd('${pid}', 1)">+</button>
+                     </div>
+                 </div>`;
+             }).join('');
+
+             el.innerHTML = `
+                <div class="list-header-row">
+                    <span>Produtos da Cesta</span>
+                    <span>Qtd</span>
+                </div>
+                ${itemsHtml}
+             `;
         }
 
         function clearCart() {
@@ -616,6 +716,9 @@
             STATE.basePrice = 0;
             STATE.initialGap = 0;
             
+            // Esconde a área da cesta selecionada
+            document.getElementById('selected-basket-area').style.display = 'none';
+
             updateUI();
             renderCatalogo();
             document.getElementById('btn-view-diff-float').style.display = 'none';
@@ -627,10 +730,15 @@
             STATE.cart[pid] = (STATE.cart[pid] || 0) + d;
             if (STATE.cart[pid] <= 0) delete STATE.cart[pid];
             
-            // Se usuário mexe no carrinho, atualiza UI
+            // Se usuário mexe no carrinho, atualiza UI e Lista do Topo
             updateUI();
             
-            // Atualiza visualmente os contadores
+            // Se a lista da cesta estiver visível, atualiza ela também
+            if(document.getElementById('selected-basket-area').style.display !== 'none') {
+                renderActiveBasketList();
+            }
+
+            // Atualiza visualmente os contadores no catálogo
             const els = document.querySelectorAll(`.qty-${pid}`);
             els.forEach(el => el.innerText = STATE.cart[pid] || 0);
             
@@ -821,7 +929,6 @@
             
             const orderId = new Date().getTime().toString().slice(-6);
             let checklist = `TIPO: ${STATE.mode === 'zero' ? 'MONTADA DO ZERO' : 'PERSONALIZADA'} | CESTA: ${STATE.cesta ? STATE.cesta.nome : 'N/A'}`;
-            // (Logica de checklist simplificada para brevidade, mantendo funcionalidade)
             
             const itensPayload = [];
             Object.entries(STATE.cart).forEach(([id, q]) => { const p = DB_PROD.find(x => x.id === id); if(p) itensPayload.push({id:p.id, nome:p.name, quantidade:q, preco_unitario:p.price}); });
