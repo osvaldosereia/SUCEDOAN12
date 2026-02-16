@@ -593,9 +593,10 @@
         async function init() {
             try {
                 // Removida a requisição de categorias.json
+                // Adicionado '?v=' + Date.now() para forçar a atualização do cache (Cache Buster)
                 const [r1, r2] = await Promise.all([
-                    fetch('produtos-cesta-basica.json'), 
-                    fetch('produtos.json')
+                    fetch('produtos-cesta-basica.json?v=' + Date.now()), 
+                    fetch('produtos.json?v=' + Date.now())
                 ]);
                 
                 if (r1.ok) DB_CESTAS = await r1.json();
@@ -611,7 +612,8 @@
                         code: String(p.codigo || p.id), 
                         name: p.nome, 
                         price: parseFloat(p.preco),
-                        category: p.categoria ? p.categoria.trim() : "Outros", // Lê a categoria diretamente do JSON
+                        // Ajustado para ser mais tolerante a variações e garantir atualização
+                        category: (p.categoria || p.Categoria || "Outros").trim(),
                         img: `img/produtos/${p.codigo || p.id}.webp`
                     }));
                 }
