@@ -72,7 +72,7 @@
 
         header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 24px; /* Aumentado o padding para não encostar */
+            padding: 12px 5%; /* Aumentado padding lateral (Area de respiro) */
             min-height: 70px;
             width: 100%;
         }
@@ -87,16 +87,30 @@
             overflow: visible;
         }
         
-        .btn-whatsapp-header {
-            background: #25D366; color: white;
+        /* Container Botoes Header */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-header-icon {
+            background: rgba(255,255,255,0.1); color: white;
             border-radius: 50%; padding: 0; 
             display: flex; align-items: center; justify-content: center;
-            width: 44px; height: 44px; /* Botão maior */
+            width: 40px; height: 40px; 
             font-size: 0.85rem; font-weight: 700;
             text-decoration: none;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             flex-shrink: 0;
-            margin-left: 10px;
+            transition: 0.2s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-header-icon:hover { background: rgba(255,255,255,0.2); }
+        
+        .btn-header-icon.whatsapp {
+            background: #25D366; 
+            border-color: #25D366;
         }
 
         /* --- STICKY BARS --- */
@@ -360,12 +374,15 @@
         }
         .prod-price { font-size: 1rem; font-weight: 800; color: var(--cor-action); margin-top: auto; }
         
-        /* SETAS DO CARROSSEL SEMPRE VISIVEIS */
+        /* SETAS DO CARROSSEL AJUSTADAS (MESMA LINHA DA SCROLLBAR) */
         .carousel-arrow {
-            display: flex; position: absolute; top: 55%; transform: translateY(-50%);
-            width: 40px; height: 40px; background: white; border-radius: 50%;
+            display: flex; position: absolute; 
+            bottom: 8px; /* Alinhado com a barra de rolagem */
+            top: auto; transform: none;
+            width: 32px; height: 32px; /* Menor */
+            background: white; border-radius: 50%;
             box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 10;
-            align-items: center; justify-content: center; font-size: 1.2rem;
+            align-items: center; justify-content: center; font-size: 1rem;
             cursor: pointer; color: var(--cor-primary);
             border: 1px solid #eee;
         }
@@ -410,6 +427,25 @@
              cursor: pointer; display: flex; align-items: center; justify-content: center;
              box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
+
+        /* --- TOASTS (NOTIFICACOES) --- */
+        #toast-container {
+            position: fixed; top: 90px; right: 20px;
+            z-index: 2000; display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            background: white; color: var(--cor-text-main);
+            padding: 12px 16px; border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            font-size: 0.9rem; font-weight: 600;
+            display: flex; align-items: center; gap: 10px;
+            border-left: 4px solid var(--cor-action);
+            animation: slideIn 0.3s ease;
+            max-width: 300px;
+        }
+        .toast.success { border-left-color: var(--cor-success); }
+        .toast.remove { border-left-color: var(--cor-danger); }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         /* --- MODAIS --- */
         dialog { 
@@ -464,6 +500,13 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             background: white;
         }
+        
+        /* FAQ Styles */
+        .faq-item { text-align: left; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .faq-q { font-weight: 700; color: var(--cor-primary); cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .faq-a { font-size: 0.9rem; color: #64748B; margin-top: 5px; display: none; }
+        .faq-item.active .faq-a { display: block; }
+        .faq-info { margin-top: 20px; padding: 15px; background: #F8FAFC; border-radius: 8px; font-size: 0.9rem; color: var(--cor-text-main); }
 
         /* Desktop Adjustments */
         @media (min-width: 900px) {
@@ -493,15 +536,25 @@
                 <img src="img/logo.webp" class="logo" alt="Logo Dona Antônia" width="44" height="44">
                 <div class="page-title">Super Cestas<br>Dona Antônia</div>
             </div>
-            <a href="https://wa.me/5565996813588" target="_blank" class="btn-whatsapp-header" aria-label="Falar no WhatsApp">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
+            
+            <div class="header-actions">
+                <button class="btn-header-icon" onclick="document.getElementById('modal-faq').showModal()" aria-label="Dúvidas Frequentes">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </button>
+                <a href="https://wa.me/5565996813588" target="_blank" class="btn-header-icon whatsapp" aria-label="Falar no WhatsApp">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/>
                     </svg>
                 </a>
             </div>
-        </div>
+        </header>
+    </div>
 
-        <main class="limit-container">
+    <main class="limit-container">
         <div id="view-home" class="view active">
             <div class="hero-section">
                 <div class="hero-grid">
@@ -577,6 +630,8 @@
     
     <button class="btn-scroll-top" onclick="window.scrollTo({top:0, behavior:'smooth'})" id="btn-scroll-top">⬆</button>
 
+    <div id="toast-container"></div>
+
     <dialog id="modal-items">
         <div class="modal-body" style="text-align:left; padding: 15px 20px;">
             <h3 class="modal-title" style="margin-bottom:15px; text-align:center" id="items-title">Itens da Cesta</h3>
@@ -638,6 +693,53 @@
                 </button>
                 <button class="btn-modal ghost" onclick="document.getElementById('modal-basket-preview').close()" style="margin-top:10px">Voltar</button>
             </div>
+        </div>
+    </dialog>
+    
+    <dialog id="modal-faq">
+        <div class="modal-body">
+            <h3 class="modal-title">Dúvidas Frequentes</h3>
+            
+            <div class="faq-item" onclick="this.classList.toggle('active')">
+                <div class="faq-q">Como funciona a entrega? <span>▼</span></div>
+                <div class="faq-a">Entregamos gratuitamente em Cuiabá e Várzea Grande. O prazo geralmente é de até 24h úteis após o pedido.</div>
+            </div>
+            <div class="faq-item" onclick="this.classList.toggle('active')">
+                <div class="faq-q">Quais as formas de pagamento? <span>▼</span></div>
+                <div class="faq-a">Aceitamos PIX, Dinheiro, Cartão de Crédito, Débito e Cartão Alimentação na hora da entrega.</div>
+            </div>
+            <div class="faq-item" onclick="this.classList.toggle('active')">
+                <div class="faq-q">Posso personalizar a cesta? <span>▼</span></div>
+                <div class="faq-a">Sim! Você pode escolher uma cesta base e retirar ou adicionar qualquer produto que desejar.</div>
+            </div>
+            <div class="faq-item" onclick="this.classList.toggle('active')">
+                <div class="faq-q">Tem pedido mínimo? <span>▼</span></div>
+                <div class="faq-a">Para cestas montadas do zero, o mínimo é R$ 120,00 e 8 itens. Para cestas prontas, não há mínimo.</div>
+            </div>
+            <div class="faq-item" onclick="this.classList.toggle('active')">
+                <div class="faq-q">Os produtos são de qualidade? <span>▼</span></div>
+                <div class="faq-a">Sim, trabalhamos apenas com marcas reconhecidas e produtos selecionados com data de validade longa.</div>
+            </div>
+            
+            <div class="faq-info">
+                <strong>Super Cestas Dona Antônia</strong><br>
+                R. Trinta, 105 - Jardim Nossa Sra. Aparecida<br>Cuiabá - MT, 78090-660<br><br>
+                📞 (65) 99815-0975<br>
+                📞 (65) 98449-1018
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <a href="https://wa.me/5565998150975" target="_blank" class="btn-modal primary" style="margin:0; background:#25D366; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01Z"/></svg>
+                    Chamar no Zap
+                </a>
+                <a href="https://instagram.com" target="_blank" class="btn-modal secondary" style="margin:0; border-color:#E1306C; color:#E1306C; display:flex; align-items:center; justify-content:center; gap:8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                    Instagram
+                </a>
+            </div>
+            
+            <button class="btn-modal ghost" onclick="document.getElementById('modal-faq').close()" style="margin-top:15px">Fechar</button>
         </div>
     </dialog>
 
@@ -971,6 +1073,23 @@
             totalVal.innerText = fmt(STATE.currentTotal);
         }
 
+        // Função TOAST para notificacoes
+        function showToast(msg, type='success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                ${type === 'remove' ? '🗑️' : '✅'}
+                <span>${msg}</span>
+            `;
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
         function upd(pid, d) {
             STATE.cart[pid] = (STATE.cart[pid] || 0) + d;
             if (STATE.cart[pid] <= 0) delete STATE.cart[pid];
@@ -987,6 +1106,13 @@
                 
                 // Se estiver no modo custom, atualiza lista base tambem se o item estiver nela
                 if(STATE.mode === 'custom') renderBaseList(); 
+                
+                // Dispara Toast
+                const p = DB_PROD.find(x => x.id === pid);
+                if(p) {
+                    if(d > 0) showToast(`${p.name} adicionado!`, 'success');
+                    else showToast(`${p.name} removido!`, 'remove');
+                }
             }
         }
 
