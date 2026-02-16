@@ -224,12 +224,12 @@
         .cesta-name { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; color: var(--cor-primary); }
         .cesta-price { font-size: 1.4rem; font-weight: 800; color: var(--cor-action); margin-top: 5px; margin-bottom: 10px; }
         
-        .cesta-actions { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .cesta-actions { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
 
         .btn-choose {
-            width: 100%; padding: 10px 5px;
+            width: 100%; padding: 12px 5px;
             background: var(--cor-primary); color: white;
-            border-radius: 6px; font-size: 0.8rem; text-transform: uppercase;
+            border-radius: 6px; font-size: 0.9rem; text-transform: uppercase;
             font-weight: 700;
         }
         .btn-choose.outline { background: white; border: 1px solid var(--cor-primary); color: var(--cor-primary); }
@@ -394,7 +394,7 @@
 
         /* --- MODAIS --- */
         dialog { 
-            border: none; border-radius: 16px; width: 90%; max-width: 400px; 
+            border: none; border-radius: 16px; width: 95%; max-width: 500px; 
             padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
             background: white;
         }
@@ -409,6 +409,23 @@
         .btn-modal.primary { background: var(--cor-success); color: white; }
         .btn-modal.secondary { background: white; border: 2px solid var(--cor-action); color: var(--cor-action); }
         .btn-modal.ghost { color: var(--cor-text-light); font-weight: 400; margin-top: 10px; }
+
+        /* Estilos Específicos para o Modal de Preview (Carrossel dentro do Modal) */
+        #modal-basket-preview .carousel-container {
+            border: none;
+            box-shadow: none;
+            margin: 0;
+            padding-bottom: 0;
+        }
+        #modal-basket-preview .carousel-track {
+            padding: 10px 5px; /* Ajuste para não cortar sombras */
+            justify-content: flex-start;
+        }
+        #modal-basket-preview .prod-card {
+            border: 1px solid #eee;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            width: 140px; /* Um pouco menor para caber melhor */
+        }
 
         /* Desktop Adjustments */
         @media (min-width: 900px) {
@@ -521,17 +538,6 @@
     
     <button class="btn-scroll-top" onclick="window.scrollTo({top:0, behavior:'smooth'})" id="btn-scroll-top">⬆</button>
 
-    <dialog id="modal-decision">
-        <div class="modal-body">
-            <h3 class="modal-title" id="decision-title"></h3>
-            <p class="modal-text">Deseja Personalizar a sua Cesta?</p>
-            
-            <button class="btn-modal primary" onclick="startCustomization()">SIM, PERSONALIZAR</button>
-            <button class="btn-modal secondary" onclick="prepareStandardCheckout()">NÃO, ENCOMENDAR DIRETO</button>
-            <button class="btn-modal ghost" onclick="document.getElementById('modal-decision').close()">Cancelar</button>
-        </div>
-    </dialog>
-
     <dialog id="modal-items">
         <div class="modal-body" style="text-align:left; padding: 15px 20px;">
             <h3 class="modal-title" style="margin-bottom:15px; text-align:center" id="items-title">Itens da Cesta</h3>
@@ -575,6 +581,27 @@
         </div>
     </dialog>
 
+    <dialog id="modal-basket-preview">
+        <div class="modal-body" style="padding: 15px 0 20px;">
+            <div style="padding: 0 20px;">
+                <h3 class="modal-title" id="preview-title" style="margin-bottom:5px;">Nome da Cesta</h3>
+                <p style="font-size:0.9rem; color:var(--cor-text-light); margin-bottom:15px;" id="preview-desc">Confira os itens abaixo:</p>
+            </div>
+            
+            <div class="carousel-container" id="preview-carousel-container" style="background:#f8fafc;">
+                </div>
+            
+            <div style="padding: 10px 20px;">
+                <div style="margin-bottom:15px; font-size:1.2rem; font-weight:800; color:var(--cor-primary)" id="preview-price">R$ 0,00</div>
+                
+                <button class="btn-main-action" onclick="confirmBasketSelection()">
+                    ESCOLHER ESTA CESTA
+                </button>
+                <button class="btn-modal ghost" onclick="document.getElementById('modal-basket-preview').close()" style="margin-top:10px">Voltar</button>
+            </div>
+        </div>
+    </dialog>
+
     <script>
         // --- CONFIG ---
         const CONFIG_WHATSAPP = "5565996813588"; 
@@ -587,6 +614,7 @@
             isUnlocked: false, lastScroll: 0, sortType: 'name',
             initialGap: 0, mode: 'custom', // custom, standard, zero
             // catMap removido pois não é mais necessário
+            previewBasketId: null // Armazena ID da cesta em visualização
         };
 
         // --- INIT ---
@@ -646,16 +674,16 @@
 
         function renderHome() {
             const el = document.getElementById('cestas-list');
+            // Alterado onclick para previewBasket
             el.innerHTML = DB_CESTAS.map(c => `
                 <div class="cesta-card" tabindex="0">
-                    <img src="${c.imagem || ''}" class="cesta-img" alt="${c.nome}" loading="lazy" width="300" height="300" onclick="openDecision('${c.id}')">
+                    <img src="${c.imagem || ''}" class="cesta-img" alt="${c.nome}" loading="lazy" width="300" height="300" onclick="previewBasket('${c.id}')">
                     <div class="cesta-content">
                         <div class="cesta-name">${c.nome}</div>
                         <div class="cesta-price">${fmt(c.preco)}</div>
                         
                         <div class="cesta-actions">
-                            <button class="btn-choose" onclick="openDecision('${c.id}')">Encomendar</button>
-                            <button class="btn-choose outline" onclick="openItems('${c.id}')">Ver Itens</button>
+                            <button class="btn-choose" onclick="previewBasket('${c.id}')">Ver Detalhes</button>
                         </div>
                     </div>
                 </div>
@@ -692,64 +720,70 @@
             document.getElementById('home-offers-container').innerHTML = html;
         }
 
-        // --- LOGIC ---
-        function openDecision(id) {
-            STATE.cesta = DB_CESTAS.find(x => x.id === id);
-            document.getElementById('decision-title').innerText = STATE.cesta.nome;
-            document.getElementById('modal-decision').showModal();
-        }
-
-        function openItems(id) {
+        // --- NOVA LOGICA DE PREVIEW ---
+        function previewBasket(id) {
             const cesta = DB_CESTAS.find(x => x.id === id);
             if(!cesta) return;
             
-            let html = "";
+            STATE.previewBasketId = id;
+            
+            // Popula os dados básicos
+            document.getElementById('preview-title').innerText = cesta.nome;
+            document.getElementById('preview-price').innerText = fmt(cesta.preco);
+            
+            // Monta o carrossel de itens
+            let itemsHtml = "";
+            let itemCount = 0;
+            
             cesta.produtos.forEach(itemStr => {
-                const [q, id] = itemStr.split('x ');
+                const [qStr, id] = itemStr.split('x ');
                 const pid = id.trim();
+                const q = parseInt(qStr);
                 const product = DB_PROD.find(p => p.id === pid);
+                
                 if (product) {
-                    html += `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #eee">
-                        <span style="flex:1; padding-right:10px; font-size:0.9rem; font-weight:600">${product.name}</span>
-                        <span style="font-weight:700; font-size:1rem; background:#eee; padding:4px 10px; border-radius:4px">${q}x</span>
-                    </div>`;
+                    itemCount++;
+                    itemsHtml += `
+                        <div class="prod-card">
+                            <img src="${product.img}" class="prod-img" loading="lazy" alt="${product.name}" width="150" height="150">
+                            <div class="prod-name">${product.name}</div>
+                            <div class="prod-price" style="font-size:0.9rem; color:#64748B; font-weight:normal">${q} UNIDADE(S)</div>
+                        </div>
+                    `;
                 }
             });
             
-            document.getElementById('items-title').innerText = `Itens: ${cesta.nome}`;
-            document.getElementById('items-summary').innerHTML = html;
-            document.getElementById('modal-items').showModal();
+            document.getElementById('preview-desc').innerText = `Esta cesta contém ${itemCount} produtos selecionados.`;
+            
+            // Injeta o HTML do carrossel
+            const containerHtml = `
+                <div class="carousel-track">
+                    ${itemsHtml}
+                </div>
+            `;
+            document.getElementById('preview-carousel-container').innerHTML = containerHtml;
+            
+            // Abre o modal
+            document.getElementById('modal-basket-preview').showModal();
         }
 
-        // Modo 1: Encomendar Normal (Com Checkout Modal)
-        function prepareStandardCheckout() {
-            document.getElementById('modal-decision').close();
-            STATE.mode = 'standard';
-            STATE.cart = {}; 
-            STATE.basePrice = STATE.cesta.preco;
+        function confirmBasketSelection() {
+            const id = STATE.previewBasketId;
+            if(!id) return;
             
-            // Popula o carrinho virtual para o checkout
-            let initialSum = 0;
-            STATE.cesta.produtos.forEach(itemStr => {
-                const [q, id] = itemStr.split('x ');
-                const pid = id.trim();
-                const product = DB_PROD.find(p => p.id === pid);
-                if (product) {
-                    STATE.cart[pid] = parseInt(q);
-                    initialSum += product.price * parseInt(q);
-                }
-            });
+            STATE.cesta = DB_CESTAS.find(x => x.id === id);
+            document.getElementById('modal-basket-preview').close();
             
-            STATE.initialGap = STATE.cesta.preco - initialSum;
-            STATE.currentTotal = STATE.basePrice;
-
-            openCheckoutModal();
+            startCustomization(); // Agora chamamos direto o modo de personalização
         }
 
-        // Modo 2: Personalizar
+        function openItems(id) {
+            // Mantido para compatibilidade, mas agora usamos o previewBasket
+            previewBasket(id);
+        }
+
+        // Modo 2: Personalizar (Agora o padrão ao clicar "Escolher esta Cesta")
         function startCustomization() {
-            document.getElementById('modal-decision').close();
             STATE.mode = 'custom';
             STATE.basePrice = STATE.cesta.preco;
             STATE.cart = {}; 
