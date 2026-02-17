@@ -72,7 +72,7 @@
         .cat-select { width: 100%; padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; font-weight: 600; color: var(--text-primary); background: #f8fafc; cursor: pointer; }
         .cat-select:focus { border-color: var(--accent); background: white; outline: none; }
         .stat-readonly { width: 100%; padding: 5px; border: 1px solid transparent; font-size: 11px; font-weight: 700; color: var(--text-secondary); background: transparent; text-align: center; }
-        .card-footer { padding: 8px 12px; background: #f8fafc; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; align-items: center; }
+        .card-footer { padding: 8px 12px; background: #f8fafc; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: center; }
         .btn-sq { aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; border-radius: 6px; border: 1px solid var(--border); background: white; color: var(--text-secondary); cursor: pointer; transition: 0.2s; padding: 0; width: 100%; }
         .btn-sq:hover { border-color: var(--accent); color: var(--accent); background: #f1f5f9; }
         .btn-sq.sync { background: var(--success); color: white; border-color: var(--success); }
@@ -645,6 +645,41 @@
             document.getElementById('product-grid').scrollTop = 0;
         }
 
+        function duplicateProduct(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            if(!confirm("Duplicar este produto?")) return;
+            
+            const timestamp = Date.now().toString();
+            const newSku = timestamp.slice(-8);
+            const baseEan = "2" + timestamp.slice(-11);
+            const checkDigit = calculateEanCheckDigit(baseEan);
+            const internalEan = baseEan + checkDigit;
+            
+            // Clone object
+            const newProd = JSON.parse(JSON.stringify(p));
+            // Reset identifiers
+            newProd.codigo = newSku;
+            newProd['Código'] = newSku;
+            newProd.gtin = internalEan;
+            newProd['GTIN/EAN'] = internalEan;
+            newProd.nome = "CÓPIA - " + p.nome;
+            newProd['Descrição'] = newProd.nome;
+            newProd.situacao = 'A';
+            newProd['Situação'] = 'A';
+            newProd._changed = true;
+            newProd._lastChange = "Duplicação Manual";
+            // Remove IDs if they exist
+            delete newProd.id;
+            delete newProd['ID'];
+
+            products.unshift(newProd);
+            saveData();
+            renderGrid();
+            alert("Produto duplicado! Novo SKU: " + newSku);
+            document.getElementById('product-grid').scrollTop = 0;
+        }
+
         function generateInternalEan(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
@@ -861,6 +896,7 @@
                 <div class="card-footer">
                     <button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes"><i data-lucide="list-plus" size="18"></i></button>
                     <button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta"><i data-lucide="printer" size="18"></i></button>
+                    <button class="btn-sq" onclick="duplicateProduct('${p.codigo}')" title="Duplicar Produto"><i data-lucide="copy" size="18"></i></button>
                     <button class="btn-sq ${p.nome.startsWith('OFERTA') ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta"><i data-lucide="tag" size="18"></i></button>
                     <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}"><i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i></button>
                     <button class="btn-sq" onclick="updateSingleProductJson('${p.codigo}')" title="Atualizar este produto no site"><i data-lucide="globe" size="18"></i></button>
