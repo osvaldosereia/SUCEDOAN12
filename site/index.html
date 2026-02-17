@@ -72,7 +72,7 @@
 
         header {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 20px; /* MODIFICADO: Aumentado para dar respiro */
+            padding: 12px 24px; /* MODIFICADO: Aumentado para afastar das extremidades no mobile */
             min-height: 70px;
             width: 100%;
         }
@@ -650,7 +650,7 @@
                     if (!txt.startsWith('[')) txt = '[' + txt + ']';
                     DB_PROD = JSON.parse(txt).filter(x => x.situacao === "A").map(p => ({
                         id: String(p.id), code: String(p.codigo || p.id), name: p.nome, price: parseFloat(p.preco),
-                        category: (p.categoria || p.Categoria || "Outros").trim(), img: `img/produtos/${p.codigo || p.id}.webp`
+                        category: (p.categoria || p.Categoria || "Outros").trim(), validade: p.validade, img: `img/produtos/${p.codigo || p.id}.webp`
                     }));
                 }
                 
@@ -1012,10 +1012,12 @@
         }
 
         function renderProdCard(p) {
+            const validadeHtml = p.validade ? `<div style="font-size:0.75rem; color:#D32F2F; margin-bottom:5px; font-weight:700">Val: ${p.validade}</div>` : '';
             return `
                 <div class="prod-card">
                     <img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">
                     <div class="prod-name">${p.name}</div>
+                    ${validadeHtml}
                     <div class="prod-price">${fmt(p.price)}</div>
                     <div class="qty-control">
                         <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
