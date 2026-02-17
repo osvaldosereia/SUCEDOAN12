@@ -159,9 +159,16 @@
                     <option value="margin_error">Preço Venda <= Custo</option>
                 </select>
                 <select id="sort-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value)">
-                    <option value="gondola">Gôndola</option>
+                    <option value="gondola">Gôndola (Agrupado)</option>
                     <option value="name">Nome (A-Z)</option>
                     <option value="validity">Validade (Próxima)</option>
+                    <option value="stock_asc">Estoque (Menor &rarr; Maior)</option>
+                    <option value="stock_desc">Estoque (Maior &rarr; Menor)</option>
+                    <option value="category">Categoria (A-Z)</option>
+                    <option value="price_asc">Preço Venda (Menor &rarr; Maior)</option>
+                    <option value="price_desc">Preço Venda (Maior &rarr; Menor)</option>
+                    <option value="markup_asc">Markup (Menor % &rarr; Maior %)</option>
+                    <option value="markup_desc">Markup (Maior % &rarr; Menor %)</option>
                 </select>
             </div>
             <div class="search-container" style="margin-left: 15px;">
@@ -748,8 +755,21 @@
             } else if (filterMode === 'margin_error') {
                 filtered = filtered.filter(p => (p.preco || 0) <= (p.preco_custo || 0));
             }
+            
             if(sortMode === 'name') { filtered.sort((a,b) => a.nome.localeCompare(b.nome)); }
             else if (sortMode === 'validity') { filtered.sort((a,b) => { const da = parseDate(a.validade); const db = parseDate(b.validade); if(!da) return 1; if(!db) return -1; return da - db; }); }
+            else if (sortMode === 'stock_asc') { filtered.sort((a,b) => (a.estoque||0) - (b.estoque||0)); }
+            else if (sortMode === 'stock_desc') { filtered.sort((a,b) => (b.estoque||0) - (a.estoque||0)); }
+            else if (sortMode === 'category') { filtered.sort((a,b) => (a.categoria||"").localeCompare(b.categoria||"")); }
+            else if (sortMode === 'price_asc') { filtered.sort((a,b) => (a.preco||0) - (b.preco||0)); }
+            else if (sortMode === 'price_desc') { filtered.sort((a,b) => (b.preco||0) - (a.preco||0)); }
+            else if (sortMode.startsWith('markup')) {
+                filtered.sort((a,b) => {
+                    const mA = (a.preco_custo > 0) ? ((a.preco - a.preco_custo)/a.preco_custo) : -Infinity;
+                    const mB = (b.preco_custo > 0) ? ((b.preco - b.preco_custo)/b.preco_custo) : -Infinity;
+                    return sortMode === 'markup_asc' ? mA - mB : mB - mA;
+                });
+            }
             
             document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
             if(sortMode !== 'gondola') {
