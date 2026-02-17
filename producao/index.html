@@ -940,7 +940,7 @@
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
             if(!confirm("Isso atualizará o arquivo produtos.json no GitHub com todos os produtos ATIVOS. Continuar?")) return;
             toggleLoader(true, "Enviando Produtos...");
-            const payload = products.filter(p => p.situacao !== 'I').map(p => ({ id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, estoque: Number(p.estoque) }));
+            const payload = products.filter(p => p.situacao !== 'I').map(p => ({ id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, validade: p.validade || "", estoque: Number(p.estoque) }));
             if(payload.length === 0) { toggleLoader(false); return alert("Nenhum produto ativo encontrado."); }
             const path = `site/produtos.json`;
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
@@ -969,7 +969,7 @@
             try {
                 let sha = null; let currentData = [];
                 try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, '')))); currentData = JSON.parse(decodedStr); } } catch(e) {}
-                const itemObj = { id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, estoque: Number(p.estoque) };
+                const itemObj = { id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, validade: p.validade || "", estoque: Number(p.estoque) };
                 const index = currentData.findIndex(item => item.codigo === sku);
                 if(index >= 0) currentData[index] = itemObj; else currentData.push(itemObj);
                 const contentStr = JSON.stringify(currentData, null, 2);
