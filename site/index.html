@@ -149,6 +149,16 @@
             background: var(--cor-primary); color: white;
             border-color: var(--cor-primary); box-shadow: 0 2px 4px rgba(15, 23, 42, 0.2);
         }
+        
+        .cat-chip {
+            padding: 6px 14px; border-radius: 6px;
+            border: 1px solid #e2e8f0; background: white;
+            font-size: 0.8rem; color: var(--cor-text-main); font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.2s; flex-shrink: 0;
+            cursor: pointer;
+        }
+        .cat-chip:hover { background: #f1f5f9; border-color: var(--cor-text-light); }
 
         /* --- HERO & BANNERS --- */
         .hero-section { background: white; padding: 15px 20px; text-align: center; margin-bottom: 10px; }
@@ -163,7 +173,7 @@
 
         /* --- CARROSSEL DE CESTAS (TOPO) --- */
         .section-title {
-            padding: 15px 20px 10px; font-size: 1.1rem; color: var(--cor-primary);
+            padding: 15px 20px 10px; font-size: 1rem; color: var(--cor-primary); /* Fonte reduzida */
         }
 
         .cestas-scroll-container {
@@ -204,10 +214,30 @@
             padding: 15px 20px;
             background: #E0F2F1; color: #00695C;
             border-bottom: 1px solid #B2DFDB;
-            font-size: 1rem; font-weight: 700;
+            font-size: 0.95rem; font-weight: 700;
             line-height: 1.4;
             text-align: center;
         }
+
+        /* Estilos para Toggle Retrátil */
+        .basket-toggle-header {
+            padding: 10px 20px;
+            background: #f1f5f9;
+            color: var(--cor-text-light);
+            font-size: 0.85rem; font-weight: 700;
+            text-transform: uppercase;
+            display: flex; justify-content: space-between; align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .basket-toggle-icon { transition: transform 0.3s ease; }
+        .basket-toggle-icon.rotated { transform: rotate(180deg); }
+        
+        #basket-wrapper-collapsible {
+            display: none; /* Começa oculto ou visível, controlado via JS */
+            background: white;
+        }
+        /* Fim estilos Toggle */
 
         .basket-base-list { 
             background: white; padding: 0 20px 15px; 
@@ -239,8 +269,15 @@
         
         .carousel-container { margin-bottom: 30px; background: white; padding-bottom: 15px; border-top: 1px solid var(--cor-divider); position: relative; }
         .carousel-header { padding: 15px 20px 10px; display: flex; justify-content: space-between; align-items: center; }
-        .carousel-title { font-size: 1.1rem; font-weight: 700; color: var(--cor-primary); }
+        .carousel-title { font-size: 1rem; font-weight: 700; color: var(--cor-primary); } /* Fonte reduzida */
         
+        /* Select de ordenação no carrossel */
+        .carousel-sort-select {
+            border: 1px solid #e2e8f0; border-radius: 4px;
+            font-size: 0.75rem; color: var(--cor-text-light);
+            background: #fff; padding: 4px;
+        }
+
         .carousel-track {
             display: flex; overflow-x: auto; padding: 0 20px 10px; gap: 12px;
             scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scroll-behavior: smooth;
@@ -392,7 +429,9 @@
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                 </button>
                 <a href="https://wa.me/5565996813588" target="_blank" class="btn-header-icon whatsapp" aria-label="Falar no WhatsApp">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12.005 2.01C6.533 2.01 2.083 6.46 2.083 11.929C2.083 13.799 2.607 15.617 3.6 17.193L2.83 21.239L6.965 20.465C8.496 21.373 10.232 21.848 12.005 21.848C17.476 21.848 21.926 17.398 21.926 11.929C21.926 9.281 20.894 6.79 19.02 4.916C17.146 3.042 14.655 2.01 12.005 2.01ZM17.472 14.382C17.394 14.77 17.63 14.829 17.718 14.976C17.806 15.123 17.806 15.771 17.536 16.538C17.266 17.304 15.965 17.998 15.334 18.092C14.764 18.177 14.047 18.206 13.266 17.957C12.756 17.795 12.102 17.579 11.264 17.217C7.742 15.696 5.443 12.15 5.267 11.914C5.09 11.678 3.824 9.998 3.824 6.52 4.737 5.665 5.061 5.311C5.385 4.957 5.768 4.869 6.004 4.869C6.239 4.869 6.475 4.869 6.681 4.869C6.887 4.869 7.181 4.78 7.476 5.488C7.77 6.195 8.477 7.934 8.566 8.111C8.654 8.288 8.713 8.494 8.595 8.729C8.478 8.965 8.419 9.112 8.242 9.318C8.065 9.524 7.87 9.779 7.711 9.939C7.534 10.115 7.35 10.306 7.556 10.659C7.762 11.013 8.479 12.182 9.541 13.129C10.89 14.332 12.028 14.706 12.381 14.882C12.734 15.059 12.94 15.03 13.146 14.794C13.352 14.558 14.029 13.763 14.265 13.409C14.501 13.055 14.737 13.114 15.061 13.232C15.385 13.35 17.119 14.205 17.472 14.382Z"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                    </svg>
                 </a>
             </div>
         </header>
@@ -427,7 +466,16 @@
 
         <div id="selected-basket-area" style="display:none;">
             <div class="intro-title-custom" id="basket-intro-msg"></div>
-            <div class="basket-base-list" id="basket-list-content"></div>
+            
+            <div class="basket-toggle-header" onclick="toggleBasketDetails()">
+                <span>Ver itens da cesta</span>
+                <span id="basket-arrow" class="basket-toggle-icon">▼</span>
+            </div>
+            
+            <div id="basket-wrapper-collapsible">
+                <div class="basket-base-list" id="basket-list-content"></div>
+            </div>
+
             <div class="section-separator">
                 <h3 class="separator-title">Adicionar mais itens?</h3>
                 <p class="separator-sub">Navegue pelo catálogo abaixo</p>
@@ -442,11 +490,8 @@
                 </div>
             </div>
             
-            <div class="filters-container">
-                <button class="filter-chip active" onclick="setSort('name')" id="sort-name">A-Z</button>
-                <button class="filter-chip" onclick="setSort('price_asc')" id="sort-price_asc">Menor Preço</button>
-                <button class="filter-chip" onclick="setSort('price_desc')" id="sort-price_desc">Maior Preço</button>
-            </div>
+            <div class="filters-container" id="category-nav">
+                </div>
         </div>
 
         <div id="catalogo-content" class="catalog-section"></div>
@@ -586,6 +631,7 @@
                 }
                 
                 renderBasketsTop();
+                renderCategoryChips(); // Renderiza os chips de categoria
                 renderCatalogo(); // Renderiza o catalogo imediatamente
                 updateUI(); // Reseta UI
             } catch (e) { 
@@ -606,6 +652,34 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        // --- LOGICA DE CATEGORIAS ---
+        function renderCategoryChips() {
+            const container = document.getElementById('category-nav');
+            const categories = {};
+            DB_PROD.forEach(p => { categories[p.category] = true; });
+            let sortedCats = Object.keys(categories).sort();
+            if(sortedCats.includes("Outros")) { sortedCats = sortedCats.filter(c => c !== "Outros"); sortedCats.push("Outros"); }
+            
+            // Adiciona chip para Ofertas e depois Categorias
+            let html = `<div class="cat-chip" onclick="scrollToCat('search-results')">🔍 Busca</div>`;
+            html += sortedCats.map(cat => {
+                const safeId = 'cat-' + cat.replace(/[^a-zA-Z0-9]/g, '-');
+                return `<div class="cat-chip" onclick="scrollToCat('${safeId}')">${cat}</div>`;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function scrollToCat(id) {
+            const el = document.getElementById(id);
+            if(el) {
+                const headerOffset = 130;
+                const elementPosition = el.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+            }
         }
 
         // --- LOGICA DE PREVIEW & SELEÇÃO DE CESTA ---
@@ -661,6 +735,11 @@
             // ATIVA A AREA DA CESTA E RENDERIZA A LISTA
             document.getElementById('selected-basket-area').style.display = 'block';
             document.getElementById('basket-intro-msg').innerHTML = `Você selecionou a <strong>${STATE.cesta.nome}</strong>.<br>Edite os itens abaixo se quiser.`;
+            
+            // Abre a lista inicialmente para o usuário ver
+            document.getElementById('basket-wrapper-collapsible').style.display = 'block';
+            document.getElementById('basket-arrow').classList.add('rotated');
+            
             renderActiveBasketList();
 
             updateUI();
@@ -671,6 +750,20 @@
             
             // Scroll suave até a área de edição
             document.getElementById('selected-basket-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Toggle Retrátil da Lista
+        function toggleBasketDetails() {
+            const wrapper = document.getElementById('basket-wrapper-collapsible');
+            const arrow = document.getElementById('basket-arrow');
+            
+            if(wrapper.style.display === 'none') {
+                wrapper.style.display = 'block';
+                arrow.classList.add('rotated');
+            } else {
+                wrapper.style.display = 'none';
+                arrow.classList.remove('rotated');
+            }
         }
 
         function renderActiveBasketList() {
@@ -820,7 +913,14 @@
                 if (results.length > 0) {
                     html = `
                     <div class="carousel-container" id="search-results">
-                        <div class="carousel-header"><div class="carousel-title">Resultados da Busca</div></div>
+                        <div class="carousel-header">
+                            <div class="carousel-title">Resultados da Busca</div>
+                            <select class="carousel-sort-select" onchange="setSort(this.value)">
+                                <option value="name" ${STATE.sortType=='name'?'selected':''}>A-Z</option>
+                                <option value="price_asc" ${STATE.sortType=='price_asc'?'selected':''}>$ Min</option>
+                                <option value="price_desc" ${STATE.sortType=='price_desc'?'selected':''}>$ Max</option>
+                            </select>
+                        </div>
                         <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
                         <div class="carousel-track">
                             ${results.map(p => renderProdCard(p)).join('')}
@@ -836,8 +936,15 @@
                 if (offers.length > 0) {
                     offers.sort(sorter);
                     html += `
-                    <div class="carousel-container">
-                        <div class="carousel-header"><div class="carousel-title" style="color:var(--cor-danger)">🔥 SUPER OFERTAS</div></div>
+                    <div class="carousel-container" id="cat-ofertas">
+                        <div class="carousel-header">
+                            <div class="carousel-title" style="color:var(--cor-danger)">🔥 SUPER OFERTAS</div>
+                            <select class="carousel-sort-select" onchange="setSort(this.value)">
+                                <option value="name" ${STATE.sortType=='name'?'selected':''}>A-Z</option>
+                                <option value="price_asc" ${STATE.sortType=='price_asc'?'selected':''}>$ Min</option>
+                                <option value="price_desc" ${STATE.sortType=='price_desc'?'selected':''}>$ Max</option>
+                            </select>
+                        </div>
                         <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
                         <div class="carousel-track">${offers.map(p => renderProdCard(p)).join('')}</div>
                         <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</div>
@@ -853,10 +960,18 @@
                 sortedCats.forEach(catName => {
                     let catProds = productsByCategory[catName];
                     catProds.sort(sorter);
+                    const safeId = 'cat-' + catName.replace(/[^a-zA-Z0-9]/g, '-');
                     if (catProds.length > 0) {
                         html += `
-                        <div class="carousel-container">
-                            <div class="carousel-header"><div class="carousel-title">${catName}</div></div>
+                        <div class="carousel-container" id="${safeId}">
+                            <div class="carousel-header">
+                                <div class="carousel-title">${catName}</div>
+                                <select class="carousel-sort-select" onchange="setSort(this.value)">
+                                    <option value="name" ${STATE.sortType=='name'?'selected':''}>A-Z</option>
+                                    <option value="price_asc" ${STATE.sortType=='price_asc'?'selected':''}>$ Min</option>
+                                    <option value="price_desc" ${STATE.sortType=='price_desc'?'selected':''}>$ Max</option>
+                                </select>
+                            </div>
                             <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
                             <div class="carousel-track">${catProds.map(p => renderProdCard(p)).join('')}</div>
                             <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</div>
@@ -958,7 +1073,7 @@
         }
 
         function fmt(v) { return v.toLocaleString('pt-BR', {style:'currency', currency:'BRL'}); }
-        function setSort(type) { STATE.sortType = type; document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active')); document.getElementById(`sort-${type}`).classList.add('active'); renderCatalogo(); }
+        function setSort(type) { STATE.sortType = type; renderCatalogo(); }
         function clearSearch() { document.getElementById('search-input').value = ""; renderCatalogo(); }
         function openImageZoom(src) { document.getElementById('zoom-img').src = src; document.getElementById('modal-image-zoom').showModal(); }
 
