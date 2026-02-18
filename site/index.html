@@ -77,6 +77,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .val-q{font-weight:600;font-size:.85rem;width:24px;text-align:center}
 .btn-add-big{margin-top:8px;width:100%;height:30px;background:var(--c-bg);color:var(--c-s);border-radius:10px;font-size:1.2rem;display:flex;align-items:center;justify-content:center;border:1px solid var(--c-bd)}
 .btn-add-big:active,.btn-add-big:hover{background:var(--c-p);color:#fff}
+/* FIX FOR JUMPING CONTENT */
+[class^="ctl-wrapper-"] { min-height: 38px; display: block; }
+
 #selected-basket-area{margin:15px 20px;background:#fff;border-radius:var(--rad);box-shadow:0 4px 6px #0000000d;animation:fadeIn .3s}
 .basket-intro-msg{padding:12px;text-align:center;background:#F0FDF4;color:#166534;font-size:.85rem;border-bottom:1px dashed #BBF7D0}
 .basket-counter{text-align:center;font-size:.75rem;color:var(--c-s);background:#f8fafc;padding:4px 10px;border-radius:20px;margin:0 auto 8px;width:fit-content;border:1px solid var(--c-bd)}
@@ -107,7 +110,7 @@ dialog::backdrop{background:#1e293bb3;backdrop-filter:blur(4px)}
 @media(min-width:900px){
     .prod-card{flex:0 0 200px} .basket-item-card{flex:0 0 160px}
     .checkout-bar{max-width:600px;left:50%;transform:translateX(-50%);border-radius:20px 20px 0 0;padding:10px 20px}
-    .cat-grid{grid-template-columns:repeat(4,1fr)} .modal-prod-grid{grid-template-columns:repeat(3,1fr)}
+    .cat-grid{grid-template-columns:repeat(5,1fr)} .modal-prod-grid{grid-template-columns:repeat(3,1fr)}
 }
 </style>
 </head>
@@ -258,7 +261,7 @@ dialog::backdrop{background:#1e293bb3;backdrop-filter:blur(4px)}
 <dialog id="modal-image-zoom" onclick="this.close()"><div class="modal-body"><img id="zoom-img" src="" alt="Zoom"></div></dialog>
 <script>
 const CONFIG_WHATSAPP="5565996813588",$=i=>document.getElementById(i);
-let DB_PROD=[],DB_CESTAS=[],DB_COUPONS=[],STATE={cesta:null,cart:{},basePrice:0,currentTotal:0,sortType:'name',initialGap:0,mode:'zero',previewBasketId:null,appliedCoupon:null,catQueue:[],catPage:0};
+let DB_PROD=[],DB_CESTAS=[],DB_COUPONS=[],STATE={cesta:null,cart:{},cartOrder:[],basePrice:0,currentTotal:0,sortType:'name',initialGap:0,mode:'zero',previewBasketId:null,appliedCoupon:null,catQueue:[],catPage:0};
 let observer;
 async function init(){
     try{
@@ -297,6 +300,7 @@ function toggleCatMenu(){
 }
 function scrollToCat(id){
     $('cat-menu').classList.remove('open');
+    if(!$(id)){let limit=50;while(!$(id)&&STATE.catPage<STATE.catQueue.length&&limit-->0){loadMoreCats()}}
     const e=$(id);if(e)window.scrollTo({top:e.getBoundingClientRect().top+window.pageYOffset-160,behavior:"smooth"});
 }
 function previewBasket(id){
@@ -312,11 +316,11 @@ function previewBasket(id){
 }
 function confirmBasketSelection(){
     const c=DB_CESTAS.find(x=>String(x.id)===STATE.previewBasketId);if(!c)return;
-    STATE.cesta=c;STATE.mode='custom';STATE.basePrice=c.preco;STATE.cart={};
+    STATE.cesta=c;STATE.mode='custom';STATE.basePrice=c.preco;STATE.cart={};STATE.cartOrder=[];
     let is=0;c.produtos.forEach(i=>{
         const p=i.split('x');if(p.length<2)return;
         const pr=DB_PROD.find(x=>x.id===p[1].trim()||x.code===p[1].trim());
-        if(pr){let q=Math.min(parseInt(p[0].trim()),pr.stock);STATE.cart[pr.id]=q;is+=pr.price*q}
+        if(pr){let q=Math.min(parseInt(p[0].trim()),pr.stock);STATE.cart[pr.id]=q;STATE.cartOrder.push(pr.id);is+=pr.price*q}
     });
     STATE.initialGap=c.preco-is;STATE.appliedCoupon=null;
     $('modal-basket-preview').close();$('zero-mode-banner').style.display='none';$('selected-basket-area').style.display='block';$('cat-separator').style.display='block';
@@ -325,9 +329,9 @@ function confirmBasketSelection(){
     showToast(`Cesta carregada!`,'s');setTimeout(()=>$('selected-basket-area').scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
 function renderActiveBasketList(){
-    const el=$('basket-list-content'),ids=Object.keys(STATE.cart);
+    const el=$('basket-list-content'),ids=STATE.cartOrder.filter(id=>STATE.cart[id]);
     if(!ids.length){el.innerHTML='<p style="text-align:center;color:#64748B;padding:10px;width:100%">Vazia.</p>';return}
-    el.innerHTML=ids.sort((a,b)=>{const pa=DB_PROD.find(x=>x.id===a),pb=DB_PROD.find(x=>x.id===b);return pa&&pb?pa.name.localeCompare(pb.name):0}).map(pid=>{
+    el.innerHTML=ids.map(pid=>{
         const p=DB_PROD.find(x=>x.id===pid);if(!p)return'';
         return `<div class="basket-item-card"><img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">${p.validade?`<div class="prod-validity">Val: ${p.validade}</div>`:''}<div class="prod-name">${formatText(p.name)}</div><div class="prod-price">${fmt(p.price)}</div><div class="qty-control" style="margin-top:auto"><button class="btn-q" onclick="upd('${pid}',-1)">-</button><span class="val-q qty-${pid}">${STATE.cart[pid]}</span><button class="btn-q" onclick="upd('${pid}',1)" style="color:var(--c-ok)">+</button></div></div>`
     }).join('');
@@ -335,14 +339,15 @@ function renderActiveBasketList(){
 function clearCart(){
     if(!Object.keys(STATE.cart).length)return showToast("Vazio.",'r');
     if(!confirm("Limpar carrinho?"))return;
-    STATE.cart={};STATE.mode='zero';STATE.cesta=null;STATE.basePrice=0;STATE.initialGap=0;STATE.appliedCoupon=null;
+    STATE.cart={};STATE.cartOrder=[];STATE.mode='zero';STATE.cesta=null;STATE.basePrice=0;STATE.initialGap=0;STATE.appliedCoupon=null;
     $('selected-basket-area').style.display='none';$('cat-separator').style.display='none';$('zero-mode-banner').style.display='block';
     updateUI();renderCatalogo();$('btn-view-diff-float').style.display='none';showToast("Limpo.",'r');
 }
 function upd(pid,d){
     const p=DB_PROD.find(x=>x.id===pid),cq=STATE.cart[pid]||0;
     if(d>0&&cq>=p.stock)return showToast("Estoque limite!", "r");
-    STATE.cart[pid]=cq+d; if(STATE.cart[pid]<=0)delete STATE.cart[pid];
+    if(d>0&&!cq)STATE.cartOrder.unshift(pid);
+    STATE.cart[pid]=cq+d; if(STATE.cart[pid]<=0){delete STATE.cart[pid];STATE.cartOrder=STATE.cartOrder.filter(x=>x!==pid)}
     if(STATE.appliedCoupon){
         let t=Object.entries(STATE.cart).reduce((a,[i,q])=>{const x=DB_PROD.find(z=>z.id===i);return a+(x?x.price*q:0)},0)+(STATE.initialGap||0);
         if(t<STATE.appliedCoupon.minimo){STATE.appliedCoupon=null;showToast("Cupom removido","r")}
