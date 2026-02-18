@@ -173,6 +173,19 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
     </header>
 </div>
 <main class="limit-container">
+    <div class="sticky-stack">
+        <div class="search-wrapper-styled">
+            <div style="position:relative">
+                 <input type="text" id="search-input" class="search-box" placeholder="O que você procura hoje?" oninput="renderCatalogo(true)">
+                 <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
+            </div>
+            <div class="custom-select-container">
+                <div class="custom-select-trigger" id="cat-trigger" onclick="toggleCatMenu()">Carregando...</div>
+                <div id="cat-menu" class="custom-select-menu"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="hero-section">
         <div class="hero-grid">
             <div class="hero-banner-mini" onclick="showTopInfo('entrega')"><strong>Entrega Grátis</strong><span>Cuiabá e VG 🚛</span></div>
@@ -205,18 +218,6 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
     <div id="ofertas-area" class="bounce-anim"></div>
     <div class="separator-zone" id="cat-separator" style="display:none"><h3 class="separator-title" style="font-size:1rem;color:var(--c-s)">MAIS PRODUTOS</h3></div>
     
-    <div class="sticky-stack">
-        <div class="search-wrapper-styled">
-            <div style="position:relative">
-                 <input type="text" id="search-input" class="search-box" placeholder="O que você procura hoje?" oninput="renderCatalogo(true)">
-                 <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
-            </div>
-            <div class="custom-select-container">
-                <div class="custom-select-trigger" id="cat-trigger" onclick="toggleCatMenu()">Carregando...</div>
-                <div id="cat-menu" class="custom-select-menu"></div>
-            </div>
-        </div>
-    </div>
     <div id="catalogo-content" style="padding-bottom:20px; min-height:400px"></div>
 </main>
 <div class="checkout-bar">
@@ -295,31 +296,49 @@ function prepareCategories(){
     let sc=Object.keys(cats).sort();
     if(sc.includes("Outros")){sc=sc.filter(c=>c!=="Outros");sc.push("Outros")}
     
-    // Add OFERTAS as a specific category logic
+    // Add logic
     const offers = DB_PROD.filter(p=>p.name.toUpperCase().includes("OFERTA"));
     if(offers.length > 0) {
         cats["🔥 OFERTAS"] = offers;
         sc.unshift("🔥 OFERTAS");
     }
     
+    // Add Cestas Prompt to start
+    sc.unshift("🧺 CESTAS BÁSICAS");
+
     STATE.catMap = {};
     sc.forEach(c => {
+        if(c === "🧺 CESTAS BÁSICAS") return;
         STATE.catMap[c] = cats[c].sort((a,b)=>{const fa=a.name.includes('***'),fb=b.name.includes('***');return fa===fb?0:fa?-1:1});
     });
     
     // Render Menu
     $('cat-menu').innerHTML=sc.map(c=>`<div class="custom-option" onclick="selectCategory('${c.replace(/'/g,"\\'")}')">${formatText(c)}</div>`).join('');
     
-    // Set default active category
-    STATE.activeCategory = sc[0];
+    // Set default active category (The second one, after Cestas, which is usually Offers)
+    STATE.activeCategory = sc[1]; 
 }
 function selectCategory(name){
+    if (name === "🧺 CESTAS BÁSICAS") {
+        $('cat-menu').classList.remove('open');
+        // Scroll to baskets area
+        const basketsArea = $('baskets-top-container');
+        const headerHeight = 60;
+        const stickyStackHeight = 130; 
+        const totalOffset = headerHeight + stickyStackHeight + 10;
+        const elementPosition = basketsArea.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({
+            top: elementPosition - totalOffset,
+            behavior: "smooth"
+        });
+        return;
+    }
+
     STATE.activeCategory = name;
     $('cat-menu').classList.remove('open');
     renderCatalogo();
     
     // SMART SCROLL LOGIC
-    const sticky = document.querySelector('.sticky-stack');
     const headerHeight = 60; // Logo area height
     const currentScroll = window.scrollY;
     
