@@ -81,8 +81,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 [class^="ctl-wrapper-"] { min-height: 38px; display: block; }
 /* DESTAQUE */
 .prod-card.featured { border: 2px solid var(--c-a); background: #fff7ed; }
-/* LAZY PLACEHOLDER */
-.lazy-cat-section { min-height: 100px; }
+/* VITRINE BUTTON */
+.btn-show-more {
+    width: 100%; padding: 12px; margin: 10px 20px 20px; width: calc(100% - 40px);
+    background: #f1f5f9; border: 1px solid var(--c-bd); border-radius: 12px;
+    color: var(--c-p); font-weight: 700; font-size: 0.9rem; cursor: pointer;
+}
+.btn-show-more:hover { background: #e2e8f0; }
 
 #selected-basket-area{margin:15px 20px;background:#fff;border-radius:var(--rad);box-shadow:0 4px 6px #0000000d;animation:fadeIn .3s}
 .basket-intro-msg{padding:12px;text-align:center;background:#F0FDF4;color:#166534;font-size:.85rem;border-bottom:1px dashed #BBF7D0}
@@ -237,7 +242,6 @@ dialog::backdrop{background:#1e293bb3;backdrop-filter:blur(4px)}
 <script>
 const CONFIG_WHATSAPP="5565996813588",$=i=>document.getElementById(i);
 let DB_PROD=[],DB_CESTAS=[],DB_COUPONS=[],STATE={cesta:null,cart:{},cartOrder:[],basePrice:0,currentTotal:0,sortType:'name',initialGap:0,mode:'zero',previewBasketId:null,appliedCoupon:null,catMap:{}};
-let observer;
 async function init(){
     try{
         const[r1,r2,r3]=await Promise.all([fetch('produtos-cesta-basica.json?v='+Date.now()),fetch('produtos.json?v='+Date.now()),fetch('cupons.json?v='+Date.now()).catch(()=>({ok:!1}))]);
@@ -247,28 +251,8 @@ async function init(){
             DB_PROD=JSON.parse(t.startsWith('[')?t:'['+t+']').filter(x=>x.situacao==="A"&&(parseInt(x.estoque)||0)>0).map(p=>({id:String(p.id),code:String(p.codigo||p.id),name:p.nome,price:parseFloat(p.preco),stock:parseInt(p.estoque)||0,category:(p.categoria||p.Categoria||"Outros").trim(),validade:p.validade,img:`img/produtos/${p.codigo||p.id}.webp`}));
         }
         if(r3&&r3.ok)DB_COUPONS=await r3.json();
-        initObserver();
         renderBasketsTop();renderCatalogo();updateUI();
     }catch(e){$('catalogo-content').innerHTML='<p style="text-align:center;padding:20px;color:#64748B">Carregando...</p>'}
-}
-function initObserver(){
-    observer=new IntersectionObserver((e)=>{
-        e.forEach(entry=>{
-            if(entry.isIntersecting){
-                const el=entry.target;
-                renderCatContent(el);
-                observer.unobserve(el);
-            }
-        })
-    },{rootMargin:'200px'});
-}
-function renderCatContent(el){
-    const name=el.getAttribute('data-name');
-    if(!name||!STATE.catMap[name])return;
-    const prods=STATE.catMap[name];
-    const gridId=`grid-${name.replace(/[^a-zA-Z0-9]/g,'-')}`;
-    const grid=$(gridId);
-    if(grid) grid.innerHTML=prods.map(p=>renderProdCard(p)).join('');
 }
 function smartTitleCase(s){
     if(!s)return"";
@@ -293,11 +277,7 @@ function toggleCatMenu(){
 }
 function scrollToCat(id){
     $('cat-menu').classList.remove('open');
-    const el=$(id);
-    if(el){
-        renderCatContent(el); 
-        window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-190,behavior:"smooth"});
-    }
+    const el=$(id);if(el)window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-190,behavior:"smooth"});
 }
 function previewBasket(id){
     const c=DB_CESTAS.find(x=>String(x.id)===String(id));if(!c)return;
@@ -401,15 +381,38 @@ function renderCatalogo(full=false){
         STATE.catMap[c] = cats[c].sort((a,b)=>{const fa=a.name.includes('***'),fb=b.name.includes('***');return fa===fb?0:fa?-1:1});
     });
 
-    const skeletonHtml = sc.map(c => {
+    const isMobile = window.innerWidth < 900;
+    const limit = isMobile ? 2 : 5;
+
+    const html = sc.map(c => {
         const id=`cat-${c.replace(/[^a-zA-Z0-9]/g,'-')}`;
         const gridId=`grid-${c.replace(/[^a-zA-Z0-9]/g,'-')}`;
-        return `<div id="${id}" class="lazy-cat-section" data-name="${c.replace(/"/g, '&quot;')}"><div class="section-header"><div class="section-title">${formatText(c)}</div></div><div class="cat-grid" id="${gridId}"></div></div>`;
+        const prods = STATE.catMap[c] || [];
+        const visible = prods.slice(0, limit);
+        const hasMore = prods.length > limit;
+        
+        return `
+        <div id="${id}" data-name="${c}">
+            <div class="section-header"><div class="section-title">${formatText(c)}</div></div>
+            <div class="cat-grid" id="${gridId}">
+                ${visible.map(p => renderProdCard(p)).join('')}
+            </div>
+            ${hasMore ? `<button class="btn-show-more" onclick="showAll('${c}')">Ver todos os ${prods.length} produtos de ${formatText(c)}</button>` : ''}
+        </div>`;
     }).join('');
     
-    $('catalogo-content').innerHTML = skeletonHtml;
-    
-    document.querySelectorAll('.lazy-cat-section').forEach(el => observer.observe(el));
+    $('catalogo-content').innerHTML = html;
+}
+
+function showAll(catName) {
+    const id = `grid-${catName.replace(/[^a-zA-Z0-9]/g,'-')}`;
+    const el = $(id);
+    const prods = STATE.catMap[catName];
+    if(el && prods) {
+        el.innerHTML = prods.map(p => renderProdCard(p)).join('');
+        const btn = el.parentElement.querySelector('.btn-show-more');
+        if(btn) btn.remove();
+    }
 }
 
 function openCategoryModal(n){
