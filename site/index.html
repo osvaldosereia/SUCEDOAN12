@@ -592,9 +592,16 @@
                     let txt = await r2.text();
                     txt = txt.trim().replace(/,(\s+)?$/, "");
                     if (!txt.startsWith('[')) txt = '[' + txt + ']';
-                    DB_PROD = JSON.parse(txt).filter(x => x.situacao === "A").map(p => ({
-                        id: String(p.id), code: String(p.codigo || p.id), name: p.nome, price: parseFloat(p.preco),
-                        category: (p.categoria || p.Categoria || "Outros").trim(), validade: p.validade, img: `img/produtos/${p.codigo || p.id}.webp`
+                    // FILTRO DE ESTOQUE APLICADO AQUI: apenas estoque > 0
+                    DB_PROD = JSON.parse(txt).filter(x => x.situacao === "A" && (parseInt(x.estoque)||0) > 0).map(p => ({
+                        id: String(p.id), 
+                        code: String(p.codigo || p.id), 
+                        name: p.nome, 
+                        price: parseFloat(p.preco),
+                        stock: parseInt(p.estoque) || 0, // Mapeando estoque
+                        category: (p.categoria || p.Categoria || "Outros").trim(), 
+                        validade: p.validade, 
+                        img: `img/produtos/${p.codigo || p.id}.webp`
                     }));
                 }
                 if (r3 && r3.ok) DB_COUPONS = await r3.json();
@@ -747,13 +754,15 @@
                 const pid = parts[1].trim();
                 const product = DB_PROD.find(p => p.id === pid || p.code === pid);
                 if (product) {
-                    STATE.cart[product.id] = q;
-                    initialSum += product.price * q;
+                    // LIMITE DE ESTOQUE NA CRIAÇÃO DA CESTA
+                    const qtyToAdd = Math.min(q, product.stock);
+                    STATE.cart[product.id] = qtyToAdd;
+                    initialSum += product.price * qtyToAdd;
                 }
             });
             
             STATE.initialGap = STATE.cesta.preco - initialSum;
-            STATE.appliedCoupon = null; // reset coupon
+            STATE.appliedCoupon = null; 
             
             document.getElementById('modal-basket-preview').close();
             document.getElementById('zero-mode-banner').style.display = 'none';
@@ -825,12 +834,20 @@
         }
 
         function upd(pid, d) {
-            STATE.cart[pid] = (STATE.cart[pid] || 0) + d;
+            const p = DB_PROD.find(x => x.id === pid);
+            if(!p) return;
+
+            const currentQty = STATE.cart[pid] || 0;
+            
+            // VERIFICAÇÃO DE ESTOQUE
+            if (d > 0 && currentQty >= p.stock) {
+                return showToast("Estoque limite atingido!", "remove");
+            }
+
+            STATE.cart[pid] = currentQty + d;
             if (STATE.cart[pid] <= 0) delete STATE.cart[pid];
             
-            // Se cupom estava aplicado, valida se ainda pode
             if (STATE.appliedCoupon) {
-                // Recalcula sem desconto para verificar minimo
                 let tempTotal = 0;
                 Object.entries(STATE.cart).forEach(([id, q]) => { const p = DB_PROD.find(x => x.id === id); if(p) tempTotal += p.price * q; });
                 tempTotal += (STATE.initialGap || 0);
@@ -859,8 +876,7 @@
                     wrapper.innerHTML = `<button class="btn-add-big" onclick="upd('${pid}', 1)">+</button>`;
                 }
             });
-            const p = DB_PROD.find(x => x.id === pid);
-            if(p && d > 0) showToast(`+1 ${formatText(p.name).substring(0,15)}...`, 'success');
+            if(d > 0) showToast(`+1 ${formatText(p.name).substring(0,15)}...`, 'success');
         }
 
         function updateUI() {
@@ -874,7 +890,6 @@
             let rawTotal = sumCart + (STATE.initialGap || 0);
             STATE.currentTotal = rawTotal;
             
-            // Apply Coupon logic for UI
             if (STATE.appliedCoupon) {
                 STATE.currentTotal -= STATE.appliedCoupon.desconto;
             }
@@ -918,13 +933,11 @@
             STATE.appliedCoupon = coupon;
             updateUI();
             
-            // Update Checkout Modal View
             const msg = document.getElementById('coupon-msg');
             msg.style.display = 'block';
             msg.style.color = 'var(--cor-success)';
             msg.innerText = `Cupom -${fmt(coupon.desconto)} aplicado!`;
             
-            // Refresh total in modal
             document.getElementById('checkout-total-display').innerText = `Total: ${fmt(STATE.currentTotal)}`;
             showToast("Desconto aplicado!", "success");
         }
