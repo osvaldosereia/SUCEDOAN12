@@ -9,15 +9,15 @@
 <style>
 :root {
     /* PALETA DE CORES DE ALTO CONTRASTE */
-    --c-p: #0f172a; /* Texto Principal (Quase Preto) */
-    --c-s: #334155; /* Texto Secundário (Cinza Escuro) */
-    --c-t: #64748b; /* Terciário (Cinza Médio - Validade mais escura) */
-    --c-a: #ea580c; /* Ação (Laranja Queimado - Mais visível) */
-    --c-ok: #15803d; /* Sucesso (Verde Escuro) */
-    --c-err: #b91c1c; /* Erro/Destaque (Vermelho Escuro) */
-    --c-bg: #f1f5f9; /* Fundo (Cinza Claro - Para destacar os cards brancos) */
-    --c-surf: #ffffff; /* Superfície (Branco Puro) */
-    --c-bd: #cbd5e1; /* Bordas (Mais definidas) */
+    --c-p: #0f172a; /* Texto Principal */
+    --c-s: #334155; /* Texto Secundário */
+    --c-t: #64748b; /* Terciário */
+    --c-a: #ea580c; /* Ação (Laranja) */
+    --c-ok: #15803d; /* Sucesso */
+    --c-err: #b91c1c; /* Erro/Destaque */
+    --c-bg: #f1f5f9; /* Fundo */
+    --c-surf: #ffffff; /* Superfície */
+    --c-bd: #cbd5e1; /* Bordas */
     --font: 'Inter', system-ui, sans-serif;
     
     --rad: 12px; 
@@ -82,7 +82,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:5px 20px 25px}
 .modal-prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:5px}
 
-/* CARDS REVISADOS - HIERARQUIA */
+/* CARDS */
 .prod-card,.basket-item-card,.cesta-mini-card{background:#fff;border-radius:var(--rad);padding:10px;display:flex;flex-direction:column;box-shadow:0 2px 4px rgba(0,0,0,0.05);position:relative;border:1px solid #e2e8f0;content-visibility:auto}
 .prod-card{flex:0 0 150px} .basket-item-card{flex:0 0 130px;padding:8px;border:1px solid var(--c-bd)}
 .cesta-mini-card{flex:0 0 260px;padding:0;overflow:hidden;box-shadow:var(--sh-sm);transition:transform .2s;border:none}
@@ -94,7 +94,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .btn-cesta-select{width:100%;background:var(--c-p);color:#fff;padding:8px;border-radius:8px;font-size:.85rem;font-weight:700}
 
 .prod-img{width:100%;aspect-ratio:1;object-fit:contain;margin-bottom:8px;mix-blend-mode:multiply}
-/* VALIDADE MAIS ESCURA */
 .prod-validity{font-size:.7rem;color:var(--c-s);font-weight:600;margin-bottom:4px;background:#f1f5f9;padding:2px 6px;border-radius:4px;width:fit-content}
 .prod-name{font-size:.85rem;line-height:1.3;height:4.5em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;color:var(--c-p);margin-bottom:8px;font-weight:600}
 .basket-item-card .prod-name{height:2.8em;-webkit-line-clamp:2;font-size:.75rem}
@@ -106,13 +105,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .btn-add-big{margin-top:8px;width:100%;height:32px;background:#fff;color:var(--c-s);border-radius:8px;font-size:1.4rem;display:flex;align-items:center;justify-content:center;border:1px solid var(--c-bd);transition:0.1s}
 .btn-add-big:active,.btn-add-big:hover{background:var(--c-p);color:#fff;border-color:var(--c-p)}
 
-/* FIX FOR JUMPING CONTENT */
+/* FIXES */
 [class^="ctl-wrapper-"] { min-height: 40px; display: block; }
-/* DESTAQUE */
 .prod-card.featured { border: 2px solid var(--c-a); background: #fff7ed; }
-/* LAZY PLACEHOLDER */
 .lazy-cat-section { min-height: 100px; }
-/* VITRINE BUTTON */
 .btn-show-more { width: calc(100% - 40px); padding: 12px; margin: 5px 20px 25px; background: #fff; border: 1px solid var(--c-bd); border-radius: 10px; color: var(--c-p); font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: var(--sh-sm); }
 .btn-show-more:hover { background: #f8fafc; border-color: var(--c-p); }
 
@@ -145,8 +141,9 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
 .coupon-btn{padding:0 18px;background:var(--c-p);color:#fff;border-radius:8px;font-weight:700;font-size:.85rem}
 
 #modal-image-zoom{background:0 0;box-shadow:none;width:100%;height:100%;max-width:100%}
-#modal-image-zoom .modal-body{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:20px;background:0 0}
+#modal-image-zoom .modal-body{display:flex;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:20px;background:0 0;position:relative;}
 #zoom-img{max-width:95vw;max-height:80vh;border-radius:12px;background:#fff;box-shadow:0 20px 50px #00000080}
+.btn-close-zoom {position:absolute; top:20px; right:20px; background:white; border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--c-p); box-shadow:var(--sh-fl); z-index:2000;}
 
 @media(min-width:900px){
     .prod-card{flex:0 0 200px} .basket-item-card{flex:0 0 160px}
@@ -272,6 +269,7 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:8px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
              Encomendar no Whatszap
         </button>
+        <button class="btn-modal secondary" onclick="$('modal-checkout').close()">Continuar Comprando</button>
     </div>
 </dialog>
 <script>
@@ -316,7 +314,7 @@ function renderCatContent(el){
         grid.innerHTML=visible.map(p=>renderProdCard(p)).join('');
         if(hasMore){
             const btn=document.createElement('div');
-            btn.innerHTML=`<button class="btn-show-more" onclick="showAll('${name.replace(/'/g,"\\'")}')">Ver todos os ${prods.length} produtos de ${formatText(name)}</button>`;
+            btn.innerHTML=`<button class="btn-show-more" onclick="showAll('${name.replace(/'/g,"\\'")}')">Ver Mais Produtos</button>`;
             el.appendChild(btn.firstChild);
         }
     }
@@ -324,7 +322,7 @@ function renderCatContent(el){
 function smartTitleCase(s){
     if(!s)return"";
     return String(s).split(' ').map(w=>{
-        let clean = w.replace(/[*]/g, ''); // Remove markup for length check
+        let clean = w.replace(/[*]/g, ''); 
         if(clean.length <= 3) return w.toLowerCase();
         return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
     }).join(' ');
@@ -345,7 +343,15 @@ function scrollToCat(id){
     const el=$(id);
     if(el){
         renderCatContent(el); 
-        window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-190,behavior:"smooth"});
+        // Ajuste de offset considerando altura do header e sticky stack
+        const headerHeight = 60;
+        const stickyStackHeight = 130; 
+        const totalOffset = headerHeight + stickyStackHeight + 10;
+        const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
+        window.scrollTo({
+            top: elementPosition - totalOffset,
+            behavior: "smooth"
+        });
     }
 }
 function previewBasket(id){
