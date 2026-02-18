@@ -347,7 +347,13 @@
                         base['Origem'] = '0'; base['Unidade'] = 'un'; base['Grupo de produtos'] = '';
                         return base;
                     });
-                    if(novos.length > 0) { products = novos; saveData(); renderGrid(); }
+                    if(novos.length > 0) { 
+                        localStorage.removeItem(STORAGE_KEY);
+                        products = novos; 
+                        saveData(); 
+                        renderGrid(); 
+                        alert("Base de dados substituída com sucesso pelo novo CSV!");
+                    }
                     toggleLoader(false);
                 }
             });
