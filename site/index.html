@@ -44,11 +44,11 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     width:100%;
     height:100%;
     display:flex;
-    align-items:center; /* Centraliza verticalmente */
+    align-items:center;
     overflow-x:auto;
     overflow-y:hidden;
     scroll-behavior:smooth;
-    padding:20px 20px; /* Respiro obrigatório acima e abaixo */
+    padding:10px 20px; /* Reduzido respiro vertical */
     gap:15px;
     scroll-snap-type:x mandatory;
 }
@@ -60,9 +60,9 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     .carousel-wrapper{justify-content:center;max-width:1200px;margin:0 auto;gap:25px}
 }
 
-/* CARDS UNIFICADOS (Reduzidos 30%) */
+/* CARDS UNIFICADOS */
 .u-card{
-    flex:0 0 200px; /* Reduzido de 280px */
+    flex:0 0 200px;
     scroll-snap-align:center;
     background:#fff;border-radius:20px;
     border:1px solid var(--c-bd);
@@ -71,14 +71,14 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     overflow:hidden;
     position:relative;
     height:auto;
-    max-height:100%; /* Garante que respeite o padding do wrapper */
+    max-height:100%;
     transition:transform .2s;
 }
 .u-card:active{transform:scale(0.98)}
 
 @media(max-width:600px){
-    .u-card{flex:0 0 65%;} /* Ajuste proporcional mobile */
-    .carousel-wrapper{padding:20px 10%;}
+    .u-card{flex:0 0 65%;}
+    .carousel-wrapper{padding:10px 10%;}
 }
 
 .u-img-area{width:100%;aspect-ratio:1;background:#f8fafc;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9}
@@ -120,38 +120,28 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     display:flex;flex-direction:column;
 }
 
-/* 1. Menu Circular (iFood Style) */
+/* 1. Menu Circular */
 .menu-scroll-area{
     width:100%; overflow-x:auto;
-    padding:12px 20px 6px; /* Reduced bottom padding */
+    padding:12px 20px 6px;
     border-bottom:1px solid #f1f5f9;
     display:flex; gap:15px;
     align-items: flex-start;
 }
 .menu-scroll-area::-webkit-scrollbar{display:none}
 
-.cat-bubble{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:70px;opacity:1;transition:.3s}
+.cat-bubble{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:75px;opacity:1;transition:.3s}
 .cat-bubble.active{transform:scale(1.05)}
 .cat-bubble.active .cat-img-ring{border-color:var(--c-a);box-shadow:0 0 0 3px rgba(234,88,12,0.2)}
 .cat-bubble.active .cat-name{color:var(--c-a);font-weight:800}
 
-/* Botão Fixo Minha Cesta */
-.cat-bubble.fixed-cart {
-    position: sticky; left: 0; z-index: 10;
-    background: #fff; /* Cobre o scroll atrás */
-    padding-right: 15px;
-    margin-right: -10px; /* Ajuste visual */
-    border-right: 1px solid #f1f5f9;
-}
-.cat-bubble.fixed-cart .cat-img-ring {
-    background: var(--c-p); border: none;
-    display: flex; align-items: center; justify-content: center;
-    color: #fff;
-}
-
-.cat-img-ring{width:56px;height:56px;border-radius:50%;padding:2px;border:2px solid var(--c-bd);background:#fff}
+/* Anel da imagem aumentado */
+.cat-img-ring{width:64px;height:64px;border-radius:50%;padding:2px;border:2px solid var(--c-bd);background:#fff;display:flex;align-items:center;justify-content:center}
 .cat-img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#f1f5f9}
 .cat-name{font-size:0.7rem;font-weight:600;color:var(--c-s);text-align:center;line-height:1.1;max-width:80px}
+
+/* Cart Icon Color */
+.cat-bubble[id*="__CART__"] .cat-img-ring { background: var(--c-p); border-color: var(--c-p); color:#fff; }
 
 /* 2. Busca */
 .search-bar-area{padding:6px 20px 10px;background:#fff;position:relative}
@@ -322,7 +312,8 @@ const STATE={
     activeCat:'__CESTAS__', 
     mode:'zero', 
     baseBasket:null,
-    coupon:null
+    coupon:null,
+    initialGap: 0
 };
 
 async function init(){
@@ -360,33 +351,30 @@ function renderMenu(){
     const offers = STATE.prods.filter(p=>p.name.toUpperCase().includes("OFERTA"));
     if(offers.length){ cats["🔥 OFERTAS"]=offers; catKeys = ["🔥 OFERTAS", ...catKeys.filter(c=>c!=="🔥 OFERTAS")]; }
 
-    // Itens dinâmicos (Minha Cesta é separado no HTML/CSS como fixed)
+    // Lista unificada rolável
     const menuItems = [
+        {key:'__CART__', name:'Minha Cesta', img:null}, // Img null usa o icone SVG via CSS
         {key:'__CESTAS__', name:'Cestas Básicas', img:'img/produtos/cesta.webp'},
         ...catKeys.map(k=>({key:k, name:k, img:cats[k][0]?.img}))
     ];
 
-    // Build: Primeiro o botão fixo "Minha Cesta"
-    let html = `
-    <div class="cat-bubble fixed-cart ${STATE.activeCat==='__CART__'?'active':''}" onclick="loadCategory('__CART__')" id="bubble-__CART__">
-        <div class="cat-img-ring">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-        </div>
-        <div class="cat-name">Minha Cesta</div>
-    </div>`;
-
-    // Depois os itens scrollaveis
-    html += menuItems.map(m=>{
-        const img = m.img || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cbd5e1"><circle cx="12" cy="12" r="10"/></svg>';
+    $('menu-bubbles').innerHTML = menuItems.map(m=>{
         const idKey = m.key.replace(/\s/g,'-');
+        // Se for CART, usa SVG, senão usa IMG
+        let content;
+        if(m.key === '__CART__'){
+            content = `<div class="cat-img-ring"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg></div>`;
+        } else {
+            const img = m.img || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cbd5e1"><circle cx="12" cy="12" r="10"/></svg>';
+            content = `<div class="cat-img-ring"><img src="${img}" class="cat-img" onerror="this.src='data:image/svg+xml,<svg...'"></div>`;
+        }
+        
         return `
         <div class="cat-bubble ${STATE.activeCat===m.key?'active':''}" onclick="loadCategory('${m.key.replace(/'/g,"\\'")}')" id="bubble-${idKey}">
-            <div class="cat-img-ring"><img src="${img}" class="cat-img" onerror="this.src='data:image/svg+xml,<svg...'"></div>
+            ${content}
             <div class="cat-name">${formatName(m.name)}</div>
         </div>`
     }).join('');
-
-    $('menu-bubbles').innerHTML = html;
 }
 
 function loadCategory(key){
@@ -496,6 +484,7 @@ function confirmBasket(){
     STATE.baseBasket = c;
     STATE.cart = {}; STATE.cartOrder = [];
     
+    let itemsSum = 0;
     c.produtos.forEach(s=>{
         const [qStr, ref] = s.split('x');
         const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
@@ -503,8 +492,12 @@ function confirmBasket(){
             const q = Math.min(parseInt(qStr), p.stock || 999);
             STATE.cart[p.id] = q;
             STATE.cartOrder.push(p.id);
+            itemsSum += (p.price * q);
         }
     });
+
+    // Calcula diferença para enviar ao Make
+    STATE.initialGap = c.preco - itemsSum;
     
     $('modal-basket-preview').close();
     showToast(`Cesta ${c.nome} carregada!`, 's');
@@ -550,6 +543,9 @@ function updateTotals(){
         if(p){ total += p.price * q; count += q; }
     });
     
+    // Adiciona o gap original da cesta se existir
+    total += (STATE.initialGap || 0);
+
     if(STATE.coupon && total >= STATE.coupon.minimo){
         total -= STATE.coupon.desconto;
     } else if(STATE.coupon){
@@ -563,7 +559,7 @@ function updateTotals(){
 
 function clearCart(){
     if(!confirm("Esvaziar tudo?")) return;
-    STATE.cart = {}; STATE.cartOrder = []; STATE.mode = 'zero'; STATE.coupon=null;
+    STATE.cart = {}; STATE.cartOrder = []; STATE.mode = 'zero'; STATE.coupon=null; STATE.initialGap=0;
     updateTotals();
     $('modal-checkout').close();
     loadCategory('__CESTAS__');
@@ -582,8 +578,14 @@ function handleSearch(q){
 function clearSearch(){ $('search-inp').value=''; handleSearch(''); }
 
 function openCheckout(){
-    if(Object.keys(STATE.cart).length === 0) return showToast("Carrinho vazio!", "r");
+    const unique = Object.keys(STATE.cart).length;
+    if(unique === 0) return showToast("Carrinho vazio!", "r");
     
+    // Validações de Pedido Mínimo
+    const totalRaw = parseMoney($('val-total').innerText);
+    if(totalRaw < 85) return showToast("Mínimo R$ 85,00 para fechar pedido", "r");
+    if(unique < 8) return showToast("Mínimo 8 itens diferentes", "r");
+
     // Render Modal Carousel
     $('chk-list').innerHTML = STATE.cartOrder.map(id=>{
         const p = STATE.prods.find(x=>x.id===id);
@@ -607,6 +609,7 @@ function applyCupom(){
     Object.entries(STATE.cart).forEach(([id,q])=>{
         const p=STATE.prods.find(x=>x.id===id); if(p) rawTotal+=p.price*q;
     });
+    rawTotal += (STATE.initialGap || 0);
 
     if(!c) return showToast("Cupom inválido", "r");
     if(rawTotal < c.minimo) return showToast(`Mínimo R$ ${c.minimo}`, "r");
@@ -621,6 +624,11 @@ async function sendOrder(){
     const nome = $('cli-nome').value;
     if(!nome) return alert("Por favor, digite seu nome.");
     
+    // Validação extra
+    const unique = Object.keys(STATE.cart).length;
+    const totalCurrent = parseMoney($('val-total').innerText);
+    if(totalCurrent < 85 || unique < 8) return alert("Regras: Min R$ 85,00 e 8 itens diferentes.");
+    
     let itemsTxt = "";
     const itensApi = [];
     let total = 0;
@@ -634,6 +642,13 @@ async function sendOrder(){
         }
     });
     
+    // Injeta o GAP no envio
+    if(STATE.initialGap && STATE.initialGap !== 0){
+        total += STATE.initialGap;
+        itemsTxt += `1x Ajuste/Embalagem Cesta\n`;
+        itensApi.push({id:'GAP', nome:'Ajuste/Embalagem Cesta', quantidade:1, preco_unitario:STATE.initialGap});
+    }
+
     let finalTotal = total;
     let cupomTxt = "";
     if(STATE.coupon){
@@ -662,6 +677,7 @@ function formatName(s){
     return s.replace(/\*\*\*(.*?)\*\*\*/g, '$1')
             .toLowerCase().replace(/(?:^|\s)\S/g, a=>a.toUpperCase());
 }
+function parseMoney(s){ return parseFloat(s.replace('R$','').replace('.','').replace(',','.').trim()); }
 function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 function showToast(m,t){
     const d=document.createElement('div'); d.className='toast';
