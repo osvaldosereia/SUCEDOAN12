@@ -107,22 +107,7 @@
         }
         .card:active { transform: scale(0.98); }
 
-        /* MODO CESTAS (Grande, Imagem 1:1) */
-        .card-cesta {
-            width: 75vw; max-width: 350px;
-            overflow: hidden;
-        }
-        .cesta-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #e2e8f0; }
-        .cesta-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; text-align: center; }
-        .cesta-title { font-size: 1.2rem; font-weight: 800; color: var(--c-primary); }
-        .cesta-price { font-size: 1.3rem; font-weight: 900; color: var(--c-accent); }
-        .btn-cesta {
-            width: 100%; background: var(--c-primary); color: white;
-            padding: 12px; border-radius: 8px; font-weight: 700; border: none;
-            margin-top: 5px;
-        }
-
-        /* MODO PRODUTOS (Compacto, Vertical) */
+        /* ESTILO UNIFICADO DE PRODUTO (Compacto, Vertical) */
         .card-prod {
             width: 150px; /* Largura fixa boa para mobile */
             padding: 10px;
@@ -150,6 +135,17 @@
             border: 1px solid var(--c-border); border-radius: 8px;
             color: var(--c-secondary); font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
         }
+
+        /* Botão específico para Cestas (Ver Detalhes) */
+        .btn-view-details {
+            font-size: 0.75rem; 
+            font-weight: 800; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: var(--c-primary);
+            color: white;
+            border: none;
+        }
         
         .qty-ctrl {
             display: flex; width: 100%; height: 100%;
@@ -158,6 +154,13 @@
         }
         .qty-btn { width: 35px; background: white; border: none; font-weight: 700; font-size: 1.1rem; color: var(--c-primary); cursor: pointer; }
         .qty-val { flex-grow: 1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; }
+
+        /* Estilo para Cesta quando usada no Modal (Reutilizando classes existentes) */
+        .btn-cesta {
+            width: 100%; background: var(--c-primary); color: white;
+            padding: 12px; border-radius: 8px; font-weight: 700; border: none;
+            margin-top: 5px;
+        }
 
         /* --- 6. BARRA DE NAVEGAÇÃO (CATEGORIAS + BUSCA) --- */
         .nav-bar {
@@ -450,16 +453,26 @@ const APP = {
             }
         } 
         else if (catName === "Cestas Básicas") {
-            track.innerHTML = APP.data.cestas.map(c => `
-                <div class="card card-cesta">
-                    <img src="${c.imagem}" class="cesta-img" onclick="APP.previewBasket('${c.id}')">
-                    <div class="cesta-body">
-                        <div class="cesta-title">${c.nome}</div>
-                        <div class="cesta-price">${APP.fmt(c.preco)}</div>
-                        <button class="btn-cesta" onclick="APP.previewBasket('${c.id}')">VER DETALHES</button>
-                    </div>
-                </div>
-            `).join('');
+            // UNIFICAÇÃO: Renderiza Cestas usando o mesmo estilo visual de Produtos (card-prod)
+            const list = APP.data.cestas;
+            if(!list || list.length === 0) {
+                track.innerHTML = '<div class="empty-msg">Nenhuma cesta disponível.</div>';
+            } else {
+                track.innerHTML = list.map(c => {
+                    // Mapeia estrutura da Cesta para o visual do Card
+                    return `
+                    <div class="card card-prod">
+                        <img src="${c.imagem}" class="prod-img" onclick="APP.previewBasket('${c.id}')" loading="lazy">
+                        <div class="prod-name">${c.nome}</div>
+                        <div class="prod-price">${APP.fmt(c.preco)}</div>
+                        <div class="qty-wrapper">
+                            <button class="btn-add btn-view-details" onclick="APP.previewBasket('${c.id}')">
+                                VER DETALHES
+                            </button>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
         }
         else {
             // Produtos normais
