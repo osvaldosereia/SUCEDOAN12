@@ -970,7 +970,7 @@
                     html = `<p style="text-align:center; padding:40px; color:#64748B">Nenhum produto encontrado.</p>`;
                 }
             } else {
-                const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
+                const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("**OFERTA**"));
                 if (offers.length > 0) {
                     offers.sort(sorter);
                     html += `
