@@ -177,6 +177,48 @@
         .arrow-right { right: 10px; }
         @media (hover: hover) { .carousel-arrow { display: flex; } }
 
+        /* --- CATEGORIA GRID (NOVO) --- */
+        .cat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 10px 20px 20px;
+        }
+        .cat-btn-big {
+            background: white;
+            border: 1px solid var(--cor-border);
+            border-radius: 12px;
+            padding: 15px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.95rem; /* Ajustado para visualmente bonito e organizado */
+            font-weight: 700;
+            color: var(--cor-primary);
+            box-shadow: var(--shadow-sm);
+            min-height: 60px;
+            transition: transform 0.1s, background 0.2s;
+            cursor: pointer;
+            line-height: 1.2;
+        }
+        .cat-btn-big:active {
+            transform: scale(0.96);
+            background: #f1f5f9;
+        }
+        .cat-btn-big:hover {
+            border-color: var(--cor-primary);
+        }
+
+        /* --- MODAL PRODUTOS GRID (NOVO) --- */
+        .modal-prod-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 5px;
+            text-align: left;
+        }
+
         /* --- CARDS --- */
         .prod-card {
             flex: 0 0 150px; 
@@ -347,6 +389,8 @@
             .checkout-bar { max-width: 600px; left: 50%; transform: translateX(-50%); border-radius: 20px 20px 0 0; bottom: 0; padding: 10px 20px; gap: 20px; }
             .btn-trash { margin-right: auto; }
             .btn-main-action { max-width: none; }
+            .cat-grid { grid-template-columns: repeat(4, 1fr); }
+            .modal-prod-grid { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
@@ -555,6 +599,16 @@
             <button class="btn-modal primary" onclick="document.getElementById('modal-mini-info').close()">OK</button>
         </div>
     </dialog>
+    
+    <dialog id="modal-category-view">
+        <div class="modal-body" style="padding: 15px 10px; max-height: 85vh; overflow-y: auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding:0 10px;">
+                <h3 class="modal-title" id="cat-modal-title" style="font-size:1.1rem">CATEGORIA</h3>
+                <button onclick="document.getElementById('modal-category-view').close()" style="background:#F1F5F9; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center;">✕</button>
+            </div>
+            <div class="modal-prod-grid" id="cat-modal-grid"></div>
+        </div>
+    </dialog>
 
     <dialog id="modal-image-zoom" onclick="this.close()">
         <div class="modal-body">
@@ -685,13 +739,15 @@
             let html = `<div class="cat-chip" onclick="scrollToCat('cat-ofertas')">🔥 Ofertas</div>`; 
             html += sortedCats.map(cat => {
                 const safeId = 'cat-' + cat.replace(/[^a-zA-Z0-9]/g, '-');
-                return `<div class="cat-chip" onclick="scrollToCat('${safeId}')">${formatText(cat)}</div>`;
+                // Alterado para abrir modal também nos chips
+                return `<div class="cat-chip" onclick="openCategoryModal('${cat}')">${formatText(cat)}</div>`;
             }).join('');
             
             container.innerHTML = html;
         }
 
         function scrollToCat(id) {
+            // Mantido para compatibilidade com "Ofertas"
             const el = document.getElementById(id);
             if(el) {
                 const headerOffset = 140;
@@ -969,6 +1025,7 @@
                     html = `<p style="text-align:center; padding:40px; color:#64748B">Nenhum produto encontrado.</p>`;
                 }
             } else {
+                // MODO PADRÃO: Ofertas (Carrossel) + Categorias (Botões)
                 const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("**OFERTA**"));
                 if (offers.length > 0) {
                     offers.sort(sorter);
@@ -989,25 +1046,55 @@
                 let sortedCats = Object.keys(productsByCategory).sort();
                 if(sortedCats.includes("Outros")) { sortedCats = sortedCats.filter(c => c !== "Outros"); sortedCats.push("Outros"); }
                 
+                // Renderizar Grid de Botões
+                html += `<div class="section-header"><div class="section-title">Categorias</div></div>`;
+                html += `<div class="cat-grid">`;
                 sortedCats.forEach(catName => {
-                    let catProds = productsByCategory[catName];
-                    catProds.sort(sorter);
-                    const safeId = 'cat-' + catName.replace(/[^a-zA-Z0-9]/g, '-');
-                    if (catProds.length > 0) {
-                        html += `
-                        <div class="carousel-container" id="${safeId}">
-                            <div class="section-header">
-                                <div class="section-title">${formatText(catName)}</div>
-                                <div class="section-subtitle">Arraste para o lado ➝</div>
-                            </div>
-                            <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-250, behavior:'smooth'})">❮</div>
-                            <div class="carousel-track">${catProds.map(p => renderProdCard(p)).join('')}</div>
-                            <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:250, behavior:'smooth'})">❯</div>
-                        </div>`;
-                    }
+                     // Verifica se tem produtos na categoria antes de criar o botão
+                     if (productsByCategory[catName].length > 0) {
+                        html += `<div class="cat-btn-big" onclick="openCategoryModal('${catName}')">${formatText(catName)}</div>`;
+                     }
                 });
+                html += `</div>`;
             }
             document.getElementById('catalogo-content').innerHTML = html;
+        }
+        
+        function openCategoryModal(catName) {
+            const prods = DB_PROD.filter(p => p.category === catName);
+            prods.sort((a, b) => a.name.localeCompare(b.name));
+            
+            document.getElementById('cat-modal-title').innerText = catName.toUpperCase();
+            
+            const grid = document.getElementById('cat-modal-grid');
+            grid.innerHTML = prods.map(p => {
+                // Card ligeiramente adaptado para grid do modal (reaproveitando estilo prod-card)
+                const validadeHtml = p.validade ? `<div class="prod-validity">Val: ${p.validade}</div>` : '';
+                const qty = STATE.cart[p.id] || 0;
+                let btnHtml = '';
+                if (qty > 0) {
+                    btnHtml = `
+                    <div class="qty-control">
+                        <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
+                        <span class="val-q qty-${p.id}">${qty}</span>
+                        <button class="btn-q" onclick="upd('${p.id}', 1)" style="color:var(--cor-success)">+</button>
+                    </div>`;
+                } else {
+                    btnHtml = `<button class="btn-add-big" onclick="upd('${p.id}', 1)">+</button>`;
+                }
+                return `
+                    <div class="prod-card" style="flex:auto; width:100%;">
+                        <img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">
+                        ${validadeHtml}
+                        <div class="prod-name">${formatText(p.name)}</div>
+                        <div class="prod-price">${fmt(p.price)}</div>
+                        <div class="ctl-wrapper-${p.id}">
+                            ${btnHtml}
+                        </div>
+                    </div>`;
+            }).join('');
+            
+            document.getElementById('modal-category-view').showModal();
         }
 
         function renderProdCard(p) {
