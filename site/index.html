@@ -13,18 +13,19 @@
     <style>
         /* --- DESIGN SYSTEM MODERNIZADO (CLEAN & ELEGANT) --- */
         :root {
-            --cor-primary: #1e293b; /* Slate 800 - Mais suave que preto */
-            --cor-secondary: #475569; /* Slate 600 - Texto apoio */
-            --cor-action: #F97316; /* Laranja Moderno (Orange 500) */
-            --cor-success: #10B981; /* Emerald 500 - Verde Suave */
-            --cor-danger: #EF4444; /* Red 500 */
-            --cor-bg: #F8FAFC; /* Slate 50 - Off-white muito leve */
+            --cor-primary: #1e293b; /* Slate 800 */
+            --cor-secondary: #64748b; /* Slate 500 */
+            --cor-tertiary: #94a3b8; /* Slate 400 (Validade) */
+            --cor-action: #F97316; /* Laranja Moderno */
+            --cor-success: #10B981; /* Verde Suave */
+            --cor-danger: #EF4444; /* Vermelho */
+            --cor-bg: #F8FAFC; /* Off-white */
             --cor-surface: #FFFFFF; 
             --cor-border: #E2E8F0;
             
             --font-main: 'Inter', system-ui, -apple-system, sans-serif;
             
-            --radius-lg: 16px; /* Cantos bem arredondados (Moderno) */
+            --radius-lg: 16px;
             --radius-pill: 50px;
             --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
             --shadow-float: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.025);
@@ -39,32 +40,29 @@
             background-color: var(--cor-bg); 
             color: var(--cor-primary);
             margin: 0;
-            padding-bottom: 140px; /* Mais espaço para checkout flutuante */
-            font-size: 15px; /* Tamanho base legível */
+            padding-bottom: 140px; 
+            font-size: 15px; 
             line-height: 1.5;
             min-height: 100vh;
             overflow-x: hidden;
-            -webkit-font-smoothing: antialiased; /* Fontes mais nítidas */
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Container Limitador */
-        .limit-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
+        .limit-container { max-width: 1200px; margin: 0 auto; width: 100%; }
 
         h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--cor-primary); letter-spacing: -0.02em; }
         button { cursor: pointer; border: none; background: none; font-family: inherit; font-weight: 600; padding: 0; }
         
-        /* --- HEADER CLEAN --- */
+        /* --- HEADER CLEAN (Hide on Scroll) --- */
         .header-wrapper {
             position: sticky; top: 0; z-index: 1000;
-            background: rgba(255, 255, 255, 0.95); /* Quase branco sólido */
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--cor-border);
             width: 100%;
+            transition: transform 0.3s ease;
         }
+        .header-wrapper.hidden { transform: translateY(-100%); }
 
         header {
             display: flex; align-items: center; justify-content: space-between;
@@ -74,15 +72,9 @@
         
         .header-left { display: flex; align-items: center; gap: 12px; }
         .logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow-sm); }
-        
-        .page-title { 
-            font-size: 0.95rem; font-weight: 700; color: var(--cor-primary); 
-            line-height: 1.2;
-        }
-        
+        .page-title { font-size: 0.95rem; font-weight: 700; color: var(--cor-primary); line-height: 1.2; }
         .header-actions { display: flex; align-items: center; gap: 8px; }
 
-        /* Botões de Ícone Clean */
         .btn-header-icon {
             width: 38px; height: 38px; border-radius: 50%;
             background: #F1F5F9; color: var(--cor-secondary);
@@ -90,23 +82,19 @@
             transition: 0.2s;
         }
         .btn-header-icon:hover { background: #E2E8F0; color: var(--cor-primary); }
-        .btn-header-icon.whatsapp { 
-            background: #DCFCE7; color: #16A34A; /* Verde bem claro com ícone verde */
-        }
+        .btn-header-icon.whatsapp { background: #DCFCE7; color: #16A34A; }
 
-        /* --- STICKY SEARCH & FILTERS --- */
+        /* --- STICKY SEARCH --- */
         .sticky-stack { 
-            position: sticky; 
-            top: 65px; /* Ajustado para o novo header */
-            z-index: 990; 
-            width: 100%; 
-            background: var(--cor-bg); 
-            padding-bottom: 5px;
+            position: sticky; top: 65px; z-index: 990; 
+            width: 100%; background: var(--cor-bg); 
+            padding-bottom: 5px; transition: top 0.3s ease;
         }
+        .header-wrapper.hidden + main .sticky-stack { top: 0; } /* Ajuste quando header some */
 
         .search-container { padding: 10px 20px; }
         .search-box {
-            width: 100%; padding: 12px 16px 12px 42px; /* Espaço para ícone */
+            width: 100%; padding: 12px 16px 12px 42px;
             border: 1px solid transparent; 
             border-radius: var(--radius-pill);
             background: white;
@@ -125,10 +113,8 @@
         }
 
         .filters-container {
-            padding: 0 20px 10px;
-            display: flex; gap: 8px;
-            overflow-x: auto; white-space: nowrap;
-            -webkit-overflow-scrolling: touch;
+            padding: 0 20px 10px; display: flex; gap: 8px;
+            overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
         .filters-container::-webkit-scrollbar { display: none; }
@@ -140,44 +126,74 @@
             transition: all 0.2s; flex-shrink: 0; cursor: pointer;
             box-shadow: var(--shadow-sm);
         }
-        .cat-chip:active, .cat-chip:hover { 
-            background: var(--cor-primary); color: white; border-color: var(--cor-primary); 
-        }
+        .cat-chip:active, .cat-chip:hover { background: var(--cor-primary); color: white; border-color: var(--cor-primary); }
 
-        /* --- HERO & BANNERS (MINIMALISTAS) --- */
+        /* --- HERO --- */
         .hero-section { padding: 10px 20px; }
         .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .hero-banner-mini {
-            background: white; padding: 12px;
-            border-radius: var(--radius-lg); 
-            display: flex; flex-direction: column;
-            align-items: flex-start; justify-content: center;
-            box-shadow: var(--shadow-sm); font-size: 0.8rem;
-            color: var(--cor-secondary);
+            background: white; padding: 12px; border-radius: var(--radius-lg); 
+            display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+            box-shadow: var(--shadow-sm); font-size: 0.8rem; color: var(--cor-secondary);
             border: 1px solid var(--cor-border);
         }
         .hero-banner-mini strong { font-size: 0.9rem; color: var(--cor-primary); display: block; margin-bottom: 2px; }
 
-        /* --- SEÇÕES & TÍTULOS --- */
-        .section-header {
-            padding: 20px 20px 10px; 
-            display: flex; justify-content: space-between; align-items: baseline;
-        }
+        /* --- SEÇÕES & CARROSSEL --- */
+        .section-header { padding: 20px 20px 10px; display: flex; justify-content: space-between; align-items: baseline; }
         .section-title { font-size: 1.1rem; font-weight: 800; color: var(--cor-primary); }
-        .section-subtitle { font-size: 0.85rem; color: var(--cor-secondary); font-weight: 400; }
+        .section-subtitle { font-size: 0.85rem; color: var(--cor-secondary); font-weight: 400; display: flex; align-items: center; gap: 4px; }
 
-        /* --- CARROSSEL DE CESTAS --- */
-        .cestas-scroll-container {
-            display: flex; overflow-x: auto; padding: 0 20px 20px; gap: 15px;
-            scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+        .carousel-container { 
+            margin-bottom: 20px; background: transparent; position: relative; 
         }
-        .cestas-scroll-container::-webkit-scrollbar { display: none; }
+        /* Gradiente Fade-out na direita */
+        .carousel-container::after {
+            content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 40px;
+            background: linear-gradient(to right, transparent, var(--cor-bg)); pointer-events: none; z-index: 5;
+        }
+        /* Fade-out específico para área branca */
+        .basket-area-carousel::after { background: linear-gradient(to right, transparent, white) !important; }
 
+        .carousel-track {
+            display: flex; overflow-x: auto; padding: 0 20px 10px; gap: 12px;
+            scroll-snap-type: x mandatory; scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .carousel-track::-webkit-scrollbar { display: none; }
+
+        /* Animação Bounce */
+        @keyframes bounce-hint { 
+            0%, 100% { transform: translateX(0); } 
+            50% { transform: translateX(-20px); } 
+        }
+        .bounce-anim .carousel-track { animation: bounce-hint 1.2s ease 0.5s 1; }
+
+        /* Setas Desktop */
+        .carousel-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 36px; height: 36px; border-radius: 50%;
+            background: white; border: 1px solid var(--cor-border);
+            box-shadow: var(--shadow-float); z-index: 10;
+            display: none; align-items: center; justify-content: center;
+            cursor: pointer; color: var(--cor-primary); font-size: 1.2rem;
+        }
+        .arrow-left { left: 10px; }
+        .arrow-right { right: 10px; }
+        @media (hover: hover) { .carousel-arrow { display: flex; } }
+
+        /* Cards */
+        .prod-card {
+            flex: 0 0 160px; scroll-snap-align: start;
+            background: white; border-radius: var(--radius-lg);
+            padding: 12px; display: flex; flex-direction: column;
+            box-shadow: var(--shadow-card);
+            border: 1px solid transparent; position: relative;
+        }
         .cesta-mini-card {
             flex: 0 0 280px; scroll-snap-align: start;
             background: white; border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-float); 
-            overflow: hidden; position: relative;
+            box-shadow: var(--shadow-float); overflow: hidden; position: relative;
             transition: transform 0.2s;
         }
         .cesta-mini-card:active { transform: scale(0.98); }
@@ -187,79 +203,12 @@
         .cesta-mini-name { font-weight: 700; color: var(--cor-primary); font-size: 1.05rem; }
         .cesta-mini-price { font-weight: 800; color: var(--cor-action); font-size: 1.25rem; }
         .btn-cesta-select {
-            margin-top: 10px; width: 100%; 
-            background: var(--cor-primary); color: white;
-            padding: 10px; border-radius: 10px; 
-            font-size: 0.9rem; font-weight: 600;
+            margin-top: 10px; width: 100%; background: var(--cor-primary); color: white;
+            padding: 10px; border-radius: 10px; font-size: 0.9rem; font-weight: 600;
         }
 
-        /* --- ÁREA DA CESTA ATIVA (ESTILO RECIBO CLEAN) --- */
-        #selected-basket-area {
-            margin: 15px 20px; background: white;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-card);
-            overflow: hidden;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .basket-intro-msg {
-            padding: 20px; text-align: center;
-            background: #F0FDF4; color: #166534;
-            font-size: 0.95rem; border-bottom: 1px dashed #BBF7D0;
-        }
-
-        .basket-toggle-header {
-            padding: 15px 20px; background: white;
-            color: var(--cor-primary);
-            font-size: 0.95rem; font-weight: 600;
-            display: flex; justify-content: space-between; align-items: center;
-            cursor: pointer;
-        }
-        .basket-toggle-icon { color: var(--cor-secondary); font-size: 0.8rem; transition: transform 0.3s; }
-        .basket-toggle-icon.rotated { transform: rotate(180deg); }
-
-        .basket-base-list { 
-            padding: 0 20px 20px; 
-        }
-        
-        .base-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-bottom: 1px solid var(--cor-bg);
-        }
-        .base-item:last-child { border-bottom: none; }
-        .base-item-name { font-size: 0.9rem; color: var(--cor-secondary); flex: 1; padding-right: 15px; }
-
-        .separator-zone {
-            padding: 20px; text-align: center;
-            background: transparent;
-        }
-        .separator-title { font-size: 1rem; color: var(--cor-primary); font-weight: 700; }
-        .separator-sub { font-size: 0.85rem; color: var(--cor-secondary); margin-top: 4px; }
-
-        /* --- PRODUTOS & CARROSSEL --- */
-        .carousel-container { 
-            margin-bottom: 20px; background: transparent; 
-            position: relative; 
-        }
-        .carousel-track {
-            display: flex; overflow-x: auto; padding: 0 20px 10px; gap: 12px;
-            scroll-snap-type: x mandatory; scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
-        .carousel-track::-webkit-scrollbar { display: none; }
-
-        .prod-card {
-            flex: 0 0 160px; scroll-snap-align: start;
-            background: white; border-radius: var(--radius-lg);
-            padding: 12px; display: flex; flex-direction: column;
-            box-shadow: var(--shadow-card);
-            border: 1px solid transparent;
-            position: relative;
-        }
-        .prod-img { 
-            width: 100%; aspect-ratio: 1; object-fit: contain; 
-            margin-bottom: 12px; mix-blend-mode: multiply; 
-        }
+        .prod-img { width: 100%; aspect-ratio: 1; object-fit: contain; margin-bottom: 8px; mix-blend-mode: multiply; }
+        .prod-validity { font-size: 0.7rem; color: var(--cor-tertiary); font-weight: 500; margin-bottom: 2px; }
         .prod-name { 
             font-size: 0.85rem; line-height: 1.3; height: 3.9em; 
             overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
@@ -267,23 +216,35 @@
         }
         .prod-price { font-size: 1.1rem; font-weight: 700; color: var(--cor-action); margin-top: auto; letter-spacing: -0.5px; }
         
-        /* Controles de Quantidade (Grandes e Fáceis) */
         .qty-control {
             display: flex; align-items: center; justify-content: space-between;
-            background: #F1F5F9; border-radius: 12px; 
-            margin-top: 10px; padding: 2px;
+            background: #F1F5F9; border-radius: 12px; margin-top: 10px; padding: 2px;
         }
         .btn-q { 
             width: 32px; height: 32px; border-radius: 10px;
-            background: white; color: var(--cor-primary); 
-            font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            transition: 0.1s;
+            background: white; color: var(--cor-primary); font-size: 1.2rem; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: 0.1s;
         }
         .btn-q:active { transform: scale(0.9); background: #e2e8f0; }
         .val-q { font-weight: 600; font-size: 1rem; width: 30px; text-align: center; }
 
-        /* --- CHECKOUT BAR (FLUTUANTE MODERNA) --- */
+        /* --- ÁREA DA CESTA ATIVA --- */
+        #selected-basket-area {
+            margin: 15px 20px; background: white; border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-card); overflow: hidden; animation: fadeIn 0.3s ease;
+        }
+        .basket-intro-msg {
+            padding: 15px 20px; text-align: center; background: #F0FDF4; color: #166534;
+            font-size: 0.95rem; border-bottom: 1px dashed #BBF7D0;
+        }
+        .basket-carousel-wrapper { padding: 15px 0; background: white; }
+
+        .separator-zone { padding: 20px; text-align: center; background: transparent; }
+        .separator-title { font-size: 1rem; color: var(--cor-primary); font-weight: 700; }
+        .separator-sub { font-size: 0.85rem; color: var(--cor-secondary); margin-top: 4px; }
+
+        /* --- CHECKOUT BAR --- */
         .checkout-bar {
             position: fixed; bottom: 0; left: 0; width: 100%;
             background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
@@ -292,17 +253,16 @@
             box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
             display: flex; flex-direction: column; gap: 10px;
         }
-        
         .checkout-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .checkout-label { font-size: 0.8rem; color: var(--cor-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
         .checkout-total { font-size: 1.5rem; color: var(--cor-primary); font-weight: 800; letter-spacing: -1px; }
 
         .btn-main-action {
             width: 100%; padding: 16px; border-radius: 14px;
-            background: var(--cor-success); color: white; font-weight: 700;
+            background: #25D366; color: white; font-weight: 700;
             font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
             transition: transform 0.1s;
         }
         .btn-main-action:active { transform: scale(0.98); }
@@ -311,12 +271,11 @@
             position: absolute; top: -50px; right: 20px;
             width: 40px; height: 40px; border-radius: 50%;
             background: white; color: var(--cor-danger); 
-            border: 1px solid #FECACA;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 1px solid #FECACA; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* --- TOASTS --- */
+        /* --- TOASTS & MODALS --- */
         #toast-container {
             position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
             z-index: 2000; display: flex; flex-direction: column; gap: 10px;
@@ -332,18 +291,15 @@
         }
         @keyframes slideInTop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-        /* --- MODAIS (ROUNDED) --- */
         dialog { 
-            border: none; border-radius: 24px; width: 90%; max-width: 450px; 
-            padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); 
-            background: white;
+            border: none; border-radius: 24px; width: 95%; max-width: 450px; 
+            padding: 0; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); background: white;
             animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
         dialog::backdrop { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(4px); }
         
-        .modal-body { padding: 30px 24px; text-align: center; }
+        .modal-body { padding: 30px 20px; text-align: center; }
         .modal-title { font-size: 1.3rem; margin-bottom: 10px; color: var(--cor-primary); font-weight: 800; }
         .modal-desc { color: var(--cor-secondary); font-size: 0.95rem; margin-bottom: 24px; line-height: 1.5; }
         
@@ -398,13 +354,17 @@
             </div>
         </div>
 
-        <div id="baskets-top-container">
+        <div id="baskets-top-container" class="bounce-anim">
             <div class="section-header">
                 <div class="section-title">Cestas Prontas</div>
-                <div class="section-subtitle">Toque para ver</div>
+                <div class="section-subtitle">Arraste para o lado ➝</div>
             </div>
-            <div class="cestas-scroll-container" id="cestas-scroll-list">
-                </div>
+            <div class="carousel-container">
+                <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-250, behavior:'smooth'})">❮</div>
+                <div class="carousel-track" id="cestas-scroll-list">
+                    </div>
+                <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:250, behavior:'smooth'})">❯</div>
+            </div>
         </div>
 
         <div style="padding: 0 20px 10px;" id="zero-mode-banner">
@@ -414,16 +374,13 @@
             </div>
         </div>
 
-        <div id="selected-basket-area" style="display:none;">
+        <div id="selected-basket-area" style="display:none;" class="bounce-anim">
             <div class="basket-intro-msg" id="basket-intro-msg"></div>
-            
-            <div class="basket-toggle-header" onclick="toggleBasketDetails()">
-                <span>📄 Lista de Itens</span>
-                <span id="basket-arrow" class="basket-toggle-icon">▼</span>
-            </div>
-            
-            <div id="basket-wrapper-collapsible">
-                <div class="basket-base-list" id="basket-list-content"></div>
+            <div class="carousel-container basket-area-carousel">
+                <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
+                <div class="carousel-track" id="basket-list-content">
+                    </div>
+                <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</div>
             </div>
         </div>
         
@@ -456,7 +413,8 @@
         </div>
         
         <button class="btn-main-action" id="btn-concluir-pedido" onclick="openCheckoutModal()">
-            CONCLUIR PEDIDO
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            Enviar pedido no Whatsapp
         </button>
     </div>
     
@@ -468,7 +426,11 @@
             <h3 class="modal-title" id="preview-title">Nome da Cesta</h3>
             <p class="modal-desc" id="preview-desc">Confira os itens inclusos:</p>
             
-            <div class="carousel-container" id="preview-carousel-container" style="background:#F8FAFC; border-radius:12px; padding:10px 0;"></div>
+            <div class="carousel-container basket-area-carousel" style="background:#F8FAFC; border-radius:12px; padding:10px 0;">
+                <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
+                <div class="carousel-track" id="preview-carousel-track"></div>
+                <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</div>
+            </div>
             
             <div style="margin-top:20px;">
                 <div style="margin-bottom:20px; font-size:1.8rem; font-weight:800; color:var(--cor-action)" id="preview-price">R$ 0,00</div>
@@ -480,11 +442,18 @@
 
     <dialog id="modal-checkout">
         <div class="modal-body" style="text-align:left;">
-            <h3 class="modal-title" style="text-align:center">Finalizar</h3>
+            <h3 class="modal-title" style="text-align:center">Finalizar Pedido</h3>
             
-            <div id="checkout-summary" style="margin-bottom:20px; font-size:0.9rem; background:#F8FAFC; padding:15px; border-radius:12px; max-height: 30vh; overflow-y:auto; border:1px solid var(--cor-border);"></div>
+            <div style="margin-bottom:20px; text-align:center;">
+                <div style="font-size:0.9rem; color:var(--cor-secondary); margin-bottom:10px;">Itens no carrinho:</div>
+                <div class="carousel-container basket-area-carousel" style="background:#F8FAFC; border-radius:12px; border:1px solid var(--cor-border);">
+                     <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
+                     <div class="carousel-track" id="checkout-carousel-track"></div>
+                     <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</div>
+                </div>
+            </div>
             
-            <div style="font-size:1.4rem; font-weight:800; text-align:right; margin-bottom:20px; color:var(--cor-primary)" id="checkout-total-display"></div>
+            <div style="font-size:1.4rem; font-weight:800; text-align:center; margin-bottom:20px; color:var(--cor-primary)" id="checkout-total-display"></div>
             
             <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--cor-secondary); margin-bottom:5px">Seu Nome:</label>
             <input type="text" id="cust-name" class="search-box" style="margin-bottom:15px; padding:12px; border:1px solid var(--cor-border); background-image:none;" placeholder="Digite seu nome">
@@ -498,7 +467,10 @@
                 <option>Cartão Alimentação</option>
             </select>
             
-            <button class="btn-modal primary" onclick="sendOrder()">ENVIAR NO WHATSAPP</button>
+            <button class="btn-modal primary" onclick="sendOrder()">
+                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                 ENVIAR NO WHATSAPP
+            </button>
             <button class="btn-modal ghost" onclick="document.getElementById('modal-checkout').close()">Cancelar</button>
         </div>
     </dialog>
@@ -558,9 +530,10 @@
         let DB_CESTAS = [];
         let STATE = {
             cesta: null, cart: {}, basePrice: 0, currentTotal: 0, 
-            sortType: 'name', initialGap: 0, mode: 'zero', // Começa no modo ZERO por padrão
+            sortType: 'name', initialGap: 0, mode: 'zero', 
             previewBasketId: null
         };
+        let lastScroll = 0;
 
         // --- INIT ---
         async function init() {
@@ -590,6 +563,18 @@
                 document.getElementById('catalogo-content').innerHTML = '<p style="text-align:center; padding:20px; color:#64748B">Carregando catálogo...</p>';
             }
         }
+        
+        // --- SCROLL HEADER HIDE ---
+        window.addEventListener('scroll', () => {
+            const current = window.scrollY;
+            const header = document.querySelector('.header-wrapper');
+            if (current > lastScroll && current > 80) {
+                header.classList.add('hidden');
+            } else {
+                header.classList.remove('hidden');
+            }
+            lastScroll = current;
+        });
 
         function renderBasketsTop() {
             const container = document.getElementById('cestas-scroll-list');
@@ -612,7 +597,7 @@
             let sortedCats = Object.keys(categories).sort();
             if(sortedCats.includes("Outros")) { sortedCats = sortedCats.filter(c => c !== "Outros"); sortedCats.push("Outros"); }
             
-            let html = `<div class="cat-chip" onclick="scrollToCat('cat-ofertas')">🔥 Ofertas</div>`; // Atalho fixo
+            let html = `<div class="cat-chip" onclick="scrollToCat('cat-ofertas')">🔥 Ofertas</div>`; 
             html += sortedCats.map(cat => {
                 const safeId = 'cat-' + cat.replace(/[^a-zA-Z0-9]/g, '-');
                 return `<div class="cat-chip" onclick="scrollToCat('${safeId}')">${cat}</div>`;
@@ -644,16 +629,22 @@
                 const [qStr, id] = itemStr.split('x ');
                 const product = DB_PROD.find(p => p.id === id.trim());
                 if (product) {
-                    itemsHtml += `
-                        <div class="prod-card" style="box-shadow:none; border:1px solid #eee;">
-                            <img src="${product.img}" class="prod-img" loading="lazy">
-                            <div class="prod-name">${product.name}</div>
-                            <div class="prod-price" style="font-size:0.9rem;color:#64748B;font-weight:600">${qStr} UN</div>
-                        </div>`;
+                    itemsHtml += createMiniCardHtml(product, qStr);
                 }
             });
-            document.getElementById('preview-carousel-container').innerHTML = `<div class="carousel-track">${itemsHtml}</div>`;
+            document.getElementById('preview-carousel-track').innerHTML = itemsHtml;
             document.getElementById('modal-basket-preview').showModal();
+        }
+        
+        function createMiniCardHtml(product, qtyLabel) {
+             const validity = product.validade ? `<div class="prod-validity">Val: ${product.validade}</div>` : '';
+             return `
+                <div class="prod-card" style="box-shadow:none; border:1px solid #eee;">
+                    <img src="${product.img}" class="prod-img" loading="lazy">
+                    ${validity}
+                    <div class="prod-name">${product.name}</div>
+                    <div class="prod-price" style="font-size:0.9rem;color:#64748B;font-weight:600">${qtyLabel} UNIDADE(S)</div>
+                </div>`;
         }
 
         function confirmBasketSelection() {
@@ -684,9 +675,6 @@
             document.getElementById('cat-separator').style.display = 'block';
             document.getElementById('basket-intro-msg').innerHTML = `Cesta <strong>${STATE.cesta.nome}</strong> ativada.<br>Você pode adicionar ou remover itens abaixo.`;
             
-            document.getElementById('basket-wrapper-collapsible').style.display = 'block';
-            document.getElementById('basket-arrow').classList.add('rotated');
-            
             renderActiveBasketList();
             updateUI();
             renderCatalogo(); 
@@ -699,25 +687,12 @@
             }, 100);
         }
 
-        function toggleBasketDetails() {
-            const wrapper = document.getElementById('basket-wrapper-collapsible');
-            const arrow = document.getElementById('basket-arrow');
-            
-            if(wrapper.style.display === 'none') {
-                wrapper.style.display = 'block';
-                arrow.classList.add('rotated');
-            } else {
-                wrapper.style.display = 'none';
-                arrow.classList.remove('rotated');
-            }
-        }
-
         function renderActiveBasketList() {
              const el = document.getElementById('basket-list-content');
              const cartIds = Object.keys(STATE.cart);
              
              if(cartIds.length === 0) {
-                 el.innerHTML = '<p style="text-align:center;color:#64748B;padding:10px;">Cesta vazia.</p>';
+                 el.innerHTML = '<p style="text-align:center;color:#64748B;padding:10px; width:100%">Cesta vazia.</p>';
                  return;
              }
              
@@ -731,15 +706,19 @@
                  const p = DB_PROD.find(x => x.id === pid);
                  if(!p) return '';
                  const qty = STATE.cart[pid];
+                 const validadeHtml = p.validade ? `<div class="prod-validity">Val: ${p.validade}</div>` : '';
                  return `
-                 <div class="base-item">
-                     <span class="base-item-name">${p.name}</span>
-                     <div class="qty-control" style="margin:0; background:transparent">
-                         <button class="btn-q" onclick="upd('${pid}', -1)" style="width:28px;height:28px;font-size:1rem">-</button>
-                         <span class="val-q qty-${pid}" style="font-size:0.9rem">${qty}</span>
-                         <button class="btn-q" onclick="upd('${pid}', 1)" style="width:28px;height:28px;font-size:1rem">+</button>
-                     </div>
-                 </div>`;
+                    <div class="prod-card" style="border:1px solid #f1f5f9; box-shadow:none;">
+                        <img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">
+                        ${validadeHtml}
+                        <div class="prod-name">${p.name}</div>
+                        <div class="prod-price">${fmt(p.price)}</div>
+                        <div class="qty-control">
+                            <button class="btn-q" onclick="upd('${pid}', -1)">-</button>
+                            <span class="val-q qty-${pid}">${qty}</span>
+                            <button class="btn-q" onclick="upd('${pid}', 1)" style="color:var(--cor-success)">+</button>
+                        </div>
+                    </div>`;
              }).join('');
 
              el.innerHTML = itemsHtml;
@@ -794,29 +773,14 @@
 
             const statusText = document.getElementById('chk-status-text');
             const totalVal = document.getElementById('chk-total-val');
-            const btnConcluir = document.getElementById('btn-concluir-pedido');
             
             totalVal.innerText = fmt(STATE.currentTotal);
             
             if (STATE.mode === 'zero') {
                 statusText.innerText = "TOTAL A PAGAR";
                 statusText.style.color = "var(--cor-secondary)";
-                btnConcluir.innerText = "CONCLUIR PEDIDO";
-                btnConcluir.style.background = "var(--cor-success)";
             } else {
                 const diff = STATE.basePrice - STATE.currentTotal;
-                
-                let hasChanges = false;
-                 if (STATE.mode === 'custom' && STATE.cesta) {
-                    let originalMap = {};
-                    STATE.cesta.produtos.forEach(itemStr => { const [q, id] = itemStr.split('x '); originalMap[id.trim()] = parseInt(q); });
-                    for (let [id, origQty] of Object.entries(originalMap)) { if ((STATE.cart[id] || 0) < origQty) { hasChanges = true; break; } }
-                    if(!hasChanges) { for (let [id, currQty] of Object.entries(STATE.cart)) { if (currQty > (originalMap[id] || 0)) { hasChanges = true; break; } } }
-                }
-                
-                btnConcluir.innerText = hasChanges ? "FINALIZAR PERSONALIZAÇÃO" : "FINALIZAR PEDIDO";
-                btnConcluir.style.background = hasChanges ? "var(--cor-action)" : "var(--cor-success)";
-
                 if (diff > 0.01) {
                     statusText.innerText = `CRÉDITO: ${fmt(diff)}`;
                     statusText.style.color = "var(--cor-success)";
@@ -846,6 +810,7 @@
                     <div class="carousel-container" id="search-results">
                         <div class="section-header">
                             <div class="section-title">Resultados da Busca</div>
+                            <div class="section-subtitle">Arraste para o lado ➝</div>
                         </div>
                         <div class="carousel-track" style="flex-wrap:wrap;">
                             ${results.map(p => renderProdCard(p)).join('')}
@@ -855,7 +820,6 @@
                     html = `<p style="text-align:center; padding:40px; color:#64748B">Nenhum produto encontrado.</p>`;
                 }
             } else {
-                // Ofertas
                 const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
                 if (offers.length > 0) {
                     offers.sort(sorter);
@@ -863,8 +827,11 @@
                     <div class="carousel-container" id="cat-ofertas">
                          <div class="section-header">
                             <div class="section-title" style="color:var(--cor-danger)">🔥 SUPER OFERTAS</div>
+                            <div class="section-subtitle">Arraste para o lado ➝</div>
                         </div>
+                        <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-250, behavior:'smooth'})">❮</div>
                         <div class="carousel-track">${offers.map(p => renderProdCard(p)).join('')}</div>
+                        <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:250, behavior:'smooth'})">❯</div>
                     </div>`;
                 }
                 
@@ -882,8 +849,11 @@
                         <div class="carousel-container" id="${safeId}">
                             <div class="section-header">
                                 <div class="section-title">${catName}</div>
+                                <div class="section-subtitle">Arraste para o lado ➝</div>
                             </div>
+                            <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-250, behavior:'smooth'})">❮</div>
                             <div class="carousel-track">${catProds.map(p => renderProdCard(p)).join('')}</div>
+                            <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:250, behavior:'smooth'})">❯</div>
                         </div>`;
                     }
                 });
@@ -892,12 +862,12 @@
         }
 
         function renderProdCard(p) {
-            const validadeHtml = p.validade ? `<div style="font-size:0.7rem; color:#EF4444; margin-bottom:5px; font-weight:700">Val: ${p.validade}</div>` : '';
+            const validadeHtml = p.validade ? `<div class="prod-validity">Val: ${p.validade}</div>` : '';
             return `
                 <div class="prod-card">
                     <img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">
-                    <div class="prod-name">${p.name}</div>
                     ${validadeHtml}
+                    <div class="prod-name">${p.name}</div>
                     <div class="prod-price">${fmt(p.price)}</div>
                     <div class="qty-control">
                         <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
@@ -961,12 +931,20 @@
                 if (Object.keys(STATE.cart).length < 10) return alert(`Escolha pelo menos 10 itens.`);
             }
             
+            // Gerar Carrossel do Checkout
             let html = Object.entries(STATE.cart).map(([id, q]) => {
                 const p = DB_PROD.find(x => x.id === id);
-                return `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f1f5f9"><span style="font-size:0.9rem; color:var(--cor-primary)">${p.name}</span><span style="font-weight:700; color:var(--cor-primary)">${q}x</span></div>`;
+                if(!p) return '';
+                // Card Simplificado para Review
+                return `
+                <div class="prod-card" style="width:140px; flex:0 0 140px; box-shadow:none; border:1px solid #f1f5f9">
+                    <img src="${p.img}" class="prod-img" loading="lazy">
+                    <div class="prod-name" style="height:auto; -webkit-line-clamp:2; font-size:0.8rem">${p.name}</div>
+                    <div style="font-weight:700; color:var(--cor-primary); margin-top:5px; text-align:center; background:#f1f5f9; border-radius:8px; padding:4px;">${q}x</div>
+                </div>`;
             }).join('');
             
-            document.getElementById('checkout-summary').innerHTML = html;
+            document.getElementById('checkout-carousel-track').innerHTML = html;
             document.getElementById('checkout-total-display').innerText = `Total: ${fmt(STATE.currentTotal)}`;
             document.getElementById('modal-checkout').showModal();
         }
