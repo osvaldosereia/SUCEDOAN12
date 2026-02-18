@@ -89,9 +89,10 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--c-bd);box-shadow:var(--sh-fl);z-index:10;display:none;align-items:center;justify-content:center;font-size:1rem;color:var(--c-p);cursor:pointer}
 .arrow-left{left:10px} .arrow-right{right:10px} @media(hover:hover){.carousel-arrow{display:flex}}
 
-/* CARDS - AUMENTADOS 30% E FOTO CESTA 1:1 */
+/* CARDS - AUMENTADOS 10% EM CIMA DO ANTERIOR */
 .prod-card,.basket-item-card,.cesta-mini-card{background:#fff;border-radius:var(--rad);padding:10px;display:flex;flex-direction:column;box-shadow:0 2px 4px rgba(0,0,0,0.05);position:relative;border:1px solid #e2e8f0;content-visibility:auto}
-.prod-card{flex:0 0 210px; min-width: 210px;} 
+/* MOBILE: 210px * 1.1 = 231px */
+.prod-card{flex:0 0 231px; min-width: 231px;} 
 .basket-item-card{flex:0 0 130px;padding:8px;border:1px solid var(--c-bd)}
 .cesta-mini-card{flex:0 0 260px;padding:0;overflow:hidden;box-shadow:var(--sh-sm);transition:transform .2s;border:none}
 .cesta-mini-card:active{transform:scale(.98)}
@@ -159,8 +160,8 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
     .checkout-bar{max-width:900px;width:95%;left:50%;transform:translateX(-50%);border-radius:20px;bottom:20px;padding:15px 30px;justify-content:space-between;gap:20px;border:1px solid var(--c-bd)}
     .checkout-info{flex-direction:row;align-items:center;gap:20px}
     .btn-main-action{max-width:300px}
-    /* AUMENTADO DE 200PX PARA 260PX NO DESKTOP */
-    .prod-card{flex:0 0 260px} 
+    /* DESKTOP: 260px * 1.1 = 286px */
+    .prod-card{flex:0 0 286px} 
 }
 </style>
 </head>
@@ -222,7 +223,7 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
         <div class="control-row">
             <span class="control-label">Encontre:</span>
             <div style="position:relative;">
-                 <input type="text" id="search-input" class="search-box" placeholder="O que você procura hoje?" oninput="renderCatalogo(true)">
+                 <input type="text" id="search-input" class="search-box" placeholder="" oninput="renderCatalogo(true)">
                  <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
             </div>
         </div>
@@ -357,8 +358,10 @@ function selectCategory(name){
     renderCatalogo();
     
     // Scroll to position right below header (dynamic area start)
-    const area = $('dynamic-area');
-    window.scrollTo({top:area.getBoundingClientRect().top+window.pageYOffset-70, behavior:'smooth'});
+    setTimeout(() => {
+        const area = $('dynamic-area');
+        window.scrollTo({top:area.getBoundingClientRect().top+window.pageYOffset-70, behavior:'smooth'});
+    }, 50);
 }
 function renderCatalogo(fromSearch=false){
     const q=$('search-input').value.toUpperCase(),clr=$('btn-clear-search');clr.style.display=q?'block':'none';
