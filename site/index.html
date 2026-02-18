@@ -202,6 +202,9 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
         <div id="basket-count-display" class="basket-counter">0 itens</div>
     </div>
     
+    <div id="ofertas-area" class="bounce-anim"></div>
+    <div class="separator-zone" id="cat-separator" style="display:none"><h3 class="separator-title" style="font-size:1rem;color:var(--c-s)">MAIS PRODUTOS</h3></div>
+    
     <div class="sticky-stack">
         <div class="search-wrapper-styled">
             <div style="position:relative">
@@ -314,7 +317,17 @@ function selectCategory(name){
     STATE.activeCategory = name;
     $('cat-menu').classList.remove('open');
     renderCatalogo();
-    window.scrollTo({top:0, behavior:'smooth'}); // Reset scroll to top of list
+    
+    // SMART SCROLL LOGIC
+    const sticky = document.querySelector('.sticky-stack');
+    const headerHeight = 60; // Logo area height
+    const currentScroll = window.scrollY;
+    
+    if (currentScroll < headerHeight) {
+        // If we are seeing the logo, scroll just enough to stick the search bar
+        window.scrollTo({top: headerHeight + 5, behavior: 'smooth'});
+    }
+    // If we are already scrolled down, do nothing (keep user context)
 }
 function renderCatalogo(fromSearch=false){
     const q=$('search-input').value.toUpperCase(),clr=$('btn-clear-search');clr.style.display=q?'block':'none';
@@ -400,10 +413,21 @@ function confirmBasketSelection(){
         if(pr){let q=Math.min(parseInt(p[0].trim()),pr.stock);STATE.cart[pr.id]=q;STATE.cartOrder.push(pr.id);is+=pr.price*q}
     });
     STATE.initialGap=c.preco-is;STATE.appliedCoupon=null;
-    $('modal-basket-preview').close();$('zero-mode-banner').style.display='none';$('selected-basket-area').style.display='block';$('cat-separator').style.display='block';
+    $('modal-basket-preview').close();$('zero-mode-banner').style.display='none';
+    
+    // Force visible
+    const area = $('selected-basket-area');
+    area.style.display='block';
+    area.style.zIndex='900'; 
+    $('cat-separator').style.display='block';
     $('basket-intro-msg').innerHTML=`Cesta <strong>${formatText(c.nome)}</strong> ativada.`;
-    renderActiveBasketList();updateUI();renderCatalogo();$('btn-view-diff-float').style.display='flex';
-    showToast(`Cesta carregada!`,'s');setTimeout(()=>$('selected-basket-area').scrollIntoView({behavior:'smooth',block:'start'}),100);
+    
+    renderActiveBasketList(); // Force render immediately
+    updateUI();
+    renderCatalogo();
+    $('btn-view-diff-float').style.display='flex';
+    showToast(`Cesta carregada!`,'s');
+    setTimeout(()=>area.scrollIntoView({behavior:'smooth',block:'center'}),100);
 }
 function renderActiveBasketList(){
     const el=$('basket-list-content'),ids=STATE.cartOrder.filter(id=>STATE.cart[id]);
