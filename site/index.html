@@ -155,7 +155,6 @@
 
         .carousel-track {
             display: flex; overflow-x: auto; padding: 0 20px 10px; gap: 12px;
-            scroll-snap-type: x mandatory; scroll-behavior: smooth;
             -webkit-overflow-scrolling: touch;
         }
         .carousel-track::-webkit-scrollbar { display: none; }
@@ -180,7 +179,7 @@
 
         /* --- CARDS --- */
         .prod-card {
-            flex: 0 0 150px; scroll-snap-align: start;
+            flex: 0 0 150px; 
             background: white; border-radius: 14px;
             padding: 10px; display: flex; flex-direction: column;
             box-shadow: var(--shadow-card);
@@ -189,7 +188,7 @@
         
         .basket-item-card {
             flex: 0 0 130px; /* Compacto para carrossel de cesta */
-            scroll-snap-align: start;
+            
             background: white; border-radius: 14px;
             padding: 8px; display: flex; flex-direction: column;
             box-shadow: var(--shadow-card); border: 1px solid #f1f5f9; position: relative;
@@ -199,7 +198,7 @@
         .basket-item-card .prod-price { font-size: 0.9rem; }
 
         .cesta-mini-card {
-            flex: 0 0 260px; scroll-snap-align: start;
+            flex: 0 0 260px; 
             background: white; border-radius: 14px;
             box-shadow: var(--shadow-float); overflow: hidden; position: relative;
             transition: transform 0.2s;
