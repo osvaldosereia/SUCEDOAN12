@@ -40,7 +40,7 @@
             background-color: var(--cor-bg); 
             color: var(--cor-primary);
             margin: 0;
-            padding-bottom: 140px; 
+            padding-bottom: 120px; /* Ajustado para barra compacta */
             font-size: 15px; 
             line-height: 1.5;
             min-height: 100vh;
@@ -271,23 +271,23 @@
         .separator-title { font-size: 1rem; color: var(--cor-primary); font-weight: 700; }
         .separator-sub { font-size: 0.85rem; color: var(--cor-secondary); margin-top: 4px; }
 
-        /* --- CHECKOUT BAR --- */
+        /* --- CHECKOUT BAR COMPACTA --- */
         .checkout-bar {
             position: fixed; bottom: 0; left: 0; width: 100%;
             background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
-            padding: 12px 20px 20px; z-index: 1001; 
+            padding: 10px 20px 10px; z-index: 1001; 
             border-top: 1px solid var(--cor-border);
             box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column; gap: 10px;
+            display: flex; flex-direction: column; gap: 8px;
         }
-        .checkout-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .checkout-label { font-size: 0.8rem; color: var(--cor-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
-        .checkout-total { font-size: 1.5rem; color: var(--cor-primary); font-weight: 800; letter-spacing: -1px; }
+        .checkout-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0px; }
+        .checkout-label { font-size: 0.75rem; color: var(--cor-secondary); text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+        .checkout-total { font-size: 1.2rem; color: var(--cor-primary); font-weight: 800; letter-spacing: -1px; }
 
         .btn-main-action {
-            width: 100%; padding: 16px; border-radius: 14px;
+            width: 100%; padding: 12px; border-radius: 12px;
             background: #25D366; color: white; font-weight: 700;
-            font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;
+            font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;
             box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
             display: flex; align-items: center; justify-content: center; gap: 8px;
             transition: transform 0.1s;
@@ -445,7 +445,6 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                  ENVIAR NO WHATSAPP
             </button>
-            <button class="btn-modal ghost" onclick="document.getElementById('modal-checkout').close()">Cancelar</button>
         </div>
     </dialog>
 
@@ -543,35 +542,25 @@
             if(!str) return "";
             const lowers = ['de', 'da', 'do', 'dos', 'das', 'em', 'por', 'com', 'sem', 'um', 'uma', 'uns', 'umas', 'para', 'pra'];
             const uppers = ['pvc', 'tv', 'led', 'usb', 'ph', 'uva', 'sul', 'mt', 'vg'];
-            
-            // Check if string is ALL CAPS
             const isAllCaps = str === str.toUpperCase();
-            
             let words = str.split(' ');
             
             return words.map(w => {
-                // Parse markdown first to protect inside tags (simplistic)
                 let prefix = "", suffix = "", core = w;
                 if(w.startsWith("**")) { prefix = "**"; core = w.slice(2); }
                 else if(w.startsWith("*")) { prefix = "*"; core = w.slice(1); }
                 if(core.endsWith("**")) { suffix = "**"; core = core.slice(0, -2); }
                 else if(core.endsWith("*")) { suffix = "*"; core = core.slice(0, -1); }
                 
-                // Capitalization Logic
                 let cleanWord = core.toLowerCase();
                 if (uppers.includes(cleanWord)) {
                     core = cleanWord.toUpperCase();
                 } else if (lowers.includes(cleanWord)) {
                     core = cleanWord;
                 } else if (core.length <= 3) {
-                    // Rule: Lowercase <= 3 chars UNLESS originally 3 uppercase chars
-                    // If the whole string was ALL CAPS, we assume we should standard title case it (First Upper)
-                    // unless it's a known acronym.
-                    // If mixed case, check the original word 'w'.
                     if (!isAllCaps && w.length === 3 && w === w.toUpperCase()) {
-                        core = w; // Keep original 3-letter uppercase (e.g. "ABC")
+                        core = w; 
                     } else {
-                        // Standardize
                         core = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1);
                     }
                 } else {
@@ -585,7 +574,6 @@
         function formatText(str) {
             if(!str) return "";
             let formatted = smartTitleCase(str);
-            // Markdown parsing
             formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<span style="font-weight:800; color:var(--cor-danger)">$1</span>');
             formatted = formatted.replace(/\*(.*?)\*/g, '<b>$1</b>');
             return formatted;
@@ -595,12 +583,11 @@
         window.addEventListener('scroll', () => {
             const current = window.scrollY;
             const header = document.querySelector('.header-wrapper');
-            if (current > lastScroll && current > 80) {
+            if (current > 50) {
                 header.classList.add('hidden');
             } else {
                 header.classList.remove('hidden');
             }
-            lastScroll = current;
         });
 
         function renderBasketsTop() {
@@ -653,8 +640,8 @@
             
             let itemsHtml = "";
             cesta.produtos.forEach(itemStr => {
-                const [qStr, id] = itemStr.split('x ');
-                const product = DB_PROD.find(p => p.id === id.trim());
+                const [qStr, pid] = itemStr.split('x ');
+                const product = DB_PROD.find(p => p.id === pid.trim() || p.code === pid.trim());
                 if (product) {
                     itemsHtml += createMiniCardHtml(product, qStr);
                 }
@@ -686,9 +673,10 @@
             let initialSum = 0;
             STATE.cesta.produtos.forEach(itemStr => {
                 const [q, pid] = itemStr.split('x ');
-                const product = DB_PROD.find(p => p.id === pid.trim());
+                // Ajuste crítico: Busca por ID ou Código para garantir compatibilidade
+                const product = DB_PROD.find(p => p.id === pid.trim() || p.code === pid.trim());
                 if (product) {
-                    STATE.cart[pid.trim()] = parseInt(q);
+                    STATE.cart[product.id] = parseInt(q);
                     initialSum += product.price * parseInt(q);
                 }
             });
