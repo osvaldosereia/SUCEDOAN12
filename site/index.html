@@ -17,7 +17,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:none}
 body{font-family:var(--font);background:var(--c-bg);color:var(--c-p);margin:0;padding:0;height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
-img{user-select:none;pointer-events:none} /* Evita arrastar img */
+img{user-select:none;pointer-events:none}
 button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight:600}
 
 /* --- TOPO (HEADER) --- */
@@ -30,70 +30,83 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .btn-icon:hover{background:#e2e8f0;color:var(--c-p)}
 
 /* --- PALCO CENTRAL (CARROUSEL) --- */
-.main-stage{flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;overflow:hidden;background:var(--c-bg)}
-.stage-title-area{position:absolute;top:20px;left:0;width:100%;text-align:center;z-index:10;pointer-events:none;padding:0 20px}
-.stage-title{font-size:1.2rem;font-weight:900;color:var(--c-p);text-transform:uppercase;text-shadow:0 2px 10px rgba(255,255,255,0.8)}
-.stage-subtitle{font-size:0.8rem;color:var(--c-s);font-weight:600;background:rgba(255,255,255,0.9);padding:2px 8px;border-radius:12px;display:inline-block}
+.main-stage{
+    flex:1;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    overflow:hidden;
+    background:var(--c-bg);
+}
 
-.carousel-wrapper{width:100%;height:100%;display:flex;align-items:center;overflow-x:auto;overflow-y:hidden;scroll-behavior:smooth;padding:0 20px;gap:15px;scroll-snap-type:x mandatory}
-/* Scrollbar oculta */
+.carousel-wrapper{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center; /* Centraliza verticalmente */
+    overflow-x:auto;
+    overflow-y:hidden;
+    scroll-behavior:smooth;
+    padding:20px 20px; /* Respiro obrigatório acima e abaixo */
+    gap:15px;
+    scroll-snap-type:x mandatory;
+}
 .carousel-wrapper::-webkit-scrollbar{display:none}
 .carousel-wrapper{-ms-overflow-style:none;scrollbar-width:none}
 
 /* DESKTOP LIMIT */
 @media(min-width:1024px){
     .carousel-wrapper{justify-content:center;max-width:1200px;margin:0 auto;gap:25px}
-    .stage-title-area{top:40px}
 }
 
-/* CARDS UNIFICADOS */
+/* CARDS UNIFICADOS (Reduzidos 30%) */
 .u-card{
-    flex:0 0 280px; /* Largura base */
+    flex:0 0 200px; /* Reduzido de 280px */
     scroll-snap-align:center;
-    background:#fff;border-radius:24px;
+    background:#fff;border-radius:20px;
     border:1px solid var(--c-bd);
     box-shadow:var(--sh-sm);
     display:flex;flex-direction:column;
     overflow:hidden;
     position:relative;
-    height:fit-content;
-    max-height:85vh;
+    height:auto;
+    max-height:100%; /* Garante que respeite o padding do wrapper */
     transition:transform .2s;
 }
 .u-card:active{transform:scale(0.98)}
 
-/* Mobile adjustment: make cards fit nicely */
 @media(max-width:600px){
-    .u-card{flex:0 0 80%;} /* Peeking effect */
-    .carousel-wrapper{padding:0 10%;} /* Center the snap */
+    .u-card{flex:0 0 65%;} /* Ajuste proporcional mobile */
+    .carousel-wrapper{padding:20px 10%;}
 }
 
 .u-img-area{width:100%;aspect-ratio:1;background:#f8fafc;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9}
-.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:10px}
-.u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal} /* Cestas fill area */
+.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:8px}
+.u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal}
 
-.u-info{padding:15px;display:flex;flex-direction:column;gap:8px}
-.u-tag{position:absolute;top:10px;left:10px;background:#fff;padding:4px 8px;border-radius:6px;font-size:0.7rem;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,0.1);z-index:2}
+.u-info{padding:10px;display:flex;flex-direction:column;gap:6px;flex:1}
+.u-tag{position:absolute;top:8px;left:8px;background:#fff;padding:2px 6px;border-radius:6px;font-size:0.65rem;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,0.1);z-index:2}
 .u-name{
-    font-size:0.95rem;font-weight:700;color:var(--c-p);line-height:1.3;
+    font-size:0.85rem;font-weight:700;color:var(--c-p);line-height:1.2;
     display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
-    min-height:3.9em; /* Garante altura para 3 linhas visualmente, 4 corta */
+    min-height:3.6em;
 }
-.u-price{font-size:1.2rem;font-weight:900;color:var(--c-a)}
+.u-price{font-size:1.1rem;font-weight:900;color:var(--c-a)}
 
-.u-action-row{margin-top:auto;padding-top:10px}
-.btn-big-action{width:100%;background:var(--c-p);color:#fff;padding:12px;border-radius:12px;font-weight:700;font-size:0.9rem;display:flex;align-items:center;justify-content:center;gap:6px}
+.u-action-row{margin-top:auto;padding-top:8px}
+.btn-big-action{width:100%;background:var(--c-p);color:#fff;padding:10px;border-radius:10px;font-weight:700;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:4px}
 .btn-big-action.added{background:#fff;border:2px solid var(--c-ok);color:var(--c-ok)}
 
 /* Controles de QTD */
-.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:12px;padding:4px}
-.btn-qty{width:40px;height:40px;border-radius:10px;background:#fff;font-size:1.2rem;font-weight:800;box-shadow:var(--sh-sm);color:var(--c-p)}
-.qty-val{font-size:1.1rem;font-weight:800;flex:1;text-align:center}
+.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:10px;padding:3px}
+.btn-qty{width:32px;height:32px;border-radius:8px;background:#fff;font-size:1.1rem;font-weight:800;box-shadow:var(--sh-sm);color:var(--c-p)}
+.qty-val{font-size:1rem;font-weight:800;flex:1;text-align:center}
 
 /* SETAS DESKTOP */
-.nav-arrow{position:absolute;top:50%;transform:translateY(-50%);width:50px;height:50px;border-radius:50%;background:#fff;border:1px solid var(--c-bd);box-shadow:var(--sh-fl);z-index:20;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:1.5rem;color:var(--c-p)}
+.nav-arrow{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid var(--c-bd);box-shadow:var(--sh-fl);z-index:20;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:1.2rem;color:var(--c-p)}
 .nav-arrow:hover{background:var(--c-p);color:#fff}
-.nav-left{left:20px} .nav-right{right:20px}
+.nav-left{left:10px} .nav-right{right:10px}
 @media(min-width:1024px){.nav-arrow{display:flex}}
 
 
@@ -110,23 +123,38 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* 1. Menu Circular (iFood Style) */
 .menu-scroll-area{
     width:100%; overflow-x:auto;
-    padding:12px 20px;
+    padding:12px 20px 6px; /* Reduced bottom padding */
     border-bottom:1px solid #f1f5f9;
     display:flex; gap:15px;
+    align-items: flex-start;
 }
 .menu-scroll-area::-webkit-scrollbar{display:none}
 
-.cat-bubble{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:70px;opacity:0.6;transition:.3s}
-.cat-bubble.active{opacity:1;transform:scale(1.05)}
+.cat-bubble{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:70px;opacity:1;transition:.3s}
+.cat-bubble.active{transform:scale(1.05)}
 .cat-bubble.active .cat-img-ring{border-color:var(--c-a);box-shadow:0 0 0 3px rgba(234,88,12,0.2)}
 .cat-bubble.active .cat-name{color:var(--c-a);font-weight:800}
+
+/* Botão Fixo Minha Cesta */
+.cat-bubble.fixed-cart {
+    position: sticky; left: 0; z-index: 10;
+    background: #fff; /* Cobre o scroll atrás */
+    padding-right: 15px;
+    margin-right: -10px; /* Ajuste visual */
+    border-right: 1px solid #f1f5f9;
+}
+.cat-bubble.fixed-cart .cat-img-ring {
+    background: var(--c-p); border: none;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+}
 
 .cat-img-ring{width:56px;height:56px;border-radius:50%;padding:2px;border:2px solid var(--c-bd);background:#fff}
 .cat-img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#f1f5f9}
 .cat-name{font-size:0.7rem;font-weight:600;color:var(--c-s);text-align:center;line-height:1.1;max-width:80px}
 
 /* 2. Busca */
-.search-bar-area{padding:10px 20px;background:#fff;position:relative}
+.search-bar-area{padding:6px 20px 10px;background:#fff;position:relative}
 .search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:10px 12px 10px 40px;border-radius:10px;font-weight:600;color:var(--c-p)}
 .search-icon{position:absolute;left:32px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none}
 .clear-search{position:absolute;right:30px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:none;align-items:center;justify-content:center}
@@ -138,7 +166,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .val-total{font-size:1.3rem;font-weight:900;color:var(--c-p)}
 .btn-checkout{flex:1;background:#16a34a;color:#fff;padding:14px;border-radius:12px;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(22,163,74,0.3)}
 
-/* MODAIS & TOAST (Mantidos e adaptados) */
+/* MODAIS & TOAST */
 dialog{border:none;border-radius:24px;width:92%;max-width:420px;padding:0;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);background:#fff;animation:modalPop .3s}
 dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
 @keyframes modalPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
@@ -146,6 +174,35 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
 .btn-modal{width:100%;padding:14px;border-radius:12px;font-weight:800;margin-bottom:10px;font-size:1rem}
 .btn-modal.primary{background:var(--c-p);color:#fff}
 .btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
+
+/* Modal Carousels */
+.modal-carousel-track {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 10px 5px;
+    scroll-snap-type: x mandatory;
+    justify-content: flex-start;
+}
+.modal-carousel-track::-webkit-scrollbar{height:4px;background:transparent}
+.modal-carousel-track::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+
+.modal-card {
+    flex: 0 0 140px;
+    scroll-snap-align: start;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    padding: 8px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+.modal-card img { width: 100%; aspect-ratio: 1; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 6px; }
+.modal-card .mc-name { font-size: 0.75rem; font-weight: 700; color: var(--c-p); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em; }
+.modal-card .mc-price { font-size: 0.9rem; font-weight: 800; color: var(--c-a); margin-top: auto; }
+.modal-card .mc-qty { font-size: 0.75rem; font-weight: 600; color: var(--c-s); background: #f1f5f9; padding: 2px 6px; border-radius: 4px; width: fit-content; margin-top: 4px; }
+
 
 #toast-container{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:2000;pointer-events:none}
 .toast{background:var(--c-p);color:#fff;padding:12px 24px;border-radius:50px;box-shadow:0 10px 30px rgba(0,0,0,0.3);font-size:.9rem;font-weight:600;animation:slideInTop .4s;margin-bottom:10px;text-align:center}
@@ -174,11 +231,6 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
 </header>
 
 <main class="main-stage">
-    <div class="stage-title-area">
-        <div class="stage-title" id="stage-title">Carregando...</div>
-        <div class="stage-subtitle" id="stage-sub">Arraste para ver mais</div>
-    </div>
-    
     <div class="nav-arrow nav-left" onclick="$('main-carousel').scrollBy({left:-300,behavior:'smooth'})">❮</div>
     <div class="carousel-wrapper" id="main-carousel">
         </div>
@@ -212,7 +264,11 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
     <div class="modal-body">
         <h3 class="stage-title" style="color:var(--c-p);font-size:1.4rem" id="prev-title"></h3>
         <p style="color:var(--c-s);margin-bottom:15px" id="prev-desc"></p>
-        <div style="background:#f8fafc;padding:10px;border-radius:12px;max-height:40vh;overflow-y:auto;text-align:left" id="prev-list"></div>
+        
+        <div style="background:#f8fafc;padding:5px;border-radius:12px;border:1px solid var(--c-bd);margin-bottom:15px">
+            <div class="modal-carousel-track" id="prev-list"></div>
+        </div>
+        
         <div style="margin-top:20px">
             <div style="font-size:1.8rem;font-weight:900;color:var(--c-a);margin-bottom:15px" id="prev-price"></div>
             <button class="btn-modal primary" onclick="confirmBasket()">QUERO ESTA CESTA</button>
@@ -224,7 +280,10 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
 <dialog id="modal-checkout">
     <div class="modal-body" style="text-align:left">
         <h3 style="text-align:center;text-transform:uppercase;font-weight:900">Finalizar Pedido</h3>
-        <div id="chk-list" style="max-height:30vh;overflow-y:auto;background:#f8fafc;padding:10px;border-radius:12px;margin:15px 0"></div>
+        
+        <div style="background:#f8fafc;padding:5px;border-radius:12px;border:1px solid var(--c-bd);margin:15px 0">
+            <div class="modal-carousel-track" id="chk-list"></div>
+        </div>
         
         <div style="text-align:right;margin-bottom:15px">
             <div style="font-size:1.4rem;font-weight:900" id="chk-total"></div>
@@ -261,7 +320,7 @@ const STATE={
     baskets:[], prods:[], coupons:[],
     cart:{}, cartOrder:[], 
     activeCat:'__CESTAS__', 
-    mode:'zero', // 'zero' or 'custom'
+    mode:'zero', 
     baseBasket:null,
     coupon:null
 };
@@ -288,80 +347,78 @@ async function init(){
         if(r3&&r3.ok) STATE.coupons = await r3.json();
 
         renderMenu();
-        loadCategory('__CESTAS__'); // Início padrão
+        loadCategory('__CESTAS__');
     }catch(e){$('main-carousel').innerHTML='<p style="padding:20px;text-align:center">Erro ao carregar dados.</p>';console.error(e)}
 }
 
 /* --- MENU LOGIC --- */
 function renderMenu(){
-    // 1. Extrair categorias reais
     const cats = {};
     STATE.prods.forEach(p=>{ if(!cats[p.cat])cats[p.cat]=[]; cats[p.cat].push(p) });
     let catKeys = Object.keys(cats).sort();
     
-    // Ofertas no topo
     const offers = STATE.prods.filter(p=>p.name.toUpperCase().includes("OFERTA"));
     if(offers.length){ cats["🔥 OFERTAS"]=offers; catKeys = ["🔥 OFERTAS", ...catKeys.filter(c=>c!=="🔥 OFERTAS")]; }
 
-    // 2. Construir lista final: CESTAS -> MINHA CESTA -> CATEGORIAS
+    // Itens dinâmicos (Minha Cesta é separado no HTML/CSS como fixed)
     const menuItems = [
-        {key:'__CESTAS__', name:'Cestas Básicas', img:'img/produtos/cesta.webp'}, // Placeholder ou img fixa
-        {key:'__CART__', name:'Minha Cesta', img:'img/produtos/cart.webp'},
+        {key:'__CESTAS__', name:'Cestas Básicas', img:'img/produtos/cesta.webp'},
         ...catKeys.map(k=>({key:k, name:k, img:cats[k][0]?.img}))
     ];
 
-    $('menu-bubbles').innerHTML = menuItems.map(m=>{
-        // Fallback img se nao tiver
+    // Build: Primeiro o botão fixo "Minha Cesta"
+    let html = `
+    <div class="cat-bubble fixed-cart ${STATE.activeCat==='__CART__'?'active':''}" onclick="loadCategory('__CART__')" id="bubble-__CART__">
+        <div class="cat-img-ring">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        </div>
+        <div class="cat-name">Minha Cesta</div>
+    </div>`;
+
+    // Depois os itens scrollaveis
+    html += menuItems.map(m=>{
         const img = m.img || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cbd5e1"><circle cx="12" cy="12" r="10"/></svg>';
+        const idKey = m.key.replace(/\s/g,'-');
         return `
-        <div class="cat-bubble ${STATE.activeCat===m.key?'active':''}" onclick="loadCategory('${m.key.replace(/'/g,"\\'")}')" id="bubble-${m.key.replace(/\s/g,'-')}">
+        <div class="cat-bubble ${STATE.activeCat===m.key?'active':''}" onclick="loadCategory('${m.key.replace(/'/g,"\\'")}')" id="bubble-${idKey}">
             <div class="cat-img-ring"><img src="${img}" class="cat-img" onerror="this.src='data:image/svg+xml,<svg...'"></div>
             <div class="cat-name">${formatName(m.name)}</div>
         </div>`
     }).join('');
+
+    $('menu-bubbles').innerHTML = html;
 }
 
 function loadCategory(key){
-    // Regra Minha Cesta Vazia
     if(key === '__CART__'){
         if(Object.keys(STATE.cart).length === 0){
             return showToast("Seu carrinho está vazio!", "r");
         }
     }
 
-    // Atualizar UI Menu
     document.querySelectorAll('.cat-bubble').forEach(el=>el.classList.remove('active'));
     const bub = document.getElementById(`bubble-${key.replace(/\s/g,'-')}`);
     if(bub) bub.classList.add('active');
 
     STATE.activeCat = key;
     const carousel = $('main-carousel');
-    const title = $('stage-title');
-
-    carousel.innerHTML = ''; // Limpar palco
+    carousel.innerHTML = '';
     
     if(key === '__CESTAS__'){
-        title.innerText = "Cestas Prontas";
         renderCards(STATE.baskets, 'BASKET');
     } 
     else if(key === '__CART__'){
-        title.innerText = "Itens Selecionados";
         const items = STATE.cartOrder.map(id=>STATE.prods.find(p=>p.id===id)).filter(Boolean);
         renderCards(items, 'PROD');
     }
     else {
-        // Categoria de Produto
-        title.innerText = key;
         const items = STATE.prods.filter(p=> (key==="🔥 OFERTAS" ? p.name.toUpperCase().includes("OFERTA") : p.cat === key));
-        // Ordenação inteligente
         items.sort((a,b)=>{
             const fa=a.name.includes('***'), fb=b.name.includes('***');
             return fa===fb ? 0 : fa ? -1 : 1;
         });
         renderCards(items, 'PROD');
     }
-    
-    // Reset scroll
     carousel.scrollTo({left:0});
 }
 
@@ -382,7 +439,6 @@ function renderCards(list, type){
                 </div>
             </div>`;
         } else {
-            // PRODUTO
             const q = STATE.cart[item.id] || 0;
             const btn = q > 0 
                 ? `<div class="qty-row"><button class="btn-qty" onclick="upd('${item.id}',-1)">-</button><span class="qty-val qty-${item.id}">${q}</span><button class="btn-qty" onclick="upd('${item.id}',1)" style="color:var(--c-ok)">+</button></div>`
@@ -417,13 +473,17 @@ function previewBasket(id){
     $('prev-desc').innerHTML = `${c.produtos.length} itens inclusos`;
     $('prev-price').innerHTML = fmt(c.preco);
     
+    // Render Modal Carousel
     $('prev-list').innerHTML = c.produtos.map(s=>{
         const [qtd, ref] = s.split('x');
         if(!ref) return '';
         const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
-        return `<div style="display:flex;justify-content:space-between;border-bottom:1px solid #eee;padding:4px 0;font-size:0.9rem">
-            <span>${p ? formatName(p.name) : ref}</span>
-            <strong>${qtd}x</strong>
+        if(!p) return '';
+        return `
+        <div class="modal-card">
+            <img src="${p.img}" loading="lazy">
+            <div class="mc-name">${formatName(p.name)}</div>
+            <div class="mc-qty">${qtd}x unidade(s)</div>
         </div>`;
     }).join('');
     
@@ -436,7 +496,6 @@ function confirmBasket(){
     STATE.baseBasket = c;
     STATE.cart = {}; STATE.cartOrder = [];
     
-    // Popular carrinho
     c.produtos.forEach(s=>{
         const [qStr, ref] = s.split('x');
         const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
@@ -449,12 +508,7 @@ function confirmBasket(){
     
     $('modal-basket-preview').close();
     showToast(`Cesta ${c.nome} carregada!`, 's');
-    
-    // Calcular "Gap" inicial (preço fixo da cesta vs soma dos produtos)
-    // Se o preço da cesta for fixo, ajustamos logicamente. 
-    // Aqui assumimos lógica simples: carrega os itens e vai pro modo "Minha Cesta"
-    
-    loadCategory('__CART__'); // Auto-switch para editar
+    loadCategory('__CART__');
     updateTotals();
 }
 
@@ -473,14 +527,11 @@ function upd(id, delta){
     if(next === 0){
         delete STATE.cart[id];
         STATE.cartOrder = STATE.cartOrder.filter(x=>x!==id);
-        // Se estiver vendo o carrinho e remover item, remove card da tela
         if(STATE.activeCat === '__CART__') loadCategory('__CART__');
     }
     
-    // Atualiza botões em tempo real (em todas as instancias do produto)
     document.querySelectorAll(`.qty-${id}`).forEach(e=>e.innerText = next);
     
-    // Se mudou de 0 para 1 ou 1 para 0, precisa redesenhar o wrapper do botão
     if((cur===0 && next>0) || (cur>0 && next===0)){
         const btn = next > 0 
              ? `<div class="qty-row"><button class="btn-qty" onclick="upd('${id}',-1)">-</button><span class="qty-val qty-${id}">${next}</span><button class="btn-qty" onclick="upd('${id}',1)" style="color:var(--c-ok)">+</button></div>`
@@ -499,10 +550,6 @@ function updateTotals(){
         if(p){ total += p.price * q; count += q; }
     });
     
-    // Lógica Cesta Personalizada (mantém preço base da cesta se não alterou muito? 
-    // Simplificando: Soma real dos itens. Se veio de cesta, mostra diferença?
-    // User pediu simplificação. Vamos usar soma real dos itens.
-    
     if(STATE.coupon && total >= STATE.coupon.minimo){
         total -= STATE.coupon.desconto;
     } else if(STATE.coupon){
@@ -519,7 +566,7 @@ function clearCart(){
     STATE.cart = {}; STATE.cartOrder = []; STATE.mode = 'zero'; STATE.coupon=null;
     updateTotals();
     $('modal-checkout').close();
-    loadCategory('__CESTAS__'); // Volta pro inicio
+    loadCategory('__CESTAS__');
     showToast("Carrinho limpo", "r");
 }
 
@@ -527,14 +574,8 @@ function clearCart(){
 function handleSearch(q){
     const btn = $('btn-clr-search');
     btn.style.display = q ? 'flex' : 'none';
+    if(!q) return loadCategory(STATE.activeCat);
     
-    if(!q){
-        // Se limpou, volta pra categoria ativa
-        return loadCategory(STATE.activeCat);
-    }
-    
-    // Modo Busca
-    $('stage-title').innerText = "Resultados da Busca";
     const res = STATE.prods.filter(p => p.name.toUpperCase().includes(q.toUpperCase()));
     renderCards(res, 'PROD');
 }
@@ -543,13 +584,16 @@ function clearSearch(){ $('search-inp').value=''; handleSearch(''); }
 function openCheckout(){
     if(Object.keys(STATE.cart).length === 0) return showToast("Carrinho vazio!", "r");
     
-    // Render lista simples no modal
+    // Render Modal Carousel
     $('chk-list').innerHTML = STATE.cartOrder.map(id=>{
         const p = STATE.prods.find(x=>x.id===id);
         const q = STATE.cart[id];
-        return `<div style="display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #eee">
-            <span style="font-size:0.8rem;flex:1">${formatName(p.name)}</span>
-            <strong style="color:var(--c-p)">${q}x ${fmt(p.price*q)}</strong>
+        return `
+        <div class="modal-card">
+            <img src="${p.img}" loading="lazy">
+            <div class="mc-name">${formatName(p.name)}</div>
+            <div class="mc-price">${fmt(p.price)}</div>
+            <div class="mc-qty">${q} unidade(s)</div>
         </div>`;
     }).join('');
     
@@ -559,9 +603,6 @@ function openCheckout(){
 function applyCupom(){
     const code = $('cupom-code').value.toUpperCase().trim();
     const c = STATE.coupons.find(x=>x.codigo === code);
-    const total = parseMoney($('val-total').innerText); // Pega do visual atual (hack simples) ou recalcula
-    
-    // Recalcular total limpo
     let rawTotal = 0;
     Object.entries(STATE.cart).forEach(([id,q])=>{
         const p=STATE.prods.find(x=>x.id===id); if(p) rawTotal+=p.price*q;
@@ -603,7 +644,6 @@ async function sendOrder(){
     const pgto = $('cli-pgto').value;
     const msg = `*NOVO PEDIDO*\n👤 ${nome}\n💰 Pagamento: ${pgto}\n\n*ITENS:*\n${itemsTxt}${cupomTxt}\n\n*TOTAL: ${fmt(finalTotal)}*`;
     
-    // Webhook (Silencioso)
     try{
         fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method:"POST", headers:{"Content-Type":"application/json"},
@@ -623,7 +663,6 @@ function formatName(s){
             .toLowerCase().replace(/(?:^|\s)\S/g, a=>a.toUpperCase());
 }
 function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-function parseMoney(s){ return parseFloat(s.replace('R$','').replace('.','').replace(',','.').trim()); }
 function showToast(m,t){
     const d=document.createElement('div'); d.className='toast';
     d.style.background= t==='r'?'var(--c-err)':'var(--c-ok)';
