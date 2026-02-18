@@ -11,15 +11,15 @@
     <title>Super Cestas Básicas Dona Antônia</title>
 
     <style>
-        /* --- DESIGN SYSTEM CLEAN --- */
+        /* --- DESIGN SYSTEM MODERNIZADO (CLEAN & ELEGANT) --- */
         :root {
-            --cor-primary: #1e293b;
-            --cor-secondary: #64748b;
-            --cor-tertiary: #94a3b8;
-            --cor-action: #F97316;
-            --cor-success: #10B981;
-            --cor-danger: #EF4444;
-            --cor-bg: #F8FAFC;
+            --cor-primary: #1e293b; /* Slate 800 */
+            --cor-secondary: #64748b; /* Slate 500 */
+            --cor-tertiary: #94a3b8; /* Slate 400 (Validade) */
+            --cor-action: #F97316; /* Laranja Moderno */
+            --cor-success: #10B981; /* Verde Suave */
+            --cor-danger: #EF4444; /* Vermelho */
+            --cor-bg: #F8FAFC; /* Off-white */
             --cor-surface: #FFFFFF; 
             --cor-border: #E2E8F0;
             
@@ -53,14 +53,14 @@
         h1, h2, h3, h4 { margin: 0; font-weight: 700; color: var(--cor-primary); letter-spacing: -0.02em; }
         button { cursor: pointer; border: none; background: none; font-family: inherit; font-weight: 600; padding: 0; }
         
-        /* --- HEADER CLEAN (Só aparece no topo) --- */
+        /* --- HEADER CLEAN (Hide on Scroll) --- */
         .header-wrapper {
             position: sticky; top: 0; z-index: 1000;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(8px);
             border-bottom: 1px solid var(--cor-border);
             width: 100%;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* Animação suave */
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .header-wrapper.hidden { transform: translateY(-100%); }
 
@@ -217,11 +217,14 @@
 
         .prod-img { width: 100%; aspect-ratio: 1; object-fit: contain; margin-bottom: 6px; mix-blend-mode: multiply; }
         .prod-validity { font-size: 0.65rem; color: var(--cor-tertiary); font-weight: 500; margin-bottom: 2px; }
+        
         .prod-name { 
-            font-size: 0.8rem; line-height: 1.3; height: 3.9em; 
-            overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+            font-size: 0.8rem; line-height: 1.3; 
+            height: 5.2em; /* 4 linhas x 1.3 */
+            overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical;
             color: var(--cor-primary); margin-bottom: 6px; font-weight: 500;
         }
+        
         .prod-price { font-size: 1rem; font-weight: 700; color: var(--cor-action); margin-top: auto; letter-spacing: -0.5px; }
         
         .qty-control {
@@ -320,13 +323,19 @@
         dialog::backdrop { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(4px); }
         
         .modal-body { padding: 25px 20px; text-align: center; }
-        .modal-title { font-size: 1.2rem; margin-bottom: 8px; color: var(--cor-primary); font-weight: 800; }
+        .modal-title { font-size: 1.2rem; margin-bottom: 2px; color: var(--cor-primary); font-weight: 800; text-transform: uppercase; }
+        .modal-subtitle { font-size: 0.85rem; color: var(--cor-secondary); font-weight: 600; margin-bottom: 15px; }
         .modal-desc { color: var(--cor-secondary); font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5; }
         
         .btn-modal { width: 100%; padding: 12px; border-radius: 10px; font-weight: 700; margin-bottom: 10px; font-size: 0.95rem; cursor: pointer; }
         .btn-modal.primary { background: var(--cor-success); color: white; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2); }
         .btn-modal.secondary { background: white; border: 2px solid var(--cor-border); color: var(--cor-secondary); }
         .btn-modal.ghost { color: var(--cor-secondary); font-weight: 500; margin-top: 5px; background: none; font-size: 0.85rem; }
+
+        /* CUPOM */
+        .coupon-box { display: flex; gap: 8px; margin-bottom: 15px; }
+        .coupon-input { flex-grow: 1; padding: 10px; border: 1px solid var(--cor-border); border-radius: 8px; text-transform: uppercase; font-weight: 700; color: var(--cor-primary); }
+        .coupon-btn { padding: 0 15px; background: var(--cor-primary); color: white; border-radius: 8px; font-weight: 700; font-size: 0.8rem; }
 
         /* Zoom */
         #modal-image-zoom { background: transparent; box-shadow: none; width: 100%; height: 100%; max-width: 100%; }
@@ -436,8 +445,8 @@
         </div>
         
         <button class="btn-main-action" id="btn-concluir-pedido" onclick="openCheckoutModal()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-            ENVIAR PEDIDO
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 8H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2zM5 8V6a5 5 0 0 1 10 0v2"/></svg>
+            VER CESTA
         </button>
     </div>
     
@@ -465,10 +474,10 @@
 
     <dialog id="modal-checkout">
         <div class="modal-body" style="text-align:left;">
-            <h3 class="modal-title" style="text-align:center">Finalizar Pedido</h3>
+            <h3 class="modal-title" style="text-align:center">PRODUTOS DA SUA CESTA</h3>
+            <div id="checkout-subtitle" class="modal-subtitle" style="text-align:center">0 produtos</div>
             
             <div style="margin-bottom:20px; text-align:center;">
-                <div style="font-size:0.85rem; color:var(--cor-secondary); margin-bottom:10px;">Itens no carrinho:</div>
                 <div class="carousel-container basket-area-carousel" style="background:#F8FAFC; border-radius:12px; border:1px solid var(--cor-border);">
                      <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
                      <div class="carousel-track" id="checkout-carousel-track"></div>
@@ -476,7 +485,17 @@
                 </div>
             </div>
             
-            <div style="font-size:1.3rem; font-weight:800; text-align:center; margin-bottom:20px; color:var(--cor-primary)" id="checkout-total-display"></div>
+            <div style="text-align:right; margin-bottom:20px;">
+                <div style="font-size:1.4rem; font-weight:800; color:var(--cor-primary)" id="checkout-total-display"></div>
+                <div id="installments-text" style="font-size:0.75rem; color:var(--cor-tertiary); margin-top:2px;">Parcele em até 3x sem juros no cartão de crédito</div>
+            </div>
+
+            <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--cor-secondary); margin-bottom:5px">CUPOM DE DESCONTO</label>
+            <div class="coupon-box">
+                <input type="text" id="coupon-code" class="coupon-input" placeholder="CÓDIGO">
+                <button class="coupon-btn" onclick="applyCoupon()">APLICAR</button>
+            </div>
+            <div id="coupon-msg" style="font-size:0.75rem; margin-bottom:15px; display:none;"></div>
             
             <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--cor-secondary); margin-bottom:5px">Seu Nome:</label>
             <input type="text" id="cust-name" class="search-box" style="margin-bottom:15px; padding:12px; border:1px solid var(--cor-border); background-image:none;" placeholder="Digite seu nome">
@@ -494,6 +513,7 @@
                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                  ENVIAR NO WHATSAPP
             </button>
+            <button class="btn-modal secondary" onclick="document.getElementById('modal-checkout').close()">Continuar Comprando</button>
         </div>
     </dialog>
 
@@ -550,19 +570,21 @@
         // --- STATE ---
         let DB_PROD = [];
         let DB_CESTAS = [];
+        let DB_COUPONS = [];
         let STATE = {
             cesta: null, cart: {}, basePrice: 0, currentTotal: 0, 
             sortType: 'name', initialGap: 0, mode: 'zero', 
-            previewBasketId: null
+            previewBasketId: null, appliedCoupon: null
         };
         let lastScroll = 0;
 
         // --- INIT ---
         async function init() {
             try {
-                const [r1, r2] = await Promise.all([
+                const [r1, r2, r3] = await Promise.all([
                     fetch('produtos-cesta-basica.json?v=' + Date.now()), 
-                    fetch('produtos.json?v=' + Date.now())
+                    fetch('produtos.json?v=' + Date.now()),
+                    fetch('cupons.json?v=' + Date.now()).catch(() => ({ ok: false }))
                 ]);
                 
                 if (r1.ok) DB_CESTAS = await r1.json();
@@ -575,6 +597,7 @@
                         category: (p.categoria || p.Categoria || "Outros").trim(), validade: p.validade, img: `img/produtos/${p.codigo || p.id}.webp`
                     }));
                 }
+                if (r3 && r3.ok) DB_COUPONS = await r3.json();
                 
                 renderBasketsTop();
                 renderCategoryChips(); 
@@ -589,15 +612,11 @@
         // --- TEXT FORMATTER (SAFE) ---
         function smartTitleCase(str) {
             if(!str) return "";
-            // Proteção contra números ou null
             let s = String(str);
-            
             const lowers = ['de', 'da', 'do', 'dos', 'das', 'em', 'por', 'com', 'sem', 'um', 'uma', 'uns', 'umas', 'para', 'pra'];
             const uppers = ['pvc', 'tv', 'led', 'usb', 'ph', 'uva', 'sul', 'mt', 'vg', 'kg', 'ml'];
-            
             const isAllCaps = s === s.toUpperCase();
             let words = s.split(' ');
-            
             return words.map(w => {
                 let prefix = "", suffix = "", core = w;
                 if(w.startsWith("**")) { prefix = "**"; core = w.slice(2); }
@@ -611,15 +630,11 @@
                 } else if (lowers.includes(cleanWord)) {
                     core = cleanWord;
                 } else if (core.length <= 3) {
-                    if (!isAllCaps && w.length === 3 && w === w.toUpperCase()) {
-                        core = w; 
-                    } else {
-                        core = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1);
-                    }
+                    if (!isAllCaps && w.length === 3 && w === w.toUpperCase()) core = w; 
+                    else core = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1);
                 } else {
                     core = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1);
                 }
-                
                 return prefix + core + suffix;
             }).join(' ');
         }
@@ -636,12 +651,8 @@
         window.addEventListener('scroll', () => {
             const current = window.scrollY;
             const header = document.querySelector('.header-wrapper');
-            // Só mostra se estiver quase no topo (ex: menos de 50px de scroll)
-            if (current > 50) {
-                header.classList.add('hidden');
-            } else {
-                header.classList.remove('hidden');
-            }
+            if (current > 50) header.classList.add('hidden');
+            else header.classList.remove('hidden');
         });
 
         function renderBasketsTop() {
@@ -685,31 +696,23 @@
         }
 
         function previewBasket(id) {
-            // Conversão de ID para String para evitar erro de tipo
             const cesta = DB_CESTAS.find(x => String(x.id) === String(id));
             if(!cesta) return;
             
             STATE.previewBasketId = String(id);
             
-            // Usando innerHTML para processar formatação
             document.getElementById('preview-title').innerHTML = formatText(cesta.nome);
             document.getElementById('preview-price').innerText = fmt(cesta.preco);
             document.getElementById('preview-desc').innerText = `Contém ${cesta.produtos.length} itens selecionados:`;
             
             let itemsHtml = "";
             cesta.produtos.forEach(itemStr => {
-                // Split seguro para aceitar '1x' ou '1 x'
                 const parts = itemStr.split('x');
                 if(parts.length < 2) return;
-                
                 const qStr = parts[0].trim();
                 const pid = parts[1].trim();
-                
-                // Busca robusta por ID ou Código
                 const product = DB_PROD.find(p => p.id === pid || p.code === pid);
-                if (product) {
-                    itemsHtml += createMiniCardHtml(product, qStr);
-                }
+                if (product) itemsHtml += createMiniCardHtml(product, qStr);
             });
             document.getElementById('preview-carousel-track').innerHTML = itemsHtml;
             document.getElementById('modal-basket-preview').showModal();
@@ -729,11 +732,9 @@
         function confirmBasketSelection() {
             const id = STATE.previewBasketId;
             if(!id) return;
-            
             const cesta = DB_CESTAS.find(x => String(x.id) === String(id));
             if(!cesta) return;
             STATE.cesta = cesta;
-            
             STATE.mode = 'custom';
             STATE.basePrice = STATE.cesta.preco;
             STATE.cart = {};
@@ -744,7 +745,6 @@
                 if(parts.length < 2) return;
                 const q = parseInt(parts[0].trim());
                 const pid = parts[1].trim();
-                
                 const product = DB_PROD.find(p => p.id === pid || p.code === pid);
                 if (product) {
                     STATE.cart[product.id] = q;
@@ -753,10 +753,10 @@
             });
             
             STATE.initialGap = STATE.cesta.preco - initialSum;
+            STATE.appliedCoupon = null; // reset coupon
             
             document.getElementById('modal-basket-preview').close();
             document.getElementById('zero-mode-banner').style.display = 'none';
-
             document.getElementById('selected-basket-area').style.display = 'block';
             document.getElementById('cat-separator').style.display = 'block';
             document.getElementById('basket-intro-msg').innerHTML = `Cesta <strong>${formatText(STATE.cesta.nome)}</strong> ativada.<br>Você pode adicionar ou remover itens abaixo.`;
@@ -764,13 +764,9 @@
             renderActiveBasketList();
             updateUI();
             renderCatalogo(); 
-            
             document.getElementById('btn-view-diff-float').style.display = 'flex';
             showToast(`Cesta carregada!`, 'success');
-            
-            setTimeout(() => {
-                document.getElementById('selected-basket-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            setTimeout(() => { document.getElementById('selected-basket-area').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
         }
 
         function renderActiveBasketList() {
@@ -781,7 +777,6 @@
                  el.innerHTML = '<p style="text-align:center;color:#64748B;padding:10px; width:100%">Cesta vazia.</p>';
                  return;
              }
-             
              cartIds.sort((a,b) => {
                  const pa = DB_PROD.find(x => x.id === a);
                  const pb = DB_PROD.find(x => x.id === b);
@@ -806,19 +801,18 @@
                         </div>
                     </div>`;
              }).join('');
-
              el.innerHTML = itemsHtml;
         }
 
         function clearCart() {
             if(Object.keys(STATE.cart).length === 0) return showToast("Carrinho vazio.", 'remove');
             if(!confirm("Limpar todo o carrinho?")) return;
-            
             STATE.cart = {};
             STATE.mode = 'zero';
             STATE.cesta = null;
             STATE.basePrice = 0;
             STATE.initialGap = 0;
+            STATE.appliedCoupon = null;
             
             document.getElementById('selected-basket-area').style.display = 'none';
             document.getElementById('cat-separator').style.display = 'none';
@@ -831,22 +825,27 @@
         }
 
         function upd(pid, d) {
-            const wasEmpty = !STATE.cart[pid];
             STATE.cart[pid] = (STATE.cart[pid] || 0) + d;
             if (STATE.cart[pid] <= 0) delete STATE.cart[pid];
             
-            updateUI();
-            
-            // Se estiver em modo edição de cesta e adicionou algo novo, re-renderiza o carrossel da cesta
-            if(document.getElementById('selected-basket-area').style.display !== 'none') {
-                renderActiveBasketList();
+            // Se cupom estava aplicado, valida se ainda pode
+            if (STATE.appliedCoupon) {
+                // Recalcula sem desconto para verificar minimo
+                let tempTotal = 0;
+                Object.entries(STATE.cart).forEach(([id, q]) => { const p = DB_PROD.find(x => x.id === id); if(p) tempTotal += p.price * q; });
+                tempTotal += (STATE.initialGap || 0);
+                if(tempTotal < STATE.appliedCoupon.minimo) {
+                    STATE.appliedCoupon = null;
+                    showToast("Cupom removido (valor mínimo)", "remove");
+                }
             }
 
-            // Atualiza catálogo visualmente
+            updateUI();
+            if(document.getElementById('selected-basket-area').style.display !== 'none') renderActiveBasketList();
+            
             const els = document.querySelectorAll(`.qty-${pid}`);
             els.forEach(el => el.innerText = STATE.cart[pid] || 0);
             
-            // Toggle botão "+" / controle qty no catálogo
             const cardControls = document.querySelectorAll(`.ctl-wrapper-${pid}`);
             cardControls.forEach(wrapper => {
                 if(STATE.cart[pid] > 0) {
@@ -860,11 +859,8 @@
                     wrapper.innerHTML = `<button class="btn-add-big" onclick="upd('${pid}', 1)">+</button>`;
                 }
             });
-            
             const p = DB_PROD.find(x => x.id === pid);
-            if(p) {
-                if(d > 0) showToast(`+1 ${formatText(p.name).substring(0,15)}...`, 'success');
-            }
+            if(p && d > 0) showToast(`+1 ${formatText(p.name).substring(0,15)}...`, 'success');
         }
 
         function updateUI() {
@@ -875,14 +871,62 @@
                 return acc + (p ? p.price * q : 0);
             }, 0);
             
-            STATE.currentTotal = sumCart + (STATE.initialGap || 0);
+            let rawTotal = sumCart + (STATE.initialGap || 0);
+            STATE.currentTotal = rawTotal;
+            
+            // Apply Coupon logic for UI
+            if (STATE.appliedCoupon) {
+                STATE.currentTotal -= STATE.appliedCoupon.desconto;
+            }
 
             const totalVal = document.getElementById('chk-total-val');
             totalVal.innerText = fmt(STATE.currentTotal);
             
-            // Atualiza contador do box da cesta
             const counterEl = document.getElementById('basket-count-display');
             if(counterEl) counterEl.innerText = `${countItems} itens na cesta`;
+            
+            const statusText = document.getElementById('chk-status-text');
+            if (STATE.mode === 'zero') {
+                statusText.innerText = "TOTAL A PAGAR";
+                statusText.style.color = "var(--cor-secondary)";
+            } else {
+                const diff = STATE.basePrice - STATE.currentTotal;
+                if (diff > 0.01) {
+                    statusText.innerText = `CRÉDITO: ${fmt(diff)}`;
+                    statusText.style.color = "var(--cor-success)";
+                } else if (diff < -0.01) {
+                    statusText.innerText = `ACRÉSCIMO: ${fmt(Math.abs(diff))}`;
+                    statusText.style.color = "var(--cor-danger)";
+                } else {
+                    statusText.innerText = "VALOR ORIGINAL";
+                    statusText.style.color = "var(--cor-secondary)";
+                }
+            }
+        }
+
+        function applyCoupon() {
+            const code = document.getElementById('coupon-code').value.trim().toUpperCase();
+            if (!code) return;
+            
+            const coupon = DB_COUPONS.find(c => c.codigo === code);
+            if (!coupon) return showToast("Cupom inválido", "remove");
+            
+            if (STATE.currentTotal < coupon.minimo) {
+                return showToast(`Mínimo R$ ${coupon.minimo}`, "remove");
+            }
+            
+            STATE.appliedCoupon = coupon;
+            updateUI();
+            
+            // Update Checkout Modal View
+            const msg = document.getElementById('coupon-msg');
+            msg.style.display = 'block';
+            msg.style.color = 'var(--cor-success)';
+            msg.innerText = `Cupom -${fmt(coupon.desconto)} aplicado!`;
+            
+            // Refresh total in modal
+            document.getElementById('checkout-total-display').innerText = `Total: ${fmt(STATE.currentTotal)}`;
+            showToast("Desconto aplicado!", "success");
         }
 
         function renderCatalogo() {
@@ -903,15 +947,17 @@
                             <div class="section-title">Resultados da Busca</div>
                             <div class="section-subtitle">Arraste para o lado ➝</div>
                         </div>
-                        <div class="carousel-track" style="flex-wrap:wrap;">
+                        <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-250, behavior:'smooth'})">❮</div>
+                        <div class="carousel-track">
                             ${results.map(p => renderProdCard(p)).join('')}
                         </div>
+                        <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:250, behavior:'smooth'})">❯</div>
                     </div>`;
                 } else {
                     html = `<p style="text-align:center; padding:40px; color:#64748B">Nenhum produto encontrado.</p>`;
                 }
             } else {
-                const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("**OFERTA**"));
+                const offers = DB_PROD.filter(p => p.name.toUpperCase().startsWith("OFERTA"));
                 if (offers.length > 0) {
                     offers.sort(sorter);
                     html += `
@@ -1033,6 +1079,11 @@
                 if (Object.keys(STATE.cart).length < 10) return alert(`Escolha pelo menos 10 itens.`);
             }
             
+            // Subtitle count
+            let totalCount = 0;
+            Object.values(STATE.cart).forEach(q => totalCount += q);
+            document.getElementById('checkout-subtitle').innerText = `${totalCount} produtos`;
+
             // Gerar Carrossel do Checkout
             let html = Object.entries(STATE.cart).map(([id, q]) => {
                 const p = DB_PROD.find(x => x.id === id);
@@ -1059,6 +1110,10 @@
             const orderId = new Date().getTime().toString().slice(-6);
             let checklist = `TIPO: ${STATE.mode === 'zero' ? 'MONTADA DO ZERO' : 'PERSONALIZADA'} | CESTA: ${STATE.cesta ? STATE.cesta.nome : 'N/A'}`;
             
+            if (STATE.appliedCoupon) {
+                checklist += ` | CUPOM: ${STATE.appliedCoupon.codigo} (-${STATE.appliedCoupon.desconto})`;
+            }
+
             const itensPayload = [];
             Object.entries(STATE.cart).forEach(([id, q]) => { const p = DB_PROD.find(x => x.id === id); if(p) itensPayload.push({id:p.id, nome:p.name, quantidade:q, preco_unitario:p.price}); });
             
@@ -1071,6 +1126,10 @@
 
             let msg = `*PEDIDO #${orderId}*\n👤 ${name}\n💰 ${pay}\n\n*ITENS:*\n`;
             itensPayload.forEach(i => msg += `${i.quantidade}x ${i.nome}\n`);
+            
+            if (STATE.appliedCoupon) {
+                msg += `\n🏷️ Cupom: ${STATE.appliedCoupon.codigo}`;
+            }
             msg += `\n*TOTAL: ${fmt(STATE.currentTotal)}*`;
             
             window.location.href = `https://wa.me/${CONFIG_WHATSAPP}?text=${encodeURIComponent(msg)}`;
