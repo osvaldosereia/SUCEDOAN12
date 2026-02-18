@@ -51,14 +51,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 .search-box:focus{border-color:var(--c-a);box-shadow:0 0 0 3px rgba(234,88,12,0.15)}
 .btn-clear-search{position:absolute;right:16px;top:13px;color:var(--c-s);padding:5px;display:none;z-index:10}
 
-/* CUSTOM SELECTOR */
+/* CUSTOM SELECTOR (Menu Style) */
 .custom-select-container{position:relative;width:100%}
 .custom-select-trigger{background:#fff;border:1px solid var(--c-bd);padding:12px 15px;border-radius:var(--rad);font-size:.9rem;font-weight:700;color:var(--c-p);display:flex;justify-content:space-between;align-items:center;cursor:pointer;box-shadow:var(--sh-sm)}
 .custom-select-trigger:after{content:'▼';font-size:.7rem;color:var(--c-s)}
-.custom-select-menu{position:absolute;top:105%;left:0;width:100%;background:#fff;border:1px solid var(--c-bd);border-radius:var(--rad);max-height:300px;overflow-y:auto;z-index:100;box-shadow:var(--sh-fl);display:none;animation:fadeIn .2s}
+.custom-select-menu{position:absolute;top:105%;left:0;width:100%;background:#fff;border:1px solid var(--c-bd);border-radius:var(--rad);max-height:400px;overflow-y:auto;z-index:100;box-shadow:var(--sh-fl);display:none;animation:fadeIn .2s}
 .custom-select-menu.open{display:block}
-.custom-option{padding:12px 15px;border-bottom:1px solid #f1f5f9;font-size:.9rem;color:var(--c-s);cursor:pointer;transition:.2s;font-weight:500}
+.custom-option{padding:12px 15px;border-bottom:1px solid #f1f5f9;font-size:.9rem;color:var(--c-s);cursor:pointer;transition:.2s;font-weight:500;display:flex;justify-content:space-between;}
 .custom-option:hover,.custom-option:active{background:#f8fafc;color:var(--c-a);padding-left:20px;font-weight:700}
+.custom-option.selected{background:#fff7ed;color:var(--c-a);font-weight:800;border-left:4px solid var(--c-a)}
 
 /* LAYOUT ELEMENTS */
 .hero-section{padding:10px 20px} .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -108,8 +109,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:10p
 /* FIXES */
 [class^="ctl-wrapper-"] { min-height: 40px; display: block; }
 .prod-card.featured { border: 2px solid var(--c-a); background: #fff7ed; }
-.lazy-cat-section { min-height: 100px; }
-.btn-show-more { width: calc(100% - 40px); padding: 12px; margin: 5px 20px 25px; background: #fff; border: 1px solid var(--c-bd); border-radius: 10px; color: var(--c-p); font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: var(--sh-sm); }
+.prod-card.sold-out { opacity: 0.7; }
+.btn-show-more { width: calc(100% - 40px); padding: 12px; margin: 10px 20px 40px; background: #fff; border: 1px solid var(--c-bd); border-radius: 10px; color: var(--c-p); font-weight: 700; font-size: 0.9rem; cursor: pointer; box-shadow: var(--sh-sm); }
 .btn-show-more:hover { background: #f8fafc; border-color: var(--c-p); }
 
 #selected-basket-area{margin:15px 20px;background:#fff;border-radius:var(--rad);box-shadow:var(--sh-fl);animation:fadeIn .3s;border:1px solid var(--c-bd)}
@@ -201,9 +202,6 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
         <div id="basket-count-display" class="basket-counter">0 itens</div>
     </div>
     
-    <div id="ofertas-area" class="bounce-anim"></div>
-    <div class="separator-zone" id="cat-separator" style="display:none"><h3 class="separator-title" style="font-size:1rem;color:var(--c-s)">MAIS PRODUTOS</h3></div>
-    
     <div class="sticky-stack">
         <div class="search-wrapper-styled">
             <div style="position:relative">
@@ -211,12 +209,12 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
                  <button class="btn-clear-search" id="btn-clear-search" onclick="clearSearch()">✕</button>
             </div>
             <div class="custom-select-container">
-                <div class="custom-select-trigger" onclick="toggleCatMenu()">Navegar por Categorias</div>
+                <div class="custom-select-trigger" id="cat-trigger" onclick="toggleCatMenu()">Carregando...</div>
                 <div id="cat-menu" class="custom-select-menu"></div>
             </div>
         </div>
     </div>
-    <div id="catalogo-content" style="padding-bottom:20px"></div>
+    <div id="catalogo-content" style="padding-bottom:20px; min-height:400px"></div>
 </main>
 <div class="checkout-bar">
     <button class="btn-trash" onclick="clearCart()">🗑️</button>
@@ -274,49 +272,93 @@ dialog::backdrop{background:rgba(15,23,42,0.75);backdrop-filter:blur(4px)}
 </dialog>
 <script>
 const CONFIG_WHATSAPP="5565996813588",$=i=>document.getElementById(i);
-let DB_PROD=[],DB_CESTAS=[],DB_COUPONS=[],STATE={cesta:null,cart:{},cartOrder:[],basePrice:0,currentTotal:0,sortType:'name',initialGap:0,mode:'zero',previewBasketId:null,appliedCoupon:null,catMap:{}};
-let observer;
+let DB_PROD=[],DB_CESTAS=[],DB_COUPONS=[],STATE={cesta:null,cart:{},cartOrder:[],basePrice:0,currentTotal:0,sortType:'name',initialGap:0,mode:'zero',previewBasketId:null,appliedCoupon:null,catMap:{},activeCategory:null};
 async function init(){
     try{
         const[r1,r2,r3]=await Promise.all([fetch('produtos-cesta-basica.json?v='+Date.now()),fetch('produtos.json?v='+Date.now()),fetch('cupons.json?v='+Date.now()).catch(()=>({ok:!1}))]);
         if(r1.ok)DB_CESTAS=await r1.json();
         if(r2.ok){
             let t=(await r2.text()).trim().replace(/,(\s+)?$/,"");
-            DB_PROD=JSON.parse(t.startsWith('[')?t:'['+t+']').filter(x=>x.situacao==="A"&&(parseInt(x.estoque)||0)>0).map(p=>({id:String(p.id),code:String(p.codigo||p.id),name:p.nome,price:parseFloat(p.preco),stock:parseInt(p.estoque)||0,category:(p.categoria||p.Categoria||"Outros").trim(),validade:p.validade,img:`img/produtos/${p.codigo||p.id}.webp`}));
+            DB_PROD=JSON.parse(t.startsWith('[')?t:'['+t+']').filter(x=>x.situacao==="A").map(p=>({id:String(p.id),code:String(p.codigo||p.id),name:p.nome,price:parseFloat(p.preco),stock:parseInt(p.estoque)||0,category:(p.categoria||p.Categoria||"Outros").trim(),validade:p.validade,img:`img/produtos/${p.codigo||p.id}.webp`}));
         }
         if(r3&&r3.ok)DB_COUPONS=await r3.json();
-        initObserver();
+        prepareCategories();
         renderBasketsTop();renderCatalogo();updateUI();
     }catch(e){$('catalogo-content').innerHTML='<p style="text-align:center;padding:20px;color:#64748B">Carregando...</p>'}
 }
-function initObserver(){
-    observer=new IntersectionObserver((e)=>{
-        e.forEach(entry=>{
-            if(entry.isIntersecting){
-                const el=entry.target;
-                renderCatContent(el);
-                observer.unobserve(el);
-            }
-        })
-    },{rootMargin:'200px'});
+function prepareCategories(){
+    const cats={};
+    DB_PROD.forEach(p=>{if(!cats[p.category])cats[p.category]=[];cats[p.category].push(p)});
+    let sc=Object.keys(cats).sort();
+    if(sc.includes("Outros")){sc=sc.filter(c=>c!=="Outros");sc.push("Outros")}
+    
+    // Add OFERTAS as a specific category logic
+    const offers = DB_PROD.filter(p=>p.name.toUpperCase().includes("OFERTA"));
+    if(offers.length > 0) {
+        cats["🔥 OFERTAS"] = offers;
+        sc.unshift("🔥 OFERTAS");
+    }
+    
+    STATE.catMap = {};
+    sc.forEach(c => {
+        STATE.catMap[c] = cats[c].sort((a,b)=>{const fa=a.name.includes('***'),fb=b.name.includes('***');return fa===fb?0:fa?-1:1});
+    });
+    
+    // Render Menu
+    $('cat-menu').innerHTML=sc.map(c=>`<div class="custom-option" onclick="selectCategory('${c.replace(/'/g,"\\'")}')">${formatText(c)}</div>`).join('');
+    
+    // Set default active category
+    STATE.activeCategory = sc[0];
 }
-function renderCatContent(el){
-    const name=el.getAttribute('data-name');
-    if(!name||!STATE.catMap[name])return;
-    const prods=STATE.catMap[name];
-    const gridId=`grid-${name.replace(/[^a-zA-Z0-9]/g,'-')}`;
-    const grid=$(gridId);
-    if(grid){
-        const isMobile=window.innerWidth<900;
-        const limit=isMobile?2:5;
-        const visible=prods.slice(0,limit);
-        const hasMore=prods.length>limit;
-        grid.innerHTML=visible.map(p=>renderProdCard(p)).join('');
-        if(hasMore){
-            const btn=document.createElement('div');
-            btn.innerHTML=`<button class="btn-show-more" onclick="showAll('${name.replace(/'/g,"\\'")}')">Ver Mais Produtos</button>`;
-            el.appendChild(btn.firstChild);
-        }
+function selectCategory(name){
+    STATE.activeCategory = name;
+    $('cat-menu').classList.remove('open');
+    renderCatalogo();
+    window.scrollTo({top:0, behavior:'smooth'}); // Reset scroll to top of list
+}
+function renderCatalogo(fromSearch=false){
+    const q=$('search-input').value.toUpperCase(),clr=$('btn-clear-search');clr.style.display=q?'block':'none';
+    const container = $('catalogo-content');
+    
+    if(q){
+        let r=DB_PROD.filter(p=>p.name.toUpperCase().includes(q));
+        $('cat-trigger').innerText = "Resultados da Busca";
+        container.innerHTML=r.length?`<div class="cat-grid" style="padding-top:20px">${r.map(p=>renderProdCard(p)).join('')}</div>`:`<p style="text-align:center;padding:40px;color:#64748B">Nada encontrado.</p>`;
+        return;
+    }
+
+    const currentCat = STATE.activeCategory;
+    $('cat-trigger').innerText = formatText(currentCat);
+    
+    const prods = STATE.catMap[currentCat] || [];
+    const limit = 12; // Load chunk size
+    const visible = prods.slice(0, limit);
+    const hasMore = prods.length > limit;
+    
+    const gridId = `grid-${currentCat.replace(/[^a-zA-Z0-9]/g,'-')}`;
+    
+    let html = `
+        <div style="padding:10px 20px 0;">
+            <div class="section-title" style="margin-bottom:10px">${formatText(currentCat)}</div>
+        </div>
+        <div class="cat-grid" id="${gridId}">
+            ${visible.map(p => renderProdCard(p)).join('')}
+        </div>`;
+        
+    if(hasMore){
+        html += `<button class="btn-show-more" onclick="showAll('${currentCat.replace(/'/g,"\\'")}')">Ver Mais Produtos</button>`;
+    }
+    
+    container.innerHTML = html;
+}
+function showAll(catName) {
+    const id = `grid-${catName.replace(/[^a-zA-Z0-9]/g,'-')}`;
+    const el = $(id);
+    const prods = STATE.catMap[catName];
+    if(el && prods) {
+        el.innerHTML = prods.map(p => renderProdCard(p)).join('');
+        const btn = el.parentElement.querySelector('.btn-show-more');
+        if(btn) btn.remove();
     }
 }
 function smartTitleCase(s){
@@ -337,22 +379,6 @@ function renderBasketsTop(){
 }
 function toggleCatMenu(){
     $('cat-menu').classList.toggle('open');
-}
-function scrollToCat(id){
-    $('cat-menu').classList.remove('open');
-    const el=$(id);
-    if(el){
-        renderCatContent(el); 
-        // Ajuste de offset considerando altura do header e sticky stack
-        const headerHeight = 60;
-        const stickyStackHeight = 130; 
-        const totalOffset = headerHeight + stickyStackHeight + 10;
-        const elementPosition = el.getBoundingClientRect().top + window.pageYOffset;
-        window.scrollTo({
-            top: elementPosition - totalOffset,
-            behavior: "smooth"
-        });
-    }
 }
 function previewBasket(id){
     const c=DB_CESTAS.find(x=>String(x.id)===String(id));if(!c)return;
@@ -429,63 +455,21 @@ function applyCoupon(){
     $('coupon-msg').style.display='block';$('coupon-msg').innerText=`-${fmt(c.desconto)} aplicado!`;$('coupon-msg').style.color='var(--c-ok)';
     $('checkout-total-display').innerText=`Total: ${fmt(STATE.currentTotal)}`;showToast("Aplicado!","s");
 }
-function renderCatalogo(full=false){
-    const q=$('search-input').value.toUpperCase(),clr=$('btn-clear-search');clr.style.display=q?'block':'none';
-    const s=(a,b)=>a.name.localeCompare(b.name);
-    
-    if(!q){
-        const off=DB_PROD.filter(p=>p.name.toUpperCase().includes("OFERTA")).sort(s);
-        $('ofertas-area').innerHTML=off.length?`<div class="carousel-container" id="cat-ofertas"><div class="section-header"><div class="section-title" style="color:var(--c-err)">🔥 SUPER OFERTAS</div></div><div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-250,behavior:'smooth'})">❮</div><div class="carousel-track">${off.map(p=>renderProdCard(p)).join('')}</div><div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:250,behavior:'smooth'})">❯</div></div>`:'';
-    } else {
-        $('ofertas-area').innerHTML='';
-    }
-
-    if(q){
-        let r=DB_PROD.filter(p=>p.name.toUpperCase().includes(q)).sort(s);
-        $('catalogo-content').innerHTML=r.length?`<div class="cat-grid">${r.map(p=>renderProdCard(p)).join('')}</div>`:`<p style="text-align:center;padding:40px;color:#64748B">Nada encontrado.</p>`;
-        return;
-    }
-
-    const cats={};DB_PROD.forEach(p=>{if(!cats[p.category])cats[p.category]=[];cats[p.category].push(p)});
-    let sc=Object.keys(cats).sort();if(sc.includes("Outros")){sc=sc.filter(c=>c!=="Outros");sc.push("Outros")}
-    
-    $('cat-menu').innerHTML=sc.map(c=>`<div class="custom-option" onclick="scrollToCat('cat-${c.replace(/[^a-zA-Z0-9]/g,'-')}')">${formatText(c)}</div>`).join('');
-
-    STATE.catMap = {};
-    sc.forEach(c => {
-        STATE.catMap[c] = cats[c].sort((a,b)=>{const fa=a.name.includes('***'),fb=b.name.includes('***');return fa===fb?0:fa?-1:1});
-    });
-
-    const skeletonHtml = sc.map(c => {
-        const id=`cat-${c.replace(/[^a-zA-Z0-9]/g,'-')}`;
-        const gridId=`grid-${c.replace(/[^a-zA-Z0-9]/g,'-')}`;
-        return `<div id="${id}" class="lazy-cat-section" data-name="${c.replace(/"/g, '&quot;')}"><div class="section-header"><div class="section-title">${formatText(c)}</div></div><div class="cat-grid" id="${gridId}"></div></div>`;
-    }).join('');
-    
-    $('catalogo-content').innerHTML = skeletonHtml;
-    
-    document.querySelectorAll('.lazy-cat-section').forEach(el => observer.observe(el));
-}
-
-function showAll(catName) {
-    const id = `grid-${catName.replace(/[^a-zA-Z0-9]/g,'-')}`;
-    const el = $(id);
-    const prods = STATE.catMap[catName];
-    if(el && prods) {
-        el.innerHTML = prods.map(p => renderProdCard(p)).join('');
-        const btn = el.parentElement.querySelector('.btn-show-more');
-        if(btn) btn.remove();
-    }
-}
-
-function openCategoryModal(n){
-    scrollToCat(`cat-${n.replace(/[^a-zA-Z0-9]/g,'-')}`);
-}
-
 function renderProdCard(p){
     const q=STATE.cart[p.id]||0;
     const isFeat = p.name.includes('***');
-    return `<div class="prod-card ${isFeat?'featured':''}"><img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">${p.validade?`<div class="prod-validity">Val: ${p.validade}</div>`:''}<div class="prod-name">${formatText(p.name)}</div><div class="prod-price">${fmt(p.price)}</div><div class="ctl-wrapper-${p.id}">${q>0?`<div class="qty-control"><button class="btn-q" onclick="upd('${p.id}',-1)">-</button><span class="val-q qty-${p.id}">${q}</span><button class="btn-q" onclick="upd('${p.id}',1)" style="color:var(--c-ok)">+</button></div>`:`<button class="btn-add-big" onclick="upd('${p.id}',1)">+</button>`}</div></div>`;
+    const isSoldOut = p.stock <= 0;
+
+    let actionBtn;
+    if (isSoldOut) {
+         actionBtn = `<div class="btn-add-big" style="background:#e2e8f0; color:#94a3b8; border-color:#cbd5e1; pointer-events:none; font-size:0.85rem; font-weight:700">ESGOTADO</div>`;
+    } else if (q > 0) {
+         actionBtn = `<div class="qty-control"><button class="btn-q" onclick="upd('${p.id}',-1)">-</button><span class="val-q qty-${p.id}">${q}</span><button class="btn-q" onclick="upd('${p.id}',1)" style="color:var(--c-ok)">+</button></div>`;
+    } else {
+         actionBtn = `<button class="btn-add-big" onclick="upd('${p.id}',1)">+</button>`;
+    }
+
+    return `<div class="prod-card ${isFeat?'featured':''} ${isSoldOut?'sold-out':''}"><img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">${p.validade?`<div class="prod-validity">Val: ${p.validade}</div>`:''}<div class="prod-name">${formatText(p.name)}</div><div class="prod-price">${fmt(p.price)}</div><div class="ctl-wrapper-${p.id}">${actionBtn}</div></div>`;
 }
 function showTopInfo(t){
     $('mini-info-title').innerText=t==='pagamento'?"Pagamento":"Entrega";
