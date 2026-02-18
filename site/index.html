@@ -90,7 +90,7 @@
             width: 100%; background: var(--cor-bg); 
             padding-bottom: 5px; transition: top 0.3s ease;
         }
-        .header-wrapper.hidden + main .sticky-stack { top: 0; } /* Ajuste quando header some */
+        .header-wrapper.hidden + main .sticky-stack { top: 0; } 
 
         .search-container { padding: 10px 20px; }
         .search-box {
@@ -190,6 +190,19 @@
             box-shadow: var(--shadow-card);
             border: 1px solid transparent; position: relative;
         }
+        
+        /* CARD DA CESTA (MENOR - 2.25 itens na tela) */
+        .basket-item-card {
+            flex: 0 0 130px; /* Reduzido para caber 2.25 em ~360px */
+            scroll-snap-align: start;
+            background: white; border-radius: var(--radius-lg);
+            padding: 10px; display: flex; flex-direction: column;
+            box-shadow: var(--shadow-card); border: 1px solid #f1f5f9; position: relative;
+        }
+        .basket-item-card .prod-img { margin-bottom: 5px; }
+        .basket-item-card .prod-name { font-size: 0.8rem; height: 2.8em; -webkit-line-clamp: 2; margin-bottom: 4px;}
+        .basket-item-card .prod-price { font-size: 0.95rem; }
+
         .cesta-mini-card {
             flex: 0 0 280px; scroll-snap-align: start;
             background: white; border-radius: var(--radius-lg);
@@ -218,16 +231,26 @@
         
         .qty-control {
             display: flex; align-items: center; justify-content: space-between;
-            background: #F1F5F9; border-radius: 12px; margin-top: 10px; padding: 2px;
+            background: #F1F5F9; border-radius: 12px; margin-top: 10px; padding: 2px; height: 32px;
         }
         .btn-q { 
-            width: 32px; height: 32px; border-radius: 10px;
-            background: white; color: var(--cor-primary); font-size: 1.2rem; 
+            width: 28px; height: 28px; border-radius: 10px;
+            background: white; color: var(--cor-primary); font-size: 1rem; 
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 1px 2px rgba(0,0,0,0.1); transition: 0.1s;
         }
         .btn-q:active { transform: scale(0.9); background: #e2e8f0; }
-        .val-q { font-weight: 600; font-size: 1rem; width: 30px; text-align: center; }
+        .val-q { font-weight: 600; font-size: 0.9rem; width: 30px; text-align: center; }
+
+        /* Botão + Flutuante no Card */
+        .btn-add-big {
+            margin-top: 10px; width: 100%; height: 32px;
+            background: var(--cor-bg); color: var(--cor-secondary);
+            border-radius: 12px; font-size: 1.4rem; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s;
+        }
+        .btn-add-big:active, .btn-add-big:hover { background: var(--cor-primary); color: white; border-color: var(--cor-primary); }
 
         /* --- ÁREA DA CESTA ATIVA --- */
         #selected-basket-area {
@@ -238,7 +261,11 @@
             padding: 15px 20px; text-align: center; background: #F0FDF4; color: #166534;
             font-size: 0.95rem; border-bottom: 1px dashed #BBF7D0;
         }
-        .basket-carousel-wrapper { padding: 15px 0; background: white; }
+        .basket-counter {
+            text-align: center; font-size: 0.8rem; color: var(--cor-secondary);
+            background: #f8fafc; padding: 5px; border-radius: 20px; margin: 0 auto 10px;
+            width: fit-content; border: 1px solid #e2e8f0; font-weight: 600;
+        }
 
         .separator-zone { padding: 20px; text-align: center; background: transparent; }
         .separator-title { font-size: 1rem; color: var(--cor-primary); font-weight: 700; }
@@ -315,6 +342,7 @@
 
         @media (min-width: 900px) {
             .prod-card { flex: 0 0 200px; }
+            .basket-item-card { flex: 0 0 160px; }
             .checkout-bar { max-width: 600px; left: 50%; transform: translateX(-50%); border-radius: 20px 20px 0 0; bottom: 0; padding-bottom: 20px; }
             .btn-trash { right: -60px; top: 20px; }
         }
@@ -325,7 +353,7 @@
     <div class="header-wrapper">
         <header class="limit-container">
             <div class="header-left">
-                <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" width="50" height="50">
+                <img src="img/logo.webp" class="logo" alt="Logo" width="40" height="40">
                 <div class="page-title">Super Cestas<br>Dona Antônia</div>
             </div>
             
@@ -376,12 +404,13 @@
 
         <div id="selected-basket-area" style="display:none;" class="bounce-anim">
             <div class="basket-intro-msg" id="basket-intro-msg"></div>
-            <div class="carousel-container basket-area-carousel">
+            <div class="carousel-container basket-area-carousel" style="padding-bottom:10px;">
                 <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
                 <div class="carousel-track" id="basket-list-content">
                     </div>
                 <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</div>
             </div>
+            <div id="basket-count-display" class="basket-counter">0 itens na cesta</div>
         </div>
         
         <div class="separator-zone" id="cat-separator" style="display:none">
@@ -413,62 +442,7 @@
         </div>
         
         <button class="btn-main-action" id="btn-concluir-pedido" onclick="openCheckoutModal()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-            Enviar pedido no Whatsapp
-        </button>
-    </div>
-    
-    <div id="toast-container"></div>
-    <button id="btn-view-diff-float" style="display:none" onclick="openDiffModal()"></button>
-
-    <dialog id="modal-basket-preview">
-        <div class="modal-body">
-            <h3 class="modal-title" id="preview-title">Nome da Cesta</h3>
-            <p class="modal-desc" id="preview-desc">Confira os itens inclusos:</p>
-            
-            <div class="carousel-container basket-area-carousel" style="background:#F8FAFC; border-radius:12px; padding:10px 0;">
-                <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
-                <div class="carousel-track" id="preview-carousel-track"></div>
-                <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</div>
-            </div>
-            
-            <div style="margin-top:20px;">
-                <div style="margin-bottom:20px; font-size:1.8rem; font-weight:800; color:var(--cor-action)" id="preview-price">R$ 0,00</div>
-                <button class="btn-modal primary" onclick="confirmBasketSelection()">QUERO ESTA CESTA</button>
-                <button class="btn-modal ghost" onclick="document.getElementById('modal-basket-preview').close()">Voltar</button>
-            </div>
-        </div>
-    </dialog>
-
-    <dialog id="modal-checkout">
-        <div class="modal-body" style="text-align:left;">
-            <h3 class="modal-title" style="text-align:center">Finalizar Pedido</h3>
-            
-            <div style="margin-bottom:20px; text-align:center;">
-                <div style="font-size:0.9rem; color:var(--cor-secondary); margin-bottom:10px;">Itens no carrinho:</div>
-                <div class="carousel-container basket-area-carousel" style="background:#F8FAFC; border-radius:12px; border:1px solid var(--cor-border);">
-                     <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-200, behavior:'smooth'})">❮</div>
-                     <div class="carousel-track" id="checkout-carousel-track"></div>
-                     <div class="carousel-arrow arrow-right" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:200, behavior:'smooth'})">❯</div>
-                </div>
-            </div>
-            
-            <div style="font-size:1.4rem; font-weight:800; text-align:center; margin-bottom:20px; color:var(--cor-primary)" id="checkout-total-display"></div>
-            
-            <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--cor-secondary); margin-bottom:5px">Seu Nome:</label>
-            <input type="text" id="cust-name" class="search-box" style="margin-bottom:15px; padding:12px; border:1px solid var(--cor-border); background-image:none;" placeholder="Digite seu nome">
-            
-            <label style="display:block; font-size:0.85rem; font-weight:700; color:var(--cor-secondary); margin-bottom:5px">Pagamento (na entrega):</label>
-            <select id="cust-pay" class="search-box" style="margin-bottom:25px; padding:12px; border:1px solid var(--cor-border); background-image:none;">
-                <option>PIX</option>
-                <option>Dinheiro</option>
-                <option>Cartão de Crédito</option>
-                <option>Cartão de Débito</option>
-                <option>Cartão Alimentação</option>
-            </select>
-            
-            <button class="btn-modal primary" onclick="sendOrder()">
-                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:5px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                  ENVIAR NO WHATSAPP
             </button>
             <button class="btn-modal ghost" onclick="document.getElementById('modal-checkout').close()">Cancelar</button>
@@ -564,6 +538,59 @@
             }
         }
         
+        // --- TEXT FORMATTER ---
+        function smartTitleCase(str) {
+            if(!str) return "";
+            const lowers = ['de', 'da', 'do', 'dos', 'das', 'em', 'por', 'com', 'sem', 'um', 'uma', 'uns', 'umas', 'para', 'pra'];
+            const uppers = ['pvc', 'tv', 'led', 'usb', 'ph', 'uva', 'sul', 'mt', 'vg'];
+            
+            // Check if string is ALL CAPS
+            const isAllCaps = str === str.toUpperCase();
+            
+            let words = str.split(' ');
+            
+            return words.map(w => {
+                // Parse markdown first to protect inside tags (simplistic)
+                let prefix = "", suffix = "", core = w;
+                if(w.startsWith("**")) { prefix = "**"; core = w.slice(2); }
+                else if(w.startsWith("*")) { prefix = "*"; core = w.slice(1); }
+                if(core.endsWith("**")) { suffix = "**"; core = core.slice(0, -2); }
+                else if(core.endsWith("*")) { suffix = "*"; core = core.slice(0, -1); }
+                
+                // Capitalization Logic
+                let cleanWord = core.toLowerCase();
+                if (uppers.includes(cleanWord)) {
+                    core = cleanWord.toUpperCase();
+                } else if (lowers.includes(cleanWord)) {
+                    core = cleanWord;
+                } else if (core.length <= 3) {
+                    // Rule: Lowercase <= 3 chars UNLESS originally 3 uppercase chars
+                    // If the whole string was ALL CAPS, we assume we should standard title case it (First Upper)
+                    // unless it's a known acronym.
+                    // If mixed case, check the original word 'w'.
+                    if (!isAllCaps && w.length === 3 && w === w.toUpperCase()) {
+                        core = w; // Keep original 3-letter uppercase (e.g. "ABC")
+                    } else {
+                        // Standardize
+                        core = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1);
+                    }
+                } else {
+                    core = cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1);
+                }
+                
+                return prefix + core + suffix;
+            }).join(' ');
+        }
+
+        function formatText(str) {
+            if(!str) return "";
+            let formatted = smartTitleCase(str);
+            // Markdown parsing
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<span style="font-weight:800; color:var(--cor-danger)">$1</span>');
+            formatted = formatted.replace(/\*(.*?)\*/g, '<b>$1</b>');
+            return formatted;
+        }
+
         // --- SCROLL HEADER HIDE ---
         window.addEventListener('scroll', () => {
             const current = window.scrollY;
@@ -582,7 +609,7 @@
                 <div class="cesta-mini-card" onclick="previewBasket('${c.id}')">
                     <img src="${c.imagem || ''}" class="cesta-mini-img" loading="lazy">
                     <div class="cesta-mini-content">
-                        <div class="cesta-mini-name">${c.nome}</div>
+                        <div class="cesta-mini-name">${formatText(c.nome)}</div>
                         <div class="cesta-mini-price">${fmt(c.preco)}</div>
                         <button class="btn-cesta-select">Ver itens</button>
                     </div>
@@ -600,7 +627,7 @@
             let html = `<div class="cat-chip" onclick="scrollToCat('cat-ofertas')">🔥 Ofertas</div>`; 
             html += sortedCats.map(cat => {
                 const safeId = 'cat-' + cat.replace(/[^a-zA-Z0-9]/g, '-');
-                return `<div class="cat-chip" onclick="scrollToCat('${safeId}')">${cat}</div>`;
+                return `<div class="cat-chip" onclick="scrollToCat('${safeId}')">${formatText(cat)}</div>`;
             }).join('');
             
             container.innerHTML = html;
@@ -620,7 +647,7 @@
             const cesta = DB_CESTAS.find(x => x.id === id);
             if(!cesta) return;
             STATE.previewBasketId = id;
-            document.getElementById('preview-title').innerText = cesta.nome;
+            document.getElementById('preview-title').innerText = formatText(cesta.nome);
             document.getElementById('preview-price').innerText = fmt(cesta.preco);
             document.getElementById('preview-desc').innerText = `Contém ${cesta.produtos.length} itens selecionados:`;
             
@@ -642,7 +669,7 @@
                 <div class="prod-card" style="box-shadow:none; border:1px solid #eee;">
                     <img src="${product.img}" class="prod-img" loading="lazy">
                     ${validity}
-                    <div class="prod-name">${product.name}</div>
+                    <div class="prod-name">${formatText(product.name)}</div>
                     <div class="prod-price" style="font-size:0.9rem;color:#64748B;font-weight:600">${qtyLabel} UNIDADE(S)</div>
                 </div>`;
         }
@@ -673,7 +700,7 @@
 
             document.getElementById('selected-basket-area').style.display = 'block';
             document.getElementById('cat-separator').style.display = 'block';
-            document.getElementById('basket-intro-msg').innerHTML = ` <strong>${STATE.cesta.nome}</strong>.<br> Personalize ou encomende ela normal`;
+            document.getElementById('basket-intro-msg').innerHTML = `Cesta <strong>${formatText(STATE.cesta.nome)}</strong> ativada.<br>Você pode adicionar ou remover itens abaixo.`;
             
             renderActiveBasketList();
             updateUI();
@@ -708,12 +735,12 @@
                  const qty = STATE.cart[pid];
                  const validadeHtml = p.validade ? `<div class="prod-validity">Val: ${p.validade}</div>` : '';
                  return `
-                    <div class="prod-card" style="border:1px solid #f1f5f9; box-shadow:none;">
+                    <div class="basket-item-card">
                         <img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">
                         ${validadeHtml}
-                        <div class="prod-name">${p.name}</div>
+                        <div class="prod-name">${formatText(p.name)}</div>
                         <div class="prod-price">${fmt(p.price)}</div>
-                        <div class="qty-control">
+                        <div class="qty-control" style="margin-top:auto;">
                             <button class="btn-q" onclick="upd('${pid}', -1)">-</button>
                             <span class="val-q qty-${pid}">${qty}</span>
                             <button class="btn-q" onclick="upd('${pid}', 1)" style="color:var(--cor-success)">+</button>
@@ -745,26 +772,46 @@
         }
 
         function upd(pid, d) {
+            const wasEmpty = !STATE.cart[pid];
             STATE.cart[pid] = (STATE.cart[pid] || 0) + d;
             if (STATE.cart[pid] <= 0) delete STATE.cart[pid];
             
             updateUI();
             
+            // Se estiver em modo edição de cesta e adicionou algo novo, re-renderiza o carrossel da cesta
             if(document.getElementById('selected-basket-area').style.display !== 'none') {
                 renderActiveBasketList();
             }
 
+            // Atualiza catálogo visualmente
             const els = document.querySelectorAll(`.qty-${pid}`);
             els.forEach(el => el.innerText = STATE.cart[pid] || 0);
             
+            // Toggle botão "+" / controle qty no catálogo
+            const cardControls = document.querySelectorAll(`.ctl-wrapper-${pid}`);
+            cardControls.forEach(wrapper => {
+                if(STATE.cart[pid] > 0) {
+                    wrapper.innerHTML = `
+                    <div class="qty-control">
+                        <button class="btn-q" onclick="upd('${pid}', -1)">-</button>
+                        <span class="val-q qty-${pid}">${STATE.cart[pid]}</span>
+                        <button class="btn-q" onclick="upd('${pid}', 1)" style="color:var(--cor-success)">+</button>
+                    </div>`;
+                } else {
+                    wrapper.innerHTML = `<button class="btn-add-big" onclick="upd('${pid}', 1)">+</button>`;
+                }
+            });
+            
             const p = DB_PROD.find(x => x.id === pid);
             if(p) {
-                if(d > 0) showToast(`+1 ${p.name.substring(0,15)}...`, 'success');
+                if(d > 0) showToast(`+1 ${formatText(p.name).substring(0,15)}...`, 'success');
             }
         }
 
         function updateUI() {
+            let countItems = 0;
             const sumCart = Object.entries(STATE.cart).reduce((acc, [id, q]) => {
+                countItems += q;
                 const p = DB_PROD.find(x => x.id === id);
                 return acc + (p ? p.price * q : 0);
             }, 0);
@@ -775,6 +822,10 @@
             const totalVal = document.getElementById('chk-total-val');
             
             totalVal.innerText = fmt(STATE.currentTotal);
+            
+            // Atualiza contador do box da cesta
+            const counterEl = document.getElementById('basket-count-display');
+            if(counterEl) counterEl.innerText = `${countItems} itens na cesta`;
             
             if (STATE.mode === 'zero') {
                 statusText.innerText = "TOTAL A PAGAR";
@@ -848,7 +899,7 @@
                         html += `
                         <div class="carousel-container" id="${safeId}">
                             <div class="section-header">
-                                <div class="section-title">${catName}</div>
+                                <div class="section-title">${formatText(catName)}</div>
                                 <div class="section-subtitle">Arraste para o lado ➝</div>
                             </div>
                             <div class="carousel-arrow arrow-left" onclick="this.parentElement.querySelector('.carousel-track').scrollBy({left:-250, behavior:'smooth'})">❮</div>
@@ -863,16 +914,28 @@
 
         function renderProdCard(p) {
             const validadeHtml = p.validade ? `<div class="prod-validity">Val: ${p.validade}</div>` : '';
+            const qty = STATE.cart[p.id] || 0;
+            
+            let btnHtml = '';
+            if (qty > 0) {
+                btnHtml = `
+                <div class="qty-control">
+                    <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
+                    <span class="val-q qty-${p.id}">${qty}</span>
+                    <button class="btn-q" onclick="upd('${p.id}', 1)" style="color:var(--cor-success)">+</button>
+                </div>`;
+            } else {
+                btnHtml = `<button class="btn-add-big" onclick="upd('${p.id}', 1)">+</button>`;
+            }
+
             return `
                 <div class="prod-card">
                     <img src="${p.img}" class="prod-img" loading="lazy" onclick="openImageZoom('${p.img}')">
                     ${validadeHtml}
-                    <div class="prod-name">${p.name}</div>
+                    <div class="prod-name">${formatText(p.name)}</div>
                     <div class="prod-price">${fmt(p.price)}</div>
-                    <div class="qty-control">
-                        <button class="btn-q" onclick="upd('${p.id}', -1)">-</button>
-                        <span class="val-q qty-${p.id}">${STATE.cart[p.id] || 0}</span>
-                        <button class="btn-q" onclick="upd('${p.id}', 1)" style="color:var(--cor-success)">+</button>
+                    <div class="ctl-wrapper-${p.id}">
+                        ${btnHtml}
                     </div>
                 </div>`;
         }
@@ -905,15 +968,14 @@
             if(STATE.cesta) STATE.cesta.produtos.forEach(itemStr => { const [q, id] = itemStr.split('x '); originalMap[id.trim()] = parseInt(q); });
             
             let removed = [], added = [];
-            const fmtName = (n) => n.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ');
-
+            
             for (let [id, origQty] of Object.entries(originalMap)) {
                 const currQty = STATE.cart[id] || 0;
-                if (currQty < origQty) { const p = DB_PROD.find(x => x.id === id); if(p) removed.push(`<div style="color:var(--cor-danger)"><strong>- ${origQty - currQty}x</strong> ${fmtName(p.name)}</div>`); }
+                if (currQty < origQty) { const p = DB_PROD.find(x => x.id === id); if(p) removed.push(`<div style="color:var(--cor-danger)"><strong>- ${origQty - currQty}x</strong> ${formatText(p.name)}</div>`); }
             }
             for (let [id, currQty] of Object.entries(STATE.cart)) {
                 const origQty = originalMap[id] || 0;
-                if (currQty > origQty) { const p = DB_PROD.find(x => x.id === id); if(p) added.push(`<div style="color:var(--cor-success)"><strong>+ ${currQty - origQty}x</strong> ${fmtName(p.name)}</div>`); }
+                if (currQty > origQty) { const p = DB_PROD.find(x => x.id === id); if(p) added.push(`<div style="color:var(--cor-success)"><strong>+ ${currQty - origQty}x</strong> ${formatText(p.name)}</div>`); }
             }
             
             let content = (removed.length === 0 && added.length === 0) ? "<p style='color:var(--cor-secondary)'>Nenhuma alteração.</p>" : "";
@@ -939,7 +1001,7 @@
                 return `
                 <div class="prod-card" style="width:140px; flex:0 0 140px; box-shadow:none; border:1px solid #f1f5f9">
                     <img src="${p.img}" class="prod-img" loading="lazy">
-                    <div class="prod-name" style="height:auto; -webkit-line-clamp:2; font-size:0.8rem">${p.name}</div>
+                    <div class="prod-name" style="height:auto; -webkit-line-clamp:2; font-size:0.8rem">${formatText(p.name)}</div>
                     <div style="font-weight:700; color:var(--cor-primary); margin-top:5px; text-align:center; background:#f1f5f9; border-radius:8px; padding:4px;">${q}x</div>
                 </div>`;
             }).join('');
