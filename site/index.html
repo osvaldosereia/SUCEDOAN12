@@ -247,8 +247,8 @@ async function init(){
             DB_PROD=JSON.parse(t.startsWith('[')?t:'['+t+']').filter(x=>x.situacao==="A"&&(parseInt(x.estoque)||0)>0).map(p=>({id:String(p.id),code:String(p.codigo||p.id),name:p.nome,price:parseFloat(p.preco),stock:parseInt(p.estoque)||0,category:(p.categoria||p.Categoria||"Outros").trim(),validade:p.validade,img:`img/produtos/${p.codigo||p.id}.webp`}));
         }
         if(r3&&r3.ok)DB_COUPONS=await r3.json();
-        renderBasketsTop();renderCatalogo();updateUI();
         initObserver();
+        renderBasketsTop();renderCatalogo();updateUI();
     }catch(e){$('catalogo-content').innerHTML='<p style="text-align:center;padding:20px;color:#64748B">Carregando...</p>'}
 }
 function initObserver(){
@@ -295,7 +295,7 @@ function scrollToCat(id){
     $('cat-menu').classList.remove('open');
     const el=$(id);
     if(el){
-        renderCatContent(el); // Force render before scrolling
+        renderCatContent(el); 
         window.scrollTo({top:el.getBoundingClientRect().top+window.pageYOffset-190,behavior:"smooth"});
     }
 }
@@ -404,7 +404,7 @@ function renderCatalogo(full=false){
     const skeletonHtml = sc.map(c => {
         const id=`cat-${c.replace(/[^a-zA-Z0-9]/g,'-')}`;
         const gridId=`grid-${c.replace(/[^a-zA-Z0-9]/g,'-')}`;
-        return `<div id="${id}" class="lazy-cat-section" data-name="${c}"><div class="section-header"><div class="section-title">${formatText(c)}</div></div><div class="cat-grid" id="${gridId}"></div></div>`;
+        return `<div id="${id}" class="lazy-cat-section" data-name="${c.replace(/"/g, '&quot;')}"><div class="section-header"><div class="section-title">${formatText(c)}</div></div><div class="cat-grid" id="${gridId}"></div></div>`;
     }).join('');
     
     $('catalogo-content').innerHTML = skeletonHtml;
