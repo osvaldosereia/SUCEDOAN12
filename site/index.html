@@ -3,440 +3,585 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Super Cestas Dona Antônia - O melhor preço da região">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="description" content="Super Cestas Básicas Dona Antônia - Entrega Rápida">
+    <meta name="theme-color" content="#0f172a">
     <title>Super Cestas Dona Antônia</title>
     <style>
-        /* --- 1. RESET E OTIMIZAÇÃO (CRÍTICO PARA PERFORMANCE) --- */
+        /* --- 1. CONFIGURAÇÕES GERAIS E VARIÁVEIS --- */
         :root {
-            --primary: #ea1d2c; /* Cor estilo iFood */
-            --dark: #3e3e3e;
-            --gray: #717171;
-            --light: #f2f2f2;
+            --primary: #0f172a;    /* Azul Escuro (Tua marca) */
+            --accent: #ea580c;     /* Laranja (Ações) */
+            --bg: #f8fafc;         /* Fundo claro */
             --white: #ffffff;
-            --green: #2ecc71;
+            --border: #e2e8f0;
+            --text: #334155;
+            --green: #16a34a;      /* Sucesso */
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            --shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; outline: none; }
-        
+
         body {
             font-family: var(--font);
-            background: var(--light);
-            color: var(--dark);
-            height: 100dvh; /* Altura total do mobile moderna */
+            background: var(--bg);
+            color: var(--primary);
+            height: 100dvh; /* Altura exata da tela do celular */
             width: 100vw;
             overflow: hidden; /* O site não rola, só o conteúdo interno */
             display: grid;
-            grid-template-rows: auto auto 1fr auto; /* Header | Nav+Search | Carousel | Footer */
+            grid-template-rows: 60px auto 1fr auto; /* Header | Nav | Conteúdo | Footer */
         }
 
-        /* --- 2. HEADER (Top Bar) --- */
+        /* --- 2. HEADER (TOPO FIXO) --- */
         .header {
             background: var(--white);
-            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
             display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.05);
-            z-index: 10;
+            padding: 0 16px;
+            z-index: 20;
         }
         .brand { display: flex; align-items: center; gap: 10px; }
-        .logo { width: 40px; height: 40px; border-radius: 50%; background: var(--primary); object-fit: cover; }
-        .brand-txt { font-size: 0.9rem; font-weight: 700; line-height: 1.2; }
-        .btn-faq { background: none; border: 1px solid #ddd; border-radius: 50%; width: 32px; height: 32px; font-weight: bold; color: var(--gray); cursor: pointer; }
+        .logo { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+        .brand-name { font-size: 0.95rem; font-weight: 800; line-height: 1.1; color: var(--primary); }
+        
+        .header-actions { display: flex; gap: 10px; }
+        .btn-icon { 
+            width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+            background: var(--white); display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--text); cursor: pointer;
+        }
 
-        /* --- 3. NAVEGAÇÃO E BUSCA (Acima do carrossel) --- */
-        .nav-area {
+        /* --- 3. NAVEGAÇÃO E BUSCA --- */
+        .nav-section {
             background: var(--white);
             padding: 10px 0;
             display: flex; flex-direction: column; gap: 10px;
+            box-shadow: 0 4px 6px -4px rgba(0,0,0,0.05);
+            z-index: 10;
         }
-        
-        /* Menu Horizontal (Categorias) */
-        .cat-scroll {
-            display: flex; gap: 15px; overflow-x: auto; padding: 0 16px;
-            scrollbar-width: none; /* Firefox */
-        }
-        .cat-scroll::-webkit-scrollbar { display: none; }
-        
-        .cat-btn {
-            display: flex; flex-direction: column; align-items: center; gap: 5px;
-            background: none; border: none; opacity: 0.6; transition: 0.2s; cursor: pointer;
-        }
-        .cat-btn.active { opacity: 1; transform: scale(1.05); }
-        .cat-btn.active .cat-img { border-color: var(--primary); }
-        .cat-btn.active .cat-name { color: var(--primary); font-weight: 700; }
-        
-        .cat-img { width: 50px; height: 50px; border-radius: 50%; background: #eee; object-fit: cover; border: 2px solid transparent; }
-        .cat-name { font-size: 0.75rem; color: var(--dark); font-weight: 500; white-space: nowrap; }
 
-        /* Busca */
-        .search-box { padding: 0 16px; position: relative; }
+        /* Barra de Busca */
+        .search-container { padding: 0 16px; position: relative; }
         .search-input {
-            width: 100%; padding: 10px 15px 10px 35px;
-            background: #f7f7f7; border: none; border-radius: 8px;
-            font-size: 0.9rem; color: var(--dark);
+            width: 100%; padding: 10px 15px 10px 38px;
+            background: #f1f5f9; border: 1px solid var(--border); border-radius: 10px;
+            font-size: 0.9rem; color: var(--primary);
         }
-        .search-icon { position: absolute; left: 26px; top: 50%; transform: translateY(-50%); width: 14px; opacity: 0.5; }
+        .search-icon {
+            position: absolute; left: 28px; top: 50%; transform: translateY(-50%);
+            width: 16px; height: 16px; opacity: 0.5; pointer-events: none;
+        }
 
-        /* --- 4. ÁREA PRINCIPAL (CARROSSEL) --- */
-        .main-stage {
-            overflow-y: auto; /* Rolagem vertical se necessário */
+        /* Categorias (Scroll Horizontal) */
+        .cat-list {
+            display: flex; gap: 12px; padding: 0 16px;
+            overflow-x: auto; scrollbar-width: none;
+        }
+        .cat-list::-webkit-scrollbar { display: none; }
+
+        .cat-item {
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            min-width: 60px; cursor: pointer; opacity: 0.6; transition: 0.2s;
+        }
+        .cat-item.active { opacity: 1; transform: scale(1.05); }
+        .cat-circle {
+            width: 50px; height: 50px; border-radius: 50%; background: var(--white);
+            border: 2px solid var(--border); display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        .cat-item.active .cat-circle { border-color: var(--accent); }
+        .cat-item.active .cat-name { color: var(--accent); font-weight: 700; }
+        .cat-img { width: 100%; height: 100%; object-fit: cover; }
+        .cat-emoji { font-size: 1.5rem; }
+        .cat-name { font-size: 0.7rem; font-weight: 600; text-align: center; }
+
+        /* --- 4. ÁREA DE CONTEÚDO (SCROLLÁVEL) --- */
+        .main-content {
+            overflow-y: auto;
             overflow-x: hidden;
-            background: var(--light);
-            padding: 15px 0;
-            display: flex; flex-direction: column;
+            padding: 15px 16px 80px; /* Padding extra embaixo pro footer não cobrir */
+            background: var(--bg);
         }
-        
-        .section-title { padding: 0 16px 10px; font-size: 1rem; font-weight: 800; color: var(--dark); }
 
-        /* Carrossel iFood Style */
-        .carousel {
-            display: flex; gap: 12px; overflow-x: auto; padding: 0 16px 40px; /* Padding bottom extra p/ sombra */
-            scroll-behavior: smooth;
+        .section-header { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-end; }
+        .section-title { font-size: 1.1rem; font-weight: 800; color: var(--primary); text-transform: uppercase; }
+        .section-subtitle { font-size: 0.8rem; color: var(--text); }
+
+        /* Grid de Produtos (Responsivo) */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 colunas no mobile */
+            gap: 12px;
         }
-        .carousel::-webkit-scrollbar { display: none; }
 
-        /* Cards de Produto */
+        /* Card do Produto */
         .card {
-            flex: 0 0 140px; /* Largura fixa */
             background: var(--white);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 10px;
-            box-shadow: var(--shadow);
+            padding: 8px;
             display: flex; flex-direction: column;
             position: relative;
         }
-        .card-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 8px; margin-bottom: 8px; background: #eee; }
-        .card-validity { font-size: 0.65rem; color: #888; margin-bottom: 4px; display: block; }
-        .card-title { 
-            font-size: 0.85rem; font-weight: 600; line-height: 1.3; color: var(--dark);
-            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; /* Max 3 linhas */
-            margin-bottom: auto; /* Empurra preço p/ baixo */
-            height: 3.9em; /* Altura fixa para alinhar */
-        }
-        .card-price { font-size: 0.95rem; font-weight: 800; color: var(--green); margin: 8px 0; }
         
-        /* Botões de Controle (+ / -) */
-        .ctrl-box { 
-            display: flex; align-items: center; justify-content: space-between; 
-            background: #fff; border: 1px solid #eee; border-radius: 20px; height: 32px; overflow: hidden;
-        }
-        .btn-act { width: 30px; height: 100%; border: none; background: #fff; font-size: 1.2rem; color: var(--primary); font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .qtd-display { font-size: 0.9rem; font-weight: 600; }
-        .btn-add-start { width: 100%; height: 32px; border: none; background: var(--white); border: 1px solid #ddd; color: var(--gray); border-radius: 8px; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
-        
-        /* --- 5. BARRA INFERIOR (Footer) --- */
-        .footer-bar {
-            background: var(--white);
-            padding: 12px 16px;
-            border-top: 1px solid #eee;
-            display: flex; align-items: center; justify-content: space-between; gap: 15px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            z-index: 20;
-        }
-        .total-box { display: flex; flex-direction: column; }
-        .total-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; }
-        .total-val { font-size: 1.1rem; font-weight: 800; color: var(--dark); }
-        
-        .btn-cart {
-            background: var(--primary); color: white; border: none;
-            padding: 0 24px; height: 44px; border-radius: 8px;
-            font-weight: 700; font-size: 0.9rem;
-            flex-grow: 1; max-width: 200px;
+        .card-img-area { position: relative; width: 100%; aspect-ratio: 1/1; margin-bottom: 8px; }
+        .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .card-tag { 
+            position: absolute; top: 0; left: 0; background: var(--accent); color: white; 
+            font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;
         }
 
-        /* --- 6. MODAL (Cesta e Checkout) --- */
+        .card-info { flex-grow: 1; display: flex; flex-direction: column; }
+        .card-name { 
+            font-size: 0.85rem; font-weight: 600; color: var(--primary); line-height: 1.3;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+            margin-bottom: 4px; height: 3.9em;
+        }
+        .card-validity { font-size: 0.65rem; color: #94a3b8; margin-bottom: auto; }
+        .card-price { font-size: 1rem; font-weight: 800; color: var(--accent); margin: 8px 0; }
+
+        /* Controles de Quantidade */
+        .qty-control {
+            display: flex; height: 34px; border-radius: 8px; overflow: hidden;
+            border: 1px solid var(--border); background: #f8fafc;
+        }
+        .btn-qty { width: 32px; border: none; background: white; font-weight: bold; font-size: 1.1rem; color: var(--primary); }
+        .qty-val { flex-grow: 1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; }
+        
+        .btn-add {
+            width: 100%; height: 34px; border-radius: 8px; border: 1px solid var(--border);
+            background: white; color: var(--text); font-weight: 700; font-size: 0.8rem;
+        }
+        .btn-add.highlight { background: var(--primary); color: white; border: none; }
+
+        /* --- 5. RODAPÉ (CHECKOUT) --- */
+        .footer-checkout {
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            padding: 10px 16px;
+            display: flex; align-items: center; gap: 15px;
+            z-index: 30;
+        }
+        .footer-info { display: flex; flex-direction: column; flex-grow: 1; }
+        .footer-label { font-size: 0.7rem; font-weight: 700; color: var(--text); text-transform: uppercase; }
+        .footer-total { font-size: 1.2rem; font-weight: 900; color: var(--primary); }
+        
+        .btn-finish {
+            background: var(--green); color: white; border: none;
+            padding: 0 24px; height: 48px; border-radius: 10px;
+            font-weight: 800; font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(22,163,74,0.3);
+        }
+        
+        .btn-trash {
+            width: 40px; height: 40px; border-radius: 50%; background: #fee2e2;
+            color: #ef4444; border: none; font-size: 1.1rem; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* --- 6. MODAIS --- */
         dialog {
-            border: none; border-radius: 16px; padding: 0;
-            width: 90%; max-width: 400px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            border: none; border-radius: 16px; padding: 20px; width: 90%; max-width: 400px;
+            background: white; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
             margin: auto;
         }
-        dialog::backdrop { background: rgba(0,0,0,0.6); backdrop-filter: blur(2px); }
+        dialog::backdrop { background: rgba(15,23,42,0.8); backdrop-filter: blur(2px); }
         
-        .modal-header { padding: 15px; border-bottom: 1px solid #eee; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-        .btn-close { background: none; border: none; font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 5px; }
+        .modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 5px; text-align: center; }
+        .modal-desc { text-align: center; font-size: 0.9rem; color: var(--text); margin-bottom: 15px; }
         
-        .modal-body { padding: 20px 15px; max-height: 60vh; overflow-y: auto; }
-        
-        /* Carrossel dentro do Modal */
-        .cart-carousel { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; }
-        .cart-item { min-width: 80px; text-align: center; font-size: 0.8rem; }
-        .cart-img { width: 60px; height: 60px; border-radius: 8px; background: #eee; object-fit: cover; margin-bottom: 5px; }
+        /* Lista dentro do modal */
+        .modal-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-item { min-width: 80px; text-align: center; font-size: 0.75rem; border: 1px solid var(--border); padding: 5px; border-radius: 8px; }
+        .modal-img { width: 50px; height: 50px; object-fit: contain; margin-bottom: 5px; }
 
-        .form-group { margin-bottom: 15px; }
-        .form-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px; }
         
-        .btn-send { width: 100%; background: var(--green); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 10px; }
-        .btn-outline { width: 100%; background: white; color: var(--gray); border: 1px solid #ddd; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .btn-full { width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; border: none; margin-bottom: 8px; cursor: pointer; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
 
-        /* Estados utilitários */
+        /* Utilitários */
         .hidden { display: none !important; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text); }
     </style>
 </head>
 <body>
 
     <header class="header">
         <div class="brand">
-            <svg class="logo" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="50" fill="#ea1d2c"/>
-                <text x="50" y="65" font-size="40" text-anchor="middle" fill="white" font-weight="bold">D</text>
-            </svg>
-            <div class="brand-txt">Super Cestas<br>Dona Antônia</div>
+            <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzBmMTcyYSIvPjwvc3ZnPg=='">
+            <div class="brand-name">Super Cestas<br>Dona Antônia</div>
         </div>
-        <button class="btn-faq" onclick="APP.toggleFaq()">?</button>
+        <div class="header-actions">
+            <button class="btn-icon" onclick="document.getElementById('modal-faq').showModal()">?</button>
+            <a href="https://wa.me/5565996813588" target="_blank" class="btn-icon" style="background:#dcfce7; color:#15803d; border-color:#bbf7d0; text-decoration:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+            </a>
+        </div>
     </header>
 
-    <div class="nav-area">
-        <div class="search-box">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <input type="text" class="search-input" placeholder="Buscar item..." oninput="APP.search(this.value)">
+    <div class="nav-section">
+        <div class="search-container">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="search-input" class="search-input" placeholder="O que você procura hoje?" oninput="APP.handleSearch(this.value)">
         </div>
-        
-        <div class="cat-scroll" id="cat-list">
+        <div class="cat-list" id="cat-container">
             </div>
     </div>
 
-    <main class="main-stage">
-        <div class="section-title" id="page-title">Destaques</div>
-        <div class="carousel" id="prod-list">
+    <main class="main-content">
+        <div class="section-header">
+            <div class="section-title" id="page-title">Carregando...</div>
+            <div class="section-subtitle" id="page-subtitle"></div>
+        </div>
+        
+        <div id="products-container" class="products-grid">
             </div>
     </main>
 
-    <footer class="footer-bar">
-        <div class="total-box">
-            <span class="total-lbl">Total do Pedido</span>
-            <span class="total-val" id="total-val">R$ 0,00</span>
+    <footer class="footer-checkout">
+        <button class="btn-trash" onclick="APP.clearCart()">🗑️</button>
+        <div class="footer-info">
+            <span class="footer-label">Total do Pedido</span>
+            <span class="footer-total" id="total-display">R$ 0,00</span>
         </div>
-        <button class="btn-cart" onclick="APP.openCheckout()">VER CESTA</button>
+        <button class="btn-finish" onclick="APP.openCheckout()">
+            VER CESTA
+        </button>
     </footer>
 
+    <dialog id="modal-preview">
+        <h3 class="modal-title" id="preview-title">Cesta</h3>
+        <p class="modal-desc" id="preview-desc"></p>
+        <div class="modal-list" id="preview-list"></div>
+        <div class="modal-title" id="preview-price" style="color:var(--accent); font-size:1.4rem"></div>
+        <button class="btn-full btn-primary" onclick="APP.confirmBasket()">QUERO ESTA CESTA</button>
+        <button class="btn-full btn-outline" onclick="document.getElementById('modal-preview').close()">VOLTAR</button>
+    </dialog>
+
     <dialog id="modal-checkout">
-        <div class="modal-header">
-            <span>Sua Cesta</span>
-            <button class="btn-close" onclick="APP.closeModal()">×</button>
-        </div>
-        <div class="modal-body">
-            <div id="cart-preview" class="cart-carousel"></div>
-            <div id="cart-msg" style="text-align: center; color: #888; margin-bottom: 20px;">Cesta vazia</div>
+        <h3 class="modal-title">Finalizar Pedido</h3>
+        <div id="checkout-items" style="max-height:150px; overflow-y:auto; margin-bottom:15px; border-bottom:1px dashed var(--border)"></div>
+        
+        <input type="text" id="client-name" class="form-input" placeholder="Seu Nome Completo">
+        <select id="client-pay" class="form-input" style="background:white">
+            <option>PIX</option>
+            <option>Dinheiro</option>
+            <option>Cartão Crédito/Débito</option>
+        </select>
 
-            <div class="form-group">
-                <input type="text" id="client-name" class="form-input" placeholder="Seu Nome Completo">
-            </div>
-            <div class="form-group">
-                <input type="tel" id="client-phone" class="form-input" placeholder="Seu Telefone / WhatsApp">
-            </div>
-
-            <button class="btn-send" onclick="APP.sendOrder()">ENVIAR PEDIDO</button>
-            <button class="btn-outline" onclick="APP.closeModal()">Continuar Comprando</button>
-        </div>
+        <button class="btn-full btn-primary" onclick="APP.sendOrder()" style="background:var(--green)">ENVIAR NO WHATSAPP</button>
+        <button class="btn-full btn-outline" onclick="document.getElementById('modal-checkout').close()">CONTINUAR COMPRANDO</button>
     </dialog>
 
     <dialog id="modal-faq">
-        <div class="modal-header">
-            <span>Informações</span>
-            <button class="btn-close" onclick="document.getElementById('modal-faq').close()">×</button>
-        </div>
-        <div class="modal-body">
-            <p><strong>Entregas:</strong> Cuiabá e Várzea Grande.</p>
-            <p style="margin-top:10px"><strong>Pagamento:</strong> Aceitamos PIX, Dinheiro e Cartão na entrega.</p>
-        </div>
+        <h3 class="modal-title">Dúvidas</h3>
+        <p style="margin:10px 0"><strong>Entrega:</strong> Grátis para Cuiabá e Várzea Grande.</p>
+        <p style="margin-bottom:20px"><strong>Pagamento:</strong> Realizado na entrega.</p>
+        <button class="btn-full btn-primary" onclick="document.getElementById('modal-faq').close()">ENTENDI</button>
     </dialog>
 
 <script>
-/* DADOS SIMULADOS (MOCK) 
-   Para usar dados reais, substitua isso por um fetch() no APP.init()
-*/
-const DATA = [
-    { id: 1, nome: "Cesta Básica Econômica", preco: 150.00, cat: "Cestas", img: "https://via.placeholder.com/150/FFC107/000?text=Cesta+1", validade: "10/12/2026" },
-    { id: 2, nome: "Cesta Básica Família", preco: 280.00, cat: "Cestas", img: "https://via.placeholder.com/150/FFC107/000?text=Cesta+2", validade: "15/12/2026" },
-    { id: 3, nome: "Arroz Tio João 5kg", preco: 28.90, cat: "Alimentos", img: "https://via.placeholder.com/150/eee/333?text=Arroz", validade: "20/08/2026" },
-    { id: 4, nome: "Feijão Carioca 1kg", preco: 8.50, cat: "Alimentos", img: "https://via.placeholder.com/150/eee/333?text=Feijao", validade: "01/05/2026" },
-    { id: 5, nome: "Óleo de Soja 900ml", preco: 6.99, cat: "Alimentos", img: "https://via.placeholder.com/150/eee/333?text=Oleo", validade: "12/12/2027" },
-    { id: 6, nome: "Sabão em Pó 1kg", preco: 12.90, cat: "Limpeza", img: "https://via.placeholder.com/150/eee/333?text=Sabao", validade: "Indeterminada" },
-    { id: 7, nome: "Detergente Líquido", preco: 2.50, cat: "Limpeza", img: "https://via.placeholder.com/150/eee/333?text=Detergente", validade: "10/2026" }
-];
-
 const APP = {
-    cart: {}, // Armazena { id: quantidade }
-    activeCat: 'Todas',
-    
-    init() {
-        this.renderCats();
-        this.renderProds();
+    data: { prods: [], cestas: [] },
+    state: {
+        cart: {}, 
+        activeCat: 'Cestas Básicas',
+        basketMode: null, // Se user escolheu uma cesta fechada
+        previewId: null
+    },
+
+    async init() {
+        try {
+            // Tenta carregar os arquivos JSON locais
+            const [r1, r2] = await Promise.all([
+                fetch('produtos-cesta-basica.json').then(r => r.ok ? r.json() : []),
+                fetch('produtos.json').then(r => r.ok ? r.text() : '[]')
+            ]);
+
+            APP.data.cestas = r1;
+            
+            // Tratamento do produtos.json que as vezes vem com virgula no final
+            let txt = r2.trim().replace(/,(\s+)?$/, "");
+            const rawProds = JSON.parse(txt.startsWith('[') ? txt : '['+txt+']');
+            
+            APP.data.prods = rawProds
+                .filter(x => x.situacao === "A")
+                .map(p => ({
+                    id: String(p.id),
+                    name: p.nome,
+                    price: parseFloat(p.preco),
+                    cat: (p.categoria || "Outros").trim(),
+                    img: `img/produtos/${p.codigo || p.id}.webp`, // Caminho da imagem
+                    validity: p.validity || ''
+                }));
+
+            APP.renderCats();
+            APP.selectCat('Cestas Básicas');
+        } catch(e) {
+            console.error("Erro carregando dados", e);
+            document.getElementById('products-container').innerHTML = '<div class="empty-state">Erro ao carregar produtos.<br>Verifique os arquivos JSON.</div>';
+        }
     },
 
     // --- RENDERIZAÇÃO ---
     renderCats() {
-        const cats = ['Todas', ...new Set(DATA.map(p => p.cat))];
-        const html = cats.map(c => `
-            <button class="cat-btn ${c === this.activeCat ? 'active' : ''}" onclick="APP.setCat('${c}')">
-                <img src="https://via.placeholder.com/50?text=${c[0]}" class="cat-img">
-                <span class="cat-name">${c}</span>
-            </button>
-        `).join('');
-        document.getElementById('cat-list').innerHTML = html;
-    },
-
-    renderProds(filterText = '') {
-        const container = document.getElementById('prod-list');
-        container.innerHTML = '';
-
-        let list = DATA;
+        // Extrai categorias unicas
+        const cats = ['Minha Cesta', 'Cestas Básicas', ...new Set(APP.data.prods.map(p => p.cat))].filter(c => c);
         
-        // Filtro por Categoria
-        if(this.activeCat !== 'Todas') {
-            list = list.filter(p => p.cat === this.activeCat);
-        }
-        
-        // Filtro por Busca
-        if(filterText) {
-            const term = filterText.toLowerCase();
-            list = list.filter(p => p.nome.toLowerCase().includes(term));
-            document.getElementById('page-title').innerText = "Resultados da Busca";
-        } else {
-            document.getElementById('page-title').innerText = this.activeCat === 'Todas' ? 'Destaques' : this.activeCat;
-        }
-
-        if(list.length === 0) {
-            container.innerHTML = '<div style="padding:20px; text-align:center; color:#999; width:100%">Nenhum item encontrado</div>';
-            return;
-        }
-
-        container.innerHTML = list.map(p => {
-            const qtd = this.cart[p.id] || 0;
-            const btnHtml = qtd === 0 
-                ? `<button class="btn-add-start" onclick="APP.add(${p.id})">ADICIONAR</button>`
-                : `<div class="ctrl-box">
-                     <button class="btn-act" onclick="APP.remove(${p.id})">-</button>
-                     <span class="qtd-display">${qtd}</span>
-                     <button class="btn-act" onclick="APP.add(${p.id})">+</button>
-                   </div>`;
-
+        const html = cats.map(c => {
+            let icon = '📦';
+            if(c.includes('Cesta Básica')) icon = '🧺';
+            if(c.includes('Minha')) icon = '🛒';
+            
+            const isActive = c === APP.state.activeCat ? 'active' : '';
+            // Safe ID para o DOM
+            const safeId = c.replace(/[^a-zA-Z0-9]/g, '');
+            
             return `
-            <div class="card">
-                <img src="${p.img}" class="card-img" loading="lazy" alt="${p.nome}">
-                <span class="card-validity">Val: ${p.validade}</span>
-                <h3 class="card-title">${p.nome}</h3>
-                <div class="card-price">${this.fmt(p.preco)}</div>
-                <div id="action-${p.id}">${btnHtml}</div>
+            <div class="cat-item ${isActive}" onclick="APP.selectCat('${c}')" id="btn-${safeId}">
+                <div class="cat-circle"><span class="cat-emoji">${icon}</span></div>
+                <div class="cat-name">${c.replace('Cestas Básicas', 'Cestas')}</div>
             </div>`;
         }).join('');
+        
+        document.getElementById('cat-container').innerHTML = html;
+    },
+
+    selectCat(catName) {
+        APP.state.activeCat = catName;
+        
+        // Atualiza visual dos botoes
+        document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('active'));
+        const safeId = catName.replace(/[^a-zA-Z0-9]/g, '');
+        const btn = document.getElementById(`btn-${safeId}`);
+        if(btn) btn.classList.add('active');
+
+        document.getElementById('page-title').innerText = catName;
+        const container = document.getElementById('products-container');
+        container.innerHTML = '';
+
+        // Lógica de Renderização por Categoria
+        if(catName === 'Minha Cesta') {
+            const ids = Object.keys(APP.state.cart);
+            if(ids.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Sua cesta está vazia 😔</div>';
+            } else {
+                ids.forEach(id => {
+                    const p = APP.data.prods.find(x => x.id === id);
+                    if(p) container.innerHTML += APP.createCard(p);
+                });
+            }
+        } 
+        else if (catName === 'Cestas Básicas') {
+            // Renderiza as Cestas do JSON específico
+            if(APP.data.cestas.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Nenhuma cesta disponível.</div>';
+            } else {
+                container.innerHTML = APP.data.cestas.map(c => `
+                <div class="card">
+                    <div class="card-img-area">
+                        <img src="${c.imagem}" class="card-img" loading="lazy" onclick="APP.previewBasket('${c.id}')">
+                    </div>
+                    <div class="card-name">${c.nome}</div>
+                    <div class="card-price">${APP.fmt(c.preco)}</div>
+                    <button class="btn-add highlight" onclick="APP.previewBasket('${c.id}')">VER ITENS</button>
+                </div>`).join('');
+            }
+        } 
+        else {
+            // Produtos unitários
+            const list = APP.data.prods.filter(p => p.cat === catName);
+            if(list.length === 0) container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Sem produtos aqui.</div>';
+            else container.innerHTML = list.map(p => APP.createCard(p)).join('');
+        }
+    },
+
+    createCard(p) {
+        const qty = APP.state.cart[p.id] || 0;
+        
+        let btnHtml = '';
+        if(qty === 0) {
+            btnHtml = `<button class="btn-add" onclick="APP.upd('${p.id}', 1)">ADICIONAR</button>`;
+        } else {
+            btnHtml = `
+            <div class="qty-control">
+                <button class="btn-qty" onclick="APP.upd('${p.id}', -1)">-</button>
+                <div class="qty-val">${qty}</div>
+                <button class="btn-qty" onclick="APP.upd('${p.id}', 1)" style="color:var(--green)">+</button>
+            </div>`;
+        }
+
+        return `
+        <div class="card" id="card-${p.id}">
+            <div class="card-img-area">
+                <img src="${p.img}" class="card-img" loading="lazy" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1zaXplPSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iI2cbdjQ4YiI+TmVtIEltYWdlbTwvdGV4dD48L3N2Zz4='">
+                ${p.validity ? `<span class="card-tag">${p.validity}</span>` : ''}
+            </div>
+            <div class="card-info">
+                <div class="card-name">${p.name}</div>
+                <div class="card-price">${APP.fmt(p.price)}</div>
+                <div id="ctrl-${p.id}" style="margin-top:auto">${btnHtml}</div>
+            </div>
+        </div>`;
     },
 
     // --- AÇÕES ---
-    setCat(cat) {
-        this.activeCat = cat;
-        this.renderCats(); // Atualiza destaque do botão
-        this.renderProds();
-    },
+    upd(id, diff) {
+        const current = APP.state.cart[id] || 0;
+        const next = current + diff;
+        
+        if(next <= 0) delete APP.state.cart[id];
+        else APP.state.cart[id] = next;
 
-    search(val) {
-        this.renderProds(val);
-    },
-
-    add(id) {
-        if(!this.cart[id]) this.cart[id] = 0;
-        this.cart[id]++;
-        this.refreshCard(id);
-        this.updateTotal();
-    },
-
-    remove(id) {
-        if(this.cart[id]) {
-            this.cart[id]--;
-            if(this.cart[id] <= 0) delete this.cart[id];
-        }
-        this.refreshCard(id);
-        this.updateTotal();
-    },
-
-    // Atualiza apenas o botão do card específico (Performance)
-    refreshCard(id) {
-        const el = document.getElementById(`action-${id}`);
-        if(!el) return; // Item pode não estar visível na busca atual
-
-        const qtd = this.cart[id] || 0;
-        if(qtd === 0) {
-            el.innerHTML = `<button class="btn-add-start" onclick="APP.add(${id})">ADICIONAR</button>`;
+        // Se estivermos em "Minha Cesta", redesenhar tudo para remover o item visualmente
+        if(APP.state.activeCat === 'Minha Cesta' && next <= 0) {
+            APP.selectCat('Minha Cesta');
         } else {
-            el.innerHTML = `
-                <div class="ctrl-box">
-                    <button class="btn-act" onclick="APP.remove(${id})">-</button>
-                    <span class="qtd-display">${qtd}</span>
-                    <button class="btn-act" onclick="APP.add(${id})">+</button>
-                </div>`;
+            // Se não, atualiza só o card específico (Performance)
+            const p = APP.data.prods.find(x => x.id === id);
+            if(p) {
+                const ctrl = document.getElementById(`ctrl-${id}`);
+                if(ctrl) {
+                    if(next === 0) ctrl.innerHTML = `<button class="btn-add" onclick="APP.upd('${p.id}', 1)">ADICIONAR</button>`;
+                    else ctrl.innerHTML = `
+                    <div class="qty-control">
+                        <button class="btn-qty" onclick="APP.upd('${p.id}', -1)">-</button>
+                        <div class="qty-val">${next}</div>
+                        <button class="btn-qty" onclick="APP.upd('${p.id}', 1)" style="color:var(--green)">+</button>
+                    </div>`;
+                }
+            }
         }
+        APP.updateTotal();
     },
 
     updateTotal() {
         let total = 0;
-        for(let id in this.cart) {
-            const p = DATA.find(x => x.id == id);
-            if(p) total += p.preco * this.cart[id];
+        // Soma itens unitários
+        for(const [id, qty] of Object.entries(APP.state.cart)) {
+            const p = APP.data.prods.find(x => x.id === id);
+            if(p) total += p.price * qty;
         }
-        document.getElementById('total-val').innerText = this.fmt(total);
+        
+        // Se houver lógica de cesta fechada, pode ajustar aqui. 
+        // Assumindo que ao confirmar cesta, ela vira itens no carrinho (logica do teu codigo original)
+
+        APP.state.total = total;
+        document.getElementById('total-display').innerText = APP.fmt(total);
+    },
+
+    handleSearch(term) {
+        if(!term) return APP.selectCat(APP.state.activeCat);
+        
+        document.getElementById('page-title').innerText = "Busca";
+        document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('active'));
+        
+        const res = APP.data.prods.filter(p => p.name.toUpperCase().includes(term.toUpperCase()));
+        const container = document.getElementById('products-container');
+        
+        if(res.length === 0) container.innerHTML = '<div class="empty-state" style="grid-column:1/-1">Nada encontrado.</div>';
+        else container.innerHTML = res.map(p => APP.createCard(p)).join('');
+    },
+
+    // --- MODAL CESTA ---
+    previewBasket(id) {
+        const c = APP.data.cestas.find(x => String(x.id) === String(id));
+        if(!c) return;
+
+        APP.state.previewId = id;
+        document.getElementById('preview-title').innerText = c.nome;
+        document.getElementById('preview-desc').innerText = "Contém os seguintes itens:";
+        document.getElementById('preview-price').innerText = APP.fmt(c.preco);
+
+        // Gera lista visual dos itens da cesta
+        const html = c.produtos.map(str => {
+            const [qtd, ...rest] = str.split('x');
+            const nomeRef = rest.join('x').trim();
+            // Tenta achar imagem do produto correspondente
+            const p = APP.data.prods.find(x => x.name.includes(nomeRef) || x.id === nomeRef);
+            const img = p ? p.img : 'img/placeholder.png';
+            
+            return `
+            <div class="modal-item">
+                <img src="${img}" class="modal-img" onerror="this.style.display='none'">
+                <div style="font-weight:bold">${qtd}x</div>
+                <div style="height:2.4em; overflow:hidden; line-height:1.2">${nomeRef}</div>
+            </div>`;
+        }).join('');
+        
+        document.getElementById('preview-list').innerHTML = html;
+        document.getElementById('modal-preview').showModal();
+    },
+
+    confirmBasket() {
+        const c = APP.data.cestas.find(x => String(x.id) === String(APP.state.previewId));
+        if(c) {
+            APP.state.cart = {}; // Limpa carrinho anterior (Regra comum em vendas de cesta)
+            
+            // Converte lista de strings da cesta em itens no carrinho
+            c.produtos.forEach(str => {
+                const [qtdStr, ...rest] = str.split('x');
+                const nomeRef = rest.join('x').trim();
+                const p = APP.data.prods.find(x => x.name.includes(nomeRef) || x.id === nomeRef);
+                if(p) APP.state.cart[p.id] = parseInt(qtdStr);
+            });
+            
+            APP.state.basketMode = c;
+            APP.updateTotal();
+            APP.selectCat('Minha Cesta'); // Leva usuario pra cesta
+            document.getElementById('modal-preview').close();
+        }
+    },
+
+    clearCart() {
+        if(confirm("Esvaziar carrinho?")) {
+            APP.state.cart = {};
+            APP.state.basketMode = null;
+            APP.updateTotal();
+            APP.selectCat('Minha Cesta');
+        }
     },
 
     // --- CHECKOUT ---
     openCheckout() {
-        const modal = document.getElementById('modal-checkout');
-        const container = document.getElementById('cart-preview');
-        const msg = document.getElementById('cart-msg');
+        const ids = Object.keys(APP.state.cart);
+        if(ids.length === 0) return alert("Seu carrinho está vazio!");
+
+        const list = document.getElementById('checkout-items');
+        list.innerHTML = ids.map(id => {
+            const p = APP.data.prods.find(x => x.id === id);
+            const q = APP.state.cart[id];
+            return `<div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:0.9rem">
+                <span>${q}x ${p.name}</span>
+                <strong>${APP.fmt(p.price * q)}</strong>
+            </div>`;
+        }).join('');
         
-        container.innerHTML = '';
-        const ids = Object.keys(this.cart);
-
-        if(ids.length === 0) {
-            msg.style.display = 'block';
-            container.style.display = 'none';
-        } else {
-            msg.style.display = 'none';
-            container.style.display = 'flex';
-            container.innerHTML = ids.map(id => {
-                const p = DATA.find(x => x.id == id);
-                return `
-                <div class="cart-item">
-                    <img src="${p.img}" class="cart-img">
-                    <div>${this.cart[id]}x</div>
-                </div>`;
-            }).join('');
-        }
-        modal.showModal();
-    },
-
-    closeModal() {
-        document.getElementById('modal-checkout').close();
+        document.getElementById('modal-checkout').showModal();
     },
 
     sendOrder() {
         const name = document.getElementById('client-name').value;
-        if(!name || Object.keys(this.cart).length === 0) {
-            alert('Por favor, preencha seu nome e adicione itens.');
-            return;
-        }
+        const pay = document.getElementById('client-pay').value;
+        if(!name) return alert("Digite seu nome!");
 
-        let msg = `*NOVO PEDIDO - ${name}*\n------------------\n`;
-        let total = 0;
-        for(let id in this.cart) {
-            const p = DATA.find(x => x.id == id);
-            const sub = p.preco * this.cart[id];
-            total += sub;
-            msg += `${this.cart[id]}x ${p.nome}\n`;
-        }
-        msg += `------------------\n*TOTAL: ${this.fmt(total)}*`;
+        let msg = `*NOVO PEDIDO*\n👤 Cliente: ${name}\n💰 Pagamento: ${pay}\n\n*ITENS:*\n`;
+        
+        if(APP.state.basketMode) msg += `🧺 (Base: ${APP.state.basketMode.nome})\n`;
 
-        const phone = "5565996813588"; // Número do seu cliente
-        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        for(const [id, qty] of Object.entries(APP.state.cart)) {
+            const p = APP.data.prods.find(x => x.id === id);
+            msg += `${qty}x ${p.name}\n`;
+        }
+        
+        msg += `\n*TOTAL: ${APP.fmt(APP.state.total)}*`;
+        
+        const url = `https://wa.me/5565996813588?text=${encodeURIComponent(msg)}`;
+        window.location.href = url;
     },
 
-    toggleFaq() {
-        document.getElementById('modal-faq').showModal();
-    },
-
-    fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+    fmt(n) { return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 };
 
 APP.init();
