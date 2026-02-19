@@ -435,7 +435,11 @@ async function init(){
         renderMenu();
         $('modal-welcome').showModal();
         updateTotals(); 
-    }catch(e){$('main-carousel').innerHTML='<p style="padding:20px;text-align:center">Erro ao carregar dados.</p>';console.error(e)}
+    }catch(e){
+        $('main-carousel').innerHTML='<p style="padding:20px;text-align:center;color:red;font-weight:bold;">Erro fatal na leitura dos arquivos.<br>Veja o alerta na tela ou abra o F12.</p>';
+        alert("🚨 ERRO NO CARREGAMENTO DA LOJA 🚨\n\nErro exato gerado: " + e.message + "\n\nCOMO RESOLVER:\n1. Se o erro for 'Failed to fetch', significa que você abriu o arquivo HTML direto da pasta. É preciso subir na internet ou usar uma extensão Live Server para testar o sistema.\n2. Se o erro for 'Unexpected token', 'JSON', etc, significa que você modificou um dos arquivos .json e esqueceu de fechar aspas, ou botou/tirou uma vírgula no lugar errado.");
+        console.error("ERRO DO CÓDIGO", e);
+    }
 }
 
 function closeWelcome(targetCat){
