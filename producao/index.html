@@ -751,63 +751,83 @@
 
 
 
-        function exportarCSV() {
+       function exportarCSV() {
+    if (products.length === 0) return alert("Nada para exportar.");
+    
+    const produtosAtivos = products.filter(p => p.situacao !== 'I');
+    
+    if (produtosAtivos.length === 0) return alert("Nenhum produto ativo para exportar.");
+    
+    const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
+    
+    const dadosParaExportar = produtosAtivos.map(p => {
+        const linha = {};
+        const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
+        
+        // Preparação dos dados: formatando e preenchendo as chaves do objeto
+        p['Descrição'] = p.nome; 
+        p['Preço'] = fmt(p.preco); 
+        p['Preço de custo'] = fmt(p.preco_custo); 
+        p['Estoque'] = fmt(p.estoque);
+        p['Localização'] = p.localizacao; 
+        p['GTIN/EAN'] = p.gtin; 
+        p['URL Imagens Externas'] = ""; 
+        p['NCM'] = p.ncm; 
+        
+        // AJUSTE AQUI: Substituímos o valor literal pelas palavras completas
+        p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; 
+        
+        p['Categoria do produto'] = p.categoria;
+        p['Origem'] = '0'; 
+        p['Unidade'] = 'un'; 
+        p['Grupo de produtos'] = '';
+        
+        // Atribui os dados à linha final obedecendo o modelo de colunas
+        colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
+        return linha;
+    });
+    
+    const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
+    const l = document.createElement("a"); 
+    l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
+    l.download = "produtos_export_ativos.csv"; 
+    l.click();
+}
 
-            if (products.length === 0) return alert("Nada para exportar.");
-
-            const produtosAtivos = products.filter(p => p.situacao !== 'I');
-
-            if (produtosAtivos.length === 0) return alert("Nenhum produto ativo para exportar.");
-
-            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
-
-            const dadosParaExportar = produtosAtivos.map(p => {
-
-                const linha = {};
-
-                const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-
-                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque);
-
-                p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = ""; p['NCM'] = p.ncm; p['Situação'] = p.situacao; p['Categoria do produto'] = p.categoria;
-
-                p['Origem'] = '0'; p['Unidade'] = 'un'; p['Grupo de produtos'] = '';
-
-                colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
-
-                return linha;
-
-            });
-
-            const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
-
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-
-            l.download = "produtos_export_ativos.csv"; l.click();
-
-        }
-
-
-
-        function exportSingleCSV(sku) {
-
-            const p = products.find(x => x.codigo === sku);
-
-            if (!p) return;
-
-            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
-
-            const linha = {}; const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-
-            p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = ""; p['NCM'] = p.ncm; p['Situação'] = p.situacao; p['Categoria do produto'] = p.categoria; p['Origem'] = '0'; p['Unidade'] = 'un'; p['Grupo de produtos'] = '';
-
-            colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
-
-            const csv = Papa.unparse({ fields: colunasModelo, data: [linha] }, { quotes: true, delimiter: ";" });
-
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `produto_${sku}.csv`; l.click();
-
-        }
+function exportSingleCSV(sku) {
+    const p = products.find(x => x.codigo === sku);
+    if (!p) return;
+    
+    const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
+    
+    const linha = {}; 
+    const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
+    
+    p['Descrição'] = p.nome; 
+    p['Preço'] = fmt(p.preco); 
+    p['Preço de custo'] = fmt(p.preco_custo); 
+    p['Estoque'] = fmt(p.estoque); 
+    p['Localização'] = p.localizacao; 
+    p['GTIN/EAN'] = p.gtin; 
+    p['URL Imagens Externas'] = ""; 
+    p['NCM'] = p.ncm; 
+    
+    // AJUSTE AQUI: Aplicando a mesma regra na exportação unitária
+    p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; 
+    
+    p['Categoria do produto'] = p.categoria; 
+    p['Origem'] = '0'; 
+    p['Unidade'] = 'un'; 
+    p['Grupo de produtos'] = '';
+    
+    colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
+    
+    const csv = Papa.unparse({ fields: colunasModelo, data: [linha] }, { quotes: true, delimiter: ";" });
+    const l = document.createElement("a"); 
+    l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
+    l.download = `produto_${sku}.csv`; 
+    l.click();
+}
 
 
 
