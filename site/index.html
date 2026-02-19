@@ -158,7 +158,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .menu-area-wrapper{display:flex;flex-direction:column;gap:15px;padding:15px 20px 10px;border-bottom:1px solid #f1f5f9}
 
 .menu-scroll-area{
-    width:100%; overflow-x:auto; display:flex; gap:12px; align-items: flex-start;
+    width:100%; overflow-x:auto; display:flex; gap:8px; align-items: flex-start;
 }
 .menu-scroll-area::-webkit-scrollbar{display:none}
 
@@ -169,7 +169,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 .cat-img-ring{width:72px;height:72px;border-radius:50%;padding:2px;border:2px solid var(--c-bd);background:#fff;display:flex;align-items:center;justify-content:center;transition:border-color .2s}
 .cat-img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#f1f5f9}
-.cat-name{font-size:0.75rem;font-weight:600;color:var(--c-s);text-align:center;line-height:1.1;max-width:85px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.cat-name{font-size:0.7rem;font-weight:500;color:var(--c-s);text-align:center;line-height:1.1;max-width:85px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .cat-bubble[id*="__CART__"] .cat-img-ring { background: var(--c-p); border-color: var(--c-p); color:#fff; }
 
 /* SEARCH & FILTER ROW */
@@ -312,16 +312,14 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
 <dialog id="modal-welcome">
     <div class="welcome-container">
-        <h2 class="welcome-title">Olá! Como você quer fazer suas compras hoje?</h2>
+        <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Super Cestas Dona Antônia" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 3px solid #fff; margin-bottom: 40px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
         
         <button class="btn-welcome" onclick="closeWelcome('__CESTAS__')">
-            <h3 style="color:#ea580c">ESCOLHER UMA CESTA BÁSICA</h3>
-            <p>Se quiser pode trocar e adicionar produtos.</p>
+            <h3 style="color:#ea580c">CESTAS BÁSICAS PRONTAS</h3>
         </button>
         
         <button class="btn-welcome" onclick="closeWelcome('__OFFERS__')">
             <h3 style="color:#0f172a">MONTAR MINHA CESTA</h3>
-            <p>Você monta a sua cesta.</p>
         </button>
     </div>
 </dialog>
