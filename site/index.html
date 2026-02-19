@@ -333,7 +333,8 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         </div>
         <div style="margin-top:20px">
             <div style="font-size:1.8rem;font-weight:900;color:var(--c-a);margin-bottom:15px" id="prev-price"></div>
-            <button class="btn-modal primary" id="btn-confirm-preview">QUERO ESTA CESTA</button>
+            <button class="btn-modal primary" id="btn-confirm-preview">ENCOMENDAR CESTA PADRÃO</button>
+            <button class="btn-modal primary" id="btn-customize-preview" style="background:var(--c-a); display:none;">TROCAR PRODUTOS</button>
             <button class="btn-modal secondary" onclick="$('modal-basket-preview').close()">Voltar</button>
         </div>
     </div>
@@ -652,8 +653,15 @@ function previewBasket(id){
     }).join('');
     
     const btn = $('btn-confirm-preview');
-    btn.innerText = "QUERO ESTA CESTA";
-    btn.onclick = () => confirmBasket();
+    btn.innerText = "ENCOMENDAR CESTA PADRÃO";
+    btn.onclick = () => { confirmBasket(); openCheckout(); };
+    
+    const btnCust = $('btn-customize-preview');
+    if(btnCust) {
+        btnCust.style.display = 'block';
+        btnCust.innerText = "TROCAR PRODUTOS";
+        btnCust.onclick = () => confirmBasket();
+    }
     
     $('modal-basket-preview').showModal();
 }
@@ -678,6 +686,9 @@ function previewCombo(id){
     const btn = $('btn-confirm-preview');
     btn.innerText = "ADICIONAR COMBO AO CARRINHO";
     btn.onclick = () => confirmCombo(id);
+    
+    const btnCust = $('btn-customize-preview');
+    if(btnCust) btnCust.style.display = 'none';
     
     $('modal-basket-preview').showModal();
 }
