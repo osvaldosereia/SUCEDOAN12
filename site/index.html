@@ -315,7 +315,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <p>Já vem montada, prático e rápido.</p>
         </button>
         
-        <button class="btn-welcome" onclick="closeWelcome('🔥 OFERTAS')">
+        <button class="btn-welcome" onclick="closeWelcome('__OFFERS__')">
             <h3 style="color:#0f172a">Montar Minha Cesta</h3>
             <p>Vou escolher item por item.</p>
         </button>
@@ -399,9 +399,8 @@ const STATE={
     cart:{}, cartOrder:[], 
     activeCat:'__CESTAS__', 
     mode:'zero', 
-    baseBasket:null, 
-    minBasketPrice:0,  // Preço original da cesta escolhida
-    basketExtraFee:0,  // Valor Fixo das Despesas Extras (Preço da Cesta - Soma Inicial dos Produtos)
+    baseBasket:null, minBasketPrice:0, // Cesta Logic (Floor Price)
+    basketExtraFee:0, // Diferença Fixa enviada ao Make
     coupon:null,
     currentList: []
 };
@@ -438,19 +437,29 @@ function closeWelcome(targetCat){
     loadCategory(targetCat);
 }
 
-/* --- LOGIC --- */
+/* --- LOGIC MENU E CATEGORIAS DINAMICAS --- */
 function renderMenu(){
     const cats = {};
     STATE.prods.forEach(p=>{ if(!cats[p.cat])cats[p.cat]=[]; cats[p.cat].push(p) });
     let catKeys = Object.keys(cats).sort();
+    
+    // Categorias Dinâmicas
     const offers = STATE.prods.filter(p=>p.name.includes("**"));
-    if(offers.length){ cats["🔥 OFERTAS"]=offers; catKeys = ["🔥 OFERTAS", ...catKeys.filter(c=>c!=="🔥 OFERTAS")]; }
+    const under5 = STATE.prods.filter(p=>p.price <= 5.00);
+    const under10 = STATE.prods.filter(p=>p.price > 5.00 && p.price <= 10.00);
 
     const menuItems = [
         {key:'__CART__', name:'Minha Cesta', img:null}, 
-        {key:'__CESTAS__', name:'Cestas Básicas', img:'img/produtos/cesta.webp'},
-        ...catKeys.map(k=>({key:k, name:k, img:cats[k][0]?.img}))
+        {key:'__CESTAS__', name:'Cestas Básicas', img:'img/produtos/cesta.webp'}
     ];
+
+    if(offers.length) menuItems.push({key:'__OFFERS__', name:'🔥 Ofertas', img:offers[0].img});
+    if(under5.length) menuItems.push({key:'__UNDER_5__', name:'🟢 Até R$ 5,00', img:under5[0].img});
+    if(under10.length) menuItems.push({key:'__UNDER_10__', name:'🔵 Até R$ 10,00', img:under10[0].img});
+
+    catKeys.forEach(k=>{
+        menuItems.push({key:k, name:k, img:cats[k][0]?.img});
+    });
 
     $('menu-bubbles').innerHTML = menuItems.map(m=>{
         const idKey = m.key.replace(/\s/g,'-');
@@ -482,9 +491,20 @@ function loadCategory(key){
         STATE.currentList = STATE.cartOrder.map(id=>STATE.prods.find(p=>p.id===id)).filter(Boolean);
         renderChunked(STATE.currentList, 'PROD', true);
     }
+    else if(key === '__OFFERS__'){
+        STATE.currentList = STATE.prods.filter(p=>p.name.includes("**"));
+        applyFilter(); 
+    }
+    else if(key === '__UNDER_5__'){
+        STATE.currentList = STATE.prods.filter(p=>p.price <= 5.00);
+        applyFilter(); 
+    }
+    else if(key === '__UNDER_10__'){
+        STATE.currentList = STATE.prods.filter(p=>p.price > 5.00 && p.price <= 10.00);
+        applyFilter(); 
+    }
     else {
-        let items = STATE.prods.filter(p=> (key==="🔥 OFERTAS" ? p.name.includes("**") : p.cat === key));
-        STATE.currentList = items;
+        STATE.currentList = STATE.prods.filter(p=> p.cat === key);
         applyFilter(); 
     }
 }
@@ -499,14 +519,13 @@ function applyFilter(){
     if(type === 'az') list.sort((a,b)=>a.name.localeCompare(b.name));
     
     if(type === 'def') list.sort((a,b)=>{
-        const fa=a.name.includes('***'), fb=b.name.includes('***');
+        const fa=a.name.includes('**'), fb=b.name.includes('**');
         return fa===fb ? 0 : fa ? -1 : 1;
     });
 
     renderChunked(list, 'PROD', true);
 }
 
-// BUG DO SCROLL INFINITO CORRIGIDO (Removemos chunks/slices e renderizamos tudo direto com segurança)
 function renderChunked(list, type, reset){
     const carousel = $('main-carousel');
     if(reset) carousel.innerHTML = '';
