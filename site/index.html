@@ -26,8 +26,9 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .logo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
 .brand-txt{font-size:.9rem;font-weight:800;line-height:1.1}
 .header-actions{display:flex;gap:10px}
-.btn-icon{width:40px;height:40px;border-radius:50%;background:#f1f5f9;color:var(--c-s);display:flex;align-items:center;justify-content:center;transition:.2s}
-.btn-icon:hover{background:#e2e8f0;color:var(--c-p)}
+/* Botão Informações estilo Pill */
+.btn-info-pill{background:#f1f5f9;color:var(--c-p);padding:8px 16px;border-radius:20px;font-size:0.8rem;font-weight:700;border:1px solid var(--c-bd);transition:.2s}
+.btn-info-pill:hover{background:#e2e8f0}
 
 /* --- PALCO CENTRAL (CARROUSEL) --- */
 .main-stage{
@@ -85,10 +86,15 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:8px}
 .u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal}
 
+/* ETIQUETA OFERTA */
+.offer-tag{position:absolute;bottom:0;left:0;background:#dc2626;color:#fff;font-size:0.7rem;padding:4px 10px;border-top-right-radius:12px;font-weight:800;z-index:5;box-shadow:2px -2px 5px rgba(0,0,0,0.1)}
+
 .u-info{padding:10px;display:flex;flex-direction:column;gap:6px;flex:1}
 .u-tag{position:absolute;top:8px;left:8px;background:#fff;padding:2px 6px;border-radius:6px;font-size:0.65rem;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,0.1);z-index:2}
 .u-name{
-    font-size:0.85rem;font-weight:700;color:var(--c-p);line-height:1.2;
+    font-size:0.95rem; /* Aumentado */
+    font-weight:500; /* Mais leve */
+    color:var(--c-p);line-height:1.3;
     display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
     min-height:3.6em;
 }
@@ -125,7 +131,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     width:100%; overflow-x:auto;
     padding:12px 20px 6px;
     border-bottom:1px solid #f1f5f9;
-    display:flex; gap:10px; /* Gap reduzido */
+    display:flex; gap:10px;
     align-items: flex-start;
 }
 .menu-scroll-area::-webkit-scrollbar{display:none}
@@ -141,7 +147,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* Nome da categoria ajustado */
 .cat-name{
     font-size:0.75rem;
-    font-weight:500; /* Mais leve */
+    font-weight:500;
     color:var(--c-s);
     text-align:center;
     line-height:1.1;
@@ -223,8 +229,9 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
 
 /* Image Zoom Modal */
 #modal-image-zoom{background:transparent;box-shadow:none;max-width:100vw;max-height:100vh}
-#modal-image-zoom .modal-body{padding:0;display:flex;align-items:center;justify-content:center;height:100vh;width:100vw;background:rgba(0,0,0,0.8)}
+#modal-image-zoom .modal-body{padding:0;display:flex;align-items:center;justify-content:center;height:100vh;width:100vw;background:rgba(0,0,0,0.8);position:relative}
 #zoom-img{max-width:95%;max-height:85%;border-radius:12px}
+.btn-close-zoom{position:absolute;top:20px;right:20px;width:40px;height:40px;background:#fff;border-radius:50%;color:var(--c-p);font-weight:800;font-size:1.2rem;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:2010;display:flex;align-items:center;justify-content:center}
 
 </style>
 </head>
@@ -236,9 +243,7 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
         <div class="brand-txt">Super Cestas<br>Dona Antônia</div>
     </div>
     <div class="header-actions">
-        <button class="btn-icon" onclick="$('modal-faq').showModal()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-        </button>
+        <button class="btn-info-pill" onclick="$('modal-faq').showModal()">INFORMAÇÕES</button>
     </div>
 </header>
 
@@ -261,7 +266,7 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
 
     <div class="checkout-bar">
         <div class="total-info">
-            <span class="lbl-total" id="lbl-total-type">Total Estimado</span>
+            <span class="lbl-total" id="lbl-total-type">Total</span>
             <span class="val-total" id="val-total">R$ 0,00</span>
         </div>
         <button class="btn-checkout" onclick="openCheckout()">
@@ -323,7 +328,12 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
     </div>
 </dialog>
 
-<dialog id="modal-image-zoom" onclick="this.close()"><div class="modal-body"><img id="zoom-img" src=""></div></dialog>
+<dialog id="modal-image-zoom" onclick="if(event.target===this)this.close()">
+    <div class="modal-body">
+        <button class="btn-close-zoom" onclick="this.closest('dialog').close()">✕</button>
+        <img id="zoom-img" src="">
+    </div>
+</dialog>
 
 <dialog id="modal-faq" onclick="if(event.target===this)this.close()">
     <div class="modal-body">
@@ -412,7 +422,8 @@ function renderMenu(){
     STATE.prods.forEach(p=>{ if(!cats[p.cat])cats[p.cat]=[]; cats[p.cat].push(p) });
     let catKeys = Object.keys(cats).sort();
     
-    const offers = STATE.prods.filter(p=>p.name.toUpperCase().includes("OFERTA"));
+    // Ofertas detectadas por asteriscos
+    const offers = STATE.prods.filter(p=>p.name.includes("**"));
     if(offers.length){ cats["🔥 OFERTAS"]=offers; catKeys = ["🔥 OFERTAS", ...catKeys.filter(c=>c!=="🔥 OFERTAS")]; }
 
     // Lista unificada rolável
@@ -463,7 +474,7 @@ function loadCategory(key){
         renderCards(items, 'PROD');
     }
     else {
-        const items = STATE.prods.filter(p=> (key==="🔥 OFERTAS" ? p.name.toUpperCase().includes("OFERTA") : p.cat === key));
+        const items = STATE.prods.filter(p=> (key==="🔥 OFERTAS" ? p.name.includes("**") : p.cat === key));
         items.sort((a,b)=>{
             const fa=a.name.includes('***'), fb=b.name.includes('***');
             return fa===fb ? 0 : fa ? -1 : 1;
@@ -495,11 +506,16 @@ function renderCards(list, type){
                 ? `<div class="qty-row"><button class="btn-qty" onclick="upd('${item.id}',-1)">-</button><span class="qty-val qty-${item.id}">${q}</span><button class="btn-qty" onclick="upd('${item.id}',1)" style="color:var(--c-ok)">+</button></div>`
                 : `<button class="btn-big-action ${item.stock<=0?'disabled':''}" onclick="upd('${item.id}',1)" ${item.stock<=0?'disabled':''}>${item.stock<=0?'ESGOTADO':'ADICIONAR'}</button>`;
             
+            // Lógica Oferta
+            const isOffer = item.name.includes("**");
+            const offerLabel = isOffer ? '<div class="offer-tag">OFERTA</div>' : '';
+
             return `
             <div class="u-card">
                 <div class="u-img-area">
                     <img src="${item.img}" class="u-img" loading="lazy" onclick="zoom('${item.img}')">
                     ${item.val ? `<div class="u-tag">Val: ${item.val}</div>` : ''}
+                    ${offerLabel}
                 </div>
                 <div class="u-info">
                     <div class="u-name">${formatName(item.name)}</div>
@@ -739,9 +755,10 @@ async function sendOrder(){
 
 function formatName(s){
     if(!s) return '';
-    let clean = s.replace(/\*\*\*(.*?)\*\*\*/g, '$1').toLowerCase();
+    // Remove palavras entre ** **
+    let clean = s.replace(/\*\*(.*?)\*\*/g, '').replace(/\s+/g, ' ').trim();
     // Lógica 3 letras minusculas
-    return clean.split(' ').map(w => {
+    return clean.toLowerCase().split(' ').map(w => {
         return w.length <= 3 ? w : w.charAt(0).toUpperCase() + w.slice(1);
     }).join(' ');
 }
