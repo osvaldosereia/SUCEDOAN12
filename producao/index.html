@@ -120,6 +120,13 @@
         .btn-icon { padding: 4px; border-radius: 4px; border: 1px solid var(--border); background: white; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; }
         .btn-icon:hover { background: var(--bg-body); color: var(--accent); border-color: var(--accent); }
         .btn-icon.del:hover { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
+
+        /* Estilos Novos: Visualização em Lista */
+        .list-row { display: grid; grid-template-columns: 80px 1fr 120px 80px 80px; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 12px; transition: 0.2s; border-left: 3px solid transparent; }
+        .list-row:hover { background: #f1f5f9; border-left-color: var(--accent); }
+        .list-header { font-weight: bold; background: #e2e8f0; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-left: 3px solid transparent; cursor: default; }
+        .list-header:hover { background: #e2e8f0; border-left-color: transparent; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); margin-top: 50px; }
     </style>
 </head>
 <body>
@@ -152,13 +159,14 @@
                 <button class="nav-btn" onclick="createNewProduct()" style="margin-left:5px; background:#dcfce7; border-color:#86efac; color:#166534;"><i data-lucide="plus-square" size="14"></i> NOVO PRODUTO</button>
             </div>
             <div style="display:flex; gap:5px; align-items:center; margin-left:15px;">
-                <select id="filter-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value)">
+                <select id="filter-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value, true)">
                     <option value="all">Todos</option>
+                    <option value="ofertas">Em Oferta</option>
                     <option value="validity60">Vence < 60 dias</option>
                     <option value="errors">Erros de Cadastro (GTIN/NCM/Preço)</option>
                     <option value="margin_error">Preço Venda <= Custo</option>
                 </select>
-                <select id="sort-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value)">
+                <select id="sort-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value, true)">
                     <option value="gondola">Gôndola (Agrupado)</option>
                     <option value="name">Nome (A-Z)</option>
                     <option value="validity">Validade (Próxima)</option>
@@ -182,6 +190,13 @@
             <div id="total-count">0</div>
         </div>
         <div class="product-grid" id="product-grid"></div>
+    </div>
+
+    <div id="modal-product-card" class="modal-overlay">
+        <div class="modal-card" style="width: 380px; max-height: 95vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="modal-header"><span>Editar Produto</span><button class="close-btn" onclick="closeModal('modal-product-card')"><i data-lucide="x"></i></button></div>
+            <div class="modal-body" id="product-card-container" style="padding: 15px; background: #f1f5f9; overflow-y: auto; flex-grow: 1; display: flex; justify-content: center;"></div>
+        </div>
     </div>
 
     <div id="modal-login" class="modal-overlay">
@@ -299,7 +314,7 @@
             loadCategoriesFromGithub();
             setupEditorEvents();
             // Implementação do debounce (300ms de espera)
-            document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value), 300));
+            document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value, true), 300));
         };
 
         function showSection(id, btn) {
@@ -351,7 +366,7 @@
                         localStorage.removeItem(STORAGE_KEY);
                         products = novos; 
                         saveData(); 
-                        renderGrid(); 
+                        renderGrid("", false); 
                         alert("Base de dados substituída com sucesso pelo novo CSV!");
                     }
                     toggleLoader(false);
@@ -456,7 +471,7 @@
                 document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user;
                 document.getElementById('cfg-repo').value = cfg.repo; document.getElementById('cfg-path').value = cfg.path;
             }
-            renderGrid();
+            renderGrid("", false);
         }
 
         async function loadCategoriesFromGithub() {
@@ -470,7 +485,7 @@
                     const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
                     availableCategories = JSON.parse(decodedStr);
                     availableCategories.sort((a,b) => a.localeCompare(b));
-                    renderGrid(document.getElementById('search-input').value);
+                    renderGrid(document.getElementById('search-input').value, false);
                 }
             } catch(e) { console.error("Erro ao carregar categorias:", e); }
         }
@@ -500,7 +515,7 @@
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 if(!res.ok) throw new Error(await res.text());
                 input.value = ""; alert("Categoria criada com sucesso!");
-                renderGrid(document.getElementById('search-input').value);
+                renderGrid(document.getElementById('search-input').value, true);
             } catch(err) { alert("Erro GitHub: " + err.message); availableCategories = availableCategories.filter(c => c !== newCat); } finally { toggleLoader(false); }
         }
         
@@ -532,8 +547,7 @@
             if(!confirm(`Tem certeza que deseja apagar a categoria "${cat}"?`)) return;
             availableCategories = availableCategories.filter(c => c !== cat);
             renderCategoryManager();
-            // Atualiza grid de fundo para refletir mudança (mas não salva no git ainda)
-            renderGrid(document.getElementById('search-input').value);
+            renderGrid(document.getElementById('search-input').value, true);
         }
 
         function editCategory(oldName) {
@@ -545,7 +559,6 @@
                 const idx = availableCategories.indexOf(oldName);
                 if(idx !== -1) availableCategories[idx] = upperName;
                 
-                // Atualiza produtos que tinham a categoria antiga
                 let count = 0;
                 products.forEach(p => {
                     if(p.categoria === oldName || p['Categoria do produto'] === oldName) {
@@ -558,7 +571,7 @@
                 if(count > 0) saveData();
                 
                 renderCategoryManager();
-                renderGrid(document.getElementById('search-input').value);
+                renderGrid(document.getElementById('search-input').value, true);
             }
         }
 
@@ -597,15 +610,11 @@
             }
         }
         
-        // --- FUNÇÕES DE CÁLCULO DE EAN-13 (CORREÇÃO MATEMÁTICA) ---
         function calculateEanCheckDigit(code12) {
             if(code12.length !== 12) return '0';
             let sum = 0;
-            // EAN-13 checksum algorithm
             for(let i = 0; i < 12; i++) {
                 const digit = parseInt(code12[i]);
-                // Posições ímpares (índice 0, 2...) peso 1
-                // Posições pares (índice 1, 3...) peso 3
                 if(i % 2 === 0) sum += digit * 1;
                 else sum += digit * 3;
             }
@@ -614,16 +623,12 @@
             return checkDigit.toString();
         }
 
-        // --- FUNÇÕES DE NOVO PRODUTO E CÓDIGO INTERNO ---
         function createNewProduct() {
             const timestamp = Date.now().toString();
-            const sku = timestamp.slice(-8); // SKU numérico baseado em tempo
+            const sku = timestamp.slice(-8); 
             
-            // Gera base de 12 dígitos começando com '2'
             const baseEan = "2" + timestamp.slice(-11);
-            // Calcula dígito verificador
             const checkDigit = calculateEanCheckDigit(baseEan);
-            // EAN Final (13 dígitos)
             const internalEan = baseEan + checkDigit;
             
             const newProd = {
@@ -642,7 +647,6 @@
                 formato: 'S',
                 _changed: true,
                 _lastChange: "Criação Manual",
-                // Campos de compatibilidade
                 'Código': sku,
                 'Descrição': "NOVO PRODUTO",
                 'Preço': 0,
@@ -654,11 +658,10 @@
                 'GTIN/EAN': internalEan
             };
             
-            products.unshift(newProd); // Adiciona no início da lista
+            products.unshift(newProd); 
             saveData();
-            renderGrid();
+            renderGrid(document.getElementById('search-input').value, true);
             alert("Produto criado com código: " + sku + " e EAN: " + internalEan);
-            // Scroll para o topo onde está o novo produto
             document.getElementById('product-grid').scrollTop = 0;
         }
 
@@ -673,9 +676,7 @@
             const checkDigit = calculateEanCheckDigit(baseEan);
             const internalEan = baseEan + checkDigit;
             
-            // Clone object
             const newProd = JSON.parse(JSON.stringify(p));
-            // Reset identifiers
             newProd.codigo = newSku;
             newProd['Código'] = newSku;
             newProd.gtin = internalEan;
@@ -686,15 +687,17 @@
             newProd['Situação'] = 'A';
             newProd._changed = true;
             newProd._lastChange = "Duplicação Manual";
-            // Remove IDs if they exist
             delete newProd.id;
             delete newProd['ID'];
 
             products.unshift(newProd);
             saveData();
-            renderGrid();
+            renderGrid(document.getElementById('search-input').value, true);
             alert("Produto duplicado! Novo SKU: " + newSku);
             document.getElementById('product-grid').scrollTop = 0;
+            
+            // Fecha modal caso estivesse aberto no produto antigo
+            closeModal('modal-product-card');
         }
 
         function generateInternalEan(sku) {
@@ -702,28 +705,23 @@
             if(!p) return;
             const timestamp = Date.now().toString();
             
-            // Gera base de 12 dígitos começando com '2'
             const baseEan = "2" + timestamp.slice(-11);
-            // Calcula dígito verificador
             const checkDigit = calculateEanCheckDigit(baseEan);
-            // EAN Final (13 dígitos)
             const internalEan = baseEan + checkDigit;
 
             updateProduct(sku, 'gtin', internalEan);
-            // Atualiza o input visualmente
-            const card = document.getElementById('card-' + sku);
-            if(card) {
-                const input = card.querySelector('.card-input-small');
-                if(input) input.value = internalEan;
-                // Re-renderizar o card para mostrar os botões corretos
-                renderGrid(document.getElementById('search-input').value);
+            
+            // Se o card estiver aberto no modal, recria ele visualmente
+            const container = document.getElementById('product-card-container');
+            if (container.querySelector('#card-' + sku)) {
+                openProductModal(sku); 
             }
         }
         
         function printBarcode50mm(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            const code = p.gtin || p.codigo; // Usa GTIN se tiver, senão SKU
+            const code = p.gtin || p.codigo; 
             
             const w = window.open('', '', 'width=900,height=600');
             w.document.write(`
@@ -789,11 +787,60 @@
             return null;
         }
 
-        function renderGrid(filter = "") {
+        function openProductModal(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            const container = document.getElementById('product-card-container');
+            container.innerHTML = '';
+            
+            const cardElement = createCard(p);
+            // Garante que o card ocupe o espaço correto dentro do modal
+            cardElement.style.width = '100%';
+            cardElement.style.maxWidth = '320px'; 
+            
+            container.appendChild(cardElement);
+            lucide.createIcons();
+            openModal('modal-product-card');
+        }
+
+        function createListRow(p) {
+            const isInactive = p.situacao === 'I';
+            const row = document.createElement('div');
+            row.className = `list-row`;
+            if (p._changed) row.style.borderLeftColor = "var(--warning)";
+            if (isInactive) row.style.opacity = "0.5";
+            
+            row.innerHTML = `
+                <div style="font-weight:bold; color:var(--text-secondary);">${p.codigo}</div>
+                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.nome}">${p.nome}</div>
+                <div style="color:var(--text-secondary); font-size:10px;">${p.gtin || '-'}</div>
+                <div style="text-align:right;">${formatNum(p.estoque)}</div>
+                <div style="text-align:right; font-weight:bold; color:var(--success);">${formatNum(p.preco)}</div>
+            `;
+            // Ao clicar na linha, abre o card completo
+            row.onclick = () => openProductModal(p.codigo);
+            return row;
+        }
+
+        function renderGrid(filter = "", forceShow = false) {
             const gridContainer = document.getElementById('product-grid');
             gridContainer.innerHTML = "";
             const filterMode = document.getElementById('filter-select').value;
             const sortMode = document.getElementById('sort-select').value;
+            
+            // LAZY RENDERING: Não renderiza milhares de produtos ao iniciar o sistema
+            if (!filter && filterMode === 'all' && !forceShow) {
+                gridContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="search" size="48" style="opacity:0.3; margin-bottom:15px;"></i>
+                        <h3>Encontre Produtos</h3>
+                        <p style="font-size:12px; margin-top:5px;">Digite o nome, código ou EAN na barra de busca para listar os produtos.</p>
+                    </div>`;
+                lucide.createIcons();
+                document.getElementById('total-count').innerText = "0 PRODUTOS";
+                return;
+            }
+
             let filtered = products;
             if(filter) {
                 const term = filter.toLowerCase();
@@ -806,6 +853,8 @@
                 filtered = filtered.filter(p => !p.gtin || !p.ncm || !p.preco || p.preco === 0);
             } else if (filterMode === 'margin_error') {
                 filtered = filtered.filter(p => (p.preco || 0) <= (p.preco_custo || 0));
+            } else if (filterMode === 'ofertas') {
+                filtered = filtered.filter(p => (p.nome||"").startsWith("OFERTA -"));
             }
             
             if(sortMode === 'name') { filtered.sort((a,b) => a.nome.localeCompare(b.nome)); }
@@ -824,11 +873,28 @@
             }
             
             document.getElementById('total-count').innerText = filtered.length + " PRODUTOS";
+
+            const buildList = (items, container) => {
+                const header = document.createElement('div');
+                header.className = 'list-row list-header';
+                header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>EAN</div><div style="text-align:right;">ESTOQUE</div><div style="text-align:right;">PREÇO (R$)</div>`;
+                container.appendChild(header);
+                
+                const subGrid = document.createElement('div'); 
+                subGrid.className = 'category-items-container';
+                subGrid.style.display = 'flex';
+                subGrid.style.flexDirection = 'column';
+                subGrid.style.gap = '0';
+                
+                items.forEach(p => { subGrid.appendChild(createListRow(p)); });
+                container.appendChild(subGrid);
+            };
+
             if(sortMode !== 'gondola') {
-                const subGrid = document.createElement('div'); subGrid.className = 'category-items-container';
-                filtered.forEach(p => subGrid.appendChild(createCard(p)));
-                gridContainer.appendChild(subGrid); lucide.createIcons(); return;
+                buildList(filtered, gridContainer);
+                lucide.createIcons(); return;
             }
+
             const gruposParaRenderizar = [...GONDOLAS, SEM_LOCAL];
             gruposParaRenderizar.forEach(gondolaNome => {
                 let prodsDaSecao;
@@ -838,12 +904,11 @@
                     prodsDaSecao = filtered.filter(p => { if(!p.localizacao) return false; const parts = p.localizacao.split('-'); return parts[0] === gondolaNome; });
                 }
                 if(prodsDaSecao.length === 0) return;
-                const header = document.createElement('div'); header.className = 'category-header';
-                header.innerText = gondolaNome === SEM_LOCAL ? "SEM LOCALIZAÇÃO / OUTROS" : `GÔNDOLA ${gondolaNome}`;
-                gridContainer.appendChild(header);
-                const subGrid = document.createElement('div'); subGrid.className = 'category-items-container';
-                prodsDaSecao.forEach(p => { subGrid.appendChild(createCard(p)); });
-                gridContainer.appendChild(subGrid);
+                const headerTitle = document.createElement('div'); headerTitle.className = 'category-header';
+                headerTitle.innerText = gondolaNome === SEM_LOCAL ? "SEM LOCALIZAÇÃO / OUTROS" : `GÔNDOLA ${gondolaNome}`;
+                gridContainer.appendChild(headerTitle);
+                
+                buildList(prodsDaSecao, gridContainer);
             });
             lucide.createIcons();
         }
@@ -868,7 +933,6 @@
                 if(markup < 20) lucroClass = "color: #dc2626;"; else if(markup > 40) lucroClass = "color: #16a34a;";
             }
             
-            // Lógica dos botões EAN
             const hasEan = p.gtin && p.gtin.length > 0;
             const searchBtn = `<button class="btn-mini-action" onclick="searchGoogle('${p.gtin || p.nome}')" title="Pesquisar"><i data-lucide="search" size="12"></i> BUSCAR</button>`;
             const printBtn = `<button class="btn-mini-action" onclick="printBarcode50mm('${p.codigo}')" title="Imprimir 50mm"><i data-lucide="printer" size="12"></i> IMPRIMIR</button>`;
@@ -1039,7 +1103,7 @@
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
             const newState = p.situacao === 'I' ? 'A' : 'I'; p.situacao = newState; p['Situação'] = newState; p._changed = true; saveData();
-            renderGrid();
+            renderGrid(document.getElementById('search-input').value, true);
         }
         
         function toggleOffer(sku) {
@@ -1047,7 +1111,15 @@
             if(!p) return;
             p.nome = p.nome.startsWith("OFERTA - ") ? p.nome.replace("OFERTA - ", "") : "OFERTA - " + p.nome;
             p['Descrição'] = p.nome; p._changed = true; saveData();
-            renderGrid(document.getElementById('search-input').value);
+            
+            // Força a atualização da lista ao fundo
+            renderGrid(document.getElementById('search-input').value, true);
+            
+            // Se o card estiver aberto no modal, recria ele visualmente
+            const container = document.getElementById('product-card-container');
+            if (container.querySelector('#card-' + sku)) {
+                openProductModal(sku); 
+            }
         }
 
         function formatNum(n) { return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'; }
@@ -1058,7 +1130,13 @@
             else document.getElementById('login-error').style.display = 'block';
         }
 
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function closeModal(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            // Atualiza a visualização em lista no fundo se estiver fechando o modal do produto
+            if(id === 'modal-product-card') {
+                renderGrid(document.getElementById('search-input').value, true);
+            }
+        }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 
         function openDetails(sku) {
@@ -1090,7 +1168,8 @@
                 if(p[k] != val) { p[k] = val; changed = true; }
             });
             if(changed) { 
-                p._changed = true; saveData(); renderGrid(); 
+                p._changed = true; saveData(); 
+                renderGrid(document.getElementById('search-input').value, true); 
                 setTimeout(() => { const card = document.getElementById('card-' + p.codigo); if(card) { card.scrollIntoView({behavior: 'smooth', block: 'center'}); card.classList.add('status-changed'); } }, 100);
             }
             closeModal('modal-details');
@@ -1115,7 +1194,7 @@
                 const novoLink = `../site/img/produtos/${p.codigo}.webp?v=${Date.now()}`;
                 if(p.url_imagem !== novoLink) { p.url_imagem = novoLink; p._changed = true; count++; }
             });
-            saveData(); renderGrid(); alert(`${count} produtos atualizados para o padrão do site!`);
+            saveData(); renderGrid(document.getElementById('search-input').value, true); alert(`${count} produtos atualizados para o padrão do site!`);
         }
 
         function openEditor(sku) {
