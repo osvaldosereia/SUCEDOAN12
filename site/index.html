@@ -41,8 +41,8 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .btn-info-pill:hover{background:#e2e8f0;border-color:var(--c-p)}
 
 /* PALCO CENTRAL */
-.main-stage{flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;overflow:hidden;background:var(--c-bg)}
-.stage-limiter {width:100%;max-width:1200px;height:100%;margin:0 auto;position:relative;display:flex;align-items:center;}
+.main-stage{flex:1;position:relative;display:block;overflow:hidden;background:var(--c-bg)}
+.stage-limiter {width:100%;max-width:1200px;height:100%;margin:0 auto;position:relative;display:block;}
 
 /* NOVO CARROSSEL / GRADE VERTICAL */
 .carousel-wrapper{
@@ -51,7 +51,8 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     grid-template-columns: repeat(2, 1fr);
     overflow-x:hidden; overflow-y:auto;
     scroll-behavior:smooth;
-    padding:12px; gap:10px;
+    padding:15px 15px 25px 15px; gap:12px;
+    -webkit-overflow-scrolling: touch;
 }
 .carousel-wrapper::-webkit-scrollbar{display:none}
 
@@ -113,12 +114,12 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     100% { background: var(--c-p); }
 }
 
-.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:12px;padding:4px;border:1px solid var(--c-bd)}
-.btn-qty{width:30px;height:30px;border-radius:6px;background:#fff;font-size:1rem;font-weight:800;box-shadow:var(--sh-sm);color:var(--c-p)}
+.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:10px;padding:4px;border:1px solid var(--c-bd); gap:2px}
+.btn-qty{width:28px;height:28px;border-radius:6px;background:#fff;font-size:1rem;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,0.1);color:var(--c-p)}
 .qty-inp{
-    width:40px; text-align:center; font-size:0.95rem; font-weight:800;
+    width:32px; text-align:center; font-size:0.95rem; font-weight:800;
     border:none; background:transparent; color:var(--c-p);
-    -moz-appearance:textfield;
+    -moz-appearance:textfield; padding:0;
 }
 .qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
