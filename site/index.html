@@ -8,27 +8,44 @@
 <title>Super Cestas Básicas Dona Antônia</title>
 <style>
 :root {
-    --c-p: #0f172a; --c-s: #334155; --c-t: #64748b;
-    --c-a: #ea580c; --c-ok: #15803d; --c-err: #b91c1c;
-    --c-bg: #f8fafc; --c-surf: #ffffff; --c-bd: #cbd5e1;
+    /* CORES DE ALTO CONTRASTE (Ajuste Profissional) */
+    --c-p: #0f172a;      /* Principal: Slate 900 */
+    --c-s: #334155;      /* Secundário: Slate 700 (Escurecido para leitura) */
+    --c-t: #64748b;      /* Terciário: Slate 500 */
+    --c-a: #ea580c;      /* Ação: Orange 600 */
+    --c-ok: #15803d;     /* Sucesso: Green 700 */
+    --c-err: #b91c1c;    /* Erro: Red 700 */
+    --c-bg: #f8fafc;     /* Fundo: Slate 50 */
+    --c-surf: #ffffff;   /* Superfície */
+    --c-bd: #cbd5e1;     /* Bordas: Slate 300 */
     --font: 'Inter', system-ui, sans-serif;
-    --rad: 16px; --sh-sm: 0 1px 3px rgba(0,0,0,0.1);
-    --sh-fl: 0 10px 15px -3px rgba(0,0,0,0.1);
+    
+    --rad: 16px; 
+    --sh-sm: 0 1px 3px rgba(0,0,0,0.15); /* Sombra reforçada */
+    --sh-fl: 0 10px 15px -3px rgba(0,0,0,0.15); /* Sombra flutuante reforçada */
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:none}
 body{font-family:var(--font);background:var(--c-bg);color:var(--c-p);margin:0;padding:0;height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
-img{user-select:none;pointer-events:none}
+/* Imagem agora permite clique (pointer-events auto para zoom) */
+img{user-select:none;} 
 button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight:600}
 
+/* LAYOUT DESKTOP LIMITER */
+.layout-limit {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+}
+
 /* --- TOPO (HEADER) --- */
-.app-header{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20}
+.app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;justify-content:center}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;height:100%}
 .header-brand{display:flex;align-items:center;gap:10px}
 .logo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
 .brand-txt{font-size:.9rem;font-weight:800;line-height:1.1}
-.header-actions{display:flex;gap:10px}
-/* Botão Informações estilo Pill */
 .btn-info-pill{background:#f1f5f9;color:var(--c-p);padding:8px 16px;border-radius:20px;font-size:0.8rem;font-weight:700;border:1px solid var(--c-bd);transition:.2s}
-.btn-info-pill:hover{background:#e2e8f0}
+.btn-info-pill:hover{background:#e2e8f0;border-color:var(--c-p)}
 
 /* --- PALCO CENTRAL (CARROUSEL) --- */
 .main-stage{
@@ -39,6 +56,16 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     justify-content:center;
     overflow:hidden;
     background:var(--c-bg);
+}
+
+.stage-limiter {
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .carousel-wrapper{
@@ -56,11 +83,6 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .carousel-wrapper::-webkit-scrollbar{display:none}
 .carousel-wrapper{-ms-overflow-style:none;scrollbar-width:none}
 
-/* DESKTOP LIMIT */
-@media(min-width:1024px){
-    .carousel-wrapper{justify-content:center;max-width:1200px;margin:0 auto;gap:25px}
-}
-
 /* CARDS UNIFICADOS */
 .u-card{
     flex:0 0 200px;
@@ -73,8 +95,9 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     position:relative;
     height:auto;
     max-height:100%;
-    transition:transform .2s;
+    transition:transform .2s, box-shadow .2s;
 }
+.u-card:hover{box-shadow:var(--sh-fl);transform:translateY(-2px)}
 .u-card:active{transform:scale(0.98)}
 
 @media(max-width:600px){
@@ -82,26 +105,28 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     .carousel-wrapper{padding:10px 10%;}
 }
 
-.u-img-area{width:100%;aspect-ratio:1;background:#f8fafc;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9}
-.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:8px}
+.u-img-area{width:100%;aspect-ratio:1;background:#f8fafc;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9;cursor:zoom-in}
+.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:8px;transition:transform .3s}
+.u-img-area:hover .u-img{transform:scale(1.05)}
 .u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal}
 
 /* ETIQUETA OFERTA */
 .offer-tag{position:absolute;bottom:0;left:0;background:#dc2626;color:#fff;font-size:0.7rem;padding:4px 10px;border-top-right-radius:12px;font-weight:800;z-index:5;box-shadow:2px -2px 5px rgba(0,0,0,0.1)}
 
-.u-info{padding:10px;display:flex;flex-direction:column;gap:6px;flex:1}
+.u-info{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
 .u-tag{position:absolute;top:8px;left:8px;background:#fff;padding:2px 6px;border-radius:6px;font-size:0.65rem;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,0.1);z-index:2}
 .u-name{
-    font-size:0.95rem; /* Aumentado */
-    font-weight:500; /* Mais leve */
+    font-size:0.95rem;
+    font-weight:600; /* Levemente mais peso para leitura */
     color:var(--c-p);line-height:1.3;
     display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
     min-height:3.6em;
 }
-.u-price{font-size:1.1rem;font-weight:900;color:var(--c-a)}
+.u-price{font-size:1.15rem;font-weight:900;color:var(--c-a)}
 
 .u-action-row{margin-top:auto;padding-top:8px}
-.btn-big-action{width:100%;background:var(--c-p);color:#fff;padding:10px;border-radius:10px;font-weight:700;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:4px}
+.btn-big-action{width:100%;background:var(--c-p);color:#fff;padding:10px;border-radius:10px;font-weight:700;font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:4px;transition:background .2s}
+.btn-big-action:hover{background:#1e293b}
 .btn-big-action.added{background:#fff;border:2px solid var(--c-ok);color:var(--c-ok)}
 
 /* Controles de QTD */
@@ -109,10 +134,23 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .btn-qty{width:32px;height:32px;border-radius:8px;background:#fff;font-size:1.1rem;font-weight:800;box-shadow:var(--sh-sm);color:var(--c-p)}
 .qty-val{font-size:1rem;font-weight:800;flex:1;text-align:center}
 
-/* SETAS DESKTOP */
-.nav-arrow{position:absolute;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid var(--c-bd);box-shadow:var(--sh-fl);z-index:20;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:1.2rem;color:var(--c-p)}
-.nav-arrow:hover{background:var(--c-p);color:#fff}
-.nav-left{left:10px} .nav-right{right:10px}
+/* SETAS DESKTOP (Agora dentro do limiter) */
+.nav-arrow{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:48px;height:48px;border-radius:50%;
+    background:#fff;border:1px solid var(--c-bd);
+    box-shadow:var(--sh-fl);z-index:20;cursor:pointer;
+    display:none;align-items:center;justify-content:center;
+    font-size:1.2rem;color:var(--c-p);
+    transition:transform .2s, background .2s;
+}
+.nav-arrow:hover{background:var(--c-p);color:#fff;transform:translateY(-50%) scale(1.1)}
+.nav-left{left:-20px} .nav-right{right:-20px}
+
+/* Ajuste das setas em telas muito grandes para não sumir */
+@media(min-width:1300px){
+    .nav-left{left:-60px} .nav-right{right:-60px}
+}
 @media(min-width:1024px){.nav-arrow{display:flex}}
 
 
@@ -124,14 +162,16 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     box-shadow:0 -5px 25px rgba(0,0,0,0.05);
     z-index:30;
     display:flex;flex-direction:column;
+    align-items:center; /* Centraliza o stack */
 }
+.stack-inner { width: 100%; max-width: 1200px; }
 
 /* 1. Menu Circular */
 .menu-scroll-area{
     width:100%; overflow-x:auto;
     padding:12px 20px 6px;
     border-bottom:1px solid #f1f5f9;
-    display:flex; gap:10px;
+    display:flex; gap:12px;
     align-items: flex-start;
 }
 .menu-scroll-area::-webkit-scrollbar{display:none}
@@ -139,15 +179,14 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .cat-bubble{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:75px;opacity:1;transition:.3s}
 .cat-bubble.active{transform:scale(1.05)}
 .cat-bubble.active .cat-img-ring{border-color:var(--c-a);box-shadow:0 0 0 3px rgba(234,88,12,0.2)}
-.cat-bubble.active .cat-name{color:var(--c-a);font-weight:700}
+.cat-bubble.active .cat-name{color:var(--c-a);font-weight:800}
 
-/* Anel da imagem aumentado */
-.cat-img-ring{width:72px;height:72px;border-radius:50%;padding:2px;border:2px solid var(--c-bd);background:#fff;display:flex;align-items:center;justify-content:center}
+.cat-img-ring{width:72px;height:72px;border-radius:50%;padding:2px;border:2px solid var(--c-bd);background:#fff;display:flex;align-items:center;justify-content:center;transition:border-color .2s}
+.cat-img-ring:hover{border-color:var(--c-p)}
 .cat-img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#f1f5f9}
-/* Nome da categoria ajustado */
 .cat-name{
     font-size:0.75rem;
-    font-weight:500;
+    font-weight:600;
     color:var(--c-s);
     text-align:center;
     line-height:1.1;
@@ -158,33 +197,33 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
-/* Cart Icon Color */
 .cat-bubble[id*="__CART__"] .cat-img-ring { background: var(--c-p); border-color: var(--c-p); color:#fff; }
 
 /* 2. Busca */
 .search-bar-area{padding:6px 20px 10px;background:#fff;position:relative}
-.search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:10px 12px 10px 40px;border-radius:10px;font-weight:600;color:var(--c-p)}
+.search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:10px 12px 10px 40px;border-radius:10px;font-weight:600;color:var(--c-p);transition:box-shadow .2s}
+.search-inp:focus{box-shadow:0 0 0 2px rgba(15, 23, 42, 0.1); border-color:var(--c-p)}
 .search-icon{position:absolute;left:32px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none}
-.clear-search{position:absolute;right:30px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:none;align-items:center;justify-content:center}
+.clear-search{position:absolute;right:30px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
 
 /* 3. Checkout Bar */
 .checkout-bar{padding:15px 20px 20px;display:flex;align-items:center;justify-content:space-between;gap:15px}
 .total-info{display:flex;flex-direction:column}
 .lbl-total{font-size:0.7rem;text-transform:uppercase;font-weight:800;color:var(--c-s)}
-.val-total{font-size:1.3rem;font-weight:900;color:var(--c-p)}
-.btn-checkout{flex:1;background:#16a34a;color:#fff;padding:14px;border-radius:12px;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(22,163,74,0.3)}
+.val-total{font-size:1.4rem;font-weight:900;color:var(--c-p)}
+.btn-checkout{flex:1;background:#16a34a;color:#fff;padding:14px;border-radius:12px;font-weight:800;font-size:1rem;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 12px rgba(22,163,74,0.3);transition:transform .1s}
+.btn-checkout:active{transform:scale(0.98)}
 
 /* MODAIS & TOAST */
 dialog{border:none;border-radius:24px;width:92%;max-width:420px;padding:0;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);background:#fff;animation:modalPop .3s}
-dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
+dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 @keyframes modalPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
 .modal-body{padding:25px 20px;text-align:center}
 .btn-modal{width:100%;padding:14px;border-radius:12px;font-weight:800;margin-bottom:10px;font-size:1rem}
 .btn-modal.primary{background:var(--c-p);color:#fff}
 .btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
 
-/* FAQ Modal Specs */
+/* FAQ */
 .faq-header { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid #eee; padding-bottom:15px }
 .faq-logo { width: 80px; height: 80px; border-radius: 50%; border:1px solid #cbd5e1; }
 .faq-info-txt { font-size: 0.85rem; color: var(--c-s); line-height: 1.4; }
@@ -195,83 +234,71 @@ dialog::backdrop{background:rgba(15,23,42,0.8);backdrop-filter:blur(4px)}
 .btn-social { flex: 1; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; }
 
 /* Modal Carousels */
-.modal-carousel-track {
-    display: flex;
-    overflow-x: auto;
-    gap: 12px;
-    padding: 10px 5px;
-    scroll-snap-type: x mandatory;
-    justify-content: flex-start;
-}
+.modal-carousel-track { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; scroll-snap-type: x mandatory; justify-content: flex-start; }
 .modal-carousel-track::-webkit-scrollbar{height:4px;background:transparent}
 .modal-carousel-track::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
-
-.modal-card {
-    flex: 0 0 140px;
-    scroll-snap-align: start;
-    border: 1px solid #eee;
-    border-radius: 12px;
-    padding: 8px;
-    background: #fff;
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-}
+.modal-card { flex: 0 0 140px; scroll-snap-align: start; border: 1px solid #eee; border-radius: 12px; padding: 8px; background: #fff; display: flex; flex-direction: column; text-align: left; }
 .modal-card img { width: 100%; aspect-ratio: 1; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 6px; }
 .modal-card .mc-name { font-size: 0.75rem; font-weight: 700; color: var(--c-p); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em; }
 .modal-card .mc-price { font-size: 0.9rem; font-weight: 800; color: var(--c-a); margin-top: auto; }
 .modal-card .mc-qty { font-size: 0.75rem; font-weight: 600; color: var(--c-s); background: #f1f5f9; padding: 2px 6px; border-radius: 4px; width: fit-content; margin-top: 4px; }
-
 
 #toast-container{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:2000;pointer-events:none}
 .toast{background:var(--c-p);color:#fff;padding:12px 24px;border-radius:50px;box-shadow:0 10px 30px rgba(0,0,0,0.3);font-size:.9rem;font-weight:600;animation:slideInTop .4s;margin-bottom:10px;text-align:center}
 @keyframes slideInTop{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 /* Image Zoom Modal */
-#modal-image-zoom{background:transparent;box-shadow:none;max-width:100vw;max-height:100vh}
-#modal-image-zoom .modal-body{padding:0;display:flex;align-items:center;justify-content:center;height:100vh;width:100vw;background:rgba(0,0,0,0.8);position:relative}
-#zoom-img{max-width:95%;max-height:85%;border-radius:12px}
-.btn-close-zoom{position:absolute;top:20px;right:20px;width:40px;height:40px;background:#fff;border-radius:50%;color:var(--c-p);font-weight:800;font-size:1.2rem;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:2010;display:flex;align-items:center;justify-content:center}
+#modal-image-zoom{background:transparent;box-shadow:none;width:100%;height:100%;max-width:none;max-height:none}
+#modal-image-zoom .modal-body{padding:0;display:flex;align-items:center;justify-content:center;height:100vh;width:100vw;position:relative}
+#zoom-img{max-width:90%;max-height:85vh;border-radius:12px;background:#fff;box-shadow:0 25px 50px rgba(0,0,0,0.5)}
+.btn-close-zoom{position:absolute;top:20px;right:20px;width:44px;height:44px;background:#fff;border-radius:50%;color:var(--c-p);font-weight:800;font-size:1.2rem;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:2010;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s}
+.btn-close-zoom:hover{transform:scale(1.1)}
 
 </style>
 </head>
 <body>
 
 <header class="app-header">
-    <div class="header-brand">
-        <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo">
-        <div class="brand-txt">Super Cestas<br>Dona Antônia</div>
-    </div>
-    <div class="header-actions">
-        <button class="btn-info-pill" onclick="$('modal-faq').showModal()">INFORMAÇÕES</button>
+    <div class="layout-limit header-inner">
+        <div class="header-brand">
+            <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo">
+            <div class="brand-txt">Super Cestas<br>Dona Antônia</div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-info-pill" onclick="$('modal-faq').showModal()">INFORMAÇÕES</button>
+        </div>
     </div>
 </header>
 
 <main class="main-stage">
-    <div class="nav-arrow nav-left" onclick="$('main-carousel').scrollBy({left:-300,behavior:'smooth'})">❮</div>
-    <div class="carousel-wrapper" id="main-carousel">
-        </div>
-    <div class="nav-arrow nav-right" onclick="$('main-carousel').scrollBy({left:300,behavior:'smooth'})">❯</div>
+    <div class="stage-limiter">
+        <div class="nav-arrow nav-left" onclick="$('main-carousel').scrollBy({left:-300,behavior:'smooth'})">❮</div>
+        <div class="carousel-wrapper" id="main-carousel">
+            </div>
+        <div class="nav-arrow nav-right" onclick="$('main-carousel').scrollBy({left:300,behavior:'smooth'})">❯</div>
+    </div>
 </main>
 
 <div class="bottom-stack">
-    <div class="menu-scroll-area" id="menu-bubbles">
+    <div class="stack-inner">
+        <div class="menu-scroll-area" id="menu-bubbles">
+            </div>
+
+        <div class="search-bar-area">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="search-inp" class="search-inp" placeholder="Busque por nome..." oninput="handleSearch(this.value)">
+            <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
         </div>
 
-    <div class="search-bar-area">
-        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="search-inp" class="search-inp" placeholder="Busque por nome..." oninput="handleSearch(this.value)">
-        <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
-    </div>
-
-    <div class="checkout-bar">
-        <div class="total-info">
-            <span class="lbl-total" id="lbl-total-type">Total</span>
-            <span class="val-total" id="val-total">R$ 0,00</span>
+        <div class="checkout-bar">
+            <div class="total-info">
+                <span class="lbl-total" id="lbl-total-type">Total</span>
+                <span class="val-total" id="val-total">R$ 0,00</span>
+            </div>
+            <button class="btn-checkout" onclick="openCheckout()">
+                VER CARRINHO <span id="badge-count" style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;font-size:0.8rem">0</span>
+            </button>
         </div>
-        <button class="btn-checkout" onclick="openCheckout()">
-            VER CARRINHO <span id="badge-count" style="background:rgba(255,255,255,0.2);padding:2px 8px;border-radius:10px;font-size:0.8rem">0</span>
-        </button>
     </div>
 </div>
 
@@ -512,8 +539,8 @@ function renderCards(list, type){
 
             return `
             <div class="u-card">
-                <div class="u-img-area">
-                    <img src="${item.img}" class="u-img" loading="lazy" onclick="zoom('${item.img}')">
+                <div class="u-img-area" onclick="openImageZoom('${item.img}')">
+                    <img src="${item.img}" class="u-img" loading="lazy">
                     ${item.val ? `<div class="u-tag">Val: ${item.val}</div>` : ''}
                     ${offerLabel}
                 </div>
@@ -770,7 +797,7 @@ function showToast(m,t){
     d.innerText=m; $('toast-container').appendChild(d);
     setTimeout(()=>d.remove(), 2500);
 }
-function zoom(s){ $('zoom-img').src=s; $('modal-image-zoom').showModal(); }
+function openImageZoom(s){ $('zoom-img').src=s; $('modal-image-zoom').showModal(); }
 
 init();
 </script>
