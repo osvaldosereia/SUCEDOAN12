@@ -650,26 +650,21 @@
             
             toggleLoader(true, "Importando dados do GitHub...");
             const path = `site/bancodedados.json`;
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`;
             
             try {
-                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if(!res.ok) throw new Error("Arquivo bancodedados.json não encontrado no site.");
+                // A mágica anti-CORS e anti-limite do GitHub: solicitar o formato 'raw' diretamente pela API principal
+                const res = await fetch(url, { 
+                    headers: { 
+                        "Authorization": `token ${cfg.token}`,
+                        "Accept": "application/vnd.github.v3.raw" 
+                    } 
+                });
                 
-                const json = await res.json();
-                let importedProducts;
-
-                // Forma mais segura para arquivos muito grandes: buscar pela raw URL (download_url)
-                if (json.download_url) {
-                    // ?v= garante que o navegador/API não pegará cache antigo da CDN raw
-                    const rawRes = await fetch(json.download_url + "?v=" + Date.now(), { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(!rawRes.ok) throw new Error("Erro ao baixar o conteúdo raw do arquivo.");
-                    importedProducts = await rawRes.json();
-                } else {
-                    // Fallback para caso a download_url não esteja presente
-                    const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                    importedProducts = JSON.parse(decodedStr);
-                }
+                if(!res.ok) throw new Error("Arquivo bancodedados.json não encontrado no site ou sem permissão de acesso.");
+                
+                // Como pedimos o formato raw, a resposta já é o array de produtos direto, sem Base64!
+                const importedProducts = await res.json();
                 
                 if(Array.isArray(importedProducts)) {
                     localStorage.removeItem(STORAGE_KEY);
