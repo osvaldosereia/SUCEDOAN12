@@ -8,19 +8,19 @@
 <title>Super Cestas Básicas Dona Antônia</title>
 <style>
 :root {
-    /* PALETA PROFISSIONAL (MAIOR CONTRASTE) */
+    /* PALETA PROFISSIONAL */
     --c-p: #0f172a;      /* Texto Principal */
-    --c-s: #1e293b;      /* Texto Secundário (Escurecido) */
+    --c-s: #1e293b;      /* Texto Secundário */
     --c-t: #64748b;      /* Texto Terciário */
     --c-a: #ea580c;      /* Ação Principal (Laranja) */
     --c-ok: #15803d;     /* Sucesso */
     --c-err: #b91c1c;    /* Erro */
-    --c-bg: #e2e8f0;     /* Fundo Geral (Mais escuro para contraste) */
+    --c-bg: #e2e8f0;     /* Fundo Geral */
     --c-surf: #ffffff;   /* Superfície Cards */
     --c-bd: #cbd5e1;     /* Bordas */
     --font: 'Inter', system-ui, sans-serif;
     
-    --sh-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Elevation */
+    --sh-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); 
     --sh-float: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:none}
@@ -31,33 +31,45 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* LAYOUT DESKTOP LIMITER */
 .layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
 
-/* HEADER */
-.app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;justify-content:center}
-.header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;height:auto;flex-wrap:wrap;gap:15px}
-.header-brand{display:flex;align-items:center;gap:10px;order:1}
+/* HEADER LIMPO */
+.app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;flex-direction:column;align-items:center}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;width:100%;gap:15px;flex-wrap:wrap;}
+.header-brand{display:flex;align-items:center;gap:10px;}
 .logo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
 .brand-txt{font-size:.9rem;font-weight:800;line-height:1.1}
 
-/* SEARCH & FILTER ROW (Agora no header) */
-.search-filter-row{display:flex;gap:10px;width:100%;order:3}
+/* SEARCH & FILTER */
+.search-filter-row{display:flex;gap:10px;flex:1;min-width:250px;}
 .search-bar-area{flex:1;position:relative}
 .search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:10px 12px 10px 40px;border-radius:10px;font-weight:600;color:var(--c-p);transition:box-shadow .2s}
 .search-inp:focus{box-shadow:0 0 0 2px rgba(15, 23, 42, 0.1); border-color:var(--c-p)}
-.search-icon{position:absolute;left:32px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none;left:12px}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none}
 .clear-search{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
 .filter-sel{background:#f8fafc;border:1px solid var(--c-bd);border-radius:10px;padding:0 10px;font-weight:600;color:var(--c-s);font-size:0.85rem}
 
 @media(min-width: 800px){
-    .search-filter-row{flex:1;width:auto;order:2;margin:0 20px}
-    .header-inner{flex-wrap:nowrap}
+    .header-inner{flex-wrap:nowrap;}
 }
 
+/* CHIPS BAR (Categorias Rápidas) */
+.chips-bar {
+    display: none; width: 100%; max-width: 1200px; padding: 12px 20px; gap: 8px;
+    overflow-x: auto; scroll-behavior: smooth; align-items: center;
+}
+.chips-bar::-webkit-scrollbar { display: none; }
+.chip {
+    padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    background: #f1f5f9; color: var(--c-s); white-space: nowrap; border: 1px solid var(--c-bd);
+    cursor: pointer; transition: 0.2s;
+}
+.chip.active { background: var(--c-p); color: #fff; border-color: var(--c-p); }
+
 /* PALCO CENTRAL (GRADE VERTICAL) */
-.main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:140px; /* Respiro para a Tab Bar e Checkout flutuante */}
+.main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:180px; scroll-behavior:smooth;}
 
 .grid-wrapper{
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 15px; padding: 20px;
     width: 100%; max-width: 1200px; margin: 0 auto;
     align-content: start;
@@ -75,14 +87,13 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     border:1px solid #fff;
     box-shadow:var(--sh-card);
     display:flex;flex-direction:column;
-    position:relative;
-    height: 100%;
+    position:relative; height: 100%;
     transition:transform .2s, box-shadow .2s;
 }
 .u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
 
 .u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9;cursor:zoom-in; border-radius: 20px 20px 0 0;}
-.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:5px;transition:transform .3s}
+.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:5px;transition:transform .3s} 
 .u-img-area:hover .u-img{transform:scale(1.05)}
 .u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal}
 
@@ -97,7 +108,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     font-size:0.8rem; font-weight:600;
     color:var(--c-p); line-height:1.3;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
-    flex-grow: 1; 
+    min-height:3.9em; flex-grow: 1; 
 }
 
 /* Metadados (Validade / Restam) em Texto Simples */
@@ -107,8 +118,8 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px; margin-top: auto;}
 
 @media(max-width:600px){
-    /* Fontes mais leves e menor tamanho do valor */
-    .u-name{font-size: 0.75rem; font-weight: 500;}
+    /* Nome em até 3 linhas, fontes mais leves */
+    .u-name{font-size: 0.75rem; font-weight: 500; -webkit-line-clamp: 3; min-height: 3.9em;}
     .u-price{font-size: 1rem; font-weight: 700;}
 }
 
@@ -149,19 +160,20 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     bottom: calc(60px + env(safe-area-inset-bottom));
     left: 0; width: 100%; z-index: 90;
     display: flex; flex-direction: column; align-items: center;
+    pointer-events: none; /* Para não bloquear cliques onde não tem elemento */
 }
 
-/* PROGRESS BAR (Agora Flutuante) */
-.progress-area{width:100%;background:#e2e8f0;padding:10px 20px;border-top:1px solid var(--c-bd);display:none;flex-direction:column;align-items:center;gap:4px;box-shadow:0 -4px 10px rgba(0,0,0,0.05)}
+/* PROGRESS BAR (Flutuante e Dinâmica) */
+.progress-area{width:100%;background:#e2e8f0;padding:10px 20px;border-top:1px solid var(--c-bd);display:none;flex-direction:column;align-items:center;gap:4px;box-shadow:0 -4px 15px rgba(0,0,0,0.08); pointer-events: auto;}
 .prog-txt{font-size:0.75rem;font-weight:700;color:var(--c-s);text-transform:uppercase;text-align:center}
-.prog-track{width:100%;max-width:400px;height:6px;background:#cbd5e1;border-radius:3px;overflow:hidden}
+.prog-track{width:100%;max-width:500px;height:6px;background:#cbd5e1;border-radius:3px;overflow:hidden}
 .prog-fill{height:100%;background:var(--c-a);width:0%;transition:width .5s ease-out}
 
 /* CHECKOUT FLOATING BTN */
-.floating-checkout-wrap { width: 100%; max-width: 500px; padding: 10px 20px; display: none; }
+.floating-checkout-wrap { width: 100%; max-width: 500px; padding: 15px 20px; display: none; pointer-events: auto; }
 .btn-floating-checkout{
     width:100%; background:#16a34a; color:#fff;
-    padding:16px; border-radius:16px; font-weight:900; font-size:1rem;
+    padding:16px; border-radius:16px; font-weight:900; font-size:1.1rem;
     display:flex; align-items:center; justify-content:center; gap:8px;
     box-shadow:0 10px 25px rgba(22,163,74,0.4); border:none; cursor:pointer;
     transition:transform .1s;
@@ -180,11 +192,11 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     flex: 1; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; transition: color 0.2s; position: relative;
 }
-.tab-item.active { color: var(--c-a); }
-.tab-icon { font-size: 1.4rem; line-height: 1; }
+.tab-item.active { color: var(--c-p); }
+.tab-icon { font-size: 1.3rem; line-height: 1; }
 .tab-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;}
 .cart-badge {
-    position: absolute; top: 4px; right: calc(50% - 18px);
+    position: absolute; top: 6px; right: calc(50% - 18px);
     background: var(--c-err); color: #fff; font-size: 0.6rem; font-weight: 800;
     padding: 2px 6px; border-radius: 10px; line-height: 1; border: 2px solid #fff; display: none;
 }
@@ -198,13 +210,20 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .btn-modal.primary{background:var(--c-p);color:#fff}
 .btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
 
-/* CATEGORIES MODAL GRID */
-.cat-grid-wrapper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px; margin-top: 15px; }
-.cat-bubble{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;opacity:1;transition:.3s}
-.cat-bubble:active{transform:scale(0.95)}
-.cat-img-ring{width:64px;height:64px;border-radius:50%;padding:2px;border:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:center}
-.cat-img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#f1f5f9}
-.cat-name{font-size:0.7rem;font-weight:600;color:var(--c-s);text-align:center;line-height:1.1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+/* MACRO DEPARTMENTS GRID (Modal) */
+.macro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+.macro-card {
+    background: #f8fafc; border: 1px solid var(--c-bd); border-radius: 16px; padding: 25px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer;
+    transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+.macro-card:active { transform: scale(0.95); }
+.macro-card.alimentos { border-color: #fca5a5; background: #fef2f2; }
+.macro-card.higiene { border-color: #93c5fd; background: #eff6ff; }
+.macro-card.limpeza { border-color: #86efac; background: #f0fdf4; }
+.macro-card.utilidades { border-color: #fde047; background: #fefce8; }
+.macro-icon { font-size: 2.2rem; line-height: 1; }
+.macro-title { font-weight: 800; font-size: 0.9rem; color: var(--c-p); text-transform: uppercase; }
 
 /* TOAST */
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
@@ -228,7 +247,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .social-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; margin-bottom: 15px; }
 .btn-social { flex: 1; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; }
 
-/* MODAL CAROUSEL */
+/* MODAL CAROUSEL (Para Cestas e Combos preview) */
 .modal-carousel-track { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; scroll-snap-type: x mandatory; justify-content: flex-start; }
 .modal-carousel-track::-webkit-scrollbar{height:4px;background:transparent}
 .modal-card { flex: 0 0 140px; scroll-snap-align: start; border: 1px solid #eee; border-radius: 12px; padding: 8px; background: #fff; display: flex; flex-direction: column; text-align: left; }
@@ -250,16 +269,20 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         <div class="search-filter-row" id="top-search-row">
             <div class="search-bar-area">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar..." oninput="handleSearch(this.value)">
+                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto..." oninput="handleSearch(this.value)">
                 <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
             </div>
             <select class="filter-sel" id="filter-sel" onchange="applyFilter()">
-                <option value="def">Padrão</option>
+                <option value="def">Relevância</option>
                 <option value="min">Menor Preço</option>
                 <option value="max">Maior Preço</option>
                 <option value="az">A-Z</option>
             </select>
         </div>
+    </div>
+    <div class="layout-limit" style="width: 100%;">
+        <div class="chips-bar" id="chips-bar">
+            </div>
     </div>
 </header>
 
@@ -288,7 +311,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         <div class="tab-icon">🔥</div><div class="tab-label">Ofertas</div>
     </div>
     <div class="tab-item" id="tab-CATEGORIAS" onclick="$('modal-categories').showModal()">
-        <div class="tab-icon">🗂️</div><div class="tab-label">Categorias</div>
+        <div class="tab-icon">🗂️</div><div class="tab-label">Departamentos</div>
     </div>
     <div class="tab-item" id="tab-__CART__" onclick="loadCategory('__CART__')">
         <div class="cart-badge" id="badge-count">0</div>
@@ -300,11 +323,26 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
 <dialog id="modal-categories">
     <div class="modal-body">
-        <h3 style="font-weight:900; color:var(--c-p); text-transform:uppercase; margin-bottom:5px;">Navegar por</h3>
-        <p style="font-size:0.85rem; color:var(--c-s);">Encontre o que você precisa</p>
-        <div class="cat-grid-wrapper" id="menu-bubbles"></div>
-        <button class="btn-modal secondary" onclick="$('modal-categories').close(); $('modal-faq').showModal();">Dúvidas Frequentes</button>
-        <button class="btn-modal secondary" onclick="$('modal-categories').close()">Fechar Menu</button>
+        <h3 style="font-weight:900; color:var(--c-p); text-transform:uppercase; margin-bottom:5px;">Departamentos</h3>
+        <p style="font-size:0.85rem; color:var(--c-s); margin-bottom: 5px;">Escolha uma seção para explorar</p>
+        
+        <div class="macro-grid">
+            <div class="macro-card alimentos" onclick="loadMacro('Alimentos')">
+                <div class="macro-icon">🍎</div><div class="macro-title">Alimentos</div>
+            </div>
+            <div class="macro-card limpeza" onclick="loadMacro('Limpeza')">
+                <div class="macro-icon">🧼</div><div class="macro-title">Limpeza</div>
+            </div>
+            <div class="macro-card higiene" onclick="loadMacro('Higiene')">
+                <div class="macro-icon">🧻</div><div class="macro-title">Higiene</div>
+            </div>
+            <div class="macro-card utilidades" onclick="loadMacro('Utilidades')">
+                <div class="macro-icon">🥄</div><div class="macro-title">Utilidades</div>
+            </div>
+        </div>
+
+        <button class="btn-modal secondary" onclick="$('modal-categories').close(); $('modal-faq').showModal();">Informações e Contato</button>
+        <button class="btn-modal secondary" style="border:none; color:var(--c-t);" onclick="$('modal-categories').close()">✕ Fechar Menu</button>
     </div>
 </dialog>
 
@@ -351,7 +389,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         </select>
         <button class="btn-modal primary" onclick="sendOrder()">ENVIAR PEDIDO (WHATSAPP)</button>
         <button class="btn-modal secondary" onclick="$('modal-checkout').close()">Continuar Comprando</button>
-        <button class="btn-modal" style="color:var(--c-err);font-size:0.8rem" onclick="clearCart()">Esvaziar Carrinho</button>
+        <button class="btn-modal" style="color:var(--c-err);font-size:0.8rem;border:none;background:transparent" onclick="clearCart()">Esvaziar Carrinho</button>
     </div>
 </dialog>
 
@@ -387,6 +425,8 @@ const STATE={
     baskets:[], prods:[], coupons:[], combos:[],
     cart:{}, cartOrder:[], 
     activeCat:'__CESTAS__', 
+    activeMacro: null,
+    activeMicro: null,
     mode:'zero', 
     baseBasket:null, minBasketPrice:0, 
     basketExtraFee:0, 
@@ -418,67 +458,92 @@ async function init(){
         if(r3&&r3.ok) STATE.coupons = await r3.json();
         if(r4&&r4.ok) STATE.combos = await r4.json();
 
-        renderMenu();
+        // Removido Modal Welcome. Carrega direto Cestas.
         loadCategory('__CESTAS__');
         updateTotals(); 
     }catch(e){
-        $('main-grid').innerHTML='<p style="padding:20px;text-align:center;color:red;font-weight:bold;grid-column:1/-1">Erro fatal na leitura dos arquivos.<br>Abra o F12 para ver detalhes.</p>';
+        $('main-grid').innerHTML='<p style="grid-column:1/-1;padding:20px;text-align:center;color:red;font-weight:bold;">Erro fatal na leitura dos arquivos.<br>Abra o F12 para ver detalhes.</p>';
         console.error("ERRO DO CÓDIGO", e);
     }
 }
 
-/* --- LOGIC MENU --- */
-function renderMenu(){
-    const cats = {};
-    STATE.prods.forEach(p=>{ if(!cats[p.cat])cats[p.cat]=[]; cats[p.cat].push(p) });
-    let catKeys = Object.keys(cats).sort();
+/* --- LOGIC CATEGORIAS & MACROS --- */
+
+// Tradutor Inteligente de Categorias do Bling
+function getMacroCat(cName) {
+    if(!cName) return 'Alimentos';
+    let n = cName.toUpperCase();
+    if(n.includes('LIMPEZA') || n.includes('SABÃO') || n.includes('LAVANDERIA') || n.includes('AMACIANTE') || n.includes('DESINFETANTE')) return 'Limpeza';
+    if(n.includes('HIGIENE') || n.includes('PERFUMARIA') || n.includes('BANHO') || n.includes('CABELO') || n.includes('CUIDADOS') || n.includes('SAÚDE') || n.includes('BELEZA') || n.includes('FRALDA') || n.includes('ABSORVENTE')) return 'Higiene';
+    if(n.includes('UTILIDADE') || n.includes('BAZAR') || n.includes('PET') || n.includes('CASA') || n.includes('ELETRO') || n.includes('PAPELARIA') || n.includes('EMBALAGEM')) return 'Utilidades';
+    return 'Alimentos'; // Mercearia, Bebidas, Carnes, etc, caem aqui por padrão.
+}
+
+function loadMacro(macroName) {
+    $('modal-categories').close();
+    document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
+    $('tab-CATEGORIAS').classList.add('active');
     
-    const under5 = STATE.prods.filter(p=>p.price <= 5.00);
-    const under10 = STATE.prods.filter(p=>p.price > 5.00 && p.price <= 10.00);
+    STATE.activeCat = 'MACRO';
+    STATE.activeMacro = macroName;
 
-    const menuItems = [];
-
-    if(STATE.combos && STATE.combos.length > 0) {
-        menuItems.push({key:'__COMBOS__', name:'🎁 Combos', img:STATE.combos[0].imagem || 'img/produtos/cesta.webp'});
-    }
-
-    if(under5.length) menuItems.push({key:'__UNDER_5__', name:'🟢 Até R$ 5,00', img:under5[0].img});
-    if(under10.length) menuItems.push({key:'__UNDER_10__', name:'🔵 Até R$ 10,00', img:under10[0].img});
-
-    catKeys.forEach(k=>{
-        menuItems.push({key:k, name:k, img:cats[k][0]?.img});
+    // Acha todas as subcategorias únicas que pertencem a esse macro
+    let microCats = new Set();
+    STATE.prods.forEach(p => {
+        if(getMacroCat(p.cat) === macroName) microCats.add(p.cat);
     });
+    let sortedMicros = Array.from(microCats).sort();
+    
+    // Renderiza a barra de Chips
+    let chipsHtml = `<div class="chip active" id="chip-Todos" onclick="loadMicro('Todos')">Ver Tudo</div>`;
+    sortedMicros.forEach(m => {
+        chipsHtml += `<div class="chip" id="chip-${m.replace(/\s/g,'-')}" onclick="loadMicro('${m.replace(/'/g,"\\'")}')">${formatName(m)}</div>`;
+    });
+    
+    $('chips-bar').innerHTML = chipsHtml;
+    $('chips-bar').style.display = 'flex';
+    
+    loadMicro('Todos');
+}
 
-    $('menu-bubbles').innerHTML = menuItems.map(m=>{
-        const img = m.img || 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cbd5e1"><circle cx="12" cy="12" r="10"/></svg>';
-        const content = `<div class="cat-img-ring"><img src="${img}" class="cat-img" onerror="this.src='data:image/svg+xml,<svg...'"></div>`;
-        return `<div class="cat-bubble" onclick="loadCategory('${m.key.replace(/'/g,"\\'")}')">${content}<div class="cat-name">${formatName(m.name)}</div></div>`
-    }).join('');
+function loadMicro(microName) {
+    STATE.activeMicro = microName;
+    
+    // UI dos Chips
+    document.querySelectorAll('.chip').forEach(el=>el.classList.remove('active'));
+    let c = document.getElementById(`chip-${microName.replace(/\s/g,'-')}`);
+    if(c) c.classList.add('active');
+    if(c) c.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
+
+    // Filtra produtos
+    let list = STATE.prods.filter(p => getMacroCat(p.cat) === STATE.activeMacro);
+    if(microName !== 'Todos') {
+        list = list.filter(p => p.cat === microName);
+    }
+    
+    STATE.currentList = list;
+    applyFilter();
 }
 
 function loadCategory(key){
     if(key === '__CART__' && Object.keys(STATE.cart).length === 0) return showToast("Seu carrinho está vazio!", "r");
 
-    // Controle visual da Tab Bar Inferior
+    // Limpa a UI
+    $('modal-categories').close();
+    $('chips-bar').style.display = 'none'; // Esconde os chips se for Cestas, Ofertas, Carrinho
+    
     document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
     if(key === '__CESTAS__' || key === '__OFFERS__' || key === '__CART__') {
         let tab = document.getElementById(`tab-${key}`);
         if(tab) tab.classList.add('active');
-    } else {
-        document.getElementById('tab-CATEGORIAS').classList.add('active');
     }
 
-    $('modal-categories').close();
     STATE.activeCat = key;
     
     if(key === '__CESTAS__'){
         STATE.currentList = STATE.baskets;
         renderChunked(STATE.currentList, 'BASKET', true);
     } 
-    else if(key === '__COMBOS__'){
-        STATE.currentList = STATE.combos;
-        renderChunked(STATE.currentList, 'COMBO', true);
-    }
     else if(key === '__CART__'){
         STATE.currentList = STATE.cartOrder.map(id=>STATE.prods.find(p=>p.id===id)).filter(Boolean);
         renderChunked(STATE.currentList, 'PROD', true);
@@ -487,25 +552,13 @@ function loadCategory(key){
         STATE.currentList = STATE.prods.filter(p=>p.name.includes("**"));
         applyFilter(); 
     }
-    else if(key === '__UNDER_5__'){
-        STATE.currentList = STATE.prods.filter(p=>p.price <= 5.00);
-        applyFilter(); 
-    }
-    else if(key === '__UNDER_10__'){
-        STATE.currentList = STATE.prods.filter(p=>p.price > 5.00 && p.price <= 10.00);
-        applyFilter(); 
-    }
-    else {
-        STATE.currentList = STATE.prods.filter(p=> p.cat === key);
-        applyFilter(); 
-    }
     
-    updateTotals(); // Atualiza botões flutuantes baseados na tela ativa
+    updateTotals(); 
 }
 
 function applyFilter(){
     const type = $('filter-sel').value;
-    if(STATE.activeCat === '__CESTAS__' || STATE.activeCat === '__COMBOS__') return; 
+    if(STATE.activeCat === '__CESTAS__') return; 
     
     let list = [...STATE.currentList];
     if(type === 'min') list.sort((a,b)=>a.price - b.price);
@@ -530,7 +583,7 @@ function renderChunked(list, type, reset){
         return cardProd(item);
     }).join('');
     
-    grid.innerHTML = html || '<p style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;">Nenhum item encontrado.</p>';
+    grid.innerHTML = html || '<p style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;margin:auto;">Nenhum item encontrado.</p>';
     if(reset) window.scrollTo({top:0});
 }
 
@@ -703,7 +756,6 @@ function confirmBasket(){
     $('modal-basket-preview').close();
     showToast(`Cesta carregada!`, 's');
     loadCategory('__CART__');
-    updateTotals();
 }
 
 function confirmCombo(id){
@@ -724,7 +776,6 @@ function confirmCombo(id){
     $('modal-basket-preview').close();
     showToast(`Combo adicionado! Os itens foram para o carrinho.`, 's');
     loadCategory('__CART__');
-    updateTotals();
 }
 
 function upd(id, delta){
@@ -755,14 +806,12 @@ function upd(id, delta){
 }
 
 function updateTotals(){
-    // 1. Soma bruta
     let sumItems = 0, count = 0;
     Object.entries(STATE.cart).forEach(([id,q])=>{
         const p = STATE.prods.find(x=>x.id===id);
         if(p){ sumItems += p.price * q; count += q; }
     });
 
-    // 2. Motor de Descontos dos Combos
     STATE.comboDiscount = 0;
     let tempCart = { ...STATE.cart };
     
@@ -771,17 +820,13 @@ function updateTotals(){
             let possibleTimes = 9999;
             let comboSomaProd = 0;
             let reqs = [];
-            
             c.produtos.forEach(s => {
                 const parts = s.split('x');
                 if (parts.length === 2) {
                     const q = parseInt(parts[0]);
                     const ref = parts[1].trim();
                     const p = STATE.prods.find(x => x.id === ref || x.code === ref);
-                    if (p) {
-                        reqs.push({ id: p.id, q: q });
-                        comboSomaProd += p.price * q;
-                    }
+                    if (p) { reqs.push({ id: p.id, q: q }); comboSomaProd += p.price * q; }
                 }
             });
             if (reqs.length === 0) possibleTimes = 0;
@@ -794,11 +839,9 @@ function updateTotals(){
         });
     }
 
-    // 3. Aplica o desconto do combo
     let displayTotal = sumItems - STATE.comboDiscount;
     let isCheckoutBlocked = false;
     
-    // 4. Lógica da Cesta
     if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
         displayTotal += STATE.basketExtraFee;
         if(displayTotal < STATE.minBasketPrice){
@@ -812,7 +855,6 @@ function updateTotals(){
             $('prog-fill').style.width = '100%'; $('prog-fill').style.background = 'var(--c-ok)';
         }
     } else {
-        // Pedido Avulso
         const minOrder = 85.00;
         const missing = Math.max(0, minOrder - displayTotal);
         const pct = Math.min(100, (displayTotal / minOrder) * 100);
@@ -826,30 +868,32 @@ function updateTotals(){
         }
     }
 
-    // 5. Cupons
     if(STATE.coupon){
         if(displayTotal >= STATE.coupon.minimo) displayTotal -= STATE.coupon.desconto;
         else { STATE.coupon=null; showToast("Cupom removido", "r"); }
     }
 
-    // TAB BAR BADGE
+    // UPDATE UI ELEMENTS
     const badge = $('badge-count');
     badge.innerText = count;
     badge.style.display = count > 0 ? 'block' : 'none';
 
-    // CHECKOUT FLUTUANTE
     $('float-total').innerText = fmt(displayTotal);
     $('chk-total').innerText = fmt(displayTotal);
     
+    // GAMIFICATION & CHECKOUT VISIBILITY LOGIC (The Frictionless Strategy)
+    if(count > 0) {
+        $('progress-area').style.display = 'flex';
+    } else {
+        $('progress-area').style.display = 'none';
+    }
+
     if(STATE.activeCat === '__CART__' && count > 0) {
         $('floating-checkout').style.display = 'block';
         $('btn-checkout').disabled = isCheckoutBlocked;
     } else {
         $('floating-checkout').style.display = 'none';
     }
-
-    // GAMIFICAÇÃO FLUTUANTE
-    $('progress-area').style.display = count > 0 ? 'flex' : 'none';
 }
 
 function openCheckout(){
@@ -875,7 +919,7 @@ function openCheckout(){
 function clearCart(){ if(confirm("Esvaziar tudo?")){STATE.cart={};STATE.cartOrder=[];STATE.mode='zero';STATE.minBasketPrice=0;STATE.basketExtraFee=0;STATE.comboDiscount=0;STATE.coupon=null;updateTotals();$('modal-checkout').close();loadCategory('__CESTAS__');}}
 function handleSearch(q){
     const btn=$('btn-clr-search'); btn.style.display=q?'flex':'none';
-    if(!q) return loadCategory(STATE.activeCat);
+    if(!q) return STATE.activeCat === 'MACRO' ? loadMicro(STATE.activeMicro) : loadCategory(STATE.activeCat);
     STATE.currentList = STATE.prods.filter(p=>p.name.toUpperCase().includes(q.toUpperCase()));
     renderChunked(STATE.currentList, 'PROD', true);
 }
