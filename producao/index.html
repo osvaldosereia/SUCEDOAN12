@@ -611,7 +611,80 @@
             if(msg) document.getElementById('loader-msg').innerText = msg;
         }
 
-        function saveDataManual() { saveData(); alert("Dados salvos localmente!"); }
+        async function saveDataManual() { 
+            saveData(); 
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub para salvar os dados no site!");
+            
+            toggleLoader(true, "Salvando bancodedados.json no GitHub...");
+            const path = `site/bancodedados.json`;
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+            
+            try {
+                let sha = null;
+                try {
+                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                    if(check.ok) { const json = await check.json(); sha = json.sha; }
+                } catch(e) {}
+                
+                const contentStr = JSON.stringify(products, null, 2);
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+                const body = { message: `Backup completo: bancodedados.json via Painel`, content: base64 };
+                if(sha) body.sha = sha;
+                
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                if(!res.ok) throw new Error(await res.text());
+                alert("Todos os dados foram salvos no site (bancodedados.json) com sucesso!");
+            } catch(err) {
+                alert("Erro GitHub: " + err.message);
+            } finally {
+                toggleLoader(false);
+            }
+        }
+
+        async function fetchAndMergeFromGithub() {
+            if(!confirm("ATENÇÃO: Isso apagará os dados locais e assumirá os produtos do bancodedados.json do GitHub. Continuar?")) return;
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
+            
+            toggleLoader(true, "Importando dados do GitHub...");
+            const path = `site/bancodedados.json`;
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+            
+            try {
+                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                if(!res.ok) throw new Error("Arquivo bancodedados.json não encontrado no site.");
+                
+                const json = await res.json();
+                const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
+                const importedProducts = JSON.parse(decodedStr);
+                
+                if(Array.isArray(importedProducts)) {
+                    localStorage.removeItem(STORAGE_KEY);
+                    products = importedProducts;
+                    saveData();
+                    
+                    availableCategories = [];
+                    let catAdded = false;
+                    products.forEach(p => {
+                        if (p.categoria && !availableCategories.includes(p.categoria)) {
+                            availableCategories.push(p.categoria);
+                            catAdded = true;
+                        }
+                    });
+                    if (catAdded) availableCategories.sort((a,b) => a.localeCompare(b));
+                    
+                    renderGrid(document.getElementById('search-input').value, false);
+                    alert("Dados importados com sucesso! O sistema assumiu os produtos do site.");
+                } else {
+                    throw new Error("Formato inválido no arquivo.");
+                }
+            } catch(err) {
+                alert("Erro ao importar: " + err.message);
+            } finally {
+                toggleLoader(false);
+            }
+        }
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
