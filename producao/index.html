@@ -996,74 +996,106 @@
             }
         }
         
+        // --- FUNÇÃO AUXILIAR PARA PREPARAR TODOS OS DADOS PARA O SITE ---
+        function prepararProdutoParaSite(p) {
+            // Cria uma cópia exata do produto com TODOS os dados (imagem, GTIN, custo, etc)
+            const item = { ...p };
+            
+            // Removemos apenas as chaves que são para uso interno do painel
+            delete item._changed;
+            delete item._lastChange;
+            
+            // Garantimos que os formatos de números estejam corretos para o site
+            item.id = Number(item['ID'] || item.id || 0);
+            item.preco = Number(item.preco || 0);
+            item.estoque = Number(item.estoque || 0);
+            if(item.em_oferta) {
+                item.preco_antigo = Number(item.preco_antigo || 0);
+            }
+            
+            return item;
+        }
+
         async function syncProductsToGithub() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
             if(!confirm("Isso atualizará o arquivo produtos.json no GitHub com todos os produtos ATIVOS. Continuar?")) return;
+            
             toggleLoader(true, "Enviando Produtos...");
-            const payload = products.filter(p => p.situacao !== 'I').map(p => ({ id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), ...(p.em_oferta && { preco_antigo: Number(p.preco_antigo || 0) }), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, validade: p.validade || "", estoque: Number(p.estoque) }));
+            
+            // AGORA USAMOS A FUNÇÃO NOVA: Pega todos os produtos ativos e preserva todos os campos
+            const payload = products.filter(p => p.situacao !== 'I').map(prepararProdutoParaSite);
+            
             if(payload.length === 0) { toggleLoader(false); return alert("Nenhum produto ativo encontrado."); }
-            const path = `site/produtos.json`; const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+            
+            const path = `site/produtos.json`; 
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
             try {
-                let sha = null; try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
+                let sha = null; 
+                try { 
+                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); 
+                    if(check.ok) { const json = await check.json(); sha = json.sha; } 
+                } catch(e) {}
+                
                 payload.sort((a,b) => a.nome.localeCompare(b.nome));
-                const contentStr = JSON.stringify(payload, null, 2); const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+                const contentStr = JSON.stringify(payload, null, 2); 
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
                 const body = { message: `Bulk Upd Prods via Painel (${payload.length} items)`, content: base64 };
                 if(sha) body.sha = sha;
+                
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error(await res.text()); alert(`Sucesso! Arquivo produtos.json atualizado.`);
-            } catch(err) { alert("Erro GitHub: " + err.message); } finally { toggleLoader(false); }
+                if(!res.ok) throw new Error(await res.text()); 
+                alert(`Sucesso! Arquivo produtos.json atualizado com TODOS os dados.`);
+            } catch(err) { 
+                alert("Erro GitHub: " + err.message); 
+            } finally { 
+                toggleLoader(false); 
+            }
         }
 
-        async function fetchAndMergeFromGithub() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+        async function updateSingleProductJson(sku) {
+            const p = products.find(x => x.codigo === sku); 
+            if(!p) return;
+            
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); 
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
             
-            if(!confirm("Isso vai baixar os dados do site (produtos.json) e atualizar os produtos locais.\nSomente campos existentes no GitHub serão substituídos. Continuar?")) return;
-
-            toggleLoader(true, "Baixando dados do site...");
-            const path = `site/produtos.json`;
+            toggleLoader(true, "Atualizando Produto no JSON...");
+            const path = `site/produtos.json`; 
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-
+            
             try {
-                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if(!res.ok) throw new Error("Não foi possível acessar o arquivo no GitHub.");
-
-                const json = await res.json();
-                const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                const siteProducts = JSON.parse(decodedStr);
+                let sha = null; 
+                let currentData = [];
+                try { 
+                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); 
+                    if(check.ok) { 
+                        const json = await check.json(); 
+                        sha = json.sha; 
+                        const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, '')))); 
+                        currentData = JSON.parse(decodedStr); 
+                    } 
+                } catch(e) {}
                 
-                let updatedCount = 0;
-
-                siteProducts.forEach(siteItem => {
-                    const localProduct = products.find(p => p.codigo === siteItem.codigo);
-                    if (localProduct) {
-                        let isModified = false;
-                        Object.keys(siteItem).forEach(key => {
-                            if (localProduct[key] !== siteItem[key]) {
-                                localProduct[key] = siteItem[key];
-                                isModified = true;
-                            }
-                        });
-                        if (isModified) {
-                            localProduct._changed = true;
-                            updatedCount++;
-                        }
-                    }
-                });
-
-                if (updatedCount > 0) {
-                    saveData();
-                    renderGrid(document.getElementById('search-input').value, true);
-                    alert(`Sucesso! ${updatedCount} produtos foram atualizados com os dados do site.`);
-                } else {
-                    alert("Nenhum dado novo/diferente encontrado para atualizar.");
-                }
-
-            } catch(err) {
-                alert("Erro ao buscar do GitHub: " + err.message);
-            } finally {
-                toggleLoader(false);
+                // USAMOS A NOVA FUNÇÃO AQUI TAMBÉM
+                const itemObj = prepararProdutoParaSite(p);
+                
+                const index = currentData.findIndex(item => item.codigo === sku);
+                if(index >= 0) currentData[index] = itemObj; 
+                else currentData.push(itemObj);
+                
+                const contentStr = JSON.stringify(currentData, null, 2); 
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+                const body = { message: `Upd Prod: ${sku} via Painel`, content: base64 };
+                if(sha) body.sha = sha;
+                
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                if(!res.ok) throw new Error(await res.text()); 
+                alert("Produto atualizado no GitHub!");
+            } catch(err) { 
+                alert("Erro GitHub: " + err.message); 
+            } finally { 
+                toggleLoader(false); 
             }
         }
 
