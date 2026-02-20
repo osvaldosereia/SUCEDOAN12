@@ -87,9 +87,9 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
 
 @media(max-width:600px){
-    /* 10% mais largos (45%), mais altos, menor gap para aproximar */
+    /* 10% mais largos (45%), mais altos, menor gap para aproximar e respiro reduzido */
     .u-card{flex:0 0 45%; min-width: 145px; height: auto;}
-    .carousel-wrapper{padding: 20px 15px; gap: 10px;}
+    .carousel-wrapper{padding: 10px 15px; gap: 10px;}
 }
 
 .u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9;cursor:zoom-in; border-radius: 20px 20px 0 0;}
@@ -101,7 +101,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .offer-tag{position:absolute;bottom:0;left:0;background:#dc2626;color:#fff;font-size:0.7rem;padding:4px 10px;border-top-right-radius:12px;font-weight:800;z-index:5;box-shadow:2px -2px 5px rgba(0,0,0,0.1)}
 
 /* Etiqueta Flutuante Nova */
-.stock-tag-float{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);background:#fff;color:var(--c-err);border:1px solid var(--c-err);padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:800;z-index:15;box-shadow:0 2px 4px rgba(0,0,0,0.1);white-space:nowrap;}
+.stock-tag-float{position:absolute;bottom:-17px;left:50%;transform:translateX(-50%);background:#fff;color:var(--c-err);border:1px solid var(--c-err);padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:800;z-index:15;box-shadow:0 2px 4px rgba(0,0,0,0.1);white-space:nowrap;}
 
 .u-tag{position:absolute;top:8px;left:8px;background:#fff;padding:2px 6px;border-radius:6px;font-size:0.65rem;font-weight:700;box-shadow:0 2px 5px rgba(0,0,0,0.1);z-index:2}
 
@@ -156,7 +156,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
-/* SETAS */
+/* SETAS DOS CARDS */
 .nav-arrow{
     position:absolute;top:50%;transform:translateY(-50%);
     width:48px;height:48px;border-radius:50%;
@@ -187,23 +187,40 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .prog-fill{height:100%;background:var(--c-a);width:0%;transition:width .5s ease-out}
 
 /* MENU & FILTERS */
-.menu-area-wrapper{display:flex;flex-direction:column;gap:6px;padding:15px 20px;}
+.menu-area-wrapper{display:flex;flex-direction:column;gap:6px;padding:20px 20px;}
 .menu-title{font-size:0.85rem;font-weight:800;color:var(--c-p);text-align:center;text-transform:uppercase;letter-spacing:0.5px;}
 
+.menu-wrapper-inner { position: relative; width: 100%; display: flex; align-items: center; }
+
 .menu-scroll-area{
-    width:100%; overflow-x:auto; display:flex; gap:4px; align-items: flex-start;
+    width:100%; overflow-x:auto; display:flex; gap:0px; align-items: flex-start; scroll-behavior:smooth;
 }
 .menu-scroll-area::-webkit-scrollbar{display:none}
 
-.cat-bubble{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;min-width:75px;opacity:1;transition:.3s}
+.cat-bubble{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-width:70px;opacity:1;transition:.3s}
 .cat-bubble.active{transform:scale(1.05)}
 .cat-bubble.active .cat-img-ring{border-color:var(--c-a);box-shadow:0 0 0 3px rgba(234,88,12,0.2)}
 .cat-bubble.active .cat-name{color:var(--c-a);font-weight:800}
 
-.cat-img-ring{width:56px;height:56px;border-radius:50%;padding:2px;border:2px solid var(--c-bd);background:#fff;display:flex;align-items:center;justify-content:center;transition:border-color .2s}
+/* Botões redondos maiores e com contorno mais leve/claro */
+.cat-img-ring{width:64px;height:64px;border-radius:50%;padding:2px;border:1px solid #e2e8f0;background:#fff;display:flex;align-items:center;justify-content:center;transition:border-color .2s}
 .cat-img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#f1f5f9}
 .cat-name{font-size:0.65rem;font-weight:500;color:var(--c-s);text-align:center;line-height:1.1;max-width:70px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .cat-bubble[id*="__CART__"] .cat-img-ring { background: var(--c-p); border-color: var(--c-p); color:#fff; }
+
+/* SETAS DO MENU (Desktop) */
+.menu-arrow{
+    position:absolute;top:32px;transform:translateY(-50%);
+    width:32px;height:32px;border-radius:50%;
+    background:#fff;border:1px solid var(--c-bd);
+    box-shadow:var(--sh-float);z-index:20;cursor:pointer;
+    display:none;align-items:center;justify-content:center;
+    font-size:1rem;color:var(--c-p);
+    transition:transform .2s;
+}
+.menu-arrow:hover{background:var(--c-p);color:#fff;transform:translateY(-50%) scale(1.1)}
+.menu-left{left:-10px} .menu-right{right:-10px}
+@media(min-width:1024px){.menu-arrow{display:flex}}
 
 /* CHECKOUT */
 .checkout-bar{padding:10px 20px 20px;display:flex;align-items:center;justify-content:space-between;gap:15px; border-top:1px solid #f1f5f9}
@@ -316,7 +333,11 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
         <div class="menu-area-wrapper">
             <div class="menu-title">Categorias</div>
-            <div class="menu-scroll-area" id="menu-bubbles"></div>
+            <div class="menu-wrapper-inner">
+                <div class="menu-arrow menu-left" onclick="$('menu-bubbles').scrollBy({left:-200,behavior:'smooth'})">❮</div>
+                <div class="menu-scroll-area" id="menu-bubbles"></div>
+                <div class="menu-arrow menu-right" onclick="$('menu-bubbles').scrollBy({left:200,behavior:'smooth'})">❯</div>
+            </div>
         </div>
 
         <div class="checkout-bar">
