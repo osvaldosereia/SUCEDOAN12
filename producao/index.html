@@ -120,24 +120,20 @@
         .btn-icon:hover { background: var(--bg-body); color: var(--accent); border-color: var(--accent); }
         .btn-icon.del:hover { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
         
-        /* -- AJUSTE DA TABELA E CLASSES DE EDIÇÃO EM LISTA -- */
         .list-row { display: grid; grid-template-columns: 60px 1fr 120px 60px 60px 80px 70px 50px 70px 40px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 11px; transition: 0.2s; border-left: 3px solid transparent; }
         .list-row:hover { background: #f1f5f9; border-left-color: var(--accent); }
         .list-header { font-weight: bold; background: #e2e8f0; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-left: 3px solid transparent; cursor: default; }
         .list-header:hover { background: #e2e8f0; border-left-color: transparent; }
         
-        /* Inputs transparentes da lista */
         .list-input { width: 100%; border: 1px solid transparent; background: transparent; font-size: 11px; padding: 4px; border-radius: 4px; color: var(--text-primary); font-family: 'Inter', sans-serif; transition: 0.2s; }
         .list-input:hover { border-color: var(--border); background: #fff; }
         .list-input:focus { border-color: var(--accent); background: #fff; outline: none; }
         .list-input.number { text-align: right; font-weight: bold; }
         
-        /* Selects transparentes da lista */
         .list-select { width: 100%; border: 1px solid transparent; background: transparent; font-size: 10px; padding: 4px; border-radius: 4px; color: var(--text-primary); font-family: 'Inter', sans-serif; cursor: pointer; transition: 0.2s; }
         .list-select:hover { border-color: var(--border); background: #fff; }
         .list-select:focus { border-color: var(--accent); background: #fff; outline: none; }
         
-        /* Botão pequeno da lista */
         .list-btn-icon { background: white; border: 1px solid var(--border); padding: 4px; border-radius: 4px; cursor: pointer; color: var(--text-secondary); display:flex; justify-content:center; align-items:center; width: 100%; transition:0.2s;}
         .list-btn-icon:hover { color: var(--accent); border-color: var(--accent); }
 
@@ -166,7 +162,11 @@
     <div id="section-products" class="view-section active">
         <div class="toolbar">
             <input type="file" id="csv-file" accept=".csv" style="display:none">
-            <button class="nav-btn" onclick="document.getElementById('csv-file').click()"><i data-lucide="file-spreadsheet" size="14"></i> IMPORTAR CSV</button>
+            <input type="file" id="csv-file-append" accept=".csv" style="display:none">
+            
+            <button class="nav-btn" onclick="document.getElementById('csv-file').click()" title="Apaga o sistema atual e substitui pelo CSV"><i data-lucide="file-spreadsheet" size="14"></i> CSV (SUBST.)</button>
+            <button class="nav-btn" onclick="document.getElementById('csv-file-append').click()" title="Adiciona novos ou atualiza produtos existentes" style="background:#e0f2fe; border-color:#bae6fd; color:#0369a1;"><i data-lucide="file-plus" size="14"></i> CSV (ADD)</button>
+            
             <div style="display:flex; gap:5px; align-items:center; border-left:1px solid #cbd5e1; padding-left:15px; margin-left:15px;">
                 <input type="text" id="new-cat-input" placeholder="Nova Categoria..." style="width:120px; padding:8px; border-radius:4px; border:1px solid #cbd5e1; font-size:12px;">
                 <button class="nav-btn" onclick="addNewCategory()" title="Adicionar Categoria ao GitHub"><i data-lucide="plus-circle" size="14"></i></button>
@@ -279,7 +279,7 @@
                 <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">Força o uso de "i/..site/img/produtos/CODIGO.webp" em tudo.</div>
                 
                 <button class="btn-danger" onclick="limparSistema()" style="margin-top: 15px; border-color:#ef4444; background:#fef2f2; color:#b91c1c;"><i data-lucide="trash-2" size="14"></i> LIMPAR TODO O SISTEMA</button>
-                <div style="font-size:10px; color:#ef4444; margin-top:8px; text-align:center; font-weight:bold;">Atenção: Apaga todos os dados e configurações locais.</div>
+                <div style="font-size:10px; color:#ef4444; margin-top:8px; text-align:center; font-weight:bold;">Atenção: Apaga tudo, mas preserva a sua conexão com o GitHub.</div>
             </div>
         </div>
     </div>
@@ -353,41 +353,97 @@
             }
         }
 
+        // Função utilitária para converter as linhas de um CSV importado em um objeto de Produto
+        function processCsvRow(d) {
+            const getVal = (key) => d[key] ? d[key] : "";
+            const getNum = (key) => { const v = getVal(key); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
+            const codigoLimpo = getVal('Código').trim();
+            let rawLoc = getVal('Localização');
+            if(rawLoc) {
+                 rawLoc = rawLoc.trim().toUpperCase().replace(/\s*-\s*/, '-');
+                 if(rawLoc.match(/^\d-[A-Z0-9]+$/)) rawLoc = '0' + rawLoc;
+            }
+            const cost = getNum('Preço de custo') || getNum('Preço de Compra');
+            const cat = getVal('Categoria do produto') ? getVal('Categoria do produto').trim().toUpperCase() : "";
+            const base = {
+                codigo: codigoLimpo, nome: getVal('Descrição'), preco: getNum('Preço'), preco_custo: cost, categoria: cat, estoque: getNum('Estoque'),
+                localizacao: rawLoc, gtin: getVal('GTIN/EAN'), url_imagem: getVal('URL Imagens Externas'), ncm: getVal('NCM'), validade: getVal('Data Validade'),
+                situacao: 'A', formato: 'S', em_oferta: false, _changed: true, _lastChange: "Importação CSV"
+            };
+            Object.keys(d).forEach(k => { if(base[k] === undefined) base[k] = d[k]; });
+            base['Código'] = codigoLimpo; base['Localização'] = rawLoc; base['Preço de custo'] = cost; base['Preço de Compra'] = cost; base['Categoria do produto'] = cat;
+            base['Origem'] = '0'; base['Unidade'] = 'un'; base['Grupo de produtos'] = '';
+            return base;
+        }
+
+        // Função utilitária para extrair categorias não existentes automaticamente do CSV
+        function extractCategoriesFromCSV(novosProdutos) {
+            let catAdded = false;
+            novosProdutos.forEach(p => {
+                if (p.categoria && !availableCategories.includes(p.categoria)) {
+                    availableCategories.push(p.categoria);
+                    catAdded = true;
+                }
+            });
+            if (catAdded) {
+                availableCategories.sort((a,b) => a.localeCompare(b));
+            }
+        }
+
+        // IMPORTAR SUBSTITUINDO TUDO
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
-            toggleLoader(true, "Lendo CSV...");
+            toggleLoader(true, "Lendo CSV (Substituindo)...");
             Papa.parse(e.target.files[0], {
                 header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: (results) => {
-                    const novos = results.data.map(d => {
-                        const getVal = (key) => d[key] ? d[key] : "";
-                        const getNum = (key) => { const v = getVal(key); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
-                        const codigoLimpo = getVal('Código').trim();
-                        let rawLoc = getVal('Localização');
-                        if(rawLoc) {
-                             rawLoc = rawLoc.trim().toUpperCase().replace(/\s*-\s*/, '-');
-                             if(rawLoc.match(/^\d-[A-Z0-9]+$/)) rawLoc = '0' + rawLoc;
-                        }
-                        const cost = getNum('Preço de custo') || getNum('Preço de Compra');
-                        const cat = getVal('Categoria do produto');
-                        const base = {
-                            codigo: codigoLimpo, nome: getVal('Descrição'), preco: getNum('Preço'), preco_custo: cost, categoria: cat, estoque: getNum('Estoque'),
-                            localizacao: rawLoc, gtin: getVal('GTIN/EAN'), url_imagem: getVal('URL Imagens Externas'), ncm: getVal('NCM'), validade: getVal('Data Validade'),
-                            situacao: 'A', formato: 'S', em_oferta: false, _changed: true, _lastChange: "Importação CSV"
-                        };
-                        Object.keys(d).forEach(k => { if(base[k] === undefined) base[k] = d[k]; });
-                        base['Código'] = codigoLimpo; base['Localização'] = rawLoc; base['Preço de custo'] = cost; base['Preço de Compra'] = cost; base['Categoria do produto'] = cat;
-                        base['Origem'] = '0'; base['Unidade'] = 'un'; base['Grupo de produtos'] = '';
-                        return base;
-                    });
+                    const novos = results.data.map(processCsvRow);
                     if(novos.length > 0) { 
                         localStorage.removeItem(STORAGE_KEY);
                         products = novos; 
+                        extractCategoriesFromCSV(novos); // Auto-captura de categorias
                         saveData(); 
                         renderGrid("", false); 
                         alert("Base de dados substituída com sucesso pelo novo CSV!");
                     }
                     toggleLoader(false);
+                    e.target.value = ''; // Limpa o input
+                }
+            });
+        });
+
+        // IMPORTAR ADICIONANDO / ATUALIZANDO (NOVO!)
+        document.getElementById('csv-file-append').addEventListener('change', function(e) {
+            if(!e.target.files[0]) return;
+            toggleLoader(true, "Lendo CSV (Adicionando)...");
+            Papa.parse(e.target.files[0], {
+                header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
+                complete: (results) => {
+                    const novos = results.data.map(processCsvRow);
+                    if(novos.length > 0) { 
+                        let adicionados = 0;
+                        let atualizados = 0;
+
+                        novos.forEach(n => {
+                            const idx = products.findIndex(p => p.codigo === n.codigo);
+                            if(idx !== -1) {
+                                // Se o produto já existe, atualizamos os dados dele
+                                products[idx] = n;
+                                atualizados++;
+                            } else {
+                                // Se não existe, inserimos no topo da lista
+                                products.unshift(n);
+                                adicionados++;
+                            }
+                        });
+
+                        extractCategoriesFromCSV(novos); // Auto-captura de categorias
+                        saveData(); 
+                        renderGrid(document.getElementById('search-input').value, false); 
+                        alert(`CSV importado com sucesso!\n${adicionados} novos produtos adicionados.\n${atualizados} produtos atualizados.`);
+                    }
+                    toggleLoader(false);
+                    e.target.value = ''; // Limpa o input
                 }
             });
         });
@@ -668,7 +724,6 @@
             container.appendChild(cardElement); lucide.createIcons(); openModal('modal-product-card');
         }
 
-        // --- ATUALIZAÇÃO DA LINHA PARA TORNÁ-LA UMA PLANILHA EDITÁVEL ---
         function createListRow(p) {
             const isInactive = p.situacao === 'I';
             const row = document.createElement('div');
@@ -676,13 +731,11 @@
             if (p._changed) row.style.borderLeftColor = "var(--warning)";
             if (isInactive) row.style.opacity = "0.5";
             
-            // Montando as opções do seletor de Categoria
             let optionsCat = `<option value="">-- SELECIONE --</option>`;
             const catList = [...availableCategories]; 
             if(p.categoria && !catList.includes(p.categoria)) catList.push(p.categoria);
             catList.forEach(c => { optionsCat += `<option value="${c}" ${p.categoria === c ? 'selected' : ''}>${c.substring(0,20)}</option>`; });
             
-            // Calculando Markup dinamicamente para exibição na lista
             let lucroStr = "-", lucroColor = "var(--text-secondary)";
             if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
                 const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
@@ -704,7 +757,6 @@
                 <div><button class="list-btn-icon" onclick="event.stopPropagation(); printLabel('${p.codigo}')" title="Imprimir Etiqueta"><i data-lucide="printer" size="14"></i></button></div>
             `;
             
-            // Permite clicar na linha num lugar vazio para abrir os detalhes (como já funcionava)
             row.onclick = () => openProductModal(p.codigo);
             return row;
         }
@@ -757,7 +809,6 @@
 
             const buildList = (items, container) => {
                 const header = document.createElement('div'); header.className = 'list-row list-header';
-                // ATUALIZAÇÃO NO CABEÇALHO PARA COMBINAR COM AS NOVAS COLUNAS
                 header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>CATEGORIA</div><div style="text-align:center;">LOCAL</div><div style="text-align:right;">EST.</div><div style="text-align:center;">VAL.</div><div style="text-align:right;">CUSTO (R$)</div><div style="text-align:right;">MKP</div><div style="text-align:right;">PREÇO (R$)</div><div style="text-align:center;"><i data-lucide="printer" size="14"></i></div>`;
                 container.appendChild(header);
                 const subGrid = document.createElement('div'); subGrid.className = 'category-items-container';
@@ -1078,9 +1129,13 @@
             saveData(); renderGrid(document.getElementById('search-input').value, true); alert(`${count} produtos atualizados para o padrão do site!`);
         }
         
+        // --- LIMPEZA SEGURA DO SISTEMA (MANTENDO O TOKEN) ---
         function limparSistema() {
-            if(confirm("ATENÇÃO: Isso vai apagar TODOS os produtos e configurações salvos neste navegador. Deseja realmente continuar?")) {
-                localStorage.clear();
+            if(confirm("ATENÇÃO: Isso vai apagar TODOS os produtos e configurações salvos neste navegador.\n\nAs configurações do GitHub serão MANTIDAS.\n\nDeseja realmente continuar?")) {
+                const configSalva = localStorage.getItem(CONFIG_KEY); // Salva o token em uma variável segura
+                localStorage.clear(); // Apaga todo o localStorage
+                if (configSalva) localStorage.setItem(CONFIG_KEY, configSalva); // Devolve o token para o localStorage
+                
                 alert("Sistema limpo com sucesso! A página será recarregada para iniciar do zero.");
                 window.location.reload();
             }
