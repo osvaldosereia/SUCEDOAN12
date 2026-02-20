@@ -31,25 +31,18 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* LAYOUT DESKTOP LIMITER */
 .layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
 
-/* HEADER LIMPO */
+/* NOVO HEADER: Logo Esquerda + Busca Extensa */
 .app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;flex-direction:column;align-items:center}
-.header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;width:100%;gap:15px;flex-wrap:wrap;}
-.header-brand{display:flex;align-items:center;gap:10px;}
-.logo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
-.brand-txt{font-size:.9rem;font-weight:800;line-height:1.1}
+.header-inner{display:flex;align-items:center;padding:12px 20px;width:100%;gap:15px;}
+.header-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo{width:65px;height:65px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
 
-/* SEARCH & FILTER */
-.search-filter-row{display:flex;gap:10px;flex:1;min-width:250px;}
+/* SEARCH BAR */
 .search-bar-area{flex:1;position:relative}
-.search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:10px 12px 10px 40px;border-radius:10px;font-weight:600;color:var(--c-p);transition:box-shadow .2s}
+.search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:12px 15px 12px 40px;border-radius:12px;font-weight:600;color:var(--c-p);transition:box-shadow .2s;font-size:0.95rem;}
 .search-inp:focus{box-shadow:0 0 0 2px rgba(15, 23, 42, 0.1); border-color:var(--c-p)}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none}
-.clear-search{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
-.filter-sel{background:#f8fafc;border:1px solid var(--c-bd);border-radius:10px;padding:0 10px;font-weight:600;color:var(--c-s);font-size:0.85rem}
-
-@media(min-width: 800px){
-    .header-inner{flex-wrap:nowrap;}
-}
+.clear-search{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:24px;height:24px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
 
 /* CHIPS BAR (Categorias Rápidas) */
 .chips-bar {
@@ -67,17 +60,32 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* PALCO CENTRAL (GRADE VERTICAL) */
 .main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:180px; scroll-behavior:smooth;}
 
+/* FILTRO DISCRETO ACIMA DA GRADE */
+.filter-row {
+    width: 100%; max-width: 1200px; margin: 0 auto; padding: 15px 20px 0;
+    display: flex; justify-content: flex-end; align-items: center;
+}
+.filter-sel-inline {
+    background: transparent; border: none; font-weight: 700; color: var(--c-s);
+    font-size: 0.8rem; text-align: right; cursor: pointer; appearance: none; -webkit-appearance: none;
+    padding-right: 15px; position: relative;
+}
+/* Seta do select nativo para ficar bonito */
+.filter-wrapper { position: relative; display: inline-block; }
+.filter-wrapper::after { content: '▼'; font-size: 0.6rem; position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--c-s); pointer-events: none;}
+
 .grid-wrapper{
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px; padding: 20px;
+    gap: 15px; padding: 15px 20px 20px;
     width: 100%; max-width: 1200px; margin: 0 auto;
     align-content: start;
 }
 
 @media(max-width:600px){
     /* 2 Cards por linha no mobile */
-    .grid-wrapper{ grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; }
+    .grid-wrapper{ grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 15px 15px; }
+    .filter-row { padding: 10px 15px 0; }
 }
 
 /* CARDS */
@@ -154,7 +162,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
-/* FLOATING BOTTOM AREA (Gamification & Checkout) */
+/* FLOATING BOTTOM AREA (Apenas o Botão Unificado) */
 .floating-bottom {
     position: fixed;
     bottom: calc(60px + env(safe-area-inset-bottom));
@@ -163,23 +171,22 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     pointer-events: none; /* Para não bloquear cliques onde não tem elemento */
 }
 
-/* PROGRESS BAR (Flutuante e Dinâmica) */
-.progress-area{width:100%;background:#e2e8f0;padding:10px 20px;border-top:1px solid var(--c-bd);display:none;flex-direction:column;align-items:center;gap:4px;box-shadow:0 -4px 15px rgba(0,0,0,0.08); pointer-events: auto;}
-.prog-txt{font-size:0.75rem;font-weight:700;color:var(--c-s);text-transform:uppercase;text-align:center}
-.prog-track{width:100%;max-width:500px;height:6px;background:#cbd5e1;border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;background:var(--c-a);width:0%;transition:width .5s ease-out}
-
-/* CHECKOUT FLOATING BTN */
+/* CHECKOUT FLOATING BTN - UNIFICADO COM GAMIFICAÇÃO */
 .floating-checkout-wrap { width: 100%; max-width: 500px; padding: 15px 20px; display: none; pointer-events: auto; }
 .btn-floating-checkout{
     width:100%; background:#16a34a; color:#fff;
-    padding:16px; border-radius:16px; font-weight:900; font-size:1.1rem;
+    padding:16px; border-radius:16px; font-weight:900; font-size:1.05rem;
     display:flex; align-items:center; justify-content:center; gap:8px;
-    box-shadow:0 10px 25px rgba(22,163,74,0.4); border:none; cursor:pointer;
-    transition:transform .1s;
+    box-shadow:0 10px 25px rgba(0,0,0,0.15); border:none; cursor:pointer;
+    transition:all .2s; text-align: center; line-height: 1.2;
 }
 .btn-floating-checkout:active{transform:scale(0.98)}
-.btn-floating-checkout:disabled{background:#94a3b8;cursor:not-allowed;box-shadow:none}
+
+/* Estados do Botão Flutuante */
+.btn-floating-checkout.state-locked { background: #94a3b8; cursor: not-allowed; box-shadow: none; color: #fff; }
+.btn-floating-checkout.state-alert { background: var(--c-a); cursor: not-allowed; box-shadow: none; color: #fff; }
+.btn-floating-checkout.state-ready { background: #16a34a; }
+
 
 /* APP TAB BAR (Bottom Navigation) */
 .bottom-nav-bar {
@@ -191,7 +198,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .tab-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     flex: 1; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; transition: color 0.2s; position: relative;
-    min-width: 0; /* Permite espremer para caber 5 itens */
+    min-width: 0; 
 }
 .tab-item.active { color: var(--c-p); }
 .tab-icon { font-size: 1.2rem; line-height: 1; }
@@ -265,20 +272,11 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     <div class="layout-limit header-inner">
         <div class="header-brand">
             <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo">
-            <div class="brand-txt">Super Cestas<br>Dona Antônia</div>
         </div>
-        <div class="search-filter-row" id="top-search-row">
-            <div class="search-bar-area">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto..." oninput="handleSearch(this.value)">
-                <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
-            </div>
-            <select class="filter-sel" id="filter-sel" onchange="applyFilter()">
-                <option value="def">Relevância</option>
-                <option value="min">Menor Preço</option>
-                <option value="max">Maior Preço</option>
-                <option value="az">A-Z</option>
-            </select>
+        <div class="search-bar-area">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto..." oninput="handleSearch(this.value)">
+            <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
         </div>
     </div>
     <div class="layout-limit" style="width: 100%;">
@@ -287,20 +285,26 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     </div>
 </header>
 
-<main class="main-stage">
+<main class="main-stage" id="scroll-stage">
+    <div class="filter-row" id="filter-container">
+        <div class="filter-wrapper">
+            <select class="filter-sel-inline" id="filter-sel" onchange="applyFilter()">
+                <option value="def">Relevância</option>
+                <option value="min">Menor Preço</option>
+                <option value="max">Maior Preço</option>
+                <option value="az">A-Z</option>
+            </select>
+        </div>
+    </div>
     <div class="grid-wrapper" id="main-grid">
         </div>
 </main>
 
 <div class="floating-bottom">
     <div class="floating-checkout-wrap" id="floating-checkout">
-        <button class="btn-floating-checkout" id="btn-checkout" onclick="openCheckout()">
-            FINALIZAR PEDIDO • <span id="float-total">R$ 0,00</span>
+        <button class="btn-floating-checkout state-ready" id="btn-checkout" onclick="openCheckout()">
+            ✅ FINALIZAR PEDIDO • <span id="float-total">R$ 0,00</span>
         </button>
-    </div>
-    <div class="progress-area" id="progress-area">
-        <div class="prog-txt" id="prog-txt">Faltam R$ 85,00 para fechar pedido</div>
-        <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
     </div>
 </div>
 
@@ -484,8 +488,10 @@ function loadMacro(macroName) {
 
     let chipsHtml = `<div class="chip active" id="chip-Todos" onclick="loadMicro('Todos')">Ver Tudo</div>`;
     
-    // Renderiza a barra de Chips baseada no arquivo departamento.json
-    const categoriasDoCorredor = STATE.departamentos[macroName] || [];
+    // Renderiza a barra de Chips baseada no arquivo departamento.json (ORDEM ALFABÉTICA)
+    let categoriasDoCorredor = STATE.departamentos[macroName] || [];
+    categoriasDoCorredor.sort((a,b) => a.localeCompare(b)); // Ordem Alfabética
+
     categoriasDoCorredor.forEach(cat => {
         const safeId = cat.replace(/\s/g,'-');
         chipsHtml += `<div class="chip" id="chip-${safeId}" onclick="loadMicro('${cat.replace(/'/g,"\\'")}')">${cat}</div>`;
@@ -508,7 +514,7 @@ function loadMicro(catName) {
         c.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
     }
 
-    // Filtra produtos pela Categoria (Micro) ou por todas as categorias do Corredor (Macro)
+    // Filtra produtos
     let list = [];
     if(catName === 'Todos') {
         const categoriasDoCorredor = STATE.departamentos[STATE.activeMacro] || [];
@@ -577,6 +583,13 @@ function renderChunked(list, type, reset){
     const grid = $('main-grid');
     if(reset) grid.innerHTML = '';
     
+    // Mostra ou esconde o filtro de ordenação com base no tipo
+    if(type === 'BASKET' || type === 'COMBO') {
+        $('filter-container').style.display = 'none';
+    } else {
+        $('filter-container').style.display = 'flex';
+    }
+
     const html = list.map(item => {
         if(type === 'BASKET') return cardBasket(item);
         if(type === 'COMBO') return cardCombo(item);
@@ -584,7 +597,11 @@ function renderChunked(list, type, reset){
     }).join('');
     
     grid.innerHTML = html || '<p style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;margin:auto;">Nenhum item encontrado.</p>';
-    if(reset) window.scrollTo({top:0});
+    
+    // Volta suavemente para o topo da grade
+    if(reset) {
+        $('scroll-stage').scrollTo({top:0, behavior: 'smooth'});
+    }
 }
 
 /* CARDS */
@@ -840,31 +857,34 @@ function updateTotals(){
     }
 
     let displayTotal = sumItems - STATE.comboDiscount;
-    let isCheckoutBlocked = false;
+    let btnCheckout = $('btn-checkout');
     
+    // Lógica do Botão de Checkout (Unificado)
+    btnCheckout.classList.remove('state-locked', 'state-alert', 'state-ready');
+    btnCheckout.disabled = false;
+
     if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
         displayTotal += STATE.basketExtraFee;
         if(displayTotal < STATE.minBasketPrice){
             const credit = STATE.minBasketPrice - displayTotal;
             displayTotal = STATE.minBasketPrice; 
-            $('prog-txt').innerHTML = `<span style="color:var(--c-a);font-size:0.85rem;font-weight:900;">🚨 USE SEU CRÉDITO: ${fmt(credit)}</span>`;
-            $('prog-fill').style.width = '100%'; $('prog-fill').style.background = 'repeating-linear-gradient(45deg, var(--c-a), var(--c-a) 10px, #fb923c 10px, #fb923c 20px)';
-            isCheckoutBlocked = true; 
+            btnCheckout.classList.add('state-alert');
+            btnCheckout.disabled = true;
+            btnCheckout.innerHTML = `⚠️ USE ${fmt(credit)} DE CRÉDITO`;
         } else {
-            $('prog-txt').innerText = "Valor da cesta atingido! 🚀";
-            $('prog-fill').style.width = '100%'; $('prog-fill').style.background = 'var(--c-ok)';
+            btnCheckout.classList.add('state-ready');
+            btnCheckout.innerHTML = `✅ FINALIZAR • ${fmt(displayTotal)}`;
         }
     } else {
         const minOrder = 85.00;
         const missing = Math.max(0, minOrder - displayTotal);
-        const pct = Math.min(100, (displayTotal / minOrder) * 100);
         if(missing > 0){
-            $('prog-txt').innerText = `Faltam ${fmt(missing)} para o pedido mínimo`;
-            $('prog-fill').style.width = `${pct}%`; $('prog-fill').style.background = 'var(--c-a)';
-            isCheckoutBlocked = true;
+            btnCheckout.classList.add('state-locked');
+            btnCheckout.disabled = true;
+            btnCheckout.innerHTML = `🔒 FALTAM ${fmt(missing)}`;
         } else {
-            $('prog-txt').innerText = "Pedido mínimo atingido! 🚀";
-            $('prog-fill').style.width = '100%'; $('prog-fill').style.background = 'var(--c-ok)';
+            btnCheckout.classList.add('state-ready');
+            btnCheckout.innerHTML = `✅ FINALIZAR • ${fmt(displayTotal)}`;
         }
     }
 
@@ -878,19 +898,11 @@ function updateTotals(){
     badge.innerText = count;
     badge.style.display = count > 0 ? 'block' : 'none';
 
-    $('float-total').innerText = fmt(displayTotal);
     $('chk-total').innerText = fmt(displayTotal);
     
-    // GAMIFICATION & CHECKOUT VISIBILITY LOGIC (The Frictionless Strategy)
-    if(count > 0) {
-        $('progress-area').style.display = 'flex';
-    } else {
-        $('progress-area').style.display = 'none';
-    }
-
+    // Mostra o botão apenas na aba do carrinho e se tiver itens
     if(STATE.activeCat === '__CART__' && count > 0) {
         $('floating-checkout').style.display = 'block';
-        $('btn-checkout').disabled = isCheckoutBlocked;
     } else {
         $('floating-checkout').style.display = 'none';
     }
@@ -926,7 +938,9 @@ function handleSearch(q){
 function clearSearch(){$('search-inp').value='';handleSearch('');}
 function applyCupom(){
     const c=STATE.coupons.find(x=>x.codigo===$('cupom-code').value.toUpperCase().trim());
-    const tot=parseMoney($('float-total').innerText);
+    let totStr = $('chk-total').innerText;
+    const tot=parseMoney(totStr);
+    
     if(c && tot>=c.minimo){ STATE.coupon=c; updateTotals(); $('cupom-msg').innerText="CUPOM APLICADO!"; $('cupom-msg').style.display='block'; }
     else showToast("Cupom inválido ou mínimo não atingido", "r");
 }
