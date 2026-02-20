@@ -120,7 +120,8 @@
         .btn-icon:hover { background: var(--bg-body); color: var(--accent); border-color: var(--accent); }
         .btn-icon.del:hover { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
         
-        .list-row { display: grid; grid-template-columns: 60px 1fr 120px 60px 60px 80px 70px 50px 70px 40px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 11px; transition: 0.2s; border-left: 3px solid transparent; }
+        /* Ajuste do grid para comportar novas colunas (10 no total) */
+        .list-row { display: grid; grid-template-columns: 90px 1fr 120px 80px 60px 80px 70px 45px 70px 40px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 11px; transition: 0.2s; border-left: 3px solid transparent; }
         .list-row:hover { background: #f1f5f9; border-left-color: var(--accent); }
         .list-header { font-weight: bold; background: #e2e8f0; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-left: 3px solid transparent; cursor: default; }
         .list-header:hover { background: #e2e8f0; border-left-color: transparent; }
@@ -176,6 +177,8 @@
             <div style="display:flex; gap:5px; align-items:center; margin-left:15px;">
                 <select id="filter-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value, true)">
                     <option value="all">Todos</option>
+                    <option value="ativos">Somente Ativos</option>
+                    <option value="inativos">Somente Inativos</option>
                     <option value="ofertas">Em Oferta</option>
                     <option value="validity60">Vence < 60 dias</option>
                     <option value="errors">Erros de Cadastro (GTIN/NCM/Preço)</option>
@@ -353,7 +356,6 @@
             }
         }
 
-        // Função utilitária para converter as linhas de um CSV importado em um objeto de Produto
         function processCsvRow(d) {
             const getVal = (key) => d[key] ? d[key] : "";
             const getNum = (key) => { const v = getVal(key); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
@@ -376,7 +378,6 @@
             return base;
         }
 
-        // Função utilitária para extrair categorias não existentes automaticamente do CSV
         function extractCategoriesFromCSV(novosProdutos) {
             let catAdded = false;
             novosProdutos.forEach(p => {
@@ -390,7 +391,6 @@
             }
         }
 
-        // IMPORTAR SUBSTITUINDO TUDO
         document.getElementById('csv-file').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
             toggleLoader(true, "Lendo CSV (Substituindo)...");
@@ -401,18 +401,17 @@
                     if(novos.length > 0) { 
                         localStorage.removeItem(STORAGE_KEY);
                         products = novos; 
-                        extractCategoriesFromCSV(novos); // Auto-captura de categorias
+                        extractCategoriesFromCSV(novos); 
                         saveData(); 
                         renderGrid("", false); 
                         alert("Base de dados substituída com sucesso pelo novo CSV!");
                     }
                     toggleLoader(false);
-                    e.target.value = ''; // Limpa o input
+                    e.target.value = ''; 
                 }
             });
         });
 
-        // IMPORTAR ADICIONANDO / ATUALIZANDO (NOVO!)
         document.getElementById('csv-file-append').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
             toggleLoader(true, "Lendo CSV (Adicionando)...");
@@ -427,23 +426,21 @@
                         novos.forEach(n => {
                             const idx = products.findIndex(p => p.codigo === n.codigo);
                             if(idx !== -1) {
-                                // Se o produto já existe, atualizamos os dados dele
                                 products[idx] = n;
                                 atualizados++;
                             } else {
-                                // Se não existe, inserimos no topo da lista
                                 products.unshift(n);
                                 adicionados++;
                             }
                         });
 
-                        extractCategoriesFromCSV(novos); // Auto-captura de categorias
+                        extractCategoriesFromCSV(novos);
                         saveData(); 
                         renderGrid(document.getElementById('search-input').value, false); 
                         alert(`CSV importado com sucesso!\n${adicionados} novos produtos adicionados.\n${atualizados} produtos atualizados.`);
                     }
                     toggleLoader(false);
-                    e.target.value = ''; // Limpa o input
+                    e.target.value = ''; 
                 }
             });
         });
@@ -703,6 +700,30 @@
             if (container.querySelector('#card-' + sku)) openProductModal(sku); 
         }
         
+        // --- FUNÇÃO PARA ALTERAR O CÓDIGO (SKU) COM SEGURANÇA ---
+        function changeProductCode(oldSku, newSku) {
+            newSku = newSku.trim().toUpperCase();
+            if(!newSku || oldSku === newSku) return;
+            if(products.find(p => p.codigo === newSku)) {
+                alert("Já existe um produto com este código!");
+                renderGrid(document.getElementById('search-input').value, true); 
+                return;
+            }
+            const p = products.find(p => p.codigo === oldSku);
+            if(p) {
+                p.codigo = newSku;
+                p['Código'] = newSku;
+                p._changed = true;
+                p._lastChange = new Date().toLocaleString();
+                saveData();
+                renderGrid(document.getElementById('search-input').value, true);
+                const container = document.getElementById('product-card-container');
+                if (container.innerHTML !== '' && document.getElementById('modal-product-card').style.display !== 'none') {
+                    openProductModal(newSku); 
+                }
+            }
+        }
+
         function printBarcode50mm(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
@@ -745,11 +766,11 @@
             }
             
             row.innerHTML = `
-                <div style="font-weight:bold; color:var(--text-secondary); cursor:pointer;" onclick="openProductModal('${p.codigo}')" title="Abrir Detalhes">${p.codigo}</div>
+                <div><input type="text" class="list-input" style="font-weight:bold; color:var(--text-secondary);" value="${p.codigo}" onchange="changeProductCode('${p.codigo}', this.value)" onclick="event.stopPropagation()" title="Alterar Código"></div>
                 <div><input type="text" class="list-input" style="font-weight:600;" value="${p.nome}" onchange="updateProduct('${p.codigo}', 'nome', this.value)" onclick="event.stopPropagation()"></div>
                 <div><select class="list-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)" onclick="event.stopPropagation()">${optionsCat}</select></div>
-                <div style="font-size:10px; font-weight:bold; color:var(--text-secondary); text-align:center;">${p.localizacao || '-'}</div>
-                <div style="text-align:right;">${formatNum(p.estoque)}</div>
+                <div><input type="text" class="list-input" style="font-size:10px; font-weight:bold; color:var(--text-secondary); text-align:center;" value="${p.localizacao || ''}" onchange="updateProduct('${p.codigo}', 'localizacao', this.value)" onclick="event.stopPropagation()"></div>
+                <div><input type="text" class="list-input number" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)" onclick="event.stopPropagation()"></div>
                 <div><input type="text" class="list-input" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}; text-align:center;" value="${p.validade || ''}" placeholder="DD/MM/AAAA" onchange="updateProduct('${p.codigo}', 'validade', this.value)" onclick="event.stopPropagation()"></div>
                 <div><input type="text" class="list-input number" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)" onclick="event.stopPropagation()"></div>
                 <div style="text-align:right; font-size:10px; font-weight:bold; color:${lucroColor}; padding-right:4px;">${lucroStr}</div>
@@ -779,7 +800,13 @@
                 const term = filter.toLowerCase();
                 filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term) || (p.gtin||"").includes(term) || (p.localizacao||"").toLowerCase().includes(term));
             }
-            if(filterMode === 'validity60') {
+            
+            // --- APLICAÇÃO DOS NOVOS FILTROS (ATIVOS/INATIVOS) ---
+            if(filterMode === 'ativos') {
+                filtered = filtered.filter(p => p.situacao !== 'I');
+            } else if (filterMode === 'inativos') {
+                filtered = filtered.filter(p => p.situacao === 'I');
+            } else if(filterMode === 'validity60') {
                 const limit = new Date(); limit.setDate(limit.getDate() + 60);
                 filtered = filtered.filter(p => { if(!p.validade) return false; const dt = parseDate(p.validade); return dt && dt <= limit; });
             } else if (filterMode === 'errors') {
@@ -892,7 +919,10 @@
                     <div class="img-overlay"><button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button><button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button></div>
                 </div>
                 <div class="card-body">
-                    <div class="card-sku"><span>${p.codigo}</span><div class="loc-controls"><select class="loc-select" onchange="updateProduct('${p.codigo}', 'gondola', this.value)">${optionsG}</select><select class="loc-select" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)">${optionsP}</select></div></div>
+                    <div class="card-sku">
+                        <input type="text" class="card-input-small" style="font-size:12px; font-weight:900; width:100px; padding:0; color:var(--text-secondary); text-transform:uppercase;" value="${p.codigo}" onchange="changeProductCode('${p.codigo}', this.value)" title="Editar Código">
+                        <div class="loc-controls"><select class="loc-select" onchange="updateProduct('${p.codigo}', 'gondola', this.value)">${optionsG}</select><select class="loc-select" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)">${optionsP}</select></div>
+                    </div>
                     <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
                     <div style="margin-top:4px;"><label style="font-size:9px; color:var(--accent); font-weight:bold;">CATEGORIA</label><select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">${optionsCat}</select></div>
                     <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
@@ -919,14 +949,6 @@
                     <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto"><i data-lucide="download" size="18"></i></button>
                 </div>`;
             return card;
-        }
-
-        function printLabel(sku) {
-            const p = products.find(x => x.codigo === sku); if (!p) return; let gondola = "---", prateleira = "---";
-            if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); gondola = parts[0]; prateleira = parts[1]; }
-            const w = window.open('', '', 'width=900,height=600');
-            w.document.write(`<html><head><style>@page { size: 80mm 80mm; margin: 0; } body { width: 80mm; height: 80mm; margin: 0; padding: 2mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; font-family: sans-serif; text-align: center; } .loc-row { font-size: 20px; font-weight: 900; border-bottom: 2px solid #000; width: 100%; margin-bottom: 5px; display: flex; justify-content: space-around; } .name { font-size: 16px; font-weight: 900; margin-bottom: 2px; line-height: 1.1; text-transform: uppercase; max-height: 55px; overflow:hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; } .sku { font-size: 24px; font-weight: 900; margin: 2px 0; } .ean { font-size: 12px; font-weight: bold; } .val-box { margin-top: 5px; border: 2px solid #000; border-radius: 6px; padding: 2px 8px; font-weight: 900; font-size: 14px; width: 90%; } </style></head><body><div class="loc-row"><span>GON: ${gondola}</span><span>PRAT: ${prateleira}</span></div><div class="name">${p.nome}</div><div class="sku">${p.codigo}</div><div class="ean">EAN: ${p.gtin || ''}</div><div class="val-box">VAL: ${p.validade || '---'}</div><script>window.onload = function() { window.print(); }<\/script></body></html>`);
-            w.document.close();
         }
 
         function updateProduct(sku, field, value) {
@@ -956,7 +978,15 @@
             }
             if(p[field] != finalVal) {
                 p[field] = finalVal;
-                if(field === 'nome') p['Descrição'] = finalVal; if(field === 'preco') p['Preço'] = value; if(field === 'estoque') p['Estoque'] = value; if(field === 'categoria') p['Categoria do produto'] = value; if(field === 'gtin') p['GTIN/EAN'] = value; if(field === 'ncm') p['NCM'] = value; if(field === 'validade') p['Data Validade'] = value;
+                if(field === 'nome') p['Descrição'] = finalVal; 
+                if(field === 'preco') p['Preço'] = value; 
+                if(field === 'estoque') p['Estoque'] = value; 
+                if(field === 'categoria') p['Categoria do produto'] = value; 
+                if(field === 'gtin') p['GTIN/EAN'] = value; 
+                if(field === 'ncm') p['NCM'] = value; 
+                if(field === 'validade') p['Data Validade'] = value;
+                if(field === 'localizacao') p['Localização'] = value; // Adicionado atualização direta do local
+                
                 p._changed = true; p._lastChange = new Date().toLocaleString(); saveData();
                 const card = document.getElementById('card-' + sku);
                 if(card) {
@@ -1129,12 +1159,11 @@
             saveData(); renderGrid(document.getElementById('search-input').value, true); alert(`${count} produtos atualizados para o padrão do site!`);
         }
         
-        // --- LIMPEZA SEGURA DO SISTEMA (MANTENDO O TOKEN) ---
         function limparSistema() {
             if(confirm("ATENÇÃO: Isso vai apagar TODOS os produtos e configurações salvos neste navegador.\n\nAs configurações do GitHub serão MANTIDAS.\n\nDeseja realmente continuar?")) {
-                const configSalva = localStorage.getItem(CONFIG_KEY); // Salva o token em uma variável segura
-                localStorage.clear(); // Apaga todo o localStorage
-                if (configSalva) localStorage.setItem(CONFIG_KEY, configSalva); // Devolve o token para o localStorage
+                const configSalva = localStorage.getItem(CONFIG_KEY); 
+                localStorage.clear(); 
+                if (configSalva) localStorage.setItem(CONFIG_KEY, configSalva); 
                 
                 alert("Sistema limpo com sucesso! A página será recarregada para iniciar do zero.");
                 window.location.reload();
