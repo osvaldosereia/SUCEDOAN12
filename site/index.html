@@ -33,9 +33,10 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 /* HEADER */
 .app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;flex-direction:column;align-items:center}
-.header-inner{display:flex;align-items:center;padding:12px 20px;width:100%;gap:15px;}
+/* Ajuste de respiro: Menos espaço embaixo (4px) */
+.header-inner{display:flex;align-items:center;padding:12px 20px 4px 20px;width:100%;gap:15px;}
 .header-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.logo{width:75px;height:75px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
+.logo{width:65px;height:65px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
 
 /* SEARCH BAR */
 .search-bar-area{flex:1;position:relative}
@@ -45,6 +46,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .clear-search{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:24px;height:24px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
 
 /* CHIPS BAR (Categorias Rápidas) */
+/* Ajuste de respiro: Menos espaço em cima (4px) */
 .chips-bar {
     display: none; width: 100%; max-width: 1200px; padding: 4px 20px 12px 20px; gap: 8px;
     overflow-x: auto; scroll-behavior: smooth; align-items: center;
@@ -60,9 +62,33 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* PALCO CENTRAL (GRADE VERTICAL) */
 .main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:140px; scroll-behavior:smooth;}
 
+/* BANNERS */
+.banner-wrapper {
+    width: 100%; max-width: 1200px; margin: 0 auto;
+    padding: 15px 20px 5px; display: none; gap: 12px;
+    overflow-x: auto; scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+}
+.banner-wrapper::-webkit-scrollbar { display: none; }
+.banner-card {
+    flex: 0 0 85%; scroll-snap-align: start;
+    border-radius: 16px; padding: 18px 20px;
+    display: flex; flex-direction: column; justify-content: center;
+    cursor: pointer; transition: transform 0.2s;
+    min-height: 90px; box-shadow: var(--sh-card);
+}
+.banner-card:active { transform: scale(0.98); }
+.banner-title { font-size: 1.15rem; font-weight: 900; margin-bottom: 4px; line-height: 1.1; letter-spacing: -0.5px;}
+.banner-sub { font-size: 0.8rem; font-weight: 600; opacity: 0.9; line-height: 1.2; }
+
+@media(min-width: 800px) {
+    .banner-wrapper { overflow-x: visible; }
+    .banner-card { flex: 1; }
+}
+
 /* FILTRO DISCRETO ACIMA DA GRADE */
 .filter-row {
-    width: 100%; max-width: 1200px; margin: 0 auto; padding: 15px 20px 0;
+    width: 100%; max-width: 1200px; margin: 0 auto; padding: 10px 20px 0;
     display: flex; justify-content: flex-end; align-items: center;
 }
 .filter-sel-inline {
@@ -83,7 +109,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 @media(max-width:600px){
     .grid-wrapper{ grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 15px 15px; }
-    .filter-row { padding: 10px 15px 0; }
+    .filter-row { padding: 5px 15px 0; }
 }
 
 /* CARDS */
@@ -210,7 +236,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .btn-floating-checkout:active{transform:scale(0.98)}
 
-/* APP TAB BAR (Bottom Navigation) */
+/* APP TAB BAR (Bottom Navigation) - Agora com 4 abas */
 .bottom-nav-bar {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #fff; display: flex; justify-content: space-around; align-items: center;
@@ -220,7 +246,6 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .tab-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     flex: 1; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; transition: color 0.2s; position: relative;
-    min-width: 0; 
 }
 .tab-item.active { color: var(--c-p); }
 .tab-icon { font-size: 1.3rem; line-height: 1; }
@@ -308,6 +333,10 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 </header>
 
 <main class="main-stage" id="scroll-stage">
+    
+    <div class="banner-wrapper" id="banner-area">
+        </div>
+
     <div class="filter-row" id="filter-container">
         <div class="filter-wrapper">
             <select class="filter-sel-inline" id="filter-sel" onchange="applyFilter()">
@@ -453,7 +482,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 <script>
 const $=i=>document.getElementById(i);
 const STATE={
-    baskets:[], prods:[], coupons:[], combos:[], departamentos:{},
+    baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, banners:[],
     cart:{}, cartOrder:[], 
     activeCat:'__CESTAS__', 
     activeMacro: null,
@@ -468,12 +497,13 @@ const STATE={
 
 async function init(){
     try{
-        const[r1,r2,r3,r4,r5]=await Promise.all([
+        const[r1,r2,r3,r4,r5,r6]=await Promise.all([
             fetch('produtos-cesta-basica.json?v='+Date.now()),
             fetch('produtos.json?v='+Date.now()),
             fetch('cupons.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('combos.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('departamento.json?v='+Date.now()).catch(()=>({ok:false}))
+            fetch('departamento.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('banner.json?v='+Date.now()).catch(()=>({ok:false}))
         ]);
         if(r1.ok) STATE.baskets = await r1.json();
         if(r2.ok){
@@ -491,12 +521,41 @@ async function init(){
         if(r3&&r3.ok) STATE.coupons = await r3.json();
         if(r4&&r4.ok) STATE.combos = await r4.json();
         if(r5&&r5.ok) STATE.departamentos = await r5.json();
+        if(r6&&r6.ok) STATE.banners = await r6.json();
 
+        renderBanners();
         loadCategory('__CESTAS__');
         updateTotals(); 
     }catch(e){
         $('main-grid').innerHTML='<p style="grid-column:1/-1;padding:20px;text-align:center;color:red;font-weight:bold;">Erro fatal na leitura dos arquivos.<br>Abra o F12 para ver detalhes.</p>';
         console.error("ERRO DO CÓDIGO", e);
+    }
+}
+
+/* --- LOGICA DOS BANNERS --- */
+function renderBanners() {
+    const wrap = $('banner-area');
+    if (!STATE.banners || STATE.banners.length === 0) {
+        wrap.style.display = 'none';
+        return;
+    }
+    wrap.innerHTML = STATE.banners.map(b => `
+        <div class="banner-card" style="background:${b.corFundo}; color:${b.corTexto}" onclick="handleBannerClick('${b.linkChip}')">
+            <div class="banner-title">${b.titulo}</div>
+            <div class="banner-sub">${b.subtitulo}</div>
+        </div>
+    `).join('');
+}
+
+window.handleBannerClick = function(link) {
+    if(!link) return;
+    if(link.startsWith('__')) {
+        loadCategory(link);
+    } else if (['OFERTAS_SEMANA', 'COMBOS', 'ATE_2'].includes(link)) {
+        loadCategory('__OFFERS__');
+        setTimeout(() => loadOfferMicro(link), 100);
+    } else {
+        goToCategory(link);
     }
 }
 
@@ -521,6 +580,7 @@ function loadMacro(macroName) {
     
     $('chips-bar').innerHTML = chipsHtml;
     $('chips-bar').style.display = 'flex';
+    $('banner-area').style.display = 'none'; // Esconde banners nos corredores
     
     loadMicro('Todos');
     updateTotals();
@@ -580,6 +640,13 @@ function loadCategory(key){
     $('modal-corredores').close();
     $('chips-bar').style.display = 'none'; 
     
+    // Controlo dos Banners (Apenas visíveis na Home/Cestas)
+    if(key === '__CESTAS__' && STATE.banners && STATE.banners.length > 0) {
+        $('banner-area').style.display = 'flex';
+    } else {
+        $('banner-area').style.display = 'none';
+    }
+
     document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
     if(key === '__CESTAS__' || key === '__OFFERS__' || key === '__CART__') {
         let tab = document.getElementById(`tab-${key}`);
