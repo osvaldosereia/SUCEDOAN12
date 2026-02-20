@@ -119,7 +119,12 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .meta-row { margin-bottom: 4px; }
 .meta-text { font-size: 0.65rem; font-weight: 700; color: var(--c-t); display: block; }
 
-.u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px; margin-top: auto;}
+/* ÁREA DE PREÇO E DESCONTO */
+.price-area { margin-top: auto; display: flex; flex-direction: column; gap: 0px; }
+.old-price-row { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.strike-price { font-size: 0.75rem; color: var(--c-t); text-decoration: line-through; font-weight: 600; }
+.discount-badge { background: #fee2e2; color: var(--c-err); font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; line-height: 1; }
+.u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px;}
 
 @media(max-width:600px){
     .u-name{font-size: 0.75rem; font-weight: 500; -webkit-line-clamp: 3; min-height: 3.9em;}
@@ -138,8 +143,18 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 @media(max-width:600px){
     .btn-big-action{padding: 12px 8px; font-size: 0.8rem;}
 }
-.btn-big-action:active{transform:scale(0.95)}
+
+.btn-big-action:active:not(:disabled){transform:scale(0.95)}
 .btn-big-action.success-flash{animation:flashGreen 0.5s ease-out}
+
+/* CSS para Botão Esgotado */
+.btn-big-action:disabled {
+    background: #cbd5e1 !important;
+    color: var(--c-t) !important;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
 
 @keyframes flashGreen {
     0% { background: var(--c-p); }
@@ -195,7 +210,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .btn-floating-checkout:active{transform:scale(0.98)}
 
-/* APP TAB BAR (Bottom Navigation) - Agora com 4 abas */
+/* APP TAB BAR (Bottom Navigation) */
 .bottom-nav-bar {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #fff; display: flex; justify-content: space-around; align-items: center;
@@ -205,6 +220,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .tab-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     flex: 1; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; transition: color 0.2s; position: relative;
+    min-width: 0; 
 }
 .tab-item.active { color: var(--c-p); }
 .tab-icon { font-size: 1.3rem; line-height: 1; }
@@ -466,6 +482,7 @@ async function init(){
             STATE.prods = raw.filter(x=>x.situacao==="A").map(p=>({
                 id:String(p.id), code:String(p.codigo||p.id),
                 name:p.nome, price:parseFloat(p.preco),
+                oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null,
                 stock:parseInt(p.estoque)||0,
                 cat:(p.categoria||p.Categoria||"Outros").trim(),
                 val:p.validade, img:`img/produtos/${p.codigo||p.id}.webp`
@@ -544,7 +561,7 @@ function loadOfferMicro(type) {
 
     if (type === 'OFERTAS_SEMANA') {
         $('filter-sel').value = 'def';
-        STATE.currentList = STATE.prods.filter(p => p.name.includes("**"));
+        STATE.currentList = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
         applyFilter();
     } else if (type === 'COMBOS') {
         STATE.currentList = STATE.combos;
@@ -603,7 +620,8 @@ function applyFilter(){
     if(type === 'az') list.sort((a,b)=>a.name.localeCompare(b.name));
     
     if(type === 'def') list.sort((a,b)=>{
-        const fa=a.name.includes('**'), fb=b.name.includes('**');
+        const fa = a.oldPrice && a.oldPrice > a.price;
+        const fb = b.oldPrice && b.oldPrice > b.price;
         return fa===fb ? 0 : fa ? -1 : 1;
     });
 
@@ -691,7 +709,7 @@ function cardCombo(item){
 function cardProd(item){
     const q = STATE.cart[item.id] || 0;
     const isOfferTab = (STATE.activeCat === '__OFFERS__' && STATE.activeMicro !== 'COMBOS');
-    const isOffer = item.name.includes("**");
+    const isOffer = item.oldPrice && item.oldPrice > item.price;
     
     let metaHtml = '';
     if(item.val || item.stock < 10) {
@@ -700,6 +718,24 @@ function cardProd(item){
         if(item.stock < 10) m.push(`Restam ${item.stock}`);
         metaHtml = `<div class="meta-row"><span class="meta-text">${m.join(' | ')}</span></div>`;
     }
+
+    let priceHtml = '';
+    if (isOffer) {
+        const discountPct = Math.round(((item.oldPrice - item.price) / item.oldPrice) * 100);
+        priceHtml = `
+        <div class="price-area">
+            <div class="old-price-row">
+                <span class="strike-price">${fmt(item.oldPrice)}</span>
+                <span class="discount-badge">-${discountPct}%</span>
+            </div>
+            <div class="u-price">${fmt(item.price)}</div>
+        </div>`;
+    } else {
+        priceHtml = `
+        <div class="price-area">
+            <div class="u-price">${fmt(item.price)}</div>
+        </div>`;
+    }
     
     const btn = q > 0 
         ? `<div class="qty-row">
@@ -707,18 +743,17 @@ function cardProd(item){
              <input class="qty-inp qty-${item.id}" type="number" value="${q}" onchange="upd('${item.id}',this.value- ${q})">
              <button class="btn-qty" onclick="upd('${item.id}',1)" style="color:var(--c-ok)">+</button>
            </div>`
-        : `<button class="btn-big-action ${item.stock<=0?'disabled':''}" id="btn-add-${item.id}" onclick="addAnim('${item.id}');upd('${item.id}',1)" ${item.stock<=0?'disabled':''}>${item.stock<=0?'ESGOTADO':'ADICIONAR'}</button>`;
+        : `<button class="btn-big-action" id="btn-add-${item.id}" onclick="addAnim('${item.id}');upd('${item.id}',1)" ${item.stock<=0?'disabled':''}>${item.stock<=0?'ESGOTADO':'ADICIONAR'}</button>`;
     
     return `
     <div class="u-card">
         <div class="u-img-area" onclick="openImageZoom('${item.img}')">
             <img src="${item.img}" class="u-img" loading="lazy">
-            ${isOffer ? '<div class="offer-tag">OFERTA</div>' : ''}
         </div>
         <div class="u-info">
             <div class="u-name">${formatName(item.name)}</div>
             ${metaHtml}
-            <div class="u-price">${fmt(item.price)}</div>
+            ${priceHtml}
             <div class="u-action-row ctrl-wrap-${item.id}">
                 ${btn}
                 ${(isOfferTab && item.cat) ? `<div class="offer-cat-link" onclick="goToCategory('${item.cat}')">+ ${item.cat}</div>` : ''}
@@ -801,25 +836,51 @@ function confirmBasket(){
     STATE.cart = {}; STATE.cartOrder = [];
     
     let itemsSum = 0;
+    let alertStock = false;
     c.produtos.forEach(s=>{
         const [qStr, ref] = s.split('x');
         const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
         if(p){
-            const q = Math.min(parseInt(qStr), p.stock || 999);
-            STATE.cart[p.id] = q; STATE.cartOrder.push(p.id);
-            itemsSum += (p.price * q);
+            let q = parseInt(qStr);
+            if(q > p.stock) {
+                q = p.stock;
+                alertStock = true;
+            }
+            if(q > 0) {
+                STATE.cart[p.id] = q; STATE.cartOrder.push(p.id);
+                itemsSum += (p.price * q);
+            }
         }
     });
 
     STATE.basketExtraFee = STATE.minBasketPrice - itemsSum;
     $('modal-basket-preview').close();
-    showToast(`Cesta carregada!`, 's');
+    
+    if(alertStock) showToast(`Cesta carregada! Alguns itens limitados ao estoque.`, 's');
+    else showToast(`Cesta carregada!`, 's');
+    
     loadCategory('__CART__');
 }
 
 function confirmCombo(id){
     const c = STATE.combos.find(x=>String(x.id)===String(id));
     if(!c) return;
+    
+    let canAdd = true;
+    let missingItem = "";
+    c.produtos.forEach(s=>{
+        const [qStr, ref] = s.split('x');
+        const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
+        if(p){
+            const cur = STATE.cart[p.id] || 0;
+            if(cur + parseInt(qStr) > p.stock) {
+                canAdd = false;
+                missingItem = p.name;
+            }
+        }
+    });
+
+    if(!canAdd) return showToast(`Estoque insuficiente: ${missingItem}`, "r");
     
     c.produtos.forEach(s=>{
         const [qStr, ref] = s.split('x');
@@ -841,9 +902,16 @@ function upd(id, delta){
     const p = STATE.prods.find(x=>x.id===id);
     if(!p) return;
     const cur = STATE.cart[id] || 0;
-    const next = Math.max(0, cur + parseInt(delta));
     
-    if(next > p.stock) return showToast("Estoque limite atingido", "r");
+    let next = cur + parseInt(delta);
+    if(isNaN(next)) next = 0;
+    next = Math.max(0, next);
+    
+    if(next > p.stock) {
+        showToast(`Apenas ${p.stock} unidades disponíveis`, "r");
+        document.querySelectorAll(`.qty-${id}`).forEach(e=>e.value = cur);
+        return;
+    }
     
     if(cur === 0 && next > 0) STATE.cartOrder.push(id);
     STATE.cart[id] = next;
@@ -988,6 +1056,7 @@ function clearSearch(){$('search-inp').value='';handleSearch('');}
 function applyCupom(){
     const c=STATE.coupons.find(x=>x.codigo===$('cupom-code').value.toUpperCase().trim());
     const tot=parseMoney($('chk-total').innerText);
+    
     if(c && tot>=c.minimo){ STATE.coupon=c; updateTotals(); $('cupom-msg').innerText="CUPOM APLICADO!"; $('cupom-msg').style.display='block'; }
     else showToast("Cupom inválido ou mínimo não atingido", "r");
 }
@@ -1036,7 +1105,7 @@ async function sendOrder(){
     window.location.href=`https://wa.me/5565996813588?text=${encodeURIComponent(msg)}`;
 }
 
-function formatName(s){ return s?s.replace(/\*\*(.*?)\*\*/g,'').replace(/\s+/g,' ').trim().toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
+function formatName(s){ return s?s.replace(/\s+/g,' ').trim().toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
 function parseMoney(s){return parseFloat(s.replace('R$','').replace('.','').replace(',','.').trim());}
 function fmt(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function showToast(m,t){const d=document.createElement('div');d.className='toast';d.style.background=t==='r'?'var(--c-err)':'var(--c-ok)';d.innerText=m;$('toast-container').appendChild(d);setTimeout(()=>d.remove(),2500);}
