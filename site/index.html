@@ -42,38 +42,36 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 /* PALCO CENTRAL */
 .main-stage{flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;overflow:hidden;background:var(--c-bg)}
-/* Modificado: Removido o display flex para permitir que o position absolute do filho funcione perfeitamente */
-.stage-limiter {width:100%;max-width:1200px;height:100%;margin:0 auto;position:relative;}
+.stage-limiter {width:100%;max-width:1200px;height:100%;margin:0 auto;position:relative;display:flex;align-items:center;}
 
-/* Modificado: Position Absolute trava o tamanho do wrapper exatamente no limite da tela! */
 .carousel-wrapper{
-    position:absolute; top:0; left:0; width:100%; height:100%;
-    display:grid; 
-    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-    align-content: start;
-    overflow-x:hidden; overflow-y:auto;
+    width:100%; height:100%;
+    display:flex; align-items:center;
+    overflow-x:auto; overflow-y:hidden;
     scroll-behavior:smooth;
-    padding:20px; gap:15px;
+    padding:10px 20px; gap:15px;
+    scroll-snap-type:x mandatory;
 }
 .carousel-wrapper::-webkit-scrollbar{display:none}
 
 /* CARDS */
-/* Modificado: Limpadas as regras de rolagem horizontal (snap e flex width) */
 .u-card{
+    flex:0 0 200px;
+    scroll-snap-align:center;
     background:var(--c-surf);
     border-radius:20px;
     border:1px solid #fff;
     box-shadow:var(--sh-card);
     display:flex;flex-direction:column;
     overflow:hidden; position:relative;
-    height:100%;
+    height:auto; max-height:100%;
     transition:transform .2s, box-shadow .2s;
 }
 .u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
 
 @media(max-width:600px){
-    /* Modificado: 2 colunas travadas para mobile */
-    .carousel-wrapper{grid-template-columns: repeat(2, 1fr); padding:15px; gap:10px;}
+    .u-card{flex:0 0 70%;}
+    .carousel-wrapper{padding:10px 10%;}
 }
 
 .u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9;cursor:zoom-in}
@@ -127,20 +125,19 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* SETAS */
-/* Modificado: Ocultamos as setas pois na rolagem vertical via grade elas não são mais necessárias */
 .nav-arrow{
     position:absolute;top:50%;transform:translateY(-50%);
     width:48px;height:48px;border-radius:50%;
     background:#fff;border:1px solid var(--c-bd);
     box-shadow:var(--sh-float);z-index:20;cursor:pointer;
-    display:none !important;
-    align-items:center;justify-content:center;
+    display:none;align-items:center;justify-content:center;
     font-size:1.2rem;color:var(--c-p);
     transition:transform .2s;
 }
 .nav-arrow:hover{background:var(--c-p);color:#fff;transform:translateY(-50%) scale(1.1)}
 .nav-left{left:-20px} .nav-right{right:-20px}
 @media(min-width:1300px){ .nav-left{left:-60px} .nav-right{right:-60px} }
+@media(min-width:1024px){.nav-arrow{display:flex}}
 
 /* BOTTOM STACK */
 .bottom-stack{
@@ -267,10 +264,10 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
 <main class="main-stage">
     <div class="stage-limiter">
-        <div class="nav-arrow nav-left" onclick="$('main-carousel').scrollBy({top:-300,behavior:'smooth'})">❮</div>
+        <div class="nav-arrow nav-left" onclick="$('main-carousel').scrollBy({left:-300,behavior:'smooth'})">❮</div>
         <div class="carousel-wrapper" id="main-carousel">
             </div>
-        <div class="nav-arrow nav-right" onclick="$('main-carousel').scrollBy({top:300,behavior:'smooth'})">❯</div>
+        <div class="nav-arrow nav-right" onclick="$('main-carousel').scrollBy({left:300,behavior:'smooth'})">❯</div>
     </div>
 </main>
 
@@ -557,7 +554,7 @@ function renderChunked(list, type, reset){
     }).join('');
     
     carousel.innerHTML = html || '<p style="margin:auto;color:#94a3b8">Nenhum item encontrado.</p>';
-    if(reset) carousel.scrollTo({top:0}); // <--- Modificado aqui!
+    if(reset) carousel.scrollTo({left:0});
 }
 
 /* CARDS */
