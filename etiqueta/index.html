@@ -2,9 +2,9 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Matriz de Etiquetas 80x80</title>
+    <title>Matriz de Etiquetas 80x80 - Expandida</title>
     <style>
-        /* --- ESTILOS DO ECRÃ (Tabela Organizada) --- */
+        /* --- ESTILOS DO ECRÃ --- */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f0f2f5;
@@ -17,17 +17,15 @@
 
         h1 { color: #333; margin-bottom: 20px; }
 
-        /* O Contentor Principal */
         #matriz-principal {
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            max-width: 1000px;
+            max-width: 1200px; /* Aumentado para acomodar mais botões */
             width: 100%;
         }
 
-        /* Cada Linha (Uma Gôndola) */
         .linha-gondola {
             display: flex;
             align-items: center;
@@ -37,10 +35,9 @@
         
         .linha-gondola:last-child { border-bottom: none; }
 
-        /* O Cabeçalho da Linha (Número da Gôndola) */
         .cabecalho-linha {
             width: 120px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             color: #444;
             background-color: #e9ecef;
@@ -48,24 +45,23 @@
             border-radius: 4px;
             text-align: center;
             margin-right: 15px;
-            flex-shrink: 0; /* Não deixa encolher */
+            flex-shrink: 0;
         }
 
-        /* A Grade de Botões (A-G) */
         .grade-botoes {
             display: grid;
-            grid-template-columns: repeat(7, 1fr); /* Exatamente 7 colunas */
-            gap: 10px;
+            /* Ajustado para 13 colunas (A até M) */
+            grid-template-columns: repeat(13, 1fr); 
+            gap: 8px;
             flex-grow: 1;
         }
 
-        /* O Botão de Impressão (Representa a Prateleira) */
         .btn-prateleira {
             background-color: #fff;
             border: 2px solid #007bff;
             color: #007bff;
-            padding: 10px;
-            font-size: 16px;
+            padding: 8px 5px;
+            font-size: 14px;
             font-weight: bold;
             border-radius: 4px;
             cursor: pointer;
@@ -75,30 +71,24 @@
         .btn-prateleira:hover {
             background-color: #007bff;
             color: white;
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
 
-        /* --- ESTILOS DE IMPRESSÃO (Onde a mágica acontece) --- */
-        
-        /* Área invisível até à hora de imprimir */
+        /* --- ESTILOS DE IMPRESSÃO --- */
         #area-impressao {
             display: none; 
         }
 
         @media print {
-            /* 1. Esconde o site inteiro */
             body > * { display: none !important; }
 
-            /* 2. Mostra e formata a área de impressão */
             #area-impressao {
                 display: flex !important;
-                position: fixed; /* Fixa no topo da folha */
+                position: fixed;
                 top: 0;
                 left: 0;
                 width: 80mm;
                 height: 80mm;
-                
-                /* Alinhamento perfeito no centro da etiqueta */
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
@@ -106,7 +96,6 @@
                 background: white;
             }
 
-            /* Tipografia Gigante para a Impressora */
             .print-titulo { 
                 font-size: 14pt; 
                 font-family: Arial, sans-serif; 
@@ -123,7 +112,6 @@
                 color: #000;
             }
 
-            /* Configuração da folha */
             @page {
                 size: 80mm 80mm;
                 margin: 0; 
@@ -133,43 +121,39 @@
 </head>
 <body>
 
-    <h1>Painel de Etiquetas</h1>
+    <h1>Painel de Etiquetas (Gôndola 20 | Prateleira M)</h1>
     
-    <div id="matriz-principal">
-        </div>
+    <div id="matriz-principal"></div>
 
     <div id="area-impressao"></div>
 
     <script>
         const matriz = document.getElementById('matriz-principal');
         const areaImpressao = document.getElementById('area-impressao');
-        const letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G', "H", "I", "J", "k"];
+        
+        // 1. ATUALIZAÇÃO: Lista de letras expandida até "M"
+        const letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
 
-        // Loop das Gôndolas (Linhas)
-        for (let i = 1; i <= 10; i++) {
+        // 2. ATUALIZAÇÃO: Loop alterado para ir até 20 gôndolas
+        for (let i = 1; i <= 20; i++) {
             
-            // Criar o contentor da linha
             const linhaDiv = document.createElement('div');
             linhaDiv.className = 'linha-gondola';
 
-            // Criar o cabeçalho "Gôndola X"
             const cabecalho = document.createElement('div');
             cabecalho.className = 'cabecalho-linha';
             cabecalho.innerText = `GÔNDOLA ${i}`;
             linhaDiv.appendChild(cabecalho);
 
-            // Criar a área dos botões (Colunas)
             const botoesDiv = document.createElement('div');
             botoesDiv.className = 'grade-botoes';
 
-            // Loop das Prateleiras (Colunas A-G)
             letras.forEach(letra => {
                 const btn = document.createElement('button');
                 btn.className = 'btn-prateleira';
-                btn.innerText = letra; // Mostra apenas a letra no botão para ser compacto
-                btn.title = `Imprimir Gôndola ${i} - Prateleira ${letra}`; // Dica ao passar o rato
+                btn.innerText = letra; 
+                btn.title = `Imprimir Gôndola ${i} - Prateleira ${letra}`;
                 
-                // Configura o clique
                 btn.onclick = function() {
                     imprimirEtiqueta(i, letra);
                 };
@@ -181,20 +165,13 @@
             matriz.appendChild(linhaDiv);
         }
 
-        // Função de Impressão Limpa
         function imprimirEtiqueta(num, letra) {
-            // 1. Limpa a área anterior
-            areaImpressao.innerHTML = '';
-
-            // 2. Constrói a etiqueta HTML
             areaImpressao.innerHTML = `
                 <div class="print-titulo">GONDOLA:</div>
                 <div class="print-valor">${num}</div>
                 <div class="print-titulo">PRATELEIRA:</div>
                 <div class="print-valor">${letra}</div>
             `;
-
-            // 3. Manda imprimir
             window.print();
         }
     </script>
