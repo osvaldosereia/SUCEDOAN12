@@ -119,10 +119,28 @@
         .btn-icon { padding: 4px; border-radius: 4px; border: 1px solid var(--border); background: white; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; }
         .btn-icon:hover { background: var(--bg-body); color: var(--accent); border-color: var(--accent); }
         .btn-icon.del:hover { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
-        .list-row { display: grid; grid-template-columns: 80px 1fr 110px 80px 80px 80px 80px; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 12px; transition: 0.2s; border-left: 3px solid transparent; }
+        
+        /* -- AJUSTE DA TABELA E CLASSES DE EDIÇÃO EM LISTA -- */
+        .list-row { display: grid; grid-template-columns: 60px 1fr 120px 60px 60px 80px 70px 50px 70px 40px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 11px; transition: 0.2s; border-left: 3px solid transparent; }
         .list-row:hover { background: #f1f5f9; border-left-color: var(--accent); }
         .list-header { font-weight: bold; background: #e2e8f0; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-left: 3px solid transparent; cursor: default; }
         .list-header:hover { background: #e2e8f0; border-left-color: transparent; }
+        
+        /* Inputs transparentes da lista */
+        .list-input { width: 100%; border: 1px solid transparent; background: transparent; font-size: 11px; padding: 4px; border-radius: 4px; color: var(--text-primary); font-family: 'Inter', sans-serif; transition: 0.2s; }
+        .list-input:hover { border-color: var(--border); background: #fff; }
+        .list-input:focus { border-color: var(--accent); background: #fff; outline: none; }
+        .list-input.number { text-align: right; font-weight: bold; }
+        
+        /* Selects transparentes da lista */
+        .list-select { width: 100%; border: 1px solid transparent; background: transparent; font-size: 10px; padding: 4px; border-radius: 4px; color: var(--text-primary); font-family: 'Inter', sans-serif; cursor: pointer; transition: 0.2s; }
+        .list-select:hover { border-color: var(--border); background: #fff; }
+        .list-select:focus { border-color: var(--accent); background: #fff; outline: none; }
+        
+        /* Botão pequeno da lista */
+        .list-btn-icon { background: white; border: 1px solid var(--border); padding: 4px; border-radius: 4px; cursor: pointer; color: var(--text-secondary); display:flex; justify-content:center; align-items:center; width: 100%; transition:0.2s;}
+        .list-btn-icon:hover { color: var(--accent); border-color: var(--accent); }
+
         .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); margin-top: 50px; }
     </style>
 </head>
@@ -650,6 +668,7 @@
             container.appendChild(cardElement); lucide.createIcons(); openModal('modal-product-card');
         }
 
+        // --- ATUALIZAÇÃO DA LINHA PARA TORNÁ-LA UMA PLANILHA EDITÁVEL ---
         function createListRow(p) {
             const isInactive = p.situacao === 'I';
             const row = document.createElement('div');
@@ -657,15 +676,35 @@
             if (p._changed) row.style.borderLeftColor = "var(--warning)";
             if (isInactive) row.style.opacity = "0.5";
             
+            // Montando as opções do seletor de Categoria
+            let optionsCat = `<option value="">-- SELECIONE --</option>`;
+            const catList = [...availableCategories]; 
+            if(p.categoria && !catList.includes(p.categoria)) catList.push(p.categoria);
+            catList.forEach(c => { optionsCat += `<option value="${c}" ${p.categoria === c ? 'selected' : ''}>${c.substring(0,20)}</option>`; });
+            
+            // Calculando Markup dinamicamente para exibição na lista
+            let lucroStr = "-", lucroColor = "var(--text-secondary)";
+            if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
+                const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
+                lucroStr = markup.toFixed(1) + "%";
+                if(markup < 20) lucroColor = "var(--danger)"; 
+                else if(markup > 40) lucroColor = "var(--success)";
+            }
+            
             row.innerHTML = `
-                <div style="font-weight:bold; color:var(--text-secondary);">${p.codigo}</div>
-                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.nome}">${p.nome}</div>
-                <div style="color:var(--text-secondary); font-size:10px;">${p.gtin || '-'}</div>
-                <div style="font-size:10px; font-weight:bold; color:var(--text-secondary);">${p.localizacao || '-'}</div>
-                <div style="font-size:10px; font-weight:bold; color:${p.validade ? '#d97706' : 'var(--text-secondary)'};">${p.validade || '-'}</div>
+                <div style="font-weight:bold; color:var(--text-secondary); cursor:pointer;" onclick="openProductModal('${p.codigo}')" title="Abrir Detalhes">${p.codigo}</div>
+                <div><input type="text" class="list-input" style="font-weight:600;" value="${p.nome}" onchange="updateProduct('${p.codigo}', 'nome', this.value)" onclick="event.stopPropagation()"></div>
+                <div><select class="list-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)" onclick="event.stopPropagation()">${optionsCat}</select></div>
+                <div style="font-size:10px; font-weight:bold; color:var(--text-secondary); text-align:center;">${p.localizacao || '-'}</div>
                 <div style="text-align:right;">${formatNum(p.estoque)}</div>
-                <div style="text-align:right; font-weight:bold; color:var(--success);">${formatNum(p.preco)}</div>
+                <div><input type="text" class="list-input" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}; text-align:center;" value="${p.validade || ''}" placeholder="DD/MM/AAAA" onchange="updateProduct('${p.codigo}', 'validade', this.value)" onclick="event.stopPropagation()"></div>
+                <div><input type="text" class="list-input number" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)" onclick="event.stopPropagation()"></div>
+                <div style="text-align:right; font-size:10px; font-weight:bold; color:${lucroColor}; padding-right:4px;">${lucroStr}</div>
+                <div><input type="text" class="list-input number" style="color:var(--success);" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)" onclick="event.stopPropagation()"></div>
+                <div><button class="list-btn-icon" onclick="event.stopPropagation(); printLabel('${p.codigo}')" title="Imprimir Etiqueta"><i data-lucide="printer" size="14"></i></button></div>
             `;
+            
+            // Permite clicar na linha num lugar vazio para abrir os detalhes (como já funcionava)
             row.onclick = () => openProductModal(p.codigo);
             return row;
         }
@@ -718,7 +757,8 @@
 
             const buildList = (items, container) => {
                 const header = document.createElement('div'); header.className = 'list-row list-header';
-                header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>EAN</div><div>LOCAL</div><div>VAL.</div><div style="text-align:right;">ESTOQUE</div><div style="text-align:right;">PREÇO (R$)</div>`;
+                // ATUALIZAÇÃO NO CABEÇALHO PARA COMBINAR COM AS NOVAS COLUNAS
+                header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>CATEGORIA</div><div style="text-align:center;">LOCAL</div><div style="text-align:right;">EST.</div><div style="text-align:center;">VAL.</div><div style="text-align:right;">CUSTO (R$)</div><div style="text-align:right;">MKP</div><div style="text-align:right;">PREÇO (R$)</div><div style="text-align:center;"><i data-lucide="printer" size="14"></i></div>`;
                 container.appendChild(header);
                 const subGrid = document.createElement('div'); subGrid.className = 'category-items-container';
                 subGrid.style.display = 'flex'; subGrid.style.flexDirection = 'column'; subGrid.style.gap = '0';
@@ -1038,7 +1078,6 @@
             saveData(); renderGrid(document.getElementById('search-input').value, true); alert(`${count} produtos atualizados para o padrão do site!`);
         }
         
-        // --- NOVA FUNÇÃO PARA LIMPAR O LOCAL STORAGE ---
         function limparSistema() {
             if(confirm("ATENÇÃO: Isso vai apagar TODOS os produtos e configurações salvos neste navegador. Deseja realmente continuar?")) {
                 localStorage.clear();
