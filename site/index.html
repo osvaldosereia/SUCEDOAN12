@@ -31,7 +31,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* LAYOUT DESKTOP LIMITER */
 .layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
 
-/* NOVO HEADER: Logo Esquerda + Busca Extensa */
+/* HEADER */
 .app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;flex-direction:column;align-items:center}
 .header-inner{display:flex;align-items:center;padding:12px 20px;width:100%;gap:15px;}
 .header-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
@@ -58,7 +58,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .chip.active { background: var(--c-p); color: #fff; border-color: var(--c-p); }
 
 /* PALCO CENTRAL (GRADE VERTICAL) */
-.main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:180px; scroll-behavior:smooth;}
+.main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:140px; scroll-behavior:smooth;}
 
 /* FILTRO DISCRETO ACIMA DA GRADE */
 .filter-row {
@@ -70,7 +70,6 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     font-size: 0.8rem; text-align: right; cursor: pointer; appearance: none; -webkit-appearance: none;
     padding-right: 15px; position: relative;
 }
-/* Seta do select nativo para ficar bonito */
 .filter-wrapper { position: relative; display: inline-block; }
 .filter-wrapper::after { content: '▼'; font-size: 0.6rem; position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--c-s); pointer-events: none;}
 
@@ -83,7 +82,6 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 
 @media(max-width:600px){
-    /* 2 Cards por linha no mobile */
     .grid-wrapper{ grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px 15px 15px; }
     .filter-row { padding: 10px 15px 0; }
 }
@@ -105,7 +103,6 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-img-area:hover .u-img{transform:scale(1.05)}
 .u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal}
 
-/* ETIQUETAS E COMBOS */
 .offer-tag{position:absolute;bottom:0;left:0;background:#dc2626;color:#fff;font-size:0.7rem;padding:4px 10px;border-top-right-radius:12px;font-weight:800;z-index:5;box-shadow:2px -2px 5px rgba(0,0,0,0.1)}
 
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; }
@@ -119,14 +116,12 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     min-height:3.9em; flex-grow: 1; 
 }
 
-/* Metadados (Validade / Restam) em Texto Simples */
 .meta-row { margin-bottom: 4px; }
 .meta-text { font-size: 0.65rem; font-weight: 700; color: var(--c-t); display: block; }
 
 .u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px; margin-top: auto;}
 
 @media(max-width:600px){
-    /* Nome em até 3 linhas, fontes mais leves */
     .u-name{font-size: 0.75rem; font-weight: 500; -webkit-line-clamp: 3; min-height: 3.9em;}
     .u-price{font-size: 1rem; font-weight: 700;}
 }
@@ -143,7 +138,6 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 @media(max-width:600px){
     .btn-big-action{padding: 12px 8px; font-size: 0.8rem;}
 }
-
 .btn-big-action:active{transform:scale(0.95)}
 .btn-big-action.success-flash{animation:flashGreen 0.5s ease-out}
 
@@ -162,33 +156,46 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
-/* FLOATING BOTTOM AREA (Apenas o Botão Unificado) */
+/* LINK DE CATEGORIA (OFERTAS) */
+.offer-cat-link {
+    font-size: 0.65rem; font-weight: 800; color: var(--c-a); text-align: center;
+    margin-top: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.offer-cat-link:active { opacity: 0.7; }
+
+/* FLOATING BOTTOM AREA (Discreto e na mesma linha) */
 .floating-bottom {
-    position: fixed;
-    bottom: calc(60px + env(safe-area-inset-bottom));
-    left: 0; width: 100%; z-index: 90;
-    display: flex; flex-direction: column; align-items: center;
-    pointer-events: none; /* Para não bloquear cliques onde não tem elemento */
+    position: fixed; bottom: calc(60px + env(safe-area-inset-bottom));
+    left: 0; width: 100%; z-index: 90; display: none; /* Só aparece no carrinho */
+    justify-content: center; pointer-events: none; 
 }
 
-/* CHECKOUT FLOATING BTN - UNIFICADO COM GAMIFICAÇÃO */
-.floating-checkout-wrap { width: 100%; max-width: 500px; padding: 15px 20px; display: none; pointer-events: auto; }
+.floating-checkout-wrap {
+    width: 100%; max-width: 600px; padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
+    border-top: 1px solid var(--c-bd); pointer-events: auto;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+}
+
+.checkout-inline-row {
+    display: flex; gap: 15px; align-items: center; justify-content: space-between; width: 100%;
+}
+
+.progress-mini { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+#prog-txt-mini { font-size: 0.65rem; font-weight: 800; color: var(--c-s); text-transform: uppercase;}
+.prog-track-mini { width: 100%; height: 6px; background: #cbd5e1; border-radius: 3px; overflow: hidden; }
+.prog-fill-mini { height: 100%; background: var(--c-ok); width: 0%; transition: width 0.3s ease-out; }
+
 .btn-floating-checkout{
-    width:100%; background:#16a34a; color:#fff;
-    padding:16px; border-radius:16px; font-weight:900; font-size:1.05rem;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.15); border:none; cursor:pointer;
-    transition:all .2s; text-align: center; line-height: 1.2;
+    flex: 1; background:#16a34a; color:#fff;
+    padding:12px 10px; border-radius:12px; font-weight:900; font-size:0.9rem;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 12px rgba(22,163,74,0.3); border:none; cursor:pointer;
+    transition:transform .1s; text-align: center; white-space: nowrap;
 }
 .btn-floating-checkout:active{transform:scale(0.98)}
 
-/* Estados do Botão Flutuante */
-.btn-floating-checkout.state-locked { background: #94a3b8; cursor: not-allowed; box-shadow: none; color: #fff; }
-.btn-floating-checkout.state-alert { background: var(--c-a); cursor: not-allowed; box-shadow: none; color: #fff; }
-.btn-floating-checkout.state-ready { background: #16a34a; }
-
-
-/* APP TAB BAR (Bottom Navigation) */
+/* APP TAB BAR (Bottom Navigation) - Agora com 4 abas */
 .bottom-nav-bar {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #fff; display: flex; justify-content: space-around; align-items: center;
@@ -198,11 +205,10 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .tab-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     flex: 1; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; transition: color 0.2s; position: relative;
-    min-width: 0; 
 }
 .tab-item.active { color: var(--c-p); }
-.tab-icon { font-size: 1.2rem; line-height: 1; }
-.tab-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; padding: 0 2px;}
+.tab-icon { font-size: 1.3rem; line-height: 1; }
+.tab-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .cart-badge {
     position: absolute; top: 6px; right: calc(50% - 15px);
     background: var(--c-err); color: #fff; font-size: 0.6rem; font-weight: 800;
@@ -255,7 +261,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .social-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; margin-bottom: 15px; }
 .btn-social { flex: 1; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 6px; color: #fff; }
 
-/* MODAL CAROUSEL (Para Cestas e Combos preview) */
+/* MODAL CAROUSEL */
 .modal-carousel-track { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; scroll-snap-type: x mandatory; justify-content: flex-start; }
 .modal-carousel-track::-webkit-scrollbar{height:4px;background:transparent}
 .modal-card { flex: 0 0 140px; scroll-snap-align: start; border: 1px solid #eee; border-radius: 12px; padding: 8px; background: #fff; display: flex; flex-direction: column; text-align: left; }
@@ -300,20 +306,21 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         </div>
 </main>
 
-<div class="floating-bottom">
-    <div class="floating-checkout-wrap" id="floating-checkout">
-        <button class="btn-floating-checkout state-ready" id="btn-checkout" onclick="openCheckout()">
-            ✅ FINALIZAR PEDIDO • <span id="float-total">R$ 0,00</span>
-        </button>
+<div class="floating-bottom" id="floating-bottom">
+    <div class="floating-checkout-wrap">
+        <div class="checkout-inline-row">
+            <div class="progress-mini" id="progress-mini">
+                <span id="prog-txt-mini">Faltam R$ 85</span>
+                <div class="prog-track-mini"><div class="prog-fill-mini" id="prog-fill-mini"></div></div>
+            </div>
+            <button class="btn-floating-checkout" id="btn-checkout" onclick="openCheckout()">FINALIZAR</button>
+        </div>
     </div>
 </div>
 
 <nav class="bottom-nav-bar">
     <div class="tab-item active" id="tab-__CESTAS__" onclick="loadCategory('__CESTAS__')">
         <div class="tab-icon">📦</div><div class="tab-label">Cestas</div>
-    </div>
-    <div class="tab-item" id="tab-__COMBOS__" onclick="loadCategory('__COMBOS__')">
-        <div class="tab-icon">🎁</div><div class="tab-label">Combos</div>
     </div>
     <div class="tab-item" id="tab-__OFFERS__" onclick="loadCategory('__OFFERS__')">
         <div class="tab-icon">🔥</div><div class="tab-label">Ofertas</div>
@@ -476,8 +483,7 @@ async function init(){
     }
 }
 
-/* --- LOGIC CORREDORES (MACROS & MICROS) --- */
-
+/* --- NAVEGACAO ENTRE DEPARTAMENTOS --- */
 function loadMacro(macroName) {
     $('modal-corredores').close();
     document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
@@ -488,9 +494,8 @@ function loadMacro(macroName) {
 
     let chipsHtml = `<div class="chip active" id="chip-Todos" onclick="loadMicro('Todos')">Ver Tudo</div>`;
     
-    // Renderiza a barra de Chips baseada no arquivo departamento.json (ORDEM ALFABÉTICA)
     let categoriasDoCorredor = STATE.departamentos[macroName] || [];
-    categoriasDoCorredor.sort((a,b) => a.localeCompare(b)); // Ordem Alfabética
+    categoriasDoCorredor.sort((a,b) => a.localeCompare(b)); 
 
     categoriasDoCorredor.forEach(cat => {
         const safeId = cat.replace(/\s/g,'-');
@@ -501,12 +506,12 @@ function loadMacro(macroName) {
     $('chips-bar').style.display = 'flex';
     
     loadMicro('Todos');
+    updateTotals();
 }
 
 function loadMicro(catName) {
     STATE.activeMicro = catName;
     
-    // UI dos Chips
     document.querySelectorAll('.chip').forEach(el=>el.classList.remove('active'));
     let c = document.getElementById(`chip-${catName.replace(/\s/g,'-')}`);
     if(c) {
@@ -514,7 +519,6 @@ function loadMicro(catName) {
         c.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
     }
 
-    // Filtra produtos
     let list = [];
     if(catName === 'Todos') {
         const categoriasDoCorredor = STATE.departamentos[STATE.activeMacro] || [];
@@ -527,15 +531,40 @@ function loadMicro(catName) {
     applyFilter();
 }
 
+/* --- ABA DE OFERTAS & CHIPS ESPECIAIS --- */
+function loadOfferMicro(type) {
+    STATE.activeMicro = type;
+    
+    document.querySelectorAll('.chip').forEach(el=>el.classList.remove('active'));
+    let c = document.getElementById(`chip-${type}`);
+    if(c) {
+        c.classList.add('active');
+        c.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
+    }
+
+    if (type === 'OFERTAS_SEMANA') {
+        $('filter-sel').value = 'def';
+        STATE.currentList = STATE.prods.filter(p => p.name.includes("**"));
+        applyFilter();
+    } else if (type === 'COMBOS') {
+        STATE.currentList = STATE.combos;
+        renderChunked(STATE.currentList, 'COMBO', true);
+    } else if (type === 'ATE_2') {
+        $('filter-sel').value = 'min'; 
+        STATE.currentList = STATE.prods.filter(p => p.price <= 2.00);
+        applyFilter();
+    }
+}
+
+/* --- NAVEGACAO PRINCIPAL --- */
 function loadCategory(key){
     if(key === '__CART__' && Object.keys(STATE.cart).length === 0) return showToast("Seu carrinho está vazio!", "r");
 
-    // Limpa a UI
     $('modal-corredores').close();
-    $('chips-bar').style.display = 'none'; // Esconde os chips nas abas principais
+    $('chips-bar').style.display = 'none'; 
     
     document.querySelectorAll('.tab-item').forEach(el=>el.classList.remove('active'));
-    if(key === '__CESTAS__' || key === '__OFFERS__' || key === '__CART__' || key === '__COMBOS__') {
+    if(key === '__CESTAS__' || key === '__OFFERS__' || key === '__CART__') {
         let tab = document.getElementById(`tab-${key}`);
         if(tab) tab.classList.add('active');
     }
@@ -546,17 +575,19 @@ function loadCategory(key){
         STATE.currentList = STATE.baskets;
         renderChunked(STATE.currentList, 'BASKET', true);
     } 
-    else if(key === '__COMBOS__'){
-        STATE.currentList = STATE.combos;
-        renderChunked(STATE.currentList, 'COMBO', true);
-    }
     else if(key === '__CART__'){
         STATE.currentList = STATE.cartOrder.map(id=>STATE.prods.find(p=>p.id===id)).filter(Boolean);
         renderChunked(STATE.currentList, 'PROD', true);
     }
     else if(key === '__OFFERS__'){
-        STATE.currentList = STATE.prods.filter(p=>p.name.includes("**"));
-        applyFilter(); 
+        let chipsHtml = `
+            <div class="chip" id="chip-OFERTAS_SEMANA" onclick="loadOfferMicro('OFERTAS_SEMANA')">Ofertas da Semana</div>
+            <div class="chip" id="chip-COMBOS" onclick="loadOfferMicro('COMBOS')">Combos</div>
+            <div class="chip" id="chip-ATE_2" onclick="loadOfferMicro('ATE_2')">Até R$ 2,00</div>
+        `;
+        $('chips-bar').innerHTML = chipsHtml;
+        $('chips-bar').style.display = 'flex';
+        loadOfferMicro('OFERTAS_SEMANA');
     }
     
     updateTotals(); 
@@ -564,7 +595,7 @@ function loadCategory(key){
 
 function applyFilter(){
     const type = $('filter-sel').value;
-    if(STATE.activeCat === '__CESTAS__' || STATE.activeCat === '__COMBOS__') return; 
+    if(STATE.activeCat === '__CESTAS__' || STATE.activeMicro === 'COMBOS') return; 
     
     let list = [...STATE.currentList];
     if(type === 'min') list.sort((a,b)=>a.price - b.price);
@@ -583,7 +614,6 @@ function renderChunked(list, type, reset){
     const grid = $('main-grid');
     if(reset) grid.innerHTML = '';
     
-    // Mostra ou esconde o filtro de ordenação com base no tipo
     if(type === 'BASKET' || type === 'COMBO') {
         $('filter-container').style.display = 'none';
     } else {
@@ -598,10 +628,20 @@ function renderChunked(list, type, reset){
     
     grid.innerHTML = html || '<p style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;margin:auto;">Nenhum item encontrado.</p>';
     
-    // Volta suavemente para o topo da grade
-    if(reset) {
-        $('scroll-stage').scrollTo({top:0, behavior: 'smooth'});
+    if(reset) $('scroll-stage').scrollTo({top:0, behavior: 'smooth'});
+}
+
+/* LINK DINAMICO PARA CATEGORIA */
+window.goToCategory = function(catName) {
+    let foundMacro = 'Alimentos'; 
+    for(let macro in STATE.departamentos) {
+        if(STATE.departamentos[macro] && STATE.departamentos[macro].includes(catName)) {
+            foundMacro = macro;
+            break;
+        }
     }
+    loadMacro(foundMacro);
+    setTimeout(() => { loadMicro(catName); }, 100);
 }
 
 /* CARDS */
@@ -650,6 +690,7 @@ function cardCombo(item){
 
 function cardProd(item){
     const q = STATE.cart[item.id] || 0;
+    const isOfferTab = (STATE.activeCat === '__OFFERS__' && STATE.activeMicro !== 'COMBOS');
     const isOffer = item.name.includes("**");
     
     let metaHtml = '';
@@ -680,6 +721,7 @@ function cardProd(item){
             <div class="u-price">${fmt(item.price)}</div>
             <div class="u-action-row ctrl-wrap-${item.id}">
                 ${btn}
+                ${(isOfferTab && item.cat) ? `<div class="offer-cat-link" onclick="goToCategory('${item.cat}')">+ ${item.cat}</div>` : ''}
             </div>
         </div>
     </div>`;
@@ -695,7 +737,7 @@ function addAnim(id){
     }
 }
 
-/* PREVIEWS (Cesta e Combo) */
+/* PREVIEWS */
 function previewBasket(id){
     const c = STATE.baskets.find(x=>String(x.id)===String(id));
     if(!c) return;
@@ -817,7 +859,9 @@ function upd(id, delta){
         const btn = next > 0 
              ? `<div class="qty-row"><button class="btn-qty" onclick="upd('${id}',-1)">-</button><input class="qty-inp qty-${id}" type="number" value="${next}" onchange="upd('${id}',this.value-${next})"><button class="btn-qty" onclick="upd('${id}',1)" style="color:var(--c-ok)">+</button></div>`
              : `<button class="btn-big-action" id="btn-add-${id}" onclick="addAnim('${id}');upd('${id}',1)">ADICIONAR</button>`;
-        document.querySelectorAll(`.ctrl-wrap-${id}`).forEach(el=>el.innerHTML = btn);
+        document.querySelectorAll(`.ctrl-wrap-${id}`).forEach(el=> {
+            el.innerHTML = btn + ((STATE.activeCat === '__OFFERS__' && p.cat) ? `<div class="offer-cat-link" onclick="goToCategory('${p.cat}')">+ ${p.cat}</div>` : '');
+        });
     }
     updateTotals();
 }
@@ -858,33 +902,35 @@ function updateTotals(){
 
     let displayTotal = sumItems - STATE.comboDiscount;
     let btnCheckout = $('btn-checkout');
+    let isCheckoutBlocked = false;
     
-    // Lógica do Botão de Checkout (Unificado)
-    btnCheckout.classList.remove('state-locked', 'state-alert', 'state-ready');
-    btnCheckout.disabled = false;
-
     if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
         displayTotal += STATE.basketExtraFee;
         if(displayTotal < STATE.minBasketPrice){
             const credit = STATE.minBasketPrice - displayTotal;
             displayTotal = STATE.minBasketPrice; 
-            btnCheckout.classList.add('state-alert');
-            btnCheckout.disabled = true;
-            btnCheckout.innerHTML = `⚠️ USE ${fmt(credit)} DE CRÉDITO`;
+            $('prog-txt-mini').innerHTML = `<span style="color:var(--c-a);">USE ${fmt(credit)} DE CRÉDITO</span>`;
+            $('prog-fill-mini').style.width = '100%'; 
+            $('prog-fill-mini').style.background = 'repeating-linear-gradient(45deg, var(--c-a), var(--c-a) 10px, #fb923c 10px, #fb923c 20px)';
+            isCheckoutBlocked = true; 
         } else {
-            btnCheckout.classList.add('state-ready');
-            btnCheckout.innerHTML = `✅ FINALIZAR • ${fmt(displayTotal)}`;
+            $('prog-txt-mini').innerText = "Pedido Liberado!";
+            $('prog-fill-mini').style.width = '100%'; 
+            $('prog-fill-mini').style.background = 'var(--c-ok)';
         }
     } else {
         const minOrder = 85.00;
         const missing = Math.max(0, minOrder - displayTotal);
+        const pct = Math.min(100, (displayTotal / minOrder) * 100);
         if(missing > 0){
-            btnCheckout.classList.add('state-locked');
-            btnCheckout.disabled = true;
-            btnCheckout.innerHTML = `🔒 FALTAM ${fmt(missing)}`;
+            $('prog-txt-mini').innerText = `Faltam ${fmt(missing)}`;
+            $('prog-fill-mini').style.width = `${pct}%`; 
+            $('prog-fill-mini').style.background = 'var(--c-a)';
+            isCheckoutBlocked = true;
         } else {
-            btnCheckout.classList.add('state-ready');
-            btnCheckout.innerHTML = `✅ FINALIZAR • ${fmt(displayTotal)}`;
+            $('prog-txt-mini').innerText = "Pedido Liberado!";
+            $('prog-fill-mini').style.width = '100%'; 
+            $('prog-fill-mini').style.background = 'var(--c-ok)';
         }
     }
 
@@ -893,18 +939,21 @@ function updateTotals(){
         else { STATE.coupon=null; showToast("Cupom removido", "r"); }
     }
 
-    // UPDATE UI ELEMENTS
+    // UPDATE UI
     const badge = $('badge-count');
     badge.innerText = count;
     badge.style.display = count > 0 ? 'block' : 'none';
 
     $('chk-total').innerText = fmt(displayTotal);
     
-    // Mostra o botão apenas na aba do carrinho e se tiver itens
+    // VISIBILIDADE NO CARRINHO
     if(STATE.activeCat === '__CART__' && count > 0) {
-        $('floating-checkout').style.display = 'block';
+        $('floating-bottom').style.display = 'flex';
+        btnCheckout.disabled = isCheckoutBlocked;
+        btnCheckout.style.background = isCheckoutBlocked ? '#94a3b8' : '#16a34a';
+        btnCheckout.innerHTML = `FINALIZAR • ${fmt(displayTotal)}`;
     } else {
-        $('floating-checkout').style.display = 'none';
+        $('floating-bottom').style.display = 'none';
     }
 }
 
@@ -938,9 +987,7 @@ function handleSearch(q){
 function clearSearch(){$('search-inp').value='';handleSearch('');}
 function applyCupom(){
     const c=STATE.coupons.find(x=>x.codigo===$('cupom-code').value.toUpperCase().trim());
-    let totStr = $('chk-total').innerText;
-    const tot=parseMoney(totStr);
-    
+    const tot=parseMoney($('chk-total').innerText);
     if(c && tot>=c.minimo){ STATE.coupon=c; updateTotals(); $('cupom-msg').innerText="CUPOM APLICADO!"; $('cupom-msg').style.display='block'; }
     else showToast("Cupom inválido ou mínimo não atingido", "r");
 }
