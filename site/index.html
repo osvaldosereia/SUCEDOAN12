@@ -71,8 +71,8 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .banner-wrapper::-webkit-scrollbar { display: none; }
 .banner-card {
-    flex: 0 0 85%; scroll-snap-align: start;
-    border-radius: 16px; padding: 18px 20px;
+    flex: 0 0 auto; width: max-content; max-width: 85vw; scroll-snap-align: start;
+    border-radius: 16px; padding: 18px 25px;
     display: flex; flex-direction: column; justify-content: center;
     cursor: pointer; transition: transform 0.2s;
     min-height: 90px; box-shadow: var(--sh-card);
@@ -83,7 +83,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 @media(min-width: 800px) {
     .banner-wrapper { overflow-x: visible; }
-    .banner-card { flex: 1; }
+    .banner-card { flex: 1; max-width: none; width: auto; }
 }
 
 /* FILTRO DISCRETO ACIMA DA GRADE */
@@ -248,6 +248,10 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     flex: 1; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; transition: color 0.2s; position: relative;
 }
 .tab-item.active { color: var(--c-p); }
+.tab-item.active::before {
+    content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 35px; height: 3px; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; background: var(--c-p);
+}
 .tab-icon { font-size: 1.3rem; line-height: 1; }
 .tab-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .cart-badge {
@@ -482,6 +486,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 <script>
 const $=i=>document.getElementById(i);
 const STATE={
+    SHOW_VALIDADE: true, // FLAG PARA MOSTRAR/OCULTAR DATA DE VALIDADE
     baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, banners:[],
     cart:{}, cartOrder:[], 
     activeCat:'__CESTAS__', 
@@ -705,12 +710,21 @@ function renderChunked(list, type, reset){
         $('filter-container').style.display = 'flex';
     }
 
-    const html = list.map(item => {
+    let html = list.map(item => {
         if(type === 'BASKET') return cardBasket(item);
         if(type === 'COMBO') return cardCombo(item);
         return cardProd(item);
     }).join('');
     
+    // Adiciona Título e Botões Extra caso esteja no Carrinho
+    if(STATE.activeCat === '__CART__' && list.length > 0) {
+        html = `<div style="grid-column: 1/-1; font-size: 1.3rem; font-weight: 900; color: var(--c-p); padding-top: 10px; margin-bottom: 5px;">Produtos da sua cesta</div>` + html;
+        html += `<div style="grid-column: 1/-1; display: flex; gap: 15px; margin-top: 20px; padding-bottom: 20px;">
+                    <button class="btn-modal secondary" style="flex:1; margin:0; font-size:0.85rem;" onclick="loadCategory('__OFFERS__')">🔥 OFERTAS</button>
+                    <button class="btn-modal secondary" style="flex:1; margin:0; font-size:0.85rem;" onclick="$('modal-corredores').showModal()">🗂️ CORREDORES</button>
+                 </div>`;
+    }
+
     grid.innerHTML = html || '<p style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:20px;margin:auto;">Nenhum item encontrado.</p>';
     
     if(reset) $('scroll-stage').scrollTo({top:0, behavior: 'smooth'});
@@ -779,11 +793,11 @@ function cardProd(item){
     const isOffer = item.oldPrice && item.oldPrice > item.price;
     
     let metaHtml = '';
-    if(item.val || item.stock < 10) {
+    if((item.val && STATE.SHOW_VALIDADE) || item.stock < 10) {
         let m = [];
-        if(item.val) m.push(`Val: ${item.val}`);
+        if(item.val && STATE.SHOW_VALIDADE) m.push(`Val: ${item.val}`);
         if(item.stock < 10) m.push(`Restam ${item.stock}`);
-        metaHtml = `<div class="meta-row"><span class="meta-text">${m.join(' | ')}</span></div>`;
+        if(m.length > 0) metaHtml = `<div class="meta-row"><span class="meta-text">${m.join(' | ')}</span></div>`;
     }
 
     let priceHtml = '';
@@ -1097,7 +1111,8 @@ function openCheckout(){
     
     let listHtml = STATE.cartOrder.map(id=>{
         const p = STATE.prods.find(x=>x.id===id);
-        return `<div class="modal-card"><img src="${p.img}"><div class="mc-name">${formatName(p.name)}</div><div class="mc-price">${fmt(p.price)}</div><div class="mc-qty">${STATE.cart[id]}x</div></div>`
+        const qtyStr = STATE.cart[id] > 1 ? 'unidades' : 'unidade';
+        return `<div class="modal-card"><img src="${p.img}"><div class="mc-name">${formatName(p.name)}</div><div class="mc-price">${fmt(p.price)}</div><div class="mc-qty">${STATE.cart[id]} ${qtyStr}</div></div>`
     }).join('');
     
     if(STATE.comboDiscount > 0){
