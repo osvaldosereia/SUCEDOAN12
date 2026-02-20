@@ -79,9 +79,7 @@
         .btn-sq.sync:hover { background: #15803d; }
         .btn-sq.inactive-state { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
         .btn-sq.offer-active { background: #dc2626; color: white; border-color: #dc2626; }
-        @keyframes spin-slow { to { transform: rotate(360deg); } }
-        .btn-sq.sync.pending i { animation: spin-slow 2s linear infinite; opacity: 0.8; }
-        .btn-sq.sync.pending { background: #f59e0b; border-color: #f59e0b; }
+        
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
         .modal-card { background: #ffffff; padding: 0; border-radius: 12px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border); box-shadow: 0 25px 50px rgba(0,0,0,0.2); overflow: hidden; }
         .modal-card.login { width: 350px; }
@@ -112,6 +110,7 @@
         #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 3000; display: none; justify-content: center; align-items: center; color: var(--text-primary); flex-direction: column; gap: 15px; }
         .spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
         .cat-list { display: flex; flex-direction: column; gap: 6px; max-height: 400px; overflow-y: auto; margin-top: 10px; }
         .cat-row { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; }
         .cat-row span { flex-grow: 1; }
@@ -120,8 +119,7 @@
         .btn-icon:hover { background: var(--bg-body); color: var(--accent); border-color: var(--accent); }
         .btn-icon.del:hover { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
         
-        /* Ajuste do grid para comportar novas colunas (10 no total) */
-        .list-row { display: grid; grid-template-columns: 90px 1fr 120px 80px 60px 80px 70px 45px 70px 40px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 11px; transition: 0.2s; border-left: 3px solid transparent; }
+        .list-row { display: grid; grid-template-columns: 90px 1fr 120px 100px 60px 80px 70px 45px 70px 70px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 11px; transition: 0.2s; border-left: 3px solid transparent; }
         .list-row:hover { background: #f1f5f9; border-left-color: var(--accent); }
         .list-header { font-weight: bold; background: #e2e8f0; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-left: 3px solid transparent; cursor: default; }
         .list-header:hover { background: #e2e8f0; border-left-color: transparent; }
@@ -204,7 +202,10 @@
             </div>
             <button class="nav-btn" onclick="saveDataManual()"><i data-lucide="save" size="14"></i> SALVAR DADOS</button>
             <button class="nav-btn" onclick="fetchAndMergeFromGithub()" title="Baixar produtos do site e atualizar dados locais"><i data-lucide="download-cloud" size="14"></i> IMPORTAR DO SITE</button>
-            <button class="nav-btn" onclick="syncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)"><i data-lucide="globe" size="14"></i> ATUALIZAR SITE</button>
+            <button class="nav-btn" onclick="queueSyncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)"><i data-lucide="globe" size="14"></i> ATUALIZAR SITE</button>
+            
+            <div id="queue-status" style="display:none; align-items:center; gap:5px; font-size:11px; font-weight:bold; color:var(--warning); background:#fffbeb; padding:6px 12px; border-radius:6px; border:1px solid #fcd34d; margin-left: 10px;"></div>
+            
             <button class="nav-btn" onclick="exportarCSV()"><i data-lucide="download" size="14"></i> CSV</button>
             <button class="nav-btn" onclick="openPrintListModal()"><i data-lucide="printer" size="14"></i> LISTAS</button>
             <div id="total-count">0</div>
@@ -252,7 +253,7 @@
                     <button class="btn-act" onclick="document.getElementById('fileInput').click()">PC</button>
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
                     <button class="btn-act" onclick="downloadImage()">BAIXAR</button>
-                    <button class="btn-act primary" style="flex:2" onclick="uploadToGithub()">GITHUB & SYNC</button>
+                    <button class="btn-act primary" style="flex:2" onclick="queueImageUpload()">ENVIAR PARA O SITE</button>
                 </div>
             </div>
         </div>
@@ -320,6 +321,82 @@
         const ctx = canvas.getContext('2d');
         let loadedImage = null;
         let activeSticker = null; 
+
+        // --- SISTEMA DE FILA PARA O GITHUB ---
+        let githubQueue = [];
+        let isProcessingQueue = false;
+        let queueInterval = null;
+
+        window.addEventListener('beforeunload', function (e) {
+            if (githubQueue.length > 0 || isProcessingQueue || queueInterval) {
+                e.preventDefault();
+                e.returnValue = 'Você tem envios pendentes para o site na fila. Se sair, eles não serão enviados. Deseja sair?';
+            }
+        });
+
+        function updateQueueUI(msg) {
+            const el = document.getElementById('queue-status');
+            if(!el) return;
+            if(githubQueue.length === 0 && !isProcessingQueue && !msg) {
+                el.innerHTML = '';
+                el.style.display = 'none';
+            } else {
+                el.style.display = 'flex';
+                let iconHtml = isProcessingQueue ? `<i data-lucide="loader" class="spin-icon" size="14"></i>` : `<i data-lucide="clock" size="14"></i>`;
+                el.innerHTML = `${iconHtml} <span>${msg || `Fila: ${githubQueue.length}`}</span>`;
+                lucide.createIcons();
+            }
+        }
+
+        function addToQueue(type, desc, taskFunc, delayMs) {
+            githubQueue.push({ type, desc, task: taskFunc, delay: delayMs });
+            updateQueueUI(`Adicionado: ${desc} (Fila: ${githubQueue.length})`);
+            if(!isProcessingQueue && !queueInterval) {
+                processQueue();
+            }
+        }
+
+        async function processQueue() {
+            if(githubQueue.length === 0) {
+                isProcessingQueue = false;
+                updateQueueUI();
+                return;
+            }
+            
+            isProcessingQueue = true;
+            const item = githubQueue.shift();
+            
+            updateQueueUI(`Enviando: ${item.desc}...`);
+            toggleLoader(true, `Sincronizando: ${item.desc}...`);
+            
+            try {
+                await item.task();
+            } catch(e) {
+                alert(`Erro no envio (${item.desc}): ` + e.message);
+            } finally {
+                toggleLoader(false);
+            }
+
+            isProcessingQueue = false; 
+            let remaining = item.delay / 1000;
+            updateQueueUI(`Aguardando API: ${remaining}s... (Fila: ${githubQueue.length})`);
+            
+            queueInterval = setInterval(() => {
+                remaining--;
+                if(remaining <= 0) {
+                    clearInterval(queueInterval);
+                    queueInterval = null;
+                    if(githubQueue.length > 0) {
+                        processQueue();
+                    } else {
+                        updateQueueUI();
+                    }
+                } else {
+                    updateQueueUI(`Aguardando API: ${remaining}s... (Fila: ${githubQueue.length})`);
+                }
+            }, 1000);
+        }
+        // -------------------------------------
 
         function debounce(func, wait) {
             let timeout;
@@ -454,7 +531,7 @@
                 const linha = {};
                 const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
                 p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque);
-                p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = ""; p['NCM'] = p.ncm; 
+                p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = p.url_imagem || ""; p['NCM'] = p.ncm; 
                 p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Categoria do produto'] = p.categoria;
                 p['Origem'] = '0'; p['Unidade'] = 'un'; p['Grupo de produtos'] = '';
                 colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
@@ -471,7 +548,7 @@
             const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
             const linha = {}; const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
             p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); 
-            p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = ""; p['NCM'] = p.ncm; 
+            p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = p.url_imagem || ""; p['NCM'] = p.ncm; 
             p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Categoria do produto'] = p.categoria; 
             p['Origem'] = '0'; p['Unidade'] = 'un'; p['Grupo de produtos'] = '';
             colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
@@ -625,16 +702,23 @@
             if(newName && newName.trim() !== "" && newName !== oldName) {
                 const upperName = newName.trim().toUpperCase();
                 if(availableCategories.includes(upperName)) return alert("Esta categoria já existe.");
+                
                 const idx = availableCategories.indexOf(oldName);
                 if(idx !== -1) availableCategories[idx] = upperName;
+                
                 let count = 0;
                 products.forEach(p => {
                     if(p.categoria === oldName || p['Categoria do produto'] === oldName) {
-                        p.categoria = upperName; p['Categoria do produto'] = upperName; p._changed = true; count++;
+                        p.categoria = upperName;
+                        p['Categoria do produto'] = upperName;
+                        p._changed = true;
+                        count++;
                     }
                 });
                 if(count > 0) saveData();
-                renderCategoryManager(); renderGrid(document.getElementById('search-input').value, true);
+                
+                renderCategoryManager();
+                renderGrid(document.getElementById('search-input').value, true);
             }
         }
 
@@ -642,24 +726,35 @@
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
             if(!confirm("Isso atualizará o arquivo de categorias no GitHub. Continuar?")) return;
+            
             toggleLoader(true, "Sincronizando Categorias...");
             const path = `site/categorias-padrao.json`;
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+            
             try {
                 let sha = null;
                 try {
                     const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
                     if(check.ok) { const json = await check.json(); sha = json.sha; }
                 } catch(e) {}
+                
                 availableCategories.sort((a,b) => a.localeCompare(b));
                 const contentStr = JSON.stringify(availableCategories, null, 2);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+                
                 const body = { message: `Update Categories via Manager`, content: base64 };
                 if(sha) body.sha = sha;
+                
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 if(!res.ok) throw new Error(await res.text());
-                alert("Categorias atualizadas com sucesso!"); closeModal('modal-categories');
-            } catch(err) { alert("Erro GitHub: " + err.message); } finally { toggleLoader(false); }
+                
+                alert("Categorias atualizadas com sucesso!");
+                closeModal('modal-categories');
+            } catch(err) { 
+                alert("Erro GitHub: " + err.message); 
+            } finally { 
+                toggleLoader(false); 
+            }
         }
         
         function calculateEanCheckDigit(code12) {
@@ -667,40 +762,109 @@
             let sum = 0;
             for(let i = 0; i < 12; i++) {
                 const digit = parseInt(code12[i]);
-                if(i % 2 === 0) sum += digit * 1; else sum += digit * 3;
+                if(i % 2 === 0) sum += digit * 1;
+                else sum += digit * 3;
             }
-            return ((10 - (sum % 10)) % 10).toString();
+            const remainder = sum % 10;
+            const checkDigit = (10 - remainder) % 10;
+            return checkDigit.toString();
         }
 
         function createNewProduct() {
-            const timestamp = Date.now().toString(); const sku = timestamp.slice(-8); 
-            const baseEan = "2" + timestamp.slice(-11); const internalEan = baseEan + calculateEanCheckDigit(baseEan);
+            const timestamp = Date.now().toString();
+            const sku = timestamp.slice(-8); 
+            
+            const baseEan = "2" + timestamp.slice(-11);
+            const checkDigit = calculateEanCheckDigit(baseEan);
+            const internalEan = baseEan + checkDigit;
+            
             const newProd = {
-                codigo: sku, nome: "NOVO PRODUTO", preco: 0, preco_custo: 0, categoria: "", estoque: 0, localizacao: "SEM LOCAL", gtin: internalEan, url_imagem: "", ncm: "", validade: "", situacao: 'A', formato: 'S', em_oferta: false, _changed: true, _lastChange: "Criação Manual", 'Código': sku, 'Descrição': "NOVO PRODUTO", 'Preço': 0, 'Preço de custo': 0, 'Preço de Compra': 0, 'Categoria do produto': "", 'Estoque': 0, 'Localização': "SEM LOCAL", 'GTIN/EAN': internalEan
+                codigo: sku,
+                nome: "NOVO PRODUTO",
+                preco: 0,
+                preco_custo: 0,
+                categoria: "",
+                estoque: 0,
+                localizacao: "SEM LOCAL",
+                gtin: internalEan,
+                url_imagem: "",
+                ncm: "",
+                validade: "",
+                situacao: 'A',
+                formato: 'S',
+                em_oferta: false,
+                _changed: true,
+                _lastChange: "Criação Manual",
+                'Código': sku,
+                'Descrição': "NOVO PRODUTO",
+                'Preço': 0,
+                'Preço de custo': 0,
+                'Preço de Compra': 0,
+                'Categoria do produto': "",
+                'Estoque': 0,
+                'Localização': "SEM LOCAL",
+                'GTIN/EAN': internalEan
             };
-            products.unshift(newProd); saveData(); renderGrid(document.getElementById('search-input').value, true); alert("Produto criado com código: " + sku + " e EAN: " + internalEan); document.getElementById('product-grid').scrollTop = 0;
+            
+            products.unshift(newProd); 
+            saveData();
+            renderGrid(document.getElementById('search-input').value, true);
+            alert("Produto criado com código: " + sku + " e EAN: " + internalEan);
+            document.getElementById('product-grid').scrollTop = 0;
         }
 
         function duplicateProduct(sku) {
             const p = products.find(x => x.codigo === sku);
-            if(!p) return; if(!confirm("Duplicar este produto?")) return;
-            const timestamp = Date.now().toString(); const newSku = timestamp.slice(-8);
-            const baseEan = "2" + timestamp.slice(-11); const internalEan = baseEan + calculateEanCheckDigit(baseEan);
+            if(!p) return;
+            if(!confirm("Duplicar este produto?")) return;
+            
+            const timestamp = Date.now().toString();
+            const newSku = timestamp.slice(-8);
+            const baseEan = "2" + timestamp.slice(-11);
+            const checkDigit = calculateEanCheckDigit(baseEan);
+            const internalEan = baseEan + checkDigit;
+            
             const newProd = JSON.parse(JSON.stringify(p));
-            newProd.codigo = newSku; newProd['Código'] = newSku; newProd.gtin = internalEan; newProd['GTIN/EAN'] = internalEan; newProd.nome = "CÓPIA - " + p.nome; newProd['Descrição'] = newProd.nome; newProd.situacao = 'A'; newProd['Situação'] = 'A'; newProd.em_oferta = false; newProd._changed = true; newProd._lastChange = "Duplicação Manual"; delete newProd.id; delete newProd['ID'];
-            products.unshift(newProd); saveData(); renderGrid(document.getElementById('search-input').value, true); alert("Produto duplicado! Novo SKU: " + newSku); document.getElementById('product-grid').scrollTop = 0; closeModal('modal-product-card');
+            newProd.codigo = newSku;
+            newProd['Código'] = newSku;
+            newProd.gtin = internalEan;
+            newProd['GTIN/EAN'] = internalEan;
+            newProd.nome = "CÓPIA - " + p.nome;
+            newProd['Descrição'] = newProd.nome;
+            newProd.situacao = 'A';
+            newProd['Situação'] = 'A';
+            newProd.em_oferta = false;
+            newProd._changed = true;
+            newProd._lastChange = "Duplicação Manual";
+            delete newProd.id;
+            delete newProd['ID'];
+
+            products.unshift(newProd);
+            saveData();
+            renderGrid(document.getElementById('search-input').value, true);
+            alert("Produto duplicado! Novo SKU: " + newSku);
+            document.getElementById('product-grid').scrollTop = 0;
+            
+            closeModal('modal-product-card');
         }
 
         function generateInternalEan(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            const timestamp = Date.now().toString(); const baseEan = "2" + timestamp.slice(-11); const internalEan = baseEan + calculateEanCheckDigit(baseEan);
+            const timestamp = Date.now().toString();
+            
+            const baseEan = "2" + timestamp.slice(-11);
+            const checkDigit = calculateEanCheckDigit(baseEan);
+            const internalEan = baseEan + checkDigit;
+
             updateProduct(sku, 'gtin', internalEan);
+            
             const container = document.getElementById('product-card-container');
-            if (container.querySelector('#card-' + sku)) openProductModal(sku); 
+            if (container.querySelector('#card-' + sku)) {
+                openProductModal(sku); 
+            }
         }
         
-        // --- FUNÇÃO PARA ALTERAR O CÓDIGO (SKU) COM SEGURANÇA ---
         function changeProductCode(oldSku, newSku) {
             newSku = newSku.trim().toUpperCase();
             if(!newSku || oldSku === newSku) return;
@@ -711,10 +875,7 @@
             }
             const p = products.find(p => p.codigo === oldSku);
             if(p) {
-                p.codigo = newSku;
-                p['Código'] = newSku;
-                p._changed = true;
-                p._lastChange = new Date().toLocaleString();
+                p.codigo = newSku; p['Código'] = newSku; p._changed = true; p._lastChange = new Date().toLocaleString();
                 saveData();
                 renderGrid(document.getElementById('search-input').value, true);
                 const container = document.getElementById('product-card-container');
@@ -728,8 +889,37 @@
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
             const code = p.gtin || p.codigo; 
+            
             const w = window.open('', '', 'width=900,height=600');
-            w.document.write(`<html><head><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script><style>@page { size: 50mm 30mm; margin: 0; } body { margin: 0; width: 50mm; height: 30mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; } .prod-name { font-family: sans-serif; font-size: 10px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 95%; margin-bottom: 2px; } #barcode { width: 95%; height: auto; }</style></head><body><div class="prod-name">${p.nome}</div><svg id="barcode"></svg><script>window.onload = function() { JsBarcode("#barcode", "${code}", { format: "CODE128", width: 1.5, height: 50, displayValue: true, fontSize: 10, margin: 0 }); setTimeout(() => { window.print(); }, 300); }<\/script></body></html>`);
+            w.document.write(`
+                <html>
+                <head>
+                    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
+                    <style>
+                        @page { size: 50mm 30mm; margin: 0; }
+                        body { 
+                            margin: 0; 
+                            width: 50mm; 
+                            height: 30mm;
+                            display: flex; 
+                            flex-direction: column; 
+                            align-items: center; 
+                            justify-content: center;
+                            overflow: hidden;
+                        }
+                        .prod-name { font-family: sans-serif; font-size: 10px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 95%; margin-bottom: 2px; }
+                        #barcode { width: 95%; height: auto; }
+                    </style>
+                </head>
+                <body>
+                    <div class="prod-name">${p.nome}</div>
+                    <svg id="barcode"></svg>
+                    <script>
+                        window.onload = function() { JsBarcode("#barcode", "${code}", { format: "CODE128", width: 1.5, height: 50, displayValue: true, fontSize: 10, margin: 0 }); setTimeout(() => { window.print(); }, 300); }
+                    <\/script>
+                </body>
+                </html>
+            `);
             w.document.close();
         }
 
@@ -740,9 +930,14 @@
         function openProductModal(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            const container = document.getElementById('product-card-container'); container.innerHTML = '';
-            const cardElement = createCard(p); cardElement.style.width = '100%'; cardElement.style.maxWidth = '320px'; 
-            container.appendChild(cardElement); lucide.createIcons(); openModal('modal-product-card');
+            const container = document.getElementById('product-card-container');
+            container.innerHTML = '';
+            const cardElement = createCard(p);
+            cardElement.style.width = '100%';
+            cardElement.style.maxWidth = '320px'; 
+            container.appendChild(cardElement);
+            lucide.createIcons();
+            openModal('modal-product-card');
         }
 
         function createListRow(p) {
@@ -757,6 +952,11 @@
             if(p.categoria && !catList.includes(p.categoria)) catList.push(p.categoria);
             catList.forEach(c => { optionsCat += `<option value="${c}" ${p.categoria === c ? 'selected' : ''}>${c.substring(0,20)}</option>`; });
             
+            let currentG = "", currentP = "";
+            if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); currentG = parts[0]; currentP = parts[1]; }
+            let optionsG = `<option value="">GON</option>`; GONDOLAS.forEach(g => { optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>${g}</option>`; });
+            let optionsP = `<option value="">PRT</option>`; PRATELEIRAS.forEach(pr => { optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>${pr}</option>`; });
+            
             let lucroStr = "-", lucroColor = "var(--text-secondary)";
             if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
                 const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
@@ -769,15 +969,27 @@
                 <div><input type="text" class="list-input" style="font-weight:bold; color:var(--text-secondary);" value="${p.codigo}" onchange="changeProductCode('${p.codigo}', this.value)" onclick="event.stopPropagation()" title="Alterar Código"></div>
                 <div><input type="text" class="list-input" style="font-weight:600;" value="${p.nome}" onchange="updateProduct('${p.codigo}', 'nome', this.value)" onclick="event.stopPropagation()"></div>
                 <div><select class="list-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)" onclick="event.stopPropagation()">${optionsCat}</select></div>
-                <div><input type="text" class="list-input" style="font-size:10px; font-weight:bold; color:var(--text-secondary); text-align:center;" value="${p.localizacao || ''}" onchange="updateProduct('${p.codigo}', 'localizacao', this.value)" onclick="event.stopPropagation()"></div>
+                
+                <div>
+                    <div style="display:flex; gap:2px; justify-content:center;">
+                        <select class="list-select" style="padding:2px; text-align:center;" onchange="updateProduct('${p.codigo}', 'gondola', this.value)" onclick="event.stopPropagation()" title="Gôndola">${optionsG}</select>
+                        <select class="list-select" style="padding:2px; text-align:center;" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)" onclick="event.stopPropagation()" title="Prateleira">${optionsP}</select>
+                    </div>
+                </div>
+
                 <div><input type="text" class="list-input number" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)" onclick="event.stopPropagation()"></div>
                 <div><input type="text" class="list-input" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}; text-align:center;" value="${p.validade || ''}" placeholder="DD/MM/AAAA" onchange="updateProduct('${p.codigo}', 'validade', this.value)" onclick="event.stopPropagation()"></div>
                 <div><input type="text" class="list-input number" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)" onclick="event.stopPropagation()"></div>
                 <div style="text-align:right; font-size:10px; font-weight:bold; color:${lucroColor}; padding-right:4px;">${lucroStr}</div>
                 <div><input type="text" class="list-input number" style="color:var(--success);" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)" onclick="event.stopPropagation()"></div>
-                <div><button class="list-btn-icon" onclick="event.stopPropagation(); printLabel('${p.codigo}')" title="Imprimir Etiqueta"><i data-lucide="printer" size="14"></i></button></div>
+                
+                <div>
+                    <div style="display:flex; gap:4px; justify-content:center;">
+                        <button class="list-btn-icon" onclick="event.stopPropagation(); queueSingleProductJson('${p.codigo}')" title="Atualizar no Site"><i data-lucide="globe" size="14"></i></button>
+                        <button class="list-btn-icon" onclick="event.stopPropagation(); printLabel('${p.codigo}')" title="Imprimir Etiqueta"><i data-lucide="printer" size="14"></i></button>
+                    </div>
+                </div>
             `;
-            
             row.onclick = () => openProductModal(p.codigo);
             return row;
         }
@@ -801,21 +1013,12 @@
                 filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term) || (p.gtin||"").includes(term) || (p.localizacao||"").toLowerCase().includes(term));
             }
             
-            // --- APLICAÇÃO DOS NOVOS FILTROS (ATIVOS/INATIVOS) ---
-            if(filterMode === 'ativos') {
-                filtered = filtered.filter(p => p.situacao !== 'I');
-            } else if (filterMode === 'inativos') {
-                filtered = filtered.filter(p => p.situacao === 'I');
-            } else if(filterMode === 'validity60') {
-                const limit = new Date(); limit.setDate(limit.getDate() + 60);
-                filtered = filtered.filter(p => { if(!p.validade) return false; const dt = parseDate(p.validade); return dt && dt <= limit; });
-            } else if (filterMode === 'errors') {
-                filtered = filtered.filter(p => !p.gtin || !p.ncm || !p.preco || p.preco === 0);
-            } else if (filterMode === 'margin_error') {
-                filtered = filtered.filter(p => (p.preco || 0) <= (p.preco_custo || 0));
-            } else if (filterMode === 'ofertas') {
-                filtered = filtered.filter(p => p.em_oferta);
-            }
+            if(filterMode === 'ativos') { filtered = filtered.filter(p => p.situacao !== 'I'); } 
+            else if (filterMode === 'inativos') { filtered = filtered.filter(p => p.situacao === 'I'); } 
+            else if(filterMode === 'validity60') { const limit = new Date(); limit.setDate(limit.getDate() + 60); filtered = filtered.filter(p => { if(!p.validade) return false; const dt = parseDate(p.validade); return dt && dt <= limit; }); } 
+            else if (filterMode === 'errors') { filtered = filtered.filter(p => !p.gtin || !p.ncm || !p.preco || p.preco === 0); } 
+            else if (filterMode === 'margin_error') { filtered = filtered.filter(p => (p.preco || 0) <= (p.preco_custo || 0)); } 
+            else if (filterMode === 'ofertas') { filtered = filtered.filter(p => p.em_oferta); }
             
             if(sortMode === 'name') { filtered.sort((a,b) => a.nome.localeCompare(b.nome)); }
             else if (sortMode === 'validity') { filtered.sort((a,b) => { const da = parseDate(a.validade); const db = parseDate(b.validade); if(!da) return 1; if(!db) return -1; return da - db; }); }
@@ -836,7 +1039,7 @@
 
             const buildList = (items, container) => {
                 const header = document.createElement('div'); header.className = 'list-row list-header';
-                header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>CATEGORIA</div><div style="text-align:center;">LOCAL</div><div style="text-align:right;">EST.</div><div style="text-align:center;">VAL.</div><div style="text-align:right;">CUSTO (R$)</div><div style="text-align:right;">MKP</div><div style="text-align:right;">PREÇO (R$)</div><div style="text-align:center;"><i data-lucide="printer" size="14"></i></div>`;
+                header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>CATEGORIA</div><div style="text-align:center;">LOCAL</div><div style="text-align:right;">EST.</div><div style="text-align:center;">VAL.</div><div style="text-align:right;">CUSTO (R$)</div><div style="text-align:right;">MKP</div><div style="text-align:right;">PREÇO (R$)</div><div style="text-align:center;"><i data-lucide="globe" size="14"></i> <i data-lucide="printer" size="14"></i></div>`;
                 container.appendChild(header);
                 const subGrid = document.createElement('div'); subGrid.className = 'category-items-container';
                 subGrid.style.display = 'flex'; subGrid.style.flexDirection = 'column'; subGrid.style.gap = '0';
@@ -846,41 +1049,17 @@
 
             if(sortMode === 'gondola' || sortMode === 'group_category') {
                 let groupsToRender = [];
-                
                 if (sortMode === 'gondola') {
                     groupsToRender = [...GONDOLAS, SEM_LOCAL];
                     groupsToRender.forEach(g => {
-                        let prodsDaSecao = filtered.filter(p => {
-                            if (g === SEM_LOCAL) {
-                                if (!p.localizacao) return true;
-                                const parts = p.localizacao.split('-');
-                                return !parts[0] || !GONDOLAS.includes(parts[0]);
-                            } else {
-                                if (!p.localizacao) return false;
-                                const parts = p.localizacao.split('-');
-                                return parts[0] === g;
-                            }
-                        });
-                        if (prodsDaSecao.length > 0) {
-                            const headerTitle = document.createElement('div'); headerTitle.className = 'category-header';
-                            headerTitle.innerText = g === SEM_LOCAL ? "SEM LOCALIZAÇÃO / OUTROS" : `GÔNDOLA ${g}`;
-                            gridContainer.appendChild(headerTitle);
-                            buildList(prodsDaSecao, gridContainer);
-                        }
+                        let prodsDaSecao = filtered.filter(p => { if (g === SEM_LOCAL) { if (!p.localizacao) return true; const parts = p.localizacao.split('-'); return !parts[0] || !GONDOLAS.includes(parts[0]); } else { if (!p.localizacao) return false; const parts = p.localizacao.split('-'); return parts[0] === g; } });
+                        if (prodsDaSecao.length > 0) { const headerTitle = document.createElement('div'); headerTitle.className = 'category-header'; headerTitle.innerText = g === SEM_LOCAL ? "SEM LOCALIZAÇÃO / OUTROS" : `GÔNDOLA ${g}`; gridContainer.appendChild(headerTitle); buildList(prodsDaSecao, gridContainer); }
                     });
                 } else if (sortMode === 'group_category') {
-                    const uniqueCats = new Set();
-                    filtered.forEach(p => uniqueCats.add(p.categoria ? p.categoria.toUpperCase() : "SEM CATEGORIA"));
-                    groupsToRender = Array.from(uniqueCats).sort();
-                    
+                    const uniqueCats = new Set(); filtered.forEach(p => uniqueCats.add(p.categoria ? p.categoria.toUpperCase() : "SEM CATEGORIA")); groupsToRender = Array.from(uniqueCats).sort();
                     groupsToRender.forEach(c => {
                         let prodsDaSecao = filtered.filter(p => (p.categoria ? p.categoria.toUpperCase() : "SEM CATEGORIA") === c);
-                        if (prodsDaSecao.length > 0) {
-                            const headerTitle = document.createElement('div'); headerTitle.className = 'category-header';
-                            headerTitle.innerText = c;
-                            gridContainer.appendChild(headerTitle);
-                            buildList(prodsDaSecao, gridContainer);
-                        }
+                        if (prodsDaSecao.length > 0) { const headerTitle = document.createElement('div'); headerTitle.className = 'category-header'; headerTitle.innerText = c; gridContainer.appendChild(headerTitle); buildList(prodsDaSecao, gridContainer); }
                     });
                 }
                 lucide.createIcons(); return;
@@ -894,7 +1073,8 @@
             let currentG = "", currentP = "";
             if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); currentG = parts[0]; currentP = parts[1]; }
             const isInactive = p.situacao === 'I';
-            const card = document.createElement('div'); card.id = `card-${p.codigo}`;
+            const card = document.createElement('div');
+            card.id = `card-${p.codigo}`;
             card.className = `card ${p._changed ? 'status-changed' : 'status-synced'} ${isInactive ? 'status-inactive' : ''}`;
             const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
             let optionsG = `<option value="">--</option>`; GONDOLAS.forEach(g => { optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>GON ${g}</option>`; });
@@ -904,19 +1084,25 @@
             catList.forEach(c => { optionsCat += `<option value="${c}" ${p.categoria === c ? 'selected' : ''}>${c}</option>`; });
             let lucroStr = "-", lucroClass = "";
             if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) {
-                const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100; lucroStr = markup.toFixed(1) + "%";
+                const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
+                lucroStr = markup.toFixed(1) + "%";
                 if(markup < 20) lucroClass = "color: #dc2626;"; else if(markup > 40) lucroClass = "color: #16a34a;";
             }
+            
             const hasEan = p.gtin && p.gtin.length > 0;
             const searchBtn = `<button class="btn-mini-action" onclick="searchGoogle('${p.gtin || p.nome}')" title="Pesquisar"><i data-lucide="search" size="12"></i> BUSCAR</button>`;
             const printBtn = `<button class="btn-mini-action" onclick="printBarcode50mm('${p.codigo}')" title="Imprimir 50mm"><i data-lucide="printer" size="12"></i> IMPRIMIR</button>`;
             const generateBtn = `<button class="btn-mini-action" onclick="generateInternalEan('${p.codigo}')" style="background:#fffbeb; color:#d97706; border-color:#fcd34d;" title="Gerar Código 2..."><i data-lucide="wand-2" size="12"></i> GERAR</button>`;
+            
             const eanButtons = `<div class="ean-controls">${searchBtn}${printBtn}${!hasEan ? generateBtn : ''}</div>`;
 
             card.innerHTML = `
                 <div class="card-img-area" onclick="openEditor('${p.codigo}')">
                     <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
-                    <div class="img-overlay"><button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button><button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button></div>
+                    <div class="img-overlay">
+                        <button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button>
+                        <button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="card-sku">
@@ -945,20 +1131,33 @@
                     <button class="btn-sq" onclick="duplicateProduct('${p.codigo}')" title="Duplicar Produto"><i data-lucide="copy" size="18"></i></button>
                     <button class="btn-sq ${p.em_oferta ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta"><i data-lucide="tag" size="18"></i></button>
                     <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}"><i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i></button>
-                    <button class="btn-sq" onclick="updateSingleProductJson('${p.codigo}')" title="Atualizar este produto no site"><i data-lucide="globe" size="18"></i></button>
+                    <button class="btn-sq" onclick="queueSingleProductJson('${p.codigo}')" title="Atualizar este produto no site"><i data-lucide="globe" size="18"></i></button>
                     <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto"><i data-lucide="download" size="18"></i></button>
                 </div>`;
             return card;
+        }
+
+        function printLabel(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if (!p) return;
+            let gondola = "---", prateleira = "---";
+            if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); gondola = parts[0]; prateleira = parts[1]; }
+            const w = window.open('', '', 'width=900,height=600');
+            w.document.write(`<html><head><style>@page { size: 80mm 80mm; margin: 0; } body { width: 80mm; height: 80mm; margin: 0; padding: 2mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; font-family: sans-serif; text-align: center; } .loc-row { font-size: 20px; font-weight: 900; border-bottom: 2px solid #000; width: 100%; margin-bottom: 5px; display: flex; justify-content: space-around; } .name { font-size: 16px; font-weight: 900; margin-bottom: 2px; line-height: 1.1; text-transform: uppercase; max-height: 55px; overflow:hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; } .sku { font-size: 24px; font-weight: 900; margin: 2px 0; } .ean { font-size: 12px; font-weight: bold; } .val-box { margin-top: 5px; border: 2px solid #000; border-radius: 6px; padding: 2px 8px; font-weight: 900; font-size: 14px; width: 90%; } </style></head><body><div class="loc-row"><span>GON: ${gondola}</span><span>PRAT: ${prateleira}</span></div><div class="name">${p.nome}</div><div class="sku">${p.codigo}</div><div class="ean">EAN: ${p.gtin || ''}</div><div class="val-box">VAL: ${p.validade || '---'}</div><script>window.onload = function() { window.print(); }<\/script></body></html>`);
+            w.document.close();
         }
 
         function updateProduct(sku, field, value) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
             if(field === 'gondola' || field === 'prateleira') {
-                let parts = (p.localizacao || "-").split('-'); let g = field === 'gondola' ? value : (parts[0] || ""); let pr = field === 'prateleira' ? value : (parts[1] || "");
+                let parts = (p.localizacao || "-").split('-');
+                let g = field === 'gondola' ? value : (parts[0] || "");
+                let pr = field === 'prateleira' ? value : (parts[1] || "");
                 const newLoc = `${g}-${pr}`;
                 if(p.localizacao !== newLoc) {
-                    p.localizacao = newLoc; p['Localização'] = newLoc; p._changed = true; p._lastChange = new Date().toLocaleString(); saveData();
+                    p.localizacao = newLoc; p['Localização'] = newLoc; p._changed = true; p._lastChange = new Date().toLocaleString();
+                    saveData();
                     const card = document.getElementById('card-' + sku); if(card) { card.classList.remove('status-synced'); card.classList.add('status-changed'); }
                 }
                 return;
@@ -966,172 +1165,184 @@
             let finalVal = value;
             if(['preco','estoque','preco_custo','Preço de Compra','preco_antigo'].includes(field)) finalVal = parseFloat(value.replace(',','.')) || 0;
             if(field === 'preco_custo' || field === 'Preço de Compra') {
-                p['preco_custo'] = finalVal; p['Preço de custo'] = finalVal; p['Preço de Compra'] = finalVal; p._changed = true; p._lastChange = new Date().toLocaleString(); saveData();
+                p['preco_custo'] = finalVal; p['Preço de custo'] = finalVal; p['Preço de Compra'] = finalVal;
+                p._changed = true; p._lastChange = new Date().toLocaleString(); saveData();
                 const card = document.getElementById('card-' + sku);
                 if(card) {
-                    const inputs = card.querySelectorAll('.stat-input'); if(inputs[2]) inputs[2].value = formatNum(finalVal); if(inputs[3]) inputs[3].value = formatNum(finalVal);
+                    const inputs = card.querySelectorAll('.stat-input');
+                    if(inputs[2]) inputs[2].value = formatNum(finalVal);
+                    if(inputs[3]) inputs[3].value = formatNum(finalVal);
                     card.classList.remove('status-synced'); card.classList.add('status-changed');
                     const markupEl = card.querySelector('.stat-readonly');
-                    if(markupEl && p.preco > 0 && finalVal > 0) { const markup = ((p.preco - finalVal) / finalVal) * 100; markupEl.innerText = markup.toFixed(1) + "%"; markupEl.style.color = markup < 20 ? '#dc2626' : (markup > 40 ? '#16a34a' : ''); }
+                    if(markupEl && p.preco > 0 && finalVal > 0) {
+                        const markup = ((p.preco - finalVal) / finalVal) * 100;
+                        markupEl.innerText = markup.toFixed(1) + "%";
+                        markupEl.style.color = markup < 20 ? '#dc2626' : (markup > 40 ? '#16a34a' : '');
+                    }
                 }
                 return;
             }
             if(p[field] != finalVal) {
                 p[field] = finalVal;
-                if(field === 'nome') p['Descrição'] = finalVal; 
-                if(field === 'preco') p['Preço'] = value; 
-                if(field === 'estoque') p['Estoque'] = value; 
-                if(field === 'categoria') p['Categoria do produto'] = value; 
-                if(field === 'gtin') p['GTIN/EAN'] = value; 
-                if(field === 'ncm') p['NCM'] = value; 
-                if(field === 'validade') p['Data Validade'] = value;
-                if(field === 'localizacao') p['Localização'] = value; // Adicionado atualização direta do local
-                
+                if(field === 'nome') p['Descrição'] = finalVal; if(field === 'preco') p['Preço'] = value;
+                if(field === 'estoque') p['Estoque'] = value; if(field === 'categoria') p['Categoria do produto'] = value;
+                if(field === 'gtin') p['GTIN/EAN'] = value; if(field === 'ncm') p['NCM'] = value; if(field === 'validade') p['Data Validade'] = value;
                 p._changed = true; p._lastChange = new Date().toLocaleString(); saveData();
                 const card = document.getElementById('card-' + sku);
                 if(card) {
                     card.classList.remove('status-synced'); card.classList.add('status-changed');
-                    if(field === 'preco') { const markupEl = card.querySelector('.stat-readonly'); if(markupEl && p.preco > 0 && p.preco_custo > 0) { const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100; markupEl.innerText = markup.toFixed(1) + "%"; markupEl.style.color = markup < 20 ? '#dc2626' : (markup > 40 ? '#16a34a' : ''); } }
+                    if(field === 'preco') {
+                         const markupEl = card.querySelector('.stat-readonly');
+                         if(markupEl && p.preco > 0 && p.preco_custo > 0) {
+                             const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100;
+                             markupEl.innerText = markup.toFixed(1) + "%";
+                             markupEl.style.color = markup < 20 ? '#dc2626' : (markup > 40 ? '#16a34a' : '');
+                         }
+                    }
                 }
             }
         }
         
-        // --- FUNÇÃO AUXILIAR PARA PREPARAR TODOS OS DADOS PARA O SITE ---
+        // --- FUNÇÃO DE MAPEAMENTO ESTRITO (CORRIGIDA) ---
         function prepararProdutoParaSite(p) {
-            // Cria uma cópia exata do produto com TODOS os dados (imagem, GTIN, custo, etc)
-            const item = { ...p };
+            // Cria um objeto novo Apenas com os 9 campos necessários
+            const item = {
+                id: Number(p['ID'] || p.id || 0),
+                nome: p.nome || "",
+                preco: Number(p.preco || 0),
+                codigo: p.codigo || "",
+                situacao: p.situacao || "A",
+                categoria: p.categoria || "",
+                validade: p.validade || "",
+                estoque: Number(p.estoque || 0)
+            };
             
-            // Removemos apenas as chaves que são para uso interno do painel
-            delete item._changed;
-            delete item._lastChange;
-            
-            // Garantimos que os formatos de números estejam corretos para o site
-            item.id = Number(item['ID'] || item.id || 0);
-            item.preco = Number(item.preco || 0);
-            item.estoque = Number(item.estoque || 0);
-            if(item.em_oferta) {
-                item.preco_antigo = Number(item.preco_antigo || 0);
+            // Só adiciona preco_antigo se estiver em oferta e possuir o valor
+            if(p.em_oferta && p.preco_antigo) {
+                item.preco_antigo = Number(p.preco_antigo);
             }
             
             return item;
         }
 
-        async function syncProductsToGithub() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-            if(!confirm("Isso atualizará o arquivo produtos.json no GitHub com todos os produtos ATIVOS. Continuar?")) return;
-            
-            toggleLoader(true, "Enviando Produtos...");
-            
-            // AGORA USAMOS A FUNÇÃO NOVA: Pega todos os produtos ativos e preserva todos os campos
-            const payload = products.filter(p => p.situacao !== 'I').map(prepararProdutoParaSite);
-            
-            if(payload.length === 0) { toggleLoader(false); return alert("Nenhum produto ativo encontrado."); }
-            
-            const path = `site/produtos.json`; 
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-            try {
-                let sha = null; 
-                try { 
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); 
-                    if(check.ok) { const json = await check.json(); sha = json.sha; } 
-                } catch(e) {}
+        // --- FUNÇÕES DE SINCRONIZAÇÃO DA FILA (CORRIGIDAS E SEGURAS) ---
+        function queueSyncProductsToGithub() {
+            if(!confirm("Isso atualizará o arquivo produtos.json no GitHub com todos os produtos ATIVOS. A fila aguardará 240s após o envio. Continuar?")) return;
+            addToQueue('full', 'Site Completo', async () => {
+                const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+                if(!cfg || !cfg.token) throw new Error("Configure o Token do GitHub!");
+                
+                const payload = products.filter(p => p.situacao !== 'I').map(prepararProdutoParaSite);
+                if(payload.length === 0) throw new Error("Nenhum produto ativo encontrado.");
+                
+                const path = `site/produtos.json`;
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                
+                let sha = null;
+                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                if (check.ok) { 
+                    const json = await check.json(); 
+                    sha = json.sha; 
+                } else if (check.status !== 404) {
+                    throw new Error(`Erro na API do GitHub ao verificar o arquivo: Status ${check.status}`);
+                }
                 
                 payload.sort((a,b) => a.nome.localeCompare(b.nome));
-                const contentStr = JSON.stringify(payload, null, 2); 
+                const contentStr = JSON.stringify(payload, null, 2);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
                 const body = { message: `Bulk Upd Prods via Painel (${payload.length} items)`, content: base64 };
                 if(sha) body.sha = sha;
                 
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error(await res.text()); 
-                alert(`Sucesso! Arquivo produtos.json atualizado com TODOS os dados.`);
-            } catch(err) { 
-                alert("Erro GitHub: " + err.message); 
-            } finally { 
-                toggleLoader(false); 
-            }
+                if(!res.ok) throw new Error(await res.text());
+            }, 240000); // Aguarda 240 segundos APÓS enviar
         }
 
-        async function updateSingleProductJson(sku) {
-            const p = products.find(x => x.codigo === sku); 
-            if(!p) return;
-            
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); 
-            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-            
-            toggleLoader(true, "Atualizando Produto no JSON...");
-            const path = `site/produtos.json`; 
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-            
-            try {
+        function queueSingleProductJson(sku) {
+            addToQueue('single', `Prod ${sku}`, async () => {
+                const p = products.find(x => x.codigo === sku);
+                if(!p) throw new Error("Produto não encontrado.");
+                
+                const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+                if(!cfg || !cfg.token) throw new Error("Configure o Token do GitHub!");
+                
+                const path = `site/produtos.json`;
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                
                 let sha = null; 
                 let currentData = [];
-                try { 
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); 
-                    if(check.ok) { 
-                        const json = await check.json(); 
-                        sha = json.sha; 
+                
+                // --- PROTEÇÃO RIGOROSA: Aborta se falhar a leitura para evitar apagar outros produtos ---
+                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                if (check.ok) { 
+                    const json = await check.json(); 
+                    sha = json.sha; 
+                    try {
                         const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, '')))); 
                         currentData = JSON.parse(decodedStr); 
-                    } 
-                } catch(e) {}
+                    } catch(e) {
+                        throw new Error("O arquivo produtos.json no GitHub está corrompido ou não é um JSON válido.");
+                    }
+                } else if (check.status !== 404) {
+                    throw new Error(`Erro na API do GitHub ao tentar ler o arquivo: Status ${check.status}. Abortado para proteção de dados.`);
+                }
                 
-                // USAMOS A NOVA FUNÇÃO AQUI TAMBÉM
                 const itemObj = prepararProdutoParaSite(p);
-                
                 const index = currentData.findIndex(item => item.codigo === sku);
-                if(index >= 0) currentData[index] = itemObj; 
-                else currentData.push(itemObj);
+                if(index >= 0) {
+                    currentData[index] = itemObj; 
+                } else {
+                    currentData.push(itemObj);
+                }
                 
-                const contentStr = JSON.stringify(currentData, null, 2); 
+                const contentStr = JSON.stringify(currentData, null, 2);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
                 const body = { message: `Upd Prod: ${sku} via Painel`, content: base64 };
                 if(sha) body.sha = sha;
                 
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error(await res.text()); 
-                alert("Produto atualizado no GitHub!");
-            } catch(err) { 
-                alert("Erro GitHub: " + err.message); 
-            } finally { 
-                toggleLoader(false); 
-            }
+                if(!res.ok) throw new Error(await res.text());
+            }, 60000); // Aguarda 60 segundos APÓS enviar
         }
 
-        async function updateSingleProductJson(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-            toggleLoader(true, "Atualizando Produto no JSON...");
-            const path = `site/produtos.json`; const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-            try {
-                let sha = null; let currentData = [];
-                try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, '')))); currentData = JSON.parse(decodedStr); } } catch(e) {}
-                const itemObj = { id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), ...(p.em_oferta && { preco_antigo: Number(p.preco_antigo || 0) }), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, validade: p.validade || "", estoque: Number(p.estoque) };
-                const index = currentData.findIndex(item => item.codigo === sku);
-                if(index >= 0) currentData[index] = itemObj; else currentData.push(itemObj);
-                const contentStr = JSON.stringify(currentData, null, 2); const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `Upd Prod: ${sku} via Painel`, content: base64 };
+        function queueImageUpload() {
+            if(!currentEditingId) return;
+            const sku = currentEditingId;
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
+            
+            const base64 = canvas.toDataURL('image/webp', 0.9).split(',')[1];
+            
+            addToQueue('image', `Img ${sku}`, async () => {
+                const folderPath = cfg.path || "site/img/produtos"; 
+                const fileName = sku + ".webp";
+                const fullPath = `${folderPath}/${fileName}`.replace('//','/');
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${fullPath}`;
+                
+                let sha = null;
+                try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
+                
+                const body = { message: `Alt: ${sku} via Painel`, content: base64 };
                 if(sha) body.sha = sha;
+                
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error(await res.text()); alert("Produto atualizado no GitHub!");
-            } catch(err) { alert("Erro GitHub: " + err.message); } finally { toggleLoader(false); }
-        }
-        
-        function toggleActive(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            const newState = p.situacao === 'I' ? 'A' : 'I'; p.situacao = newState; p['Situação'] = newState; p._changed = true; saveData();
-            renderGrid(document.getElementById('search-input').value, true);
-        }
-        
-        function toggleOffer(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            p.em_oferta = !p.em_oferta; p._changed = true; saveData();
-            renderGrid(document.getElementById('search-input').value, true);
-            const container = document.getElementById('product-card-container');
-            if (container.querySelector('#card-' + sku)) openProductModal(sku); 
+                if(!res.ok) throw new Error(await res.text());
+                
+                const p = products.find(x => x.codigo === sku);
+                if(p) {
+                    p.url_imagem = `../${folderPath}/${fileName}?v=${Date.now()}`;
+                    p.observacoes = (p.observacoes || "") + ` [UpdImg: ${currentUser||"Sistema"} em ${new Date().toLocaleDateString()}]`;
+                    p._changed = true; saveData();
+                    const card = document.getElementById('card-' + sku);
+                    if(card) { const img = card.querySelector('.card-img'); if(img) img.src = p.url_imagem; card.classList.add('status-changed'); }
+                }
+            }, 60000); // Aguarda 60 segundos APÓS enviar
+            
+            closeModal('modal-editor'); 
         }
 
+        // -----------------------------------------------------------
+        
         function formatNum(n) { return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'; }
 
         function attemptLogin() {
@@ -1142,18 +1353,24 @@
 
         function closeModal(id) { 
             document.getElementById(id).style.display = 'none'; 
-            if(id === 'modal-product-card') renderGrid(document.getElementById('search-input').value, true);
+            if(id === 'modal-product-card') {
+                renderGrid(document.getElementById('search-input').value, true);
+            }
         }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 
         function openDetails(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            currentEditingId = sku; const form = document.getElementById('details-form'); form.innerHTML = '';
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            currentEditingId = sku;
+            const form = document.getElementById('details-form');
+            form.innerHTML = '';
             const keys = Object.keys(p).filter(k => !k.startsWith('_') && k !== 'formato');
             const priorities = ['codigo', 'nome', 'localizacao', 'situacao', 'gtin', 'ncm', 'cest', 'preco', 'preco_antigo', 'preco_custo', 'estoque'];
             keys.sort((a,b) => { const ia = priorities.indexOf(a), ib = priorities.indexOf(b); if(ia !== -1 && ib !== -1) return ia - ib; if(ia !== -1) return -1; if(ib !== -1) return 1; return a.localeCompare(b); });
             keys.forEach(k => {
-                const div = document.createElement('div'); div.className = 'form-group'; const valStr = String(p[k]||'');
+                const div = document.createElement('div'); div.className = 'form-group';
+                const valStr = String(p[k]||'');
                 if(valStr.length > 30 || k === 'nome' || k === 'Descrição' || k.includes('URL') || k.includes('Obs')) div.style.gridColumn = "span 2";
                 div.innerHTML = `<label>${k}</label><input type="text" value="${p[k]!==undefined && p[k]!==null ? p[k] : ''}" data-key="${k}" class="detail-input">`;
                 form.appendChild(div);
@@ -1162,20 +1379,26 @@
         }
 
         function saveDetails() {
-            const p = products.find(x => x.codigo === currentEditingId); if(!p) return;
+            const p = products.find(x => x.codigo === currentEditingId);
+            if(!p) return;
             let changed = false;
             document.querySelectorAll('.detail-input').forEach(inp => {
                 const k = inp.getAttribute('data-key'); let val = inp.value;
                 if(['preco','preco_antigo','preco_custo','estoque','pesoLiquido','pesoBruto','largura','altura','profundidade'].includes(k)) { const num = parseFloat(val.replace(',','.')); if(!isNaN(num)) val = num; }
                 if(p[k] != val) { p[k] = val; changed = true; }
             });
-            if(changed) { p._changed = true; saveData(); renderGrid(document.getElementById('search-input').value, true); setTimeout(() => { const card = document.getElementById('card-' + p.codigo); if(card) { card.scrollIntoView({behavior: 'smooth', block: 'center'}); card.classList.add('status-changed'); } }, 100); }
+            if(changed) { 
+                p._changed = true; saveData(); 
+                renderGrid(document.getElementById('search-input').value, true); 
+                setTimeout(() => { const card = document.getElementById('card-' + p.codigo); if(card) { card.scrollIntoView({behavior: 'smooth', block: 'center'}); card.classList.add('status-changed'); } }, 100);
+            }
             closeModal('modal-details');
         }
 
         function openConfigModal() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            document.getElementById('cfg-token').value = cfg.token||''; document.getElementById('cfg-user').value = cfg.user||''; document.getElementById('cfg-repo').value = cfg.repo||''; document.getElementById('cfg-path').value = cfg.path||'';
+            document.getElementById('cfg-token').value = cfg.token||''; document.getElementById('cfg-user').value = cfg.user||'';
+            document.getElementById('cfg-repo').value = cfg.repo||''; document.getElementById('cfg-path').value = cfg.path||'';
             openModal('modal-config');
         }
 
@@ -1187,8 +1410,103 @@
         function restaurarLinksPadraoSite() {
             if(!confirm("Isso mudará TODAS as imagens para 'i/..site/img/produtos/CODIGO.webp'. Continuar?")) return;
             let count = 0;
-            products.forEach(p => { const novoLink = `../site/img/produtos/${p.codigo}.webp?v=${Date.now()}`; if(p.url_imagem !== novoLink) { p.url_imagem = novoLink; p._changed = true; count++; } });
+            products.forEach(p => {
+                const novoLink = `../site/img/produtos/${p.codigo}.webp?v=${Date.now()}`;
+                if(p.url_imagem !== novoLink) { p.url_imagem = novoLink; p._changed = true; count++; }
+            });
             saveData(); renderGrid(document.getElementById('search-input').value, true); alert(`${count} produtos atualizados para o padrão do site!`);
+        }
+
+        function openEditor(sku) {
+            const p = products.find(x => x.codigo === sku);
+            currentEditingId = sku;
+            document.getElementById('file-name-preview').innerText = sku + ".webp";
+            const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p.url_imagem || "";
+            img.onload = () => { loadedImage = img; drawCanvas(); openModal('modal-editor'); };
+            img.onerror = () => { loadedImage = null; drawCanvas(); openModal('modal-editor'); };
+        }
+
+        function setupEditorEvents() {
+            ['zoomRange','sharpenRange','brightnessRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
+            document.getElementById('fileInput').addEventListener('change', (e) => {
+                if(e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        const img = new Image(); img.onload = () => { loadedImage = img; drawCanvas(); }; img.src = evt.target.result;
+                        document.getElementById('file-size-preview').innerText = Math.round(e.target.files[0].size/1024) + "kb";
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            window.addEventListener('paste', e => {
+                if(document.getElementById('modal-editor').style.display === 'none') return;
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let index in items) {
+                    const item = items[index];
+                    if (item.kind === 'file' && item.type.includes('image/')) {
+                        const blob = item.getAsFile(); const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = new Image(); img.onload = () => { loadedImage = img; drawCanvas(); }; img.src = event.target.result;
+                            document.getElementById('file-size-preview').innerText = "Colado da Área de Transf.";
+                        };
+                        reader.readAsDataURL(blob);
+                    }
+                }
+            });
+        }
+
+        function toggleSticker(type) {
+            if(activeSticker === type) activeSticker = null; else activeSticker = type;
+            document.querySelectorAll('.sticker-btn').forEach(b => b.classList.remove('active'));
+            if(activeSticker) document.getElementById('stk-'+type).classList.add('active');
+            drawCanvas();
+        }
+
+        function applySharpen(ctx, w, h, mix) {
+            if (mix <= 0) return;
+            try {
+                const imageData = ctx.getImageData(0, 0, w, h); const data = imageData.data; const w4 = w * 4; const copy = new Uint8ClampedArray(data);
+                for (let y = 1; y < h - 1; y++) {
+                    for (let x = 1; x < w - 1; x++) {
+                        const i = (y * w + x) * 4;
+                        for (let c = 0; c < 3; c++) {
+                            const val = copy[i + c] * (1 + 4 * mix) + copy[i + c - 4] * (-mix) + copy[i + c + 4] * (-mix) + copy[i + c - w4] * (-mix) + copy[i + c + w4] * (-mix);
+                            data[i + c] = val;
+                        }
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            } catch(e) { console.warn("Sharpen not possible (CORS?)", e); }
+        }
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if(loadedImage) {
+                const zoom = parseFloat(document.getElementById('zoomRange').value);
+                const bright = parseFloat(document.getElementById('brightnessRange').value);
+                const sharpen = parseFloat(document.getElementById('sharpenRange').value);
+                ctx.filter = `brightness(${bright})`;
+                const w = loadedImage.width * zoom, h = loadedImage.height * zoom;
+                ctx.drawImage(loadedImage, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+                ctx.filter = 'none'; 
+                if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
+            } else {
+                ctx.font = "20px Inter"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center"; ctx.fillText("Sem imagem", canvas.width/2, canvas.height/2);
+            }
+            if(activeSticker) {
+                ctx.save();
+                const bannerW = 280, bannerH = 60, padTop = 30;
+                ctx.fillStyle = (activeSticker === 'offer') ? "#ef4444" : (activeSticker === 'best' ? "#f59e0b" : "#3b82f6");
+                ctx.fillRect(0, padTop, bannerW, bannerH);
+                let text = (activeSticker === 'offer') ? "OFERTA" : (activeSticker === 'best' ? "MELHOR PREÇO" : "SÓ HOJE");
+                ctx.font = "900 30px Inter"; ctx.fillStyle = "white"; ctx.textAlign = "left"; ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4;
+                ctx.fillText(text, 20, padTop + 40); ctx.restore();
+            }
+        }
+
+        function downloadImage() {
+            const link = document.createElement('a'); link.download = currentEditingId + '.webp';
+            link.href = canvas.toDataURL('image/webp', 0.9); link.click();
         }
         
         function limparSistema() {
@@ -1200,86 +1518,6 @@
                 alert("Sistema limpo com sucesso! A página será recarregada para iniciar do zero.");
                 window.location.reload();
             }
-        }
-
-        function openEditor(sku) {
-            const p = products.find(x => x.codigo === sku); currentEditingId = sku; document.getElementById('file-name-preview').innerText = sku + ".webp";
-            const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p.url_imagem || "";
-            img.onload = () => { loadedImage = img; drawCanvas(); openModal('modal-editor'); };
-            img.onerror = () => { loadedImage = null; drawCanvas(); openModal('modal-editor'); };
-        }
-
-        function setupEditorEvents() {
-            ['zoomRange','sharpenRange','brightnessRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
-            document.getElementById('fileInput').addEventListener('change', (e) => {
-                if(e.target.files && e.target.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = (evt) => { const img = new Image(); img.onload = () => { loadedImage = img; drawCanvas(); }; img.src = evt.target.result; document.getElementById('file-size-preview').innerText = Math.round(e.target.files[0].size/1024) + "kb"; };
-                    reader.readAsDataURL(e.target.files[0]);
-                }
-            });
-            window.addEventListener('paste', e => {
-                if(document.getElementById('modal-editor').style.display === 'none') return;
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for (let index in items) {
-                    const item = items[index];
-                    if (item.kind === 'file' && item.type.includes('image/')) {
-                        const blob = item.getAsFile(); const reader = new FileReader();
-                        reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; drawCanvas(); }; img.src = event.target.result; document.getElementById('file-size-preview').innerText = "Colado da Área de Transf."; };
-                        reader.readAsDataURL(blob);
-                    }
-                }
-            });
-        }
-
-        function toggleSticker(type) {
-            if(activeSticker === type) activeSticker = null; else activeSticker = type;
-            document.querySelectorAll('.sticker-btn').forEach(b => b.classList.remove('active'));
-            if(activeSticker) document.getElementById('stk-'+type).classList.add('active'); drawCanvas();
-        }
-
-        function applySharpen(ctx, w, h, mix) {
-            if (mix <= 0) return;
-            try {
-                const imageData = ctx.getImageData(0, 0, w, h); const data = imageData.data; const w4 = w * 4; const copy = new Uint8ClampedArray(data);
-                for (let y = 1; y < h - 1; y++) { for (let x = 1; x < w - 1; x++) { const i = (y * w + x) * 4; for (let c = 0; c < 3; c++) { const val = copy[i + c] * (1 + 4 * mix) + copy[i + c - 4] * (-mix) + copy[i + c + 4] * (-mix) + copy[i + c - w4] * (-mix) + copy[i + c + w4] * (-mix); data[i + c] = val; } } }
-                ctx.putImageData(imageData, 0, 0);
-            } catch(e) { console.warn("Sharpen not possible (CORS?)", e); }
-        }
-
-        function drawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(loadedImage) {
-                const zoom = parseFloat(document.getElementById('zoomRange').value); const bright = parseFloat(document.getElementById('brightnessRange').value); const sharpen = parseFloat(document.getElementById('sharpenRange').value);
-                ctx.filter = `brightness(${bright})`; const w = loadedImage.width * zoom, h = loadedImage.height * zoom;
-                ctx.drawImage(loadedImage, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h); ctx.filter = 'none'; 
-                if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
-            } else { ctx.font = "20px Inter"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center"; ctx.fillText("Sem imagem", canvas.width/2, canvas.height/2); }
-            if(activeSticker) {
-                ctx.save(); const bannerW = 280, bannerH = 60, padTop = 30; ctx.fillStyle = (activeSticker === 'offer') ? "#ef4444" : (activeSticker === 'best' ? "#f59e0b" : "#3b82f6");
-                ctx.fillRect(0, padTop, bannerW, bannerH); let text = (activeSticker === 'offer') ? "OFERTA" : (activeSticker === 'best' ? "MELHOR PREÇO" : "SÓ HOJE");
-                ctx.font = "900 30px Inter"; ctx.fillStyle = "white"; ctx.textAlign = "left"; ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 4;
-                ctx.fillText(text, 20, padTop + 40); ctx.restore();
-            }
-        }
-
-        function downloadImage() { const link = document.createElement('a'); link.download = currentEditingId + '.webp'; link.href = canvas.toDataURL('image/webp', 0.9); link.click(); }
-
-        async function uploadToGithub() {
-            if(!currentEditingId) return;
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-            toggleLoader(true, "Processando imagem...");
-            try {
-                const base64 = canvas.toDataURL('image/webp', 0.9).split(',')[1]; const fileName = currentEditingId + ".webp"; const folderPath = cfg.path || "site/img/produtos"; const fullPath = `${folderPath}/${fileName}`.replace('//','/');
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${fullPath}`; let sha = null;
-                try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
-                const body = { message: `Alt: ${currentEditingId} via Painel`, content: base64 }; if(sha) body.sha = sha;
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error(await res.text());
-                const p = products.find(x => x.codigo === currentEditingId);
-                if(p) { p.url_imagem = `../${folderPath}/${fileName}?v=${Date.now()}`; p.observacoes = (p.observacoes || "") + ` [UpdImg: ${currentUser||"Sistema"} em ${new Date().toLocaleDateString()}]`; p._changed = true; saveData(); const card = document.getElementById('card-' + currentEditingId); if(card) { const img = card.querySelector('.card-img'); if(img) img.src = p.url_imagem; card.classList.add('status-changed'); } }
-                closeModal('modal-editor'); alert("Sucesso! Imagem enviada para o GitHub.");
-            } catch(err) { console.error(err); alert("Erro ao enviar: " + err.message); } finally { toggleLoader(false); }
         }
     </script>
 </body>
