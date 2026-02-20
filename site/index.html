@@ -40,6 +40,9 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .btn-info-pill{background:#f1f5f9;color:var(--c-p);padding:8px 16px;border-radius:20px;font-size:0.8rem;font-weight:700;border:1px solid var(--c-bd);transition:.2s}
 .btn-info-pill:hover{background:#e2e8f0;border-color:var(--c-p)}
 
+/* SUB-HEADER (BUSCA E FILTRO) */
+.app-sub-header {flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:15;display:flex;justify-content:center}
+
 /* PALCO CENTRAL */
 .main-stage{flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;overflow:hidden;background:var(--c-bg)}
 .stage-limiter {width:100%;max-width:1200px;height:100%;margin:0 auto;position:relative;display:flex;align-items:center;}
@@ -56,7 +59,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 /* CARDS */
 .u-card{
-    flex:0 0 200px;
+    flex:0 0 170px;
     scroll-snap-align:center;
     background:var(--c-surf);
     border-radius:20px;
@@ -70,8 +73,9 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
 
 @media(max-width:600px){
-    .u-card{flex:0 0 70%;}
-    .carousel-wrapper{padding:10px 10%;}
+    /* Proporção para caber ~2.5 cards na tela */
+    .u-card{flex:0 0 38%; min-width: 135px;}
+    .carousel-wrapper{padding:10px 20px;}
 }
 
 .u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9;cursor:zoom-in}
@@ -88,21 +92,21 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; }
 .combo-save { color: var(--c-ok); font-size: 0.75rem; font-weight: 800; background: #dcfce7; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px;}
 
-.u-info{padding:12px;display:flex;flex-direction:column;gap:6px;flex:1}
+.u-info{padding:10px;display:flex;flex-direction:column;gap:4px;flex:1}
 .u-name{
-    font-size:0.9rem; font-weight:600;
+    font-size:0.8rem; font-weight:600;
     color:var(--c-p); line-height:1.3;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
     min-height:2.6em;
 }
-.u-price{font-size:1.3rem;font-weight:900;color:var(--c-a);letter-spacing:-0.5px}
+.u-price{font-size:1.15rem;font-weight:900;color:var(--c-a);letter-spacing:-0.5px}
 
 /* BOTÕES E INPUTS */
 .u-action-row{margin-top:auto;padding-top:8px}
 .btn-big-action{
     width:100%; background:var(--c-p); color:#fff;
-    padding:8px; border-radius:10px;
-    font-weight:700; font-size:0.8rem;
+    padding:6px 8px; border-radius:10px;
+    font-weight:700; font-size:0.75rem;
     display:flex; align-items:center; justify-content:center; gap:4px;
     transition:background .2s, transform .1s;
 }
@@ -115,10 +119,10 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     100% { background: var(--c-p); }
 }
 
-.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:12px;padding:4px;border:1px solid var(--c-bd)}
-.btn-qty{width:30px;height:30px;border-radius:6px;background:#fff;font-size:1rem;font-weight:800;box-shadow:var(--sh-sm);color:var(--c-p)}
+.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:12px;padding:3px;border:1px solid var(--c-bd)}
+.btn-qty{width:28px;height:28px;border-radius:6px;background:#fff;font-size:1rem;font-weight:800;box-shadow:var(--sh-sm);color:var(--c-p)}
 .qty-inp{
-    width:40px; text-align:center; font-size:0.95rem; font-weight:800;
+    width:30px; text-align:center; font-size:0.95rem; font-weight:800;
     border:none; background:transparent; color:var(--c-p);
     -moz-appearance:textfield;
 }
@@ -155,7 +159,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .prog-fill{height:100%;background:var(--c-a);width:0%;transition:width .5s ease-out}
 
 /* MENU & FILTERS */
-.menu-area-wrapper{display:flex;flex-direction:column;gap:8px;padding:8px 20px 4px;border-bottom:1px solid #f1f5f9}
+.menu-area-wrapper{display:flex;flex-direction:column;gap:8px;padding:12px 20px;}
 
 .menu-scroll-area{
     width:100%; overflow-x:auto; display:flex; gap:8px; align-items: flex-start;
@@ -172,8 +176,8 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .cat-name{font-size:0.65rem;font-weight:500;color:var(--c-s);text-align:center;line-height:1.1;max-width:70px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .cat-bubble[id*="__CART__"] .cat-img-ring { background: var(--c-p); border-color: var(--c-p); color:#fff; }
 
-/* SEARCH & FILTER ROW */
-.search-filter-row{display:flex;gap:10px;padding:0 20px 10px;background:#fff}
+/* SEARCH & FILTER ROW (Agora no topo) */
+.search-filter-row{display:flex;gap:10px;padding:12px 20px;background:#fff;width:100%}
 .search-bar-area{flex:1;position:relative}
 .search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:10px 12px 10px 40px;border-radius:10px;font-weight:600;color:var(--c-p);transition:box-shadow .2s}
 .search-inp:focus{box-shadow:0 0 0 2px rgba(15, 23, 42, 0.1); border-color:var(--c-p)}
@@ -183,7 +187,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .filter-sel{background:#f8fafc;border:1px solid var(--c-bd);border-radius:10px;padding:0 10px;font-weight:600;color:var(--c-s);font-size:0.85rem}
 
 /* CHECKOUT */
-.checkout-bar{padding:15px 20px 20px;display:flex;align-items:center;justify-content:space-between;gap:15px}
+.checkout-bar{padding:10px 20px 20px;display:flex;align-items:center;justify-content:space-between;gap:15px; border-top:1px solid #f1f5f9}
 .total-info{display:flex;flex-direction:column}
 .lbl-total{font-size:0.7rem;text-transform:uppercase;font-weight:800;color:var(--c-s)}
 .val-total{font-size:1.4rem;font-weight:900;color:var(--c-p)}
@@ -262,6 +266,24 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     </div>
 </header>
 
+<div class="app-sub-header">
+    <div class="layout-limit">
+        <div class="search-filter-row">
+            <div class="search-bar-area">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar..." oninput="handleSearch(this.value)">
+                <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
+            </div>
+            <select class="filter-sel" id="filter-sel" onchange="applyFilter()">
+                <option value="def">Padrão</option>
+                <option value="min">Menor Preço</option>
+                <option value="max">Maior Preço</option>
+                <option value="az">A-Z</option>
+            </select>
+        </div>
+    </div>
+</div>
+
 <main class="main-stage">
     <div class="stage-limiter">
         <div class="nav-arrow nav-left" onclick="$('main-carousel').scrollBy({left:-300,behavior:'smooth'})">❮</div>
@@ -280,20 +302,6 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
         <div class="menu-area-wrapper">
             <div class="menu-scroll-area" id="menu-bubbles"></div>
-        </div>
-
-        <div class="search-filter-row">
-            <div class="search-bar-area">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar..." oninput="handleSearch(this.value)">
-                <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
-            </div>
-            <select class="filter-sel" id="filter-sel" onchange="applyFilter()">
-                <option value="def">Padrão</option>
-                <option value="min">Menor Preço</option>
-                <option value="max">Maior Preço</option>
-                <option value="az">A-Z</option>
-            </select>
         </div>
 
         <div class="checkout-bar">
