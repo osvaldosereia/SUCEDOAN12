@@ -355,7 +355,7 @@
                         const base = {
                             codigo: codigoLimpo, nome: getVal('Descrição'), preco: getNum('Preço'), preco_custo: cost, categoria: cat, estoque: getNum('Estoque'),
                             localizacao: rawLoc, gtin: getVal('GTIN/EAN'), url_imagem: getVal('URL Imagens Externas'), ncm: getVal('NCM'), validade: getVal('Data Validade'),
-                            situacao: 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
+                            situacao: 'A', formato: 'S', em_oferta: false, _changed: true, _lastChange: "Importação CSV"
                         };
                         Object.keys(d).forEach(k => { if(base[k] === undefined) base[k] = d[k]; });
                         base['Código'] = codigoLimpo; base['Localização'] = rawLoc; base['Preço de custo'] = cost; base['Preço de Compra'] = cost; base['Categoria do produto'] = cat;
@@ -693,6 +693,7 @@ function exportSingleCSV(sku) {
                 validade: "",
                 situacao: 'A',
                 formato: 'S',
+                em_oferta: false,
                 _changed: true,
                 _lastChange: "Criação Manual",
                 'Código': sku,
@@ -733,6 +734,7 @@ function exportSingleCSV(sku) {
             newProd['Descrição'] = newProd.nome;
             newProd.situacao = 'A';
             newProd['Situação'] = 'A';
+            newProd.em_oferta = false;
             newProd._changed = true;
             newProd._lastChange = "Duplicação Manual";
             delete newProd.id;
@@ -902,7 +904,7 @@ function exportSingleCSV(sku) {
             } else if (filterMode === 'margin_error') {
                 filtered = filtered.filter(p => (p.preco || 0) <= (p.preco_custo || 0));
             } else if (filterMode === 'ofertas') {
-                filtered = filtered.filter(p => (p.nome||"").startsWith("OFERTA -"));
+                filtered = filtered.filter(p => p.em_oferta);
             }
             
             if(sortMode === 'name') { filtered.sort((a,b) => a.nome.localeCompare(b.nome)); }
@@ -1016,18 +1018,18 @@ function exportSingleCSV(sku) {
                     </div>
                     <div class="card-stats">
                         <div class="stat-box"><span class="stat-label">Venda (R$)</span><input class="stat-input" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)"></div>
-                        ${p.nome.startsWith('OFERTA') ? `<div class="stat-box"><span class="stat-label" style="color:var(--warning)">Preço Antigo</span><input class="stat-input" style="border-color:var(--warning)" value="${formatNum(p.preco_antigo || 0)}" onchange="updateProduct('${p.codigo}', 'preco_antigo', this.value)"></div>` : ''}
+                        ${p.em_oferta ? `<div class="stat-box"><span class="stat-label" style="color:var(--warning)">Preço Antigo</span><input class="stat-input" style="border-color:var(--warning)" value="${formatNum(p.preco_antigo || 0)}" onchange="updateProduct('${p.codigo}', 'preco_antigo', this.value)"></div>` : ''}
                         <div class="stat-box"><span class="stat-label">Estoque</span><input class="stat-input" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)"></div>
                         <div class="stat-box"><span class="stat-label">P. Compra</span><input class="stat-input" value="${formatNum(p['Preço de Compra'] || 0)}" onchange="updateProduct('${p.codigo}', 'Preço de Compra', this.value)"></div>
                         <div class="stat-box"><span class="stat-label">P. Custo</span><input class="stat-input" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)"></div>
-                        <div class="stat-box" style="grid-column: span ${p.nome.startsWith('OFERTA') ? '1' : '2'}"><span class="stat-label">Markup %</span><div class="stat-readonly" style="${lucroClass}">${lucroStr}</div></div>
+                        <div class="stat-box" style="grid-column: span ${p.em_oferta ? '1' : '2'}"><span class="stat-label">Markup %</span><div class="stat-readonly" style="${lucroClass}">${lucroStr}</div></div>
                     </div>
                 </div>
                 <div class="card-footer">
                     <button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes"><i data-lucide="list-plus" size="18"></i></button>
                     <button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta"><i data-lucide="printer" size="18"></i></button>
                     <button class="btn-sq" onclick="duplicateProduct('${p.codigo}')" title="Duplicar Produto"><i data-lucide="copy" size="18"></i></button>
-                    <button class="btn-sq ${p.nome.startsWith('OFERTA') ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta"><i data-lucide="tag" size="18"></i></button>
+                    <button class="btn-sq ${p.em_oferta ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta"><i data-lucide="tag" size="18"></i></button>
                     <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}"><i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i></button>
                     <button class="btn-sq" onclick="updateSingleProductJson('${p.codigo}')" title="Atualizar este produto no site"><i data-lucide="globe" size="18"></i></button>
                     <button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto"><i data-lucide="download" size="18"></i></button>
@@ -1106,7 +1108,7 @@ function exportSingleCSV(sku) {
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
             if(!confirm("Isso atualizará o arquivo produtos.json no GitHub com todos os produtos ATIVOS. Continuar?")) return;
             toggleLoader(true, "Enviando Produtos...");
-            const payload = products.filter(p => p.situacao !== 'I').map(p => ({ id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), ...(p.nome.startsWith('OFERTA') && { preco_antigo: Number(p.preco_antigo || 0) }), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, validade: p.validade || "", estoque: Number(p.estoque) }));
+            const payload = products.filter(p => p.situacao !== 'I').map(p => ({ id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), ...(p.em_oferta && { preco_antigo: Number(p.preco_antigo || 0) }), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, validade: p.validade || "", estoque: Number(p.estoque) }));
             if(payload.length === 0) { toggleLoader(false); return alert("Nenhum produto ativo encontrado."); }
             const path = `site/produtos.json`;
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
@@ -1135,7 +1137,7 @@ function exportSingleCSV(sku) {
             try {
                 let sha = null; let currentData = [];
                 try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, '')))); currentData = JSON.parse(decodedStr); } } catch(e) {}
-                const itemObj = { id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), ...(p.nome.startsWith('OFERTA') && { preco_antigo: Number(p.preco_antigo || 0) }), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, validade: p.validade || "", estoque: Number(p.estoque) };
+                const itemObj = { id: Number(p['ID'] || 0), nome: p.nome, preco: Number(p.preco), ...(p.em_oferta && { preco_antigo: Number(p.preco_antigo || 0) }), codigo: p.codigo, situacao: p.situacao, categoria: p.categoria, validade: p.validade || "", estoque: Number(p.estoque) };
                 const index = currentData.findIndex(item => item.codigo === sku);
                 if(index >= 0) currentData[index] = itemObj; else currentData.push(itemObj);
                 const contentStr = JSON.stringify(currentData, null, 2);
@@ -1158,8 +1160,11 @@ function exportSingleCSV(sku) {
         function toggleOffer(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            p.nome = p.nome.startsWith("OFERTA - ") ? p.nome.replace("OFERTA - ", "") : "OFERTA - " + p.nome;
-            p['Descrição'] = p.nome; p._changed = true; saveData();
+            
+            // Agora apenas alterna a flag interna sem mudar o nome
+            p.em_oferta = !p.em_oferta;
+            p._changed = true; 
+            saveData();
             
             // Força a atualização da lista ao fundo
             renderGrid(document.getElementById('search-input').value, true);
