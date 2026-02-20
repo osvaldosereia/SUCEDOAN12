@@ -1282,6 +1282,30 @@
                 }
             }
         }
+
+        function toggleActive(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if (!p) return;
+            const isInactive = p.situacao === 'I';
+            p.situacao = isInactive ? 'A' : 'I';
+            p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO';
+            p._changed = true;
+            p._lastChange = new Date().toLocaleString();
+            saveData(); 
+            openProductModal(sku); 
+            renderGrid(document.getElementById('search-input').value, true);
+        }
+
+        function toggleOffer(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if (!p) return;
+            p.em_oferta = !p.em_oferta;
+            p._changed = true;
+            p._lastChange = new Date().toLocaleString();
+            saveData();
+            openProductModal(sku); 
+            renderGrid(document.getElementById('search-input').value, true);
+        }
         
         // --- FUNÇÃO DE MAPEAMENTO ESTRITO (CORRIGIDA) ---
         function prepararProdutoParaSite(p) {
