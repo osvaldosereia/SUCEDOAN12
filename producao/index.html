@@ -9,7 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* Estilos originais mantidos integralmente */
         :root {
             --bg-body: #f8fafc;
             --bg-card: #ffffff;
@@ -120,7 +119,7 @@
         .btn-icon { padding: 4px; border-radius: 4px; border: 1px solid var(--border); background: white; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; }
         .btn-icon:hover { background: var(--bg-body); color: var(--accent); border-color: var(--accent); }
         .btn-icon.del:hover { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
-        .list-row { display: grid; grid-template-columns: 80px 1fr 120px 80px 80px; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 12px; transition: 0.2s; border-left: 3px solid transparent; }
+        .list-row { display: grid; grid-template-columns: 80px 1fr 110px 80px 80px 80px 80px; gap: 10px; padding: 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 12px; transition: 0.2s; border-left: 3px solid transparent; }
         .list-row:hover { background: #f1f5f9; border-left-color: var(--accent); }
         .list-header { font-weight: bold; background: #e2e8f0; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-left: 3px solid transparent; cursor: default; }
         .list-header:hover { background: #e2e8f0; border-left-color: transparent; }
@@ -183,9 +182,7 @@
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
             </div>
             <button class="nav-btn" onclick="saveDataManual()"><i data-lucide="save" size="14"></i> SALVAR DADOS</button>
-            
             <button class="nav-btn" onclick="fetchAndMergeFromGithub()" title="Baixar produtos do site e atualizar dados locais"><i data-lucide="download-cloud" size="14"></i> IMPORTAR DO SITE</button>
-            
             <button class="nav-btn" onclick="syncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)"><i data-lucide="globe" size="14"></i> ATUALIZAR SITE</button>
             <button class="nav-btn" onclick="exportarCSV()"><i data-lucide="download" size="14"></i> CSV</button>
             <button class="nav-btn" onclick="openPrintListModal()"><i data-lucide="printer" size="14"></i> LISTAS</button>
@@ -262,6 +259,9 @@
                 <hr style="margin:20px 0; border:0; border-top:1px solid #e2e8f0;">
                 <button class="btn-danger" onclick="restaurarLinksPadraoSite()"><i data-lucide="refresh-ccw" size="14"></i> PADRONIZAR COMO NO SITE</button>
                 <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">Força o uso de "i/..site/img/produtos/CODIGO.webp" em tudo.</div>
+                
+                <button class="btn-danger" onclick="limparSistema()" style="margin-top: 15px; border-color:#ef4444; background:#fef2f2; color:#b91c1c;"><i data-lucide="trash-2" size="14"></i> LIMPAR TODO O SISTEMA</button>
+                <div style="font-size:10px; color:#ef4444; margin-top:8px; text-align:center; font-weight:bold;">Atenção: Apaga todos os dados e configurações locais.</div>
             </div>
         </div>
     </div>
@@ -300,7 +300,6 @@
         let loadedImage = null;
         let activeSticker = null; 
 
-        // Função de Debounce
         function debounce(func, wait) {
             let timeout;
             return function(...args) {
@@ -657,12 +656,20 @@
             row.className = `list-row`;
             if (p._changed) row.style.borderLeftColor = "var(--warning)";
             if (isInactive) row.style.opacity = "0.5";
-            row.innerHTML = `<div style="font-weight:bold; color:var(--text-secondary);">${p.codigo}</div><div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.nome}">${p.nome}</div><div style="color:var(--text-secondary); font-size:10px;">${p.gtin || '-'}</div><div style="text-align:right;">${formatNum(p.estoque)}</div><div style="text-align:right; font-weight:bold; color:var(--success);">${formatNum(p.preco)}</div>`;
+            
+            row.innerHTML = `
+                <div style="font-weight:bold; color:var(--text-secondary);">${p.codigo}</div>
+                <div style="font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${p.nome}">${p.nome}</div>
+                <div style="color:var(--text-secondary); font-size:10px;">${p.gtin || '-'}</div>
+                <div style="font-size:10px; font-weight:bold; color:var(--text-secondary);">${p.localizacao || '-'}</div>
+                <div style="font-size:10px; font-weight:bold; color:${p.validade ? '#d97706' : 'var(--text-secondary)'};">${p.validade || '-'}</div>
+                <div style="text-align:right;">${formatNum(p.estoque)}</div>
+                <div style="text-align:right; font-weight:bold; color:var(--success);">${formatNum(p.preco)}</div>
+            `;
             row.onclick = () => openProductModal(p.codigo);
             return row;
         }
 
-        // --- FUNÇÃO DE RENDERIZAÇÃO ATUALIZADA (AJUSTE DE CATEGORIA) ---
         function renderGrid(filter = "", forceShow = false) {
             const gridContainer = document.getElementById('product-grid');
             gridContainer.innerHTML = "";
@@ -711,7 +718,7 @@
 
             const buildList = (items, container) => {
                 const header = document.createElement('div'); header.className = 'list-row list-header';
-                header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>EAN</div><div style="text-align:right;">ESTOQUE</div><div style="text-align:right;">PREÇO (R$)</div>`;
+                header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>EAN</div><div>LOCAL</div><div>VAL.</div><div style="text-align:right;">ESTOQUE</div><div style="text-align:right;">PREÇO (R$)</div>`;
                 container.appendChild(header);
                 const subGrid = document.createElement('div'); subGrid.className = 'category-items-container';
                 subGrid.style.display = 'flex'; subGrid.style.flexDirection = 'column'; subGrid.style.gap = '0';
@@ -719,12 +726,10 @@
                 container.appendChild(subGrid);
             };
 
-            // Nova lógica: Lidar tanto com Agrupamento por Gôndola quanto Agrupamento por Categoria
             if(sortMode === 'gondola' || sortMode === 'group_category') {
                 let groupsToRender = [];
                 
                 if (sortMode === 'gondola') {
-                    // Prepara grupos de Gôndola
                     groupsToRender = [...GONDOLAS, SEM_LOCAL];
                     groupsToRender.forEach(g => {
                         let prodsDaSecao = filtered.filter(p => {
@@ -746,7 +751,6 @@
                         }
                     });
                 } else if (sortMode === 'group_category') {
-                    // Prepara grupos de Categoria listando as exclusivas no filtro
                     const uniqueCats = new Set();
                     filtered.forEach(p => uniqueCats.add(p.categoria ? p.categoria.toUpperCase() : "SEM CATEGORIA"));
                     groupsToRender = Array.from(uniqueCats).sort();
@@ -764,7 +768,6 @@
                 lucide.createIcons(); return;
             }
 
-            // Para outras ordenações normais
             buildList(filtered, gridContainer);
             lucide.createIcons();
         }
@@ -891,7 +894,6 @@
             } catch(err) { alert("Erro GitHub: " + err.message); } finally { toggleLoader(false); }
         }
 
-        // --- NOVA FUNÇÃO: FETCH AND MERGE DO GITHUB PARA O SISTEMA ---
         async function fetchAndMergeFromGithub() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
@@ -907,29 +909,21 @@
                 if(!res.ok) throw new Error("Não foi possível acessar o arquivo no GitHub.");
 
                 const json = await res.json();
-                
-                // Decodificando o arquivo Base64 do GitHub
                 const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
                 const siteProducts = JSON.parse(decodedStr);
                 
                 let updatedCount = 0;
 
-                // Percorrendo a lista de produtos baixada
                 siteProducts.forEach(siteItem => {
                     const localProduct = products.find(p => p.codigo === siteItem.codigo);
-
-                    // Se encontrou no nosso sistema, mescla as propriedades
                     if (localProduct) {
                         let isModified = false;
-                        
                         Object.keys(siteItem).forEach(key => {
                             if (localProduct[key] !== siteItem[key]) {
                                 localProduct[key] = siteItem[key];
                                 isModified = true;
                             }
                         });
-
-                        // Se ouve mudança, marcamos para salvar e sinalizar na UI
                         if (isModified) {
                             localProduct._changed = true;
                             updatedCount++;
@@ -1042,6 +1036,15 @@
             let count = 0;
             products.forEach(p => { const novoLink = `../site/img/produtos/${p.codigo}.webp?v=${Date.now()}`; if(p.url_imagem !== novoLink) { p.url_imagem = novoLink; p._changed = true; count++; } });
             saveData(); renderGrid(document.getElementById('search-input').value, true); alert(`${count} produtos atualizados para o padrão do site!`);
+        }
+        
+        // --- NOVA FUNÇÃO PARA LIMPAR O LOCAL STORAGE ---
+        function limparSistema() {
+            if(confirm("ATENÇÃO: Isso vai apagar TODOS os produtos e configurações salvos neste navegador. Deseja realmente continuar?")) {
+                localStorage.clear();
+                alert("Sistema limpo com sucesso! A página será recarregada para iniciar do zero.");
+                window.location.reload();
+            }
         }
 
         function openEditor(sku) {
