@@ -42,23 +42,23 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 /* PALCO CENTRAL */
 .main-stage{flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;overflow:hidden;background:var(--c-bg)}
-/* Modificado: align-items alterado de center para flex-start para preencher a tela de cima para baixo */
-.stage-limiter {width:100%;max-width:1200px;height:100%;margin:0 auto;position:relative;display:flex;align-items:flex-start;}
+/* Modificado: Removido o display flex para permitir que o position absolute do filho funcione perfeitamente */
+.stage-limiter {width:100%;max-width:1200px;height:100%;margin:0 auto;position:relative;}
 
-/* Modificado: Transformado de flexbox horizontal para grid vertical */
+/* Modificado: Position Absolute trava o tamanho do wrapper exatamente no limite da tela! */
 .carousel-wrapper{
-    width:100%; height:100%;
+    position:absolute; top:0; left:0; width:100%; height:100%;
     display:grid; 
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
     align-content: start;
-    overflow-x:hidden; overflow-y:auto; /* Habilita rolagem vertical */
+    overflow-x:hidden; overflow-y:auto;
     scroll-behavior:smooth;
-    padding:20px 20px 100px 20px; gap:15px; /* Padding-bottom extra para não cortar itens com a barra inferior */
+    padding:20px; gap:15px;
 }
 .carousel-wrapper::-webkit-scrollbar{display:none}
 
 /* CARDS */
-/* Modificado: Removidas regras horizontais e fixada a altura em 100% para alinhamento da grade */
+/* Modificado: Limpadas as regras de rolagem horizontal (snap e flex width) */
 .u-card{
     background:var(--c-surf);
     border-radius:20px;
@@ -66,14 +66,14 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     box-shadow:var(--sh-card);
     display:flex;flex-direction:column;
     overflow:hidden; position:relative;
-    height:100%; 
+    height:100%;
     transition:transform .2s, box-shadow .2s;
 }
 .u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
 
 @media(max-width:600px){
-    /* Modificado: Força 2 colunas perfeitas no mobile com espaçamento ajustado */
-    .carousel-wrapper{grid-template-columns: repeat(2, 1fr); padding:15px 15px 80px 15px; gap:10px;}
+    /* Modificado: 2 colunas travadas para mobile */
+    .carousel-wrapper{grid-template-columns: repeat(2, 1fr); padding:15px; gap:10px;}
 }
 
 .u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9;cursor:zoom-in}
@@ -127,12 +127,13 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* SETAS */
+/* Modificado: Ocultamos as setas pois na rolagem vertical via grade elas não são mais necessárias */
 .nav-arrow{
     position:absolute;top:50%;transform:translateY(-50%);
     width:48px;height:48px;border-radius:50%;
     background:#fff;border:1px solid var(--c-bd);
     box-shadow:var(--sh-float);z-index:20;cursor:pointer;
-    display:none !important; /* Modificado: Forçamos ocultar as setas pois na grade vertical não há rolagem lateral */
+    display:none !important;
     align-items:center;justify-content:center;
     font-size:1.2rem;color:var(--c-p);
     transition:transform .2s;
@@ -266,10 +267,10 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
 <main class="main-stage">
     <div class="stage-limiter">
-        <div class="nav-arrow nav-left" onclick="$('main-carousel').scrollBy({left:-300,behavior:'smooth'})">❮</div>
+        <div class="nav-arrow nav-left" onclick="$('main-carousel').scrollBy({top:-300,behavior:'smooth'})">❮</div>
         <div class="carousel-wrapper" id="main-carousel">
             </div>
-        <div class="nav-arrow nav-right" onclick="$('main-carousel').scrollBy({left:300,behavior:'smooth'})">❯</div>
+        <div class="nav-arrow nav-right" onclick="$('main-carousel').scrollBy({top:300,behavior:'smooth'})">❯</div>
     </div>
 </main>
 
@@ -556,7 +557,7 @@ function renderChunked(list, type, reset){
     }).join('');
     
     carousel.innerHTML = html || '<p style="margin:auto;color:#94a3b8">Nenhum item encontrado.</p>';
-    if(reset) carousel.scrollTo({top:0});
+    if(reset) carousel.scrollTo({top:0}); // <--- Modificado aqui!
 }
 
 /* CARDS */
