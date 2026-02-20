@@ -113,16 +113,15 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     flex-grow: 1; /* Faz o nome empurrar o resto pro final do card */
 }
 
-/* Nova Área de Metadados (Validade / Restam) */
-.meta-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 4px; }
-.meta-val { font-size: 0.65rem; font-weight: 700; color: var(--c-t); background: #f1f5f9; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--c-bd); }
-.meta-stock { font-size: 0.65rem; font-weight: 800; color: var(--c-err); background: #fef2f2; padding: 2px 6px; border-radius: 4px; border: 1px solid #fca5a5; }
+/* Nova Área de Metadados (Validade / Restam) em Texto Simples */
+.meta-row { margin-bottom: 4px; }
+.meta-text { font-size: 0.65rem; font-weight: 700; color: var(--c-t); display: block; }
 
 .u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px; margin-top: auto;}
 
 @media(max-width:600px){
-    /* Nome em até 4 linhas, fontes mais leves e menor tamanho do valor */
-    .u-name{font-size: 0.75rem; font-weight: 500; -webkit-line-clamp: 4; min-height: 5.2em;}
+    /* Nome em até 3 linhas, fontes mais leves e menor tamanho do valor */
+    .u-name{font-size: 0.75rem; font-weight: 500; -webkit-line-clamp: 3; min-height: 3.9em;}
     .u-price{font-size: 1rem; font-weight: 700;}
 }
 
@@ -676,10 +675,10 @@ function cardProd(item){
     
     let metaHtml = '';
     if(item.val || item.stock < 10) {
-        metaHtml = `<div class="meta-row">`;
-        if(item.val) metaHtml += `<span class="meta-val">Val: ${item.val}</span>`;
-        if(item.stock < 10) metaHtml += `<span class="meta-stock">Restam ${item.stock}</span>`;
-        metaHtml += `</div>`;
+        let m = [];
+        if(item.val) m.push(`Val: ${item.val}`);
+        if(item.stock < 10) m.push(`Restam ${item.stock}`);
+        metaHtml = `<div class="meta-row"><span class="meta-text">${m.join(' | ')}</span></div>`;
     }
     
     const btn = q > 0 
