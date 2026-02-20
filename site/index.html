@@ -33,15 +33,29 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 /* HEADER */
 .app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;justify-content:center}
-.header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;height:100%}
-.header-brand{display:flex;align-items:center;gap:10px}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;height:auto;flex-wrap:wrap;gap:15px}
+.header-brand{display:flex;align-items:center;gap:10px;order:1}
 .logo{width:42px;height:42px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
 .brand-txt{font-size:.9rem;font-weight:800;line-height:1.1}
+
+.header-actions{order:2}
 .btn-info-pill{background:#f1f5f9;color:var(--c-p);padding:8px 16px;border-radius:20px;font-size:0.8rem;font-weight:700;border:1px solid var(--c-bd);transition:.2s}
 .btn-info-pill:hover{background:#e2e8f0;border-color:var(--c-p)}
 
-/* SUB-HEADER (BUSCA E FILTRO) */
-.app-sub-header {flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:15;display:flex;justify-content:center}
+/* SEARCH & FILTER ROW (Agora no header) */
+.search-filter-row{display:flex;gap:10px;width:100%;order:3}
+.search-bar-area{flex:1;position:relative}
+.search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:10px 12px 10px 40px;border-radius:10px;font-weight:600;color:var(--c-p);transition:box-shadow .2s}
+.search-inp:focus{box-shadow:0 0 0 2px rgba(15, 23, 42, 0.1); border-color:var(--c-p)}
+.search-icon{position:absolute;left:32px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none;left:12px}
+.clear-search{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
+.filter-sel{background:#f8fafc;border:1px solid var(--c-bd);border-radius:10px;padding:0 10px;font-weight:600;color:var(--c-s);font-size:0.85rem}
+
+@media(min-width: 800px){
+    .search-filter-row{flex:1;width:auto;order:2;margin:0 20px}
+    .header-actions{order:3}
+    .header-inner{flex-wrap:nowrap}
+}
 
 /* PALCO CENTRAL */
 .main-stage{flex:1;position:relative;display:flex;flex-direction:column;justify-content:center;overflow:hidden;background:var(--c-bg)}
@@ -73,9 +87,10 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
 
 @media(max-width:600px){
-    /* Proporção para caber ~2.5 cards na tela */
-    .u-card{flex:0 0 38%; min-width: 135px;}
-    .carousel-wrapper{padding:10px 20px;}
+    /* Proporção para caber ~2.5 cards na tela, com altura igualada e mais respiro */
+    .u-card{flex:0 0 38%; min-width: 135px; height: auto;}
+    .carousel-wrapper{padding: 30px 20px; align-items: stretch;}
+    .u-price{font-size: 1rem; font-weight: 700;}
 }
 
 .u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid #f1f5f9;cursor:zoom-in}
@@ -94,18 +109,18 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 
 .u-info{padding:10px;display:flex;flex-direction:column;gap:4px;flex:1}
 .u-name{
-    font-size:0.8rem; font-weight:600;
+    font-size:0.8rem; font-weight:500;
     color:var(--c-p); line-height:1.3;
-    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
-    min-height:2.6em;
+    display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;
+    min-height:5.2em;
 }
-.u-price{font-size:1.15rem;font-weight:900;color:var(--c-a);letter-spacing:-0.5px}
+.u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px}
 
 /* BOTÕES E INPUTS */
 .u-action-row{margin-top:auto;padding-top:8px}
 .btn-big-action{
     width:100%; background:var(--c-p); color:#fff;
-    padding:6px 8px; border-radius:10px;
+    padding:12px 8px; border-radius:10px;
     font-weight:700; font-size:0.75rem;
     display:flex; align-items:center; justify-content:center; gap:4px;
     transition:background .2s, transform .1s;
@@ -120,7 +135,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 
 .qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:12px;padding:3px;border:1px solid var(--c-bd)}
-.btn-qty{width:28px;height:28px;border-radius:6px;background:#fff;font-size:1rem;font-weight:800;box-shadow:var(--sh-sm);color:var(--c-p)}
+.btn-qty{width:32px;height:32px;border-radius:6px;background:#fff;font-size:1rem;font-weight:800;box-shadow:var(--sh-sm);color:var(--c-p)}
 .qty-inp{
     width:30px; text-align:center; font-size:0.95rem; font-weight:800;
     border:none; background:transparent; color:var(--c-p);
@@ -175,16 +190,6 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .cat-img{width:100%;height:100%;border-radius:50%;object-fit:cover;background:#f1f5f9}
 .cat-name{font-size:0.65rem;font-weight:500;color:var(--c-s);text-align:center;line-height:1.1;max-width:70px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .cat-bubble[id*="__CART__"] .cat-img-ring { background: var(--c-p); border-color: var(--c-p); color:#fff; }
-
-/* SEARCH & FILTER ROW (Agora no topo) */
-.search-filter-row{display:flex;gap:10px;padding:12px 20px;background:#fff;width:100%}
-.search-bar-area{flex:1;position:relative}
-.search-inp{width:100%;background:#f8fafc;border:1px solid var(--c-bd);padding:10px 12px 10px 40px;border-radius:10px;font-weight:600;color:var(--c-p);transition:box-shadow .2s}
-.search-inp:focus{box-shadow:0 0 0 2px rgba(15, 23, 42, 0.1); border-color:var(--c-p)}
-.search-icon{position:absolute;left:32px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none;left:12px}
-.clear-search{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
-
-.filter-sel{background:#f8fafc;border:1px solid var(--c-bd);border-radius:10px;padding:0 10px;font-weight:600;color:var(--c-s);font-size:0.85rem}
 
 /* CHECKOUT */
 .checkout-bar{padding:10px 20px 20px;display:flex;align-items:center;justify-content:space-between;gap:15px; border-top:1px solid #f1f5f9}
@@ -260,15 +265,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo">
             <div class="brand-txt">Super Cestas<br>Dona Antônia</div>
         </div>
-        <div class="header-actions">
-            <button class="btn-info-pill" onclick="$('modal-faq').showModal()">INFORMAÇÕES</button>
-        </div>
-    </div>
-</header>
-
-<div class="app-sub-header">
-    <div class="layout-limit">
-        <div class="search-filter-row">
+        <div class="search-filter-row" id="top-search-row">
             <div class="search-bar-area">
                 <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 <input type="text" id="search-inp" class="search-inp" placeholder="Buscar..." oninput="handleSearch(this.value)">
@@ -281,8 +278,11 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
                 <option value="az">A-Z</option>
             </select>
         </div>
+        <div class="header-actions">
+            <button class="btn-info-pill" onclick="$('modal-faq').showModal()">INFORMAÇÕES</button>
+        </div>
     </div>
-</div>
+</header>
 
 <main class="main-stage">
     <div class="stage-limiter">
