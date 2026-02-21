@@ -8,19 +8,18 @@
 <title>Super Cestas Básicas Dona Antônia</title>
 <style>
 :root {
-    /* PALETA PROFISSIONAL (Ajustada para melhor contraste e leveza) */
+    /* PALETA PROFISSIONAL */
     --c-p: #0f172a;      /* Texto Principal */
     --c-s: #334155;      /* Texto Secundário */
     --c-t: #64748b;      /* Texto Terciário */
     --c-a: #ea580c;      /* Ação Principal (Laranja) */
     --c-ok: #15803d;     /* Sucesso */
     --c-err: #dc2626;    /* Erro */
-    --c-bg: #f8fafc;     /* Fundo Geral (Mais limpo e claro) */
+    --c-bg: #f8fafc;     /* Fundo Geral */
     --c-surf: #ffffff;   /* Superfície Cards */
-    --c-bd: #e2e8f0;     /* Bordas mais sutis */
+    --c-bd: #e2e8f0;     /* Bordas sutis */
     --font: 'Inter', system-ui, sans-serif;
     
-    /* Sombras mais difusas e modernas */
     --sh-card: 0 4px 12px rgba(0, 0, 0, 0.04); 
     --sh-float: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
 }
@@ -33,7 +32,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
 
 /* HEADER */
-.app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;flex-direction:column;align-items:center}
+.app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;flex-direction:column;align-items:center; position:relative;}
 .header-inner{display:flex;align-items:center;padding:12px 20px 12px 20px;width:100%;gap:15px;}
 .header-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .logo{width:65px;height:65px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
@@ -93,8 +92,8 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     .banner-card { flex: 1; max-width: none; width: auto; }
 }
 
-/* SECTIONS PÁGINA ÚNICA - COM MARGEM DE ROLAGEM CORRIGIDA PARA NÃO ESCONDER O TÍTULO */
-.page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; scroll-margin-top: 140px;}
+/* SECTIONS PÁGINA ÚNICA */
+.page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
 .section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
 
 .grid-wrapper{
@@ -178,11 +177,11 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
-/* APP TAB BAR (Bottom Navigation) */
+/* APP TAB BAR (Bottom Navigation) - DIMINUÍDA */
 .bottom-nav-bar {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #fff; display: flex; justify-content: space-around; align-items: center;
-    height: 65px; border-top: 1px solid var(--c-bd); z-index: 100;
+    height: 55px; border-top: 1px solid var(--c-bd); z-index: 100;
     padding-bottom: env(safe-area-inset-bottom);
     box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
 }
@@ -193,12 +192,12 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .tab-item:active { transform: scale(0.95); }
 .tab-item.active { color: var(--c-a); font-weight: 800; }
-.tab-icon { font-size: 1.4rem; line-height: 1; }
-.tab-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.tab-icon { font-size: 1.25rem; line-height: 1; }
+.tab-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
 .cart-badge {
-    position: absolute; top: 8px; right: calc(50% - 18px);
+    position: absolute; top: 4px; right: calc(50% - 18px);
     background: var(--c-err); color: #fff; font-size: 0.65rem; font-weight: 900;
-    min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
     border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 0 4px; display: none;
 }
 
@@ -211,7 +210,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     position: absolute; top: 15px; right: 15px; width: 32px; height: 32px;
     background: #f1f5f9; border-radius: 50%; color: var(--c-p); font-weight: 800;
     font-size: 1rem; display: flex; align-items: center; justify-content: center;
-    border: 1px solid var(--c-bd); z-index: 10; transition: background 0.2s;
+    border: 1px solid var(--c-bd); z-index: 10; transition: background 0.2s; cursor: pointer;
 }
 .btn-close-modal:active { background: #e2e8f0; }
 
@@ -219,38 +218,43 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .btn-modal.primary{background:var(--c-p);color:#fff}
 .btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
 
-/* MODAL CHECKOUT (BOTTOM SHEET) */
+/* MODAL CHECKOUT (BOTTOM SHEET) - AUMENTADO PARA 90% */
 #modal-checkout {
     margin: auto auto 0 auto; border-radius: 24px 24px 0 0;
-    width: 100%; max-width: 600px; height: 85dvh; max-height: 85dvh;
+    width: 100%; max-width: 600px; height: 90dvh; max-height: 90dvh;
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 #modal-checkout .modal-body {
     height: 100%; display: flex; flex-direction: column; padding: 25px 20px max(20px, env(safe-area-inset-bottom)); text-align: left;
 }
-.chk-list-area { flex: 1; overflow-y: auto; background: #f8fafc; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; margin-bottom: 5px; }
+.chk-list-area { flex: 1; overflow-y: auto; background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);}
 .chk-item-simple { display: flex; justify-content: flex-start; align-items: flex-start; font-size: 0.9rem; color: var(--c-p); padding: 10px 0; border-bottom: 1px dashed var(--c-bd); gap: 10px;}
 .chk-item-simple:last-child { border-bottom: none; }
 .chk-item-qtd { color: var(--c-a); font-weight: 800; min-width: 25px; text-align: right;}
 .chk-item-name { font-weight: 500; text-align: left; flex: 1; line-height: 1.3;}
 
-/* BOTÕES CHECKOUT MELHORADOS */
+/* BOTÕES CHECKOUT HIERARQUIA VISUAL OTIMIZADA */
 #btn-send-order { 
     background: #25D366; color: #fff; font-size: 1.05rem; padding: 16px; border-radius: 14px; 
-    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); transition: transform 0.2s, box-shadow 0.2s; width: 100%; font-weight: 800; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer;
 }
 #btn-send-order:active { transform: scale(0.98); }
 #btn-send-order:disabled { background: var(--c-bd); box-shadow: none; color: var(--c-s); }
+
 .btn-checkout-secondary {
-    width: 100%; padding: 16px; background: #f1f5f9; border: none; border-radius: 14px;
-    color: var(--c-p); font-weight: 700; font-size: 1rem; margin-bottom: 10px; transition: background 0.2s;
+    width: 100%; padding: 12px; background: transparent; border: none;
+    color: var(--c-s); font-weight: 700; font-size: 0.95rem; margin-top: 5px; transition: color 0.2s; cursor: pointer;
 }
-.btn-checkout-secondary:active { background: #e2e8f0; }
+.btn-checkout-secondary:active { color: var(--c-p); }
+
 .btn-checkout-clear {
-    width: 100%; padding: 10px; background: transparent; border: none; color: var(--c-err);
-    font-size: 0.85rem; font-weight: 600; text-decoration: underline; margin-top: 5px; cursor: pointer;
+    padding: 8px 15px; background: transparent; border: none; color: var(--c-err);
+    font-size: 0.75rem; font-weight: 600; text-decoration: underline; cursor: pointer; display: inline-block;
 }
+
+/* CUPOM ÁREA DISCRETA */
+.cupom-box { background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed var(--c-bd); }
 
 /* TOAST */
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
@@ -396,33 +400,39 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 <dialog id="modal-checkout">
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <h3 style="text-align:center;text-transform:uppercase;font-weight:900; margin-bottom:15px; margin-top:10px;">Seu Pedido</h3>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; margin-top: 10px; border-bottom: 1px solid var(--c-bd); padding-bottom: 10px;">
+            <h3 style="text-transform:uppercase; font-weight:900; color:var(--c-p); margin:0;">Seu Pedido</h3>
+            <button style="background:#f1f5f9; color:var(--c-p); border:none; padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:700; cursor:pointer;" onclick="$('modal-checkout').close(); goToMinhaCesta();">✏️ Editar</button>
+        </div>
         
         <div class="chk-list-area" id="chk-list">
             </div>
         
-        <div style="text-align:right; margin-bottom:10px;">
-             <button style="background:transparent; color:var(--c-p); border:1px solid var(--c-bd); padding:8px 14px; border-radius:8px; font-size:0.85rem; font-weight:700; cursor:pointer;" onclick="$('modal-checkout').close(); goToMinhaCesta();">✏️ Alterar produtos</button>
-        </div>
-        
-        <div style="text-align:right;margin-bottom:15px; margin-top:10px;">
+        <div style="text-align:right; margin-bottom:15px; margin-top:5px;">
             <div style="font-size:0.9rem; font-weight:700; color:var(--c-t);" id="chk-info-extra"></div>
             <div style="font-size:1.8rem;font-weight:900; color:var(--c-p);" id="chk-total"></div>
         </div>
         
-        <div id="coupon-toggle" onclick="this.style.display='none'; $('coupon-wrap').style.display='flex';" style="color:var(--c-a); font-size:0.85rem; font-weight:800; cursor:pointer; margin-bottom:15px; text-decoration:underline;">Tem um cupom de desconto?</div>
-        <div id="coupon-wrap" style="display:none; gap:5px; margin-bottom:15px">
-            <input id="cupom-code" style="flex:1;padding:12px;border:1px solid var(--c-bd);border-radius:12px;text-transform:uppercase;font-weight:700;" placeholder="CÓDIGO">
-            <button class="btn-modal primary" onclick="applyCupom()" style="width:auto; margin:0; padding:0 20px; border-radius:12px;">OK</button>
+        <div class="cupom-box">
+            <div id="coupon-toggle" onclick="this.style.display='none'; $('coupon-wrap').style.display='flex';" style="color:var(--c-a); font-size:0.85rem; font-weight:800; cursor:pointer; text-decoration:underline;">Tem um cupom de desconto?</div>
+            <div id="coupon-wrap" style="display:none; gap:5px;">
+                <input id="cupom-code" style="flex:1;padding:10px;border:1px solid var(--c-bd);border-radius:8px;text-transform:uppercase;font-weight:700; font-size:0.9rem;" placeholder="CÓDIGO">
+                <button class="btn-modal primary" onclick="applyCupom()" style="width:auto; margin:0; padding:0 15px; border-radius:8px; font-size:0.9rem;">OK</button>
+            </div>
+            <div id="cupom-msg" style="font-size:.85rem;font-weight:800; color:var(--c-ok);display:none; margin-top:5px;"></div>
         </div>
-        <div id="cupom-msg" style="font-size:.85rem;font-weight:800;margin-bottom:15px;color:var(--c-ok);display:none"></div>
         
-        <button id="btn-send-order" onclick="sendOrder()" style="width: 100%; font-weight: 800; display:flex; align-items:center; justify-content:center;">
+        <button id="btn-send-order" onclick="sendOrder()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
             ENVIAR PEDIDO NO WHATSAPP
         </button>
+        
         <button class="btn-checkout-secondary" onclick="$('modal-checkout').close()">Continuar Comprando</button>
-        <button class="btn-checkout-clear" onclick="clearCart()">Limpar Carrinho</button>
+        
+        <div style="text-align: center; margin-top: 5px;">
+            <button class="btn-checkout-clear" onclick="clearCart()">Limpar Carrinho</button>
+        </div>
     </div>
 </dialog>
 
@@ -531,8 +541,6 @@ function renderHome() {
         if(list.length > 0) renderPaginated(`grid-${safeM}`, `macro_${safeM}`, list, 10, 'PROD');
         else $(`macro-${safeM}`).style.display = 'none';
     });
-
-    setTimeout(setupScrollSpy, 500); 
 }
 
 function renderPaginated(containerId, listKey, list, step, type) {
@@ -568,7 +576,6 @@ function renderCestaAtiva() {
     if(STATE.cartOrder.length > 0) {
         $('section-cesta-ativa').style.display = 'block';
         let list = STATE.cartOrder.map(id => STATE.prods.find(p => p.id === id)).filter(Boolean);
-        // Na minha cesta mostramos todos sem limitação de 10
         renderPaginated('grid-cesta-ativa', 'cesta_ativa', list, 9999, 'PROD');
     } else {
         $('section-cesta-ativa').style.display = 'none';
@@ -576,7 +583,7 @@ function renderCestaAtiva() {
     }
 }
 
-/* --- BOTTOM NAV E SCROLL SPY (SIMPLIFICADO) --- */
+/* --- BOTTOM NAV E ROLAGEM MATEMÁTICA EXATA --- */
 window.updateBottomNav = function(activeId) {
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     if(activeId) {
@@ -587,51 +594,40 @@ window.updateBottomNav = function(activeId) {
 
 window.goToMinhaCesta = function() {
     updateBottomNav('btn-nav-cesta');
-    if(STATE.cartOrder.length > 0) {
-        let sec = document.getElementById('section-cesta-ativa');
-        if(sec) sec.scrollIntoView({behavior:'smooth'});
-    } else {
-        let sec = document.getElementById('section-cestas');
-        if(sec) sec.scrollIntoView({behavior:'smooth'});
+    let sec = document.getElementById(STATE.cartOrder.length > 0 ? 'section-cesta-ativa' : 'section-cestas');
+    if(sec) {
+        // Altura do cabeçalho ~80px
+        const y = sec.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({top: y, behavior: 'smooth'});
     }
 }
 
 window.scrollToSection = function(sectionId, btnId) {
     updateBottomNav(btnId);
     let sec = document.getElementById(sectionId);
-    // Como a classe .page-section tem scroll-margin-top no CSS, não precisa fazer matemática!
-    if(sec) sec.scrollIntoView({behavior:'smooth'}); 
+    if(sec) {
+        // Altura do cabeçalho ~80px
+        const y = sec.getBoundingClientRect().top + window.scrollY - 80;
+        window.scrollTo({top: y, behavior: 'smooth'});
+    }
 }
 
 window.scrollToMacro = function(safeM) {
     updateBottomNav(null); 
+    
+    document.querySelectorAll('#chips-corredores .chip').forEach(el=>el.classList.remove('active'));
+    let chip = document.getElementById(`chip-${safeM}`);
+    if(chip) {
+        chip.classList.add('active');
+        chip.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
+    }
+    
     const el = document.getElementById(`macro-${safeM}`);
     if(el) {
-        // Aproveita o scroll-margin-top do CSS para dar a margem perfeita
-        el.scrollIntoView({behavior: 'smooth'}); 
+        // Altura exata: Cabeçalho (~80px) + Barra de Chips (~60px) = 140px
+        const y = el.getBoundingClientRect().top + window.scrollY - 145;
+        window.scrollTo({top: y, behavior: 'smooth'}); 
     }
-}
-
-function setupScrollSpy() {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if(entry.isIntersecting) {
-                const id = entry.target.id;
-                if(id.startsWith('macro-')) {
-                    const macro = id.replace('macro-', '');
-                    document.querySelectorAll('#chips-corredores .chip').forEach(el=>el.classList.remove('active'));
-                    const chip = document.getElementById(`chip-${macro}`);
-                    if(chip) {
-                        chip.classList.add('active');
-                        // Use scroll nativo com auto para não conflitar com a animação de scroll do usuário
-                        chip.scrollIntoView({behavior: 'auto', block: 'nearest', inline: 'center'});
-                    }
-                }
-            }
-        });
-    }, { rootMargin: "-140px 0px -60% 0px" }); 
-
-    document.querySelectorAll('.macro-section').forEach(sec => observer.observe(sec));
 }
 
 /* --- BANNERS --- */
@@ -984,7 +980,6 @@ function clearCart(){
         updateTotals(); 
         $('section-cesta-ativa').style.display='none'; 
         $('modal-checkout').close(); 
-        // A mágica que corrige o bug: redesenhar a tela inteira zera os botões físicos
         renderHome(); 
         window.scrollTo(0,0); 
     }
