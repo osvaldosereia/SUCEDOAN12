@@ -93,8 +93,8 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     .banner-card { flex: 1; max-width: none; width: auto; }
 }
 
-/* SECTIONS PÁGINA ÚNICA */
-.page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; scroll-margin-top: 60px;}
+/* SECTIONS PÁGINA ÚNICA - COM MARGEM DE ROLAGEM CORRIGIDA PARA NÃO ESCONDER O TÍTULO */
+.page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; scroll-margin-top: 140px;}
 .section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
 
 .grid-wrapper{
@@ -330,7 +330,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <div class="grid-wrapper list-view" id="grid-ate2"></div>
         </div>
 
-        <div id="section-corredores" class="page-section" style="margin-top:15px;">
+        <div id="section-corredores" style="margin-top:15px;">
             <div class="chips-bar" id="chips-corredores" style="display:flex;"></div>
             <div id="grid-corredores-wrap"></div>
         </div>
@@ -532,7 +532,7 @@ function renderHome() {
         else $(`macro-${safeM}`).style.display = 'none';
     });
 
-    setTimeout(setupScrollSpy, 500); // Aguarda render para calcular alturas
+    setTimeout(setupScrollSpy, 500); 
 }
 
 function renderPaginated(containerId, listKey, list, step, type) {
@@ -576,7 +576,7 @@ function renderCestaAtiva() {
     }
 }
 
-/* --- BOTTOM NAV E SCROLL SPY --- */
+/* --- BOTTOM NAV E SCROLL SPY (SIMPLIFICADO) --- */
 window.updateBottomNav = function(activeId) {
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     if(activeId) {
@@ -588,24 +588,27 @@ window.updateBottomNav = function(activeId) {
 window.goToMinhaCesta = function() {
     updateBottomNav('btn-nav-cesta');
     if(STATE.cartOrder.length > 0) {
-        $('section-cesta-ativa').scrollIntoView({behavior:'smooth', block:'start'});
+        let sec = document.getElementById('section-cesta-ativa');
+        if(sec) sec.scrollIntoView({behavior:'smooth'});
     } else {
-        $('section-cestas').scrollIntoView({behavior:'smooth', block:'start'});
+        let sec = document.getElementById('section-cestas');
+        if(sec) sec.scrollIntoView({behavior:'smooth'});
     }
 }
 
 window.scrollToSection = function(sectionId, btnId) {
     updateBottomNav(btnId);
     let sec = document.getElementById(sectionId);
-    if(sec) sec.scrollIntoView({behavior:'smooth', block:'start'});
+    // Como a classe .page-section tem scroll-margin-top no CSS, não precisa fazer matemática!
+    if(sec) sec.scrollIntoView({behavior:'smooth'}); 
 }
 
 window.scrollToMacro = function(safeM) {
-    updateBottomNav(null); // Tira seleção dos fixos de baixo
+    updateBottomNav(null); 
     const el = document.getElementById(`macro-${safeM}`);
     if(el) {
-        const y = el.getBoundingClientRect().top + window.scrollY - 120; // Offset do cabeçalho
-        window.scrollTo({top: y, behavior: 'smooth'});
+        // Aproveita o scroll-margin-top do CSS para dar a margem perfeita
+        el.scrollIntoView({behavior: 'smooth'}); 
     }
 }
 
@@ -620,12 +623,13 @@ function setupScrollSpy() {
                     const chip = document.getElementById(`chip-${macro}`);
                     if(chip) {
                         chip.classList.add('active');
-                        chip.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
+                        // Use scroll nativo com auto para não conflitar com a animação de scroll do usuário
+                        chip.scrollIntoView({behavior: 'auto', block: 'nearest', inline: 'center'});
                     }
                 }
             }
         });
-    }, { rootMargin: "-150px 0px -70% 0px", threshold: 0 }); 
+    }, { rootMargin: "-140px 0px -60% 0px" }); 
 
     document.querySelectorAll('.macro-section').forEach(sec => observer.observe(sec));
 }
