@@ -605,7 +605,7 @@ window.goToMinhaCesta = function() {
 
 window.instantScrollToMacro = function(safeM) {
     updateBottomNav(null); 
-    document.querySelectorAll('#chips-corredores .chip').forEach(el=>el.classList.remove('active'));
+document.querySelectorAll('.chips-bar .chip').forEach(el => el.classList.remove('active'));
     let chip = document.getElementById(`chip-${safeM}`);
     if(chip) chip.classList.add('active');
     
