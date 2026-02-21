@@ -229,9 +229,9 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
 #modal-checkout .modal-body {
-    height: 100%; display: flex; flex-direction: column; padding: 25px 20px max(20px, env(safe-area-inset-bottom)); text-align: left;
+    height: 100%; display: block; overflow-y: auto; padding: 25px 20px max(20px, env(safe-area-inset-bottom)); text-align: left;
 }
-.chk-list-area { flex: 1; overflow-y: auto; background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);}
+.chk-list-area { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);}
 .chk-item-simple { display: flex; justify-content: flex-start; align-items: flex-start; font-size: 0.9rem; color: var(--c-p); padding: 10px 0; border-bottom: 1px dashed var(--c-bd); gap: 10px;}
 .chk-item-simple:last-child { border-bottom: none; }
 .chk-item-qtd { color: var(--c-a); font-weight: 800; min-width: 25px; text-align: right;}
@@ -428,7 +428,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <div style="font-size:0.9rem; font-weight:700; color:var(--c-t);" id="chk-info-extra"></div>
             <div style="font-size:0.85rem; font-weight:700; color:var(--c-s); text-transform:uppercase;">Total a pagar</div>
             <div style="font-size:2.2rem;font-weight:900; color:var(--c-p); line-height:1.1;" id="chk-total"></div>
-            <div style="font-size:0.7rem; color:var(--c-t); margin-top:4px; font-weight:600;">Parcele em até 3x sem juros no cartão de crédito</div>
+            <div style="font-size:0.7rem; color:var(--c-t); margin-top:4px; font-weight:600;" id="chk-installment">Parcele em até 3x sem juros no cartão de crédito</div>
         </div>
 
         <div id="chk-incentive-banner" style="margin-bottom:15px;"></div>
@@ -447,10 +447,9 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             ENVIAR PEDIDO NO WHATSAPP
         </button>
         
-        <button class="btn-checkout-secondary" onclick="$('modal-checkout').close()">Continuar Comprando</button>
-        
-        <div style="text-align: center; margin-top: 5px;">
-            <button class="btn-checkout-clear" onclick="clearCart()">Limpar Carrinho</button>
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+            <button class="btn-checkout-secondary" style="margin: 0; flex: 1;" onclick="$('modal-checkout').close()">Continuar Comprando</button>
+            <button class="btn-checkout-clear" style="margin: 0; padding: 12px 15px;" onclick="clearCart()">Limpar Carrinho</button>
         </div>
     </div>
 </dialog>
@@ -460,7 +459,7 @@ const $=i=>document.getElementById(i);
 const STATE={
     baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, descontosValor:[],
     cart:{}, cartOrder:[], observer: null,
-    mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
+    mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, appliedCombos: [], coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
     lists: {}, pageLimits: {}
 };
 
@@ -950,6 +949,7 @@ function updateTotals(){
     });
 
     STATE.comboDiscount = 0;
+    STATE.appliedCombos = [];
     let tempCart = { ...STATE.cart };
     
     if (STATE.combos && STATE.combos.length > 0) {
@@ -971,7 +971,12 @@ function updateTotals(){
             if (possibleTimes > 0) {
                 reqs.forEach(r => tempCart[r.id] -= (r.q * possibleTimes));
                 let discountPerCombo = comboSomaProd - c.preco;
-                if (discountPerCombo > 0) STATE.comboDiscount += discountPerCombo * possibleTimes;
+                if (discountPerCombo > 0) {
+                    STATE.comboDiscount += discountPerCombo * possibleTimes;
+                    for(let i=0; i<possibleTimes; i++) {
+                        STATE.appliedCombos.push({ nome: c.nome, desconto: discountPerCombo });
+                    }
+                }
             }
         });
     }
@@ -1033,7 +1038,13 @@ function updateTotals(){
     let bruto = sumItems + (STATE.mode === 'custom' ? STATE.basketExtraFee : 0);
     let summaryHtml = `<div style="display:flex; justify-content:space-between;"><span>Valor total:</span><span>${fmt(bruto)}</span></div>`;
     summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Entrega:</span><span>Grátis</span></div>`;
-    if(STATE.comboDiscount > 0) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto combo:</span><span>-${fmt(STATE.comboDiscount)}</span></div>`;
+    
+    if(STATE.appliedCombos && STATE.appliedCombos.length > 0) {
+        STATE.appliedCombos.forEach(ac => {
+            summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto Combo (${formatName(ac.nome)}):</span><span>-${fmt(ac.desconto)}</span></div>`;
+        });
+    }
+    
     if(STATE.valueDiscount > 0) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto por valor:</span><span>-${fmt(STATE.valueDiscount)}</span></div>`;
     if(STATE.coupon) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Cupom:</span><span>-${fmt(STATE.coupon.desconto)}</span></div>`;
 
@@ -1055,6 +1066,7 @@ function updateTotals(){
     badge.style.display = count > 0 ? 'flex' : 'none';
 
     $('chk-total').innerText = fmt(displayTotal);
+    if($('chk-installment')) $('chk-installment').innerText = `Parcele em até 3x de ${fmt(displayTotal/3)} sem juros no cartão de crédito`;
     $('chk-info-extra').innerHTML = extraInfo;
     
     let btnChk = $('btn-send-order');
@@ -1083,7 +1095,7 @@ function openCheckout(){
 
 function clearCart(){ 
     if(confirm("Esvaziar carrinho?")){
-        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.minBasketPrice=0; STATE.basketExtraFee=0; STATE.comboDiscount=0; STATE.coupon=null; STATE.valueDiscount=0; STATE.nextDiscountIncentive="";
+        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.minBasketPrice=0; STATE.basketExtraFee=0; STATE.comboDiscount=0; STATE.appliedCombos=[]; STATE.coupon=null; STATE.valueDiscount=0; STATE.nextDiscountIncentive="";
         updateTotals(); 
         $('section-cesta-ativa').style.display='none'; 
         $('modal-checkout').close(); 
