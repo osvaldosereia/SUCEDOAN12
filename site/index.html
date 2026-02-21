@@ -68,30 +68,6 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* PALCO CENTRAL (GRADE VERTICAL) */
 .main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:100px; scroll-behavior:smooth;}
 
-/* BANNERS */
-.banner-wrapper {
-    width: 100%; max-width: 1200px; margin: 0 auto;
-    padding: 15px 20px 5px; display: none; gap: 12px;
-    overflow-x: auto; scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-}
-.banner-wrapper::-webkit-scrollbar { display: none; }
-.banner-card {
-    flex: 0 0 auto; width: max-content; max-width: 85vw; scroll-snap-align: start;
-    border-radius: 16px; padding: 18px 25px;
-    display: flex; flex-direction: column; justify-content: center;
-    cursor: pointer; transition: transform 0.2s;
-    min-height: 90px; box-shadow: var(--sh-card);
-}
-.banner-card:active { transform: scale(0.98); }
-.banner-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; line-height: 1.1; letter-spacing: -0.5px;}
-.banner-sub { font-size: 0.8rem; font-weight: 500; opacity: 0.9; line-height: 1.2; }
-
-@media(min-width: 800px) {
-    .banner-wrapper { overflow-x: visible; }
-    .banner-card { flex: 1; max-width: none; width: auto; }
-}
-
 /* SECTIONS PÁGINA ÚNICA */
 .page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
 .section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
@@ -101,20 +77,13 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
     gap: 15px; padding: 5px 20px 15px; width: 100%; align-content: start;
 }
+/* NOVA GRADE DE 2 COLUNAS MOBILE, ATÉ 5 DESKTOP */
 .grid-produtos {
-    display: grid; grid-template-columns: repeat(3, 1fr);
-    gap: 8px; padding: 5px 15px 15px; width: 100%; align-content: start;
-}
-
-@media(min-width: 600px) {
-    .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 12px; padding: 5px 20px 15px; width: 100%; align-content: start;
 }
 @media(min-width: 800px) {
-    .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 5px 20px 15px; }
-}
-@media(max-width:600px){
-    .grid-wrapper{ grid-template-columns: 1fr 1fr; gap: 10px; padding: 5px 15px 15px; }
-    .section-title { padding: 15px 15px 10px; }
+    .grid-produtos { grid-template-columns: repeat(5, 1fr); gap: 15px; }
 }
 
 /* CARDS GRANDES (Cestas e Combos) */
@@ -134,62 +103,31 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-name{font-size:0.85rem; font-weight:600; color:var(--c-p); line-height:1.3; display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; min-height:3.9em; flex-grow: 1; }
 .u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px;}
 
-/* CARDS QUADRADOS MORPH (Nova Grade 3 Colunas) */
+/* CARDS DISCRETOS (Apenas Foto e Preço) */
 .card-sq {
-    background: #fff; border-radius: 12px; aspect-ratio: 1; position: relative;
-    overflow: hidden; box-shadow: var(--sh-card); border: 1px solid var(--c-bd);
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    background: #fff; border-radius: 12px; position: relative;
+    overflow: hidden; border: 1px solid var(--c-bd); box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s;
 }
-.card-sq-tag {
-    position: absolute; top: 6px; left: 6px; color: #fff; font-size: 0.75rem;
-    font-weight: 800; padding: 2px 6px; border-radius: 6px; z-index: 2; line-height: 1.2;
-    transition: opacity 0.2s;
+.card-sq:active { transform: scale(0.98); }
+.card-sq-img-area {
+    width: 100%; aspect-ratio: 1; padding: 12px; display: flex; align-items: center; justify-content: center;
 }
-.card-sq-img {
-    width: 85%; height: 85%; object-fit: contain; mix-blend-mode: multiply;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+.card-sq-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+.card-sq-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 12px 12px 12px; width: 100%; margin-top: auto;
 }
-.card-sq-add {
-    position: absolute; bottom: 6px; right: 6px; width: 30px; height: 30px;
-    background: var(--c-ok); color: #fff; font-size: 1.4rem; font-weight: 600;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    z-index: 2; box-shadow: 0 2px 6px rgba(21, 128, 61, 0.4); border:none; padding:0; line-height:1;
-    transition: transform 0.1s, opacity 0.2s;
+.card-sq-price { font-size: 0.9rem; font-weight: 700; color: var(--c-s); }
+.card-sq-plus {
+    width: 28px; height: 28px; border-radius: 50%; background: #f1f5f9; color: var(--c-s);
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 500; flex-shrink: 0; margin-left: 5px;
 }
-.card-sq-add:active:not(:disabled) { transform: scale(0.9); }
-.card-sq-add:disabled { background: var(--c-bd); color: var(--c-s); box-shadow: none; cursor: not-allowed; }
-
-/* EFEITO MORPH (ESTADO IN-CART) */
-.card-sq-overlay {
-    position: absolute; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 10;
-    display: flex; flex-direction: column; justify-content: space-between; padding: 8px;
-    opacity: 0; pointer-events: none; transition: opacity 0.2s ease; backdrop-filter: blur(2px);
+.card-sq-qty {
+    position: absolute; top: 8px; right: 8px; background: var(--c-ok); color: #fff;
+    font-size: 0.75rem; font-weight: 800; min-width: 22px; height: 22px; border-radius: 11px; padding: 0 4px;
+    display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
-.card-sq.in-cart .card-sq-overlay { opacity: 1; pointer-events: auto; }
-.card-sq.in-cart .card-sq-img { transform: scale(0.85); }
-.card-sq.in-cart .card-sq-add { opacity: 0; pointer-events: none; }
-.card-sq.in-cart .card-sq-tag { opacity: 0; pointer-events: none; }
-
-.card-sq-name {
-    color: #fff; font-size: 0.75rem; font-weight: 600; text-align: center;
-    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-    overflow: hidden; line-height: 1.2; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-}
-.card-sq-ctrl {
-    display: flex; align-items: center; justify-content: space-between;
-    background: #fff; border-radius: 8px; padding: 2px; height: 32px;
-}
-.card-sq-btn {
-    width: 26px; height: 100%; border-radius: 6px; background: #f1f5f9; cursor: pointer;
-    font-weight: 800; color: var(--c-p); font-size: 1.1rem; border:none; display:flex; align-items:center; justify-content:center;
-}
-.card-sq-btn:active { background: #e2e8f0; }
-.card-sq-inp {
-    width: 24px; text-align: center; font-size: 0.9rem; font-weight: 800;
-    border: none; background: transparent; padding: 0; color: var(--c-p);
-    -moz-appearance: textfield;
-}
-.card-sq-inp::-webkit-outer-spin-button, .card-sq-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
 /* BOTOES AUXILIARES */
 .u-action-row{padding-top:8px; padding-bottom: 4px; position: relative;}
@@ -200,6 +138,14 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .btn-big-action:active:not(:disabled){transform:scale(0.95)}
 .btn-big-action:disabled { background: var(--c-bd) !important; color: var(--c-t) !important; cursor: not-allowed; box-shadow: none; transform: none; }
+
+.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:12px;padding:4px;border:1px solid var(--c-bd); height: 48px; width: 100%;}
+.btn-qty{width:44px;height:100%;border-radius:8px;background:#fff;font-size:1.5rem;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,0.1);color:var(--c-p)}
+.qty-inp{
+    width:40px; text-align:center; font-size:1.2rem; font-weight:800;
+    border:none; background:transparent; color:var(--c-p); -moz-appearance:textfield; padding:0;
+}
+.qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* APP TAB BAR (ESTILO MERCADO LIVRE) */
 .bottom-nav-bar {
@@ -256,16 +202,18 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .btn-close-modal:active { background: #e2e8f0; }
 
 .btn-modal{width:100%;padding:14px;border-radius:12px;font-weight:800;margin-bottom:10px;font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px;}
-.btn-modal.primary{background:var(--c-p);color:#fff}
+.btn-modal.primary{background:var(--c-p);color:#fff; cursor: pointer;}
 .btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
 
-/* MODAL CHECKOUT (BOTTOM SHEET) - 90% */
-#modal-checkout {
+/* MODAL CHECKOUT E QUICK VIEW */
+#modal-checkout, #modal-quick-view {
     margin: auto auto 0 auto; border-radius: 24px 24px 0 0;
-    width: 100%; max-width: 600px; height: 90dvh; max-height: 90dvh;
+    width: 100%; max-width: 600px;
     animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
+#modal-checkout { height: 90dvh; max-height: 90dvh; }
 @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
 #modal-checkout .modal-body {
     height: 100%; display: flex; flex-direction: column; padding: 25px 20px max(20px, env(safe-area-inset-bottom)); text-align: left;
 }
@@ -302,13 +250,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .toast { padding: 12px 20px; color: #fff; border-radius: 12px; font-weight: 700; font-size: 0.9rem; box-shadow: var(--sh-float); text-align: center; animation: toastPop 0.3s ease-out; pointer-events: auto; }
 @keyframes toastPop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* ZOOM */
-#modal-image-zoom{background:transparent;box-shadow:none;width:100%;height:100%;max-width:none;max-height:none}
-#modal-image-zoom .modal-body{padding:0;display:flex;align-items:center;justify-content:center;height:100vh;width:100vw;position:relative}
-#zoom-img{max-width:90%;max-height:85vh;border-radius:12px;background:#fff;box-shadow:0 25px 50px rgba(0,0,0,0.5)}
-.btn-close-zoom{position:absolute;top:20px;right:20px;width:44px;height:44px;background:#fff;border-radius:50%;color:var(--c-p);font-weight:800;font-size:1.2rem;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:2010;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-
-/* MODAL CAROUSEL (Preview Cesta) */
+/* CAROUSEL PREVIEW */
 .modal-carousel-track { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; scroll-snap-type: x mandatory; justify-content: flex-start; }
 .modal-carousel-track::-webkit-scrollbar{height:4px;background:transparent}
 .modal-card { flex: 0 0 140px; scroll-snap-align: start; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; background: #fff; display: flex; flex-direction: column; text-align: left; }
@@ -341,26 +283,24 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
 <main class="main-stage" id="scroll-stage">
     
-    <div class="banner-wrapper" id="banner-area"></div>
-
-    <div id="section-busca" class="page-section" style="display:none;">
+    <div id="section-busca" class="page-section" style="display:none; padding-top:15px;">
         <div class="section-title">Resultados da Busca</div>
         <div class="grid-produtos" id="grid-busca"></div>
     </div>
 
     <div id="wrapper-sections">
-        <div id="section-cestas" class="page-section">
+        <div id="section-cestas" class="page-section" style="padding-top:15px;">
             <div class="section-title">Cestas Básicas</div>
             <div class="grid-wrapper" id="grid-cestas"></div>
         </div>
 
-        <div id="section-cesta-ativa" class="page-section" style="display:none; background: #fff; padding: 10px 0; border-top: 1px solid var(--c-bd); border-bottom: 1px solid var(--c-bd);">
+        <div id="section-cesta-ativa" class="page-section" style="display:none; background: #fff; padding: 15px 0; border-top: 1px solid var(--c-bd); border-bottom: 1px solid var(--c-bd);">
             <div class="section-title" style="color:var(--c-a); padding-bottom:5px;">Minha Cesta Personalizada</div>
             <div class="layout-limit" style="padding: 0 20px 10px; font-size:0.85rem; color:var(--c-s); font-weight:500;">Role para baixo para adicionar mais itens ou edite as quantidades abaixo:</div>
             <div class="grid-produtos" id="grid-cesta-ativa"></div>
         </div>
 
-        <div id="section-ofertas" class="page-section">
+        <div id="section-ofertas" class="page-section" style="padding-top:15px;">
             <div class="section-title">🔥 Ofertas da Semana</div>
             <div class="grid-produtos" id="grid-ofertas"></div>
         </div>
@@ -375,7 +315,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <div class="grid-produtos" id="grid-ate2"></div>
         </div>
 
-        <div id="section-corredores" style="margin-top:15px;">
+        <div id="section-corredores" style="margin-top:5px;">
             <div class="chips-bar" id="chips-corredores" style="display:flex;"></div>
             <div id="grid-corredores-wrap"></div>
         </div>
@@ -404,6 +344,20 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 </nav>
 
 <div id="toast-container"></div>
+
+<dialog id="modal-quick-view">
+    <div class="modal-body" style="padding: 30px 20px 25px max(20px, env(safe-area-inset-bottom));">
+        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
+        <div style="display:flex; justify-content:center; margin-bottom: 20px;">
+            <img id="qv-img" src="" style="width: 180px; height: 180px; object-fit: contain; mix-blend-mode: multiply;">
+        </div>
+        <h3 id="qv-name" style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 8px; line-height: 1.2;"></h3>
+        <div id="qv-price" style="font-size: 1.4rem; font-weight: 900; color: var(--c-a); margin-bottom: 25px;"></div>
+        
+        <div id="qv-action-area">
+            </div>
+    </div>
+</dialog>
 
 <dialog id="modal-faq" onclick="if(event.target===this)this.close()">
     <div class="modal-body">
@@ -449,8 +403,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <button style="background:#f1f5f9; color:var(--c-p); border:none; padding:6px 12px; border-radius:8px; font-size:0.8rem; font-weight:700; cursor:pointer;" onclick="$('modal-checkout').close(); goToMinhaCesta();">✏️ Editar</button>
         </div>
         
-        <div class="chk-list-area" id="chk-list">
-            </div>
+        <div class="chk-list-area" id="chk-list"></div>
         
         <div style="text-align:right; margin-bottom:15px; margin-top:5px;">
             <div style="font-size:0.9rem; font-weight:700; color:var(--c-t);" id="chk-info-extra"></div>
@@ -479,17 +432,10 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     </div>
 </dialog>
 
-<dialog id="modal-image-zoom" onclick="if(event.target===this)this.close()">
-    <div class="modal-body">
-        <button class="btn-close-zoom" onclick="this.closest('dialog').close()">✕</button>
-        <img id="zoom-img" src="">
-    </div>
-</dialog>
-
 <script>
 const $=i=>document.getElementById(i);
 const STATE={
-    baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, banners:[],
+    baskets:[], prods:[], coupons:[], combos:[], departamentos:{},
     cart:{}, cartOrder:[], 
     mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, coupon:null,
     lists: {}, pageLimits: {}
@@ -497,15 +443,25 @@ const STATE={
 
 const MIN_ORDER = 85.00; 
 
+// OBSERVADOR DE SCROLL INFINITO (Global)
+const scrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if(entry.isIntersecting) {
+            const listKey = entry.target.dataset.list;
+            scrollObserver.unobserve(entry.target);
+            loadMore(listKey);
+        }
+    });
+}, { rootMargin: '300px' });
+
 async function init(){
     try{
-        const[r1,r2,r3,r4,r5,r6]=await Promise.all([
+        const[r1,r2,r3,r4,r5]=await Promise.all([
             fetch('produtos-cesta-basica.json?v='+Date.now()),
             fetch('produtos.json?v='+Date.now()),
             fetch('cupons.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('combos.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('departamento.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('banner.json?v='+Date.now()).catch(()=>({ok:false}))
+            fetch('departamento.json?v='+Date.now()).catch(()=>({ok:false}))
         ]);
         if(r1.ok) STATE.baskets = await r1.json();
         if(r2.ok){
@@ -523,9 +479,7 @@ async function init(){
         if(r3&&r3.ok) STATE.coupons = await r3.json();
         if(r4&&r4.ok) STATE.combos = await r4.json();
         if(r5&&r5.ok) STATE.departamentos = await r5.json();
-        if(r6&&r6.ok) STATE.banners = await r6.json();
 
-        renderBanners();
         renderHome();
         updateTotals(); 
     }catch(e){
@@ -534,7 +488,7 @@ async function init(){
     }
 }
 
-/* --- RENDERIZAÇÃO PÁGINA ÚNICA E PAGINAÇÃO INTELIGENTE --- */
+/* --- RENDERIZAÇÃO E SCROLL INFINITO --- */
 function renderHome() {
     STATE.lists = {}; 
     
@@ -562,7 +516,7 @@ function renderHome() {
         let safeM = m.replace(/\s/g,'-');
         chipsHtml += `<div class="chip" id="chip-${safeM}" onclick="scrollToMacro('${safeM}')">${m}</div>`;
         corredoresHtml += `
-            <div id="macro-${safeM}" class="page-section" style="padding-top:10px;">
+            <div id="macro-${safeM}" class="page-section macro-section" style="padding-top:10px;">
                 <div class="section-title">🗂️ ${m}</div>
                 <div class="grid-produtos" id="grid-${safeM}"></div>
             </div>`;
@@ -590,15 +544,20 @@ function renderPaginated(containerId, listKey, list, step, type) {
     let html = visibleList.map(item => {
         if(type === 'BASKET') return cardBasket(item);
         if(type === 'COMBO') return cardCombo(item);
-        return cardProdHoriz(item); // Agora retorna o quadrado Morph
+        return cardProdHoriz(item); 
     }).join('');
 
+    // Adiciona o sentinela para o Scroll Infinito se houver mais itens
     if(limit < list.length) {
-        html += `<div style="grid-column: 1/-1; padding: 10px 0;"><button class="btn-big-action" style="background:#e2e8f0; color:var(--c-p); border:none; padding:12px; font-size:0.85rem;" onclick="loadMore('${listKey}')">MOSTRAR MAIS ⬇</button></div>`;
+        html += `<div class="scroll-sentinel" data-list="${listKey}" style="grid-column: 1/-1; height: 1px; width: 100%;"></div>`;
     }
     
     let c = $(containerId);
-    if(c) c.innerHTML = html || '<p style="padding:20px; color:var(--c-t); font-weight:600;">Nenhum produto encontrado.</p>';
+    if(c) {
+        c.innerHTML = html || '<p style="padding:20px; color:var(--c-t); font-weight:600;">Nenhum produto encontrado.</p>';
+        const sentinel = c.querySelector('.scroll-sentinel');
+        if (sentinel) scrollObserver.observe(sentinel);
+    }
 }
 
 window.loadMore = function(listKey) {
@@ -620,7 +579,7 @@ function renderCestaAtiva() {
     }
 }
 
-/* --- ROLAGEM MATEMÁTICA INTERNA (À PROVA DE FALHAS) --- */
+/* --- ROLAGEM MATEMÁTICA INTERNA --- */
 function smoothScrollTo(elementId, offset) {
     const el = document.getElementById(elementId);
     const stage = document.getElementById('scroll-stage');
@@ -653,27 +612,10 @@ window.scrollToSection = function(sectionId, btnId) {
 
 window.scrollToMacro = function(safeM) {
     updateBottomNav(null); 
-    
     document.querySelectorAll('#chips-corredores .chip').forEach(el=>el.classList.remove('active'));
     let chip = document.getElementById(`chip-${safeM}`);
-    if(chip) {
-        chip.classList.add('active');
-    }
-    
+    if(chip) chip.classList.add('active');
     smoothScrollTo(`macro-${safeM}`, 55); 
-}
-
-/* --- BANNERS --- */
-function renderBanners() {
-    const wrap = $('banner-area');
-    if (!STATE.banners || STATE.banners.length === 0) return;
-    wrap.style.display = 'flex';
-    wrap.innerHTML = STATE.banners.map(b => `
-        <div class="banner-card" style="background:${b.corFundo}; color:${b.corTexto}">
-            <div class="banner-title">${b.titulo}</div>
-            <div class="banner-sub">${b.subtitulo}</div>
-        </div>
-    `).join('');
 }
 
 /* --- CARDS GRANDES (Cestas e Combos) --- */
@@ -719,34 +661,124 @@ function cardCombo(item){
     </div>`;
 }
 
-/* --- NOVO CARD QUADRADO (MORPH INTERNO) --- */
+/* --- CARD PRODUTO (LIMPO & DISCRETO) --- */
 function cardProdHoriz(item){
     const q = STATE.cart[item.id] || 0;
     const isOffer = item.oldPrice && item.oldPrice > item.price;
-    const inCart = q > 0 ? 'in-cart' : '';
     
-    // Mostra apenas o número do preço para caber na etiqueta pequena (ex: 24,90)
-    const priceStr = fmt(item.price).replace('R$', '').trim();
-    const tagBg = isOffer ? 'var(--c-err)' : '#000';
+    let oldPriceHtml = isOffer ? `<div style="font-size:0.65rem; color:var(--c-t); text-decoration:line-through; line-height:1;">${fmt(item.oldPrice)}</div>` : '';
+    let priceColor = isOffer ? 'color:var(--c-err)' : '';
     
     return `
-    <div class="card-sq card-sq-${item.id} ${inCart}">
-        <div class="card-sq-tag" style="background:${tagBg}">${priceStr}</div>
-        <img src="${item.img}" class="card-sq-img" loading="lazy" onclick="openImageZoom('${item.img}')">
-        <button class="card-sq-add" onclick="upd('${item.id}',1)" ${item.stock<=0?'disabled':''}>${item.stock<=0?'X':'+'}</button>
-        
-        <div class="card-sq-overlay">
-            <div class="card-sq-name">${formatName(item.name)}</div>
-            <div class="card-sq-ctrl">
-                <button class="card-sq-btn" onclick="upd('${item.id}',-1)">-</button>
-                <input class="card-sq-inp qty-${item.id}" type="number" value="${q}" onchange="upd('${item.id}', this.value, true)">
-                <button class="card-sq-btn" onclick="upd('${item.id}',1)" style="color:var(--c-ok)">+</button>
+    <div class="card-sq card-sq-${item.id}" onclick="openQuickView('${item.id}')">
+        ${q > 0 ? `<div class="card-sq-qty">${q}</div>` : ''}
+        <div class="card-sq-img-area">
+            <img src="${item.img}" class="card-sq-img" loading="lazy">
+        </div>
+        <div class="card-sq-bottom">
+            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                ${oldPriceHtml}
+                <span class="card-sq-price" style="${priceColor}">${fmt(item.price)}</span>
             </div>
+            <div class="card-sq-plus">${q > 0 ? '✓' : '+'}</div>
         </div>
     </div>`;
 }
 
-/* PREVIEWS E CONFIRMAÇÕES */
+/* --- MODAL QUICK VIEW (OPÇÃO 2) --- */
+window.openQuickView = function(id) {
+    const p = STATE.prods.find(x => x.id === id);
+    if(!p) return;
+    
+    $('qv-img').src = p.img;
+    $('qv-name').innerText = formatName(p.name);
+    
+    const isOffer = p.oldPrice && p.oldPrice > p.price;
+    if(isOffer) {
+        $('qv-price').innerHTML = `<span style="font-size:0.9rem; color:var(--c-t); text-decoration:line-through; font-weight:600; margin-right:8px;">${fmt(p.oldPrice)}</span><span style="color:var(--c-err);">${fmt(p.price)}</span>`;
+    } else {
+        $('qv-price').innerHTML = fmt(p.price);
+    }
+    
+    renderQuickViewAction(id);
+    $('modal-quick-view').showModal();
+}
+
+window.renderQuickViewAction = function(id) {
+    const p = STATE.prods.find(x => x.id === id);
+    const q = STATE.cart[id] || 0;
+    
+    let html = '';
+    if(q === 0) {
+        html = `<button class="btn-modal primary" style="background:#25D366; width:100%; padding:16px; border-radius:12px; font-size:1.05rem;" onclick="addFromQuickView('${id}')">ADICIONAR 1 UN</button>`;
+    } else {
+        html = `
+        <div class="qty-row" style="height: 52px; max-width: 220px; margin: 0 auto; border-radius: 14px; background:#f1f5f9; border:1px solid var(--c-bd);">
+             <button class="btn-qty" style="width: 50px; font-size: 1.6rem; background:transparent; box-shadow:none;" onclick="upd('${id}', -1); renderQuickViewAction('${id}')">-</button>
+             <input class="qty-inp" type="number" value="${q}" style="font-size: 1.3rem;" readonly>
+             <button class="btn-qty" style="width: 50px; font-size: 1.6rem; color: var(--c-ok); background:transparent; box-shadow:none;" onclick="upd('${id}', 1); renderQuickViewAction('${id}')">+</button>
+        </div>
+        `;
+    }
+    $('qv-action-area').innerHTML = html;
+}
+
+window.addFromQuickView = function(id) {
+    upd(id, 1);
+    $('modal-quick-view').close();
+}
+
+/* UPDATE CARRINHO E VISUAIS DOS CARDS */
+function upd(id, delta){
+    const p = STATE.prods.find(x=>x.id===id);
+    if(!p) return;
+    
+    try { if(navigator.vibrate) navigator.vibrate(50); } catch(e){}
+    
+    const cur = STATE.cart[id] || 0;
+    let next = Math.max(0, cur + parseInt(delta));
+    if(isNaN(next)) next = 0;
+    
+    if(next > p.stock) {
+        showToast(`Apenas ${p.stock} un. disponíveis`, "r");
+        return;
+    }
+    
+    if(cur === 0 && next > 0) STATE.cartOrder.push(id);
+    STATE.cart[id] = next;
+    
+    if(next === 0){
+        delete STATE.cart[id];
+        STATE.cartOrder = STATE.cartOrder.filter(x=>x!==id);
+    }
+    
+    // Atualiza badges em todos os lugares onde este card aparece
+    document.querySelectorAll(`.card-sq-${id}`).forEach(el => {
+        let badge = el.querySelector('.card-sq-qty');
+        let plus = el.querySelector('.card-sq-plus');
+        
+        if (next > 0) {
+            if (!badge) {
+                badge = document.createElement('div');
+                badge.className = 'card-sq-qty';
+                el.insertBefore(badge, el.firstChild);
+            }
+            badge.innerText = next;
+            if(plus) plus.innerText = '✓';
+        } else {
+            if (badge) badge.remove();
+            if(plus) plus.innerText = '+';
+        }
+    });
+    
+    if((cur===0 && next>0) || (cur>0 && next===0)){
+        setTimeout(renderCestaAtiva, 50);
+    }
+    
+    updateTotals();
+}
+
+/* PREVIEWS E CONFIRMAÇÕES (CESTAS E COMBOS) */
 function previewBasket(id){
     const c = STATE.baskets.find(x=>String(x.id)===String(id));
     if(!c) return;
@@ -774,7 +806,6 @@ function previewBasket(id){
 function previewCombo(id){
     const c = STATE.combos.find(x=>String(x.id)===String(id));
     if(!c) return;
-    
     let sum = 0;
     $('prev-title').innerHTML = formatName(c.nome);
     $('prev-list').innerHTML = c.produtos.map(s=>{
@@ -783,7 +814,6 @@ function previewCombo(id){
         if(p) sum += p.price * parseInt(qtd);
         return `<div class="modal-card"><img src="${p?.img}" loading="lazy"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${qtd}x</div></div>`
     }).join('');
-    
     const econ = sum - c.preco;
     $('prev-desc').innerHTML = `<span class="combo-strike">De: ${fmt(sum)}</span> | <span style="color:var(--c-ok);">Economia: ${fmt(econ)}</span>`;
     $('prev-price').innerHTML = fmt(c.preco);
@@ -792,7 +822,6 @@ function previewCombo(id){
     btn.innerText = "ADICIONAR COMBO";
     btn.onclick = () => confirmCombo(id);
     $('btn-customize-preview').style.display = 'none';
-    
     $('modal-basket-preview').showModal();
 }
 
@@ -857,50 +886,6 @@ function confirmCombo(id){
     updateTotals();
 }
 
-/* UPDATE CARRINHO REVISADO PARA MORPH */
-function upd(id, delta, isAbsolute = false){
-    const p = STATE.prods.find(x=>x.id===id);
-    if(!p) return;
-    
-    // Tenta vibrar levemente para dar feedback tátil da compra rapida
-    try { if(navigator.vibrate) navigator.vibrate(50); } catch(e){}
-    
-    const cur = STATE.cart[id] || 0;
-    
-    let next = isAbsolute ? parseInt(delta) : Math.max(0, cur + parseInt(delta));
-    if(isNaN(next)) next = 0;
-    
-    if(next > p.stock) {
-        showToast(`Apenas ${p.stock} un. disponíveis`, "r");
-        document.querySelectorAll(`.qty-${id}`).forEach(e=>e.value = cur); // reverte valor visual caso digitado a mais
-        return;
-    }
-    
-    if(cur === 0 && next > 0) STATE.cartOrder.push(id);
-    STATE.cart[id] = next;
-    
-    if(next === 0){
-        delete STATE.cart[id];
-        STATE.cartOrder = STATE.cartOrder.filter(x=>x!==id);
-    }
-    
-    // Atualiza input visualmente em todos os lugares
-    document.querySelectorAll(`.qty-${id}`).forEach(e=>e.value = next);
-    
-    // Aciona a classe CSS do efeito MORPH (escurece e mostra controles)
-    document.querySelectorAll(`.card-sq-${id}`).forEach(el => {
-        if(next > 0) el.classList.add('in-cart');
-        else el.classList.remove('in-cart');
-    });
-    
-    // Se o item for o primeiro do carrinho, ou se foi removido, atualiza a cesta ativa do topo
-    if((cur===0 && next>0) || (cur>0 && next===0)){
-        setTimeout(renderCestaAtiva, 50);
-    }
-    
-    updateTotals();
-}
-
 function updateTotals(){
     let sumItems = 0, count = 0;
     Object.entries(STATE.cart).forEach(([id,q])=>{
@@ -961,12 +946,10 @@ function updateTotals(){
         else { STATE.coupon=null; showToast("Cupom removido", "r"); $('cupom-msg').style.display='none';}
     }
 
-    // UPDATE UI BADGE DO BOTAO MERCADO LIVRE
     const badge = $('badge-count');
     badge.innerText = count;
     badge.style.display = count > 0 ? 'flex' : 'none';
 
-    // UPDATE CHECKOUT
     $('chk-total').innerText = fmt(displayTotal);
     $('chk-info-extra').innerHTML = extraInfo;
     
@@ -998,7 +981,6 @@ function openCheckout(){
     $('modal-checkout').showModal();
 }
 
-/* UTILS */
 function clearCart(){ 
     if(confirm("Esvaziar carrinho?")){
         STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.minBasketPrice=0; STATE.basketExtraFee=0; STATE.comboDiscount=0; STATE.coupon=null; 
@@ -1022,8 +1004,7 @@ function handleSearch(q){
     $('section-busca').style.display = 'block';
     
     let res = STATE.prods.filter(p=>p.name.toUpperCase().includes(q.toUpperCase()));
-    // renderiza na grade quadrada
-    renderPaginated('grid-busca', 'busca', res, 30, 'PROD');
+    renderPaginated('grid-busca', 'busca', res, 20, 'PROD');
 }
 function clearSearch(){$('search-inp').value='';handleSearch('');}
 
@@ -1075,7 +1056,6 @@ function formatName(s){ return s?s.replace(/\s+/g,' ').trim().toLowerCase().spli
 function parseMoney(s){return parseFloat(s.replace('R$','').replace('.','').replace(',','.').trim());}
 function fmt(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
 function showToast(m,t){const d=document.createElement('div');d.className='toast';d.style.background=t==='r'?'var(--c-err)':'var(--c-ok)';d.innerText=m;$('toast-container').appendChild(d);setTimeout(()=>d.remove(),2500);}
-function openImageZoom(s){$('zoom-img').src=s;$('modal-image-zoom').showModal();}
 
 init();
 </script>
