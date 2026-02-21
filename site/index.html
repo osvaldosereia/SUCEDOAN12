@@ -8,19 +8,18 @@
 <title>Super Cestas Básicas Dona Antônia</title>
 <style>
 :root {
-    /* PALETA PROFISSIONAL (Ajustada para melhor contraste e leveza) */
+    /* PALETA PROFISSIONAL */
     --c-p: #0f172a;      /* Texto Principal */
     --c-s: #334155;      /* Texto Secundário */
     --c-t: #64748b;      /* Texto Terciário */
     --c-a: #ea580c;      /* Ação Principal (Laranja) */
     --c-ok: #15803d;     /* Sucesso */
     --c-err: #dc2626;    /* Erro */
-    --c-bg: #f8fafc;     /* Fundo Geral (Mais limpo e claro) */
+    --c-bg: #f8fafc;     /* Fundo Geral */
     --c-surf: #ffffff;   /* Superfície Cards */
-    --c-bd: #e2e8f0;     /* Bordas mais sutis */
+    --c-bd: #e2e8f0;     /* Bordas sutis */
     --font: 'Inter', system-ui, sans-serif;
     
-    /* Sombras mais difusas e modernas */
     --sh-card: 0 4px 12px rgba(0, 0, 0, 0.04); 
     --sh-float: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
 }
@@ -93,28 +92,32 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     .banner-card { flex: 1; max-width: none; width: auto; }
 }
 
-/* SECTIONS PÁGINA ÚNICA (Removemos margens de rolagem automáticas para usar JS preciso) */
+/* SECTIONS PÁGINA ÚNICA */
 .page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
 .section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
 
+/* GRADES */
 .grid-wrapper{
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px; padding: 5px 20px 15px;
-    width: 100%; align-content: start;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px; padding: 5px 20px 15px; width: 100%; align-content: start;
 }
-.grid-wrapper.list-view { grid-template-columns: 1fr; gap: 10px; padding: 5px 20px 10px; }
+.grid-produtos {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; padding: 5px 15px 15px; width: 100%; align-content: start;
+}
 
 @media(min-width: 600px) {
-    .grid-wrapper.list-view { grid-template-columns: 1fr 1fr; }
+    .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+}
+@media(min-width: 800px) {
+    .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 5px 20px 15px; }
 }
 @media(max-width:600px){
     .grid-wrapper{ grid-template-columns: 1fr 1fr; gap: 10px; padding: 5px 15px 15px; }
-    .grid-wrapper.list-view { grid-template-columns: 1fr; padding: 5px 15px 10px; }
     .section-title { padding: 15px 15px 10px; }
 }
 
-/* CARDS (Cestas e Combos) */
+/* CARDS GRANDES (Cestas e Combos) */
 .u-card{
     background:var(--c-surf); border-radius:20px; border:1px solid #fff; box-shadow:var(--sh-card);
     display:flex;flex-direction:column; position:relative; height: 100%; transition:transform .2s, box-shadow .2s;
@@ -131,52 +134,72 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-name{font-size:0.85rem; font-weight:600; color:var(--c-p); line-height:1.3; display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; min-height:3.9em; flex-grow: 1; }
 .u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px;}
 
-/* CARDS HORIZONTAIS (Produtos) */
-.u-card-horiz {
-    background: var(--c-surf); border-radius: 16px; box-shadow: var(--sh-card); border: 1px solid #fff;
-    display: flex; padding: 12px; gap: 14px; align-items: center; position: relative; transition:transform .2s;
+/* CARDS QUADRADOS MORPH (Nova Grade 3 Colunas) */
+.card-sq {
+    background: #fff; border-radius: 12px; aspect-ratio: 1; position: relative;
+    overflow: hidden; box-shadow: var(--sh-card); border: 1px solid var(--c-bd);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
 }
-.u-card-horiz:active { transform: scale(0.98); }
-.u-card-horiz .img-horiz-area {
-    width: 95px; height: 95px; border-radius: 12px; background: #fff; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center; padding: 2px;
+.card-sq-tag {
+    position: absolute; top: 6px; left: 6px; color: #fff; font-size: 0.75rem;
+    font-weight: 800; padding: 2px 6px; border-radius: 6px; z-index: 2; line-height: 1.2;
+    transition: opacity 0.2s;
 }
-.u-card-horiz .img-horiz-area img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-.u-card-horiz .info-horiz { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-.u-card-horiz .name-horiz {
-    font-size: 0.85rem; font-weight: 600; color: var(--c-p); line-height: 1.2;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px;
+.card-sq-img {
+    width: 85%; height: 85%; object-fit: contain; mix-blend-mode: multiply;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.u-card-horiz .row-price-action { display: flex; justify-content: space-between; align-items: center; margin-top: auto;}
-.u-card-horiz .price-horiz { font-size: 1.1rem; font-weight: 900; color: var(--c-a); }
-.u-card-horiz .old-price-horiz { font-size: 0.75rem; color: var(--c-t); text-decoration: line-through; margin-right: 5px; font-weight: 600;}
+.card-sq-add {
+    position: absolute; bottom: 6px; right: 6px; width: 30px; height: 30px;
+    background: var(--c-ok); color: #fff; font-size: 1.4rem; font-weight: 600;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    z-index: 2; box-shadow: 0 2px 6px rgba(21, 128, 61, 0.4); border:none; padding:0; line-height:1;
+    transition: transform 0.1s, opacity 0.2s;
+}
+.card-sq-add:active:not(:disabled) { transform: scale(0.9); }
+.card-sq-add:disabled { background: var(--c-bd); color: var(--c-s); box-shadow: none; cursor: not-allowed; }
 
-/* BOTÕES E INPUTS */
+/* EFEITO MORPH (ESTADO IN-CART) */
+.card-sq-overlay {
+    position: absolute; inset: 0; background: rgba(15, 23, 42, 0.85); z-index: 10;
+    display: flex; flex-direction: column; justify-content: space-between; padding: 8px;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease; backdrop-filter: blur(2px);
+}
+.card-sq.in-cart .card-sq-overlay { opacity: 1; pointer-events: auto; }
+.card-sq.in-cart .card-sq-img { transform: scale(0.85); }
+.card-sq.in-cart .card-sq-add { opacity: 0; pointer-events: none; }
+.card-sq.in-cart .card-sq-tag { opacity: 0; pointer-events: none; }
+
+.card-sq-name {
+    color: #fff; font-size: 0.75rem; font-weight: 600; text-align: center;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    overflow: hidden; line-height: 1.2; margin-top: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.card-sq-ctrl {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #fff; border-radius: 8px; padding: 2px; height: 32px;
+}
+.card-sq-btn {
+    width: 26px; height: 100%; border-radius: 6px; background: #f1f5f9; cursor: pointer;
+    font-weight: 800; color: var(--c-p); font-size: 1.1rem; border:none; display:flex; align-items:center; justify-content:center;
+}
+.card-sq-btn:active { background: #e2e8f0; }
+.card-sq-inp {
+    width: 24px; text-align: center; font-size: 0.9rem; font-weight: 800;
+    border: none; background: transparent; padding: 0; color: var(--c-p);
+    -moz-appearance: textfield;
+}
+.card-sq-inp::-webkit-outer-spin-button, .card-sq-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* BOTOES AUXILIARES */
 .u-action-row{padding-top:8px; padding-bottom: 4px; position: relative;}
 .btn-big-action{
     width:100%; background:var(--c-p); color:#fff; padding:10px 8px; border-radius:10px;
     font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center; gap:4px;
     transition:background .2s, transform .1s;
 }
-.btn-mini-add {
-    background: var(--c-p); color: #fff; width: 34px; height: 34px; border-radius: 10px;
-    font-size: 1.2rem; font-weight: 800; display: flex; align-items: center; justify-content: center;
-    transition: transform 0.1s, background 0.2s;
-}
-.btn-mini-add:active:not(:disabled){transform:scale(0.9)}
 .btn-big-action:active:not(:disabled){transform:scale(0.95)}
-.success-flash{animation:flashGreen 0.5s ease-out}
-.btn-big-action:disabled, .btn-mini-add:disabled { background: var(--c-bd) !important; color: var(--c-t) !important; cursor: not-allowed; box-shadow: none; transform: none; }
-
-@keyframes flashGreen { 0% { background: var(--c-p); } 50% { background: var(--c-ok); transform: scale(1.05); } 100% { background: var(--c-p); } }
-
-.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:10px;padding:3px;border:1px solid var(--c-bd); height: 34px;}
-.btn-qty{width:28px;height:100%;border-radius:6px;background:#fff;font-size:1rem;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,0.1);color:var(--c-p)}
-.qty-inp{
-    width:28px; text-align:center; font-size:0.95rem; font-weight:800;
-    border:none; background:transparent; color:var(--c-p); -moz-appearance:textfield; padding:0;
-}
-.qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.btn-big-action:disabled { background: var(--c-bd) !important; color: var(--c-t) !important; cursor: not-allowed; box-shadow: none; transform: none; }
 
 /* APP TAB BAR (ESTILO MERCADO LIVRE) */
 .bottom-nav-bar {
@@ -213,7 +236,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 0 4px; display: none;
 }
 
-/* AJUSTES PARA DESKTOP (Centralização e Layout) */
+/* AJUSTES PARA DESKTOP */
 @media(min-width: 800px) {
     .bottom-nav-bar { justify-content: center; gap: 30px; }
     .chips-bar { justify-content: center; }
@@ -236,7 +259,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .btn-modal.primary{background:var(--c-p);color:#fff}
 .btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
 
-/* MODAL CHECKOUT (BOTTOM SHEET) - AUMENTADO PARA 90% */
+/* MODAL CHECKOUT (BOTTOM SHEET) - 90% */
 #modal-checkout {
     margin: auto auto 0 auto; border-radius: 24px 24px 0 0;
     width: 100%; max-width: 600px; height: 90dvh; max-height: 90dvh;
@@ -322,7 +345,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
     <div id="section-busca" class="page-section" style="display:none;">
         <div class="section-title">Resultados da Busca</div>
-        <div class="grid-wrapper list-view" id="grid-busca"></div>
+        <div class="grid-produtos" id="grid-busca"></div>
     </div>
 
     <div id="wrapper-sections">
@@ -333,13 +356,13 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
         <div id="section-cesta-ativa" class="page-section" style="display:none; background: #fff; padding: 10px 0; border-top: 1px solid var(--c-bd); border-bottom: 1px solid var(--c-bd);">
             <div class="section-title" style="color:var(--c-a); padding-bottom:5px;">Minha Cesta Personalizada</div>
-            <div class="layout-limit" style="padding: 0 20px 10px; font-size:0.85rem; color:var(--c-s); font-weight:500;">Role para baixo para adicionar mais itens ou modifique as quantidades abaixo:</div>
-            <div class="grid-wrapper list-view" id="grid-cesta-ativa"></div>
+            <div class="layout-limit" style="padding: 0 20px 10px; font-size:0.85rem; color:var(--c-s); font-weight:500;">Role para baixo para adicionar mais itens ou edite as quantidades abaixo:</div>
+            <div class="grid-produtos" id="grid-cesta-ativa"></div>
         </div>
 
         <div id="section-ofertas" class="page-section">
             <div class="section-title">🔥 Ofertas da Semana</div>
-            <div class="grid-wrapper list-view" id="grid-ofertas"></div>
+            <div class="grid-produtos" id="grid-ofertas"></div>
         </div>
 
         <div id="section-combos" class="page-section">
@@ -349,7 +372,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
         <div id="section-ate2" class="page-section">
             <div class="section-title">🤑 Até R$ 2,00</div>
-            <div class="grid-wrapper list-view" id="grid-ate2"></div>
+            <div class="grid-produtos" id="grid-ate2"></div>
         </div>
 
         <div id="section-corredores" style="margin-top:15px;">
@@ -539,9 +562,9 @@ function renderHome() {
         let safeM = m.replace(/\s/g,'-');
         chipsHtml += `<div class="chip" id="chip-${safeM}" onclick="scrollToMacro('${safeM}')">${m}</div>`;
         corredoresHtml += `
-            <div id="macro-${safeM}" class="page-section macro-section" style="padding-top:10px;">
+            <div id="macro-${safeM}" class="page-section" style="padding-top:10px;">
                 <div class="section-title">🗂️ ${m}</div>
-                <div class="grid-wrapper list-view" id="grid-${safeM}"></div>
+                <div class="grid-produtos" id="grid-${safeM}"></div>
             </div>`;
     });
     
@@ -567,7 +590,7 @@ function renderPaginated(containerId, listKey, list, step, type) {
     let html = visibleList.map(item => {
         if(type === 'BASKET') return cardBasket(item);
         if(type === 'COMBO') return cardCombo(item);
-        return cardProdHoriz(item);
+        return cardProdHoriz(item); // Agora retorna o quadrado Morph
     }).join('');
 
     if(limit < list.length) {
@@ -653,7 +676,7 @@ function renderBanners() {
     `).join('');
 }
 
-/* --- CARDS (COMPACTOS E GRANDES) --- */
+/* --- CARDS GRANDES (Cestas e Combos) --- */
 function cardBasket(item){
     return `
     <div class="u-card">
@@ -696,44 +719,31 @@ function cardCombo(item){
     </div>`;
 }
 
+/* --- NOVO CARD QUADRADO (MORPH INTERNO) --- */
 function cardProdHoriz(item){
     const q = STATE.cart[item.id] || 0;
     const isOffer = item.oldPrice && item.oldPrice > item.price;
+    const inCart = q > 0 ? 'in-cart' : '';
     
-    let priceHtml = isOffer 
-        ? `<span class="old-price-horiz">${fmt(item.oldPrice)}</span><span class="price-horiz">${fmt(item.price)}</span>`
-        : `<span class="price-horiz">${fmt(item.price)}</span>`;
-    
-    const btn = q > 0 
-        ? `<div class="qty-row" style="flex-shrink:0;">
-             <button class="btn-qty" onclick="upd('${item.id}',-1)">-</button>
-             <input class="qty-inp qty-${item.id}" type="number" value="${q}" onchange="upd('${item.id}',this.value-${q})">
-             <button class="btn-qty" onclick="upd('${item.id}',1)" style="color:var(--c-ok)">+</button>
-           </div>`
-        : `<button class="btn-mini-add" id="btn-add-${item.id}" onclick="addAnim('${item.id}');upd('${item.id}',1)" ${item.stock<=0?'disabled':''}>${item.stock<=0?'X':'+'}</button>`;
+    // Mostra apenas o número do preço para caber na etiqueta pequena (ex: 24,90)
+    const priceStr = fmt(item.price).replace('R$', '').trim();
+    const tagBg = isOffer ? 'var(--c-err)' : '#000';
     
     return `
-    <div class="u-card-horiz">
-        <div class="img-horiz-area" onclick="openImageZoom('${item.img}')">
-            <img src="${item.img}" loading="lazy">
-        </div>
-        <div class="info-horiz">
-            <div class="name-horiz">${formatName(item.name)}</div>
-            <div class="row-price-action">
-                <div>${priceHtml}</div>
-                <div class="ctrl-wrap-${item.id}">${btn}</div>
+    <div class="card-sq card-sq-${item.id} ${inCart}">
+        <div class="card-sq-tag" style="background:${tagBg}">${priceStr}</div>
+        <img src="${item.img}" class="card-sq-img" loading="lazy" onclick="openImageZoom('${item.img}')">
+        <button class="card-sq-add" onclick="upd('${item.id}',1)" ${item.stock<=0?'disabled':''}>${item.stock<=0?'X':'+'}</button>
+        
+        <div class="card-sq-overlay">
+            <div class="card-sq-name">${formatName(item.name)}</div>
+            <div class="card-sq-ctrl">
+                <button class="card-sq-btn" onclick="upd('${item.id}',-1)">-</button>
+                <input class="card-sq-inp qty-${item.id}" type="number" value="${q}" onchange="upd('${item.id}', this.value, true)">
+                <button class="card-sq-btn" onclick="upd('${item.id}',1)" style="color:var(--c-ok)">+</button>
             </div>
         </div>
     </div>`;
-}
-
-function addAnim(id){
-    if(navigator.vibrate) navigator.vibrate(50);
-    const btn = document.getElementById(`btn-add-${id}`);
-    if(btn){
-        btn.classList.add('success-flash');
-        setTimeout(()=>btn.classList.remove('success-flash'), 400);
-    }
 }
 
 /* PREVIEWS E CONFIRMAÇÕES */
@@ -808,7 +818,7 @@ function confirmBasket(isCustom){
     
     if(isCustom) {
         showToast(`Cesta carregada para personalização!`, 's');
-        renderHome(); // Força update da tela com carrinho
+        renderHome(); 
         setTimeout(goToMinhaCesta, 300);
     } else {
         showToast(`Cesta adicionada!`, 's');
@@ -847,18 +857,22 @@ function confirmCombo(id){
     updateTotals();
 }
 
-/* UPDATE CARRINHO */
-function upd(id, delta){
+/* UPDATE CARRINHO REVISADO PARA MORPH */
+function upd(id, delta, isAbsolute = false){
     const p = STATE.prods.find(x=>x.id===id);
     if(!p) return;
+    
+    // Tenta vibrar levemente para dar feedback tátil da compra rapida
+    try { if(navigator.vibrate) navigator.vibrate(50); } catch(e){}
+    
     const cur = STATE.cart[id] || 0;
     
-    let next = Math.max(0, cur + parseInt(delta));
+    let next = isAbsolute ? parseInt(delta) : Math.max(0, cur + parseInt(delta));
     if(isNaN(next)) next = 0;
     
     if(next > p.stock) {
         showToast(`Apenas ${p.stock} un. disponíveis`, "r");
-        document.querySelectorAll(`.qty-${id}`).forEach(e=>e.value = cur);
+        document.querySelectorAll(`.qty-${id}`).forEach(e=>e.value = cur); // reverte valor visual caso digitado a mais
         return;
     }
     
@@ -870,19 +884,20 @@ function upd(id, delta){
         STATE.cartOrder = STATE.cartOrder.filter(x=>x!==id);
     }
     
-    // Atualiza input se existir
+    // Atualiza input visualmente em todos os lugares
     document.querySelectorAll(`.qty-${id}`).forEach(e=>e.value = next);
     
-    // Atualiza HTML do controle
+    // Aciona a classe CSS do efeito MORPH (escurece e mostra controles)
+    document.querySelectorAll(`.card-sq-${id}`).forEach(el => {
+        if(next > 0) el.classList.add('in-cart');
+        else el.classList.remove('in-cart');
+    });
+    
+    // Se o item for o primeiro do carrinho, ou se foi removido, atualiza a cesta ativa do topo
     if((cur===0 && next>0) || (cur>0 && next===0)){
-        const btnHtml = next > 0 
-             ? `<div class="qty-row" style="flex-shrink:0;"><button class="btn-qty" onclick="upd('${id}',-1)">-</button><input class="qty-inp qty-${id}" type="number" value="${next}" onchange="upd('${id}',this.value-${next})"><button class="btn-qty" onclick="upd('${id}',1)" style="color:var(--c-ok)">+</button></div>`
-             : `<button class="btn-mini-add" id="btn-add-${id}" onclick="addAnim('${id}');upd('${id}',1)">+</button>`;
-        document.querySelectorAll(`.ctrl-wrap-${id}`).forEach(el=> el.innerHTML = btnHtml);
-        
-        // Se adicionou o primeiro item ou removeu item, atualiza a cesta ativa visualmente
         setTimeout(renderCestaAtiva, 50);
     }
+    
     updateTotals();
 }
 
@@ -946,7 +961,7 @@ function updateTotals(){
         else { STATE.coupon=null; showToast("Cupom removido", "r"); $('cupom-msg').style.display='none';}
     }
 
-    // UPDATE UI BADGE
+    // UPDATE UI BADGE DO BOTAO MERCADO LIVRE
     const badge = $('badge-count');
     badge.innerText = count;
     badge.style.display = count > 0 ? 'flex' : 'none';
@@ -1007,7 +1022,8 @@ function handleSearch(q){
     $('section-busca').style.display = 'block';
     
     let res = STATE.prods.filter(p=>p.name.toUpperCase().includes(q.toUpperCase()));
-    $('grid-busca').innerHTML = res.map(cardProdHoriz).join('') || '<p style="padding:20px;">Nenhum produto encontrado.</p>';
+    // renderiza na grade quadrada
+    renderPaginated('grid-busca', 'busca', res, 30, 'PROD');
 }
 function clearSearch(){$('search-inp').value='';handleSearch('');}
 
