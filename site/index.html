@@ -452,9 +452,9 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 <script>
 const $=i=>document.getElementById(i);
 const STATE={
-    baskets:[], prods:[], coupons:[], combos:[], departamentos:{},
+    baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, descontosValor:[],
     cart:{}, cartOrder:[], observer: null,
-    mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, coupon:null,
+    mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
     lists: {}, pageLimits: {}
 };
 
@@ -479,12 +479,13 @@ function setupObserver() {
 async function init(){
     setupObserver();
     try{
-        const[r1,r2,r3,r4,r5]=await Promise.all([
+        const[r1,r2,r3,r4,r5,r6]=await Promise.all([
             fetch('produtos-cesta-basica.json?v='+Date.now()),
             fetch('produtos.json?v='+Date.now()),
             fetch('cupons.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('combos.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('departamento.json?v='+Date.now()).catch(()=>({ok:false}))
+            fetch('departamento.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('desconto-por-valor.json?v='+Date.now()).catch(()=>({ok:false}))
         ]);
         if(r1.ok) STATE.baskets = await r1.json();
         if(r2.ok){
@@ -502,6 +503,7 @@ async function init(){
         if(r3&&r3.ok) STATE.coupons = await r3.json();
         if(r4&&r4.ok) STATE.combos = await r4.json();
         if(r5&&r5.ok) STATE.departamentos = await r5.json();
+        if(r6&&r6.ok) STATE.descontosValor = await r6.json();
 
         renderHome();
         updateTotals(); 
@@ -847,6 +849,7 @@ function previewBasket(id){
     btnCust.onclick = () => confirmBasket(true);
     
     $('modal-basket-preview').showModal();
+    setTimeout(() => { const el = $('prev-list'); if(el) el.scrollLeft = 0; }, 10);
 }
 
 function previewCombo(id){
@@ -869,6 +872,7 @@ function previewCombo(id){
     btn.onclick = () => confirmCombo(id);
     $('btn-customize-preview').style.display = 'none';
     $('modal-basket-preview').showModal();
+    setTimeout(() => { const el = $('prev-list'); if(el) el.scrollLeft = 0; }, 10);
 }
 
 function confirmBasket(isCustom){
@@ -967,6 +971,7 @@ function updateTotals(){
     }
 
     let displayTotal = sumItems - STATE.comboDiscount;
+    let subtotalParaDesconto = displayTotal;
     let extraInfo = "";
     
     let isBlocked = false;
@@ -974,13 +979,38 @@ function updateTotals(){
     
     if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
         displayTotal += STATE.basketExtraFee;
+        subtotalParaDesconto = displayTotal;
         if(displayTotal < STATE.minBasketPrice){
             const credit = STATE.minBasketPrice - displayTotal;
             displayTotal = STATE.minBasketPrice; 
+            subtotalParaDesconto = displayTotal;
             extraInfo = `<span style="color:var(--c-a);">Aproveite ${fmt(credit)} em itens extras</span>`;
             isBlocked = true;
         }
-    } else {
+    }
+
+    STATE.valueDiscount = 0;
+    STATE.nextDiscountIncentive = "";
+    if (STATE.descontosValor && STATE.descontosValor.length > 0) {
+        let sortedDesc = [...STATE.descontosValor].sort((a,b) => a.minimo - b.minimo);
+        let appDesc = null, nxtDesc = null;
+        for(let i=0; i<sortedDesc.length; i++) {
+            if(subtotalParaDesconto >= sortedDesc[i].minimo) appDesc = sortedDesc[i];
+            else { nxtDesc = sortedDesc[i]; break; }
+        }
+        if(appDesc) STATE.valueDiscount = appDesc.desconto;
+        
+        if(nxtDesc && subtotalParaDesconto > 0) {
+            let faltam = nxtDesc.minimo - subtotalParaDesconto;
+            STATE.nextDiscountIncentive = `🛍️ Adicione mais ${fmt(faltam)} e ganhe ${fmt(nxtDesc.desconto)} de desconto!`;
+        } else if (appDesc && subtotalParaDesconto > 0) {
+            STATE.nextDiscountIncentive = `🎉 Você garantiu o desconto máximo de ${fmt(appDesc.desconto)}!`;
+        }
+    }
+
+    displayTotal -= STATE.valueDiscount;
+
+    if(STATE.mode !== 'custom' || !isBlocked) {
         missing = Math.max(0, MIN_ORDER - displayTotal);
         if(missing > 0) {
             isBlocked = true;
@@ -1019,8 +1049,17 @@ function openCheckout(){
         return `<div class="chk-item-simple"><span class="chk-item-qtd">${STATE.cart[id]}x</span><span class="chk-item-name">${formatName(p.name)}</span></div>`
     }).join('');
     
+    listHtml += `<div class="chk-item-simple" style="color:var(--c-ok); padding-top: 15px; border-top: 1px dashed var(--c-bd);"><span class="chk-item-qtd">✔️</span><span class="chk-item-name" style="font-weight:700;">Entrega grátis</span></div>`;
+    
     if(STATE.comboDiscount > 0){
-        listHtml += `<div class="chk-item-simple" style="color:var(--c-ok);"><span class="chk-item-qtd"></span><span class="chk-item-name" style="font-weight:700;">🎁 Desconto Combo</span></div>`;
+        listHtml += `<div class="chk-item-simple" style="color:var(--c-ok);"><span class="chk-item-qtd">🎁</span><span class="chk-item-name" style="font-weight:700;">Desconto Combo (-${fmt(STATE.comboDiscount)})</span></div>`;
+    }
+    if(STATE.valueDiscount > 0){
+        listHtml += `<div class="chk-item-simple" style="color:var(--c-ok);"><span class="chk-item-qtd">🤑</span><span class="chk-item-name" style="font-weight:700;">Desconto Progressivo (-${fmt(STATE.valueDiscount)})</span></div>`;
+    }
+    if(STATE.nextDiscountIncentive) {
+        let color = STATE.nextDiscountIncentive.includes('máximo') ? 'var(--c-ok)' : 'var(--c-a)';
+        listHtml += `<div class="chk-item-simple" style="color:${color}; background: #f8fafc; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px dashed ${color};"><span class="chk-item-name" style="font-weight:700; text-align:center; width:100%; display:block;">${STATE.nextDiscountIncentive}</span></div>`;
     }
 
     $('chk-list').innerHTML = listHtml;
@@ -1029,7 +1068,7 @@ function openCheckout(){
 
 function clearCart(){ 
     if(confirm("Esvaziar carrinho?")){
-        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.minBasketPrice=0; STATE.basketExtraFee=0; STATE.comboDiscount=0; STATE.coupon=null; 
+        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.minBasketPrice=0; STATE.basketExtraFee=0; STATE.comboDiscount=0; STATE.coupon=null; STATE.valueDiscount=0; STATE.nextDiscountIncentive="";
         updateTotals(); 
         $('section-cesta-ativa').style.display='none'; 
         $('modal-checkout').close(); 
@@ -1078,7 +1117,11 @@ async function sendOrder(){
         final = Math.max(final + STATE.basketExtraFee, STATE.minBasketPrice);
     }
 
-    if(STATE.coupon){ final-=STATE.coupon.desconto; itemsTxt+=`\nCUPOM: ${STATE.coupon.codigo}`; }
+    final -= STATE.valueDiscount;
+
+    if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
+    if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
+    if(STATE.coupon){ final-=STATE.coupon.desconto; itemsTxt+=`\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
     
     const msg = `*NOVO PEDIDO*\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
