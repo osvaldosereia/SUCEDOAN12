@@ -1041,7 +1041,7 @@ function updateTotals(){
     
     if(STATE.appliedCombos && STATE.appliedCombos.length > 0) {
         STATE.appliedCombos.forEach(ac => {
-            summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto Combo (${formatName(ac.nome)}):</span><span>-${fmt(ac.desconto)}</span></div>`;
+            summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto (${formatName(ac.nome)}):</span><span>-${fmt(ac.desconto)}</span></div>`;
         });
     }
     
