@@ -128,6 +128,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     padding: 6px 10px 10px 10px; width: 100%; margin-top: auto; cursor: pointer;
 }
 .card-sq-price { font-size: 0.95rem; font-weight: 800; color: var(--c-p); }
+.card-sq-name-sub { font-size: 0.65rem; color: var(--c-s); font-weight: 500; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; text-align: left; width: 100%; }
 .card-sq-ctrls { flex-shrink: 0; margin-left: 5px; cursor: default; }
 
 .card-sq-plus {
@@ -689,6 +690,7 @@ function cardProdHoriz(item){
             <div style="display:flex; flex-direction:column; align-items:flex-start; flex:1;">
                 ${oldPriceHtml}
                 <span class="card-sq-price" style="${priceColor}">${fmt(item.price)}</span>
+                <div class="card-sq-name-sub">${formatName(item.name)}</div>
             </div>
             <div class="card-sq-ctrls" id="ctrl-${item.id}">
                 ${ctrlHtml}
