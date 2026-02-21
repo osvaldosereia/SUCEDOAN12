@@ -422,10 +422,16 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
              <button style="background:transparent; color:var(--c-p); border:1px solid var(--c-bd); padding:8px 14px; border-radius:8px; font-size:0.85rem; font-weight:700; cursor:pointer;" onclick="$('modal-checkout').close(); goToMinhaCesta();">✏️ Alterar quantidades</button>
         </div>
         
-        <div style="text-align:right; margin-bottom:15px; margin-top:5px;">
+        <div id="chk-summary-lines" style="font-size: 0.9rem; color: var(--c-s); line-height: 1.6; margin-bottom: 15px; border-top: 1px dashed var(--c-bd); padding-top: 15px;"></div>
+        
+        <div style="text-align:right; margin-bottom:15px;">
             <div style="font-size:0.9rem; font-weight:700; color:var(--c-t);" id="chk-info-extra"></div>
-            <div style="font-size:1.8rem;font-weight:900; color:var(--c-p);" id="chk-total"></div>
+            <div style="font-size:0.85rem; font-weight:700; color:var(--c-s); text-transform:uppercase;">Total a pagar</div>
+            <div style="font-size:2.2rem;font-weight:900; color:var(--c-p); line-height:1.1;" id="chk-total"></div>
+            <div style="font-size:0.7rem; color:var(--c-t); margin-top:4px; font-weight:600;">Parcele em até 3x sem juros no cartão de crédito</div>
         </div>
+
+        <div id="chk-incentive-banner" style="margin-bottom:15px;"></div>
         
         <div class="cupom-box">
             <div id="coupon-toggle" onclick="this.style.display='none'; $('coupon-wrap').style.display='flex';" style="color:var(--c-a); font-size:0.85rem; font-weight:800; cursor:pointer; text-decoration:underline;">Tem um cupom de desconto?</div>
@@ -1002,7 +1008,8 @@ function updateTotals(){
         
         if(nxtDesc && subtotalParaDesconto > 0) {
             let faltam = nxtDesc.minimo - subtotalParaDesconto;
-            STATE.nextDiscountIncentive = `🛍️ Adicione mais ${fmt(faltam)} e ganhe ${fmt(nxtDesc.desconto)} de desconto!`;
+            let diffDesconto = nxtDesc.desconto - (appDesc ? appDesc.desconto : 0);
+            STATE.nextDiscountIncentive = `🛍️ Adicione mais ${fmt(faltam)} e ganhe mais ${fmt(diffDesconto)} de desconto!`;
         } else if (appDesc && subtotalParaDesconto > 0) {
             STATE.nextDiscountIncentive = `🎉 Você garantiu o desconto máximo de ${fmt(appDesc.desconto)}!`;
         }
@@ -1020,6 +1027,27 @@ function updateTotals(){
     if(STATE.coupon){
         if(displayTotal >= STATE.coupon.minimo) displayTotal -= STATE.coupon.desconto;
         else { STATE.coupon=null; showToast("Cupom removido", "r"); $('cupom-msg').style.display='none';}
+    }
+
+    // Build the Summary Checklist Layout (Amazon Style)
+    let bruto = sumItems + (STATE.mode === 'custom' ? STATE.basketExtraFee : 0);
+    let summaryHtml = `<div style="display:flex; justify-content:space-between;"><span>Valor total:</span><span>${fmt(bruto)}</span></div>`;
+    summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Entrega:</span><span>Grátis</span></div>`;
+    if(STATE.comboDiscount > 0) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto combo:</span><span>-${fmt(STATE.comboDiscount)}</span></div>`;
+    if(STATE.valueDiscount > 0) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto por valor:</span><span>-${fmt(STATE.valueDiscount)}</span></div>`;
+    if(STATE.coupon) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Cupom:</span><span>-${fmt(STATE.coupon.desconto)}</span></div>`;
+
+    let elSummary = $('chk-summary-lines');
+    if(elSummary) elSummary.innerHTML = summaryHtml;
+
+    let elBanner = $('chk-incentive-banner');
+    if(elBanner) {
+        if(STATE.nextDiscountIncentive) {
+            let color = STATE.nextDiscountIncentive.includes('máximo') ? 'var(--c-ok)' : 'var(--c-a)';
+            elBanner.innerHTML = `<div style="color:${color}; background: #f8fafc; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border: 1px dashed ${color};">${STATE.nextDiscountIncentive}</div>`;
+        } else {
+            elBanner.innerHTML = '';
+        }
     }
 
     const badge = $('badge-count');
@@ -1048,19 +1076,6 @@ function openCheckout(){
         const p = STATE.prods.find(x=>x.id===id);
         return `<div class="chk-item-simple"><span class="chk-item-qtd">${STATE.cart[id]}x</span><span class="chk-item-name">${formatName(p.name)}</span></div>`
     }).join('');
-    
-    listHtml += `<div class="chk-item-simple" style="color:var(--c-ok); padding-top: 15px; border-top: 1px dashed var(--c-bd);"><span class="chk-item-qtd">✔️</span><span class="chk-item-name" style="font-weight:700;">Entrega grátis</span></div>`;
-    
-    if(STATE.comboDiscount > 0){
-        listHtml += `<div class="chk-item-simple" style="color:var(--c-ok);"><span class="chk-item-qtd">🎁</span><span class="chk-item-name" style="font-weight:700;">Desconto Combo (-${fmt(STATE.comboDiscount)})</span></div>`;
-    }
-    if(STATE.valueDiscount > 0){
-        listHtml += `<div class="chk-item-simple" style="color:var(--c-ok);"><span class="chk-item-qtd">🤑</span><span class="chk-item-name" style="font-weight:700;">Desconto Progressivo (-${fmt(STATE.valueDiscount)})</span></div>`;
-    }
-    if(STATE.nextDiscountIncentive) {
-        let color = STATE.nextDiscountIncentive.includes('máximo') ? 'var(--c-ok)' : 'var(--c-a)';
-        listHtml += `<div class="chk-item-simple" style="color:${color}; background: #f8fafc; padding: 10px; border-radius: 8px; margin-top: 10px; border: 1px dashed ${color};"><span class="chk-item-name" style="font-weight:700; text-align:center; width:100%; display:block;">${STATE.nextDiscountIncentive}</span></div>`;
-    }
 
     $('chk-list').innerHTML = listHtml;
     $('modal-checkout').showModal();
