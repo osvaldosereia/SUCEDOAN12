@@ -9,12 +9,12 @@
 <style>
 :root {
     /* PALETA PROFISSIONAL */
-    --c-p: #0f172a;      /* Texto Principal */
+    --c-p: #0f172a;      /* Texto Principal (Azul Marinho Escuro) */
     --c-s: #334155;      /* Texto Secundário */
     --c-t: #64748b;      /* Texto Terciário */
     --c-a: #ea580c;      /* Ação Principal (Laranja) */
-    --c-ok: #15803d;     /* Sucesso */
-    --c-err: #dc2626;    /* Erro */
+    --c-ok: #15803d;     /* Sucesso (Verde) */
+    --c-err: #dc2626;    /* Erro (Vermelho) */
     --c-bg: #f8fafc;     /* Fundo Geral */
     --c-surf: #ffffff;   /* Superfície Cards */
     --c-bd: #e2e8f0;     /* Bordas sutis */
@@ -47,105 +47,111 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .btn-faq{background:#f1f5f9; color:var(--c-p); width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--c-bd); transition:background 0.2s;}
 .btn-faq:active{background:#e2e8f0;}
 
-/* CHIPS BAR & STICKY CORREDORES */
+/* CHIPS BAR (DESTAQUE VIBRANTE) */
+#chips-corredores {
+    position: sticky; top: 0; z-index: 15; 
+    background: var(--c-p); /* Fundo escuro e elegante para dar energia visual */
+    margin-top: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
 .chips-bar {
-    width: 100%; max-width: 1200px; padding: 10px 20px 12px 20px; gap: 8px;
-    overflow-x: auto; scroll-behavior: smooth; align-items: center;
+    width: 100%; max-width: 1200px; padding: 12px 20px; gap: 10px;
+    overflow-x: auto; align-items: center; scroll-behavior: auto; display: flex;
 }
 .chips-bar::-webkit-scrollbar { display: none; }
 .chip {
-    padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
-    background: #fff; color: var(--c-s); white-space: nowrap; border: 1px solid var(--c-bd); box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    padding: 8px 18px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    background: rgba(255,255,255,0.1); color: #fff; white-space: nowrap; border: 1px solid rgba(255,255,255,0.15);
     cursor: pointer; transition: 0.2s;
 }
-.chip.active { background: var(--c-p); color: #fff; border-color: var(--c-p); box-shadow: 0 4px 6px rgba(15,23,42,0.15);}
+.chip.active { background: var(--c-a); color: #fff; border-color: var(--c-a); box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);}
 
-#chips-corredores {
-    position: sticky; top: 0; z-index: 15; background: var(--c-bg); 
-    margin-top: 5px; box-shadow: 0 4px 10px -6px rgba(0,0,0,0.05);
-}
-
-/* PALCO CENTRAL (GRADE VERTICAL) */
-.main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:100px; scroll-behavior:smooth;}
+/* PALCO CENTRAL */
+.main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:100px; scroll-behavior:auto;}
 
 /* SECTIONS PÁGINA ÚNICA */
 .page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
 .section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
 
-/* GRADES */
-.grid-wrapper{
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 15px; padding: 5px 20px 15px; width: 100%; align-content: start;
-}
-/* NOVA GRADE DE 2 COLUNAS MOBILE, ATÉ 5 DESKTOP */
-.grid-produtos {
+/* GRADES (UNIFICADA EM 2 COLUNAS MOBILE, 5 DESKTOP) */
+.grid-wrapper, .grid-produtos {
     display: grid; grid-template-columns: repeat(2, 1fr);
     gap: 12px; padding: 5px 20px 15px; width: 100%; align-content: start;
 }
 @media(min-width: 800px) {
-    .grid-produtos { grid-template-columns: repeat(5, 1fr); gap: 15px; }
+    .grid-wrapper, .grid-produtos { grid-template-columns: repeat(5, 1fr); gap: 15px; }
+}
+@media(max-width:600px){
+    .grid-wrapper, .grid-produtos { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 5px 15px 15px; }
+    .section-title { padding: 15px 15px 10px; }
 }
 
-/* CARDS GRANDES (Cestas e Combos) */
+/* CARDS GRANDES (Cestas e Combos Adaptados para 2 Colunas) */
 .u-card{
-    background:var(--c-surf); border-radius:20px; border:1px solid #fff; box-shadow:var(--sh-card);
+    background:var(--c-surf); border-radius:16px; border:1px solid #fff; box-shadow:var(--sh-card);
     display:flex;flex-direction:column; position:relative; height: 100%; transition:transform .2s, box-shadow .2s;
 }
 .u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
-.u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid var(--c-bd);cursor:zoom-in; border-radius: 20px 20px 0 0;}
-.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:5px;transition:transform .3s} 
-.u-img-area:hover .u-img{transform:scale(1.05)}
+.u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid var(--c-bd); border-radius: 16px 16px 0 0;}
+.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:5px;} 
 .u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal}
-.offer-tag{position:absolute;bottom:0;left:0;background:var(--c-err);color:#fff;font-size:0.7rem;padding:4px 10px;border-top-right-radius:12px;font-weight:800;z-index:5;box-shadow:2px -2px 5px rgba(0,0,0,0.1)}
-.combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; }
-.combo-save { color: var(--c-ok); font-size: 0.75rem; font-weight: 800; background: #dcfce7; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px;}
-.u-info{padding:10px;display:flex;flex-direction:column;gap:4px;flex:1; border-radius: 0 0 20px 20px; background: var(--c-surf);}
-.u-name{font-size:0.85rem; font-weight:600; color:var(--c-p); line-height:1.3; display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; min-height:3.9em; flex-grow: 1; }
-.u-price{font-size:1.15rem;font-weight:800;color:var(--c-a);letter-spacing:-0.5px;}
+.offer-tag{position:absolute;bottom:0;left:0;background:var(--c-err);color:#fff;font-size:0.65rem;padding:4px 8px;border-top-right-radius:10px;font-weight:800;z-index:5;}
+.combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.75rem; font-weight: 600; }
+.combo-save { color: var(--c-ok); font-size: 0.7rem; font-weight: 800; background: #dcfce7; padding: 2px 4px; border-radius: 4px; display: inline-block; margin-top: 2px;}
+.u-info{padding:10px;display:flex;flex-direction:column;gap:4px;flex:1; border-radius: 0 0 16px 16px; background: var(--c-surf);}
+.u-name{font-size:0.75rem; font-weight:700; color:var(--c-p); line-height:1.2; display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; min-height:3.6em; flex-grow: 1; }
+.u-price{font-size:1.05rem;font-weight:900;color:var(--c-a);letter-spacing:-0.5px;}
 
-/* CARDS DISCRETOS (Apenas Foto e Preço) */
+/* CARDS DE PRODUTOS SIMPLES (Opção 2 Evoluída) */
 .card-sq {
     background: #fff; border-radius: 12px; position: relative;
-    overflow: hidden; border: 1px solid var(--c-bd); box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-    display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s;
+    overflow: hidden; border: 2px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    display: flex; flex-direction: column; transition: all 0.2s;
 }
-.card-sq:active { transform: scale(0.98); }
+.card-sq.in-cart {
+    border-color: var(--c-ok);
+    box-shadow: 0 4px 15px rgba(21, 128, 61, 0.15);
+}
 .card-sq-img-area {
-    width: 100%; aspect-ratio: 1; padding: 12px; display: flex; align-items: center; justify-content: center;
+    width: 100%; aspect-ratio: 1; padding: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;
 }
 .card-sq-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 .card-sq-bottom {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 6px 12px 12px 12px; width: 100%; margin-top: auto;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding: 6px 10px 10px 10px; width: 100%; margin-top: auto; cursor: pointer;
 }
-.card-sq-price { font-size: 0.9rem; font-weight: 700; color: var(--c-s); }
+.card-sq-price { font-size: 0.95rem; font-weight: 800; color: var(--c-p); }
+.card-sq-ctrls { flex-shrink: 0; margin-left: 5px; cursor: default; }
+
 .card-sq-plus {
-    width: 28px; height: 28px; border-radius: 50%; background: #f1f5f9; color: var(--c-s);
-    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 500; flex-shrink: 0; margin-left: 5px;
+    width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: var(--c-p);
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700;
+    transition: all 0.2s; border: 1px solid var(--c-bd); cursor: pointer;
 }
-.card-sq-qty {
-    position: absolute; top: 8px; right: 8px; background: var(--c-ok); color: #fff;
-    font-size: 0.75rem; font-weight: 800; min-width: 22px; height: 22px; border-radius: 11px; padding: 0 4px;
-    display: flex; align-items: center; justify-content: center; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+.card-sq-plus:active { transform: scale(0.9); }
+
+/* CONTROLE INLINE NO CARD (Botão se transforma nisto) */
+.card-sq-qty-box {
+    display: flex; align-items: center; background: var(--c-ok); border-radius: 16px;
+    height: 32px; padding: 0 2px; color: #fff; box-shadow: 0 2px 6px rgba(21, 128, 61, 0.3);
+    animation: popIn 0.2s ease-out;
 }
+@keyframes popIn { from { transform: scale(0.8); opacity: 0;} to { transform: scale(1); opacity: 1; } }
+.sq-btn {
+    width: 28px; height: 28px; border-radius: 50%; background: transparent; border: none;
+    color: #fff; font-weight: 900; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.sq-btn:active { background: rgba(0,0,0,0.1); }
+.sq-val { font-size: 0.85rem; font-weight: 900; min-width: 14px; text-align: center; }
 
 /* BOTOES AUXILIARES */
 .u-action-row{padding-top:8px; padding-bottom: 4px; position: relative;}
 .btn-big-action{
     width:100%; background:var(--c-p); color:#fff; padding:10px 8px; border-radius:10px;
-    font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center; gap:4px;
+    font-weight:800; font-size:0.75rem; display:flex; align-items:center; justify-content:center; gap:4px;
     transition:background .2s, transform .1s;
 }
 .btn-big-action:active:not(:disabled){transform:scale(0.95)}
 .btn-big-action:disabled { background: var(--c-bd) !important; color: var(--c-t) !important; cursor: not-allowed; box-shadow: none; transform: none; }
-
-.qty-row{display:flex;align-items:center;justify-content:space-between;background:#f1f5f9;border-radius:12px;padding:4px;border:1px solid var(--c-bd); height: 48px; width: 100%;}
-.btn-qty{width:44px;height:100%;border-radius:8px;background:#fff;font-size:1.5rem;font-weight:800;box-shadow:0 1px 3px rgba(0,0,0,0.1);color:var(--c-p)}
-.qty-inp{
-    width:40px; text-align:center; font-size:1.2rem; font-weight:800;
-    border:none; background:transparent; color:var(--c-p); -moz-appearance:textfield; padding:0;
-}
-.qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
 /* APP TAB BAR (ESTILO MERCADO LIVRE) */
 .bottom-nav-bar {
@@ -189,9 +195,9 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 
 /* MODAIS GERAIS */
-dialog{border:none;border-radius:24px;width:92%;max-width:420px;padding:0;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);background:#fff;animation:modalPop .3s}
+dialog{border:none;border-radius:24px;width:92%;max-width:420px;padding:0;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);background:#fff;animation:modalPop .2s}
 dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
-@keyframes modalPop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes modalPop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
 .modal-body{padding:25px 20px;text-align:center; position:relative;}
 .btn-close-modal {
     position: absolute; top: 15px; right: 15px; width: 32px; height: 32px;
@@ -201,8 +207,8 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 }
 .btn-close-modal:active { background: #e2e8f0; }
 
-.btn-modal{width:100%;padding:14px;border-radius:12px;font-weight:800;margin-bottom:10px;font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px;}
-.btn-modal.primary{background:var(--c-p);color:#fff; cursor: pointer;}
+.btn-modal{width:100%;padding:14px;border-radius:12px;font-weight:800;margin-bottom:10px;font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; cursor: pointer;}
+.btn-modal.primary{background:var(--c-p);color:#fff;}
 .btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
 
 /* MODAL CHECKOUT E QUICK VIEW */
@@ -253,11 +259,11 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 /* CAROUSEL PREVIEW */
 .modal-carousel-track { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; scroll-snap-type: x mandatory; justify-content: flex-start; }
 .modal-carousel-track::-webkit-scrollbar{height:4px;background:transparent}
-.modal-card { flex: 0 0 140px; scroll-snap-align: start; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; background: #fff; display: flex; flex-direction: column; text-align: left; }
+.modal-card { flex: 0 0 120px; scroll-snap-align: start; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; background: #fff; display: flex; flex-direction: column; text-align: left; }
 .modal-card img { width: 100%; aspect-ratio: 1; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 6px; }
-.modal-card .mc-name { font-size: 0.75rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em; }
+.modal-card .mc-name { font-size: 0.7rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em; }
 .modal-card .mc-price { font-size: 0.9rem; font-weight: 800; color: var(--c-a); margin-top: auto; }
-.modal-card .mc-qty { font-size: 0.75rem; font-weight: 600; color: var(--c-s); background: #f1f5f9; padding: 2px 6px; border-radius: 4px; width: fit-content; margin-top: 4px; }
+.modal-card .mc-qty { font-size: 0.75rem; font-weight: 800; color: #fff; background: var(--c-ok); padding: 2px 6px; border-radius: 4px; width: fit-content; margin-top: 4px; }
 
 </style>
 </head>
@@ -310,14 +316,16 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <div class="grid-wrapper" id="grid-combos"></div>
         </div>
 
-        <div id="section-ate2" class="page-section">
+        <div id="section-corredores">
+            <div id="chips-corredores">
+                <div class="chips-bar" id="chips-area"></div>
+            </div>
+            <div id="grid-corredores-wrap"></div>
+        </div>
+        
+        <div id="section-ate2" class="page-section" style="padding-top:15px;">
             <div class="section-title">🤑 Até R$ 2,00</div>
             <div class="grid-produtos" id="grid-ate2"></div>
-        </div>
-
-        <div id="section-corredores" style="margin-top:5px;">
-            <div class="chips-bar" id="chips-corredores" style="display:flex;"></div>
-            <div id="grid-corredores-wrap"></div>
         </div>
     </div>
 </main>
@@ -326,7 +334,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     <div class="tab-item" id="btn-nav-cesta" onclick="goToMinhaCesta()">
         <div class="tab-icon">📦</div><div class="tab-label">Cesta</div>
     </div>
-    <div class="tab-item" id="btn-nav-ofertas" onclick="scrollToSection('section-ofertas', 'btn-nav-ofertas')">
+    <div class="tab-item" id="btn-nav-ofertas" onclick="instantScrollTo('section-ofertas', 'btn-nav-ofertas')">
         <div class="tab-icon">🔥</div><div class="tab-label">Ofertas</div>
     </div>
     
@@ -335,10 +343,10 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         <div class="tab-icon">🛒</div>
     </div>
 
-    <div class="tab-item" id="btn-nav-combos" onclick="scrollToSection('section-combos', 'btn-nav-combos')">
+    <div class="tab-item" id="btn-nav-combos" onclick="instantScrollTo('section-combos', 'btn-nav-combos')">
         <div class="tab-icon">🎁</div><div class="tab-label">Combos</div>
     </div>
-    <div class="tab-item" id="btn-nav-ate2" onclick="scrollToSection('section-ate2', 'btn-nav-ate2')">
+    <div class="tab-item" id="btn-nav-ate2" onclick="instantScrollTo('section-ate2', 'btn-nav-ate2')">
         <div class="tab-icon">🤑</div><div class="tab-label">R$ 2</div>
     </div>
 </nav>
@@ -351,11 +359,10 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         <div style="display:flex; justify-content:center; margin-bottom: 20px;">
             <img id="qv-img" src="" style="width: 180px; height: 180px; object-fit: contain; mix-blend-mode: multiply;">
         </div>
-        <h3 id="qv-name" style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 8px; line-height: 1.2;"></h3>
+        <h3 id="qv-name" data-id="" style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 8px; line-height: 1.2;"></h3>
         <div id="qv-price" style="font-size: 1.4rem; font-weight: 900; color: var(--c-a); margin-bottom: 25px;"></div>
         
-        <div id="qv-action-area">
-            </div>
+        <div id="qv-action-area"></div>
     </div>
 </dialog>
 
@@ -443,7 +450,7 @@ const STATE={
 
 const MIN_ORDER = 85.00; 
 
-// OBSERVADOR DE SCROLL INFINITO (Global)
+// OBSERVADOR DE SCROLL INFINITO
 const scrollObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if(entry.isIntersecting) {
@@ -514,15 +521,15 @@ function renderHome() {
     
     macros.forEach(m => {
         let safeM = m.replace(/\s/g,'-');
-        chipsHtml += `<div class="chip" id="chip-${safeM}" onclick="scrollToMacro('${safeM}')">${m}</div>`;
+        chipsHtml += `<div class="chip" id="chip-${safeM}" onclick="instantScrollToMacro('${safeM}')">${m}</div>`;
         corredoresHtml += `
-            <div id="macro-${safeM}" class="page-section macro-section" style="padding-top:10px;">
+            <div id="macro-${safeM}" class="page-section" style="padding-top:10px;">
                 <div class="section-title">🗂️ ${m}</div>
                 <div class="grid-produtos" id="grid-${safeM}"></div>
             </div>`;
     });
     
-    $('chips-corredores').innerHTML = chipsHtml;
+    $('chips-area').innerHTML = chipsHtml;
     $('grid-corredores-wrap').innerHTML = corredoresHtml;
 
     macros.forEach(m => {
@@ -547,7 +554,6 @@ function renderPaginated(containerId, listKey, list, step, type) {
         return cardProdHoriz(item); 
     }).join('');
 
-    // Adiciona o sentinela para o Scroll Infinito se houver mais itens
     if(limit < list.length) {
         html += `<div class="scroll-sentinel" data-list="${listKey}" style="grid-column: 1/-1; height: 1px; width: 100%;"></div>`;
     }
@@ -579,15 +585,16 @@ function renderCestaAtiva() {
     }
 }
 
-/* --- ROLAGEM MATEMÁTICA INTERNA --- */
-function smoothScrollTo(elementId, offset) {
+/* --- ROLAGEM INSTANTÂNEA PULO NATIVO --- */
+function instantScrollTo(elementId, btnId) {
+    if(btnId) updateBottomNav(btnId);
     const el = document.getElementById(elementId);
     const stage = document.getElementById('scroll-stage');
     if(el && stage) {
         const stageRect = stage.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
-        const targetY = stage.scrollTop + (elRect.top - stageRect.top) - offset;
-        stage.scrollTo({ top: targetY, behavior: 'smooth' });
+        const targetY = stage.scrollTop + (elRect.top - stageRect.top) - 10;
+        stage.scrollTo({ top: targetY, behavior: 'auto' });
     }
 }
 
@@ -600,22 +607,24 @@ window.updateBottomNav = function(activeId) {
 }
 
 window.goToMinhaCesta = function() {
-    updateBottomNav('btn-nav-cesta');
     let secId = STATE.cartOrder.length > 0 ? 'section-cesta-ativa' : 'section-cestas';
-    smoothScrollTo(secId, 10);
+    instantScrollTo(secId, 'btn-nav-cesta');
 }
 
-window.scrollToSection = function(sectionId, btnId) {
-    updateBottomNav(btnId);
-    smoothScrollTo(sectionId, 10);
-}
-
-window.scrollToMacro = function(safeM) {
+window.instantScrollToMacro = function(safeM) {
     updateBottomNav(null); 
     document.querySelectorAll('#chips-corredores .chip').forEach(el=>el.classList.remove('active'));
     let chip = document.getElementById(`chip-${safeM}`);
     if(chip) chip.classList.add('active');
-    smoothScrollTo(`macro-${safeM}`, 55); 
+    
+    const el = document.getElementById(`macro-${safeM}`);
+    const stage = document.getElementById('scroll-stage');
+    if(el && stage) {
+        const stageRect = stage.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const targetY = stage.scrollTop + (elRect.top - stageRect.top) - 55;
+        stage.scrollTo({ top: targetY, behavior: 'auto' });
+    }
 }
 
 /* --- CARDS GRANDES (Cestas e Combos) --- */
@@ -661,37 +670,49 @@ function cardCombo(item){
     </div>`;
 }
 
-/* --- CARD PRODUTO (LIMPO & DISCRETO) --- */
+/* --- NOVO CARD PRODUTO (CONTROLE INLINE) --- */
 function cardProdHoriz(item){
     const q = STATE.cart[item.id] || 0;
     const isOffer = item.oldPrice && item.oldPrice > item.price;
+    const inCart = q > 0 ? 'in-cart' : '';
     
     let oldPriceHtml = isOffer ? `<div style="font-size:0.65rem; color:var(--c-t); text-decoration:line-through; line-height:1;">${fmt(item.oldPrice)}</div>` : '';
     let priceColor = isOffer ? 'color:var(--c-err)' : '';
     
+    let ctrlHtml = q > 0 ? `
+        <div class="card-sq-qty-box">
+            <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', -1)">-</button>
+            <span class="sq-val">${q}</span>
+            <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>
+        </div>
+    ` : `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>`;
+    
     return `
-    <div class="card-sq card-sq-${item.id}" onclick="openQuickView('${item.id}')">
-        ${q > 0 ? `<div class="card-sq-qty">${q}</div>` : ''}
-        <div class="card-sq-img-area">
+    <div class="card-sq card-sq-${item.id} ${inCart}">
+        <div class="card-sq-img-area" onclick="openQuickView('${item.id}')">
             <img src="${item.img}" class="card-sq-img" loading="lazy">
         </div>
-        <div class="card-sq-bottom">
-            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+        <div class="card-sq-bottom" onclick="openQuickView('${item.id}')">
+            <div style="display:flex; flex-direction:column; align-items:flex-start; flex:1;">
                 ${oldPriceHtml}
                 <span class="card-sq-price" style="${priceColor}">${fmt(item.price)}</span>
             </div>
-            <div class="card-sq-plus">${q > 0 ? '✓' : '+'}</div>
+            <div class="card-sq-ctrls" id="ctrl-${item.id}">
+                ${ctrlHtml}
+            </div>
         </div>
     </div>`;
 }
 
-/* --- MODAL QUICK VIEW (OPÇÃO 2) --- */
+/* --- MODAL QUICK VIEW E ATUALIZAÇÕES --- */
 window.openQuickView = function(id) {
     const p = STATE.prods.find(x => x.id === id);
     if(!p) return;
     
     $('qv-img').src = p.img;
-    $('qv-name').innerText = formatName(p.name);
+    const titleEl = $('qv-name');
+    titleEl.innerText = formatName(p.name);
+    titleEl.dataset.id = id;
     
     const isOffer = p.oldPrice && p.oldPrice > p.price;
     if(isOffer) {
@@ -705,30 +726,22 @@ window.openQuickView = function(id) {
 }
 
 window.renderQuickViewAction = function(id) {
-    const p = STATE.prods.find(x => x.id === id);
     const q = STATE.cart[id] || 0;
-    
     let html = '';
     if(q === 0) {
-        html = `<button class="btn-modal primary" style="background:#25D366; width:100%; padding:16px; border-radius:12px; font-size:1.05rem;" onclick="addFromQuickView('${id}')">ADICIONAR 1 UN</button>`;
+        html = `<button class="btn-modal primary" style="background:#25D366; width:100%; padding:16px; border-radius:12px; font-size:1.05rem;" onclick="upd('${id}', 1)">ADICIONAR 1 UN</button>`;
     } else {
         html = `
         <div class="qty-row" style="height: 52px; max-width: 220px; margin: 0 auto; border-radius: 14px; background:#f1f5f9; border:1px solid var(--c-bd);">
-             <button class="btn-qty" style="width: 50px; font-size: 1.6rem; background:transparent; box-shadow:none;" onclick="upd('${id}', -1); renderQuickViewAction('${id}')">-</button>
+             <button class="btn-qty" style="width: 50px; font-size: 1.6rem; background:transparent; box-shadow:none;" onclick="upd('${id}', -1)">-</button>
              <input class="qty-inp" type="number" value="${q}" style="font-size: 1.3rem;" readonly>
-             <button class="btn-qty" style="width: 50px; font-size: 1.6rem; color: var(--c-ok); background:transparent; box-shadow:none;" onclick="upd('${id}', 1); renderQuickViewAction('${id}')">+</button>
+             <button class="btn-qty" style="width: 50px; font-size: 1.6rem; color: var(--c-ok); background:transparent; box-shadow:none;" onclick="upd('${id}', 1)">+</button>
         </div>
         `;
     }
     $('qv-action-area').innerHTML = html;
 }
 
-window.addFromQuickView = function(id) {
-    upd(id, 1);
-    $('modal-quick-view').close();
-}
-
-/* UPDATE CARRINHO E VISUAIS DOS CARDS */
 function upd(id, delta){
     const p = STATE.prods.find(x=>x.id===id);
     if(!p) return;
@@ -752,24 +765,26 @@ function upd(id, delta){
         STATE.cartOrder = STATE.cartOrder.filter(x=>x!==id);
     }
     
-    // Atualiza badges em todos os lugares onde este card aparece
+    // Atualiza todos os cards visuais inline
     document.querySelectorAll(`.card-sq-${id}`).forEach(el => {
-        let badge = el.querySelector('.card-sq-qty');
-        let plus = el.querySelector('.card-sq-plus');
+        if(next > 0) el.classList.add('in-cart');
+        else el.classList.remove('in-cart');
         
-        if (next > 0) {
-            if (!badge) {
-                badge = document.createElement('div');
-                badge.className = 'card-sq-qty';
-                el.insertBefore(badge, el.firstChild);
+        const ctrl = el.querySelector('.card-sq-ctrls');
+        if(ctrl) {
+            if(next > 0) {
+                ctrl.innerHTML = `<div class="card-sq-qty-box"><button class="sq-btn" onclick="event.stopPropagation(); upd('${id}', -1)">-</button><span class="sq-val">${next}</span><button class="sq-btn" onclick="event.stopPropagation(); upd('${id}', 1)">+</button></div>`;
+            } else {
+                ctrl.innerHTML = `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${id}', 1)">+</button>`;
             }
-            badge.innerText = next;
-            if(plus) plus.innerText = '✓';
-        } else {
-            if (badge) badge.remove();
-            if(plus) plus.innerText = '+';
         }
     });
+
+    // Se a janela quick view estiver aberta para esse item, atualize-a ao vivo sem fechar
+    const qvName = $('qv-name');
+    if(qvName && qvName.dataset.id === id && document.getElementById('modal-quick-view').open) {
+        renderQuickViewAction(id);
+    }
     
     if((cur===0 && next>0) || (cur>0 && next===0)){
         setTimeout(renderCestaAtiva, 50);
