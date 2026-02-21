@@ -8,18 +8,19 @@
 <title>Super Cestas Básicas Dona Antônia</title>
 <style>
 :root {
-    /* PALETA PROFISSIONAL */
+    /* PALETA PROFISSIONAL (Ajustada para melhor contraste e leveza) */
     --c-p: #0f172a;      /* Texto Principal */
     --c-s: #334155;      /* Texto Secundário */
     --c-t: #64748b;      /* Texto Terciário */
     --c-a: #ea580c;      /* Ação Principal (Laranja) */
     --c-ok: #15803d;     /* Sucesso */
     --c-err: #dc2626;    /* Erro */
-    --c-bg: #f8fafc;     /* Fundo Geral */
+    --c-bg: #f8fafc;     /* Fundo Geral (Mais limpo e claro) */
     --c-surf: #ffffff;   /* Superfície Cards */
-    --c-bd: #e2e8f0;     /* Bordas sutis */
+    --c-bd: #e2e8f0;     /* Bordas mais sutis */
     --font: 'Inter', system-ui, sans-serif;
     
+    /* Sombras mais difusas e modernas */
     --sh-card: 0 4px 12px rgba(0, 0, 0, 0.04); 
     --sh-float: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
 }
@@ -92,7 +93,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     .banner-card { flex: 1; max-width: none; width: auto; }
 }
 
-/* SECTIONS PÁGINA ÚNICA */
+/* SECTIONS PÁGINA ÚNICA (Removemos margens de rolagem automáticas para usar JS preciso) */
 .page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
 .section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
 
@@ -177,7 +178,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .qty-inp::-webkit-outer-spin-button,.qty-inp::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 
-/* APP TAB BAR (Bottom Navigation) - DIMINUÍDA */
+/* APP TAB BAR (ESTILO MERCADO LIVRE) */
 .bottom-nav-bar {
     position: fixed; bottom: 0; left: 0; width: 100%;
     background: #fff; display: flex; justify-content: space-around; align-items: center;
@@ -187,18 +188,35 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 }
 .tab-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    flex: 1; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; position: relative;
+    width: 60px; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; position: relative;
     transition: color 0.2s, transform 0.1s;
 }
 .tab-item:active { transform: scale(0.95); }
 .tab-item.active { color: var(--c-a); font-weight: 800; }
 .tab-icon { font-size: 1.25rem; line-height: 1; }
 .tab-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* BOTAO CENTRAL CARRINHO (FLOAT/ELEVADO) */
+.cart-fab-wrapper {
+    position: relative; top: -15px; width: 60px; height: 60px;
+    background: var(--c-p); color: #fff !important;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px rgba(15,23,42,0.25); border: 4px solid #fff;
+    z-index: 110; flex-shrink: 0;
+}
+.cart-fab-wrapper:active { transform: scale(0.95); }
+.cart-fab-wrapper .tab-icon { font-size: 1.4rem; }
 .cart-badge {
-    position: absolute; top: 4px; right: calc(50% - 18px);
+    position: absolute; top: -2px; right: -2px;
     background: var(--c-err); color: #fff; font-size: 0.65rem; font-weight: 900;
-    min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
     border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 0 4px; display: none;
+}
+
+/* AJUSTES PARA DESKTOP (Centralização e Layout) */
+@media(min-width: 800px) {
+    .bottom-nav-bar { justify-content: center; gap: 30px; }
+    .chips-bar { justify-content: center; }
 }
 
 /* MODAIS GERAIS */
@@ -343,20 +361,22 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
 <nav class="bottom-nav-bar">
     <div class="tab-item" id="btn-nav-cesta" onclick="goToMinhaCesta()">
-        <div class="tab-icon">📦</div><div class="tab-label">Minha Cesta</div>
+        <div class="tab-icon">📦</div><div class="tab-label">Cesta</div>
     </div>
     <div class="tab-item" id="btn-nav-ofertas" onclick="scrollToSection('section-ofertas', 'btn-nav-ofertas')">
         <div class="tab-icon">🔥</div><div class="tab-label">Ofertas</div>
     </div>
+    
+    <div class="tab-item cart-fab-wrapper" onclick="openCheckout()">
+        <div class="cart-badge" id="badge-count">0</div>
+        <div class="tab-icon">🛒</div>
+    </div>
+
     <div class="tab-item" id="btn-nav-combos" onclick="scrollToSection('section-combos', 'btn-nav-combos')">
         <div class="tab-icon">🎁</div><div class="tab-label">Combos</div>
     </div>
     <div class="tab-item" id="btn-nav-ate2" onclick="scrollToSection('section-ate2', 'btn-nav-ate2')">
         <div class="tab-icon">🤑</div><div class="tab-label">R$ 2</div>
-    </div>
-    <div class="tab-item" onclick="openCheckout()" style="color:var(--c-p);">
-        <div class="cart-badge" id="badge-count">0</div>
-        <div class="tab-icon">🛒</div><div class="tab-label">Carrinho</div>
     </div>
 </nav>
 
@@ -493,30 +513,24 @@ async function init(){
 
 /* --- RENDERIZAÇÃO PÁGINA ÚNICA E PAGINAÇÃO INTELIGENTE --- */
 function renderHome() {
-    STATE.lists = {}; // Reset list definitions
+    STATE.lists = {}; 
     
-    // Cestas
     if(STATE.baskets.length > 0) renderPaginated('grid-cestas', 'cestas', STATE.baskets, 10, 'BASKET');
     else $('section-cestas').style.display = 'none';
 
-    // Minha Cesta (Verifica se há produtos)
     renderCestaAtiva();
 
-    // Ofertas
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     if(ofertas.length > 0) { $('section-ofertas').style.display = 'block'; renderPaginated('grid-ofertas', 'ofertas', ofertas, 10, 'PROD'); }
     else $('section-ofertas').style.display = 'none';
 
-    // Combos
     if(STATE.combos && STATE.combos.length > 0) { $('section-combos').style.display = 'block'; renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO'); }
     else $('section-combos').style.display = 'none';
 
-    // Até R$ 2
     const ate2 = STATE.prods.filter(p => p.price <= 2.00);
     if(ate2.length > 0) { $('section-ate2').style.display = 'block'; renderPaginated('grid-ate2', 'ate2', ate2, 10, 'PROD'); }
     else $('section-ate2').style.display = 'none';
 
-    // Corredores
     let macros = Object.keys(STATE.departamentos).sort();
     let chipsHtml = '';
     let corredoresHtml = '';
@@ -583,7 +597,18 @@ function renderCestaAtiva() {
     }
 }
 
-/* --- BOTTOM NAV E ROLAGEM MATEMÁTICA EXATA --- */
+/* --- ROLAGEM MATEMÁTICA INTERNA (À PROVA DE FALHAS) --- */
+function smoothScrollTo(elementId, offset) {
+    const el = document.getElementById(elementId);
+    const stage = document.getElementById('scroll-stage');
+    if(el && stage) {
+        const stageRect = stage.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const targetY = stage.scrollTop + (elRect.top - stageRect.top) - offset;
+        stage.scrollTo({ top: targetY, behavior: 'smooth' });
+    }
+}
+
 window.updateBottomNav = function(activeId) {
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     if(activeId) {
@@ -594,22 +619,13 @@ window.updateBottomNav = function(activeId) {
 
 window.goToMinhaCesta = function() {
     updateBottomNav('btn-nav-cesta');
-    let sec = document.getElementById(STATE.cartOrder.length > 0 ? 'section-cesta-ativa' : 'section-cestas');
-    if(sec) {
-        // Altura do cabeçalho ~80px
-        const y = sec.getBoundingClientRect().top + window.scrollY - 80;
-        window.scrollTo({top: y, behavior: 'smooth'});
-    }
+    let secId = STATE.cartOrder.length > 0 ? 'section-cesta-ativa' : 'section-cestas';
+    smoothScrollTo(secId, 10);
 }
 
 window.scrollToSection = function(sectionId, btnId) {
     updateBottomNav(btnId);
-    let sec = document.getElementById(sectionId);
-    if(sec) {
-        // Altura do cabeçalho ~80px
-        const y = sec.getBoundingClientRect().top + window.scrollY - 80;
-        window.scrollTo({top: y, behavior: 'smooth'});
-    }
+    smoothScrollTo(sectionId, 10);
 }
 
 window.scrollToMacro = function(safeM) {
@@ -619,15 +635,9 @@ window.scrollToMacro = function(safeM) {
     let chip = document.getElementById(`chip-${safeM}`);
     if(chip) {
         chip.classList.add('active');
-        chip.scrollIntoView({behavior: 'smooth', block: 'nearest', inline: 'center'});
     }
     
-    const el = document.getElementById(`macro-${safeM}`);
-    if(el) {
-        // Altura exata: Cabeçalho (~80px) + Barra de Chips (~60px) = 140px
-        const y = el.getBoundingClientRect().top + window.scrollY - 145;
-        window.scrollTo({top: y, behavior: 'smooth'}); 
-    }
+    smoothScrollTo(`macro-${safeM}`, 55); 
 }
 
 /* --- BANNERS --- */
@@ -981,7 +991,7 @@ function clearCart(){
         $('section-cesta-ativa').style.display='none'; 
         $('modal-checkout').close(); 
         renderHome(); 
-        window.scrollTo(0,0); 
+        document.getElementById('scroll-stage').scrollTo(0,0);
     }
 }
 
