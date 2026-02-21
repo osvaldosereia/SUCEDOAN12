@@ -75,6 +75,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 /* SECTIONS PÁGINA ÚNICA */
 .page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
 .section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
+.cat-title { font-size: 1.05rem; font-weight: 800; padding: 10px 20px 5px; color: var(--c-s); text-transform: capitalize; }
 
 /* GRADES (UNIFICADA EM 2 COLUNAS MOBILE, 5 DESKTOP) */
 .grid-wrapper, .grid-produtos {
@@ -87,6 +88,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 @media(max-width:600px){
     .grid-wrapper, .grid-produtos { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 5px 15px 15px; }
     .section-title { padding: 15px 15px 10px; }
+    .cat-title { padding: 10px 15px 5px; }
 }
 
 /* CARDS GRANDES (Cestas e Combos Adaptados para 2 Colunas) */
@@ -303,7 +305,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     </div>
 
     <div id="wrapper-sections">
-        <div id="section-cestas" class="page-section" style="padding-top:15px;">
+        <div id="section-cestas" class="page-section" style="display:none; padding-top:15px;">
             <div class="section-title">Cestas Básicas</div>
             <div class="grid-wrapper" id="grid-cestas"></div>
         </div>
@@ -314,12 +316,12 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <div class="grid-produtos" id="grid-cesta-ativa"></div>
         </div>
 
-        <div id="section-ofertas" class="page-section" style="padding-top:15px;">
+        <div id="section-ofertas" class="page-section" style="display:none; padding-top:15px;">
             <div class="section-title">🔥 Ofertas da Semana</div>
             <div class="grid-produtos" id="grid-ofertas"></div>
         </div>
 
-        <div id="section-combos" class="page-section">
+        <div id="section-combos" class="page-section" style="display:none;">
             <div class="section-title">🎁 Combos Especiais</div>
             <div class="grid-wrapper" id="grid-combos"></div>
         </div>
@@ -328,7 +330,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <div id="grid-corredores-wrap"></div>
         </div>
         
-        <div id="section-ate2" class="page-section" style="padding-top:15px;">
+        <div id="section-ate2" class="page-section" style="display:none; padding-top:15px;">
             <div class="section-title">🤑 Até R$ 2,00</div>
             <div class="grid-produtos" id="grid-ate2"></div>
         </div>
@@ -451,14 +453,31 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 const $=i=>document.getElementById(i);
 const STATE={
     baskets:[], prods:[], coupons:[], combos:[], departamentos:{},
-    cart:{}, cartOrder:[], 
+    cart:{}, cartOrder:[], observer: null,
     mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, coupon:null,
     lists: {}, pageLimits: {}
 };
 
 const MIN_ORDER = 85.00; 
 
+function setupObserver() {
+    if(!STATE.observer) {
+        STATE.observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    let key = entry.target.dataset.list;
+                    if(key) {
+                        STATE.observer.unobserve(entry.target);
+                        loadMore(key);
+                    }
+                }
+            });
+        }, { root: $('scroll-stage'), rootMargin: '400px' });
+    }
+}
+
 async function init(){
+    setupObserver();
     try{
         const[r1,r2,r3,r4,r5]=await Promise.all([
             fetch('produtos-cesta-basica.json?v='+Date.now()),
@@ -492,11 +511,11 @@ async function init(){
     }
 }
 
-/* --- RENDERIZAÇÃO PÁGINA ÚNICA E BOTÃO VER MAIS --- */
+/* --- RENDERIZAÇÃO PÁGINA ÚNICA --- */
 function renderHome() {
     STATE.lists = {}; 
     
-    if(STATE.baskets.length > 0) renderPaginated('grid-cestas', 'cestas', STATE.baskets, 10, 'BASKET');
+    if(STATE.baskets.length > 0) { $('section-cestas').style.display = 'block'; renderPaginated('grid-cestas', 'cestas', STATE.baskets, 10, 'BASKET'); }
     else $('section-cestas').style.display = 'none';
 
     renderCestaAtiva();
@@ -519,11 +538,23 @@ function renderHome() {
     macros.forEach(m => {
         let safeM = m.replace(/\s/g,'-');
         chipsHtml += `<div class="chip" id="chip-${safeM}" onclick="instantScrollToMacro('${safeM}')">${m}</div>`;
-        corredoresHtml += `
-            <div id="macro-${safeM}" class="page-section" style="padding-top:10px;">
-                <div class="section-title">🗂️ ${m}</div>
-                <div class="grid-produtos" id="grid-${safeM}"></div>
-            </div>`;
+        
+        let cats = STATE.departamentos[m] || [];
+        let macroHtml = `<div id="macro-${safeM}" class="page-section" style="display:none; padding-top:10px;">
+                            <div class="section-title">🗂️ ${m}</div>`;
+        let hasProds = false;
+        
+        cats.forEach(c => {
+            let safeC = c.replace(/[^a-zA-Z0-9]/g,'-');
+            let list = STATE.prods.filter(p => p.cat === c);
+            if(list.length > 0) {
+                hasProds = true;
+                macroHtml += `<div class="cat-title">${c}</div>
+                              <div class="grid-produtos" id="grid-${safeM}-${safeC}"></div>`;
+            }
+        });
+        macroHtml += `</div>`;
+        if(hasProds) corredoresHtml += macroHtml;
     });
     
     $('chips-area').innerHTML = chipsHtml;
@@ -532,9 +563,16 @@ function renderHome() {
     macros.forEach(m => {
         let safeM = m.replace(/\s/g,'-');
         let cats = STATE.departamentos[m] || [];
-        let list = STATE.prods.filter(p => cats.includes(p.cat)).sort((a,b)=>a.name.localeCompare(b.name));
-        if(list.length > 0) renderPaginated(`grid-${safeM}`, `macro_${safeM}`, list, 10, 'PROD');
-        else $(`macro-${safeM}`).style.display = 'none';
+        let macroHasProds = false;
+        cats.forEach(c => {
+            let safeC = c.replace(/[^a-zA-Z0-9]/g,'-');
+            let list = STATE.prods.filter(p => p.cat === c).sort((a,b)=>a.name.localeCompare(b.name));
+            if(list.length > 0) {
+                macroHasProds = true;
+                renderPaginated(`grid-${safeM}-${safeC}`, `macro_${safeM}_${safeC}`, list, 10, 'PROD');
+            }
+        });
+        if (macroHasProds) $(`macro-${safeM}`).style.display = 'block';
     });
 }
 
@@ -552,11 +590,17 @@ function renderPaginated(containerId, listKey, list, step, type) {
     }).join('');
 
     if(limit < list.length) {
-        html += `<div style="grid-column: 1/-1; padding: 15px 0;"><button class="btn-big-action" style="background:var(--c-p); color:#fff; border-radius: 20px; font-size: 0.9rem; padding: 14px; text-transform: uppercase; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2);" onclick="loadMore('${listKey}')">Mostrar mais ${type === 'PROD' ? 'produtos' : 'itens'} ⬇</button></div>`;
+        html += `<div class="infinite-sentinel" data-list="${listKey}" style="grid-column: 1/-1; height: 10px;"></div>`;
     }
     
     let c = $(containerId);
-    if(c) c.innerHTML = html || '<p style="padding:20px; color:var(--c-t); font-weight:600;">Nenhum produto encontrado.</p>';
+    if(c) {
+        c.innerHTML = html || '<p style="padding:20px; color:var(--c-t); font-weight:600;">Nenhum produto encontrado.</p>';
+        let sentinel = c.querySelector('.infinite-sentinel');
+        if(sentinel && STATE.observer) {
+            STATE.observer.observe(sentinel);
+        }
+    }
 }
 
 window.loadMore = function(listKey) {
@@ -615,7 +659,6 @@ document.querySelectorAll('.chips-bar .chip').forEach(el => el.classList.remove(
     if(el && stage) {
         const stageRect = stage.getBoundingClientRect();
         const elRect = el.getBoundingClientRect();
-        // Nenhuma margem extra necessária porque os chips não estão dentro do scroll-stage
         const targetY = stage.scrollTop + (elRect.top - stageRect.top) - 10;
         stage.scrollTo({ top: targetY, behavior: 'auto' });
     }
