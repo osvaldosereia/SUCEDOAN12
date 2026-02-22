@@ -538,6 +538,7 @@ async function init(){
                 name:p.nome, price:parseFloat(p.preco),
                 oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null,
                 stock:parseInt(p.estoque)||0,
+                validade: p.validade || p.Validade || null,
                 cat:(p.categoria||p.Categoria||"Outros").trim(),
                 img:`img/produtos/${p.codigo||p.id}.webp`
             }));
@@ -760,6 +761,11 @@ function cardProdHoriz(item){
     let oldPriceHtml = isOffer ? `<div style="font-size:0.65rem; color:var(--c-t); text-decoration:line-through; line-height:1;">${fmt(item.oldPrice)}</div>` : '';
     let priceColor = isOffer ? 'color:var(--c-err)' : '';
     
+    let tags = [];
+    if(item.validade) tags.push(`Validade: ${item.validade}`);
+    if(item.stock > 0 && item.stock <= 3) tags.push(`Restam ${item.stock} ou menos`);
+    let tagsHtml = tags.length > 0 ? `<div style="width:100%; margin-top:4px; padding-top:4px; border-top:1px dashed var(--c-bd); font-size:0.6rem; color:var(--c-t); font-weight:500;">${tags.join(' | ')}</div>` : '';
+    
     let ctrlHtml = q > 0 ? `
         <div class="card-sq-qty-box">
             <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', -1)">-</button>
@@ -778,6 +784,7 @@ function cardProdHoriz(item){
                 ${oldPriceHtml}
                 <span class="card-sq-price" style="${priceColor}">${fmt(item.price)}</span>
                 <div class="card-sq-name-sub">${formatName(item.name)}</div>
+                ${tagsHtml}
             </div>
             <div class="card-sq-ctrls" id="ctrl-${item.id}">
                 ${ctrlHtml}
