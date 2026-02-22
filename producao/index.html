@@ -75,8 +75,6 @@
         .card-footer { padding: 8px 12px; background: #f8fafc; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: center; }
         .btn-sq { aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; border-radius: 6px; border: 1px solid var(--border); background: white; color: var(--text-secondary); cursor: pointer; transition: 0.2s; padding: 0; width: 100%; }
         .btn-sq:hover { border-color: var(--accent); color: var(--accent); background: #f1f5f9; }
-        .btn-sq.sync { background: var(--success); color: white; border-color: var(--success); }
-        .btn-sq.sync:hover { background: #15803d; }
         .btn-sq.inactive-state { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
         .btn-sq.offer-active { background: #dc2626; color: white; border-color: #dc2626; }
         
@@ -313,6 +311,15 @@
     <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
 
     <script>
+        const USERS = { "090479": "OSVALDO", "170484": "ANDRE", "098765": "CLAUDENIL", "567890": "KELY", "121212": "JOSE", "123456": "ROSINA" };
+        let availableCategories = []; 
+        const STORAGE_KEY = 'sucedoan_data_v26';
+        const CONFIG_KEY = 'sucedoan_config';
+        const LOGIN_KEY = 'sucedoan_saved_login'; 
+        const GONDOLAS = Array.from({length: 20}, (_, i) => String(i + 1).padStart(2, '0'));
+        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+        const SEM_LOCAL = "SEM LOCAL";
+        
         let products = [];
         let currentEditingId = null;
         let currentUser = null;
@@ -396,7 +403,6 @@
                 }
             }, 1000);
         }
-        // -------------------------------------
 
         function debounce(func, wait) {
             let timeout;
@@ -522,12 +528,12 @@
             });
         });
 
-        function exportarCSV() {
-            if (products.length === 0) return alert("Nada para exportar.");
-            const produtosAtivos = products.filter(p => p.situacao !== 'I');
-            if (produtosAtivos.length === 0) return alert("Nenhum produto ativo para exportar.");
+        // OTIMIZAÇÃO: Unificação das funções de exportação (DRY: Don't Repeat Yourself)
+        function executeCsvExport(produtosArray, fileName) {
+            if (produtosArray.length === 0) return alert("Nenhum produto para exportar.");
             const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
-            const dadosParaExportar = produtosAtivos.map(p => {
+            
+            const dadosParaExportar = produtosArray.map(p => {
                 const linha = {};
                 const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
                 p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque);
@@ -537,24 +543,20 @@
                 colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
                 return linha;
             });
+            
             const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
             const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-            l.download = "produtos_export_ativos.csv"; l.click();
+            l.download = fileName; l.click();
+        }
+
+        function exportarCSV() {
+            const produtosAtivos = products.filter(p => p.situacao !== 'I');
+            executeCsvExport(produtosAtivos, "produtos_export_ativos.csv");
         }
 
         function exportSingleCSV(sku) {
             const p = products.find(x => x.codigo === sku);
-            if (!p) return;
-            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
-            const linha = {}; const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-            p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); 
-            p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = p.url_imagem || ""; p['NCM'] = p.ncm; 
-            p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Categoria do produto'] = p.categoria; 
-            p['Origem'] = '0'; p['Unidade'] = 'un'; p['Grupo de produtos'] = '';
-            colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
-            const csv = Papa.unparse({ fields: colunasModelo, data: [linha] }, { quotes: true, delimiter: ";" });
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
-            l.download = `produto_${sku}.csv`; l.click();
+            if (p) executeCsvExport([p], `produto_${sku}.csv`);
         }
 
         function openPrintListModal() {
@@ -627,7 +629,6 @@
                     if(check.ok) { const json = await check.json(); sha = json.sha; }
                 } catch(e) {}
                 
-                // Removido a indentação (null, 2) para otimizar tamanho do JSON gigante
                 const contentStr = JSON.stringify(products);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
                 const body = { message: `Backup completo: bancodedados.json via Painel`, content: base64 };
@@ -653,7 +654,6 @@
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`;
             
             try {
-                // A mágica anti-CORS e anti-limite do GitHub: solicitar o formato 'raw' diretamente pela API principal
                 const res = await fetch(url, { 
                     headers: { 
                         "Authorization": `token ${cfg.token}`,
@@ -663,7 +663,6 @@
                 
                 if(!res.ok) throw new Error("Arquivo bancodedados.json não encontrado no site ou sem permissão de acesso.");
                 
-                // Como pedimos o formato raw, a resposta já é o array de produtos direto, sem Base64!
                 const importedProducts = await res.json();
                 
                 if(Array.isArray(importedProducts)) {
@@ -850,13 +849,20 @@
             return checkDigit.toString();
         }
 
-        function createNewProduct() {
+        // OTIMIZAÇÃO: Funções auxiliares para gerar SKU e EAN sem repetir código
+        function generateNewSku() {
+            return Date.now().toString().slice(-8);
+        }
+        
+        function generateNewEan() {
             const timestamp = Date.now().toString();
-            const sku = timestamp.slice(-8); 
-            
             const baseEan = "2" + timestamp.slice(-11);
-            const checkDigit = calculateEanCheckDigit(baseEan);
-            const internalEan = baseEan + checkDigit;
+            return baseEan + calculateEanCheckDigit(baseEan);
+        }
+
+        function createNewProduct() {
+            const sku = generateNewSku(); 
+            const internalEan = generateNewEan();
             
             const newProd = {
                 codigo: sku,
@@ -898,11 +904,8 @@
             if(!p) return;
             if(!confirm("Duplicar este produto?")) return;
             
-            const timestamp = Date.now().toString();
-            const newSku = timestamp.slice(-8);
-            const baseEan = "2" + timestamp.slice(-11);
-            const checkDigit = calculateEanCheckDigit(baseEan);
-            const internalEan = baseEan + checkDigit;
+            const newSku = generateNewSku();
+            const internalEan = generateNewEan();
             
             const newProd = JSON.parse(JSON.stringify(p));
             newProd.codigo = newSku;
@@ -931,12 +934,8 @@
         function generateInternalEan(sku) {
             const p = products.find(x => x.codigo === sku);
             if(!p) return;
-            const timestamp = Date.now().toString();
             
-            const baseEan = "2" + timestamp.slice(-11);
-            const checkDigit = calculateEanCheckDigit(baseEan);
-            const internalEan = baseEan + checkDigit;
-
+            const internalEan = generateNewEan();
             updateProduct(sku, 'gtin', internalEan);
             
             const container = document.getElementById('product-card-container');
@@ -1307,9 +1306,7 @@
             renderGrid(document.getElementById('search-input').value, true);
         }
         
-        // --- FUNÇÃO DE MAPEAMENTO ESTRITO (CORRIGIDA) ---
         function prepararProdutoParaSite(p) {
-            // Cria um objeto novo Apenas com os 9 campos necessários
             const item = {
                 id: Number(p['ID'] || p.id || 0),
                 nome: p.nome || "",
@@ -1321,7 +1318,6 @@
                 estoque: Number(p.estoque || 0)
             };
             
-            // Só adiciona preco_antigo se estiver em oferta e possuir o valor
             if(p.em_oferta && p.preco_antigo) {
                 item.preco_antigo = Number(p.preco_antigo);
             }
@@ -1329,7 +1325,6 @@
             return item;
         }
 
-        // --- FUNÇÕES DE SINCRONIZAÇÃO DA FILA (CORRIGIDAS E SEGURAS) ---
         function queueSyncProductsToGithub() {
             if(!confirm("Isso atualizará o arquivo produtos.json no GitHub com todos os produtos ATIVOS. A fila aguardará 240s após o envio. Continuar?")) return;
             addToQueue('full', 'Site Completo', async () => {
@@ -1359,7 +1354,7 @@
                 
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 if(!res.ok) throw new Error(await res.text());
-            }, 240000); // Aguarda 240 segundos APÓS enviar
+            }, 240000); 
         }
 
         function queueSingleProductJson(sku) {
@@ -1376,7 +1371,6 @@
                 let sha = null; 
                 let currentData = [];
                 
-                // --- PROTEÇÃO RIGOROSA: Aborta se falhar a leitura para evitar apagar outros produtos ---
                 const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
                 if (check.ok) { 
                     const json = await check.json(); 
@@ -1406,7 +1400,7 @@
                 
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
                 if(!res.ok) throw new Error(await res.text());
-            }, 60000); // Aguarda 60 segundos APÓS enviar
+            }, 60000); 
         }
 
         function queueImageUpload() {
@@ -1440,13 +1434,11 @@
                     const card = document.getElementById('card-' + sku);
                     if(card) { const img = card.querySelector('.card-img'); if(img) img.src = p.url_imagem; card.classList.add('status-changed'); }
                 }
-            }, 60000); // Aguarda 60 segundos APÓS enviar
+            }, 60000); 
             
             closeModal('modal-editor'); 
         }
 
-        // -----------------------------------------------------------
-        
         function formatNum(n) { return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'; }
 
         function attemptLogin() {
