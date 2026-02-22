@@ -15,8 +15,8 @@
     --c-a: #ea580c;      /* Ação Principal (Laranja) */
     --c-ok: #15803d;     /* Sucesso */
     --c-err: #dc2626;    /* Erro */
-    --c-bg: #e2e8f0;     /* Fundo Geral */
-    --c-surf: #ffffff;   /* Superfície Cards */
+    --c-bg: #ffffff;     /* Fundo Geral */
+    --c-surf: #e2e8f0;   /* Superfície Cards */
     --c-bd: #e2e8f0;     /* Bordas sutis */
     --font: 'Inter', system-ui, sans-serif;
     
@@ -237,6 +237,13 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .chk-item-qtd { color: var(--c-a); font-weight: 800; min-width: 25px; text-align: right;}
 .chk-item-name { font-weight: 500; text-align: left; flex: 1; line-height: 1.3;}
 
+/* BOTÕES DE OPÇÃO DE ENTREGA */
+.del-option { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border: 2px solid var(--c-bd); border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #fff; }
+.del-option.selected { border-color: var(--c-ok); background: #f0fdf4; box-shadow: 0 4px 12px rgba(21,128,61,0.1); }
+.del-opt-title { font-weight: 800; font-size: 0.95rem; color: var(--c-p); }
+.del-opt-date { font-size: 0.8rem; color: var(--c-s); margin-top: 2px; font-weight: 500;}
+.del-opt-badge { font-size: 0.75rem; font-weight: 800; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; text-align: right; }
+
 /* BOTÕES CHECKOUT */
 #btn-send-order { 
     background: #25D366; color: #fff; font-size: 1.05rem; padding: 16px; border-radius: 14px; 
@@ -412,8 +419,17 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; margin-top: 10px; border-bottom: 1px solid var(--c-bd); padding-bottom: 10px;">
-            <h3 style="text-transform:uppercase; font-weight:900; color:var(--c-p); margin:0;">Seu Pedido</h3>
+        <div style="margin-bottom: 15px; margin-top: 10px; border-bottom: 1px solid var(--c-bd); padding-bottom: 10px; text-align: left;">
+            <h3 style="text-transform:uppercase; font-weight:900; color:var(--c-p); margin:0;">1. Receber quando?</h3>
+            <p style="font-size: 0.8rem; color: var(--c-t); margin-top: 4px; font-weight: 500;">Planeje sua entrega e ganhe desconto.</p>
+        </div>
+        
+        <div id="delivery-options-container" style="margin-bottom: 20px;">
+            <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--c-bd); padding-bottom: 10px;">
+            <h3 style="text-transform:uppercase; font-weight:900; color:var(--c-p); margin:0;">2. Seu Pedido</h3>
         </div>
         
         <div class="chk-list-area" id="chk-list"></div>
@@ -455,12 +471,33 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 </dialog>
 
 <script>
+// ==========================================
+// CONFIGURAÇÃO DE ENTREGAS (INTELIGÊNCIA DE DATAS)
+// ==========================================
+const CONFIG_ENTREGA = {
+    horaCorteHoje: 10,       // Até que horas aceita pedido para o mesmo dia (0 a 23)
+    descontoOpcao2: 5.00,    // Desconto para a segunda data disponível
+    descontoOpcao3: 8.00,    // Desconto para a terceira data disponível
+    diasSemanaInativos: [0], // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+    feriados: [              // Adicione ou remova feriados no formato 'DD/MM'
+        '01/01', // Confraternização Universal
+        '21/04', // Tiradentes
+        '01/05', // Dia do Trabalho
+        '07/09', // Independência
+        '12/10', // Nossa Sr.a Aparecida
+        '02/11', // Finados
+        '15/11', // Proclamação da República
+        '25/12'  // Natal
+    ]
+};
+
 const $=i=>document.getElementById(i);
 const STATE={
     baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, descontosValor:[],
     cart:{}, cartOrder:[], observer: null,
     mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, appliedCombos: [], coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
-    lists: {}, pageLimits: {}
+    lists: {}, pageLimits: {},
+    deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
 };
 
 const MIN_ORDER = 85.00; 
@@ -485,8 +522,8 @@ async function init(){
     setupObserver();
     try{
         const[r1,r2,r3,r4,r5,r6]=await Promise.all([
-            fetch('produtos-cesta-basica.json?v='+Date.now()),
-            fetch('produtos.json?v='+Date.now()),
+            fetch('produtos-cesta-basica.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('produtos.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('cupons.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('combos.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('departamento.json?v='+Date.now()).catch(()=>({ok:false})),
@@ -941,6 +978,86 @@ function confirmCombo(id){
     updateTotals();
 }
 
+/* LÓGICA DE GERAÇÃO E SELEÇÃO DAS DATAS DE ENTREGA */
+function renderDeliveryOptions() {
+    let options = [];
+    let date = new Date();
+    let currentHour = date.getHours();
+
+    let diaMesAtual = date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+    let isTodayValid = !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay()) && !CONFIG_ENTREGA.feriados.includes(diaMesAtual);
+    let canDeliverToday = isTodayValid && (currentHour < CONFIG_ENTREGA.horaCorteHoje);
+
+    let checkDate = new Date(date);
+    let iterations = 0;
+    const diasNomes = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+    // Se pode entregar hoje, essa é a opção 1 (Sem desconto)
+    if(canDeliverToday) {
+        options.push({ index: 0, title: 'Receber Hoje', dateStr: diaMesAtual, dayName: diasNomes[date.getDay()], discount: 0 });
+    }
+
+    // Procura os próximos dias válidos (Amanhã, Depois de amanhã, etc)
+    while(options.length < 3 && iterations < 30) {
+        checkDate.setDate(checkDate.getDate() + 1);
+        iterations++;
+        
+        let dOfWeek = checkDate.getDay();
+        let dMes = checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+        let isHoliday = CONFIG_ENTREGA.feriados.includes(dMes);
+        
+        // Só adiciona se não for domingo e não for feriado
+        if(!CONFIG_ENTREGA.diasSemanaInativos.includes(dOfWeek) && !isHoliday) {
+            let discount = 0;
+            if(options.length === 1) discount = CONFIG_ENTREGA.descontoOpcao2;
+            if(options.length === 2) discount = CONFIG_ENTREGA.descontoOpcao3;
+            
+            let title = options.length === 0 ? 'Entrega mais rápida' : 'Agendar';
+            if(iterations === 1 && canDeliverToday) title = 'Receber Amanhã';
+            if(iterations === 2 && canDeliverToday) title = 'Depois de amanhã';
+            if(iterations === 1 && !canDeliverToday) title = 'Amanhã (Mais Rápido)';
+            
+            options.push({ index: options.length, title: title, dateStr: dMes, dayName: diasNomes[dOfWeek], discount: discount });
+        }
+    }
+    
+    STATE.deliveryOptions = options;
+    
+    // Auto-seleciona a primeira opção se nada foi selecionado
+    if(!STATE.selectedDeliveryIndex && STATE.selectedDeliveryIndex !== 0) STATE.selectedDeliveryIndex = 0;
+    
+    // Desenhar HTML
+    let html = '';
+    options.forEach(opt => {
+        let isSelected = STATE.selectedDeliveryIndex === opt.index;
+        let badge = opt.discount > 0 ? `<div class="del-opt-badge">- ${fmt(opt.discount)}</div>` : '';
+        html += `
+        <div class="del-option ${isSelected ? 'selected' : ''}" onclick="selectDeliveryOption(${opt.index})">
+            <div>
+                <div class="del-opt-title">${opt.title}</div>
+                <div class="del-opt-date">${opt.dayName}, ${opt.dateStr}</div>
+            </div>
+            ${badge}
+        </div>`;
+    });
+    
+    let container = $('delivery-options-list');
+    if(container) container.innerHTML = html;
+    
+    // Atualiza o estado
+    let selOpt = options.find(x => x.index === STATE.selectedDeliveryIndex);
+    if(selOpt) {
+        STATE.deliveryDiscount = selOpt.discount;
+        STATE.deliveryDateStr = `${selOpt.dayName}, ${selOpt.dateStr}`;
+    }
+}
+
+window.selectDeliveryOption = function(idx) {
+    STATE.selectedDeliveryIndex = idx;
+    renderDeliveryOptions();
+    updateTotals(); // Recalcula totais instantaneamente
+}
+
 function updateTotals(){
     let sumItems = 0, count = 0;
     Object.entries(STATE.cart).forEach(([id,q])=>{
@@ -1000,6 +1117,11 @@ function updateTotals(){
         }
     }
 
+    // Aplica Desconto de Entrega (Agendamento)
+    if(STATE.deliveryDiscount > 0) {
+        displayTotal -= STATE.deliveryDiscount;
+    }
+
     STATE.valueDiscount = 0;
     STATE.nextDiscountIncentive = "";
     if (STATE.descontosValor && STATE.descontosValor.length > 0) {
@@ -1045,6 +1167,7 @@ function updateTotals(){
         });
     }
     
+    if(STATE.deliveryDiscount > 0) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>`;
     if(STATE.valueDiscount > 0) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto por valor:</span><span>-${fmt(STATE.valueDiscount)}</span></div>`;
     if(STATE.coupon) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Cupom:</span><span>-${fmt(STATE.coupon.desconto)}</span></div>`;
 
@@ -1083,6 +1206,10 @@ function updateTotals(){
 
 function openCheckout(){
     if(STATE.cartOrder.length === 0) return showToast("Seu carrinho está vazio!", "r");
+    
+    // Zera e re-calcula as datas inteligentes antes de exibir
+    STATE.selectedDeliveryIndex = 0;
+    renderDeliveryOptions();
     
     let listHtml = STATE.cartOrder.map(id=>{
         const p = STATE.prods.find(x=>x.id===id);
@@ -1144,13 +1271,15 @@ async function sendOrder(){
         final = Math.max(final + STATE.basketExtraFee, STATE.minBasketPrice);
     }
 
+    final -= STATE.deliveryDiscount;
     final -= STATE.valueDiscount;
 
+    if(STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
     if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
     if(STATE.coupon){ final-=STATE.coupon.desconto; itemsTxt+=`\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
     
-    const msg = `*NOVO PEDIDO*\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
+    const msg = `*NOVO PEDIDO*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
     try{
         fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
@@ -1160,7 +1289,7 @@ async function sendOrder(){
                 pedido:{
                     itens:apiItens,
                     total:final,
-                    outras_despesas: (STATE.mode === 'custom' ? STATE.basketExtraFee : 0) 
+                    outras_despesas: (STATE.mode === 'custom' ? STATE.basketExtraFee : 0) - STATE.deliveryDiscount
                 }
             })
         });
