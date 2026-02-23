@@ -199,6 +199,72 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .modal-card .mc-name { font-size: 0.7rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em; }
 .modal-card .mc-price { font-size: 0.9rem; font-weight: 800; color: var(--c-a); margin-top: auto; }
 .modal-card .mc-qty { font-size: 0.75rem; font-weight: 800; color: #fff; background: var(--c-ok); padding: 2px 6px; border-radius: 4px; width: fit-content; margin-top: 4px; }
+
+/* ==========================================
+   BANNERS PROMOCIONAIS ELEGANTES
+   ========================================== */
+.top-promo-wrap {
+    width: 100%;
+    height: 30px; /* Estreito e discreto */
+    overflow: hidden; /* Esconde os banners que não estão em foco no mobile */
+    position: relative;
+    z-index: 10;
+    background: var(--c-bg);
+}
+
+.top-promo-track {
+    display: flex;
+    flex-direction: column;
+    /* No mobile, usa animação para subir o texto a cada 3 segundos (12s total) */
+    animation: slidePromo 12s infinite cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.promo-item {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+/* Cores Elegantes (Tons pastéis com texto escuro) */
+.promo-item.c1 { background: #e0e7ff; color: #3730a3; } /* Azul suave */
+.promo-item.c2 { background: #dcfce7; color: #166534; } /* Verde suave */
+.promo-item.c3 { background: #ffedd5; color: #9a3412; } /* Laranja suave */
+.promo-item.c4 { background: #f3e8ff; color: #6b21a8; } /* Roxo suave */
+
+/* Animação que faz a rolagem no celular */
+@keyframes slidePromo {
+    0%, 20%   { transform: translateY(0); }          /* Mostra item 1 */
+    25%, 45%  { transform: translateY(-30px); }      /* Mostra item 2 */
+    50%, 70%  { transform: translateY(-60px); }      /* Mostra item 3 */
+    75%, 95%  { transform: translateY(-90px); }      /* Mostra item 4 */
+    100%      { transform: translateY(0); }          /* Volta ao item 1 de forma suave */
+}
+
+/* Comportamento no Desktop (Lado a Lado) */
+@media(min-width: 800px) {
+    .top-promo-wrap {
+        height: auto; /* Remove a altura fixa */
+    }
+    .top-promo-track {
+        flex-direction: row; /* Coloca um do lado do outro */
+        animation: none; /* Desliga a animação rotativa */
+        transform: none !important;
+    }
+    .promo-item {
+        flex: 1; /* Divide o espaço igualmente entre os 4 */
+        border-right: 1px solid rgba(0,0,0,0.05); /* Separador sutil */
+    }
+    .promo-item:last-child {
+        border-right: none;
+    }
+}
+
 </style>
 </head>
 <body>
@@ -691,6 +757,7 @@ function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL
 function showToast(m,t){ const d=document.createElement('div'); d.className='toast'; d.style.background=t==='r'?'#dc2626':'#15803d'; d.innerText=m; $('toast-container').appendChild(d); setTimeout(()=>d.remove(),2500); }
 
 init();
+
 </script>
 </body>
 </html>
