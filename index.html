@@ -383,8 +383,8 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 // ==========================================
 const CONFIG_ENTREGA = {
     horaCorteHoje: 10,       // Até que horas aceita pedido para o mesmo dia (0 a 23)
-    descontoOpcao2: 3.00,    // Desconto para a segunda data disponível
-    descontoOpcao3: 6.00,    // Desconto para a terceira data disponível
+    descontoOpcao2: 5.00,    // Desconto para a segunda data disponível
+    descontoOpcao3: 8.00,    // Desconto para a terceira data disponível
     diasSemanaInativos: [0], // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
     feriados: ['01/01', '21/04', '01/05', '07/09', '12/10', '02/11', '15/11', '25/12']
 };
@@ -650,33 +650,24 @@ async function sendOrder(){
     let apiItens = []; let itemsTxt = ""; let total = parseMoney($('chk-total').innerText);
     Object.entries(STATE.cart).forEach(([id,q])=>{ const p=STATE.prods.find(x=>x.id===id); if(p){ itemsTxt += `${q}x ${p.name}\n`; apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price}); } });
 
-    // Montagem do texto SEM caracteres de controle problemáticos
-    let obs = `Entrega: ${STATE.deliveryDateStr} | `;
+    let obs = `Entrega: ${STATE.deliveryDateStr}\n`;
     if(STATE.baseBasket){
-        obs += `Cesta Base: ${STATE.baseBasket.nome} | `;
+        obs += `Cesta Base: ${STATE.baseBasket.nome}\n\n`;
         let orig = {}; STATE.baseBasket.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) orig[p.id] = parseInt(q); });
         let rem = []; let add = [];
         Object.keys(orig).forEach(id => { if((STATE.cart[id]||0) < orig[id]) rem.push(`${orig[id]-(STATE.cart[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
         Object.keys(STATE.cart).forEach(id => { if(STATE.cart[id] > (orig[id]||0)) add.push(`${STATE.cart[id]-(orig[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
-        if(rem.length) obs += ` RETIRADOS: [${rem.join(', ')}] | `;
-        if(add.length) obs += ` ADICIONADOS: [${add.join(', ')}]`;
+        if(rem.length) obs += `=== RETIRADOS ===\n${rem.join('\n')}\n\n`;
+        if(add.length) obs += `=== ADICIONADOS ===\n${add.join('\n')}\n\n`;
     }
 
     try {
         fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method:"POST", headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({ 
-                cliente:{nome:"Cliente Site"}, 
-                pedido:{ 
-                    itens: apiItens, 
-                    total: total, 
-                    outras_despesas: STATE.basketExtraFee, 
-                    observacoes: obs.trim() 
-                } 
-            })
+            body:JSON.stringify({ cliente:{nome:"Cliente Site"}, pedido:{ itens: apiItens, total: total, outras_despesas: STATE.basketExtraFee, observacoes: obs } })
         });
     } catch(e) {}
-    window.location.href = `https://wa.me/5565996813588?text=${encodeURIComponent("*NOVO PEDIDO*\n\n"+obs.replace(/ \| /g, '\n')+"\n*TOTAL: "+fmt(total)+"*")}`;
+    window.location.href = `https://wa.me/5565996813588?text=${encodeURIComponent("*NOVO PEDIDO*\n\n"+obs+"\n*TOTAL: "+fmt(total)+"*")}`;
 }
 
 function formatName(s){ return s?s.toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
