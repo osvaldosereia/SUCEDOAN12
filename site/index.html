@@ -534,7 +534,7 @@ async function init(){
             let t=(await r2.text()).trim().replace(/,(\s+)?$/,"");
             let raw = JSON.parse(t.startsWith('[')?t:'['+t+']');
             STATE.prods = raw.filter(x=>x.situacao==="A").map(p=>({
-                id:String(p.codigo||p.id), code:String(p.codigo||p.id), // <--- A ALTERAÇÃO FOI FEITA AQUI
+id:String(p.codigo||p.id), code:String(p.codigo||p.id), blingId: String(p.id),
                 name:p.nome, price:parseFloat(p.preco),
                 oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null,
                 stock:parseInt(p.estoque)||0,
@@ -1294,7 +1294,7 @@ async function sendOrder(){
         if(p){ 
             totalBruto += p.price * q; 
             itemsTxt += `${q}x ${p.name}\n`; 
-apiItens.push({id:p.id, nome:p.name, qtd:q, price:p.price});
+apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
         }
     });
 
