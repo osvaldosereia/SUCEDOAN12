@@ -470,14 +470,13 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     </div>
 </dialog>
 
-<script>
 // ==========================================
 // CONFIGURAÇÃO DE ENTREGAS (INTELIGÊNCIA DE DATAS E PEDIDO)
 // ==========================================
 const CONFIG_ENTREGA = {
     horaCorteHoje: 10,       // Até que horas aceita pedido para o mesmo dia (0 a 23)
-    descontoOpcao2: 3.00,    // Desconto para a segunda data disponível
-    descontoOpcao3: 6.00,    // Desconto para a terceira data disponível
+    descontoOpcao2: 5.00,    // Desconto para a segunda data disponível
+    descontoOpcao3: 8.00,    // Desconto para a terceira data disponível
     diasSemanaInativos: [0], // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
     feriados: [              // Adicione ou remova feriados no formato 'DD/MM'
         '01/01', // Confraternização Universal
@@ -497,7 +496,7 @@ const $=i=>document.getElementById(i);
 const STATE={
     baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, descontosValor:[],
     cart:{}, cartOrder:[], observer: null,
-    mode:'zero', baseBasket:null, comboDiscount: 0, appliedCombos: [], coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
+    mode:'zero', baseBasket:null, basketExtraFee:0, comboDiscount: 0, appliedCombos: [], coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
     lists: {}, pageLimits: {},
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
 };
@@ -940,8 +939,9 @@ function previewCombo(id){
 function confirmBasket(isCustom){
     const c = STATE.tempBasket;
     STATE.mode = 'custom';
-    STATE.baseBasket = c; // Salva a cesta original para comparação futura
+    STATE.baseBasket = c; 
     
+    let itemsSum = 0;
     c.produtos.forEach(s=>{
         const [qStr, ref] = s.split('x');
         const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
@@ -951,9 +951,17 @@ function confirmBasket(isCustom){
                 const cur = STATE.cart[p.id] || 0;
                 if(cur === 0) STATE.cartOrder.push(p.id);
                 STATE.cart[p.id] = cur + q; 
+                itemsSum += (p.price * q); 
             }
         }
     });
+
+    // CÁLCULO DA TAXA OCULTA DA CESTA (Diferença entre o preço dela e a soma dos itens)
+    STATE.basketExtraFee = 0;
+    let taxaDestaCesta = c.preco - itemsSum;
+    if (taxaDestaCesta > 0) {
+        STATE.basketExtraFee = taxaDestaCesta;
+    }
 
     $('modal-basket-preview').close();
     
@@ -1118,7 +1126,8 @@ function updateTotals(){
         });
     }
 
-    let displayTotal = sumItems - STATE.comboDiscount;
+    // ADICIONA A TAXA DA CESTA AO VALOR DOS PRODUTOS
+    let displayTotal = sumItems + STATE.basketExtraFee - STATE.comboDiscount;
     let subtotalParaDesconto = displayTotal;
     
     let isBlocked = false;
@@ -1150,8 +1159,8 @@ function updateTotals(){
 
     displayTotal -= STATE.valueDiscount;
 
-    // VALIDAÇÃO DO PEDIDO MÍNIMO (LIVRE DE REGRAS DE CESTA)
-    let missing = Math.max(0, MIN_ORDER - displayTotal);
+    // VALIDAÇÃO DO PEDIDO MÍNIMO SOBRE O VALOR REAL DOS PRODUTOS (Ignora desconto de entrega final)
+    let missing = Math.max(0, MIN_ORDER - subtotalParaDesconto);
     if(missing > 0) {
         isBlocked = true;
     }
@@ -1162,7 +1171,7 @@ function updateTotals(){
     }
 
     // Build the Summary Checklist Layout (Amazon Style)
-    let bruto = sumItems;
+    let bruto = sumItems + STATE.basketExtraFee;
     let summaryHtml = `<div style="display:flex; justify-content:space-between;"><span>Valor total:</span><span>${fmt(bruto)}</span></div>`;
     summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Entrega:</span><span>Grátis</span></div>`;
     
@@ -1195,7 +1204,7 @@ function updateTotals(){
 
     $('chk-total').innerText = fmt(displayTotal);
     if($('chk-installment')) $('chk-installment').innerText = `Parcele em até 3x de ${fmt(displayTotal/3)} sem juros no cartão de crédito`;
-    $('chk-info-extra').innerHTML = ""; // Limpamos a mensagem antiga de "Aproveite X em itens extras"
+    $('chk-info-extra').innerHTML = ""; 
     
     let btnChk = $('btn-send-order');
     if(btnChk) {
@@ -1227,7 +1236,7 @@ function openCheckout(){
 
 function clearCart(){ 
     if(confirm("Esvaziar carrinho?")){
-        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.baseBasket=null; STATE.comboDiscount=0; STATE.appliedCombos=[]; STATE.coupon=null; STATE.valueDiscount=0; STATE.nextDiscountIncentive="";
+        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.baseBasket=null; STATE.basketExtraFee=0; STATE.comboDiscount=0; STATE.appliedCombos=[]; STATE.coupon=null; STATE.valueDiscount=0; STATE.nextDiscountIncentive="";
         updateTotals(); 
         $('section-cesta-ativa').style.display='none'; 
         $('modal-checkout').close(); 
@@ -1275,15 +1284,12 @@ async function sendOrder(){
         }
     });
 
-    let final = totalBruto - STATE.comboDiscount;
+    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount;
     final -= STATE.deliveryDiscount;
     final -= STATE.valueDiscount;
     if(STATE.coupon){ final -= STATE.coupon.desconto; }
 
-    let outras_despesas = 0;
-    if (final > totalBruto) {
-        outras_despesas = final - totalBruto;
-    }
+    let outras_despesas = STATE.basketExtraFee;
 
     if(STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
