@@ -447,7 +447,7 @@
             }
         }
 
-        function processCsvRow(d) {
+       function processCsvRow(d) {
             const getVal = (key) => d[key] ? d[key] : "";
             const getNum = (key) => { const v = getVal(key); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
             const codigoLimpo = getVal('Código').trim();
@@ -458,14 +458,21 @@
             }
             const cost = getNum('Preço de custo') || getNum('Preço de Compra');
             const cat = getVal('Categoria do produto') ? getVal('Categoria do produto').trim().toUpperCase() : "";
+            
+            // NOVIDADE: Verifica se o CSV tem a coluna Situação e se está INATIVO
+            const isInactive = getVal('Situação').toUpperCase() === 'INATIVO' || getVal('situacao').toUpperCase() === 'I';
+            
             const base = {
                 codigo: codigoLimpo, nome: getVal('Descrição'), preco: getNum('Preço'), preco_custo: cost, categoria: cat, estoque: getNum('Estoque'),
                 localizacao: rawLoc, gtin: getVal('GTIN/EAN'), url_imagem: getVal('URL Imagens Externas'), ncm: getVal('NCM'), validade: getVal('Data Validade'),
-                situacao: 'A', formato: 'S', em_oferta: false, _changed: true, _lastChange: "Importação CSV"
+                situacao: isInactive ? 'I' : 'A', // <-- Agora ele respeita a planilha
+                formato: 'S', em_oferta: false, _changed: true, _lastChange: "Importação CSV"
             };
+            
             Object.keys(d).forEach(k => { if(base[k] === undefined) base[k] = d[k]; });
             base['Código'] = codigoLimpo; base['Localização'] = rawLoc; base['Preço de custo'] = cost; base['Preço de Compra'] = cost; base['Categoria do produto'] = cat;
             base['Origem'] = '0'; base['Unidade'] = 'un'; base['Grupo de produtos'] = '';
+            base['Situação'] = isInactive ? 'INATIVO' : 'ATIVO'; // <-- Garante a formatação correta
             return base;
         }
 
@@ -514,13 +521,34 @@
                         let adicionados = 0;
                         let atualizados = 0;
 
+                        // Verifica se o CSV importado possui a coluna 'Situação'
+                        const csvTemSituacao = results.meta.fields.includes('Situação');
+
                         novos.forEach(n => {
                             const idx = products.findIndex(p => p.codigo === n.codigo);
                             if(idx !== -1) {
-                                products[idx] = n;
+                                // NOVIDADE: O produto já existe, vamos preservar os dados locais importantes!
+                                const prodExistente = products[idx];
+                                
+                                // Se o CSV *não* tem a coluna Situação, mantemos a situação local (evita que volte a ficar ativo)
+                                if (!csvTemSituacao) {
+                                    n.situacao = prodExistente.situacao;
+                                    n['Situação'] = prodExistente['Situação'];
+                                }
+                                
+                                // Preserva a imagem local se a planilha não trouxer uma nova
+                                if (!n.url_imagem && prodExistente.url_imagem) {
+                                    n.url_imagem = prodExistente.url_imagem;
+                                }
+                                
+                                // Preserva o status de oferta
+                                n.em_oferta = prodExistente.em_oferta;
+                                if (prodExistente.preco_antigo) n.preco_antigo = prodExistente.preco_antigo;
+
+                                products[idx] = n; // Atualiza mesclando os dados
                                 atualizados++;
                             } else {
-                                products.unshift(n);
+                                products.unshift(n); // Produto novo
                                 adicionados++;
                             }
                         });
