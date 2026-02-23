@@ -371,7 +371,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     <div class="modal-body" style="padding: 30px 20px 25px max(20px, env(safe-area-inset-bottom));">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         <div style="display:flex; justify-content:center; margin-bottom: 20px;">
-            <img id="qv-img" src="" style="width: 180px; height: 180px; object-fit: contain; mix-blend-mode: multiply;">
+            <img id="qv-img" src="" style="width: 270px; height: 270px; object-fit: contain; mix-blend-mode: multiply;">
         </div>
         <h3 id="qv-name" data-id="" style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 8px; line-height: 1.2;"></h3>
         <div id="qv-price" style="font-size: 1.4rem; font-weight: 900; color: var(--c-a); margin-bottom: 25px;"></div>
@@ -565,14 +565,17 @@ function renderHome() {
 
     renderCestaAtiva();
 
-    const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
+    const ofertas = STATE.prods
+        .filter(p => p.oldPrice && p.oldPrice > p.price)
+        .sort((a, b) => ((b.oldPrice - b.price) / b.oldPrice) - ((a.oldPrice - a.price) / a.oldPrice));
+
     if(ofertas.length > 0) { $('section-ofertas').style.display = 'block'; renderPaginated('grid-ofertas', 'ofertas', ofertas, 10, 'PROD'); }
     else $('section-ofertas').style.display = 'none';
 
     if(STATE.combos && STATE.combos.length > 0) { $('section-combos').style.display = 'block'; renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO'); }
     else $('section-combos').style.display = 'none';
 
-    const ate2 = STATE.prods.filter(p => p.price <= 2.00);
+    const ate2 = STATE.prods.filter(p => p.price <= 2.00).sort((a,b) => (a.name || '').localeCompare(b.name || ''));
     if(ate2.length > 0) { $('section-ate2').style.display = 'block'; renderPaginated('grid-ate2', 'ate2', ate2, 10, 'PROD'); }
     else $('section-ate2').style.display = 'none';
 
@@ -611,7 +614,7 @@ function renderHome() {
         let macroHasProds = false;
         cats.forEach(c => {
             let safeC = c.replace(/[^a-zA-Z0-9]/g,'-');
-            let list = STATE.prods.filter(p => p.cat === c).sort((a,b)=>a.name.localeCompare(b.name));
+            let list = STATE.prods.filter(p => p.cat === c).sort((a,b)=>(a.name || '').localeCompare(b.name || ''));
             if(list.length > 0) {
                 macroHasProds = true;
                 renderPaginated(`grid-${safeM}-${safeC}`, `macro_${safeM}_${safeC}`, list, 10, 'PROD');
@@ -761,21 +764,31 @@ function cardProdHoriz(item){
     let oldPriceHtml = isOffer ? `<div style="font-size:0.65rem; color:var(--c-t); text-decoration:line-through; line-height:1;">${fmt(item.oldPrice)}</div>` : '';
     let priceColor = isOffer ? 'color:var(--c-err)' : '';
     
+    let tagDescontoHtml = isOffer ? `<div style="position:absolute; top:8px; right:8px; background:var(--c-err); color:#fff; font-size:0.65rem; font-weight:900; padding:3px 6px; border-radius:6px; z-index:5;">-${Math.round(((item.oldPrice - item.price) / item.oldPrice) * 100)}%</div>` : '';
+    
     let tags = [];
     if(item.validade) tags.push(`Validade: ${item.validade}`);
     if(item.stock > 0 && item.stock <= 3) tags.push(`Restam ${item.stock} ou menos`);
     let tagsHtml = tags.length > 0 ? `<div style="width:100%; margin-top:4px; padding-top:4px; border-top:1px dashed var(--c-bd); font-size:0.6rem; color:var(--c-t); font-weight:500;">${tags.join(' | ')}</div>` : '';
     
-    let ctrlHtml = q > 0 ? `
-        <div class="card-sq-qty-box">
-            <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', -1)">-</button>
-            <span class="sq-val">${q}</span>
-            <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>
-        </div>
-    ` : `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>`;
+    let ctrlHtml = '';
+    if (item.stock <= 0) {
+        ctrlHtml = `<div style="font-size:0.65rem; color:var(--c-err); font-weight:800; padding:6px 0;">ESGOTADO</div>`;
+    } else if (q > 0) {
+        ctrlHtml = `
+            <div class="card-sq-qty-box">
+                <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', -1)">-</button>
+                <span class="sq-val">${q}</span>
+                <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>
+            </div>
+        `;
+    } else {
+        ctrlHtml = `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>`;
+    }
     
     return `
     <div class="card-sq card-sq-${item.id} ${inCart}">
+        ${tagDescontoHtml}
         <div class="card-sq-img-area" onclick="openQuickView('${item.id}')">
             <img src="${item.img}" class="card-sq-img" loading="lazy">
         </div>
@@ -815,13 +828,19 @@ window.openQuickView = function(id) {
 }
 
 window.renderQuickViewAction = function(id) {
+    const p = STATE.prods.find(x => x.id === id);
+    if(!p) return;
     const q = STATE.cart[id] || 0;
     let html = '';
-    if(q === 0) {
+    
+    if (p.stock <= 0) {
+        html = `<button class="btn-modal secondary" style="width:100%; padding:16px; border-radius:12px; font-size:1.05rem; color:var(--c-err); border: 2px solid var(--c-err);" disabled>PRODUTO ESGOTADO</button>`;
+    } else if(q === 0) {
         html = `<button class="btn-modal primary" style="background:#25D366; width:100%; padding:16px; border-radius:12px; font-size:1.05rem;" onclick="addFromQuickView('${id}')">ADICIONAR 1 UN</button>`;
     } else {
         html = `<button class="btn-modal secondary" style="width:100%; padding:16px; border-radius:12px; font-size:1.05rem;" onclick="$('modal-quick-view').close()">FECHAR</button>`;
     }
+    
     $('qv-action-area').innerHTML = html;
 }
 
@@ -860,7 +879,9 @@ function upd(id, delta){
         
         const ctrl = el.querySelector('.card-sq-ctrls');
         if(ctrl) {
-            if(next > 0) {
+            if (p.stock <= 0) {
+                ctrl.innerHTML = `<div style="font-size:0.65rem; color:var(--c-err); font-weight:800; padding:6px 0;">ESGOTADO</div>`;
+            } else if(next > 0) {
                 ctrl.innerHTML = `<div class="card-sq-qty-box"><button class="sq-btn" onclick="event.stopPropagation(); upd('${id}', -1)">-</button><span class="sq-val">${next}</span><button class="sq-btn" onclick="event.stopPropagation(); upd('${id}', 1)">+</button></div>`;
             } else {
                 ctrl.innerHTML = `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${id}', 1)">+</button>`;
@@ -985,7 +1006,7 @@ function confirmCombo(id){
     updateTotals();
 }
 
-/* LÓGICA DE GERAÇÃO E SELEÇÃO DAS DATAS DE ENTREGA */
+/* LÓGICA DE GERAÇÃO E SELEÇÃO DATAS DE ENTREGA */
 function renderDeliveryOptions() {
     let options = [];
     let date = new Date();
