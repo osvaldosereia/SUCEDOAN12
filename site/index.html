@@ -670,16 +670,12 @@ function renderCestaAtiva() {
     }
 }
 
-/* --- ROLAGEM INSTANTÂNEA PULO NATIVO --- */
+/* --- ROLAGEM INSTANTÂNEA PULO NATIVO (CORRIGIDO) --- */
 function instantScrollTo(elementId, btnId) {
     if(btnId) updateBottomNav(btnId);
     const el = document.getElementById(elementId);
-    const stage = document.getElementById('scroll-stage');
-    if(el && stage) {
-        const stageRect = stage.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        const targetY = stage.scrollTop + (elRect.top - stageRect.top) - 15;
-        stage.scrollTo({ top: targetY, behavior: 'auto' });
+    if(el) {
+        el.scrollIntoView({ behavior: 'auto', block: 'start' });
     }
 }
 
@@ -698,17 +694,13 @@ window.goToMinhaCesta = function() {
 
 window.instantScrollToMacro = function(safeM) {
     updateBottomNav(null); 
-document.querySelectorAll('.chips-bar .chip').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.chips-bar .chip').forEach(el => el.classList.remove('active'));
     let chip = document.getElementById(`chip-${safeM}`);
     if(chip) chip.classList.add('active');
     
     const el = document.getElementById(`macro-${safeM}`);
-    const stage = document.getElementById('scroll-stage');
-    if(el && stage) {
-        const stageRect = stage.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        const targetY = stage.scrollTop + (elRect.top - stageRect.top) - 10;
-        stage.scrollTo({ top: targetY, behavior: 'auto' });
+    if(el) {
+        el.scrollIntoView({ behavior: 'auto', block: 'start' });
     }
 }
 
@@ -948,9 +940,6 @@ function previewCombo(id){
 function confirmBasket(isCustom){
     const c = STATE.tempBasket;
     STATE.mode = 'custom';
-    STATE.baseBasket = c;
-    STATE.minBasketPrice = c.preco; 
-    STATE.cart = {}; STATE.cartOrder = [];
     
     let itemsSum = 0;
     c.produtos.forEach(s=>{
@@ -958,19 +947,30 @@ function confirmBasket(isCustom){
         const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
         if(p){
             let q = Math.min(parseInt(qStr), p.stock);
-            if(q > 0) { STATE.cart[p.id] = q; STATE.cartOrder.push(p.id); itemsSum += (p.price * q); }
+            if(q > 0) { 
+                const cur = STATE.cart[p.id] || 0;
+                if(cur === 0) STATE.cartOrder.push(p.id);
+                STATE.cart[p.id] = cur + q; 
+                itemsSum += (p.price * q); 
+            }
         }
     });
 
-    STATE.basketExtraFee = STATE.minBasketPrice - itemsSum;
+    let taxaDestaCesta = c.preco - itemsSum;
+    if (taxaDestaCesta > 0) {
+        STATE.basketExtraFee += taxaDestaCesta;
+    }
+    
+    if(STATE.minBasketPrice < c.preco) STATE.minBasketPrice = c.preco;
+
     $('modal-basket-preview').close();
     
     if(isCustom) {
-        showToast(`Cesta carregada para personalização!`, 's');
+        showToast(`Cesta adicionada para personalização!`, 's');
         renderHome(); 
         setTimeout(goToMinhaCesta, 300);
     } else {
-        showToast(`Cesta adicionada!`, 's');
+        showToast(`Cesta adicionada ao carrinho!`, 's');
         renderHome();
     }
     updateTotals();
@@ -1286,26 +1286,35 @@ function applyCupom(){
 async function sendOrder(){
     if($('btn-send-order').disabled) return;
     
-    let itemsTxt="", apiItens=[]; let totalBruto=0;
+    let itemsTxt="", apiItens=[]; 
+    let totalBruto = 0;
     
     Object.entries(STATE.cart).forEach(([id,q])=>{
         const p=STATE.prods.find(x=>x.id===id);
-        if(p){ totalBruto+=p.price*q; itemsTxt+=`${q}x ${p.name}\n`; apiItens.push({id:p.id,nome:p.name,qtd:q,price:p.price}); }
+        if(p){ 
+            totalBruto += p.price * q; 
+            itemsTxt += `${q}x ${p.name}\n`; 
+            apiItens.push({id:p.id, nome:p.name, qtd:q, price:p.price}); 
+        }
     });
 
     let final = totalBruto - STATE.comboDiscount;
-    
     if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
         final = Math.max(final + STATE.basketExtraFee, STATE.minBasketPrice);
     }
-
     final -= STATE.deliveryDiscount;
     final -= STATE.valueDiscount;
+    if(STATE.coupon){ final -= STATE.coupon.desconto; }
+
+    let outras_despesas = 0;
+    if (final > totalBruto) {
+        outras_despesas = final - totalBruto;
+    }
 
     if(STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
     if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
-    if(STATE.coupon){ final-=STATE.coupon.desconto; itemsTxt+=`\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
+    if(STATE.coupon){ itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
     
     const msg = `*NOVO PEDIDO*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
@@ -1315,9 +1324,9 @@ async function sendOrder(){
             body:JSON.stringify({
                 cliente:{nome: "Cliente Recorrente"},
                 pedido:{
-                    itens:apiItens,
-                    total:final,
-                    outras_despesas: (STATE.mode === 'custom' ? STATE.basketExtraFee : 0) - STATE.deliveryDiscount
+                    itens: apiItens,
+                    total: final,
+                    outras_despesas: outras_despesas
                 }
             })
         });
