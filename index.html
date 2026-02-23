@@ -1,337 +1,1345 @@
 <!DOCTYPE html>
-<html lang="pt-BR" itemscope itemtype="https://schema.org/LocalBusiness">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-    <title>Super Cestas Dona Antônia | Cuiabá e Várzea Grande</title>
-    <meta name="description" content="Cestas Básicas de Alta Qualidade em Cuiabá e VG. Pagamento na entrega.">
-    <meta name="theme-color" content="#ffffff">
-    <meta name="facebook-domain-verification" content="sa60eslx69a2vs9jaojicyissuoueq" />
-    <link rel="canonical" href="https://www.donaantonia.com.br">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
+<meta name="theme-color" content="#ffffff">
+<title>Super Cestas Básicas Dona Antônia</title>
+<style>
+:root {
+    /* PALETA PROFISSIONAL */
+    --c-p: #0f172a;      /* Texto Principal (Azul Escuro) */
+    --c-s: #334155;      /* Texto Secundário */
+    --c-t: #64748b;      /* Texto Terciário */
+    --c-a: #ea580c;      /* Ação Principal (Laranja) */
+    --c-ok: #15803d;     /* Sucesso */
+    --c-err: #dc2626;    /* Erro */
+    --c-bg: #e2e8f0;     /* Fundo Geral */
+    --c-surf: #ffffff;   /* Superfície Cards */
+    --c-bd: #e2e8f0;     /* Bordas sutis */
+    --font: 'Inter', system-ui, sans-serif;
+    
+    --sh-card: 0 4px 12px rgba(0, 0, 0, 0.04); 
+    --sh-float: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:none}
+body{font-family:var(--font);background:var(--c-bg);color:var(--c-p);margin:0;padding:0;height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
+img{user-select:none;} 
+button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight:600}
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+/* LAYOUT DESKTOP LIMITER */
+.layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
 
-    <style>
-        :root {
-            --primary: #2563EB;
-            --primary-gradient: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
-            --success: #10B981;
-            --success-dark: #047857;
-            --success-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
-            --surface: #FFFFFF;
-            --background: #F3F4F6;
-            --text-main: #111827;
-            --text-sec: #6B7280;
-            --border-medium: #E5E7EB;
-            --header-h: 70px;
-            --footer-h: 80px;
-            --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-        }
+/* HEADER */
+.app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;flex-direction:column;align-items:center; position:relative;}
+.header-inner{display:flex;align-items:center;padding:12px 20px 12px 20px;width:100%;gap:15px;}
+.header-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.logo{width:65px;height:65px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--background); color: var(--text-main); padding-bottom: 110px; }
+/* SEARCH BAR & FAQ */
+.search-bar-area{flex:1; display:flex; gap:10px; align-items:center;}
+.search-wrapper{position:relative; flex:1;}
+.search-inp{width:100%;background:#f1f5f9;border:1px solid var(--c-bd);padding:12px 15px 12px 40px;border-radius:12px;font-weight:600;color:var(--c-p);transition:box-shadow .2s;font-size:0.95rem;}
+.search-inp:focus{box-shadow:0 0 0 2px rgba(15, 23, 42, 0.1); border-color:var(--c-p); background:#fff;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none}
+.clear-search{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:24px;height:24px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
+.btn-faq{background:#f1f5f9; color:var(--c-p); width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--c-bd); transition:background 0.2s;}
+.btn-faq:active{background:#e2e8f0;}
 
-        /* HEADER */
-        .app-header {
-            height: var(--header-h); background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-medium);
-            display: flex; align-items: center; justify-content: center; 
-            position: sticky; top: 0; z-index: 50;
-        }
-        .logo-header { width: 75px; height: 75px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); position: relative; top: 15px; }
-        .brand h1 { font-size: 16px; font-weight: 700; margin-left: 15px; }
+/* CHIPS BAR (FIXA, VISÍVEL, CENTRALIZADA E VIBRANTE) */
+#fixed-chips-container {
+    flex: 0 0 auto;
+    background: var(--c-p);
+    width: 100%;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    z-index: 15;
+}
+.chips-bar {
+    width: 100%; max-width: 1200px; margin: 0 auto;
+    padding: 12px 15px; display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 8px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.chip {
+    padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+    background: rgba(255,255,255,0.1); color: #fff; white-space: nowrap;
+    border: 1px solid rgba(255,255,255,0.15); cursor: pointer; transition: 0.2s;
+}
+.chip.active {
+    background: var(--c-a); border-color: var(--c-a); box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+}
 
-        /* CATALOG GRID SYSTEM */
-        .catalog-container { 
-            padding: 20px 15px; 
-            max-width: 1200px; 
-            margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr; /* Mobile: 1 Coluna */
-            gap: 20px;
-        }
+/* PALCO CENTRAL */
+.main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:100px; scroll-behavior:auto;}
 
-        /* Desktop: 3 Colunas */
-        @media (min-width: 1024px) {
-            .catalog-container {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 30px;
-                padding: 40px 20px;
-            }
-        }
+/* SECTIONS PÁGINA ÚNICA */
+.page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
+.cat-title { font-size: 1.05rem; font-weight: 800; padding: 10px 20px 5px; color: var(--c-s); text-transform: capitalize; }
 
-        /* DIDACTIC SECTION (Ocupa largura total na grelha) */
-        .didactic-section { grid-column: 1 / -1; margin: 10px 0; }
-        .didactic-slide { 
-            background: white; border-radius: 20px; padding: 25px; 
-            box-shadow: var(--shadow-card); border-top: 6px solid var(--primary);
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .ds-title { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--text-main); }
-        .ds-items-wrapper { 
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%;
-        }
-        .ds-item { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; }
-        .ds-icon { color: var(--success); font-size: 22px; }
+/* GRADES (UNIFICADA EM 2 COLUNAS MOBILE, 5 DESKTOP) */
+.grid-wrapper, .grid-produtos {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 12px; padding: 5px 20px 15px; width: 100%; align-content: start;
+}
+@media(min-width: 800px) {
+    .grid-wrapper, .grid-produtos { grid-template-columns: repeat(5, 1fr); gap: 15px; }
+}
+@media(max-width:600px){
+    .grid-wrapper, .grid-produtos { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 5px 15px 15px; }
+    .section-title { padding: 15px 15px 10px; }
+    .cat-title { padding: 10px 15px 5px; }
+}
 
-        /* PRODUCT CARDS */
-        .product-section { 
-            background: white; border-radius: 24px; box-shadow: var(--shadow-card); 
-            overflow: hidden; display: flex; flex-direction: column;
-            transition: transform 0.3s ease; border: 1px solid rgba(0,0,0,0.05);
-        }
-        @media (min-width: 1024px) {
-            .product-section:hover { transform: translateY(-5px); }
-        }
+/* CARDS GRANDES (Cestas e Combos Adaptados para 2 Colunas) */
+.u-card{
+    background:var(--c-surf); border-radius:16px; border:1px solid #fff; box-shadow:var(--sh-card);
+    display:flex;flex-direction:column; position:relative; height: 100%; transition:transform .2s, box-shadow .2s;
+}
+.u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
+.u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid var(--c-bd); border-radius: 16px 16px 0 0;}
+.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:5px;} 
+.u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal}
+.offer-tag{position:absolute;bottom:0;left:0;background:var(--c-err);color:#fff;font-size:0.65rem;padding:4px 8px;border-top-right-radius:10px;font-weight:800;z-index:5;}
+.combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.75rem; font-weight: 600; }
+.combo-save { color: var(--c-ok); font-size: 0.7rem; font-weight: 800; background: #dcfce7; padding: 2px 4px; border-radius: 4px; display: inline-block; margin-top: 2px;}
+.u-info{padding:10px;display:flex;flex-direction:column;gap:4px;flex:1; border-radius: 0 0 16px 16px; background: var(--c-surf);}
+.u-name{font-size:0.75rem; font-weight:700; color:var(--c-p); line-height:1.2; display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; min-height:3.6em; flex-grow: 1; }
+.u-price{font-size:1.05rem;font-weight:900;color:var(--c-a);letter-spacing:-0.5px;}
 
-        .p-main-content { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
-        .p-title { font-size: 20px; font-weight: 800; margin: 0 0 15px; text-align: center; }
-        .basket-hero-img { width: 100%; aspect-ratio: 1/1; object-fit: cover; border-radius: 16px; margin-bottom: 15px; background: #f8fafc; }
-        
-        .opt-row { 
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px; border-radius: 14px; border: 1.5px solid var(--border-medium);
-            margin: 8px 0; cursor: pointer; transition: 0.2s;
-        }
-        .opt-row.selected { border-color: var(--success); background: #f0fdf4; }
-        .price-tag { font-size: 18px; font-weight: 800; color: var(--text-main); }
+/* CARDS DE PRODUTOS SIMPLES (Opção 2 Evoluída com visual verde suave) */
+.card-sq {
+    background: #fff; border-radius: 12px; position: relative;
+    overflow: hidden; border: 2px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    display: flex; flex-direction: column; transition: all 0.2s;
+}
+.card-sq:active { transform: scale(0.98); }
 
-        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; font-size: 14px; transition: opacity 0.2s; }
-        .btn:active { opacity: 0.8; }
-        .btn-primary { background: var(--primary-gradient); color: white; }
-        .btn-success { background: var(--success-gradient); color: white; }
+/* Destaque suave para item na cesta */
+.card-sq.in-cart {
+    border-color: rgba(21, 128, 61, 0.4);
+    box-shadow: 0 2px 8px rgba(21, 128, 61, 0.08);
+}
 
-        /* MODAL */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-            z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-card { 
-            background: white; width: 100%; max-width: 750px; border-radius: 28px; 
-            max-height: 85vh; overflow-y: auto; position: relative;
-        }
-        .modal-header { position: sticky; top: 0; background: white; padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10; }
-        .modal-body { padding: 25px; }
-        
-        .list-grid { display: grid; grid-template-columns: 1fr; gap: 30px; }
-        @media (min-width: 600px) { .list-grid { grid-template-columns: 1fr 1fr; } }
+.card-sq-img-area {
+    width: 100%; aspect-ratio: 1; padding: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.card-sq-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+.card-sq-bottom {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding: 6px 10px 10px 10px; width: 100%; margin-top: auto; cursor: pointer;
+}
+.card-sq-price { font-size: 0.95rem; font-weight: 800; color: var(--c-p); }
+.card-sq-name-sub { font-size: 0.65rem; color: var(--c-s); font-weight: 500; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; text-align: left; width: 100%; }
+.card-sq-ctrls { flex-shrink: 0; margin-left: 5px; cursor: default; }
 
-        .cat-title { font-size: 13px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-        .product-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 14px; color: #334155; }
-        .qty-badge { background: #eff6ff; color: #2563eb; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 11px; min-width: 38px; text-align: center; }
+.card-sq-plus {
+    width: 32px; height: 32px; border-radius: 50%; background: #f1f5f9; color: var(--c-p);
+    display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: 700;
+    transition: all 0.2s; border: 1px solid var(--c-bd); cursor: pointer;
+}
+.card-sq-plus:active { transform: scale(0.9); }
 
-        /* FOOTER */
-        .app-footer { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 500px; z-index: 100; display: flex; gap: 12px; }
-        .footer-btn { flex: 1; height: 54px; border-radius: 27px; border: none; color: white; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-size: 13px; box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
-    </style>
+/* CONTROLE INLINE NO CARD (Visual Leve e Discreto) */
+.card-sq-qty-box {
+    display: flex; align-items: center; background: #f0fdf4; border-radius: 16px;
+    height: 32px; padding: 0 4px; color: var(--c-p); border: 1px solid rgba(21, 128, 61, 0.3);
+    animation: popIn 0.2s ease-out;
+}
+@keyframes popIn { from { transform: scale(0.8); opacity: 0;} to { transform: scale(1); opacity: 1; } }
+.sq-btn {
+    width: 28px; height: 28px; border-radius: 50%; background: transparent; border: none;
+    color: var(--c-ok); font-weight: 900; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.sq-btn:active { background: rgba(21, 128, 61, 0.1); }
+.sq-val { font-size: 0.85rem; font-weight: 800; min-width: 18px; text-align: center; color: var(--c-p); }
+
+/* BOTOES AUXILIARES */
+.btn-big-action{
+    width:100%; background:var(--c-p); color:#fff; padding:10px 8px; border-radius:10px;
+    font-weight:800; font-size:0.75rem; display:flex; align-items:center; justify-content:center; gap:4px;
+    transition:background .2s, transform .1s;
+}
+.btn-big-action:active:not(:disabled){transform:scale(0.95)}
+
+/* APP TAB BAR (ESTILO MERCADO LIVRE) */
+.bottom-nav-bar {
+    position: fixed; bottom: 0; left: 0; width: 100%;
+    background: #fff; display: flex; justify-content: space-around; align-items: center;
+    height: 55px; border-top: 1px solid var(--c-bd); z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.03);
+}
+.tab-item {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 60px; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; position: relative;
+    transition: color 0.2s, transform 0.1s;
+}
+.tab-item:active { transform: scale(0.95); }
+.tab-item.active { color: var(--c-a); font-weight: 800; }
+.tab-icon { font-size: 1.25rem; line-height: 1; }
+.tab-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* BOTAO CENTRAL CARRINHO (FLOAT/ELEVADO) */
+.cart-fab-wrapper {
+    position: relative; top: -15px; width: 60px; height: 60px;
+    background: var(--c-p); color: #fff !important;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 20px rgba(15,23,42,0.25); border: 4px solid #fff;
+    z-index: 110; flex-shrink: 0;
+}
+.cart-fab-wrapper:active { transform: scale(0.95); }
+.cart-fab-wrapper .tab-icon { font-size: 1.4rem; }
+.cart-badge {
+    position: absolute; top: -2px; right: -2px;
+    background: var(--c-err); color: #fff; font-size: 0.65rem; font-weight: 900;
+    min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 0 4px; display: none;
+}
+
+/* AJUSTES PARA DESKTOP */
+@media(min-width: 800px) {
+    .bottom-nav-bar { justify-content: center; gap: 30px; }
+}
+
+/* MODAIS GERAIS */
+dialog{border:none;border-radius:24px;width:92%;max-width:420px;padding:0;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);background:#fff;animation:modalPop .2s}
+dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
+@keyframes modalPop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-body{padding:25px 20px;text-align:center; position:relative;}
+.btn-close-modal {
+    position: absolute; top: 15px; right: 15px; width: 32px; height: 32px;
+    background: #f1f5f9; border-radius: 50%; color: var(--c-p); font-weight: 800;
+    font-size: 1rem; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--c-bd); z-index: 10; transition: background 0.2s; cursor: pointer;
+}
+.btn-close-modal:active { background: #e2e8f0; }
+
+.btn-modal{width:100%;padding:14px;border-radius:12px;font-weight:800;margin-bottom:10px;font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; cursor: pointer;}
+.btn-modal.primary{background:var(--c-p);color:#fff;}
+.btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
+
+/* MODAL CHECKOUT E QUICK VIEW */
+#modal-checkout, #modal-quick-view {
+    margin: auto auto 0 auto; border-radius: 24px 24px 0 0;
+    width: 100%; max-width: 600px;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+#modal-checkout { height: 90dvh; max-height: 90dvh; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+#modal-checkout .modal-body {
+    height: 100%; display: block; overflow-y: auto; padding: 25px 20px max(20px, env(safe-area-inset-bottom)); text-align: left;
+}
+.chk-list-area { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);}
+.chk-item-simple { display: flex; justify-content: flex-start; align-items: flex-start; font-size: 0.9rem; color: var(--c-p); padding: 10px 0; border-bottom: 1px dashed var(--c-bd); gap: 10px;}
+.chk-item-simple:last-child { border-bottom: none; }
+.chk-item-qtd { color: var(--c-a); font-weight: 800; min-width: 25px; text-align: right;}
+.chk-item-name { font-weight: 500; text-align: left; flex: 1; line-height: 1.3;}
+
+/* BOTÕES DE OPÇÃO DE ENTREGA */
+.del-option { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border: 2px solid var(--c-bd); border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #fff; }
+.del-option.selected { border-color: var(--c-ok); background: #f0fdf4; box-shadow: 0 4px 12px rgba(21,128,61,0.1); }
+.del-opt-title { font-weight: 800; font-size: 0.95rem; color: var(--c-p); }
+.del-opt-date { font-size: 0.8rem; color: var(--c-s); margin-top: 2px; font-weight: 500;}
+.del-opt-badge { font-size: 0.75rem; font-weight: 800; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; text-align: right; }
+
+/* BOTÕES CHECKOUT */
+#btn-send-order { 
+    background: #25D366; color: #fff; font-size: 1.05rem; padding: 16px; border-radius: 14px; 
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); transition: transform 0.2s, box-shadow 0.2s; width: 100%; font-weight: 800; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer;
+}
+#btn-send-order:active { transform: scale(0.98); }
+#btn-send-order:disabled { background: var(--c-bd); box-shadow: none; color: var(--c-s); }
+
+.btn-checkout-secondary {
+    width: 100%; padding: 12px; background: transparent; border: none;
+    color: var(--c-s); font-weight: 700; font-size: 0.95rem; margin-top: 5px; transition: color 0.2s; cursor: pointer;
+}
+.btn-checkout-secondary:active { color: var(--c-p); }
+.btn-checkout-clear {
+    padding: 8px 15px; background: transparent; border: none; color: var(--c-err);
+    font-size: 0.75rem; font-weight: 600; text-decoration: underline; cursor: pointer; display: inline-block;
+}
+
+.cupom-box { background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed var(--c-bd); }
+
+/* TOAST */
+#toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
+.toast { padding: 12px 20px; color: #fff; border-radius: 12px; font-weight: 700; font-size: 0.9rem; box-shadow: var(--sh-float); text-align: center; animation: toastPop 0.3s ease-out; pointer-events: auto; }
+@keyframes toastPop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* CAROUSEL PREVIEW */
+.modal-carousel-track { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; scroll-snap-type: x mandatory; justify-content: flex-start; }
+.modal-carousel-track::-webkit-scrollbar{height:4px;background:transparent}
+.modal-card { flex: 0 0 120px; scroll-snap-align: start; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; background: #fff; display: flex; flex-direction: column; text-align: left; }
+.modal-card img { width: 100%; aspect-ratio: 1; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 6px; }
+.modal-card .mc-name { font-size: 0.7rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em; }
+.modal-card .mc-price { font-size: 0.9rem; font-weight: 800; color: var(--c-a); margin-top: auto; }
+.modal-card .mc-qty { font-size: 0.75rem; font-weight: 800; color: #fff; background: var(--c-ok); padding: 2px 6px; border-radius: 4px; width: fit-content; margin-top: 4px; }
+
+</style>
 </head>
 <body>
 
-    <header class="app-header">
-        <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-header" alt="Logo">
-        <div class="brand"><h1>Dona Antônia</h1></div>
-    </header>
-
-    <main id="catalog-mount" class="catalog-container"></main>
-
-    <footer class="app-footer">
-        <button onclick="openModal('company')" class="footer-btn" style="background:#111827"><i class="ph-bold ph-phone"></i> Contatos</button>
-        <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="footer-btn" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)"><i class="ph-bold ph-instagram-logo"></i> Instagram</a>
-    </footer>
-
-    <div id="modal-items" class="modal-overlay" onclick="if(event.target===this) closeModal('items')">
-        <div class="modal-card">
-            <div class="modal-header">
-                <h3 id="m-title" style="margin:0; font-weight: 800;">Itens da Cesta</h3>
-                <button onclick="closeModal('items')" style="background:none; border:none; font-size:24px; cursor:pointer;"><i class="ph-bold ph-x"></i></button>
+<header class="app-header">
+    <div class="layout-limit header-inner">
+        <div class="header-brand">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" onclick="clearSearch()">
+        </div>
+        <div class="search-bar-area">
+            <div class="search-wrapper">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto..." oninput="handleSearch(this.value)">
+                <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
             </div>
-            <div class="modal-body">
-                <div id="m-content" class="list-grid"></div>
-                <button id="m-order-btn" class="btn btn-success" style="margin-top:30px; font-size: 16px;">PEDIR NO WHATSAPP</button>
-            </div>
+            <button class="btn-faq" onclick="$('modal-faq').showModal()">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </button>
         </div>
     </div>
+</header>
 
-    <div id="modal-company" class="modal-overlay" onclick="if(event.target===this) closeModal('company')">
-        <div class="modal-card" style="max-width:400px; text-align:center; padding:35px;">
-             <img src="https://donaantonia.com.br/img/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width:90px; border-radius:50%; margin-bottom:15px; border: 3px solid #eee;">
-             <h2 style="margin:0">Atendimento</h2>
-             <p style="color:var(--text-sec); margin-bottom: 25px;">Cuiabá e Várzea Grande</p>
-             <a href="https://api.whatsapp.com/send?phone=5565998150975" class="btn btn-success" style="text-decoration:none">CHAMAR NO WHATSAPP</a>
-             <button onclick="closeModal('company')" class="btn" style="background:#f1f5f9; color:#475569; margin-top: 15px;">VOLTAR</button>
-        </div>
+<div id="fixed-chips-container">
+    <div class="chips-bar" id="chips-area"></div>
+</div>
+
+<main class="main-stage" id="scroll-stage">
+    
+    <div id="section-busca" class="page-section" style="display:none; padding-top:15px;">
+        <div class="section-title">Resultados da Busca</div>
+        <div class="grid-produtos" id="grid-busca"></div>
     </div>
 
-    <script>
-        const BASKETS = {
-            'GRANDE': {
-                name: 'Cesta Grande',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-grande.avif',
-                opts: [{ n: 'Com Arroz Tio Alvino', p: 'R$ 380', sel: true }, { n: 'Com Arroz Koblenz', p: 'R$ 390' }],
-                alimentos: [
-                    {q:'4', n:'Arroz de 5kg'}, {q:'3', n:'Açúcar Cristal 2kg'}, {q:'4', n:'Óleo de Soja 900ml'},
-                    {q:'4', n:'Feijão da Casa 1kg'}, {q:'1', n:'Café Caboclo 500g'}, {q:'3', n:'Espaguetes 500g'},
-                    {q:'12', n:'Ovos'}, {q:'1', n:'Mistura para Bolo 400g'}, {q:'1', n:'Trigo de 1kg'},
-                    {q:'1', n:'Sal de 1kg'}, {q:'2', n:'Molho Tomate FUGINI 340g'}, {q:'1', n:'Milho Lata/Sachê 250g'},
-                    {q:'1', n:'Tempero Pronto 300g'}, {q:'2', n:'Bolacha Recheada My Bit'}, {q:'2', n:'Miojo Yolle'}, {q:'4', n:'Suco Pó'}
-                ],
-                limpeza: [
-                    {q:'1', n:'Sabão Barra YPE c/ 5'}, {q:'2', n:'Creme Dental Sorriso 70g'}, {q:'2', n:'Papel Higiênico c/ 4'},
-                    {q:'1', n:'Amaciante Ype 2L'}, {q:'1', n:'Desinfetante Remmus 2L'}, {q:'1', n:'Sabão Pó OMO 800g'},
-                    {q:'2', n:'Detergente Ype 500ml'}, {q:'1', n:'Qboa de 1L'}, {q:'4', n:'Sabonete Palmolive 90g'},
-                    {q:'1', n:'Esponja de Aço Assolan'}, {q:'1', n:'Esponja de Lavar Louça'}
-                ]
-            },
-            'MEDIA': {
-                name: 'Cesta Média',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-media.avif',
-                opts: [{ n: 'Com Arroz Tio Alvino', p: 'R$ 320', sel: true }, { n: 'Com Arroz Koblenz', p: 'R$ 325' }],
-                alimentos: [
-                    {q:'3', n:'Arroz de 5kg'}, {q:'2', n:'Açúcar Cristal 2kg'}, {q:'3', n:'Óleo de Soja 900ml'},
-                    {q:'3', n:'Feijão da Casa 1kg'}, {q:'1', n:'Café Caboclo 500g'}, {q:'12', n:'Ovos'},
-                    {q:'1', n:'Mistura para Bolo 400g'}, {q:'2', n:'Espaguete de 500g'}, {q:'1', n:'Trigo de 1kg'},
-                    {q:'1', n:'Sal de 1kg'}, {q:'2', n:'Molho Tomate FUGINI 340g'}, {q:'1', n:'Milho Lata/Sachê 250g'},
-                    {q:'1', n:'Tempero Pronto 300g'}, {q:'2', n:'Bolacha Recheada My Bit'}, {q:'2', n:'Miojo Yolle'}, {q:'3', n:'Suco Pó'}
-                ],
-                limpeza: [
-                    {q:'1', n:'Sabão Barra YPE c/ 5'}, {q:'2', n:'Creme Dental Sorriso 70g'}, {q:'2', n:'Papel Higiênico c/ 4'},
-                    {q:'1', n:'Amaciante Ype 2L'}, {q:'1', n:'Desinfetante Remmus 2L'}, {q:'1', n:'Sabão Pó OMO 800g'},
-                    {q:'2', n:'Detergente Ype 500ml'}, {q:'1', n:'Qboa de 1L'}, {q:'3', n:'Sabonete Palmolive 90g'},
-                    {q:'1', n:'Esponja de Aço Assolan'}, {q:'1', n:'Esponja de Lavar Louça'}
-                ]
-            },
-            'PEQUENA': {
-                name: 'Cesta Pequena',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-pequena.avif',
-                opts: [{ n: 'Com Arroz Tio Alvino', p: 'R$ 215', sel: true }, { n: 'Com Arroz Koblenz', p: 'R$ 220' }],
-                alimentos: [
-                    {q:'2', n:'Arroz de 5kg'}, {q:'1', n:'Açúcar Cristal 2kg'}, {q:'2', n:'Óleo de Soja 900ml'},
-                    {q:'2', n:'Feijão da Casa 1kg'}, {q:'1', n:'Café Caboclo 250g'}, {q:'12', n:'Ovos'},
-                    {q:'1', n:'Mistura para Bolo 400g'}, {q:'1', n:'Espaguete de 500g'}, {q:'1', n:'Trigo de 1kg'},
-                    {q:'1', n:'Sal de 1kg'}, {q:'1', n:'Molho Tomate Fugini'}, {q:'1', n:'Milho Lata 250g'},
-                    {q:'1', n:'Tempero Pronto 300g'}, {q:'2', n:'Bolacha Recheada My Bit'}, {q:'2', n:'Miojo Yolle'}, {q:'2', n:'Suco Pó'}
-                ],
-                limpeza: [
-                    {q:'1', n:'Sabão Barra YPE c/ 5'}, {q:'1', n:'Creme Dental Sorriso 70g'}, {q:'1', n:'Papel Higiênico c/ 4'},
-                    {q:'1', n:'Amaciante Ype 2L'}, {q:'1', n:'Desinfetante Remmus 2L'}, {q:'1', n:'Sabão Pó OMO 800g'},
-                    {q:'2', n:'Detergente Ype 500ml'}, {q:'1', n:'Qboa de 1L'}, {q:'2', n:'Sabonete Palmolive 90g'},
-                    {q:'1', n:'Esponja de Aço Assolan'}, {q:'1', n:'Bucha de Lavar Louça'}
-                ]
-            },
-            'MINI': {
-                name: 'Cesta Mini',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-mini.avif',
-                opts: [{ n: 'Com Arroz Tio Alvino', p: 'R$ 165', sel: true }, { n: 'Com Arroz Koblenz', p: 'R$ 170' }],
-                alimentos: [
-                    {q:'1', n:'Arroz de 5kg'}, {q:'1', n:'Açúcar Cristal 2kg'}, {q:'2', n:'Óleo de Soja 900ml'},
-                    {q:'2', n:'Feijão da Casa 1kg'}, {q:'1', n:'Café Caboclo 250g'}, {q:'1', n:'Espaguete de 500g'},
-                    {q:'1', n:'Sal de 1kg'}, {q:'1', n:'Molho Tomate FUGINI'}, {q:'1', n:'Milho Lata 250g'},
-                    {q:'1', n:'Bolacha Recheada My Bit'}, {q:'1', n:'Miojo Apti'}, {q:'2', n:'Suco Pó'}
-                ],
-                limpeza: [
-                    {q:'1', n:'Sabão Barra YPE c/ 5'}, {q:'1', n:'Creme Dental Sorriso 70g'}, {q:'1', n:'Papel Higiênico c/ 4'},
-                    {q:'1', n:'Amaciante Ype 2L'}, {q:'1', n:'Desinfetante Remmus 2L'}, {q:'1', n:'Sabão Pó OMO 800g'},
-                    {q:'1', n:'Detergente Ype 500ml'}, {q:'1', n:'Qboa de 1L'}, {q:'2', n:'Sabonete Palmolive 90g'},
-                    {q:'1', n:'Esponja de Aço Assolan'}, {q:'1', n:'Esponja de Lavar Louça'}
-                ]
-            },
-            'ECONOMICA': {
-                name: 'Cesta Econômica',
-                img: 'https://donaantonia.com.br/img/cesta-basica-cuiaba-varzea-grande-economica.avif',
-                opts: [{ n: 'Preço Único', p: 'R$ 85', sel: true }],
-                alimentos: [
-                    {q:'1', n:'Arroz Tio Bonini 5kg'}, {q:'1', n:'Açúcar Cristal 2kg'}, {q:'1', n:'Óleo de Soja 900ml'},
-                    {q:'1', n:'Feijão Dona Dê 1kg'}, {q:'1', n:'Café Premiado 250g'}, {q:'1', n:'Espaguete de 400g'},
-                    {q:'1', n:'Trigo de 1kg'}, {q:'1', n:'Farinha de Mandioca 1kg'}, {q:'1', n:'Sal de 1kg'},
-                    {q:'1', n:'Molho Tomate 300g'}, {q:'1', n:'Milho Lata ou Sachê 250g'}, {q:'1', n:'Bolacha Recheada'},
-                    {q:'1', n:'Miojo'}, {q:'1', n:'Suco Pó'}
-                ],
-                limpeza: []
-            }
-        };
+    <div id="wrapper-sections">
+        <div id="section-cestas" class="page-section" style="display:none; padding-top:15px;">
+            <div class="section-title">Cestas Básicas</div>
+            <div class="grid-wrapper" id="grid-cestas"></div>
+        </div>
 
-        function renderAll() {
-            const container = document.getElementById('catalog-mount');
-            let html = '';
-            const order = ['GRANDE', 'MEDIA', 'PEQUENA', 'MINI', 'ECONOMICA'];
+        <div id="section-cesta-ativa" class="page-section" style="display:none; background: #fff; padding: 15px 0; border-top: 1px solid var(--c-bd); border-bottom: 1px solid var(--c-bd);">
+            <div class="section-title" style="color:var(--c-a); padding-bottom:5px;">Minha Cesta Personalizada</div>
+            <div class="layout-limit" style="padding: 0 20px 10px; font-size:0.85rem; color:var(--c-s); font-weight:500;">Adicione mais itens ou edite as quantidades abaixo:</div>
+            <div class="grid-produtos" id="grid-cesta-ativa"></div>
+        </div>
 
-            order.forEach((key, index) => {
-                const basket = BASKETS[key];
-                const optionsHtml = basket.opts.map((o, i) => `
-                    <div class="opt-row ${o.sel ? 'selected' : ''}" onclick="selectOption('${key}', ${i})">
-                        <span style="font-size: 13px; font-weight: 500;">${o.n}</span>
-                        <span class="price-tag">${o.p}</span>
-                    </div>
-                `).join('');
+        <div id="section-ofertas" class="page-section" style="display:none; padding-top:15px;">
+            <div class="section-title">🔥 Ofertas da Semana</div>
+            <div class="grid-produtos" id="grid-ofertas"></div>
+        </div>
 
-                html += `
-                    <section class="product-section">
-                        <div class="p-main-content">
-                            <h2 class="p-title">${basket.name}</h2>
-                            <img src="${basket.img}" class="basket-hero-img" alt="${basket.name}">
-                            <div style="flex-grow: 1;">${optionsHtml}</div>
-                            <button class="btn btn-primary" onclick="openItemsModal('${key}')"><i class="ph-bold ph-list-bullets"></i> LISTA DE PRODUTOS</button>
-                            <button class="btn btn-success" onclick="orderWhatsApp('${key}')"><i class="ph-bold ph-whatsapp-logo"></i> COMPRAR</button>
-                        </div>
-                    </section>
-                `;
-                
-                // Seção Didática após as duas primeiras cestas (fica no meio no desktop)
-                if(key === 'MEDIA') html += `
-                    <div class="didactic-section">
-                        <div class="didactic-slide">
-                            <div class="ds-title">Diferenciais Dona Antônia</div>
-                            <div class="ds-items-wrapper">
-                                <div class="ds-item"><i class="ph-fill ph-truck ds-icon"></i> Entrega Grátis em Cuiabá e VG</div>
-                                <div class="ds-item"><i class="ph-fill ph-hand-coins ds-icon"></i> Pague somente ao receber</div>
-                                <div class="ds-item"><i class="ph-fill ph-seal-check ds-icon"></i> Marcas de Alta Qualidade</div>
-                            </div>
-                        </div>
-                    </div>`;
+        <div id="section-combos" class="page-section" style="display:none;">
+            <div class="section-title">🎁 Combos Especiais</div>
+            <div class="grid-wrapper" id="grid-combos"></div>
+        </div>
+
+        <div id="section-corredores" style="margin-top:5px;">
+            <div id="grid-corredores-wrap"></div>
+        </div>
+        
+        <div id="section-ate2" class="page-section" style="display:none; padding-top:15px;">
+            <div class="section-title">🤑 Até R$ 2,00</div>
+            <div class="grid-produtos" id="grid-ate2"></div>
+        </div>
+    </div>
+</main>
+
+<nav class="bottom-nav-bar">
+    <div class="tab-item" id="btn-nav-cesta" onclick="goToMinhaCesta()">
+        <div class="tab-icon">📦</div><div class="tab-label">Cesta</div>
+    </div>
+    <div class="tab-item" id="btn-nav-ofertas" onclick="instantScrollTo('section-ofertas', 'btn-nav-ofertas')">
+        <div class="tab-icon">🔥</div><div class="tab-label">Ofertas</div>
+    </div>
+    
+    <div class="tab-item cart-fab-wrapper" onclick="openCheckout()">
+        <div class="cart-badge" id="badge-count">0</div>
+        <div class="tab-icon">🛒</div>
+    </div>
+
+    <div class="tab-item" id="btn-nav-combos" onclick="instantScrollTo('section-combos', 'btn-nav-combos')">
+        <div class="tab-icon">🎁</div><div class="tab-label">Combos</div>
+    </div>
+    <div class="tab-item" id="btn-nav-ate2" onclick="instantScrollTo('section-ate2', 'btn-nav-ate2')">
+        <div class="tab-icon">🤑</div><div class="tab-label">R$ 2</div>
+    </div>
+</nav>
+
+<div id="toast-container"></div>
+
+<dialog id="modal-quick-view">
+    <div class="modal-body" style="padding: 30px 20px 25px max(20px, env(safe-area-inset-bottom));">
+        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
+        <div style="display:flex; justify-content:center; margin-bottom: 20px;">
+            <img id="qv-img" src="" style="width: 270px; height: 270px; object-fit: contain; mix-blend-mode: multiply;">
+        </div>
+        <h3 id="qv-name" data-id="" style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 8px; line-height: 1.2;"></h3>
+        <div id="qv-price" style="font-size: 1.4rem; font-weight: 900; color: var(--c-a); margin-bottom: 25px;"></div>
+        
+        <div id="qv-action-area"></div>
+    </div>
+</dialog>
+
+<dialog id="modal-faq" onclick="if(event.target===this)this.close()">
+    <div class="modal-body">
+        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);" alt="Logo">
+            <h3 style="font-weight:900;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
+            <div style="font-size: 0.85rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99681-3588</div>
+        </div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Qual o valor da entrega?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div></div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Quais as formas de pagamento?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div></div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Qual o prazo de entrega?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Entregas em até 24 horas úteis após a confirmação do pedido.</div></div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Posso personalizar a cesta?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Sim! Você pode adicionar ou remover itens conforme sua necessidade.</div></div>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px; margin-bottom: 15px;">
+            <button class="btn-modal primary" style="flex: 1; background:#25D366; font-size: 0.9rem;" onclick="window.open('https://wa.me/5565996813588','_blank')">WhatsApp</button>
+            <button class="btn-modal primary" style="flex: 1; background:#E1306C; font-size: 0.9rem;" onclick="alert('Link do Instagram aqui')">Instagram</button>
+        </div>
+    </div>
+</dialog>
+
+<dialog id="modal-basket-preview">
+    <div class="modal-body">
+        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
+        <h3 style="color:var(--c-p);font-size:1.4rem; font-weight:900; margin-top:10px;" id="prev-title"></h3>
+        <p style="color:var(--c-s);margin-bottom:15px; font-weight:600;" id="prev-desc"></p>
+        <div style="background:#f8fafc;padding:5px;border-radius:12px;border:1px solid var(--c-bd);margin-bottom:15px">
+            <div class="modal-carousel-track" id="prev-list"></div>
+        </div>
+        <div style="margin-top:20px">
+            <div style="font-size:1.8rem;font-weight:900;color:var(--c-a);margin-bottom:15px" id="prev-price"></div>
+            <button class="btn-modal primary" id="btn-confirm-preview">ENCOMENDAR CESTA PADRÃO</button>
+            <button class="btn-modal primary" id="btn-customize-preview" style="background:var(--c-a); display:none;">PERSONALIZAR CESTA</button>
+        </div>
+    </div>
+</dialog>
+
+<dialog id="modal-checkout">
+    <div class="modal-body">
+        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
+        
+        <div style="margin-bottom: 15px; margin-top: 10px; border-bottom: 1px solid var(--c-bd); padding-bottom: 10px; text-align: left;">
+            <h3 style="text-transform:uppercase; font-weight:900; color:var(--c-p); margin:0;">1. Receber quando?</h3>
+            <p style="font-size: 0.8rem; color: var(--c-t); margin-top: 4px; font-weight: 500;">Planeje sua entrega e ganhe desconto.</p>
+        </div>
+        
+        <div id="delivery-options-container" style="margin-bottom: 20px;">
+            <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--c-bd); padding-bottom: 10px;">
+            <h3 style="text-transform:uppercase; font-weight:900; color:var(--c-p); margin:0;">2. Seu Pedido</h3>
+        </div>
+        
+        <div class="chk-list-area" id="chk-list"></div>
+        
+        <div style="text-align: right; margin-bottom: 10px;">
+             <button style="background:transparent; color:var(--c-p); border:1px solid var(--c-bd); padding:8px 14px; border-radius:8px; font-size:0.85rem; font-weight:700; cursor:pointer;" onclick="$('modal-checkout').close(); goToMinhaCesta();">✏️ Alterar quantidades</button>
+        </div>
+        
+        <div id="chk-summary-lines" style="font-size: 0.9rem; color: var(--c-s); line-height: 1.6; margin-bottom: 15px; border-top: 1px dashed var(--c-bd); padding-top: 15px;"></div>
+        
+        <div style="text-align:right; margin-bottom:15px;">
+            <div style="font-size:0.9rem; font-weight:700; color:var(--c-t);" id="chk-info-extra"></div>
+            <div style="font-size:0.85rem; font-weight:700; color:var(--c-s); text-transform:uppercase;">Total a pagar</div>
+            <div style="font-size:2.2rem;font-weight:900; color:var(--c-p); line-height:1.1;" id="chk-total"></div>
+            <div style="font-size:0.7rem; color:var(--c-t); margin-top:4px; font-weight:600;" id="chk-installment">Parcele em até 3x sem juros no cartão de crédito</div>
+        </div>
+
+        <div id="chk-incentive-banner" style="margin-bottom:15px;"></div>
+        
+        <div class="cupom-box">
+            <div id="coupon-toggle" onclick="this.style.display='none'; $('coupon-wrap').style.display='flex';" style="color:var(--c-a); font-size:0.85rem; font-weight:800; cursor:pointer; text-decoration:underline;">Tem um cupom de desconto?</div>
+            <div id="coupon-wrap" style="display:none; gap:5px;">
+                <input id="cupom-code" style="flex:1;padding:10px;border:1px solid var(--c-bd);border-radius:8px;text-transform:uppercase;font-weight:700; font-size:0.9rem;" placeholder="CÓDIGO">
+                <button class="btn-modal primary" onclick="applyCupom()" style="width:auto; margin:0; padding:0 15px; border-radius:8px; font-size:0.9rem;">OK</button>
+            </div>
+            <div id="cupom-msg" style="font-size:.85rem;font-weight:800; color:var(--c-ok);display:none; margin-top:5px;"></div>
+        </div>
+        
+        <button id="btn-send-order" onclick="sendOrder()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+            ENVIAR PEDIDO NO WHATSAPP
+        </button>
+        
+        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
+            <button class="btn-checkout-secondary" style="margin: 0; flex: 1;" onclick="$('modal-checkout').close()">Continuar Comprando</button>
+            <button class="btn-checkout-clear" style="margin: 0; padding: 12px 15px;" onclick="clearCart()">Limpar Carrinho</button>
+        </div>
+    </div>
+</dialog>
+
+<script>
+// ==========================================
+// CONFIGURAÇÃO DE ENTREGAS (INTELIGÊNCIA DE DATAS)
+// ==========================================
+const CONFIG_ENTREGA = {
+    horaCorteHoje: 10,       // Até que horas aceita pedido para o mesmo dia (0 a 23)
+    descontoOpcao2: 5.00,    // Desconto para a segunda data disponível
+    descontoOpcao3: 8.00,    // Desconto para a terceira data disponível
+    diasSemanaInativos: [0], // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+    feriados: [              // Adicione ou remova feriados no formato 'DD/MM'
+        '01/01', // Confraternização Universal
+        '21/04', // Tiradentes
+        '01/05', // Dia do Trabalho
+        '07/09', // Independência
+        '12/10', // Nossa Sr.a Aparecida
+        '02/11', // Finados
+        '15/11', // Proclamação da República
+        '25/12'  // Natal
+    ]
+};
+
+const $=i=>document.getElementById(i);
+const STATE={
+    baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, descontosValor:[],
+    cart:{}, cartOrder:[], observer: null,
+    mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, appliedCombos: [], coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
+    lists: {}, pageLimits: {},
+    deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
+};
+
+const MIN_ORDER = 85.00; 
+
+function setupObserver() {
+    if(!STATE.observer) {
+        STATE.observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    let key = entry.target.dataset.list;
+                    if(key) {
+                        STATE.observer.unobserve(entry.target);
+                        loadMore(key);
+                    }
+                }
             });
-            container.innerHTML = html;
+        }, { root: $('scroll-stage'), rootMargin: '400px' });
+    }
+}
+
+async function init(){
+    setupObserver();
+    try{
+        const[r1,r2,r3,r4,r5,r6]=await Promise.all([
+            fetch('/site/produtos-cesta-basica.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('/site/produtos.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('/site/cupons.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('/site/combos.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('/site/departamento.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('/site/desconto-por-valor.json?v='+Date.now()).catch(()=>({ok:false}))
+        ]);
+        if(r1.ok) STATE.baskets = await r1.json();
+       if(r2.ok){
+            let t=(await r2.text()).trim().replace(/,(\s+)?$/,"");
+            let raw = JSON.parse(t.startsWith('[')?t:'['+t+']');
+            STATE.prods = raw.filter(x=>x.situacao==="A").map(p=>({
+id:String(p.codigo||p.id), code:String(p.codigo||p.id), blingId: String(p.id),
+                name:p.nome, price:parseFloat(p.preco),
+                oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null,
+                stock:parseInt(p.estoque)||0,
+                validade: p.validade || p.Validade || null,
+                cat:(p.categoria||p.Categoria||"Outros").trim(),
+                img:`/site/img/produtos/${p.codigo||p.id}.webp`
+            }));
         }
+        if(r3&&r3.ok) STATE.coupons = await r3.json();
+        if(r4&&r4.ok) STATE.combos = await r4.json();
+        if(r5&&r5.ok) STATE.departamentos = await r5.json();
+        if(r6&&r6.ok) STATE.descontosValor = await r6.json();
 
-        function openItemsModal(key) {
-            const b = BASKETS[key];
-            document.getElementById('m-title').innerText = b.name;
-            
-            let itemsHtml = `<div><div class="cat-title"><i class="ph-fill ph-bowl-food"></i> Alimentos</div>`;
-            itemsHtml += b.alimentos.map(i => `<div class="product-item"><span class="qty-badge">${i.q}</span> ${i.n}</div>`).join('');
-            itemsHtml += `</div>`;
+        renderHome();
+        updateTotals(); 
+    }catch(e){
+        $('scroll-stage').innerHTML='<p style="padding:20px;text-align:center;color:red;font-weight:bold;">Erro fatal na leitura dos arquivos.</p>';
+        console.error("ERRO", e);
+    }
+}
 
-            if(b.limpeza.length > 0) {
-                itemsHtml += `<div><div class="cat-title"><i class="ph-fill ph-drop"></i> Limpeza e Higiene</div>`;
-                itemsHtml += b.limpeza.map(i => `<div class="product-item"><span class="qty-badge">${i.q}</span> ${i.n}</div>`).join('');
-                itemsHtml += `</div>`;
+/* --- RENDERIZAÇÃO PÁGINA ÚNICA --- */
+function renderHome() {
+    STATE.lists = {}; 
+    
+    if(STATE.baskets.length > 0) { $('section-cestas').style.display = 'block'; renderPaginated('grid-cestas', 'cestas', STATE.baskets, 10, 'BASKET'); }
+    else $('section-cestas').style.display = 'none';
+
+    renderCestaAtiva();
+
+    const ofertas = STATE.prods
+        .filter(p => p.oldPrice && p.oldPrice > p.price)
+        .sort((a, b) => ((b.oldPrice - b.price) / b.oldPrice) - ((a.oldPrice - a.price) / a.oldPrice));
+
+    if(ofertas.length > 0) { $('section-ofertas').style.display = 'block'; renderPaginated('grid-ofertas', 'ofertas', ofertas, 10, 'PROD'); }
+    else $('section-ofertas').style.display = 'none';
+
+    if(STATE.combos && STATE.combos.length > 0) { $('section-combos').style.display = 'block'; renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO'); }
+    else $('section-combos').style.display = 'none';
+
+    const ate2 = STATE.prods.filter(p => p.price <= 2.00).sort((a,b) => (a.name || '').localeCompare(b.name || ''));
+    if(ate2.length > 0) { $('section-ate2').style.display = 'block'; renderPaginated('grid-ate2', 'ate2', ate2, 10, 'PROD'); }
+    else $('section-ate2').style.display = 'none';
+
+    let macros = Object.keys(STATE.departamentos).sort();
+    let chipsHtml = '';
+    let corredoresHtml = '';
+    
+    macros.forEach(m => {
+        let safeM = m.replace(/\s/g,'-');
+        chipsHtml += `<div class="chip" id="chip-${safeM}" onclick="instantScrollToMacro('${safeM}')">${m}</div>`;
+        
+        let cats = STATE.departamentos[m] || [];
+        let macroHtml = `<div id="macro-${safeM}" class="page-section" style="display:none; padding-top:10px;">
+                            <div class="section-title">🗂️ ${m}</div>`;
+        let hasProds = false;
+        
+        cats.forEach(c => {
+            let safeC = c.replace(/[^a-zA-Z0-9]/g,'-');
+            let list = STATE.prods.filter(p => p.cat === c);
+            if(list.length > 0) {
+                hasProds = true;
+                macroHtml += `<div class="cat-title">${c}</div>
+                              <div class="grid-produtos" id="grid-${safeM}-${safeC}"></div>`;
             }
+        });
+        macroHtml += `</div>`;
+        if(hasProds) corredoresHtml += macroHtml;
+    });
+    
+    $('chips-area').innerHTML = chipsHtml;
+    $('grid-corredores-wrap').innerHTML = corredoresHtml;
 
-            document.getElementById('m-content').innerHTML = itemsHtml;
-            document.getElementById('m-order-btn').onclick = () => orderWhatsApp(key);
-            openModal('items');
+    macros.forEach(m => {
+        let safeM = m.replace(/\s/g,'-');
+        let cats = STATE.departamentos[m] || [];
+        let macroHasProds = false;
+        cats.forEach(c => {
+            let safeC = c.replace(/[^a-zA-Z0-9]/g,'-');
+            let list = STATE.prods.filter(p => p.cat === c).sort((a,b)=>(a.name || '').localeCompare(b.name || ''));
+            if(list.length > 0) {
+                macroHasProds = true;
+                renderPaginated(`grid-${safeM}-${safeC}`, `macro_${safeM}_${safeC}`, list, 10, 'PROD');
+            }
+        });
+        if (macroHasProds) $(`macro-${safeM}`).style.display = 'block';
+    });
+}
+
+function renderPaginated(containerId, listKey, list, step, type) {
+    STATE.lists[listKey] = { data: list, type: type, containerId: containerId, step: step };
+    if(!STATE.pageLimits[listKey]) STATE.pageLimits[listKey] = step;
+    
+    let limit = STATE.pageLimits[listKey];
+    let visibleList = list.slice(0, limit);
+    
+    let html = visibleList.map(item => {
+        if(type === 'BASKET') return cardBasket(item);
+        if(type === 'COMBO') return cardCombo(item);
+        return cardProdHoriz(item); 
+    }).join('');
+
+    if(limit < list.length) {
+        html += `<div class="infinite-sentinel" data-list="${listKey}" style="grid-column: 1/-1; height: 10px;"></div>`;
+    }
+    
+    let c = $(containerId);
+    if(c) {
+        c.innerHTML = html || '<p style="padding:20px; color:var(--c-t); font-weight:600;">Nenhum produto encontrado.</p>';
+        let sentinel = c.querySelector('.infinite-sentinel');
+        if(sentinel && STATE.observer) {
+            STATE.observer.observe(sentinel);
         }
+    }
+}
 
-        function selectOption(key, idx) {
-            BASKETS[key].opts.forEach((o, i) => o.sel = i === idx);
-            renderAll();
+window.loadMore = function(listKey) {
+    const config = STATE.lists[listKey];
+    if(config) {
+        STATE.pageLimits[listKey] += config.step;
+        renderPaginated(config.containerId, listKey, config.data, config.step, config.type);
+    }
+}
+
+function renderCestaAtiva() {
+    if(STATE.cartOrder.length > 0) {
+        $('section-cesta-ativa').style.display = 'block';
+        let list = STATE.cartOrder.map(id => STATE.prods.find(p => p.id === id)).filter(Boolean);
+        renderPaginated('grid-cesta-ativa', 'cesta_ativa', list, 9999, 'PROD');
+    } else {
+        $('section-cesta-ativa').style.display = 'none';
+        let c = $('grid-cesta-ativa'); if(c) c.innerHTML = '';
+    }
+}
+
+/* --- ROLAGEM INSTANTÂNEA PULO NATIVO (CORRIGIDO) --- */
+function instantScrollTo(elementId, btnId) {
+    if(btnId) updateBottomNav(btnId);
+    const el = document.getElementById(elementId);
+    if(el) {
+        el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+}
+
+window.updateBottomNav = function(activeId) {
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+    if(activeId) {
+        let el = document.getElementById(activeId);
+        if(el) el.classList.add('active');
+    }
+}
+
+window.goToMinhaCesta = function() {
+    let secId = STATE.cartOrder.length > 0 ? 'section-cesta-ativa' : 'section-cestas';
+    instantScrollTo(secId, 'btn-nav-cesta');
+}
+
+window.instantScrollToMacro = function(safeM) {
+    updateBottomNav(null); 
+    document.querySelectorAll('.chips-bar .chip').forEach(el => el.classList.remove('active'));
+    let chip = document.getElementById(`chip-${safeM}`);
+    if(chip) chip.classList.add('active');
+    
+    const el = document.getElementById(`macro-${safeM}`);
+    if(el) {
+        el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+}
+
+/* --- CARDS GRANDES (Cestas e Combos) --- */
+function cardBasket(item){
+    return `
+    <div class="u-card">
+        <div class="u-img-area"><img src="${item.imagem}" class="u-img u-img-cesta" loading="lazy"></div>
+        <div class="u-info">
+            <div class="u-name">${formatName(item.nome)}</div>
+            <div class="u-price">${fmt(item.preco)}</div>
+            <div class="u-action-row">
+                <button class="btn-big-action" onclick="previewBasket('${item.id}')">VER ITENS</button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function cardCombo(item){
+    let sum = 0;
+    item.produtos.forEach(s => {
+        const [qStr, ref] = s.split('x');
+        const p = STATE.prods.find(x => x.id === ref.trim() || x.code === ref.trim());
+        if (p) sum += p.price * parseInt(qStr);
+    });
+    const econ = sum - item.preco;
+    return `
+    <div class="u-card">
+        <div class="u-img-area">
+            <img src="${item.imagem || '/site/img/produtos/cesta.webp'}" class="u-img u-img-cesta" loading="lazy">
+            <div class="offer-tag">🔥 COMBO</div>
+        </div>
+        <div class="u-info">
+            <div class="u-name">${formatName(item.nome)}</div>
+            <div style="margin-top:auto">
+                <div class="combo-strike">De: ${fmt(sum)}</div>
+                <div class="u-price">Por: ${fmt(item.preco)}</div>
+                ${econ > 0 ? `<div class="combo-save">Economia: ${fmt(econ)}</div>` : ''}
+            </div>
+            <div class="u-action-row">
+                <button class="btn-big-action" onclick="previewCombo('${item.id}')">VER ITENS</button>
+            </div>
+        </div>
+    </div>`;
+}
+
+/* --- NOVO CARD PRODUTO (CONTROLE INLINE VERDE CLARO) --- */
+function cardProdHoriz(item){
+    const q = STATE.cart[item.id] || 0;
+    const isOffer = item.oldPrice && item.oldPrice > item.price;
+    const inCart = q > 0 ? 'in-cart' : '';
+    
+    let oldPriceHtml = isOffer ? `<div style="font-size:0.65rem; color:var(--c-t); text-decoration:line-through; line-height:1;">${fmt(item.oldPrice)}</div>` : '';
+    let priceColor = isOffer ? 'color:var(--c-err)' : '';
+    
+    let tagDescontoHtml = isOffer ? `<div style="position:absolute; top:8px; right:8px; background:var(--c-err); color:#fff; font-size:0.65rem; font-weight:900; padding:3px 6px; border-radius:6px; z-index:5;">-${Math.round(((item.oldPrice - item.price) / item.oldPrice) * 100)}%</div>` : '';
+    
+    let tags = [];
+    if(item.validade) tags.push(`Validade: ${item.validade}`);
+    if(item.stock > 0 && item.stock <= 3) tags.push(`Restam ${item.stock} ou menos`);
+    let tagsHtml = tags.length > 0 ? `<div style="width:100%; margin-top:4px; padding-top:4px; border-top:1px dashed var(--c-bd); font-size:0.6rem; color:var(--c-t); font-weight:500;">${tags.join(' | ')}</div>` : '';
+    
+    let ctrlHtml = '';
+    if (item.stock <= 0) {
+        ctrlHtml = `<div style="font-size:0.65rem; color:var(--c-err); font-weight:800; padding:6px 0;">ESGOTADO</div>`;
+    } else if (q > 0) {
+        ctrlHtml = `
+            <div class="card-sq-qty-box">
+                <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', -1)">-</button>
+                <span class="sq-val">${q}</span>
+                <button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>
+            </div>
+        `;
+    } else {
+        ctrlHtml = `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>`;
+    }
+    
+    return `
+    <div class="card-sq card-sq-${item.id} ${inCart}">
+        ${tagDescontoHtml}
+        <div class="card-sq-img-area" onclick="openQuickView('${item.id}')">
+            <img src="${item.img}" class="card-sq-img" loading="lazy">
+        </div>
+        <div class="card-sq-bottom" onclick="openQuickView('${item.id}')">
+            <div style="display:flex; flex-direction:column; align-items:flex-start; flex:1;">
+                ${oldPriceHtml}
+                <span class="card-sq-price" style="${priceColor}">${fmt(item.price)}</span>
+                <div class="card-sq-name-sub">${formatName(item.name)}</div>
+                ${tagsHtml}
+            </div>
+            <div class="card-sq-ctrls" id="ctrl-${item.id}">
+                ${ctrlHtml}
+            </div>
+        </div>
+    </div>`;
+}
+
+/* --- MODAL QUICK VIEW (FECHA SOZINHO AO ADICIONAR) --- */
+window.openQuickView = function(id) {
+    const p = STATE.prods.find(x => x.id === id);
+    if(!p) return;
+    
+    $('qv-img').src = p.img;
+    const titleEl = $('qv-name');
+    titleEl.innerText = formatName(p.name);
+    titleEl.dataset.id = id;
+    
+    const isOffer = p.oldPrice && p.oldPrice > p.price;
+    if(isOffer) {
+        $('qv-price').innerHTML = `<span style="font-size:0.9rem; color:var(--c-t); text-decoration:line-through; font-weight:600; margin-right:8px;">${fmt(p.oldPrice)}</span><span style="color:var(--c-err);">${fmt(p.price)}</span>`;
+    } else {
+        $('qv-price').innerHTML = fmt(p.price);
+    }
+    
+    renderQuickViewAction(id);
+    $('modal-quick-view').showModal();
+}
+
+window.renderQuickViewAction = function(id) {
+    const p = STATE.prods.find(x => x.id === id);
+    if(!p) return;
+    const q = STATE.cart[id] || 0;
+    let html = '';
+    
+    if (p.stock <= 0) {
+        html = `<button class="btn-modal secondary" style="width:100%; padding:16px; border-radius:12px; font-size:1.05rem; color:var(--c-err); border: 2px solid var(--c-err);" disabled>PRODUTO ESGOTADO</button>`;
+    } else if(q === 0) {
+        html = `<button class="btn-modal primary" style="background:#25D366; width:100%; padding:16px; border-radius:12px; font-size:1.05rem;" onclick="addFromQuickView('${id}')">ADICIONAR 1 UN</button>`;
+    } else {
+        html = `<button class="btn-modal secondary" style="width:100%; padding:16px; border-radius:12px; font-size:1.05rem;" onclick="$('modal-quick-view').close()">FECHAR</button>`;
+    }
+    
+    $('qv-action-area').innerHTML = html;
+}
+
+window.addFromQuickView = function(id) {
+    upd(id, 1);
+    $('modal-quick-view').close();
+}
+
+function upd(id, delta){
+    const p = STATE.prods.find(x=>x.id===id);
+    if(!p) return;
+    
+    try { if(navigator.vibrate) navigator.vibrate(50); } catch(e){}
+    
+    const cur = STATE.cart[id] || 0;
+    let next = Math.max(0, cur + parseInt(delta));
+    if(isNaN(next)) next = 0;
+    
+    if(next > p.stock) {
+        showToast(`Apenas ${p.stock} un. disponíveis`, "r");
+        return;
+    }
+    
+    if(cur === 0 && next > 0) STATE.cartOrder.push(id);
+    STATE.cart[id] = next;
+    
+    if(next === 0){
+        delete STATE.cart[id];
+        STATE.cartOrder = STATE.cartOrder.filter(x=>x!==id);
+    }
+    
+    // Atualiza cards na página de forma super leve
+    document.querySelectorAll(`.card-sq-${id}`).forEach(el => {
+        if(next > 0) el.classList.add('in-cart');
+        else el.classList.remove('in-cart');
+        
+        const ctrl = el.querySelector('.card-sq-ctrls');
+        if(ctrl) {
+            if (p.stock <= 0) {
+                ctrl.innerHTML = `<div style="font-size:0.65rem; color:var(--c-err); font-weight:800; padding:6px 0;">ESGOTADO</div>`;
+            } else if(next > 0) {
+                ctrl.innerHTML = `<div class="card-sq-qty-box"><button class="sq-btn" onclick="event.stopPropagation(); upd('${id}', -1)">-</button><span class="sq-val">${next}</span><button class="sq-btn" onclick="event.stopPropagation(); upd('${id}', 1)">+</button></div>`;
+            } else {
+                ctrl.innerHTML = `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${id}', 1)">+</button>`;
+            }
         }
+    });
 
-        function orderWhatsApp(key) {
-            const b = BASKETS[key];
-            const opt = b.opts.find(o => o.sel);
-            const msg = `Olá! Gostaria de encomendar a ${b.name} (${opt.n}) no valor de ${opt.p}.`;
-            window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
+    if((cur===0 && next>0) || (cur>0 && next===0)){
+        setTimeout(renderCestaAtiva, 50);
+    }
+    
+    updateTotals();
+}
+
+/* PREVIEWS E CONFIRMAÇÕES (CESTAS E COMBOS) */
+function previewBasket(id){
+    const c = STATE.baskets.find(x=>String(x.id)===String(id));
+    if(!c) return;
+    STATE.tempBasket = c;
+    $('prev-title').innerHTML = formatName(c.nome);
+    $('prev-desc').innerHTML = `${c.produtos.length} itens inclusos`;
+    $('prev-price').innerHTML = fmt(c.preco);
+    $('prev-list').innerHTML = c.produtos.map(s=>{
+        const [qtd, ref] = s.split('x');
+        const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
+        return `<div class="modal-card"><img src="${p?.img}" loading="lazy"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${qtd}x</div></div>`
+    }).join('');
+    
+    const btn = $('btn-confirm-preview');
+    btn.innerText = "ENCOMENDAR CESTA PADRÃO";
+    btn.onclick = () => { confirmBasket(false); openCheckout(); };
+    
+    const btnCust = $('btn-customize-preview');
+    btnCust.style.display = 'block';
+    btnCust.onclick = () => confirmBasket(true);
+    
+    $('modal-basket-preview').showModal();
+    setTimeout(() => { const el = $('prev-list'); if(el) el.scrollLeft = 0; }, 10);
+}
+
+function previewCombo(id){
+    const c = STATE.combos.find(x=>String(x.id)===String(id));
+    if(!c) return;
+    let sum = 0;
+    $('prev-title').innerHTML = formatName(c.nome);
+    $('prev-list').innerHTML = c.produtos.map(s=>{
+        const [qtd, ref] = s.split('x');
+        const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
+        if(p) sum += p.price * parseInt(qtd);
+        return `<div class="modal-card"><img src="${p?.img}" loading="lazy"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${qtd}x</div></div>`
+    }).join('');
+    const econ = sum - c.preco;
+    $('prev-desc').innerHTML = `<span class="combo-strike">De: ${fmt(sum)}</span> | <span style="color:var(--c-ok);">Economia: ${fmt(econ)}</span>`;
+    $('prev-price').innerHTML = fmt(c.preco);
+    
+    const btn = $('btn-confirm-preview');
+    btn.innerText = "ADICIONAR COMBO";
+    btn.onclick = () => confirmCombo(id);
+    $('btn-customize-preview').style.display = 'none';
+    $('modal-basket-preview').showModal();
+    setTimeout(() => { const el = $('prev-list'); if(el) el.scrollLeft = 0; }, 10);
+}
+
+function confirmBasket(isCustom){
+    const c = STATE.tempBasket;
+    STATE.mode = 'custom';
+    
+    let itemsSum = 0;
+    c.produtos.forEach(s=>{
+        const [qStr, ref] = s.split('x');
+        const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
+        if(p){
+            let q = Math.min(parseInt(qStr), p.stock);
+            if(q > 0) { 
+                const cur = STATE.cart[p.id] || 0;
+                if(cur === 0) STATE.cartOrder.push(p.id);
+                STATE.cart[p.id] = cur + q; 
+                itemsSum += (p.price * q); 
+            }
         }
+    });
 
-        function openModal(id) { document.getElementById(`modal-${id}`).classList.add('active'); }
-        function closeModal(id) { document.getElementById(`modal-${id}`).classList.remove('active'); }
+    let taxaDestaCesta = c.preco - itemsSum;
+    if (taxaDestaCesta > 0) {
+        STATE.basketExtraFee += taxaDestaCesta;
+    }
+    
+    if(STATE.minBasketPrice < c.preco) STATE.minBasketPrice = c.preco;
 
-        renderAll();
-    </script>
+    $('modal-basket-preview').close();
+    
+    if(isCustom) {
+        showToast(`Cesta adicionada para personalização!`, 's');
+        renderHome(); 
+        setTimeout(goToMinhaCesta, 300);
+    } else {
+        showToast(`Cesta adicionada ao carrinho!`, 's');
+        renderHome();
+    }
+    updateTotals();
+}
+
+function confirmCombo(id){
+    const c = STATE.combos.find(x=>String(x.id)===String(id));
+    if(!c) return;
+    
+    let canAdd = true;
+    c.produtos.forEach(s=>{
+        const [qStr, ref] = s.split('x');
+        const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
+        if(p){ if((STATE.cart[p.id] || 0) + parseInt(qStr) > p.stock) canAdd = false; }
+    });
+
+    if(!canAdd) return showToast(`Estoque insuficiente para este combo.`, "r");
+    
+    c.produtos.forEach(s=>{
+        const [qStr, ref] = s.split('x');
+        const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
+        if(p){
+            const q = parseInt(qStr);
+            const cur = STATE.cart[p.id] || 0;
+            if(cur === 0) STATE.cartOrder.push(p.id);
+            STATE.cart[p.id] = cur + q;
+        }
+    });
+    
+    $('modal-basket-preview').close();
+    showToast(`Combo adicionado!`, 's');
+    renderHome();
+    updateTotals();
+}
+
+/* LÓGICA DE GERAÇÃO E SELEÇÃO DATAS DE ENTREGA */
+function renderDeliveryOptions() {
+    let options = [];
+    let date = new Date();
+    let currentHour = date.getHours();
+
+    let diaMesAtual = date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+    let isTodayValid = !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay()) && !CONFIG_ENTREGA.feriados.includes(diaMesAtual);
+    let canDeliverToday = isTodayValid && (currentHour < CONFIG_ENTREGA.horaCorteHoje);
+
+    let checkDate = new Date(date);
+    let iterations = 0;
+    const diasNomes = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+    // Se pode entregar hoje, essa é a opção 1 (Sem desconto)
+    if(canDeliverToday) {
+        options.push({ index: 0, title: 'Receber Hoje', dateStr: diaMesAtual, dayName: diasNomes[date.getDay()], discount: 0 });
+    }
+
+    // Procura os próximos dias válidos (Amanhã, Depois de amanhã, etc)
+    while(options.length < 3 && iterations < 30) {
+        checkDate.setDate(checkDate.getDate() + 1);
+        iterations++;
+        
+        let dOfWeek = checkDate.getDay();
+        let dMes = checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
+        let isHoliday = CONFIG_ENTREGA.feriados.includes(dMes);
+        
+        // Só adiciona se não for domingo e não for feriado
+        if(!CONFIG_ENTREGA.diasSemanaInativos.includes(dOfWeek) && !isHoliday) {
+            let discount = 0;
+            if(options.length === 1) discount = CONFIG_ENTREGA.descontoOpcao2;
+            if(options.length === 2) discount = CONFIG_ENTREGA.descontoOpcao3;
+            
+            let title = options.length === 0 ? 'Entrega mais rápida' : 'Agendar';
+            if(iterations === 1 && canDeliverToday) title = 'Receber Amanhã';
+            if(iterations === 2 && canDeliverToday) title = 'Depois de amanhã';
+            if(iterations === 1 && !canDeliverToday) title = 'Amanhã (Mais Rápido)';
+            
+            options.push({ index: options.length, title: title, dateStr: dMes, dayName: diasNomes[dOfWeek], discount: discount });
+        }
+    }
+    
+    STATE.deliveryOptions = options;
+    
+    // Auto-seleciona a primeira opção se nada foi selecionado
+    if(!STATE.selectedDeliveryIndex && STATE.selectedDeliveryIndex !== 0) STATE.selectedDeliveryIndex = 0;
+    
+    // Desenhar HTML
+    let html = '';
+    options.forEach(opt => {
+        let isSelected = STATE.selectedDeliveryIndex === opt.index;
+        let badge = opt.discount > 0 ? `<div class="del-opt-badge">- ${fmt(opt.discount)}</div>` : '';
+        html += `
+        <div class="del-option ${isSelected ? 'selected' : ''}" onclick="selectDeliveryOption(${opt.index})">
+            <div>
+                <div class="del-opt-title">${opt.title}</div>
+                <div class="del-opt-date">${opt.dayName}, ${opt.dateStr}</div>
+            </div>
+            ${badge}
+        </div>`;
+    });
+    
+    let container = $('delivery-options-list');
+    if(container) container.innerHTML = html;
+    
+    // Atualiza o estado
+    let selOpt = options.find(x => x.index === STATE.selectedDeliveryIndex);
+    if(selOpt) {
+        STATE.deliveryDiscount = selOpt.discount;
+        STATE.deliveryDateStr = `${selOpt.dayName}, ${selOpt.dateStr}`;
+    }
+}
+
+window.selectDeliveryOption = function(idx) {
+    STATE.selectedDeliveryIndex = idx;
+    renderDeliveryOptions();
+    updateTotals(); // Recalcula totais instantaneamente
+}
+
+function updateTotals(){
+    let sumItems = 0, count = 0;
+    Object.entries(STATE.cart).forEach(([id,q])=>{
+        const p = STATE.prods.find(x=>x.id===id);
+        if(p){ sumItems += p.price * q; count += q; }
+    });
+
+    STATE.comboDiscount = 0;
+    STATE.appliedCombos = [];
+    let tempCart = { ...STATE.cart };
+    
+    if (STATE.combos && STATE.combos.length > 0) {
+        STATE.combos.forEach(c => {
+            let possibleTimes = 9999;
+            let comboSomaProd = 0;
+            let reqs = [];
+            c.produtos.forEach(s => {
+                const parts = s.split('x');
+                if (parts.length === 2) {
+                    const q = parseInt(parts[0]);
+                    const ref = parts[1].trim();
+                    const p = STATE.prods.find(x => x.id === ref || x.code === ref);
+                    if (p) { reqs.push({ id: p.id, q: q }); comboSomaProd += p.price * q; }
+                }
+            });
+            if (reqs.length === 0) possibleTimes = 0;
+            reqs.forEach(r => { let inCart = tempCart[r.id] || 0; possibleTimes = Math.min(possibleTimes, Math.floor(inCart / r.q)); });
+            if (possibleTimes > 0) {
+                reqs.forEach(r => tempCart[r.id] -= (r.q * possibleTimes));
+                let discountPerCombo = comboSomaProd - c.preco;
+                if (discountPerCombo > 0) {
+                    STATE.comboDiscount += discountPerCombo * possibleTimes;
+                    for(let i=0; i<possibleTimes; i++) {
+                        STATE.appliedCombos.push({ nome: c.nome, desconto: discountPerCombo });
+                    }
+                }
+            }
+        });
+    }
+
+    let displayTotal = sumItems - STATE.comboDiscount;
+    let subtotalParaDesconto = displayTotal;
+    let extraInfo = "";
+    
+    let isBlocked = false;
+    let missing = 0;
+    
+    if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
+        displayTotal += STATE.basketExtraFee;
+        subtotalParaDesconto = displayTotal;
+        if(displayTotal < STATE.minBasketPrice){
+            const credit = STATE.minBasketPrice - displayTotal;
+            displayTotal = STATE.minBasketPrice; 
+            subtotalParaDesconto = displayTotal;
+            extraInfo = `<span style="color:var(--c-a);">Aproveite ${fmt(credit)} em itens extras</span>`;
+            isBlocked = true;
+        }
+    }
+
+    // Aplica Desconto de Entrega (Agendamento)
+    if(STATE.deliveryDiscount > 0) {
+        displayTotal -= STATE.deliveryDiscount;
+    }
+
+    STATE.valueDiscount = 0;
+    STATE.nextDiscountIncentive = "";
+    if (STATE.descontosValor && STATE.descontosValor.length > 0) {
+        let sortedDesc = [...STATE.descontosValor].sort((a,b) => a.minimo - b.minimo);
+        let appDesc = null, nxtDesc = null;
+        for(let i=0; i<sortedDesc.length; i++) {
+            if(subtotalParaDesconto >= sortedDesc[i].minimo) appDesc = sortedDesc[i];
+            else { nxtDesc = sortedDesc[i]; break; }
+        }
+        if(appDesc) STATE.valueDiscount = appDesc.desconto;
+        
+        if(nxtDesc && subtotalParaDesconto > 0) {
+            let faltam = nxtDesc.minimo - subtotalParaDesconto;
+            let diffDesconto = nxtDesc.desconto - (appDesc ? appDesc.desconto : 0);
+            STATE.nextDiscountIncentive = `🛍️ Adicione mais ${fmt(faltam)} e ganhe mais ${fmt(diffDesconto)} de desconto!`;
+        } else if (appDesc && subtotalParaDesconto > 0) {
+            STATE.nextDiscountIncentive = `🎉 Você garantiu o desconto máximo de ${fmt(appDesc.desconto)}!`;
+        }
+    }
+
+    displayTotal -= STATE.valueDiscount;
+
+    if(STATE.mode !== 'custom' || !isBlocked) {
+        missing = Math.max(0, MIN_ORDER - displayTotal);
+        if(missing > 0) {
+            isBlocked = true;
+        }
+    }
+
+    if(STATE.coupon){
+        if(displayTotal >= STATE.coupon.minimo) displayTotal -= STATE.coupon.desconto;
+        else { STATE.coupon=null; showToast("Cupom removido", "r"); $('cupom-msg').style.display='none';}
+    }
+
+    // Build the Summary Checklist Layout (Amazon Style)
+    let bruto = sumItems + (STATE.mode === 'custom' ? STATE.basketExtraFee : 0);
+    let summaryHtml = `<div style="display:flex; justify-content:space-between;"><span>Valor total:</span><span>${fmt(bruto)}</span></div>`;
+    summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Entrega:</span><span>Grátis</span></div>`;
+    
+    if(STATE.appliedCombos && STATE.appliedCombos.length > 0) {
+        STATE.appliedCombos.forEach(ac => {
+            summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto (${formatName(ac.nome)}):</span><span>-${fmt(ac.desconto)}</span></div>`;
+        });
+    }
+    
+    if(STATE.deliveryDiscount > 0) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>`;
+    if(STATE.valueDiscount > 0) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Desconto por valor:</span><span>-${fmt(STATE.valueDiscount)}</span></div>`;
+    if(STATE.coupon) summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Cupom:</span><span>-${fmt(STATE.coupon.desconto)}</span></div>`;
+
+    let elSummary = $('chk-summary-lines');
+    if(elSummary) elSummary.innerHTML = summaryHtml;
+
+    let elBanner = $('chk-incentive-banner');
+    if(elBanner) {
+        if(STATE.nextDiscountIncentive) {
+            let color = STATE.nextDiscountIncentive.includes('máximo') ? 'var(--c-ok)' : 'var(--c-a)';
+            elBanner.innerHTML = `<div style="color:${color}; background: #f8fafc; padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border: 1px dashed ${color};">${STATE.nextDiscountIncentive}</div>`;
+        } else {
+            elBanner.innerHTML = '';
+        }
+    }
+
+    const badge = $('badge-count');
+    badge.innerText = count;
+    badge.style.display = count > 0 ? 'flex' : 'none';
+
+    $('chk-total').innerText = fmt(displayTotal);
+    if($('chk-installment')) $('chk-installment').innerText = `Parcele em até 3x de ${fmt(displayTotal/3)} sem juros no cartão de crédito`;
+    $('chk-info-extra').innerHTML = extraInfo;
+    
+    let btnChk = $('btn-send-order');
+    if(btnChk) {
+        if(isBlocked) {
+            btnChk.disabled = true;
+            btnChk.innerHTML = STATE.mode === 'custom' && displayTotal <= STATE.minBasketPrice ? `ADICIONE MAIS ITENS` : `FALTAM ${fmt(missing)} PARA FINALIZAR`;
+        } else {
+            btnChk.disabled = false;
+            btnChk.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> ENVIAR PEDIDO NO WHATSAPP`;
+        }
+    }
+}
+
+function openCheckout(){
+    if(STATE.cartOrder.length === 0) return showToast("Seu carrinho está vazio!", "r");
+    
+    // Zera e re-calcula as datas inteligentes antes de exibir
+    STATE.selectedDeliveryIndex = 0;
+    renderDeliveryOptions();
+    
+    let listHtml = STATE.cartOrder.map(id=>{
+        const p = STATE.prods.find(x=>x.id===id);
+        return `<div class="chk-item-simple"><span class="chk-item-qtd">${STATE.cart[id]}x</span><span class="chk-item-name">${formatName(p.name)}</span></div>`
+    }).join('');
+
+    $('chk-list').innerHTML = listHtml;
+    $('modal-checkout').showModal();
+}
+
+function clearCart(){ 
+    if(confirm("Esvaziar carrinho?")){
+        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.minBasketPrice=0; STATE.basketExtraFee=0; STATE.comboDiscount=0; STATE.appliedCombos=[]; STATE.coupon=null; STATE.valueDiscount=0; STATE.nextDiscountIncentive="";
+        updateTotals(); 
+        $('section-cesta-ativa').style.display='none'; 
+        $('modal-checkout').close(); 
+        renderHome(); 
+        document.getElementById('scroll-stage').scrollTo(0,0);
+    }
+}
+
+function handleSearch(q){
+    const btn=$('btn-clr-search'); btn.style.display=q?'flex':'none';
+    if(!q) {
+        $('wrapper-sections').style.display = 'block';
+        $('section-busca').style.display = 'none';
+        return;
+    }
+    
+    $('wrapper-sections').style.display = 'none';
+    $('section-busca').style.display = 'block';
+    
+    let res = STATE.prods.filter(p=>p.name.toUpperCase().includes(q.toUpperCase()));
+    renderPaginated('grid-busca', 'busca', res, 20, 'PROD');
+}
+function clearSearch(){$('search-inp').value='';handleSearch('');}
+
+function applyCupom(){
+    const c=STATE.coupons.find(x=>x.codigo===$('cupom-code').value.toUpperCase().trim());
+    const tot=parseMoney($('chk-total').innerText);
+    
+    if(c && tot>=c.minimo){ STATE.coupon=c; updateTotals(); $('cupom-msg').innerText="CUPOM APLICADO!"; $('cupom-msg').style.display='block'; }
+    else showToast("Cupom inválido ou mínimo não atingido", "r");
+}
+
+async function sendOrder(){
+    if($('btn-send-order').disabled) return;
+    
+    let itemsTxt="", apiItens=[]; 
+    let totalBruto = 0;
+    
+    Object.entries(STATE.cart).forEach(([id,q])=>{
+        const p=STATE.prods.find(x=>x.id===id);
+        if(p){ 
+            totalBruto += p.price * q; 
+            itemsTxt += `${q}x ${p.name}\n`; 
+apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
+        }
+    });
+
+    let final = totalBruto - STATE.comboDiscount;
+    if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
+        final = Math.max(final + STATE.basketExtraFee, STATE.minBasketPrice);
+    }
+    final -= STATE.deliveryDiscount;
+    final -= STATE.valueDiscount;
+    if(STATE.coupon){ final -= STATE.coupon.desconto; }
+
+    let outras_despesas = 0;
+    if (final > totalBruto) {
+        outras_despesas = final - totalBruto;
+    }
+
+    if(STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+    if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
+    if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
+    if(STATE.coupon){ itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
+    
+    const msg = `*NOVO PEDIDO*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
+    
+    try{
+        fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                cliente:{nome: "Cliente Recorrente"},
+                pedido:{
+                    itens: apiItens,
+                    total: final,
+                    outras_despesas: outras_despesas
+                }
+            })
+        });
+    }catch(e){}
+    window.location.href=`https://wa.me/5565996813588?text=${encodeURIComponent(msg)}`;
+}
+
+function formatName(s){ return s?s.replace(/\s+/g,' ').trim().toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
+function parseMoney(s){return parseFloat(s.replace('R$','').replace('.','').replace(',','.').trim());}
+function fmt(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});}
+function showToast(m,t){const d=document.createElement('div');d.className='toast';d.style.background=t==='r'?'var(--c-err)':'var(--c-ok)';d.innerText=m;$('toast-container').appendChild(d);setTimeout(()=>d.remove(),2500);}
+
+init();
+</script>
 </body>
 </html>
