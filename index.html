@@ -650,16 +650,33 @@ async function sendOrder(){
     let apiItens = []; let itemsTxt = ""; let total = parseMoney($('chk-total').innerText);
     Object.entries(STATE.cart).forEach(([id,q])=>{ const p=STATE.prods.find(x=>x.id===id); if(p){ itemsTxt += `${q}x ${p.name}\n`; apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price}); } });
 
-    let obs = `Entrega: ${STATE.deliveryDateStr}\n`;
-    if(STATE.baseBasket){
-        obs += `Cesta Base: ${STATE.baseBasket.nome}\n\n`;
-        let orig = {}; STATE.baseBasket.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) orig[p.id] = parseInt(q); });
-        let rem = []; let add = [];
-        Object.keys(orig).forEach(id => { if((STATE.cart[id]||0) < orig[id]) rem.push(`${orig[id]-(STATE.cart[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
-        Object.keys(STATE.cart).forEach(id => { if(STATE.cart[id] > (orig[id]||0)) add.push(`${STATE.cart[id]-(orig[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
-        if(rem.length) obs += `=== RETIRADOS ===\n${rem.join('\n')}\n\n`;
-        if(add.length) obs += `=== ADICIONADOS ===\n${add.join('\n')}\n\n`;
-    }
+   let obs = `Entrega: ${STATE.deliveryDateStr} | `; // Usa pipe em vez de nova linha
+if(STATE.baseBasket){
+    obs += `Base: ${STATE.baseBasket.nome} | `;
+    let orig = {}; 
+    STATE.baseBasket.produtos.forEach(s => { 
+        const [q, ref] = s.split('x'); 
+        const p = STATE.prods.find(x=>x.id===ref.trim()); 
+        if(p) orig[p.id] = parseInt(q); 
+    });
+    
+    let rem = []; 
+    let add = [];
+    
+    Object.keys(orig).forEach(id => { 
+        if((STATE.cart[id]||0) < orig[id]) 
+            rem.push(`${orig[id]-(STATE.cart[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); 
+    });
+    
+    Object.keys(STATE.cart).forEach(id => { 
+        if(STATE.cart[id] > (orig[id]||0)) 
+            add.push(`${STATE.cart[id]-(orig[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); 
+    });
+    
+    // Formato mais curto e sem excesso de quebras de linha
+    if(rem.length) obs += ` REMOVIDOS: ${rem.join(', ')} |`;
+    if(add.length) obs += ` ADD: ${add.join(', ')}`;
+}
 
     try {
         fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
