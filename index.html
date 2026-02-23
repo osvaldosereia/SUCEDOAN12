@@ -319,7 +319,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
         <div id="section-cesta-ativa" class="page-section" style="display:none; background: #fff; padding: 15px 0; border-top: 1px solid var(--c-bd); border-bottom: 1px solid var(--c-bd);">
             <div class="section-title" style="color:var(--c-a); padding-bottom:5px;">Minha Cesta Personalizada</div>
-            <div class="layout-limit" style="padding: 0 20px 10px; font-size:0.85rem; color:var(--c-s); font-weight:500;">Adicione mais itens ou edite as quantidades abaixo:</div>
+            <div class="layout-limit" style="padding: 0 20px 10px; font-size:0.85rem; color:var(--c-s); font-weight:500;">Adicione ou edite as quantidades abaixo:</div>
             <div class="grid-produtos" id="grid-cesta-ativa"></div>
         </div>
 
@@ -393,7 +393,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Qual o prazo de entrega?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Entregas em até 24 horas úteis após a confirmação do pedido.</div></div>
         <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Posso personalizar a cesta?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Sim! Você pode adicionar ou remover itens conforme sua necessidade.</div></div>
         <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px; margin-bottom: 15px;">
-            <button class="btn-modal primary" style="flex: 1; background:#25D366; font-size: 0.9rem;" onclick="window.open('https://wa.me/5565998150975','_blank')">WhatsApp</button>
+            <button class="btn-modal primary" style="flex: 1; background:#25D366; font-size: 0.9rem;" onclick="window.open('https://wa.me/5565996813588','_blank')">WhatsApp</button>
             <button class="btn-modal primary" style="flex: 1; background:#E1306C; font-size: 0.9rem;" onclick="alert('Link do Instagram aqui')">Instagram</button>
         </div>
     </div>
@@ -472,7 +472,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
 <script>
 // ==========================================
-// CONFIGURAÇÃO DE ENTREGAS (INTELIGÊNCIA DE DATAS)
+// CONFIGURAÇÃO DE ENTREGAS (INTELIGÊNCIA DE DATAS E PEDIDO)
 // ==========================================
 const CONFIG_ENTREGA = {
     horaCorteHoje: 10,       // Até que horas aceita pedido para o mesmo dia (0 a 23)
@@ -491,16 +491,16 @@ const CONFIG_ENTREGA = {
     ]
 };
 
+const MIN_ORDER = 75.00; // NOVO VALOR MÍNIMO ATUALIZADO
+
 const $=i=>document.getElementById(i);
 const STATE={
     baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, descontosValor:[],
     cart:{}, cartOrder:[], observer: null,
-    mode:'zero', baseBasket:null, minBasketPrice:0, basketExtraFee:0, comboDiscount: 0, appliedCombos: [], coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
+    mode:'zero', baseBasket:null, comboDiscount: 0, appliedCombos: [], coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
     lists: {}, pageLimits: {},
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
 };
-
-const MIN_ORDER = 85.00; 
 
 function setupObserver() {
     if(!STATE.observer) {
@@ -534,7 +534,7 @@ async function init(){
             let t=(await r2.text()).trim().replace(/,(\s+)?$/,"");
             let raw = JSON.parse(t.startsWith('[')?t:'['+t+']');
             STATE.prods = raw.filter(x=>x.situacao==="A").map(p=>({
-id:String(p.codigo||p.id), code:String(p.codigo||p.id), blingId: String(p.id),
+                id:String(p.codigo||p.id), code:String(p.codigo||p.id), blingId: String(p.id),
                 name:p.nome, price:parseFloat(p.preco),
                 oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null,
                 stock:parseInt(p.estoque)||0,
@@ -940,8 +940,8 @@ function previewCombo(id){
 function confirmBasket(isCustom){
     const c = STATE.tempBasket;
     STATE.mode = 'custom';
+    STATE.baseBasket = c; // Salva a cesta original para comparação futura
     
-    let itemsSum = 0;
     c.produtos.forEach(s=>{
         const [qStr, ref] = s.split('x');
         const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
@@ -951,17 +951,9 @@ function confirmBasket(isCustom){
                 const cur = STATE.cart[p.id] || 0;
                 if(cur === 0) STATE.cartOrder.push(p.id);
                 STATE.cart[p.id] = cur + q; 
-                itemsSum += (p.price * q); 
             }
         }
     });
-
-    let taxaDestaCesta = c.preco - itemsSum;
-    if (taxaDestaCesta > 0) {
-        STATE.basketExtraFee += taxaDestaCesta;
-    }
-    
-    if(STATE.minBasketPrice < c.preco) STATE.minBasketPrice = c.preco;
 
     $('modal-basket-preview').close();
     
@@ -1128,22 +1120,8 @@ function updateTotals(){
 
     let displayTotal = sumItems - STATE.comboDiscount;
     let subtotalParaDesconto = displayTotal;
-    let extraInfo = "";
     
     let isBlocked = false;
-    let missing = 0;
-    
-    if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
-        displayTotal += STATE.basketExtraFee;
-        subtotalParaDesconto = displayTotal;
-        if(displayTotal < STATE.minBasketPrice){
-            const credit = STATE.minBasketPrice - displayTotal;
-            displayTotal = STATE.minBasketPrice; 
-            subtotalParaDesconto = displayTotal;
-            extraInfo = `<span style="color:var(--c-a);">Aproveite ${fmt(credit)} em itens extras</span>`;
-            isBlocked = true;
-        }
-    }
 
     // Aplica Desconto de Entrega (Agendamento)
     if(STATE.deliveryDiscount > 0) {
@@ -1172,11 +1150,10 @@ function updateTotals(){
 
     displayTotal -= STATE.valueDiscount;
 
-    if(STATE.mode !== 'custom' || !isBlocked) {
-        missing = Math.max(0, MIN_ORDER - displayTotal);
-        if(missing > 0) {
-            isBlocked = true;
-        }
+    // VALIDAÇÃO DO PEDIDO MÍNIMO (LIVRE DE REGRAS DE CESTA)
+    let missing = Math.max(0, MIN_ORDER - displayTotal);
+    if(missing > 0) {
+        isBlocked = true;
     }
 
     if(STATE.coupon){
@@ -1185,7 +1162,7 @@ function updateTotals(){
     }
 
     // Build the Summary Checklist Layout (Amazon Style)
-    let bruto = sumItems + (STATE.mode === 'custom' ? STATE.basketExtraFee : 0);
+    let bruto = sumItems;
     let summaryHtml = `<div style="display:flex; justify-content:space-between;"><span>Valor total:</span><span>${fmt(bruto)}</span></div>`;
     summaryHtml += `<div style="display:flex; justify-content:space-between; color:var(--c-ok); font-weight:600;"><span>Entrega:</span><span>Grátis</span></div>`;
     
@@ -1218,13 +1195,13 @@ function updateTotals(){
 
     $('chk-total').innerText = fmt(displayTotal);
     if($('chk-installment')) $('chk-installment').innerText = `Parcele em até 3x de ${fmt(displayTotal/3)} sem juros no cartão de crédito`;
-    $('chk-info-extra').innerHTML = extraInfo;
+    $('chk-info-extra').innerHTML = ""; // Limpamos a mensagem antiga de "Aproveite X em itens extras"
     
     let btnChk = $('btn-send-order');
     if(btnChk) {
         if(isBlocked) {
             btnChk.disabled = true;
-            btnChk.innerHTML = STATE.mode === 'custom' && displayTotal <= STATE.minBasketPrice ? `ADICIONE MAIS ITENS` : `FALTAM ${fmt(missing)} PARA FINALIZAR`;
+            btnChk.innerHTML = `FALTAM ${fmt(missing)} PARA FINALIZAR`;
         } else {
             btnChk.disabled = false;
             btnChk.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> ENVIAR PEDIDO NO WHATSAPP`;
@@ -1250,7 +1227,7 @@ function openCheckout(){
 
 function clearCart(){ 
     if(confirm("Esvaziar carrinho?")){
-        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.minBasketPrice=0; STATE.basketExtraFee=0; STATE.comboDiscount=0; STATE.appliedCombos=[]; STATE.coupon=null; STATE.valueDiscount=0; STATE.nextDiscountIncentive="";
+        STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.baseBasket=null; STATE.comboDiscount=0; STATE.appliedCombos=[]; STATE.coupon=null; STATE.valueDiscount=0; STATE.nextDiscountIncentive="";
         updateTotals(); 
         $('section-cesta-ativa').style.display='none'; 
         $('modal-checkout').close(); 
@@ -1294,14 +1271,11 @@ async function sendOrder(){
         if(p){ 
             totalBruto += p.price * q; 
             itemsTxt += `${q}x ${p.name}\n`; 
-apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
+            apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
         }
     });
 
     let final = totalBruto - STATE.comboDiscount;
-    if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
-        final = Math.max(final + STATE.basketExtraFee, STATE.minBasketPrice);
-    }
     final -= STATE.deliveryDiscount;
     final -= STATE.valueDiscount;
     if(STATE.coupon){ final -= STATE.coupon.desconto; }
@@ -1316,6 +1290,49 @@ apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
     if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
     if(STATE.coupon){ itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
     
+    // GERAÇÃO DO TEXTO DE OBSERVAÇÕES E COMPARAÇÃO
+    let obsText = "";
+    if (STATE.deliveryDateStr) {
+        obsText += `Entrega Agendada: ${STATE.deliveryDateStr}\n`;
+    }
+
+    if (STATE.baseBasket) {
+        obsText += `Cesta Base: ${STATE.baseBasket.nome}\n\n`;
+
+        let origCart = {};
+        STATE.baseBasket.produtos.forEach(s => {
+            const [qStr, ref] = s.split('x');
+            const p = STATE.prods.find(x=>x.id===ref.trim()||x.code===ref.trim());
+            if(p) origCart[p.id] = (origCart[p.id] || 0) + parseInt(qStr);
+        });
+
+        let removed = [];
+        let added = [];
+
+        Object.keys(origCart).forEach(id => {
+            let origQ = origCart[id];
+            let curQ = STATE.cart[id] || 0;
+            if (curQ < origQ) {
+                let p = STATE.prods.find(x=>x.id===id);
+                if(p) removed.push(`${origQ - curQ}x ${p.name} (Cód: ${p.code})`);
+            }
+        });
+
+        Object.keys(STATE.cart).forEach(id => {
+            let curQ = STATE.cart[id];
+            let origQ = origCart[id] || 0;
+            if (curQ > origQ) {
+                let p = STATE.prods.find(x=>x.id===id);
+                if(p) added.push(`${curQ - origQ}x ${p.name} (Cód: ${p.code})`);
+            }
+        });
+
+        if(removed.length > 0) obsText += `=== ITENS RETIRADOS ===\n` + removed.join("\n") + `\n\n`;
+        if(added.length > 0) obsText += `=== ITENS ADICIONADOS ===\n` + added.join("\n") + `\n\n`;
+    }
+
+    obsText = obsText.trim();
+    
     const msg = `*NOVO PEDIDO*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
     try{
@@ -1326,12 +1343,13 @@ apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
                 pedido:{
                     itens: apiItens,
                     total: final,
-                    outras_despesas: outras_despesas
+                    outras_despesas: outras_despesas,
+                    observacoes: obsText
                 }
             })
         });
     }catch(e){}
-    window.location.href=`https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`;
+    window.location.href=`https://wa.me/5565996813588?text=${encodeURIComponent(msg)}`;
 }
 
 function formatName(s){ return s?s.replace(/\s+/g,' ').trim().toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
