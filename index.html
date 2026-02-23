@@ -650,24 +650,41 @@ async function sendOrder(){
     let apiItens = []; let itemsTxt = ""; let total = parseMoney($('chk-total').innerText);
     Object.entries(STATE.cart).forEach(([id,q])=>{ const p=STATE.prods.find(x=>x.id===id); if(p){ itemsTxt += `${q}x ${p.name}\n`; apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price}); } });
 
-    let obs = `Entrega: ${STATE.deliveryDateStr}\n`;
+    // 1. Variável original para o WhatsApp (mantém a formatação bonita com quebras de linha)
+    let obsWhatsApp = `Entrega: ${STATE.deliveryDateStr}\n`;
+    
+    // 2. Variável compacta APENAS para o Make/Bling (evita cortes no sistema)
+    let obsMake = `Entrega: ${STATE.deliveryDateStr} | `;
+
     if(STATE.baseBasket){
-        obs += `Cesta Base: ${STATE.baseBasket.nome}\n\n`;
+        obsWhatsApp += `Cesta Base: ${STATE.baseBasket.nome}\n\n`;
+        obsMake += `Base: ${STATE.baseBasket.nome} | `;
+
         let orig = {}; STATE.baseBasket.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) orig[p.id] = parseInt(q); });
         let rem = []; let add = [];
+        
         Object.keys(orig).forEach(id => { if((STATE.cart[id]||0) < orig[id]) rem.push(`${orig[id]-(STATE.cart[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
         Object.keys(STATE.cart).forEach(id => { if(STATE.cart[id] > (orig[id]||0)) add.push(`${STATE.cart[id]-(orig[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
-        if(rem.length) obs += `=== RETIRADOS ===\n${rem.join('\n')}\n\n`;
-        if(add.length) obs += `=== ADICIONADOS ===\n${add.join('\n')}\n\n`;
+        
+        // Preenche a formatação do WhatsApp (Idêntica à original)
+        if(rem.length) obsWhatsApp += `=== RETIRADOS ===\n${rem.join('\n')}\n\n`;
+        if(add.length) obsWhatsApp += `=== ADICIONADOS ===\n${add.join('\n')}\n\n`;
+
+        // Preenche a formatação do Make/Bling (Compacta)
+        if(rem.length) obsMake += `REMOVIDOS: ${rem.join(', ')} | `;
+        if(add.length) obsMake += `ADD: ${add.join(', ')}`;
     }
 
     try {
         fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method:"POST", headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({ cliente:{nome:"Cliente Site"}, pedido:{ itens: apiItens, total: total, outras_despesas: STATE.basketExtraFee, observacoes: obs } })
+            // Aqui enviamos a versão compacta (obsMake) para o webhook
+            body:JSON.stringify({ cliente:{nome:"Cliente Site"}, pedido:{ itens: apiItens, total: total, outras_despesas: STATE.basketExtraFee, observacoes: obsMake } })
         });
     } catch(e) {}
-    window.location.href = `https://wa.me/5565996813588?text=${encodeURIComponent("*NOVO PEDIDO*\n\n"+obs+"\n*TOTAL: "+fmt(total)+"*")}`;
+    
+    // Aqui usamos a versão original (obsWhatsApp) para manter a mensagem do cliente perfeita
+    window.location.href = `https://wa.me/5565996813588?text=${encodeURIComponent("*NOVO PEDIDO*\n\n"+obsWhatsApp+"\n*TOTAL: "+fmt(total)+"*")}`;
 }
 
 function formatName(s){ return s?s.toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
