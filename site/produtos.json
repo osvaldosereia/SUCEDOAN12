@@ -110,16 +110,6 @@
     "estoque": 6
   },
   {
-    "id": 16598430517,
-    "nome": "AÇAFRÃO DIODORO 20GR",
-    "preco": 2.49,
-    "codigo": "P0029",
-    "situacao": "A",
-    "categoria": "TEMPEROS",
-    "validade": "01/11/2026",
-    "estoque": 10
-  },
-  {
     "id": 16601898659,
     "nome": "AÇAFRÃO DIODORO 20GR",
     "preco": 1.9,
@@ -128,6 +118,16 @@
     "categoria": "",
     "validade": "",
     "estoque": 12
+  },
+  {
+    "id": 16598430517,
+    "nome": "AÇAFRÃO DIODORO 20GR",
+    "preco": 2.49,
+    "codigo": "P0029",
+    "situacao": "A",
+    "categoria": "TEMPEROS",
+    "validade": "01/11/2026",
+    "estoque": 10
   },
   {
     "id": 16601899081,
@@ -352,12 +352,13 @@
   {
     "id": 16601898581,
     "nome": "AMACIANTE YPE 2L INTENSO",
-    "preco": 10.9,
+    "preco": 8.99,
     "codigo": "P438",
     "situacao": "A",
     "categoria": "LAVANDERIA",
     "validade": "",
-    "estoque": 450
+    "estoque": 450,
+    "preco_antigo": 10.9
   },
   {
     "id": 16605690570,
@@ -647,7 +648,8 @@
     "situacao": "A",
     "categoria": "CAFÉ DA MANHÃ",
     "validade": "02/03/2026",
-    "estoque": 24
+    "estoque": 24,
+    "preco_antigo": 1.5
   },
   {
     "id": 16598402382,
@@ -772,22 +774,24 @@
   {
     "id": 16607114664,
     "nome": "BISCOITO ADORALLE 350G AGUA E SAL",
-    "preco": 5.49,
+    "preco": 4.29,
     "codigo": "00748460",
     "situacao": "A",
     "categoria": "SALGADOS",
     "validade": "14/11/2026",
-    "estoque": 60
+    "estoque": 60,
+    "preco_antigo": 5.49
   },
   {
     "id": 16605701618,
     "nome": "BISCOITO ADORALLE 350G CREAM CRACKER",
-    "preco": 5.49,
+    "preco": 4.29,
     "codigo": "P574",
     "situacao": "A",
     "categoria": "SALGADOS",
     "validade": "14/11/2026",
-    "estoque": 60
+    "estoque": 60,
+    "preco_antigo": 5.49
   },
   {
     "id": 16598396207,
@@ -882,22 +886,24 @@
   {
     "id": 16601898793,
     "nome": "BISCOITO WAFER RANCHEIRO 78G CHOCOLATE",
-    "preco": 2.29,
+    "preco": 1.79,
     "codigo": "P486",
     "situacao": "A",
     "categoria": "DOCES",
     "validade": "12/06/2026",
-    "estoque": 600
+    "estoque": 600,
+    "preco_antigo": 2.29
   },
   {
     "id": 16601898803,
     "nome": "BISCOITO WAFER RANCHEIRO 78G MORANGO",
-    "preco": 2.29,
+    "preco": 1.79,
     "codigo": "P487",
     "situacao": "A",
     "categoria": "DOCES",
     "validade": "13/06/2026",
-    "estoque": 600
+    "estoque": 600,
+    "preco_antigo": 2.29
   },
   {
     "id": 16598323845,
@@ -977,12 +983,12 @@
     "situacao": "A",
     "categoria": "CAFÉ DA MANHÃ",
     "validade": "03/02/2027",
-    "estoque": 480
+    "estoque": 30
   },
   {
     "id": 16434824308,
     "nome": "CAFÉ CABOCLO 500G TRADICIONAL",
-    "preco": 26.9,
+    "preco": 27.9,
     "codigo": "C0064",
     "situacao": "A",
     "categoria": "CAFÉ DA MANHÃ",
@@ -1157,7 +1163,8 @@
     "situacao": "A",
     "categoria": "UTENSÍLIOS",
     "validade": "",
-    "estoque": 20
+    "estoque": 20,
+    "preco_antigo": 2.7
   },
   {
     "id": 16605220913,
@@ -1167,7 +1174,8 @@
     "situacao": "A",
     "categoria": "UTENSÍLIOS",
     "validade": "",
-    "estoque": 20
+    "estoque": 20,
+    "preco_antigo": 2.7
   },
   {
     "id": 16598430600,
@@ -1242,12 +1250,13 @@
   {
     "id": 16598338983,
     "nome": "CEREAL MATINAL SUCRILHOS ORIG SACHE 280GR",
-    "preco": 9.9,
+    "preco": 8.49,
     "codigo": "P0087",
     "situacao": "A",
     "categoria": "CAFÉ DA MANHÃ",
     "validade": "12/04/2026",
-    "estoque": 7
+    "estoque": 7,
+    "preco_antigo": 10.9
   },
   {
     "id": 16601898895,
@@ -1266,7 +1275,7 @@
     "codigo": "C0089",
     "situacao": "A",
     "categoria": "CAFÉ DA MANHÃ",
-    "validade": "23/10/2025",
+    "validade": "23/10/2026",
     "estoque": 30
   },
   {
@@ -1637,7 +1646,8 @@
     "situacao": "A",
     "categoria": "DOCES",
     "validade": "25/03/2026",
-    "estoque": 27
+    "estoque": 27,
+    "preco_antigo": 2.79
   },
   {
     "id": 16598353648,
@@ -1816,7 +1826,7 @@
     "codigo": "P0118",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/09/2027",
     "estoque": 6
   },
   {
@@ -1842,32 +1852,35 @@
   {
     "id": 16598339009,
     "nome": "DESODORANTE HERBISSIMO REFIL NEUTRO 45G",
-    "preco": 1.9,
+    "preco": 1.7,
     "codigo": "P0115",
     "situacao": "A",
     "categoria": "HIGIENE",
     "validade": "",
-    "estoque": 100
+    "estoque": 100,
+    "preco_antigo": 2.5
   },
   {
     "id": 16598339016,
     "nome": "DESODORANTE HERBISSIMO REFIL SENSITIVE 45G",
-    "preco": 1.9,
+    "preco": 1.7,
     "codigo": "P0116",
     "situacao": "A",
     "categoria": "HIGIENE",
     "validade": "",
-    "estoque": 100
+    "estoque": 100,
+    "preco_antigo": 2.5
   },
   {
     "id": 16598339004,
     "nome": "DESODORANTE HERBISSIMO REFIL TRADICIONAL 45G",
-    "preco": 1.9,
+    "preco": 1.7,
     "codigo": "P0117",
     "situacao": "A",
     "categoria": "HIGIENE",
     "validade": "",
-    "estoque": 100
+    "estoque": 100,
+    "preco_antigo": 2.5
   },
   {
     "id": 16598323751,
@@ -1886,7 +1899,7 @@
     "codigo": "79824523",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/08/2028",
     "estoque": 20
   },
   {
@@ -1916,7 +1929,7 @@
     "codigo": "P0111",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/06/2028",
     "estoque": 6
   },
   {
@@ -1926,7 +1939,7 @@
     "codigo": "P0112",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "21/08/2028",
     "estoque": 12
   },
   {
@@ -1936,7 +1949,7 @@
     "codigo": "P0113",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "26/08/2028",
     "estoque": 12
   },
   {
@@ -1946,7 +1959,7 @@
     "codigo": "P0114",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "05/10/2028",
     "estoque": 12
   },
   {
@@ -1956,7 +1969,7 @@
     "codigo": "88430400",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/11/2028",
     "estoque": 6
   },
   {
@@ -1966,7 +1979,7 @@
     "codigo": "79344981",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/12/2028",
     "estoque": 6
   },
   {
@@ -1976,7 +1989,7 @@
     "codigo": "88559704",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/12/2028",
     "estoque": 6
   },
   {
@@ -1986,7 +1999,7 @@
     "codigo": "88360449",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/11/2028",
     "estoque": 6
   },
   {
@@ -1996,7 +2009,7 @@
     "codigo": "88240720",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/01/2029",
     "estoque": 6
   },
   {
@@ -2006,7 +2019,7 @@
     "codigo": "88510189",
     "situacao": "A",
     "categoria": "HIGIENE",
-    "validade": "",
+    "validade": "30/12/2028",
     "estoque": 6
   },
   {
@@ -2886,7 +2899,7 @@
     "codigo": "P209O0",
     "situacao": "A",
     "categoria": "TEMPEROS",
-    "validade": "",
+    "validade": "30/07/2026",
     "estoque": 20
   },
   {
@@ -2906,7 +2919,7 @@
     "codigo": "P0175",
     "situacao": "A",
     "categoria": "UTILIDADES",
-    "validade": "16/09/2025",
+    "validade": "16/09/2026",
     "estoque": 6
   },
   {
@@ -3592,12 +3605,13 @@
   {
     "id": 16598416978,
     "nome": "MILHO VERDE FUGINI SH 170GR",
-    "preco": 2.79,
+    "preco": 2.59,
     "codigo": "P0239",
     "situacao": "A",
     "categoria": "ENLATADOS",
     "validade": "",
-    "estoque": 540
+    "estoque": 540,
+    "preco_antigo": 2.99
   },
   {
     "id": 16604585445,
@@ -3642,12 +3656,13 @@
   {
     "id": 16601898745,
     "nome": "MISTURA PARA BOLO APTI 400G QUATRO LEITES",
-    "preco": 4.79,
+    "preco": 4.19,
     "codigo": "P483",
     "situacao": "A",
     "categoria": "DOCES",
     "validade": "30/07/2026",
-    "estoque": 360
+    "estoque": 360,
+    "preco_antigo": 4.79
   },
   {
     "id": 16605700583,
@@ -4302,22 +4317,24 @@
   {
     "id": 16601839516,
     "nome": "POTE CUMBUCA TIGELA PLASTICO COZINHA 800ml BRANCO",
-    "preco": 3.9,
+    "preco": 3.7,
     "codigo": "P413",
     "situacao": "A",
     "categoria": "UTENSÍLIOS",
     "validade": "",
-    "estoque": 9
+    "estoque": 9,
+    "preco_antigo": 4.5
   },
   {
     "id": 16601839508,
     "nome": "POTE CUMBUCA TIGELA PLASTICO COZINHA 800ml PRETO",
-    "preco": 3.9,
+    "preco": 3.7,
     "codigo": "P412",
     "situacao": "A",
     "categoria": "UTENSÍLIOS",
     "validade": "",
-    "estoque": 10
+    "estoque": 10,
+    "preco_antigo": 4.5
   },
   {
     "id": 16601839479,
@@ -4706,7 +4723,7 @@
     "codigo": "P525",
     "situacao": "A",
     "categoria": "DOCES",
-    "validade": "14/08/0226",
+    "validade": "14/08/2026",
     "estoque": 90
   },
   {
@@ -5470,16 +5487,6 @@
     "estoque": 0
   },
   {
-    "id": 16604550523,
-    "nome": "TABUA DE CORTE PLÁSTICA 20X30 COM ALÇA - CORES VARIADAS",
-    "preco": 12.9,
-    "codigo": "P569",
-    "situacao": "A",
-    "categoria": "UTENSÍLIOS",
-    "validade": "",
-    "estoque": 0
-  },
-  {
     "id": 16604585450,
     "nome": "TABUA DE CORTE PLÁSTICA 20X30 COM ALÇA - CORES VARIADAS",
     "preco": 12.9,
@@ -5488,6 +5495,16 @@
     "categoria": "UTENSÍLIOS",
     "validade": "",
     "estoque": 12
+  },
+  {
+    "id": 16604550523,
+    "nome": "TABUA DE CORTE PLÁSTICA 20X30 COM ALÇA - CORES VARIADAS",
+    "preco": 12.9,
+    "codigo": "P569",
+    "situacao": "A",
+    "categoria": "UTENSÍLIOS",
+    "validade": "",
+    "estoque": 0
   },
   {
     "id": 16601793910,
