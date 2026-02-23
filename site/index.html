@@ -530,11 +530,11 @@ async function init(){
             fetch('desconto-por-valor.json?v='+Date.now()).catch(()=>({ok:false}))
         ]);
         if(r1.ok) STATE.baskets = await r1.json();
-        if(r2.ok){
+       if(r2.ok){
             let t=(await r2.text()).trim().replace(/,(\s+)?$/,"");
             let raw = JSON.parse(t.startsWith('[')?t:'['+t+']');
             STATE.prods = raw.filter(x=>x.situacao==="A").map(p=>({
-                id:String(p.id), code:String(p.codigo||p.id),
+                id:String(p.codigo||p.id), code:String(p.codigo||p.id), // <--- A ALTERAÇÃO FOI FEITA AQUI
                 name:p.nome, price:parseFloat(p.preco),
                 oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null,
                 stock:parseInt(p.estoque)||0,
