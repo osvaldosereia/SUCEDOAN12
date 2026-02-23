@@ -285,7 +285,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 <header class="app-header">
     <div class="layout-limit header-inner">
         <div class="header-brand">
-            <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" onclick="clearSearch()">
+            <img src="site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" onclick="clearSearch()">
         </div>
         <div class="search-bar-area">
             <div class="search-wrapper">
@@ -384,7 +384,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
-            <img src="img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);" alt="Logo">
+            <img src="site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);" alt="Logo">
             <h3 style="font-weight:900;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
             <div style="font-size: 0.85rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99681-3588</div>
         </div>
@@ -522,12 +522,12 @@ async function init(){
     setupObserver();
     try{
         const[r1,r2,r3,r4,r5,r6]=await Promise.all([
-            fetch('produtos-cesta-basica.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('produtos.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('cupons.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('combos.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('departamento.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('desconto-por-valor.json?v='+Date.now()).catch(()=>({ok:false}))
+            fetch('site/produtos-cesta-basica.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('site/produtos.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('site/cupons.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('site/combos.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('site/departamento.json?v='+Date.now()).catch(()=>({ok:false})),
+            fetch('site/desconto-por-valor.json?v='+Date.now()).catch(()=>({ok:false}))
         ]);
         if(r1.ok) STATE.baskets = await r1.json();
        if(r2.ok){
@@ -540,7 +540,7 @@ id:String(p.codigo||p.id), code:String(p.codigo||p.id), blingId: String(p.id),
                 stock:parseInt(p.estoque)||0,
                 validade: p.validade || p.Validade || null,
                 cat:(p.categoria||p.Categoria||"Outros").trim(),
-                img:`img/produtos/${p.codigo||p.id}.webp`
+                img:`site/img/produtos/${p.codigo||p.id}.webp`
             }));
         }
         if(r3&&r3.ok) STATE.coupons = await r3.json();
@@ -730,7 +730,7 @@ function cardCombo(item){
     return `
     <div class="u-card">
         <div class="u-img-area">
-            <img src="${item.imagem || 'img/produtos/cesta.webp'}" class="u-img u-img-cesta" loading="lazy">
+            <img src="${item.imagem || 'site/img/produtos/cesta.webp'}" class="u-img u-img-cesta" loading="lazy">
             <div class="offer-tag">🔥 COMBO</div>
         </div>
         <div class="u-info">
