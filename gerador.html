@@ -2,234 +2,382 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Gerador de Ofertas para Instagram</title>
+<title>Estúdio de Ofertas - Dona Antônia</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     :root {
+        /* CORES FIXAS */
         --c-p: #0f172a; --c-s: #334155; --c-t: #64748b;
         --c-a: #ea580c; --c-ok: #15803d; --c-err: #dc2626;
-        --c-bg: #e2e8f0; --c-surf: #ffffff; --c-bd: #e2e8f0;
+        --c-bg: #e2e8f0; --c-surf: #ffffff; --c-bd: #cbd5e1;
         --font: 'Inter', system-ui, sans-serif;
-    }
-    body { font-family: var(--font); background: #333; color: #fff; padding: 20px; text-align: center; }
-    
-    /* ÁREA FIXA PARA EVITAR CORTES DO HTML2CANVAS */
-    #palco-invisivel {
-        position: fixed;
-        top: 0;
-        left: -9999px; /* Esconde da vista principal, mas mantém na tela para capturar */
-        z-index: -100;
-    }
 
-    /* ESTILO DO POST DO INSTAGRAM (1080 x 1350) */
+        /* VARIÁVEIS EDITÁVEIS PELO PAINEL (Tamanhos e Espaços) */
+        --logo-capa-sz: 200px;
+        --logo-norm-sz: 140px;
+        --title-capa-sz: 4.5rem;
+        --val-sz: 1.6rem;
+        --site-sz: 1.8rem;
+        --card-radius: 24px;
+        --prod-nome-sz: 1.3rem;
+        --prod-preco-sz: 3.5rem;
+        --tag-desc-sz: 1.8rem;
+    }
+    
+    * { box-sizing: border-box; }
+    body { font-family: var(--font); background: #1e293b; color: #f8fafc; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    
+    /* BARRA SUPERIOR */
+    .toolbar { background: #0f172a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; z-index: 10; }
+    .toolbar h1 { margin: 0; font-size: 1.5rem; color: #fff; }
+    .btn-group { display: flex; gap: 10px; }
+    button { padding: 10px 20px; font-size: 1rem; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+    button:active { transform: scale(0.95); }
+    .btn-gerar { background: var(--c-ok); color: #fff; padding: 10px 30px; font-size: 1.1rem; }
+    .btn-acao { background: #334155; color: #fff; }
+    .btn-acao:hover { background: #475569; }
+
+    /* LAYOUT PRINCIPAL */
+    .main-area { display: flex; flex: 1; overflow: hidden; }
+    
+    /* PAINEL LATERAL DE CONFIGURAÇÕES */
+    .sidebar { width: 350px; background: #0f172a; padding: 20px; overflow-y: auto; border-right: 1px solid #334155; }
+    .sidebar h2 { font-size: 1.2rem; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-top: 0; }
+    .ctrl-group { margin-bottom: 15px; }
+    .ctrl-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 5px; font-weight: bold; }
+    .ctrl-group input[type="range"] { width: 100%; cursor: pointer; }
+    
+    /* ÁREA DAS MATRIZES (PREVIEW) */
+    .workspace { flex: 1; overflow-y: auto; padding: 40px; background: #1e293b; display: flex; flex-direction: column; align-items: center; gap: 50px; }
+    .workspace-title { color: #cbd5e1; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; }
+
+    /* O POST DO INSTAGRAM (MATRIZ) */
     .ig-post {
-        width: 1080px;
-        height: 1350px;
-        background: var(--c-bg);
-        display: flex;
-        flex-direction: column;
-        padding: 60px;
-        box-sizing: border-box;
-        position: relative;
+        width: 1080px; height: 1350px; background: var(--c-bg);
+        display: flex; flex-direction: column; padding: 60px; position: relative;
+        /* Escala visual para caber na tela sem quebrar as proporções reais */
+        transform-origin: top center; transform: scale(0.6); margin-bottom: -500px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
     }
     
-    /* CABEÇALHO CAPA (1ª Imagem) */
-    .ig-header-capa { text-align: center; margin-bottom: 40px; }
-    .logo-grande { width: 220px; height: 220px; border-radius: 50%; object-fit: cover; border: 6px solid var(--c-bd); margin: 0 auto 20px auto; display: block; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-    .info-contato { font-size: 1.8rem; font-weight: 800; color: var(--c-s); margin-bottom: 15px; }
-    .info-validade { font-size: 1.6rem; font-weight: 900; color: #fff; background: var(--c-ok); padding: 10px 25px; border-radius: 20px; display: inline-block; text-transform: uppercase; margin-bottom: 20px; }
-    .ig-title-capa { font-size: 4.5rem; font-weight: 900; color: var(--c-p); margin: 0; text-transform: uppercase; line-height: 1; }
-    .ig-subtitle-capa { font-size: 2.5rem; color: var(--c-a); font-weight: 800; }
+    /* EDIÇÃO DE TEXTO */
+    [contenteditable="true"] { outline: 2px dashed rgba(234, 88, 12, 0); transition: outline 0.2s; padding: 2px 5px; border-radius: 4px; }
+    [contenteditable="true"]:hover { outline: 2px dashed rgba(234, 88, 12, 0.5); cursor: text; }
+    [contenteditable="true"]:focus { outline: 2px dashed var(--c-a); background: rgba(255,255,255,0.1); }
 
-    /* CABEÇALHO NORMAL (Outras Imagens) */
+    /* CABEÇALHO CAPA (Logo Esquerda, Info Direita) */
+    .ig-header-capa { display: flex; align-items: center; justify-content: space-between; gap: 40px; margin-bottom: 40px; background: #fff; padding: 30px; border-radius: 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.03); }
+    .logo-grande { width: var(--logo-capa-sz); height: var(--logo-capa-sz); border-radius: 50%; object-fit: cover; border: 4px solid var(--c-bd); flex-shrink: 0; }
+    .header-capa-info { flex: 1; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+    .ig-title-capa { font-size: var(--title-capa-sz); font-weight: 900; color: var(--c-p); margin: 0; text-transform: uppercase; line-height: 1; }
+    .info-validade { font-size: var(--val-sz); font-weight: 900; color: #fff; background: var(--c-ok); padding: 10px 25px; border-radius: 20px; display: inline-block; text-transform: uppercase; margin-top: 15px; margin-bottom: 10px; }
+    .info-contato { font-size: var(--site-sz); font-weight: 800; color: var(--c-s); }
+
+    /* CABEÇALHO NORMAL */
     .ig-header-normal { display: flex; align-items: center; gap: 30px; margin-bottom: 40px; border-bottom: 3px dashed var(--c-bd); padding-bottom: 30px; }
-    .logo-pequena { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid var(--c-bd); }
+    .logo-pequena { width: var(--logo-norm-sz); height: var(--logo-norm-sz); border-radius: 50%; object-fit: cover; border: 4px solid var(--c-bd); flex-shrink: 0;}
     .info-normal-text { text-align: left; flex: 1; }
-    .info-validade-small { font-size: 1.4rem; font-weight: 900; color: #fff; background: var(--c-ok); padding: 8px 20px; border-radius: 16px; display: inline-block; text-transform: uppercase; margin-bottom: 10px; }
-    .info-site-small { font-size: 1.6rem; font-weight: 800; color: var(--c-p); }
+    .info-validade-small { font-size: var(--val-sz); font-weight: 900; color: #fff; background: var(--c-ok); padding: 8px 20px; border-radius: 16px; display: inline-block; text-transform: uppercase; margin-bottom: 10px; }
+    .info-site-small { font-size: var(--site-sz); font-weight: 800; color: var(--c-p); }
     
     /* GRIDS */
-    .ig-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; flex: 1; align-items: center; } /* Para os 2 produtos da capa */
-    .ig-grid-4 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 40px; flex: 1; } /* Para os 4 produtos normais */
+    .ig-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; flex: 1; align-items: center; } 
+    .ig-grid-4 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 40px; flex: 1; } 
 
-    /* ESTILO DO CARD */
-    .card-sq { background: #fff; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.05); height: 100%; border: 2px solid #fff; }
+    /* ESTILO DO CARD (Fundo Branco Forçado) */
+    .card-sq { background-color: #ffffff; border-radius: var(--card-radius); padding: 25px; display: flex; flex-direction: column; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.06); height: 100%; border: 2px solid var(--c-bd); }
     .card-sq-img-area { height: 320px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
     .card-sq-img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-    .tag-desconto { position: absolute; top: 20px; right: 20px; background: var(--c-err); color: #fff; font-size: 2rem; font-weight: 900; padding: 12px 24px; border-radius: 16px; }
+    .tag-desconto { position: absolute; top: 20px; right: 20px; background: var(--c-err); color: #fff; font-size: var(--tag-desc-sz); font-weight: 900; padding: 12px 24px; border-radius: 16px; }
     .card-info { margin-top: auto; display: flex; flex-direction: column; }
-    .preco-antigo { font-size: 1.6rem; color: var(--c-t); text-decoration: line-through; font-weight: 700; }
-    .preco-novo { font-size: 4rem; font-weight: 900; color: var(--c-p); line-height: 1; margin-bottom: 15px; letter-spacing: -2px; }
-    .nome-produto { font-size: 1.8rem; color: var(--c-s); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .preco-antigo { font-size: calc(var(--prod-preco-sz) * 0.45); color: var(--c-t); text-decoration: line-through; font-weight: 700; }
+    .preco-novo { font-size: var(--prod-preco-sz); font-weight: 900; color: var(--c-p); line-height: 1; margin-bottom: 15px; letter-spacing: -2px; }
+    .nome-produto { font-size: var(--prod-nome-sz); color: var(--c-s); font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-    /* Galeria e Botões */
-    #galeria { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 30px; }
-    .preview-box { background: #fff; padding: 10px; border-radius: 12px; color: #000; }
-    .preview-img { width: 250px; height: auto; border: 1px solid #ccc; border-radius: 8px; }
-    .btn-download { display: block; background: var(--c-a); color: #fff; text-decoration: none; padding: 10px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
-    button { padding: 15px 30px; font-size: 1.2rem; background: var(--c-ok); color: #fff; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: transform 0.1s; }
-    button:active { transform: scale(0.95); }
+    /* MODAL E GALERIA DE RESULTADOS */
+    #modal-resultados { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.95); z-index: 100; display: none; flex-direction: column; padding: 40px; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .modal-header h2 { margin: 0; color: #fff; }
+    #galeria { display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; }
+    .preview-box { background: #fff; padding: 15px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; width: 320px; }
+    .preview-img { width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 15px; }
+    .btn-download { display: flex; align-items: center; justify-content: center; width: 100%; background: var(--c-a); color: #fff; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; }
+    
+    /* PALCO OCULTO PARA A CAPTURA REAL */
+    #palco-captura { position: fixed; left: -9999px; top: 0; z-index: -100; }
 </style>
 </head>
 <body>
 
-    <h1>Gerador de Posts - Dona Antônia</h1>
-    <p>O sistema vai selecionar os 2 maiores descontos para a Capa, e agrupar o restante.</p>
-    <button onclick="gerarImagens()" id="btn-gerar">GERAR IMAGENS PARA INSTAGRAM</button>
+    <div class="toolbar">
+        <h1>🛠️ Estúdio de Ofertas</h1>
+        <div class="btn-group">
+            <button class="btn-acao" onclick="document.getElementById('file-upload').click()">📂 Carregar Modelo</button>
+            <input type="file" id="file-upload" accept=".json" style="display: none;" onchange="importarModelo(event)">
+            <button class="btn-acao" onclick="exportarModelo()">💾 Exportar Modelo</button>
+            <button class="btn-gerar" onclick="processarImagens()">🚀 GERAR IMAGENS FINAIS</button>
+        </div>
+    </div>
 
-    <div id="palco-invisivel"></div>
-    <div id="galeria"></div>
+    <div class="main-area">
+        <div class="sidebar">
+            <h2>Ajustes de Tamanho</h2>
+            <div class="ctrl-group">
+                <label>Logo Capa</label>
+                <input type="range" min="150" max="350" value="200" oninput="updVar('--logo-capa-sz', this.value + 'px')">
+            </div>
+            <div class="ctrl-group">
+                <label>Logo Normal</label>
+                <input type="range" min="100" max="250" value="140" oninput="updVar('--logo-norm-sz', this.value + 'px')">
+            </div>
+            <div class="ctrl-group">
+                <label>Título Capa (🔥 SUPER...)</label>
+                <input type="range" min="3" max="7" step="0.1" value="4.5" oninput="updVar('--title-capa-sz', this.value + 'rem')">
+            </div>
+            <div class="ctrl-group">
+                <label>Tamanho da Validade</label>
+                <input type="range" min="1" max="2.5" step="0.1" value="1.6" oninput="updVar('--val-sz', this.value + 'rem')">
+            </div>
+            <div class="ctrl-group">
+                <label>Tamanho Nome Produto</label>
+                <input type="range" min="0.8" max="2.5" step="0.1" value="1.3" oninput="updVar('--prod-nome-sz', this.value + 'rem')">
+            </div>
+            <div class="ctrl-group">
+                <label>Tamanho Preço</label>
+                <input type="range" min="2" max="6" step="0.1" value="3.5" oninput="updVar('--prod-preco-sz', this.value + 'rem')">
+            </div>
+            <div class="ctrl-group">
+                <label>Arredondamento dos Cards</label>
+                <input type="range" min="0" max="60" value="24" oninput="updVar('--card-radius', this.value + 'px')">
+            </div>
+            
+            <p style="font-size:0.8rem; color:#64748b; margin-top:30px; line-height:1.5;">
+                * Clica nos textos das matrizes à direita para alterar o que está escrito.<br>
+                * As imagens e preços nas matrizes são apenas ilustrativos. Serão substituídos pelas tuas ofertas reais ao gerar.
+            </p>
+        </div>
+
+        <div class="workspace">
+            
+            <div>
+                <div class="workspace-title">Matriz 1: Capa (2 Produtos)</div>
+                <div class="ig-post" id="matriz-capa">
+                    <div class="ig-header-capa">
+                        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-grande" crossorigin="anonymous">
+                        <div class="header-capa-info">
+                            <div class="ig-title-capa" contenteditable="true" id="txt-title-capa">🔥 SUPER OFERTAS</div>
+                            <div class="info-validade" contenteditable="true" id="txt-val-capa">Calculando...</div>
+                            <div class="info-contato" contenteditable="true" id="txt-site-capa">🌐 www.donaantonia.com.br &nbsp;|&nbsp; 📱 (65) 99815-0975</div>
+                        </div>
+                    </div>
+                    <div class="ig-grid-2">
+                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 1</div></div></div>
+                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 2</div></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="workspace-title">Matriz 2: Páginas Seguintes (4 Produtos)</div>
+                <div class="ig-post" id="matriz-normal">
+                    <div class="ig-header-normal">
+                        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-pequena" crossorigin="anonymous">
+                        <div class="info-normal-text">
+                            <div class="info-validade-small" contenteditable="true" id="txt-val-norm">Calculando...</div>
+                            <div class="info-site-small" contenteditable="true" id="txt-site-norm">🌐 www.donaantonia.com.br</div>
+                        </div>
+                    </div>
+                    <div class="ig-grid-4">
+                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 3</div></div></div>
+                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 4</div></div></div>
+                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 5</div></div></div>
+                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 6</div></div></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="palco-captura"></div>
+    <div id="modal-resultados">
+        <div class="modal-header">
+            <h2 id="status-text">A Gerar Imagens... Aguarda.</h2>
+            <button class="btn-acao" onclick="fecharResultados()">✕ Fechar Galeria</button>
+        </div>
+        <div id="galeria"></div>
+    </div>
 
 <script>
-// Função para calcular a validade da semana atual (Segunda a Sábado)
-function calcularValidade() {
-    const hoje = new Date();
-    const diaSemana = hoje.getDay(); // 0 = Dom, 1 = Seg, ..., 6 = Sab
-    
-    // Calcula quantos dias voltar ou avançar para chegar na Segunda-feira
+// --- FUNÇÕES DO PAINEL E MATRIZ ---
+function updVar(varName, value) { document.documentElement.style.setProperty(varName, value); }
+
+// Calcula a validade ao carregar a página
+function setValidadeInicial() {
+    const hoje = new Date(); const diaSemana = hoje.getDay(); 
     const diffSegunda = hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); 
     const segunda = new Date(hoje.setDate(diffSegunda));
-    
-    // O sábado é 5 dias depois da segunda-feira
-    const sabado = new Date(segunda);
-    sabado.setDate(segunda.getDate() + 5);
-
+    const sabado = new Date(segunda); sabado.setDate(segunda.getDate() + 5);
     const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
     
-    return `Válido do dia ${segunda.getDate()} a ${sabado.getDate()} do mês de ${meses[sabado.getMonth()]}`;
+    const texto = `Válido do dia ${segunda.getDate()} a ${sabado.getDate()} de ${meses[sabado.getMonth()]}`;
+    document.getElementById('txt-val-capa').innerText = texto;
+    document.getElementById('txt-val-norm').innerText = texto;
+}
+window.onload = setValidadeInicial;
+
+// --- SISTEMA DE GUARDAR E CARREGAR MODELOS (JSON) ---
+function exportarModelo() {
+    const rootStyles = getComputedStyle(document.documentElement);
+    // Cria um objeto com os textos e estilos atuais
+    const modelo = {
+        textos: {
+            titleCapa: document.getElementById('txt-title-capa').innerText,
+            valCapa: document.getElementById('txt-val-capa').innerText,
+            siteCapa: document.getElementById('txt-site-capa').innerText,
+            valNorm: document.getElementById('txt-val-norm').innerText,
+            siteNorm: document.getElementById('txt-site-norm').innerText
+        },
+        estilos: {
+            '--logo-capa-sz': rootStyles.getPropertyValue('--logo-capa-sz').trim(),
+            '--logo-norm-sz': rootStyles.getPropertyValue('--logo-norm-sz').trim(),
+            '--title-capa-sz': rootStyles.getPropertyValue('--title-capa-sz').trim(),
+            '--val-sz': rootStyles.getPropertyValue('--val-sz').trim(),
+            '--site-sz': rootStyles.getPropertyValue('--site-sz').trim(),
+            '--card-radius': rootStyles.getPropertyValue('--card-radius').trim(),
+            '--prod-nome-sz': rootStyles.getPropertyValue('--prod-nome-sz').trim(),
+            '--prod-preco-sz': rootStyles.getPropertyValue('--prod-preco-sz').trim()
+        }
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(modelo));
+    const a = document.createElement('a');
+    a.setAttribute("href", dataStr);
+    a.setAttribute("download", "matriz-dona-antonia.json");
+    a.click();
 }
 
-async function gerarImagens() {
-    const btn = document.getElementById('btn-gerar');
-    btn.disabled = true;
-    btn.innerText = "A PROCESSAR...";
+function importarModelo(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const modelo = JSON.parse(e.target.result);
+            // Atualiza Textos
+            if(modelo.textos) {
+                document.getElementById('txt-title-capa').innerText = modelo.textos.titleCapa;
+                document.getElementById('txt-val-capa').innerText = modelo.textos.valCapa;
+                document.getElementById('txt-site-capa').innerText = modelo.textos.siteCapa;
+                document.getElementById('txt-val-norm').innerText = modelo.textos.valNorm;
+                document.getElementById('txt-site-norm').innerText = modelo.textos.siteNorm;
+            }
+            // Atualiza Estilos Visuais
+            if(modelo.estilos) {
+                for (const [key, value] of Object.entries(modelo.estilos)) {
+                    document.documentElement.style.setProperty(key, value);
+                    // Atualiza os sliders visualmente
+                    const valNumber = value.replace(/[^0-9.]/g, ''); // Remove 'px' ou 'rem'
+                    const inputs = document.querySelectorAll(`input[oninput*="${key}"]`);
+                    if(inputs.length > 0) inputs[0].value = valNumber;
+                }
+            }
+            alert("Modelo carregado com sucesso!");
+        } catch (error) { alert("Erro ao ler o ficheiro."); }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // Reseta o input
+}
 
-    const validadeStr = calcularValidade();
-    const logoUrl = "/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif";
+// --- MOTOR DE GERAÇÃO (HTML2CANVAS) ---
+function fecharResultados() { document.getElementById('modal-resultados').style.display = 'none'; }
 
-    // 1. LER OS PRODUTOS
+function criarCardHtml(p) {
+    const preco = parseFloat(p.preco).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    const precoAntigo = parseFloat(p.preco_antigo).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    return `
+        <div class="card-sq">
+            <div class="tag-desconto">-${p.descontoPerc}%</div>
+            <div class="card-sq-img-area">
+                <img src="/site/img/produtos/${p.codigo || p.id}.webp" class="card-sq-img" crossorigin="anonymous">
+            </div>
+            <div class="card-info">
+                <div class="preco-antigo">${precoAntigo}</div>
+                <div class="preco-novo">${preco}</div>
+                <div class="nome-produto">${p.nome}</div>
+            </div>
+        </div>`;
+}
+
+async function processarImagens() {
+    const modal = document.getElementById('modal-resultados');
+    const galeria = document.getElementById('galeria');
+    const palcoCaptura = document.getElementById('palco-captura');
+    const statusTxt = document.getElementById('status-text');
+    
+    modal.style.display = 'flex';
+    galeria.innerHTML = '';
+    palcoCaptura.innerHTML = '';
+    statusTxt.innerText = "A ler os produtos na loja...";
+
+    // 1. Ler Ofertas
     const resposta = await fetch('/site/produtos.json');
     const texto = await resposta.text();
     const dados = JSON.parse(texto.startsWith('[') ? texto : '[' + texto + ']');
     
-    // 2. FILTRAR AS OFERTAS E CALCULAR A PERCENTAGEM DE DESCONTO
     let ofertas = dados.filter(p => p.situacao === "A" && p.preco_antigo && parseFloat(p.preco_antigo) > parseFloat(p.preco));
+    ofertas.forEach(p => p.descontoPerc = Math.round(((parseFloat(p.preco_antigo) - parseFloat(p.preco)) / parseFloat(p.preco_antigo)) * 100));
+    ofertas.sort((a, b) => b.descontoPerc - a.descontoPerc); // Ordena pelo maior desconto
     
-    ofertas.forEach(p => {
-        p.descontoPerc = Math.round(((parseFloat(p.preco_antigo) - parseFloat(p.preco)) / parseFloat(p.preco_antigo)) * 100);
-    });
-
-    // Ordenar do maior desconto para o menor
-    ofertas.sort((a, b) => b.descontoPerc - a.descontoPerc);
-    
-    // 3. SEPARAR OS GRUPOS (Grupo 1 = Capa com 2 itens. Restante = Grupos de 4)
+    // Agrupa (2 para capa, 4 para as restantes)
     const grupoCapa = ofertas.slice(0, 2);
     const restantes = ofertas.slice(2);
-    
     const grupos = [grupoCapa];
-    for (let i = 0; i < restantes.length; i += 4) {
-        grupos.push(restantes.slice(i, i + 4));
-    }
+    for (let i = 0; i < restantes.length; i += 4) grupos.push(restantes.slice(i, i + 4));
 
-    const palco = document.getElementById('palco-invisivel');
-    const galeria = document.getElementById('galeria');
-    palco.innerHTML = ''; 
-    galeria.innerHTML = '<p style="font-size:1.2rem;">A gerar imagens... Pode demorar alguns segundos, aguarda!</p>';
-
-    // 4. CRIAR O HTML DE CADA IMAGEM E CAPTURAR
+    // 2. Gerar cada quadro baseado na Matriz Editável
     for (let i = 0; i < grupos.length; i++) {
-        const grupo = grupos[i];
-        const igPost = document.createElement('div');
-        igPost.className = 'ig-post';
+        statusTxt.innerText = `A desenhar e fotografar a imagem ${i + 1} de ${grupos.length}...`;
         
-        // Se for a primeira imagem (Capa)
+        let nodeClone;
         if (i === 0) {
-            igPost.innerHTML = `
-                <div class="ig-header-capa">
-                    <img src="${logoUrl}" class="logo-grande" crossorigin="anonymous">
-                    <div class="info-validade">${validadeStr}</div>
-                    <div class="info-contato">🌐 www.donaantonia.com.br &nbsp;|&nbsp; 📱 (65) 99815-0975</div>
-                    <div class="ig-title-capa">🔥 SUPER OFERTAS</div>
-                </div>
-                <div class="ig-grid-2" id="grid-${i}"></div>
-            `;
+            // Clona a Matriz da Capa
+            nodeClone = document.getElementById('matriz-capa').cloneNode(true);
+            const grid = nodeClone.querySelector('.ig-grid-2');
+            grid.innerHTML = grupos[i].map(p => criarCardHtml(p)).join('');
         } else {
-            // Se forem as imagens seguintes
-            igPost.innerHTML = `
-                <div class="ig-header-normal">
-                    <img src="${logoUrl}" class="logo-pequena" crossorigin="anonymous">
-                    <div class="info-normal-text">
-                        <div class="info-validade-small">${validadeStr}</div>
-                        <div class="info-site-small">🌐 www.donaantonia.com.br</div>
-                    </div>
-                </div>
-                <div class="ig-grid-4" id="grid-${i}"></div>
-            `;
+            // Clona a Matriz Normal
+            nodeClone = document.getElementById('matriz-normal').cloneNode(true);
+            const grid = nodeClone.querySelector('.ig-grid-4');
+            grid.innerHTML = grupos[i].map(p => criarCardHtml(p)).join('');
         }
         
-        palco.appendChild(igPost);
-        const grid = document.getElementById(`grid-${i}`);
+        // Remove a escala para a captura ficar em Alta Resolução (1080x1350)
+        nodeClone.style.transform = 'none';
+        nodeClone.style.marginBottom = '0';
+        palcoCaptura.appendChild(nodeClone);
 
-        // Montar os cards dentro do grid
-        grupo.forEach(p => {
-            const preco = parseFloat(p.preco).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
-            const precoAntigo = parseFloat(p.preco_antigo).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
-            
-            // Usamos style inline flex:1 para forçar o card a ocupar todo o espaço e esticar a imagem
-            grid.innerHTML += `
-                <div class="card-sq">
-                    <div class="tag-desconto">-${p.descontoPerc}%</div>
-                    <div class="card-sq-img-area">
-                        <img src="/site/img/produtos/${p.codigo || p.id}.webp" class="card-sq-img" crossorigin="anonymous">
-                    </div>
-                    <div class="card-info">
-                        <div class="preco-antigo">${precoAntigo}</div>
-                        <div class="preco-novo">${preco}</div>
-                        <div class="nome-produto">${p.nome}</div>
-                    </div>
-                </div>
-            `;
-        });
-
-        // ESTRATÉGIA ANTI-CORTE: Esperar rigorosamente que TODAS as imagens deste post carreguem
-        const imagensNoPost = igPost.querySelectorAll('img');
-        await Promise.all(Array.from(imagensNoPost).map(img => {
-            if (img.complete) return Promise.resolve();
-            return new Promise(resolve => {
-                img.onload = resolve;
-                img.onerror = resolve; // Resolve mesmo em erro para não travar o loop
-            });
-        }));
-        
-        // Pausa extra de segurança para os browsers processarem a renderização CSS
-        await new Promise(r => setTimeout(r, 600)); 
+        // Esperar carregamento de imagens
+        const imgs = nodeClone.querySelectorAll('img');
+        await Promise.all(Array.from(imgs).map(img => new Promise(res => { img.onload = res; img.onerror = res; })));
+        await new Promise(r => setTimeout(r, 600)); // Tempo extra para o CSS estabilizar
         
         // Capturar
-        const canvas = await html2canvas(igPost, { 
-            scale: 1, 
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: "#e2e8f0" 
-        });
-        
+        const canvas = await html2canvas(nodeClone, { scale: 1, useCORS: true, allowTaint: true, backgroundColor: "#e2e8f0" });
         const dataUrl = canvas.toDataURL("image/png");
 
-        if (i === 0) galeria.innerHTML = ''; 
-        
+        // Adicionar na Galeria Final
         galeria.innerHTML += `
             <div class="preview-box">
-                <p style="font-weight:bold; margin-bottom:5px;">${i === 0 ? '🏆 CAPA (Maiores Descontos)' : 'Post ' + (i + 1)}</p>
+                <p style="font-weight:900; color:var(--c-p); margin-top:0;">${i === 0 ? '🏆 CAPA' : 'Post ' + (i + 1)}</p>
                 <img src="${dataUrl}" class="preview-img">
-                <a href="${dataUrl}" download="oferta-instagram-${i+1}.png" class="btn-download">⬇️ Descarregar PNG</a>
+                <a href="${dataUrl}" download="oferta-${i+1}.png" class="btn-download">⬇️ Descarregar PNG</a>
             </div>
         `;
         
-        // Remove do DOM após fotografar para não pesar a memória
-        igPost.remove();
+        nodeClone.remove(); // Limpar a memória
     }
-
-    btn.innerText = "GERAR IMAGENS PARA INSTAGRAM";
-    btn.disabled = false;
+    statusTxt.innerText = "✅ Tudo pronto! Descarrega as tuas imagens abaixo.";
 }
 </script>
 </body>
