@@ -94,7 +94,8 @@
         .btn-danger:hover { background: #fee2e2; }
         .checkbox-wrapper { display: flex; align-items: center; gap: 8px; font-size: 12px; margin-top: 10px; justify-content: center; color: var(--text-secondary); }
         .checkbox-wrapper input { accent-color: var(--accent); }
-        canvas { background: #fff; max-width: 100%; border: 1px solid var(--border); margin: 0 auto; display: block; }
+        canvas { background: #fff; max-width: 100%; border: 1px solid var(--border); margin: 0 auto; display: block; cursor: grab; }
+        canvas:active { cursor: grabbing; }
         .editor-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; background: #f1f5f9; padding: 10px; border-radius: 6px; }
         .sticker-tools { display: flex; gap: 10px; margin-top: 10px; justify-content: space-between; }
         .sticker-btn { flex: 1; padding: 6px; border: 1px solid var(--border); background: #ffffff; color: var(--text-secondary); border-radius: 4px; font-size: 10px; cursor: pointer; text-align: center; }
@@ -335,6 +336,12 @@
         const ctx = canvas.getContext('2d');
         let loadedImage = null;
         let stickerScale = 1.0; 
+        
+        let imgOffsetX = 0;
+        let imgOffsetY = 0;
+        let isDragging = false;
+        let startDragX = 0;
+        let startDragY = 0;
 
         // --- SISTEMA DE FILA PARA O GITHUB ---
         let githubQueue = [];
@@ -1592,6 +1599,9 @@ const payload = products.map(prepararProdutoParaSite);
             if(document.getElementById('sticker-text-2')) document.getElementById('sticker-text-2').value = '';
             stickerScale = 1.0;
             
+            imgOffsetX = 0;
+            imgOffsetY = 0;
+            
             const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p.url_imagem || "";
             img.onload = () => { loadedImage = img; drawCanvas(); openModal('modal-editor'); };
             img.onerror = () => { loadedImage = null; drawCanvas(); openModal('modal-editor'); };
@@ -1603,7 +1613,7 @@ const payload = products.map(prepararProdutoParaSite);
                 if(e.target.files && e.target.files[0]) {
                     const reader = new FileReader();
                     reader.onload = (evt) => {
-                        const img = new Image(); img.onload = () => { loadedImage = img; drawCanvas(); }; img.src = evt.target.result;
+                        const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = evt.target.result;
                         document.getElementById('file-size-preview').innerText = Math.round(e.target.files[0].size/1024) + "kb";
                     };
                     reader.readAsDataURL(e.target.files[0]);
@@ -1617,12 +1627,33 @@ const payload = products.map(prepararProdutoParaSite);
                     if (item.kind === 'file' && item.type.includes('image/')) {
                         const blob = item.getAsFile(); const reader = new FileReader();
                         reader.onload = (event) => {
-                            const img = new Image(); img.onload = () => { loadedImage = img; drawCanvas(); }; img.src = event.target.result;
+                            const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = event.target.result;
                             document.getElementById('file-size-preview').innerText = "Colado da Área de Transf.";
                         };
                         reader.readAsDataURL(blob);
                     }
                 }
+            });
+
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startDragX = e.offsetX - imgOffsetX;
+                startDragY = e.offsetY - imgOffsetY;
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                imgOffsetX = e.offsetX - startDragX;
+                imgOffsetY = e.offsetY - startDragY;
+                drawCanvas();
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                isDragging = false;
             });
         }
 
@@ -1656,7 +1687,11 @@ const payload = products.map(prepararProdutoParaSite);
                 const sharpen = parseFloat(document.getElementById('sharpenRange').value);
                 ctx.filter = `brightness(${bright})`;
                 const w = loadedImage.width * zoom, h = loadedImage.height * zoom;
-                ctx.drawImage(loadedImage, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
+                
+                const posX = ((canvas.width - w) / 2) + imgOffsetX;
+                const posY = ((canvas.height - h) / 2) + imgOffsetY;
+                
+                ctx.drawImage(loadedImage, posX, posY, w, h);
                 ctx.filter = 'none'; 
                 if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
             } else {
