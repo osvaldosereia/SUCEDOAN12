@@ -532,7 +532,7 @@ function renderHome() {
     if(ofertas.length > 0) { $('section-ofertas').style.display = 'block'; renderPaginated('grid-ofertas', 'ofertas', ofertas, 10, 'PROD'); }
     
     // 2ª INCLUSÃO: LÓGICA DO JAVASCRIPT PARA AS ÚLTIMAS UNIDADES
-    const ultimas = STATE.prods.filter(p => p.stock > 0 && p.stock <= 5);
+    const ultimas = STATE.prods.filter(p => p.stock > 0 && p.stock <= 3);
     if(ultimas.length > 0) { $('section-ultimas').style.display = 'block'; renderPaginated('grid-ultimas', 'ultimas', ultimas, 10, 'PROD'); }
 
     if(STATE.combos && STATE.combos.length > 0) { $('section-combos').style.display = 'block'; renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO'); }
