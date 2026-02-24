@@ -1284,7 +1284,12 @@ function applyCupom(){
 }
 
 async function sendOrder(){
-    if($('btn-send-order').disabled) return;
+    const btnSubmit = $('btn-send-order');
+    if(btnSubmit.disabled) return;
+    
+    // 1. Prevenção de duplo clique (Trava o botão)
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = "⏳ ENVIANDO...";
     
     let itemsTxt="", apiItens=[]; 
     let totalBruto = 0;
@@ -1294,7 +1299,7 @@ async function sendOrder(){
         if(p){ 
             totalBruto += p.price * q; 
             itemsTxt += `${q}x ${p.name}\n`; 
-apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
+            apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
         }
     });
 
@@ -1304,13 +1309,35 @@ apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
     }
     final -= STATE.deliveryDiscount;
     final -= STATE.valueDiscount;
-    if(STATE.coupon){ final -= STATE.coupon.desconto; }
+    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
+    final -= cupomDesconto;
 
     let outras_despesas = 0;
     if (final > totalBruto) {
         outras_despesas = final - totalBruto;
+    } else {
+        // Garantia de envio da taxa extra caso haja personalização
+        outras_despesas = STATE.basketExtraFee || 0;
     }
 
+    // 2. Cálculo do Total de Descontos para o Bling
+    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
+
+    // 3. Montagem da Observação (Linha Única para o Make não quebrar)
+    let obs = `Entrega: ${STATE.deliveryDateStr}`;
+    if(STATE.baseBasket){
+        obs += ` | Cesta Base: ${STATE.baseBasket.nome}`;
+        let orig = {}; STATE.baseBasket.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) orig[p.id] = parseInt(q); });
+        let rem = []; let add = [];
+        
+        Object.keys(orig).forEach(id => { if((STATE.cart[id]||0) < orig[id]) rem.push(`${orig[id]-(STATE.cart[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
+        Object.keys(STATE.cart).forEach(id => { if(STATE.cart[id] > (orig[id]||0)) add.push(`${STATE.cart[id]-(orig[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
+        
+        if(rem.length) obs += ` | ➖ RETIRADOS: ${rem.join(', ')}`;
+        if(add.length) obs += ` | ➕ ADD: ${add.join(', ')}`;
+    }
+
+    // 4. Inserindo os descontos visuais no WhatsApp
     if(STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
     if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
@@ -1318,20 +1345,33 @@ apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
     
     const msg = `*NOVO PEDIDO*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
+    // 5. Envio seguro para o Make (com AWAIT, desconto e observacoes incluídas)
     try{
-        fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
+        await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method:"POST", headers:{"Content-Type":"application/json"},
             body:JSON.stringify({
-                cliente:{nome: "Cliente Recorrente"},
+                cliente:{nome: "Cliente Site"},
                 pedido:{
                     itens: apiItens,
                     total: final,
-                    outras_despesas: outras_despesas
+                    outras_despesas: outras_despesas,
+                    desconto: totalDescontos, // <- O Bling precisa disso para fechar a conta
+                    observacoes: obs          // <- Observações bonitas e sem pular linha
                 }
             })
         });
-    }catch(e){}
+    }catch(e){
+        console.error("Erro no Make:", e);
+    }
+    
+    // 6. Redirecionamento para WhatsApp
     window.location.href=`https://wa.me/5565996813588?text=${encodeURIComponent(msg)}`;
+
+    // 7. Destrava o botão caso o usuário volte para o site
+    setTimeout(() => {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> ENVIAR PEDIDO NO WHATSAPP`;
+    }, 3000);
 }
 
 function formatName(s){ return s?s.replace(/\s+/g,' ').trim().toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
