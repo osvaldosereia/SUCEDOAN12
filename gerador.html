@@ -6,21 +6,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     :root {
-        /* CORES FIXAS */
-        --c-p: #0f172a; --c-s: #334155; --c-t: #64748b;
-        --c-a: #ea580c; --c-ok: #15803d; --c-err: #dc2626;
-        --c-bg: #e2e8f0; --c-surf: #ffffff; --c-bd: #cbd5e1;
+        /* CORES FIXAS - Atualizadas para tons mais suaves e minimalistas */
+        --c-p: #0f172a; --c-s: #475569; --c-t: #94a3b8;
+        --c-a: #ea580c; --c-ok: #15803d; --c-err: #ef4444;
+        --c-bg: #f8fafc; /* Fundo geral da imagem bem claro */
+        --c-surf: #ffffff; /* Fundo branco para a caixa do produto */
+        --c-bd: #e2e8f0;
         --font: 'Inter', system-ui, sans-serif;
 
-        /* VARIÁVEIS EDITÁVEIS PELO PAINEL (Tamanhos e Espaços) */
-        --logo-capa-sz: 200px;
-        --logo-norm-sz: 140px;
-        --title-capa-sz: 4.5rem;
-        --val-sz: 1.6rem;
-        --site-sz: 1.8rem;
-        --card-radius: 24px;
-        --prod-nome-sz: 1.3rem;
-        --prod-preco-sz: 3.5rem;
+        /* VARIÁVEIS EDITÁVEIS PELO PAINEL (Tamanhos ajustados para 1 produto) */
+        --logo-capa-sz: 180px;
+        --logo-norm-sz: 120px;
+        --title-capa-sz: 4rem;
+        --val-sz: 1.4rem;
+        --site-sz: 1.6rem;
+        --card-radius: 32px;
+        --prod-nome-sz: 2.5rem; /* Nome maior */
+        --prod-preco-sz: 6.5rem; /* Preço bem destacado */
         --tag-desc-sz: 1.8rem;
     }
     
@@ -55,7 +57,6 @@
     .ig-post {
         width: 1080px; height: 1350px; background: var(--c-bg);
         display: flex; flex-direction: column; padding: 60px; position: relative;
-        /* Escala visual para caber na tela sem quebrar as proporções reais */
         transform-origin: top center; transform: scale(0.6); margin-bottom: -500px;
         box-shadow: 0 25px 50px rgba(0,0,0,0.5);
     }
@@ -63,36 +64,35 @@
     /* EDIÇÃO DE TEXTO */
     [contenteditable="true"] { outline: 2px dashed rgba(234, 88, 12, 0); transition: outline 0.2s; padding: 2px 5px; border-radius: 4px; }
     [contenteditable="true"]:hover { outline: 2px dashed rgba(234, 88, 12, 0.5); cursor: text; }
-    [contenteditable="true"]:focus { outline: 2px dashed var(--c-a); background: rgba(255,255,255,0.1); }
+    [contenteditable="true"]:focus { outline: 2px dashed var(--c-a); background: rgba(0,0,0,0.05); }
 
     /* CABEÇALHO CAPA (Logo Esquerda, Info Direita) */
-    .ig-header-capa { display: flex; align-items: center; justify-content: space-between; gap: 40px; margin-bottom: 40px; background: #fff; padding: 30px; border-radius: 24px; box-shadow: 0 10px 20px rgba(0,0,0,0.03); }
-    .logo-grande { width: var(--logo-capa-sz); height: var(--logo-capa-sz); border-radius: 50%; object-fit: cover; border: 4px solid var(--c-bd); flex-shrink: 0; }
+    .ig-header-capa { display: flex; align-items: center; justify-content: space-between; gap: 40px; margin-bottom: 20px; background: transparent; padding: 10px; }
+    .logo-grande { width: var(--logo-capa-sz); height: var(--logo-capa-sz); border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); flex-shrink: 0; }
     .header-capa-info { flex: 1; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
-    .ig-title-capa { font-size: var(--title-capa-sz); font-weight: 900; color: var(--c-p); margin: 0; text-transform: uppercase; line-height: 1; }
-    .info-validade { font-size: var(--val-sz); font-weight: 900; color: #fff; background: var(--c-ok); padding: 10px 25px; border-radius: 20px; display: inline-block; text-transform: uppercase; margin-top: 15px; margin-bottom: 10px; }
-    .info-contato { font-size: var(--site-sz); font-weight: 800; color: var(--c-s); }
+    .ig-title-capa { font-size: var(--title-capa-sz); font-weight: 900; color: var(--c-p); margin: 0; text-transform: uppercase; line-height: 1; letter-spacing: -1px; }
+    .info-validade { font-size: var(--val-sz); font-weight: 800; color: var(--c-ok); background: rgba(21, 128, 61, 0.1); padding: 10px 25px; border-radius: 20px; display: inline-block; text-transform: uppercase; margin-top: 15px; margin-bottom: 10px; }
+    .info-contato { font-size: var(--site-sz); font-weight: 600; color: var(--c-s); }
 
     /* CABEÇALHO NORMAL */
-    .ig-header-normal { display: flex; align-items: center; gap: 30px; margin-bottom: 40px; border-bottom: 3px dashed var(--c-bd); padding-bottom: 30px; }
-    .logo-pequena { width: var(--logo-norm-sz); height: var(--logo-norm-sz); border-radius: 50%; object-fit: cover; border: 4px solid var(--c-bd); flex-shrink: 0;}
+    .ig-header-normal { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; border-bottom: 1px solid var(--c-bd); padding-bottom: 30px; }
+    .logo-pequena { width: var(--logo-norm-sz); height: var(--logo-norm-sz); border-radius: 50%; object-fit: cover; border: 1px solid var(--c-bd); flex-shrink: 0;}
     .info-normal-text { text-align: left; flex: 1; }
-    .info-validade-small { font-size: var(--val-sz); font-weight: 900; color: #fff; background: var(--c-ok); padding: 8px 20px; border-radius: 16px; display: inline-block; text-transform: uppercase; margin-bottom: 10px; }
-    .info-site-small { font-size: var(--site-sz); font-weight: 800; color: var(--c-p); }
+    .info-validade-small { font-size: var(--val-sz); font-weight: 800; color: var(--c-ok); background: rgba(21, 128, 61, 0.1); padding: 8px 20px; border-radius: 16px; display: inline-block; text-transform: uppercase; margin-bottom: 10px; }
+    .info-site-small { font-size: var(--site-sz); font-weight: 600; color: var(--c-p); }
     
-    /* GRIDS */
-    .ig-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; flex: 1; align-items: center; } 
-    .ig-grid-4 { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 40px; flex: 1; } 
+    /* GRELHA ÚNICA (1 Produto por página) */
+    .ig-grid-1 { display: flex; flex-direction: column; width: 100%; flex: 1; justify-content: center; align-items: center; } 
 
-    /* ESTILO DO CARD (Fundo Branco Forçado) */
-    .card-sq { background-color: #ffffff; border-radius: var(--card-radius); padding: 25px; display: flex; flex-direction: column; position: relative; box-shadow: 0 8px 20px rgba(0,0,0,0.06); height: 100%; border: 2px solid var(--c-bd); }
-    .card-sq-img-area { height: 320px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
-    .card-sq-img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-    .tag-desconto { position: absolute; top: 20px; right: 20px; background: var(--c-err); color: #fff; font-size: var(--tag-desc-sz); font-weight: 900; padding: 12px 24px; border-radius: 16px; }
-    .card-info { margin-top: auto; display: flex; flex-direction: column; }
-    .preco-antigo { font-size: calc(var(--prod-preco-sz) * 0.45); color: var(--c-t); text-decoration: line-through; font-weight: 700; }
-    .preco-novo { font-size: var(--prod-preco-sz); font-weight: 900; color: var(--c-p); line-height: 1; margin-bottom: 15px; letter-spacing: -2px; }
-    .nome-produto { font-size: var(--prod-nome-sz); color: var(--c-s); font-weight: 700; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    /* ESTILO DO CARD MINIMALISTA */
+    .card-sq { background-color: var(--c-surf); border-radius: var(--card-radius); padding: 50px; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.04); width: 100%; height: 100%; border: none; text-align: center; justify-content: space-between; align-items: center; }
+    .card-sq-img-area { width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
+    .card-sq-img { max-width: 90%; max-height: 500px; object-fit: contain; } /* Sem mix-blend-mode para manter o realismo da foto no fundo branco */
+    .tag-desconto { position: absolute; top: 30px; right: 30px; background: var(--c-err); color: #fff; font-size: var(--tag-desc-sz); font-weight: 900; padding: 12px 24px; border-radius: 100px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3); }
+    .card-info { display: flex; flex-direction: column; align-items: center; width: 100%; }
+    .preco-antigo { font-size: calc(var(--prod-preco-sz) * 0.35); color: var(--c-t); text-decoration: line-through; font-weight: 600; margin-bottom: 5px; }
+    .preco-novo { font-size: var(--prod-preco-sz); font-weight: 900; color: var(--c-p); line-height: 1; margin-bottom: 25px; letter-spacing: -3px; }
+    .nome-produto { font-size: var(--prod-nome-sz); color: var(--c-s); font-weight: 600; line-height: 1.2; width: 90%; }
 
     /* MODAL E GALERIA DE RESULTADOS */
     #modal-resultados { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.95); z-index: 100; display: none; flex-direction: column; padding: 40px; overflow-y: auto; }
@@ -110,7 +110,7 @@
 <body>
 
     <div class="toolbar">
-        <h1>🛠️ Estúdio de Ofertas</h1>
+        <h1>🛠️ Estúdio de Ofertas (Minimalista)</h1>
         <div class="btn-group">
             <button class="btn-acao" onclick="document.getElementById('file-upload').click()">📂 Carregar Modelo</button>
             <input type="file" id="file-upload" accept=".json" style="display: none;" onchange="importarModelo(event)">
@@ -124,74 +124,70 @@
             <h2>Ajustes de Tamanho</h2>
             <div class="ctrl-group">
                 <label>Logo Capa</label>
-                <input type="range" min="150" max="350" value="200" oninput="updVar('--logo-capa-sz', this.value + 'px')">
+                <input type="range" min="120" max="300" value="180" oninput="updVar('--logo-capa-sz', this.value + 'px')">
             </div>
             <div class="ctrl-group">
                 <label>Logo Normal</label>
-                <input type="range" min="100" max="250" value="140" oninput="updVar('--logo-norm-sz', this.value + 'px')">
+                <input type="range" min="80" max="200" value="120" oninput="updVar('--logo-norm-sz', this.value + 'px')">
             </div>
             <div class="ctrl-group">
-                <label>Título Capa (🔥 SUPER...)</label>
-                <input type="range" min="3" max="7" step="0.1" value="4.5" oninput="updVar('--title-capa-sz', this.value + 'rem')">
+                <label>Título Capa</label>
+                <input type="range" min="3" max="6" step="0.1" value="4" oninput="updVar('--title-capa-sz', this.value + 'rem')">
             </div>
             <div class="ctrl-group">
                 <label>Tamanho da Validade</label>
-                <input type="range" min="1" max="2.5" step="0.1" value="1.6" oninput="updVar('--val-sz', this.value + 'rem')">
+                <input type="range" min="1" max="2.5" step="0.1" value="1.4" oninput="updVar('--val-sz', this.value + 'rem')">
             </div>
             <div class="ctrl-group">
                 <label>Tamanho Nome Produto</label>
-                <input type="range" min="0.8" max="2.5" step="0.1" value="1.3" oninput="updVar('--prod-nome-sz', this.value + 'rem')">
+                <input type="range" min="1.5" max="4" step="0.1" value="2.5" oninput="updVar('--prod-nome-sz', this.value + 'rem')">
             </div>
             <div class="ctrl-group">
                 <label>Tamanho Preço</label>
-                <input type="range" min="2" max="6" step="0.1" value="3.5" oninput="updVar('--prod-preco-sz', this.value + 'rem')">
+                <input type="range" min="4" max="10" step="0.1" value="6.5" oninput="updVar('--prod-preco-sz', this.value + 'rem')">
             </div>
             <div class="ctrl-group">
-                <label>Arredondamento dos Cards</label>
-                <input type="range" min="0" max="60" value="24" oninput="updVar('--card-radius', this.value + 'px')">
+                <label>Arredondamento do Fundo Branco</label>
+                <input type="range" min="0" max="60" value="32" oninput="updVar('--card-radius', this.value + 'px')">
             </div>
             
             <p style="font-size:0.8rem; color:#64748b; margin-top:30px; line-height:1.5;">
                 * Clica nos textos das matrizes à direita para alterar o que está escrito.<br>
-                * As imagens e preços nas matrizes são apenas ilustrativos. Serão substituídos pelas tuas ofertas reais ao gerar.
+                * As imagens e preços nas matrizes são apenas ilustrativos. Serão substituídos pelas tuas ofertas reais ao gerar (1 produto por imagem).
             </p>
         </div>
 
         <div class="workspace">
             
             <div>
-                <div class="workspace-title">Matriz 1: Capa (2 Produtos)</div>
+                <div class="workspace-title">Matriz 1: Imagem de Capa (1 Produto)</div>
                 <div class="ig-post" id="matriz-capa">
                     <div class="ig-header-capa">
                         <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-grande" crossorigin="anonymous">
                         <div class="header-capa-info">
-                            <div class="ig-title-capa" contenteditable="true" id="txt-title-capa">🔥 SUPER OFERTAS</div>
+                            <div class="ig-title-capa" contenteditable="true" id="txt-title-capa">SUPER OFERTAS</div>
                             <div class="info-validade" contenteditable="true" id="txt-val-capa">Calculando...</div>
-                            <div class="info-contato" contenteditable="true" id="txt-site-capa">🌐 www.donaantonia.com.br &nbsp;|&nbsp; 📱 (65) 99815-0975</div>
+                            <div class="info-contato" contenteditable="true" id="txt-site-capa">www.donaantonia.com.br &nbsp;|&nbsp; 📱 (65) 99815-0975</div>
                         </div>
                     </div>
-                    <div class="ig-grid-2">
-                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 1</div></div></div>
-                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 2</div></div></div>
+                    <div class="ig-grid-1">
+                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo Principal</div></div></div>
                     </div>
                 </div>
             </div>
 
             <div>
-                <div class="workspace-title">Matriz 2: Páginas Seguintes (4 Produtos)</div>
+                <div class="workspace-title">Matriz 2: Páginas Seguintes (1 Produto cada)</div>
                 <div class="ig-post" id="matriz-normal">
                     <div class="ig-header-normal">
                         <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-pequena" crossorigin="anonymous">
                         <div class="info-normal-text">
                             <div class="info-validade-small" contenteditable="true" id="txt-val-norm">Calculando...</div>
-                            <div class="info-site-small" contenteditable="true" id="txt-site-norm">🌐 www.donaantonia.com.br</div>
+                            <div class="info-site-small" contenteditable="true" id="txt-site-norm">www.donaantonia.com.br</div>
                         </div>
                     </div>
-                    <div class="ig-grid-4">
-                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 3</div></div></div>
-                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 4</div></div></div>
-                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 5</div></div></div>
-                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo 6</div></div></div>
+                    <div class="ig-grid-1">
+                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo Normal</div></div></div>
                     </div>
                 </div>
             </div>
@@ -229,7 +225,6 @@ window.onload = setValidadeInicial;
 // --- SISTEMA DE GUARDAR E CARREGAR MODELOS (JSON) ---
 function exportarModelo() {
     const rootStyles = getComputedStyle(document.documentElement);
-    // Cria um objeto com os textos e estilos atuais
     const modelo = {
         textos: {
             titleCapa: document.getElementById('txt-title-capa').innerText,
@@ -253,7 +248,7 @@ function exportarModelo() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(modelo));
     const a = document.createElement('a');
     a.setAttribute("href", dataStr);
-    a.setAttribute("download", "matriz-dona-antonia.json");
+    a.setAttribute("download", "matriz-dona-antonia-minimalista.json");
     a.click();
 }
 
@@ -264,7 +259,6 @@ function importarModelo(event) {
     reader.onload = function(e) {
         try {
             const modelo = JSON.parse(e.target.result);
-            // Atualiza Textos
             if(modelo.textos) {
                 document.getElementById('txt-title-capa').innerText = modelo.textos.titleCapa;
                 document.getElementById('txt-val-capa').innerText = modelo.textos.valCapa;
@@ -272,12 +266,10 @@ function importarModelo(event) {
                 document.getElementById('txt-val-norm').innerText = modelo.textos.valNorm;
                 document.getElementById('txt-site-norm').innerText = modelo.textos.siteNorm;
             }
-            // Atualiza Estilos Visuais
             if(modelo.estilos) {
                 for (const [key, value] of Object.entries(modelo.estilos)) {
                     document.documentElement.style.setProperty(key, value);
-                    // Atualiza os sliders visualmente
-                    const valNumber = value.replace(/[^0-9.]/g, ''); // Remove 'px' ou 'rem'
+                    const valNumber = value.replace(/[^0-9.]/g, '');
                     const inputs = document.querySelectorAll(`input[oninput*="${key}"]`);
                     if(inputs.length > 0) inputs[0].value = valNumber;
                 }
@@ -286,7 +278,7 @@ function importarModelo(event) {
         } catch (error) { alert("Erro ao ler o ficheiro."); }
     };
     reader.readAsText(file);
-    event.target.value = ''; // Reseta o input
+    event.target.value = '';
 }
 
 // --- MOTOR DE GERAÇÃO (HTML2CANVAS) ---
@@ -327,15 +319,12 @@ async function processarImagens() {
     
     let ofertas = dados.filter(p => p.situacao === "A" && p.preco_antigo && parseFloat(p.preco_antigo) > parseFloat(p.preco));
     ofertas.forEach(p => p.descontoPerc = Math.round(((parseFloat(p.preco_antigo) - parseFloat(p.preco)) / parseFloat(p.preco_antigo)) * 100));
-    ofertas.sort((a, b) => b.descontoPerc - a.descontoPerc); // Ordena pelo maior desconto
+    ofertas.sort((a, b) => b.descontoPerc - a.descontoPerc);
     
-    // Agrupa (2 para capa, 4 para as restantes)
-    const grupoCapa = ofertas.slice(0, 2);
-    const restantes = ofertas.slice(2);
-    const grupos = [grupoCapa];
-    for (let i = 0; i < restantes.length; i += 4) grupos.push(restantes.slice(i, i + 4));
+    // 2. Agrupa (agora é 1 por 1) - Código ajustado
+    const grupos = ofertas.map(oferta => [oferta]); // Cria um array de arrays com apenas 1 produto cada
 
-    // 2. Gerar cada quadro baseado na Matriz Editável
+    // 3. Gerar cada quadro baseado na Matriz Editável
     for (let i = 0; i < grupos.length; i++) {
         statusTxt.innerText = `A desenhar e fotografar a imagem ${i + 1} de ${grupos.length}...`;
         
@@ -343,30 +332,27 @@ async function processarImagens() {
         if (i === 0) {
             // Clona a Matriz da Capa
             nodeClone = document.getElementById('matriz-capa').cloneNode(true);
-            const grid = nodeClone.querySelector('.ig-grid-2');
+            const grid = nodeClone.querySelector('.ig-grid-1');
             grid.innerHTML = grupos[i].map(p => criarCardHtml(p)).join('');
         } else {
             // Clona a Matriz Normal
             nodeClone = document.getElementById('matriz-normal').cloneNode(true);
-            const grid = nodeClone.querySelector('.ig-grid-4');
+            const grid = nodeClone.querySelector('.ig-grid-1');
             grid.innerHTML = grupos[i].map(p => criarCardHtml(p)).join('');
         }
         
-        // Remove a escala para a captura ficar em Alta Resolução (1080x1350)
         nodeClone.style.transform = 'none';
         nodeClone.style.marginBottom = '0';
         palcoCaptura.appendChild(nodeClone);
 
-        // Esperar carregamento de imagens
         const imgs = nodeClone.querySelectorAll('img');
         await Promise.all(Array.from(imgs).map(img => new Promise(res => { img.onload = res; img.onerror = res; })));
-        await new Promise(r => setTimeout(r, 600)); // Tempo extra para o CSS estabilizar
+        await new Promise(r => setTimeout(r, 600)); 
         
-        // Capturar
-        const canvas = await html2canvas(nodeClone, { scale: 1, useCORS: true, allowTaint: true, backgroundColor: "#e2e8f0" });
+        // Mantive a cor de fundo igual ao que definiste, agora é #f8fafc (suave)
+        const canvas = await html2canvas(nodeClone, { scale: 1, useCORS: true, allowTaint: true, backgroundColor: "#f8fafc" });
         const dataUrl = canvas.toDataURL("image/png");
 
-        // Adicionar na Galeria Final
         galeria.innerHTML += `
             <div class="preview-box">
                 <p style="font-weight:900; color:var(--c-p); margin-top:0;">${i === 0 ? '🏆 CAPA' : 'Post ' + (i + 1)}</p>
@@ -375,7 +361,7 @@ async function processarImagens() {
             </div>
         `;
         
-        nodeClone.remove(); // Limpar a memória
+        nodeClone.remove(); 
     }
     statusTxt.innerText = "✅ Tudo pronto! Descarrega as tuas imagens abaixo.";
 }
