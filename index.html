@@ -133,7 +133,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .btn-big-action{ width:100%; background:var(--c-p); color:#fff; padding:10px 8px; border-radius:10px; font-weight:800; font-size:0.75rem; display:flex; align-items:center; justify-content:center; gap:4px; transition:background .2s, transform .1s; }
 .btn-big-action:active:not(:disabled){transform:scale(0.95)}
 
-/* APP TAB BAR */
+/* APP TAB BAR - ATUALIZADO (CARRINHO NA DIREITA) */
 .bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 55px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); }
 .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; position: relative; transition: color 0.2s, transform 0.1s; }
 .tab-item:active { transform: scale(0.95); }
@@ -317,9 +317,9 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <div class="grid-produtos" id="grid-ofertas"></div>
         </div>
 
-        <div id="section-ultimas" class="page-section" style="display:none; padding-top:15px;">
-            <div class="section-title">⏳ Últimas Unidades</div>
-            <div class="grid-produtos" id="grid-ultimas"></div>
+        <div id="section-outlet" class="page-section" style="display:none; padding-top:15px;">
+            <div class="section-title">⏳ Outlet</div>
+            <div class="grid-produtos" id="grid-outlet"></div>
         </div>
 
         <div id="section-combos" class="page-section" style="display:none;">
@@ -346,16 +346,21 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         <div class="tab-icon">🔥</div><div class="tab-label">Ofertas</div>
     </div>
     
-    <div class="tab-item cart-fab-wrapper" onclick="openCheckout()">
-        <div class="cart-badge" id="badge-count">0</div>
-        <div class="tab-icon">🛒</div>
-    </div>
-
     <div class="tab-item" id="btn-nav-combos" onclick="instantScrollTo('section-combos', 'btn-nav-combos')">
         <div class="tab-icon">🎁</div><div class="tab-label">Combos</div>
     </div>
+    
+    <div class="tab-item" id="btn-nav-outlet" onclick="instantScrollTo('section-outlet', 'btn-nav-outlet')">
+        <div class="tab-icon">⏳</div><div class="tab-label">Outlet</div>
+    </div>
+
     <div class="tab-item" id="btn-nav-ate2" onclick="instantScrollTo('section-ate2', 'btn-nav-ate2')">
         <div class="tab-icon">🤑</div><div class="tab-label">R$ 2</div>
+    </div>
+
+    <div class="tab-item cart-fab-wrapper" onclick="openCheckout()">
+        <div class="cart-badge" id="badge-count">0</div>
+        <div class="tab-icon">🛒</div>
     </div>
 </nav>
 
@@ -531,9 +536,9 @@ function renderHome() {
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     if(ofertas.length > 0) { $('section-ofertas').style.display = 'block'; renderPaginated('grid-ofertas', 'ofertas', ofertas, 10, 'PROD'); }
     
-    // 2ª INCLUSÃO: LÓGICA DO JAVASCRIPT PARA AS ÚLTIMAS UNIDADES
-    const ultimas = STATE.prods.filter(p => p.stock > 0 && p.stock <= 3);
-    if(ultimas.length > 0) { $('section-ultimas').style.display = 'block'; renderPaginated('grid-ultimas', 'ultimas', ultimas, 10, 'PROD'); }
+    // REGRAS DO OUTLET APLICADAS (ESTOQUE MENOR QUE 3)
+    const outlet = STATE.prods.filter(p => p.stock > 0 && p.stock < 3);
+    if(outlet.length > 0) { $('section-outlet').style.display = 'block'; renderPaginated('grid-outlet', 'outlet', outlet, 10, 'PROD'); }
 
     if(STATE.combos && STATE.combos.length > 0) { $('section-combos').style.display = 'block'; renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO'); }
     const ate2 = STATE.prods.filter(p => p.price <= 2.00);
@@ -598,18 +603,18 @@ function cardCombo(item){
     return `<div class="u-card"><div class="u-img-area"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" class="u-img u-img-cesta" loading="lazy"><div class="offer-tag">🔥 COMBO</div></div><div class="u-info"><div class="u-name">${formatName(item.nome)}</div><div style="margin-top:auto"><div class="combo-strike">De: ${fmt(sum)}</div><div class="u-price">Por: ${fmt(item.preco)}</div></div><div class="u-action-row"><button class="btn-big-action" onclick="previewCombo('${item.id}')">VER ITENS</button></div></div></div>`;
 }
 
-// 3ª INCLUSÃO: FUNÇÃO DE CARTÃO ATUALIZADA COM VALIDADE E ESTOQUE
+// INFORMAÇÕES DE ESTOQUE ATUALIZADAS PARA < 3
 function cardProdHoriz(item){
     const q = STATE.cart[item.id] || 0;
     let ctrlHtml = item.stock <= 0 ? `<div style="font-size:0.65rem; color:var(--c-err); font-weight:800;">ESGOTADO</div>` : (q > 0 ? `<div class="card-sq-qty-box"><button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', -1)">-</button><span class="sq-val">${q}</span><button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button></div>` : `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>`);
     
     let extraInfoHtml = '';
-    if (item.validade || (item.stock > 0 && item.stock <= 5)) {
+    if (item.validade || (item.stock > 0 && item.stock < 3)) {
         extraInfoHtml += `<div style="margin-top: 5px; border-top: 1px dashed var(--c-bd); padding-top: 4px; display: flex; flex-direction: column; gap: 2px;">`;
         if (item.validade) {
             extraInfoHtml += `<span style="font-size:0.55rem; color:var(--c-t); font-weight:600;">Val: ${item.validade}</span>`;
         }
-        if (item.stock > 0 && item.stock <= 5) {
+        if (item.stock > 0 && item.stock < 3) {
             extraInfoHtml += `<span style="font-size:0.55rem; color:var(--c-a); font-weight:800;">Resta${item.stock > 1 ? 'm' : ''} ${item.stock} un!</span>`;
         }
         extraInfoHtml += `</div>`;
