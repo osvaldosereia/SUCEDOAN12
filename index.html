@@ -717,60 +717,90 @@ function applyCupom(){ const c=STATE.coupons.find(x=>x.codigo===$('cupom-code').
 async function sendOrder(){
     const btnSubmit = $('btn-send-order');
     if(btnSubmit.disabled) return;
-
+    
     // Prevenção de duplo clique
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = "⏳ ENVIANDO...";
 
-    let apiItens = []; let itemsTxt = ""; let total = parseMoney($('chk-total').innerText);
-    Object.entries(STATE.cart).forEach(([id,q])=>{ const p=STATE.prods.find(x=>x.id===id); if(p){ itemsTxt += `${q}x ${p.name}\n`; apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price}); } });
+    // --- ESTRATÉGIA ANTI-BLOQUEIO: GERADOR DE ID ÚNICO ---
+    // Pega os últimos 6 dígitos do relógio interno do navegador
+    const orderId = String(Date.now()).slice(-6); 
+    
+    let itemsTxt="", apiItens=[]; 
+    let totalBruto = 0;
+    
+    Object.entries(STATE.cart).forEach(([id,q])=>{
+        const p=STATE.prods.find(x=>x.id===id);
+        if(p){ 
+            totalBruto += p.price * q; 
+            itemsTxt += `${q}x ${p.name}\n`; 
+            apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
+        }
+    });
 
-    // A VARIÁVEL OBS CONTINUA INTACTA PARA O MAKE/BLING
-    let obs = `Entrega: ${STATE.deliveryDateStr}\n`;
-    if(STATE.baseBasket){
-        obs += `Cesta Base: ${STATE.baseBasket.nome}\n\n`;
-        let orig = {}; STATE.baseBasket.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) orig[p.id] = parseInt(q); });
-        let rem = []; let add = [];
-        Object.keys(orig).forEach(id => { if((STATE.cart[id]||0) < orig[id]) rem.push(`${orig[id]-(STATE.cart[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
-        Object.keys(STATE.cart).forEach(id => { if(STATE.cart[id] > (orig[id]||0)) add.push(`${STATE.cart[id]-(orig[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
-        if(rem.length) obs += `=== RETIRADOS ===\n${rem.join('\n')}\n\n`;
-        if(add.length) obs += `=== ADICIONADOS ===\n${add.join('\n')}\n\n`;
+    let final = totalBruto - STATE.comboDiscount;
+    if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
+        final = Math.max(final + STATE.basketExtraFee, STATE.minBasketPrice);
+    }
+    final -= STATE.deliveryDiscount;
+    final -= STATE.valueDiscount;
+    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
+    final -= cupomDesconto;
+
+    let outras_despesas = 0;
+    if (final > totalBruto) {
+        outras_despesas = final - totalBruto;
+    } else {
+        outras_despesas = STATE.basketExtraFee || 0;
     }
 
-    // Calculando a soma total de descontos
-    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
     let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
 
-    // O ENVIO PARA O MAKE CONTINUA INTACTO (Apenas com "await" e a variável "desconto")
-    try {
+    // --- INCLUINDO O ID NA OBSERVAÇÃO PARA O BLING ---
+    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`;
+    if(STATE.baseBasket){
+        obs += ` | Cesta Base: ${STATE.baseBasket.nome}`;
+        let orig = {}; STATE.baseBasket.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) orig[p.id] = parseInt(q); });
+        let rem = []; let add = [];
+        
+        Object.keys(orig).forEach(id => { if((STATE.cart[id]||0) < orig[id]) rem.push(`${orig[id]-(STATE.cart[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
+        Object.keys(STATE.cart).forEach(id => { if(STATE.cart[id] > (orig[id]||0)) add.push(`${STATE.cart[id]-(orig[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
+        
+        if(rem.length) obs += ` | ➖ RETIRADOS: ${rem.join(', ')}`;
+        if(add.length) obs += ` | ➕ ADD: ${add.join(', ')}`;
+    }
+
+    if(STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+    if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
+    if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
+    if(STATE.coupon){ itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
+    
+    // --- INCLUINDO O ID NA MENSAGEM DO WHATSAPP ---
+    const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
+    
+    try{
         await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method:"POST", headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({ 
-                cliente:{nome:"Cliente Site"}, 
-                pedido:{ 
-                    itens: apiItens, 
-                    total: total, 
-                    outras_despesas: STATE.basketExtraFee, 
+            body:JSON.stringify({
+                cliente:{nome: "Cliente Site"},
+                pedido:{
+                    itens: apiItens,
+                    total: final,
+                    outras_despesas: outras_despesas,
                     desconto: totalDescontos, 
-                    observacoes: obs 
-                } 
+                    observacoes: obs // Agora a observação carrega o ID único
+                }
             })
         });
-    } catch(e) {
-        console.error("Falha no envio pro Make:", e);
-    }
+    }catch(e){}
     
-    // --- NOVA FORMATAÇÃO APENAS PARA O WHATSAPP ---
-    let msgWpp = `*NOVO PEDIDO*\n${STATE.deliveryDateStr}\n\n*LISTA DE PRODUTOS*\n${itemsTxt}\n*VALOR TOTAL:* ${fmt(total)}`;
-    window.location.href = `https://wa.me/5565996813588?text=${encodeURIComponent(msgWpp)}`;
+    window.location.href=`https://wa.me/5565996813588?text=${encodeURIComponent(msg)}`;
 
-    // Restaura o botão caso o usuário feche o WhatsApp e volte pra página
     setTimeout(() => {
         btnSubmit.disabled = false;
         btnSubmit.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> ENVIAR PEDIDO NO WHATSAPP`;
     }, 3000);
 }
-
 function formatName(s){ return s?s.toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
 function parseMoney(s){ return parseFloat(s.replace('R$','').replace('.','').replace(',','.').trim()); }
 function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
