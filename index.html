@@ -205,8 +205,8 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
    ========================================== */
 .top-promo-wrap {
     width: 100%;
-    height: 30px; /* Estreito e discreto */
-    overflow: hidden; /* Esconde os banners que não estão em foco no mobile */
+    height: 30px;
+    overflow: hidden;
     position: relative;
     z-index: 10;
     background: var(--c-bg);
@@ -215,8 +215,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .top-promo-track {
     display: flex;
     flex-direction: column;
-    /* No mobile, usa animação para subir o texto a cada 3 segundos (12s total) */
-    animation: slidePromo 12s infinite cubic-bezier(0.25, 1, 0.5, 1);
+    animation: slidePromo 15s infinite cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .promo-item {
@@ -231,40 +230,34 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     flex-shrink: 0;
 }
 
-/* Cores Elegantes (Tons pastéis com texto escuro) */
-.promo-item.c1 { background: #e0e7ff; color: #3730a3; } /* Azul suave */
-.promo-item.c2 { background: #dcfce7; color: #166534; } /* Verde suave */
-.promo-item.c3 { background: #ffedd5; color: #9a3412; } /* Laranja suave */
-.promo-item.c4 { background: #f3e8ff; color: #6b21a8; } /* Roxo suave */
+.promo-item.c1 { background: #e0e7ff; color: #3730a3; }
+.promo-item.c2 { background: #dcfce7; color: #166534; }
+.promo-item.c3 { background: #ffedd5; color: #9a3412; }
+.promo-item.c4 { background: #f3e8ff; color: #6b21a8; }
+.promo-item.c5 { background: #ccfbf1; color: #115e59; }
 
-/* Animação que faz a rolagem no celular */
 @keyframes slidePromo {
-    0%, 20%   { transform: translateY(0); }          /* Mostra item 1 */
-    25%, 45%  { transform: translateY(-30px); }      /* Mostra item 2 */
-    50%, 70%  { transform: translateY(-60px); }      /* Mostra item 3 */
-    75%, 95%  { transform: translateY(-90px); }      /* Mostra item 4 */
-    100%      { transform: translateY(0); }          /* Volta ao item 1 de forma suave */
+    0%, 16%   { transform: translateY(0); }
+    20%, 36%  { transform: translateY(-30px); }
+    40%, 56%  { transform: translateY(-60px); }
+    60%, 76%  { transform: translateY(-90px); }
+    80%, 96%  { transform: translateY(-120px); }
+    100%      { transform: translateY(0); }
 }
 
-/* Comportamento no Desktop (Lado a Lado) */
 @media(min-width: 800px) {
-    .top-promo-wrap {
-        height: auto; /* Remove a altura fixa */
-    }
+    .top-promo-wrap { height: auto; }
     .top-promo-track {
-        flex-direction: row; /* Coloca um do lado do outro */
-        animation: none; /* Desliga a animação rotativa */
+        flex-direction: row;
+        animation: none;
         transform: none !important;
     }
     .promo-item {
-        flex: 1; /* Divide o espaço igualmente entre os 4 */
-        border-right: 1px solid rgba(0,0,0,0.05); /* Separador sutil */
+        flex: 1;
+        border-right: 1px solid rgba(0,0,0,0.05);
     }
-    .promo-item:last-child {
-        border-right: none;
-    }
+    .promo-item:last-child { border-right: none; }
 }
-
 </style>
 </head>
 <body>
@@ -293,9 +286,9 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
         <div class="promo-item c2">Pedidos a partir de R$ 75</div>
         <div class="promo-item c3">Entrega Grátis em Cuiabá e VG</div>
         <div class="promo-item c4">Parcele em 3x s/ juros no cartão</div>
+        <div class="promo-item c5">Pague somente na entrega</div>
     </div>
 </div>
-    
 
 <div id="fixed-chips-container">
     <div class="chips-bar" id="chips-area"></div>
@@ -700,7 +693,7 @@ function updateTotals(){
     
     let missing = Math.max(0, MIN_ORDER - subtotal);
     $('btn-send-order').disabled = missing > 0;
-    $('btn-send-order').innerHTML = missing > 0 ? `FALTAM ${fmt(missing)}` : `ENVIAR PEDIDO`;
+    $('btn-send-order').innerHTML = missing > 0 ? `FALTAM ${fmt(missing)}` : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> ENVIAR PEDIDO NO WHATSAPP`;
 
     let summary = `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(sum+STATE.basketExtraFee)}</span></div>`;
     if(STATE.comboDiscount > 0) summary += `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Desconto Combo:</span><span>-${fmt(STATE.comboDiscount)}</span></div>`;
@@ -722,7 +715,13 @@ function clearSearch(){ $('search-inp').value=''; handleSearch(''); }
 function applyCupom(){ const c=STATE.coupons.find(x=>x.codigo===$('cupom-code').value.toUpperCase().trim()); if(c && parseMoney($('chk-total').innerText)>=c.minimo){ STATE.coupon=c; updateTotals(); $('cupom-msg').innerText="APLICADO!"; $('cupom-msg').style.display='block'; } else showToast("Inválido", "r"); }
 
 async function sendOrder(){
-    if($('btn-send-order').disabled) return;
+    const btnSubmit = $('btn-send-order');
+    if(btnSubmit.disabled) return;
+
+    // Prevenção de duplo clique
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = "⏳ ENVIANDO...";
+
     let apiItens = []; let itemsTxt = ""; let total = parseMoney($('chk-total').innerText);
     Object.entries(STATE.cart).forEach(([id,q])=>{ const p=STATE.prods.find(x=>x.id===id); if(p){ itemsTxt += `${q}x ${p.name}\n`; apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price}); } });
 
@@ -738,17 +737,38 @@ async function sendOrder(){
         if(add.length) obs += `=== ADICIONADOS ===\n${add.join('\n')}\n\n`;
     }
 
-    // O ENVIO PARA O MAKE CONTINUA INTACTO
+    // Calculando a soma total de descontos
+    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
+    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
+
+    // O ENVIO PARA O MAKE CONTINUA INTACTO (Apenas com "await" e a variável "desconto")
     try {
-        fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
+        await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method:"POST", headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({ cliente:{nome:"Cliente Site"}, pedido:{ itens: apiItens, total: total, outras_despesas: STATE.basketExtraFee, observacoes: obs } })
+            body:JSON.stringify({ 
+                cliente:{nome:"Cliente Site"}, 
+                pedido:{ 
+                    itens: apiItens, 
+                    total: total, 
+                    outras_despesas: STATE.basketExtraFee, 
+                    desconto: totalDescontos, 
+                    observacoes: obs 
+                } 
+            })
         });
-    } catch(e) {}
+    } catch(e) {
+        console.error("Falha no envio pro Make:", e);
+    }
     
-    // --- ALTERAÇÃO AQUI: NOVA FORMATAÇÃO APENAS PARA O WHATSAPP ---
+    // --- NOVA FORMATAÇÃO APENAS PARA O WHATSAPP ---
     let msgWpp = `*NOVO PEDIDO*\n${STATE.deliveryDateStr}\n\n*LISTA DE PRODUTOS*\n${itemsTxt}\n*VALOR TOTAL:* ${fmt(total)}`;
     window.location.href = `https://wa.me/5565996813588?text=${encodeURIComponent(msgWpp)}`;
+
+    // Restaura o botão caso o usuário feche o WhatsApp e volte pra página
+    setTimeout(() => {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> ENVIAR PEDIDO NO WHATSAPP`;
+    }, 3000);
 }
 
 function formatName(s){ return s?s.toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
