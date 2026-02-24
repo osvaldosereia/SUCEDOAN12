@@ -566,8 +566,9 @@
 
         function exportarCSV() {
             if (products.length === 0) return alert("Nada para exportar.");
-            const produtosAtivos = products.filter(p => p.situacao !== 'I');
-            if (produtosAtivos.length === 0) return alert("Nenhum produto ativo para exportar.");
+            // Removemos o filtro para incluir todos os produtos da lista
+const produtosParaExportar = products; 
+if (produtosParaExportar.length === 0) return alert("Nada para exportar.");
             const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
             const dadosParaExportar = produtosAtivos.map(p => {
                 const linha = {};
@@ -1378,7 +1379,8 @@
                 const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
                 if(!cfg || !cfg.token) throw new Error("Configure o Token do GitHub!");
                 
-                const payload = products.filter(p => p.situacao !== 'I').map(prepararProdutoParaSite);
+               // Mapeamos todos os produtos diretamente, sem filtrar pela situação
+const payload = products.map(prepararProdutoParaSite);
                 if(payload.length === 0) throw new Error("Nenhum produto ativo encontrado.");
                 
                 const path = `site/produtos.json`;
