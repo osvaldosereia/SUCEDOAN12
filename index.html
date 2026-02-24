@@ -766,21 +766,16 @@ async function sendOrder(){
         }
     });
 
-    let final = totalBruto - STATE.comboDiscount;
-    if(STATE.mode === 'custom' && STATE.minBasketPrice > 0){
-        final = Math.max(final + STATE.basketExtraFee, STATE.minBasketPrice);
-    }
+    // CORREÇÃO AQUI: Adicionar a taxa extra da cesta (basketExtraFee) ao totalBruto antes dos descontos
+    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount;
+
     final -= STATE.deliveryDiscount;
     final -= STATE.valueDiscount;
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
     final -= cupomDesconto;
 
-    let outras_despesas = 0;
-    if (final > totalBruto) {
-        outras_despesas = final - totalBruto;
-    } else {
-        outras_despesas = STATE.basketExtraFee || 0;
-    }
+    // Outras despesas agora captura diretamente a taxa da cesta para o seu sistema
+    let outras_despesas = STATE.basketExtraFee || 0;
 
     let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
 
@@ -801,6 +796,9 @@ async function sendOrder(){
     if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
     if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
     if(STATE.coupon){ itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
+    
+    // Adicionado no texto do WhatsApp para transparência do cliente
+    if(STATE.basketExtraFee > 0) itemsTxt += `\n📦 AJUSTE DA CESTA: +${fmt(STATE.basketExtraFee)}`;
     
     const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
