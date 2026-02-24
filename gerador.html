@@ -2,28 +2,16 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Estúdio de Ofertas - Dona Antônia</title>
+<title>Estúdio de Ofertas - Editor Livre</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
     :root {
-        /* CORES FIXAS - Atualizadas para tons mais suaves e minimalistas */
+        /* CORES FIXAS */
         --c-p: #0f172a; --c-s: #475569; --c-t: #94a3b8;
         --c-a: #ea580c; --c-ok: #15803d; --c-err: #ef4444;
-        --c-bg: #f8fafc; /* Fundo geral da imagem bem claro */
-        --c-surf: #ffffff; /* Fundo branco para a caixa do produto */
-        --c-bd: #e2e8f0;
+        --c-bg: #f8fafc; 
+        --c-surf: #ffffff; 
         --font: 'Inter', system-ui, sans-serif;
-
-        /* VARIÁVEIS EDITÁVEIS PELO PAINEL (Tamanhos ajustados para 1 produto) */
-        --logo-capa-sz: 180px;
-        --logo-norm-sz: 120px;
-        --title-capa-sz: 4rem;
-        --val-sz: 1.4rem;
-        --site-sz: 1.6rem;
-        --card-radius: 32px;
-        --prod-nome-sz: 2.5rem; /* Nome maior */
-        --prod-preco-sz: 6.5rem; /* Preço bem destacado */
-        --tag-desc-sz: 1.8rem;
     }
     
     * { box-sizing: border-box; }
@@ -45,56 +33,55 @@
     /* PAINEL LATERAL DE CONFIGURAÇÕES */
     .sidebar { width: 350px; background: #0f172a; padding: 20px; overflow-y: auto; border-right: 1px solid #334155; }
     .sidebar h2 { font-size: 1.2rem; border-bottom: 1px solid #334155; padding-bottom: 10px; margin-top: 0; }
-    .ctrl-group { margin-bottom: 15px; }
-    .ctrl-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 5px; font-weight: bold; }
-    .ctrl-group input[type="range"] { width: 100%; cursor: pointer; }
     
-    /* ÁREA DAS MATRIZES (PREVIEW) */
-    .workspace { flex: 1; overflow-y: auto; padding: 40px; background: #1e293b; display: flex; flex-direction: column; align-items: center; gap: 50px; }
-    .workspace-title { color: #cbd5e1; text-transform: uppercase; letter-spacing: 2px; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; }
+    /* GRUPOS DE CONTROLO (Ligar/Desligar + Tamanho) */
+    .control-box { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #334155; }
+    .control-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .control-header input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .control-header label { font-size: 1rem; font-weight: bold; cursor: pointer; flex: 1; }
+    .control-slider { display: flex; flex-direction: column; gap: 5px; }
+    .control-slider label { font-size: 0.8rem; color: #94a3b8; }
+    .control-slider input[type="range"] { width: 100%; cursor: pointer; }
 
-    /* O POST DO INSTAGRAM (MATRIZ) */
+    /* ÁREA DA MATRIZ (PREVIEW) */
+    .workspace { flex: 1; overflow-y: auto; padding: 40px; background: #1e293b; display: flex; justify-content: center; align-items: flex-start; }
+
+    /* O PALCO LIVRE (MATRIZ) */
     .ig-post {
         width: 1080px; height: 1350px; background: var(--c-bg);
-        display: flex; flex-direction: column; padding: 60px; position: relative;
+        position: relative; /* Essencial para os elementos absolutos funcionarem dentro dele */
         transform-origin: top center; transform: scale(0.6); margin-bottom: -500px;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.5); overflow: hidden;
     }
     
-    /* EDIÇÃO DE TEXTO */
-    [contenteditable="true"] { outline: 2px dashed rgba(234, 88, 12, 0); transition: outline 0.2s; padding: 2px 5px; border-radius: 4px; }
-    [contenteditable="true"]:hover { outline: 2px dashed rgba(234, 88, 12, 0.5); cursor: text; }
+    /* EDIÇÃO E ARRASTAR */
+    [contenteditable="true"] { outline: 2px dashed rgba(234, 88, 12, 0); transition: outline 0.2s; padding: 5px; border-radius: 4px; cursor: text; }
     [contenteditable="true"]:focus { outline: 2px dashed var(--c-a); background: rgba(0,0,0,0.05); }
-
-    /* CABEÇALHO CAPA (Logo Esquerda, Info Direita) */
-    .ig-header-capa { display: flex; align-items: center; justify-content: space-between; gap: 40px; margin-bottom: 20px; background: transparent; padding: 10px; }
-    .logo-grande { width: var(--logo-capa-sz); height: var(--logo-capa-sz); border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); flex-shrink: 0; }
-    .header-capa-info { flex: 1; display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
-    .ig-title-capa { font-size: var(--title-capa-sz); font-weight: 900; color: var(--c-p); margin: 0; text-transform: uppercase; line-height: 1; letter-spacing: -1px; }
-    .info-validade { font-size: var(--val-sz); font-weight: 800; color: var(--c-ok); background: rgba(21, 128, 61, 0.1); padding: 10px 25px; border-radius: 20px; display: inline-block; text-transform: uppercase; margin-top: 15px; margin-bottom: 10px; }
-    .info-contato { font-size: var(--site-sz); font-weight: 600; color: var(--c-s); }
-
-    /* CABEÇALHO NORMAL */
-    .ig-header-normal { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; border-bottom: 1px solid var(--c-bd); padding-bottom: 30px; }
-    .logo-pequena { width: var(--logo-norm-sz); height: var(--logo-norm-sz); border-radius: 50%; object-fit: cover; border: 1px solid var(--c-bd); flex-shrink: 0;}
-    .info-normal-text { text-align: left; flex: 1; }
-    .info-validade-small { font-size: var(--val-sz); font-weight: 800; color: var(--c-ok); background: rgba(21, 128, 61, 0.1); padding: 8px 20px; border-radius: 16px; display: inline-block; text-transform: uppercase; margin-bottom: 10px; }
-    .info-site-small { font-size: var(--site-sz); font-weight: 600; color: var(--c-p); }
     
-    /* GRELHA ÚNICA (1 Produto por página) */
-    .ig-grid-1 { display: flex; flex-direction: column; width: 100%; flex: 1; justify-content: center; align-items: center; } 
+    /* CLASSE PARA TODOS OS ELEMENTOS LIVRES */
+    .elemento-livre {
+        position: absolute; /* Permite arrastar livremente */
+        cursor: grab; /* Ícone de mãozinha */
+        user-select: none; /* Evita selecionar o texto sem querer ao arrastar */
+        box-shadow: 0 0 0 2px transparent;
+    }
+    .elemento-livre:active { cursor: grabbing; }
+    .elemento-livre:hover { box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.5); border-radius: 8px; } /* Dica visual de onde está a borda */
+    
+    /* ESTILOS INICIAIS DOS ELEMENTOS (Vão ser manipulados via JS/CSS Inline) */
+    #el-logo { width: 150px; border-radius: 50%; object-fit: cover; left: 50px; top: 50px; }
+    #el-titulo { font-size: 60px; font-weight: 900; color: var(--c-p); left: 240px; top: 80px; text-transform: uppercase; }
+    #el-validade { font-size: 24px; font-weight: 800; color: var(--c-ok); background: rgba(21, 128, 61, 0.1); padding: 10px 25px; border-radius: 20px; left: 50px; top: 220px; }
+    #el-contato { font-size: 24px; font-weight: 600; color: var(--c-s); left: 500px; top: 230px; }
+    
+    #el-fundo-card { background: var(--c-surf); border-radius: 32px; width: 900px; height: 800px; left: 90px; top: 350px; box-shadow: 0 20px 50px rgba(0,0,0,0.04); z-index: 0; }
+    #el-img-prod { width: 500px; object-fit: contain; left: 290px; top: 400px; z-index: 1; }
+    #el-tag { background: var(--c-err); color: #fff; font-size: 30px; font-weight: 900; padding: 15px 30px; border-radius: 100px; left: 750px; top: 380px; z-index: 2; }
+    #el-preco-ant { font-size: 40px; color: var(--c-t); text-decoration: line-through; font-weight: 600; left: 450px; top: 860px; z-index: 2; }
+    #el-preco-nov { font-size: 120px; font-weight: 900; color: var(--c-p); left: 350px; top: 900px; letter-spacing: -3px; z-index: 2; }
+    #el-nome-prod { font-size: 40px; color: var(--c-s); font-weight: 600; left: 150px; top: 1050px; text-align: center; width: 780px; z-index: 2; }
 
-    /* ESTILO DO CARD MINIMALISTA */
-    .card-sq { background-color: var(--c-surf); border-radius: var(--card-radius); padding: 50px; display: flex; flex-direction: column; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.04); width: 100%; height: 100%; border: none; text-align: center; justify-content: space-between; align-items: center; }
-    .card-sq-img-area { width: 100%; flex: 1; display: flex; align-items: center; justify-content: center; margin-bottom: 30px; }
-    .card-sq-img { max-width: 90%; max-height: 500px; object-fit: contain; } /* Sem mix-blend-mode para manter o realismo da foto no fundo branco */
-    .tag-desconto { position: absolute; top: 30px; right: 30px; background: var(--c-err); color: #fff; font-size: var(--tag-desc-sz); font-weight: 900; padding: 12px 24px; border-radius: 100px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3); }
-    .card-info { display: flex; flex-direction: column; align-items: center; width: 100%; }
-    .preco-antigo { font-size: calc(var(--prod-preco-sz) * 0.35); color: var(--c-t); text-decoration: line-through; font-weight: 600; margin-bottom: 5px; }
-    .preco-novo { font-size: var(--prod-preco-sz); font-weight: 900; color: var(--c-p); line-height: 1; margin-bottom: 25px; letter-spacing: -3px; }
-    .nome-produto { font-size: var(--prod-nome-sz); color: var(--c-s); font-weight: 600; line-height: 1.2; width: 90%; }
-
-    /* MODAL E GALERIA DE RESULTADOS */
+    /* MODAL RESULTADOS */
     #modal-resultados { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.95); z-index: 100; display: none; flex-direction: column; padding: 40px; overflow-y: auto; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
     .modal-header h2 { margin: 0; color: #fff; }
@@ -102,96 +89,43 @@
     .preview-box { background: #fff; padding: 15px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; width: 320px; }
     .preview-img { width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 15px; }
     .btn-download { display: flex; align-items: center; justify-content: center; width: 100%; background: var(--c-a); color: #fff; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: bold; text-align: center; }
-    
-    /* PALCO OCULTO PARA A CAPTURA REAL */
     #palco-captura { position: fixed; left: -9999px; top: 0; z-index: -100; }
 </style>
 </head>
 <body>
 
     <div class="toolbar">
-        <h1>🛠️ Estúdio de Ofertas (Minimalista)</h1>
+        <h1>🛠️ Estúdio Livre - Monta o teu Padrão</h1>
         <div class="btn-group">
-            <button class="btn-acao" onclick="document.getElementById('file-upload').click()">📂 Carregar Modelo</button>
+            <button class="btn-acao" onclick="document.getElementById('file-upload').click()">📂 Carregar Padrão</button>
             <input type="file" id="file-upload" accept=".json" style="display: none;" onchange="importarModelo(event)">
-            <button class="btn-acao" onclick="exportarModelo()">💾 Exportar Modelo</button>
+            <button class="btn-acao" onclick="exportarModelo()">💾 Guardar Padrão</button>
             <button class="btn-gerar" onclick="processarImagens()">🚀 GERAR IMAGENS FINAIS</button>
         </div>
     </div>
 
     <div class="main-area">
-        <div class="sidebar">
-            <h2>Ajustes de Tamanho</h2>
-            <div class="ctrl-group">
-                <label>Logo Capa</label>
-                <input type="range" min="120" max="300" value="180" oninput="updVar('--logo-capa-sz', this.value + 'px')">
+        <div class="sidebar" id="painel-controles">
+            <h2>Elementos da Imagem</h2>
+            <p style="font-size:0.8rem; color:#94a3b8; margin-top:0;">Liga, desliga ou muda o tamanho. Arrasta na imagem para mover.</p>
+
             </div>
-            <div class="ctrl-group">
-                <label>Logo Normal</label>
-                <input type="range" min="80" max="200" value="120" oninput="updVar('--logo-norm-sz', this.value + 'px')">
-            </div>
-            <div class="ctrl-group">
-                <label>Título Capa</label>
-                <input type="range" min="3" max="6" step="0.1" value="4" oninput="updVar('--title-capa-sz', this.value + 'rem')">
-            </div>
-            <div class="ctrl-group">
-                <label>Tamanho da Validade</label>
-                <input type="range" min="1" max="2.5" step="0.1" value="1.4" oninput="updVar('--val-sz', this.value + 'rem')">
-            </div>
-            <div class="ctrl-group">
-                <label>Tamanho Nome Produto</label>
-                <input type="range" min="1.5" max="4" step="0.1" value="2.5" oninput="updVar('--prod-nome-sz', this.value + 'rem')">
-            </div>
-            <div class="ctrl-group">
-                <label>Tamanho Preço</label>
-                <input type="range" min="4" max="10" step="0.1" value="6.5" oninput="updVar('--prod-preco-sz', this.value + 'rem')">
-            </div>
-            <div class="ctrl-group">
-                <label>Arredondamento do Fundo Branco</label>
-                <input type="range" min="0" max="60" value="32" oninput="updVar('--card-radius', this.value + 'px')">
-            </div>
-            
-            <p style="font-size:0.8rem; color:#64748b; margin-top:30px; line-height:1.5;">
-                * Clica nos textos das matrizes à direita para alterar o que está escrito.<br>
-                * As imagens e preços nas matrizes são apenas ilustrativos. Serão substituídos pelas tuas ofertas reais ao gerar (1 produto por imagem).
-            </p>
-        </div>
 
         <div class="workspace">
-            
-            <div>
-                <div class="workspace-title">Matriz 1: Imagem de Capa (1 Produto)</div>
-                <div class="ig-post" id="matriz-capa">
-                    <div class="ig-header-capa">
-                        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-grande" crossorigin="anonymous">
-                        <div class="header-capa-info">
-                            <div class="ig-title-capa" contenteditable="true" id="txt-title-capa">SUPER OFERTAS</div>
-                            <div class="info-validade" contenteditable="true" id="txt-val-capa">Calculando...</div>
-                            <div class="info-contato" contenteditable="true" id="txt-site-capa">www.donaantonia.com.br &nbsp;|&nbsp; 📱 (65) 99815-0975</div>
-                        </div>
-                    </div>
-                    <div class="ig-grid-1">
-                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo Principal</div></div></div>
-                    </div>
-                </div>
+            <div class="ig-post" id="matriz-livre">
+                <div id="el-fundo-card" class="elemento-livre"></div>
+                
+                <img id="el-logo" class="elemento-livre" src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" crossorigin="anonymous">
+                <div id="el-titulo" class="elemento-livre" contenteditable="true">SUPER OFERTAS</div>
+                <div id="el-validade" class="elemento-livre" contenteditable="true">Calculando...</div>
+                <div id="el-contato" class="elemento-livre" contenteditable="true">www.donaantonia.com.br</div>
+                
+                <img id="el-img-prod" class="elemento-livre" src="/site/img/produtos/cesta.webp" crossorigin="anonymous">
+                <div id="el-tag" class="elemento-livre" contenteditable="true">-50%</div>
+                <div id="el-preco-ant" class="elemento-livre" contenteditable="true">R$ 10,00</div>
+                <div id="el-preco-nov" class="elemento-livre" contenteditable="true">R$ 5,00</div>
+                <div id="el-nome-prod" class="elemento-livre" contenteditable="true">Produto Exemplo Principal</div>
             </div>
-
-            <div>
-                <div class="workspace-title">Matriz 2: Páginas Seguintes (1 Produto cada)</div>
-                <div class="ig-post" id="matriz-normal">
-                    <div class="ig-header-normal">
-                        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-pequena" crossorigin="anonymous">
-                        <div class="info-normal-text">
-                            <div class="info-validade-small" contenteditable="true" id="txt-val-norm">Calculando...</div>
-                            <div class="info-site-small" contenteditable="true" id="txt-site-norm">www.donaantonia.com.br</div>
-                        </div>
-                    </div>
-                    <div class="ig-grid-1">
-                        <div class="card-sq"><div class="tag-desconto">-50%</div><div class="card-sq-img-area"><img src="/site/img/produtos/cesta.webp" class="card-sq-img" crossorigin="anonymous"></div><div class="card-info"><div class="preco-antigo">R$ 10,00</div><div class="preco-novo">R$ 5,00</div><div class="nome-produto">Produto Exemplo Normal</div></div></div>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 
@@ -205,50 +139,114 @@
     </div>
 
 <script>
-// --- FUNÇÕES DO PAINEL E MATRIZ ---
-function updVar(varName, value) { document.documentElement.style.setProperty(varName, value); }
+// --- 1. CONFIGURAÇÃO DOS CONTROLOS NO PAINEL ---
+const controles = [
+    { id: 'el-logo', nome: 'Logótipo', tipo: 'img', min: 50, max: 400, val: 150 },
+    { id: 'el-titulo', nome: 'Título Principal', tipo: 'text', min: 20, max: 150, val: 60 },
+    { id: 'el-validade', nome: 'Etiqueta Validade', tipo: 'text', min: 14, max: 60, val: 24 },
+    { id: 'el-contato', nome: 'Site / Contato', tipo: 'text', min: 14, max: 60, val: 24 },
+    { id: 'el-fundo-card', nome: 'Fundo Branco (Card)', tipo: 'box', min: 200, max: 1000, val: 900 },
+    { id: 'el-img-prod', nome: 'Imagem do Produto', tipo: 'img', min: 100, max: 900, val: 500 },
+    { id: 'el-tag', nome: 'Etiqueta de Desconto', tipo: 'text', min: 14, max: 80, val: 30 },
+    { id: 'el-preco-ant', nome: 'Preço Antigo', tipo: 'text', min: 14, max: 100, val: 40 },
+    { id: 'el-preco-nov', nome: 'Preço Novo', tipo: 'text', min: 40, max: 250, val: 120 },
+    { id: 'el-nome-prod', nome: 'Nome do Produto', tipo: 'text', min: 20, max: 100, val: 40 }
+];
 
-// Calcula a validade ao carregar a página
-function setValidadeInicial() {
+const painel = document.getElementById('painel-controles');
+controles.forEach(c => {
+    painel.innerHTML += `
+        <div class="control-box">
+            <div class="control-header">
+                <input type="checkbox" id="check-${c.id}" checked onchange="toggleVis('${c.id}', this.checked)">
+                <label for="check-${c.id}">${c.nome}</label>
+            </div>
+            <div class="control-slider">
+                <label>Tamanho</label>
+                <input type="range" id="range-${c.id}" min="${c.min}" max="${c.max}" value="${c.val}" oninput="mudarTamanho('${c.id}', '${c.tipo}', this.value)">
+            </div>
+        </div>
+    `;
+});
+
+// Funções do Painel
+function toggleVis(id, isVisible) {
+    document.getElementById(id).style.display = isVisible ? 'block' : 'none';
+}
+
+function mudarTamanho(id, tipo, valor) {
+    const el = document.getElementById(id);
+    if(tipo === 'text') el.style.fontSize = valor + 'px';
+    if(tipo === 'img' || tipo === 'box') el.style.width = valor + 'px';
+    if(tipo === 'box') el.style.height = (valor * 0.9) + 'px'; // Mantém uma proporção para a caixa branca
+}
+
+// --- 2. LÓGICA DE ARRASTAR (DRAG & DROP) ---
+let elementoEmMovimento = null;
+let offsetX = 0, offsetY = 0;
+const palco = document.getElementById('matriz-livre');
+const escalaDoPalco = 0.6; // Igual ao transform: scale(0.6) do CSS
+
+palco.addEventListener('mousedown', (e) => {
+    if (e.target.classList.contains('elemento-livre')) {
+        // Se clicar dentro do texto para editar, não arrasta
+        if(e.target.tagName === 'DIV' && document.activeElement === e.target) return;
+        
+        elementoEmMovimento = e.target;
+        // Calcula a posição do rato relativa ao elemento, ajustando pela escala
+        const rect = elementoEmMovimento.getBoundingClientRect();
+        offsetX = (e.clientX - rect.left) / escalaDoPalco;
+        offsetY = (e.clientY - rect.top) / escalaDoPalco;
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!elementoEmMovimento) return;
+    
+    // Calcula a nova posição baseada no rato e na escala do palco
+    const palcoRect = palco.getBoundingClientRect();
+    let novoX = ((e.clientX - palcoRect.left) / escalaDoPalco) - offsetX;
+    let novoY = ((e.clientY - palcoRect.top) / escalaDoPalco) - offsetY;
+
+    elementoEmMovimento.style.left = novoX + 'px';
+    elementoEmMovimento.style.top = novoY + 'px';
+});
+
+document.addEventListener('mouseup', () => {
+    elementoEmMovimento = null;
+});
+
+// --- 3. VALIDADE AUTOMÁTICA ---
+window.onload = () => {
     const hoje = new Date(); const diaSemana = hoje.getDay(); 
     const diffSegunda = hoje.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); 
     const segunda = new Date(hoje.setDate(diffSegunda));
     const sabado = new Date(segunda); sabado.setDate(segunda.getDate() + 5);
     const meses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-    
-    const texto = `Válido do dia ${segunda.getDate()} a ${sabado.getDate()} de ${meses[sabado.getMonth()]}`;
-    document.getElementById('txt-val-capa').innerText = texto;
-    document.getElementById('txt-val-norm').innerText = texto;
-}
-window.onload = setValidadeInicial;
+    document.getElementById('el-validade').innerText = `Válido do dia ${segunda.getDate()} a ${sabado.getDate()} de ${meses[sabado.getMonth()]}`;
+};
 
-// --- SISTEMA DE GUARDAR E CARREGAR MODELOS (JSON) ---
+// --- 4. EXPORTAR E IMPORTAR O PADRÃO (JSON) ---
 function exportarModelo() {
-    const rootStyles = getComputedStyle(document.documentElement);
-    const modelo = {
-        textos: {
-            titleCapa: document.getElementById('txt-title-capa').innerText,
-            valCapa: document.getElementById('txt-val-capa').innerText,
-            siteCapa: document.getElementById('txt-site-capa').innerText,
-            valNorm: document.getElementById('txt-val-norm').innerText,
-            siteNorm: document.getElementById('txt-site-norm').innerText
-        },
-        estilos: {
-            '--logo-capa-sz': rootStyles.getPropertyValue('--logo-capa-sz').trim(),
-            '--logo-norm-sz': rootStyles.getPropertyValue('--logo-norm-sz').trim(),
-            '--title-capa-sz': rootStyles.getPropertyValue('--title-capa-sz').trim(),
-            '--val-sz': rootStyles.getPropertyValue('--val-sz').trim(),
-            '--site-sz': rootStyles.getPropertyValue('--site-sz').trim(),
-            '--card-radius': rootStyles.getPropertyValue('--card-radius').trim(),
-            '--prod-nome-sz': rootStyles.getPropertyValue('--prod-nome-sz').trim(),
-            '--prod-preco-sz': rootStyles.getPropertyValue('--prod-preco-sz').trim()
-        }
-    };
+    const elementos = document.querySelectorAll('.elemento-livre');
+    const modelo = {};
+    
+    elementos.forEach(el => {
+        modelo[el.id] = {
+            visivel: el.style.display !== 'none',
+            esq: el.style.left,
+            topo: el.style.top,
+            tamFonte: el.style.fontSize,
+            largura: el.style.width,
+            altura: el.style.height,
+            texto: el.tagName === 'DIV' ? el.innerText : null
+        };
+    });
 
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(modelo));
     const a = document.createElement('a');
     a.setAttribute("href", dataStr);
-    a.setAttribute("download", "matriz-dona-antonia-minimalista.json");
+    a.setAttribute("download", "meu-padrao-livre.json");
     a.click();
 }
 
@@ -259,111 +257,110 @@ function importarModelo(event) {
     reader.onload = function(e) {
         try {
             const modelo = JSON.parse(e.target.result);
-            if(modelo.textos) {
-                document.getElementById('txt-title-capa').innerText = modelo.textos.titleCapa;
-                document.getElementById('txt-val-capa').innerText = modelo.textos.valCapa;
-                document.getElementById('txt-site-capa').innerText = modelo.textos.siteCapa;
-                document.getElementById('txt-val-norm').innerText = modelo.textos.valNorm;
-                document.getElementById('txt-site-norm').innerText = modelo.textos.siteNorm;
-            }
-            if(modelo.estilos) {
-                for (const [key, value] of Object.entries(modelo.estilos)) {
-                    document.documentElement.style.setProperty(key, value);
-                    const valNumber = value.replace(/[^0-9.]/g, '');
-                    const inputs = document.querySelectorAll(`input[oninput*="${key}"]`);
-                    if(inputs.length > 0) inputs[0].value = valNumber;
+            for (const [id, config] of Object.entries(modelo)) {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.style.display = config.visivel ? 'block' : 'none';
+                    document.getElementById('check-' + id).checked = config.visivel;
+                    if(config.esq) el.style.left = config.esq;
+                    if(config.topo) el.style.top = config.topo;
+                    if(config.tamFonte) el.style.fontSize = config.tamFonte;
+                    if(config.largura) el.style.width = config.largura;
+                    if(config.altura) el.style.height = config.altura;
+                    if(config.texto && el.tagName === 'DIV') el.innerText = config.texto;
+                    
+                    // Sincroniza os sliders do painel
+                    const slider = document.getElementById('range-' + id);
+                    if(slider) {
+                        if(config.tamFonte) slider.value = parseInt(config.tamFonte);
+                        else if(config.largura) slider.value = parseInt(config.largura);
+                    }
                 }
             }
-            alert("Modelo carregado com sucesso!");
+            alert("Padrão carregado com sucesso!");
         } catch (error) { alert("Erro ao ler o ficheiro."); }
     };
     reader.readAsText(file);
     event.target.value = '';
 }
 
-// --- MOTOR DE GERAÇÃO (HTML2CANVAS) ---
+// --- 5. MOTOR DE GERAÇÃO PARA MÚLTIPLOS PRODUTOS ---
 function fecharResultados() { document.getElementById('modal-resultados').style.display = 'none'; }
-
-function criarCardHtml(p) {
-    const preco = parseFloat(p.preco).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
-    const precoAntigo = parseFloat(p.preco_antigo).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
-    return `
-        <div class="card-sq">
-            <div class="tag-desconto">-${p.descontoPerc}%</div>
-            <div class="card-sq-img-area">
-                <img src="/site/img/produtos/${p.codigo || p.id}.webp" class="card-sq-img" crossorigin="anonymous">
-            </div>
-            <div class="card-info">
-                <div class="preco-antigo">${precoAntigo}</div>
-                <div class="preco-novo">${preco}</div>
-                <div class="nome-produto">${p.nome}</div>
-            </div>
-        </div>`;
-}
 
 async function processarImagens() {
     const modal = document.getElementById('modal-resultados');
     const galeria = document.getElementById('galeria');
     const palcoCaptura = document.getElementById('palco-captura');
     const statusTxt = document.getElementById('status-text');
+    const matrizMatriz = document.getElementById('matriz-livre');
     
     modal.style.display = 'flex';
     galeria.innerHTML = '';
     palcoCaptura.innerHTML = '';
     statusTxt.innerText = "A ler os produtos na loja...";
 
-    // 1. Ler Ofertas
-    const resposta = await fetch('/site/produtos.json');
-    const texto = await resposta.text();
-    const dados = JSON.parse(texto.startsWith('[') ? texto : '[' + texto + ']');
-    
-    let ofertas = dados.filter(p => p.situacao === "A" && p.preco_antigo && parseFloat(p.preco_antigo) > parseFloat(p.preco));
-    ofertas.forEach(p => p.descontoPerc = Math.round(((parseFloat(p.preco_antigo) - parseFloat(p.preco)) / parseFloat(p.preco_antigo)) * 100));
-    ofertas.sort((a, b) => b.descontoPerc - a.descontoPerc);
-    
-    // 2. Agrupa (agora é 1 por 1) - Código ajustado
-    const grupos = ofertas.map(oferta => [oferta]); // Cria um array de arrays com apenas 1 produto cada
-
-    // 3. Gerar cada quadro baseado na Matriz Editável
-    for (let i = 0; i < grupos.length; i++) {
-        statusTxt.innerText = `A desenhar e fotografar a imagem ${i + 1} de ${grupos.length}...`;
+    try {
+        const resposta = await fetch('/site/produtos.json');
+        const texto = await resposta.text();
+        const dados = JSON.parse(texto.startsWith('[') ? texto : '[' + texto + ']');
         
-        let nodeClone;
-        if (i === 0) {
-            // Clona a Matriz da Capa
-            nodeClone = document.getElementById('matriz-capa').cloneNode(true);
-            const grid = nodeClone.querySelector('.ig-grid-1');
-            grid.innerHTML = grupos[i].map(p => criarCardHtml(p)).join('');
-        } else {
-            // Clona a Matriz Normal
-            nodeClone = document.getElementById('matriz-normal').cloneNode(true);
-            const grid = nodeClone.querySelector('.ig-grid-1');
-            grid.innerHTML = grupos[i].map(p => criarCardHtml(p)).join('');
+        let ofertas = dados.filter(p => p.situacao === "A" && p.preco_antigo && parseFloat(p.preco_antigo) > parseFloat(p.preco));
+        ofertas.forEach(p => p.descontoPerc = Math.round(((parseFloat(p.preco_antigo) - parseFloat(p.preco)) / parseFloat(p.preco_antigo)) * 100));
+        ofertas.sort((a, b) => b.descontoPerc - a.descontoPerc);
+        
+        for (let i = 0; i < ofertas.length; i++) {
+            const p = ofertas[i];
+            statusTxt.innerText = `A desenhar a imagem ${i + 1} de ${ofertas.length}...`;
+            
+            // Faz um clone do teu padrão exato
+            let nodeClone = matrizMatriz.cloneNode(true);
+            nodeClone.id = 'clone-' + i;
+            
+            // Injeta os dados do produto atual no clone
+            const preco = parseFloat(p.preco).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            const precoAntigo = parseFloat(p.preco_antigo).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            
+            const elImg = nodeClone.querySelector('#el-img-prod');
+            const elTag = nodeClone.querySelector('#el-tag');
+            const elPAnt = nodeClone.querySelector('#el-preco-ant');
+            const elPNov = nodeClone.querySelector('#el-preco-nov');
+            const elNome = nodeClone.querySelector('#el-nome-prod');
+
+            if(elImg) elImg.src = `/site/img/produtos/${p.codigo || p.id}.webp`;
+            if(elTag) elTag.innerText = `-${p.descontoPerc}%`;
+            if(elPAnt) elPAnt.innerText = precoAntigo;
+            if(elPNov) elPNov.innerText = preco;
+            if(elNome) elNome.innerText = p.nome;
+            
+            // Remove as formatações de ecrã para a foto sair perfeita
+            nodeClone.style.transform = 'none';
+            nodeClone.style.marginBottom = '0';
+            palcoCaptura.appendChild(nodeClone);
+
+            // Espera as imagens carregarem
+            const imgs = nodeClone.querySelectorAll('img');
+            await Promise.all(Array.from(imgs).map(img => new Promise(res => { img.onload = res; img.onerror = res; })));
+            await new Promise(r => setTimeout(r, 600)); 
+            
+            // Tira a fotografia com html2canvas
+            const canvas = await html2canvas(nodeClone, { scale: 1, useCORS: true, allowTaint: true, backgroundColor: "#f8fafc" });
+            const dataUrl = canvas.toDataURL("image/png");
+
+            galeria.innerHTML += `
+                <div class="preview-box">
+                    <p style="font-weight:900; color:var(--c-p); margin-top:0;">Produto: ${p.nome.substring(0, 15)}...</p>
+                    <img src="${dataUrl}" class="preview-img">
+                    <a href="${dataUrl}" download="oferta-${p.codigo||p.id}.png" class="btn-download">⬇️ Descarregar PNG</a>
+                </div>
+            `;
+            
+            nodeClone.remove(); 
         }
-        
-        nodeClone.style.transform = 'none';
-        nodeClone.style.marginBottom = '0';
-        palcoCaptura.appendChild(nodeClone);
-
-        const imgs = nodeClone.querySelectorAll('img');
-        await Promise.all(Array.from(imgs).map(img => new Promise(res => { img.onload = res; img.onerror = res; })));
-        await new Promise(r => setTimeout(r, 600)); 
-        
-        // Mantive a cor de fundo igual ao que definiste, agora é #f8fafc (suave)
-        const canvas = await html2canvas(nodeClone, { scale: 1, useCORS: true, allowTaint: true, backgroundColor: "#f8fafc" });
-        const dataUrl = canvas.toDataURL("image/png");
-
-        galeria.innerHTML += `
-            <div class="preview-box">
-                <p style="font-weight:900; color:var(--c-p); margin-top:0;">${i === 0 ? '🏆 CAPA' : 'Post ' + (i + 1)}</p>
-                <img src="${dataUrl}" class="preview-img">
-                <a href="${dataUrl}" download="oferta-${i+1}.png" class="btn-download">⬇️ Descarregar PNG</a>
-            </div>
-        `;
-        
-        nodeClone.remove(); 
+        statusTxt.innerText = "✅ Tudo pronto! Descarrega as tuas imagens abaixo.";
+    } catch (e) {
+        statusTxt.innerText = "❌ Ocorreu um erro ao ler os produtos ou gerar as imagens.";
+        console.error(e);
     }
-    statusTxt.innerText = "✅ Tudo pronto! Descarrega as tuas imagens abaixo.";
 }
 </script>
 </body>
