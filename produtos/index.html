@@ -168,8 +168,10 @@
     let produtosCarregados = [];
     let categoriasBling = new Set();
     let produtoSelecionadoIdx = null;
-    let ultimoSeqCodigo = 0; 
     let listaCompletaBling = [];
+
+    // O nosso "cofre" que armazena todos os códigos para não haver repetição
+    let codigosExistentes = new Set(); 
 
     // Lista exata de colunas conforme o CSV modelo fornecido
     const colunasModelo = [
@@ -214,7 +216,7 @@
             baseBling = {};
             categoriasBling.clear();
             listaCompletaBling = [];
-            ultimoSeqCodigo = 0;
+            codigosExistentes.clear(); // Limpa o cofre ao carregar um novo arquivo
             
             const tbody = document.getElementById('labelsTableBody');
             tbody.innerHTML = "";
@@ -234,7 +236,7 @@
 
                 listaCompletaBling.push(prodObj);
 
-                // Armazenar na baseBling para consulta (usando EAN ou ID como chave se necessário, ou apenas guardando)
+                // Armazenar na baseBling para consulta
                 const ean = prodObj['GTIN/EAN']?.trim();
                 const codigo = prodObj['Código']?.trim();
                 const desc = prodObj['Descrição'] || "SEM NOME";
@@ -242,12 +244,8 @@
                 if (ean) baseBling[ean] = prodObj;
                 if (codigo) {
                     baseBling[codigo] = prodObj;
-                    // Detectar sequencia de código P
-                    const match = codigo.match(/^P(\d+)/i);
-                    if(match) {
-                        const num = parseInt(match[1], 10);
-                        if(num > ultimoSeqCodigo) ultimoSeqCodigo = num;
-                    }
+                    // Guarda o código do produto no nosso Cofre
+                    codigosExistentes.add(codigo);
                 }
 
                 // Renderizar Tabela de Etiquetas
@@ -262,7 +260,7 @@
                 `;
                 tbody.appendChild(tr);
             }
-            alert(`CSV Carregado! ${rows.length - 1} produtos processados. Último código P detectado: P${ultimoSeqCodigo}`);
+            alert(`CSV Carregado! ${rows.length - 1} produtos processados.`);
         };
         reader.readAsText(e.target.files[0], 'ISO-8859-1');
     });
@@ -274,6 +272,31 @@
         document.getElementById('btnExport').classList.remove('hidden');
         document.getElementById('btnExportAll').classList.remove('hidden');
     });
+
+    // Função que gera o código com 6 números e 1 letra no final
+    function gerarCodigoUnico() {
+        const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let novoCodigo = "";
+        let ehUnico = false;
+
+        // O laço continua até achar um código inédito
+        while (!ehUnico) {
+            // Gera 6 números (entre 100000 e 999999)
+            const numeros = Math.floor(100000 + Math.random() * 900000);
+            // Sorteia 1 letra
+            const letraAleatoria = letras.charAt(Math.floor(Math.random() * letras.length));
+            
+            // Monta o código
+            novoCodigo = `${numeros}${letraAleatoria}`;
+
+            // Verifica no nosso Set (cofre)
+            if (!codigosExistentes.has(novoCodigo)) {
+                ehUnico = true;
+                codigosExistentes.add(novoCodigo); // Adiciona para a próxima verificação não repeti-lo
+            }
+        }
+        return novoCodigo;
+    }
 
     function lerXML(file, idx) {
         const reader = new FileReader();
@@ -303,23 +326,19 @@
                 const searchEan = xmlEan.trim();
 
                 if (baseBling[searchEan]) {
-                    // MODO ATUALIZAÇÃO: Preserva TODOS os dados originais do CSV, apenas soma estoque
+                    // MODO ATUALIZAÇÃO
                     item = { ...baseBling[searchEan] };
                     item._vinculado = true;
                     
-                    // Lógica de Soma de Estoque
                     const estAtual = parseFloat((item["Estoque"] || "0").replace(',', '.'));
                     const estEntrada = parseFloat(xmlQcom.replace(',', '.'));
                     
                     item._estoqueAtual = estAtual;
                     item._estoqueEntrada = estEntrada;
-                    
-                    // Soma estoque e formata para manter padrão
                     item["Estoque"] = (estAtual + estEntrada).toFixed(2).replace('.', ',');
 
-                    // NÃO sobrescreve preço, custo, fornecedor, etc. Mantém o cadastro original.
                 } else {
-                    // MODO NOVO: Cria estrutura
+                    // MODO NOVO
                     item = {};
                     colunasModelo.forEach(key => item[key] = "");
                     
@@ -333,7 +352,6 @@
                     item["Cód. no fornecedor"] = xmlCprod;
                     item["Fornecedor"] = emitente;
                     
-                    // Formatação para Excel (Tabs para evitar notação científica)
                     item["GTIN/EAN"] = xmlEan ? `\t${xmlEan}` : "";
                     item["GTIN/EAN da Embalagem"] = xmlEanTrib ? `\t${xmlEanTrib}` : "";
                     
@@ -344,8 +362,8 @@
                     item["Condição do Produto"] = "Novo";
                     item["Itens p/ caixa"] = "1";
 
-                    ultimoSeqCodigo++;
-                    item["Código"] = `P${ultimoSeqCodigo}\t`; // Padrão com tab no final
+                    // Usando a nossa função de código aleatório!
+                    item["Código"] = `${gerarCodigoUnico()}\t`; 
                 }
 
                 item._id = `prod-${idx}-${i}-${Date.now()}`;
@@ -371,7 +389,7 @@
         
         let statusHtml = p._vinculado ? 
             `<span class="status-vinc">VINCULADO</span>` : 
-            `<span class="status-novo">NOVO (${p["Código"]})</span>`;
+            `<span class="status-novo">NOVO (${p["Código"].trim()})</span>`;
 
         div.innerHTML = `
             <div class="flex justify-between items-start">
@@ -398,7 +416,6 @@
         const p = produtosCarregados.find(x => x._id === id);
         if(p) {
             p._selected = cb.checked;
-            // Atualiza visual do fundo
             const row = document.getElementById(`row-${id}`);
             if(row) {
                 if(p._selected) row.classList.add('bg-blue-50');
@@ -423,7 +440,6 @@
         document.getElementById('editMainName').value = p["Descrição"];
         document.getElementById('fatorInput').value = p["Itens p/ caixa"] || 1;
         
-        // Painel de Soma de Estoque
         if (p._vinculado) {
             calcInfo.innerHTML = `
                 <div class="flex items-center gap-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs shadow-sm">
@@ -449,7 +465,6 @@
 
         grid.innerHTML = "";
         
-        // Show ALL fields from colunasModelo
         colunasModelo.forEach(key => {
             const div = document.createElement('div');
             div.innerHTML = `
@@ -460,7 +475,6 @@
             grid.appendChild(div);
         });
 
-        // Evento para fator
         document.getElementById('fatorInput').oninput = function() {
             const fator = parseFloat(this.value) || 1;
             p["Itens p/ caixa"] = this.value;
@@ -473,7 +487,6 @@
             p["Preço"] = precoUnit.toFixed(4).replace('.', ',');
             p["Estoque"] = estoqueTotal;
 
-            // Atualiza input visualmente se existir
             carregarEditor(p); 
         };
     }
@@ -487,12 +500,9 @@
     function sincronizarNome(el) {
         if(produtoSelecionadoIdx !== null) {
             produtosCarregados[produtoSelecionadoIdx]["Descrição"] = el.value.toUpperCase();
-            // Atualiza lista visual
-            // Simplificação: Re-renderizar lista seria ideal, mas pesado.
         }
     }
 
-    // Ordenação da Tabela
     let dir = "asc";
     function ordenarTabela(n) {
         const table = document.getElementById("labelsTable");
@@ -542,11 +552,9 @@
         document.querySelectorAll('.label-check').forEach(cb => cb.checked = source.checked);
     }
 
-    // Função genérica de exportação CSV
     function gerarCSV(listaProdutos, nomeArquivo) {
         if(listaProdutos.length === 0) return alert("Sem produtos para exportar!");
         
-        // Cabeçalho CSV
         let csvContent = "\ufeff" + colunasModelo.map(c => `"${c}"`).join(";") + "\r\n";
 
         listaProdutos.forEach(p => {
@@ -568,20 +576,17 @@
         document.body.removeChild(link);
     }
 
-    // Botão Exportar Selecionados (Import XML Tab)
     document.getElementById('btnExport').onclick = () => {
         const sel = produtosCarregados.filter(p => p._selected);
         if(sel.length === 0) return alert("Selecione produtos na lista!");
         gerarCSV(sel, "exportacao_selecionados");
     };
 
-    // Botão Exportar Tudo (Import XML Tab)
     document.getElementById('btnExportAll').onclick = () => {
         if(produtosCarregados.length === 0) return alert("Nenhum produto carregado!");
         gerarCSV(produtosCarregados, "exportacao_xml_todos");
     };
     
-    // Botão Exportar Base Completa (Labels Tab)
     function exportarBaseBling() {
         if(listaCompletaBling.length === 0) return alert("Carregue o CSV do Bling primeiro!");
         gerarCSV(listaCompletaBling, "backup_completo_bling");
