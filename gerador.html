@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Gerador de Ofertas para Instagram</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+    /* As tuas cores e variáveis originais */
+    :root {
+        --c-p: #0f172a; --c-s: #334155; --c-t: #64748b;
+        --c-a: #ea580c; --c-ok: #15803d; --c-err: #dc2626;
+        --c-bg: #e2e8f0; --c-surf: #ffffff; --c-bd: #e2e8f0;
+        --font: 'Inter', system-ui, sans-serif;
+    }
+    body { font-family: var(--font); background: #333; color: #fff; padding: 20px; text-align: center; }
+    
+    /* ESTILO DO POST DO INSTAGRAM (1080 x 1350) */
+    .ig-post {
+        width: 1080px;
+        height: 1350px;
+        background: var(--c-bg);
+        position: absolute;
+        left: -9999px; /* Mantém escondido da tela principal */
+        top: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 60px;
+        box-sizing: border-box;
+    }
+    .ig-header { text-align: center; margin-bottom: 50px; }
+    .ig-title { font-size: 4.5rem; font-weight: 900; color: var(--c-p); margin: 0; text-transform: uppercase; }
+    .ig-subtitle { font-size: 2.5rem; color: var(--c-a); font-weight: 800; }
+    
+    /* O Grid para os 4 produtos */
+    .ig-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 40px;
+        flex: 1;
+    }
+
+    /* ESTILO DO CARD (Copiado do teu site original, mas adaptado para tamanho gigante) */
+    .card-sq { background: #fff; border-radius: 24px; padding: 20px; display: flex; flex-direction: column; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+    .card-sq-img { width: 100%; height: 350px; object-fit: contain; mix-blend-mode: multiply; }
+    .tag-desconto { position: absolute; top: 20px; right: 20px; background: var(--c-err); color: #fff; font-size: 1.8rem; font-weight: 900; padding: 10px 20px; border-radius: 12px; }
+    .card-info { margin-top: auto; padding-top: 20px; }
+    .preco-antigo { font-size: 1.5rem; color: var(--c-t); text-decoration: line-through; }
+    .preco-novo { font-size: 3.5rem; font-weight: 900; color: var(--c-p); line-height: 1; margin-bottom: 10px; }
+    .nome-produto { font-size: 1.8rem; color: var(--c-s); font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* Área onde vamos mostrar as imagens geradas prontas para download */
+    #galeria { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; margin-top: 30px; }
+    .preview-box { background: #fff; padding: 10px; border-radius: 12px; color: #000; }
+    .preview-img { width: 300px; height: auto; border: 1px solid #ccc; border-radius: 8px; }
+    .btn-download { display: block; background: var(--c-a); color: #fff; text-decoration: none; padding: 10px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
+    
+    button { padding: 15px 30px; font-size: 1.2rem; background: var(--c-ok); color: #fff; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; }
+</style>
+</head>
+<body>
+
+    <h1>Gerador de Posts - Dona Antônia</h1>
+    <p>Clica no botão abaixo para ler os produtos em oferta e gerar as imagens.</p>
+    <button onclick="gerarImagens()">GERAR IMAGENS PARA INSTAGRAM</button>
+
+    <div id="palco-invisivel"></div>
+    <div id="galeria"></div>
+
+<script>
+async function gerarImagens() {
+    // 1. LER OS PRODUTOS
+    const resposta = await fetch('/site/produtos.json');
+    const texto = await resposta.text();
+    const dados = JSON.parse(texto.startsWith('[') ? texto : '[' + texto + ']');
+    
+    // 2. FILTRAR AS OFERTAS
+    const ofertas = dados.filter(p => p.situacao === "A" && p.preco_antigo && parseFloat(p.preco_antigo) > parseFloat(p.preco));
+    
+    // 3. DIVIDIR EM GRUPOS DE 4
+    const grupos = [];
+    for (let i = 0; i < ofertas.length; i += 4) {
+        grupos.push(ofertas.slice(i, i + 4));
+    }
+
+    const palco = document.getElementById('palco-invisivel');
+    const galeria = document.getElementById('galeria');
+    palco.innerHTML = ''; galeria.innerHTML = 'A gerar imagens... aguarda!';
+
+    // 4. CRIAR O HTML DE CADA IMAGEM E CAPTURAR
+    for (let i = 0; i < grupos.length; i++) {
+        const grupo = grupos[i];
+        
+        // Montar o quadro do Instagram
+        const igPost = document.createElement('div');
+        igPost.className = 'ig-post';
+        
+        // Cabeçalho da Imagem
+        igPost.innerHTML = `
+            <div class="ig-header">
+                <div class="ig-title">🔥 OFERTAS DA SEMANA</div>
+                <div class="ig-subtitle">Super Cestas Dona Antônia</div>
+            </div>
+            <div class="ig-grid" id="grid-${i}"></div>
+        `;
+        
+        palco.appendChild(igPost);
+        const grid = document.getElementById(`grid-${i}`);
+
+        // Montar os 4 cards dentro do grid
+        grupo.forEach(p => {
+            const preco = parseFloat(p.preco).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            const precoAntigo = parseFloat(p.preco_antigo).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+            const desconto = Math.round(((parseFloat(p.preco_antigo) - parseFloat(p.preco)) / parseFloat(p.preco_antigo)) * 100);
+            
+            grid.innerHTML += `
+                <div class="card-sq">
+                    <div class="tag-desconto">-${desconto}%</div>
+                    <img src="/site/img/produtos/${p.codigo || p.id}.webp" class="card-sq-img" crossorigin="anonymous">
+                    <div class="card-info">
+                        <div class="preco-antigo">${precoAntigo}</div>
+                        <div class="preco-novo">${preco}</div>
+                        <div class="nome-produto">${p.nome}</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // 5. TIRAR A FOTOGRAFIA DO HTML
+        // Precisamos esperar um bocadinho para as imagens carregarem antes de "fotografar"
+        await new Promise(r => setTimeout(r, 1000)); 
+        
+        const canvas = await html2canvas(igPost, { scale: 1, useCORS: true });
+        const dataUrl = canvas.toDataURL("image/png");
+
+        // Mostrar na galeria com o botão de download
+        if (i === 0) galeria.innerHTML = ''; // Limpar a mensagem de "A gerar..."
+        galeria.innerHTML += `
+            <div class="preview-box">
+                <p>Post ${i + 1}</p>
+                <img src="${dataUrl}" class="preview-img">
+                <a href="${dataUrl}" download="ofertas-post-${i+1}.png" class="btn-download">⬇️ Descarregar PNG</a>
+            </div>
+        `;
+    }
+}
+</script>
+</body>
+</html>
