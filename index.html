@@ -798,7 +798,7 @@ async function sendOrder(){
     if(STATE.coupon){ itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
     
     // Adicionado no texto do WhatsApp para transparência do cliente
-    if(STATE.basketExtraFee > 0) itemsTxt += `\n📦 AJUSTE DA CESTA: +${fmt(STATE.basketExtraFee)}`;
+    if(STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
     const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
