@@ -553,10 +553,23 @@ function renderHome() {
             let terms = item.termos || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
-            let list = STATE.prods.filter(p => { 
-                let pName = norm(p.name); 
-                return subs.some(s => pName.includes(s)); 
-            });
+           // NOVO CÓDIGO (Copie e cole por cima do antigo)
+let list = STATE.prods.filter(p => { 
+    let pName = norm(p.name); 
+    return subs.some(s => {
+        let palavrasDoTermo = s.split(' '); // Conta quantas palavras tem o termo
+        
+        if (palavrasDoTermo.length === 1) {
+            // Regra 1 palavra: O produto DEVE COMEÇAR com este termo. 
+            // (Ex: "copo" pega "copo de vidro", mas recusa "molho copo")
+            return pName.startsWith(s);
+        } else {
+            // Regra 2+ palavras: O produto deve conter TODAS as palavras em qualquer lugar.
+            // (Ex: "leite pó" exige que tenha tanto "leite" quanto "pó" no nome)
+            return palavrasDoTermo.every(palavra => pName.includes(palavra));
+        }
+    }); 
+});
             if (list.length > 0) {
                 renderPaginated(`grid-${safe}`, `term_${safe}`, list, 10, 'PROD');
             }
