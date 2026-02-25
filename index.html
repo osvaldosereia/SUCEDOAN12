@@ -616,7 +616,8 @@ function setupObserver() {
 }
 
 // ==========================================
-// RENDERIZAÇÃO DA HOME (ATUALIZADA)
+// ==========================================
+// RENDERIZAÇÃO DA HOME (ATUALIZADA E SEGURA)
 // ==========================================
 function renderHome() {
     let openAccs = [];
@@ -629,7 +630,6 @@ function renderHome() {
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
-            // Só adiciona ao array de pesquisa de texto se o item tiver a propriedade "termos"
             if (item.termos) {
                 let terms = item.termos || item;
                 allTerms.push(...String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t));
@@ -637,7 +637,6 @@ function renderHome() {
         });
     }
 
-    // Inicializa o Banner Rotativo de Ofertas
     renderBannerOfertas();
 
     if (STATE.baskets.length > 0) { 
@@ -665,23 +664,25 @@ function renderHome() {
     let tHtml = '';
     let cHtml = '';
     
-    // PRIMEIRO LOOP: Cria o HTML dos acordeões e dos Chips (Botões do menu)
+    // PRIMEIRO LOOP: Cria o HTML
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             
-            // LÓGICA DE FILTRO INTELIGENTE (Bifurcação)
             let list = STATE.prods.filter(p => { 
-                // 1. Verifica se é uma busca por Preço Exato
+                // Convertendo tudo para número para evitar erros de leitura
+                let precoProduto = Number(p.price);
+                let valorAlvo = Number(item.valor);
+
                 if (item.tipo === 'preco_exato') {
-                    return p.price === item.valor;
+                    // Margem de erro minúscula para lidar com decimais do JavaScript
+                    return Math.abs(precoProduto - valorAlvo) < 0.01;
                 } 
-                // 2. Verifica se é uma busca por Preço Máximo
                 else if (item.tipo === 'preco_maximo') {
-                    return p.price > 0 && p.price <= item.valor;
+                    // Adicionamos + 0.01 como segurança (ex: se o sistema ler 1.990001, ele ainda passa)
+                    return precoProduto > 0 && precoProduto <= (valorAlvo + 0.01);
                 } 
-                // 3. Se não for preço, faz a busca normal por texto
                 else if (item.termos) {
                     let terms = item.termos || item;
                     let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
@@ -737,18 +738,20 @@ function renderHome() {
     $('section-termos').innerHTML = tHtml; 
     $('chips-area').innerHTML = cHtml;
     
-    // SEGUNDO LOOP: Preenche as listas com os produtos
+    // SEGUNDO LOOP: Preenche as listas
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             
-            // MESMA LÓGICA DE FILTRO INTELIGENTE
             let list = STATE.prods.filter(p => { 
+                let precoProduto = Number(p.price);
+                let valorAlvo = Number(item.valor);
+
                 if (item.tipo === 'preco_exato') {
-                    return p.price === item.valor;
+                    return Math.abs(precoProduto - valorAlvo) < 0.01;
                 } else if (item.tipo === 'preco_maximo') {
-                    return p.price > 0 && p.price <= item.valor;
+                    return precoProduto > 0 && precoProduto <= (valorAlvo + 0.01);
                 } else if (item.termos) {
                     let terms = item.termos || item;
                     let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
@@ -777,7 +780,11 @@ function renderHome() {
             });
 
             if (list.length > 0) {
-                renderPaginated(`grid-${safe}`, `term_${safe}`, list, 10, 'PROD');
+                // Aqui resolvemos o problema dos produtos ocultos!
+                // Se for filtro por preço, mostramos até 50 produtos de vez. Se for categoria normal, mostramos 10.
+                let limitePaginacao = (item.tipo === 'preco_maximo' || item.tipo === 'preco_exato') ? 50 : 10;
+                
+                renderPaginated(`grid-${safe}`, `term_${safe}`, list, limitePaginacao, 'PROD');
             }
         });
     }
