@@ -126,15 +126,13 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* AJUSTES PARA MOBILE: 2.2 CARDS NA TELA E AJUSTE INTERNO */
 @media(max-width: 600px) { 
     .carousel-track { padding: 5px 15px 25px; gap: 10px; } 
-    /* Grade de busca ajustada para bater com o tamanho menor do card mobile */
     .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); padding: 5px 15px 15px; gap: 10px; }
     
-    /* Card principal mobile: 42vw garante ~2.2 cards visíveis. Altura aumentada para comportar o texto estreito */
-    .u-card { height: 340px; } 
+    /* Card principal mobile e aumento da imagem */
+    .u-card { height: 370px; } /* +30px pra baixo */
     .carousel-track .u-card { flex: 0 0 42vw; } 
     
-    /* Elementos internos redimensionados para o card mais estreito */
-    .u-img-area { height: 130px; }
+    .u-img-area { height: 160px; } /* Imagem +30px maior */
     .u-info { padding: 10px; }
     .u-name { font-size: 0.8rem; }
     .u-price { font-size: 1.15rem; }
@@ -184,9 +182,9 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .del-opt-date { font-size: 0.9rem; color: var(--c-s); margin-top: 4px; font-weight: 600;}
 .del-opt-badge { font-size: 0.85rem; font-weight: 900; color: #fff; background: var(--c-ok); padding: 4px 12px; border-radius: 12px; text-align: right; }
 
-/* REGRAS ESPECÍFICAS: CARROSSEL MINIATURA NO CHECKOUT (2.5 Cards) */
-#chk-grid-ofertas { gap: 8px; padding: 5px 5px 15px; }
-#chk-grid-ofertas .u-card { height: 260px; flex: 0 0 36%; border-radius: 10px; }
+/* REGRAS ESPECÍFICAS: CARROSSEL MINIATURA NO CHECKOUT */
+#chk-grid-ofertas { gap: 8px; padding: 5px 5px 15px 0px; } /* Encostado na lateral */
+#chk-grid-ofertas .u-card { height: 260px; flex: 0 0 calc(36% - 10px); border-radius: 10px; } /* -10px na largura */
 #chk-grid-ofertas .u-img-area { height: 110px; border-radius: 10px 10px 0 0; }
 #chk-grid-ofertas .u-info { padding: 8px; }
 #chk-grid-ofertas .u-name { font-size: 0.75rem; -webkit-line-clamp: 3; line-height: 1.25; }
@@ -194,6 +192,10 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 #chk-grid-ofertas .combo-strike { font-size: 0.65rem; }
 #chk-grid-ofertas .btn-big-action { height: 32px; font-size: 0.7rem; margin-top: 6px; }
 #chk-grid-ofertas .offer-tag { font-size: 0.65rem; padding: 3px 6px; }
+
+/* Oculta apenas a validade no carrossel do modal e limpa o container caso fique vazio */
+#chk-grid-ofertas .u-validade { display: none !important; }
+#chk-grid-ofertas .extra-info-container:has(> .u-validade:only-child) { display: none !important; margin: 0; padding: 0; border: none; }
 
 /* Controles de Qtde dentro do mini carrossel */
 #chk-grid-ofertas .card-qty-ctrl { height: 32px; margin-top: 6px; padding: 0 4px; }
@@ -571,7 +573,6 @@ function setupObserver() {
 // RENDERIZAÇÃO DA HOME
 // ==========================================
 function renderHome() {
-    // 1. SALVAR O ESTADO ATUAL
     let openAccs = [];
     let scrolls = {};
     document.querySelectorAll('.term-accordion.open').forEach(el => openAccs.push(el.id));
@@ -579,7 +580,6 @@ function renderHome() {
 
     STATE.lists = {}; 
 
-    // 2. EXTRAIR TODOS OS TERMOS
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
@@ -708,7 +708,6 @@ function renderHome() {
         });
     }
 
-    // 3. RESTAURAR O ESTADO
     openAccs.forEach(id => { let el = $(id); if(el) el.classList.add('open'); });
     Object.keys(scrolls).forEach(id => { let el = $(id); if(el) el.scrollLeft = scrolls[id]; });
 }
@@ -762,9 +761,13 @@ function cardProd(p) {
 
     let extraInfoHtml = '';
     if (p.validade || (p.stock > 0 && p.stock < 3)) {
-        extraInfoHtml += `<div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--c-bd); display: flex; flex-direction: column; gap: 2px;">`;
-        if (p.validade) extraInfoHtml += `<span style="font-size:0.75rem; color:var(--c-t); font-weight:700;">Val: ${p.validade}</span>`;
-        if (p.stock > 0 && p.stock < 3) extraInfoHtml += `<span style="font-size:0.75rem; color:var(--c-a); font-weight:900;">Resta${p.stock > 1 ? 'm' : ''} ${p.stock} un!</span>`;
+        extraInfoHtml += `<div class="extra-info-container" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--c-bd); display: flex; flex-direction: column; gap: 4px;">`;
+        if (p.validade) {
+            extraInfoHtml += `<span class="u-validade" style="font-size:0.75rem; color:var(--c-t); font-weight:700; border-bottom: 1px solid var(--c-bd); padding-bottom: 4px;">Val: ${p.validade}</span>`;
+        }
+        if (p.stock > 0 && p.stock < 3) {
+            extraInfoHtml += `<span style="font-size:0.75rem; color:var(--c-a); font-weight:900;">Resta${p.stock > 1 ? 'm' : ''} ${p.stock} un!</span>`;
+        }
         extraInfoHtml += `</div>`;
     }
 
