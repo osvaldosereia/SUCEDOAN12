@@ -96,26 +96,26 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .term-content { display: none; background: var(--c-bg); border-top: 1px dashed var(--c-bd); }
 .term-accordion.open .term-content { display: block; }
 
-/* CARDS PADRONIZADOS - ALTURA FIXA E TAMANHO REDUZIDO (~10%) */
+/* CARDS PADRONIZADOS - AJUSTE +10px ALTURA E IMAGEM */
 .u-card {
     background: var(--c-surf); 
     border-radius: 14px; 
     box-shadow: var(--sh-card); 
     border: 2px solid transparent;
     display: flex; flex-direction: column; position: relative; 
-    height: 340px; /* ALTURA FIXA ESTRITA PARA DESKTOP */
+    height: 350px; /* +10px: era 340px */
     transition: 0.2s; cursor: pointer; overflow: hidden;
 }
 .u-card.in-cart { border-color: rgba(21, 128, 61, 0.4); }
-.carousel-track .u-card { flex: 0 0 230px; } /* Largura ~10% menor */
+.carousel-track .u-card { flex: 0 0 230px; } 
 
 @media(max-width: 600px) { 
-    .u-card { height: 320px; } /* ALTURA FIXA ESTRITA PARA MOBILE */
-    .carousel-track .u-card { flex: 0 0 55vw; } /* Aproximadamente 1.7 cards na tela */
+    .u-card { height: 330px; } /* +10px: era 320px */
+    .carousel-track .u-card { flex: 0 0 55vw; } 
 }
 
-/* Imagem Fixa */
-.u-img-area { width: 100%; height: 150px; background: #fff; position: relative; overflow: hidden; border-bottom: 1px solid var(--c-bd); border-radius: 14px 14px 0 0; flex-shrink: 0; }
+/* Imagem Fixa Ajustada */
+.u-img-area { width: 100%; height: 160px; /* +10px: era 150px */ background: #fff; position: relative; overflow: hidden; border-bottom: 1px solid var(--c-bd); border-radius: 14px 14px 0 0; flex-shrink: 0; }
 .u-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 10px; } 
 .u-img-cesta { object-fit: cover; padding: 0; mix-blend-mode: normal; }
 .offer-tag { position: absolute; top: 0; right: 0; background: var(--c-err); color: #fff; font-size: 0.75rem; padding: 4px 10px; border-bottom-left-radius: 12px; font-weight: 900; z-index: 5; }
@@ -365,6 +365,16 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     <div class="modal-body" style="text-align: left;">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         
+        <div id="checkout-ofertas-container" style="display:none; margin-bottom: 25px; margin-top: 10px;">
+            <h3 style="font-weight: 900; font-size: 1.2rem; color: var(--c-p); margin-bottom: 10px;">Aproveite as ofertas da semana! 🔥</h3>
+            <div class="carousel-wrapper" style="background: var(--c-surf); border-radius: 12px; padding-top: 10px;">
+                <button class="carousel-btn left" onclick="scrollCarousel('chk-grid-ofertas', -1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                <div class="carousel-track" id="chk-grid-ofertas" style="padding: 5px 10px 15px;"></div>
+                <button class="carousel-btn right" onclick="scrollCarousel('chk-grid-ofertas', 1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+            </div>
+            <div style="border-bottom: 1px dashed var(--c-bd); margin-top: 20px;"></div>
+        </div>
+
         <h3 style="font-weight: 900; margin-top: 10px; font-size: 1.2rem; color: var(--c-p);">1. Receber quando?</h3>
         <p style="font-size: 0.85rem; color: var(--c-t); margin-top: 4px; font-weight: 600;">Planeje sua entrega e ganhe desconto.</p>
         <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
@@ -869,6 +879,11 @@ function upd(id, delta) {
     
     renderHome(); 
     updateTotals(); 
+
+    // NOVO: Se o modal de checkout estiver aberto, atualiza a tela dele instantaneamente
+    if ($('modal-checkout').open) {
+        openCheckout();
+    }
 }
 
 function renderCestaAtiva() { 
@@ -963,7 +978,12 @@ function confirmBasket(isCustom, qty) {
     renderHome(); 
     updateTotals(); 
     
-    if (isCustom) setTimeout(goToMinhaCesta, 300); 
+    if (isCustom) {
+        setTimeout(goToMinhaCesta, 300); 
+    } else {
+        // NOVO: Se for cesta padrão (não customizada), abre direto o checkout
+        setTimeout(openCheckout, 300);
+    }
 }
 
 function previewCombo(id) { 
@@ -1106,9 +1126,22 @@ function updateTotals() {
 }
 
 function openCheckout() { 
-    if (STATE.cartOrder.length === 0) return showToast("Seu carrinho está vazio!", "r"); 
+    if (STATE.cartOrder.length === 0) {
+        $('modal-checkout').close();
+        return showToast("Seu carrinho está vazio!", "r"); 
+    }
     
     renderDeliveryOptions(); 
+    
+    // NOVO: Renderiza as ofertas da semana no modal de checkout
+    const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
+    if (ofertas.length > 0) {
+        $('checkout-ofertas-container').style.display = 'block';
+        // Usamos a função renderPaginated direcionando para o container chk-grid-ofertas
+        renderPaginated('chk-grid-ofertas', 'ofertas_chk', ofertas, 10, 'PROD'); 
+    } else {
+        $('checkout-ofertas-container').style.display = 'none';
+    }
     
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { 
         let p = STATE.prods.find(x => x.id === id); 
@@ -1119,7 +1152,9 @@ function openCheckout() {
         </div>`; 
     }).join(''); 
     
-    $('modal-checkout').showModal(); 
+    if (!$('modal-checkout').open) {
+        $('modal-checkout').showModal(); 
+    }
 }
 
 function renderDeliveryOptions() {
