@@ -96,26 +96,26 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .term-content { display: none; background: var(--c-bg); border-top: 1px dashed var(--c-bd); }
 .term-accordion.open .term-content { display: block; }
 
-/* CARDS PADRONIZADOS - AJUSTE +10px ALTURA E IMAGEM */
+/* CARDS PADRONIZADOS */
 .u-card {
     background: var(--c-surf); 
     border-radius: 14px; 
     box-shadow: var(--sh-card); 
     border: 2px solid transparent;
     display: flex; flex-direction: column; position: relative; 
-    height: 350px; /* +10px: era 340px */
+    height: 350px; 
     transition: 0.2s; cursor: pointer; overflow: hidden;
 }
 .u-card.in-cart { border-color: rgba(21, 128, 61, 0.4); }
 .carousel-track .u-card { flex: 0 0 230px; } 
 
 @media(max-width: 600px) { 
-    .u-card { height: 330px; } /* +10px: era 320px */
+    .u-card { height: 330px; } 
     .carousel-track .u-card { flex: 0 0 55vw; } 
 }
 
-/* Imagem Fixa Ajustada */
-.u-img-area { width: 100%; height: 160px; /* +10px: era 150px */ background: #fff; position: relative; overflow: hidden; border-bottom: 1px solid var(--c-bd); border-radius: 14px 14px 0 0; flex-shrink: 0; }
+/* Imagem Fixa */
+.u-img-area { width: 100%; height: 160px; background: #fff; position: relative; overflow: hidden; border-bottom: 1px solid var(--c-bd); border-radius: 14px 14px 0 0; flex-shrink: 0; }
 .u-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 10px; } 
 .u-img-cesta { object-fit: cover; padding: 0; mix-blend-mode: normal; }
 .offer-tag { position: absolute; top: 0; right: 0; background: var(--c-err); color: #fff; font-size: 0.75rem; padding: 4px 10px; border-bottom-left-radius: 12px; font-weight: 900; z-index: 5; }
@@ -127,6 +127,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.75rem; font-weight: 600; }
 
 .btn-big-action { width: 100%; background: var(--c-p); color: #fff; padding: 10px 8px; border-radius: 8px; font-weight: 900; font-size: 0.85rem; margin-top: 8px; display: flex; justify-content: center; align-items: center; height: 38px; }
+
+/* Controles de Quantidade Extraídos para CSS */
+.card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; border:2px solid var(--c-ok); border-radius:8px; height:38px; margin-top:8px; padding:0 5px; width:100%; box-sizing:border-box; }
+.card-qty-ctrl button { font-size:1.6rem; color:var(--c-ok); font-weight:900; background:transparent; border:none; padding:0 10px; cursor:pointer; }
+.card-qty-ctrl span { font-weight:900; font-size:1.1rem; color:var(--c-p); }
 
 /* BOTTOM NAV */
 .bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 55px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); }
@@ -141,7 +146,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 dialog { border: none; border-radius: 24px; width: 92%; max-width: 420px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); background: #fff; }
 dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); }
 .modal-body { padding: 25px 20px; text-align: center; position: relative; }
-/* Botão X reforçado e com z-index alto */
 .btn-close-modal { position: absolute; top: 15px; right: 15px; width: 34px; height: 34px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: var(--c-p); border: 2px solid var(--c-bd); z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
 .btn-modal { width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer; }
@@ -160,12 +164,27 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .promo-item { height: 30px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
 @keyframes slidePromo { 0%, 16% { transform: translateY(0); } 20%, 36% { transform: translateY(-30px); } 40%, 56% { transform: translateY(-60px); } 60%, 76% { transform: translateY(-90px); } 80%, 96% { transform: translateY(-120px); } 100% { transform: translateY(0); } }
 
-/* Elementos do checkout original */
 .del-option { display: flex; justify-content: space-between; align-items: center; padding: 14px 15px; border: 2px solid var(--c-bd); border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #fff; }
 .del-option.selected { border-color: var(--c-ok); background: #f0fdf4; box-shadow: 0 4px 12px rgba(21,128,61,0.1); }
 .del-opt-title { font-weight: 900; font-size: 1.05rem; color: var(--c-p); }
 .del-opt-date { font-size: 0.9rem; color: var(--c-s); margin-top: 4px; font-weight: 600;}
 .del-opt-badge { font-size: 0.85rem; font-weight: 900; color: #fff; background: var(--c-ok); padding: 4px 12px; border-radius: 12px; text-align: right; }
+
+/* REGRAS ESPECÍFICAS: CARROSSEL MINIATURA NO CHECKOUT (2.5 Cards) */
+#chk-grid-ofertas { gap: 8px; padding: 5px 5px 15px; }
+#chk-grid-ofertas .u-card { height: 260px; flex: 0 0 36%; border-radius: 10px; }
+#chk-grid-ofertas .u-img-area { height: 110px; border-radius: 10px 10px 0 0; }
+#chk-grid-ofertas .u-info { padding: 8px; }
+#chk-grid-ofertas .u-name { font-size: 0.75rem; -webkit-line-clamp: 3; line-height: 1.25; }
+#chk-grid-ofertas .u-price { font-size: 1rem; }
+#chk-grid-ofertas .combo-strike { font-size: 0.65rem; }
+#chk-grid-ofertas .btn-big-action { height: 32px; font-size: 0.7rem; margin-top: 6px; }
+#chk-grid-ofertas .offer-tag { font-size: 0.65rem; padding: 3px 6px; }
+
+/* Controles de Qtde dentro do mini carrossel */
+#chk-grid-ofertas .card-qty-ctrl { height: 32px; margin-top: 6px; padding: 0 4px; }
+#chk-grid-ofertas .card-qty-ctrl button { font-size: 1.4rem; padding: 0 6px; }
+#chk-grid-ofertas .card-qty-ctrl span { font-size: 0.95rem; }
 </style>
 </head>
 <body>
@@ -300,7 +319,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div style="display:flex; justify-content:center; margin-bottom: 20px;">
             <img id="qv-img" src="" style="width: 100%; max-height: 40vh; object-fit: contain; mix-blend-mode: multiply;">
         </div>
-        <h3 id="qv-name" style="font-size: 1.35rem; font-weight: 800; color: var(--c-p); margin-bottom: 8px; line-height: 1.35;"></h3>
+        <h3 id="qv-name" style="font-size: 1.35rem; font-weight: 800; color: var(--c-p); margin-bottom: 8px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;"></h3>
         <div id="qv-price" style="font-size: 1.8rem; font-weight: 900; color: var(--c-a); margin-bottom: 25px;"></div>
         <div id="qv-action-area"></div>
     </div>
@@ -365,11 +384,13 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     <div class="modal-body" style="text-align: left;">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         
+        <h2 style="font-weight: 900; font-size: 1.5rem; color: var(--c-p); margin-top: 10px; margin-bottom: 20px; text-align: center;">Finalizar Pedido</h2>
+        
         <div id="checkout-ofertas-container" style="display:none; margin-bottom: 25px; margin-top: 10px;">
-            <h3 style="font-weight: 900; font-size: 1.2rem; color: var(--c-p); margin-bottom: 10px;">Aproveite as ofertas da semana! 🔥</h3>
+            <h3 style="font-weight: 900; font-size: 1.1rem; color: var(--c-p); margin-bottom: 10px;">Aproveite as ofertas da semana! 🔥</h3>
             <div class="carousel-wrapper" style="background: var(--c-surf); border-radius: 12px; padding-top: 10px;">
                 <button class="carousel-btn left" onclick="scrollCarousel('chk-grid-ofertas', -1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
-                <div class="carousel-track" id="chk-grid-ofertas" style="padding: 5px 10px 15px;"></div>
+                <div class="carousel-track" id="chk-grid-ofertas"></div>
                 <button class="carousel-btn right" onclick="scrollCarousel('chk-grid-ofertas', 1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
             </div>
             <div style="border-bottom: 1px dashed var(--c-bd); margin-top: 20px;"></div>
@@ -536,7 +557,7 @@ function setupObserver() {
 // RENDERIZAÇÃO DA HOME
 // ==========================================
 function renderHome() {
-    // 1. SALVAR O ESTADO ATUAL (Acordeões abertos e Rolagem dos carrosséis)
+    // 1. SALVAR O ESTADO ATUAL
     let openAccs = [];
     let scrolls = {};
     document.querySelectorAll('.term-accordion.open').forEach(el => openAccs.push(el.id));
@@ -544,7 +565,7 @@ function renderHome() {
 
     STATE.lists = {}; 
 
-    // 2. EXTRAIR TODOS OS TERMOS (Para a regra do nome composto)
+    // 2. EXTRAIR TODOS OS TERMOS
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
@@ -586,7 +607,6 @@ function renderHome() {
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
             
-            // FILTRO INTELIGENTE REGEX
             let list = STATE.prods.filter(p => { 
                 let pName = norm(p.name); 
 
@@ -645,7 +665,6 @@ function renderHome() {
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
             
-            // FILTRO INTELIGENTE REGEX
             let list = STATE.prods.filter(p => { 
                 let pName = norm(p.name); 
 
@@ -675,7 +694,7 @@ function renderHome() {
         });
     }
 
-    // 3. RESTAURAR O ESTADO (Abre os acordeões e rola os carrosséis)
+    // 3. RESTAURAR O ESTADO
     openAccs.forEach(id => { let el = $(id); if(el) el.classList.add('open'); });
     Object.keys(scrolls).forEach(id => { let el = $(id); if(el) el.scrollLeft = scrolls[id]; });
 }
@@ -710,14 +729,6 @@ function renderPaginated(containerId, listKey, list, step, type) {
     }
 }
 
-function loadMore(listKey) {
-    const config = STATE.lists[listKey];
-    if (config) { 
-        STATE.pageLimits[listKey] += config.step; 
-        renderPaginated(config.containerId, listKey, config.data, config.step, config.type); 
-    }
-}
-
 // ==========================================
 // TEMPLATES DOS CARDS (PADRONIZADOS)
 // ==========================================
@@ -728,10 +739,10 @@ function cardProd(p) {
     let ctrlHtml = isEsgotado ? 
         `<button class="btn-big-action" style="background:var(--c-bd); color:var(--c-s);" disabled>ESGOTADO</button>` : 
         (q > 0 ? 
-            `<div style="display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; border:2px solid var(--c-ok); border-radius:8px; height:38px; margin-top:8px; padding:0 5px; width:100%; box-sizing:border-box;">
-                <button style="font-size:1.6rem; color:var(--c-ok); font-weight:900; background:transparent; border:none; padding:0 10px; cursor:pointer;" onclick="event.stopPropagation(); upd('${p.id}',-1)">-</button>
-                <span style="font-weight:900; font-size:1.1rem; color:var(--c-p);">${q}</span>
-                <button style="font-size:1.6rem; color:var(--c-ok); font-weight:900; background:transparent; border:none; padding:0 10px; cursor:pointer;" onclick="event.stopPropagation(); upd('${p.id}',1)">+</button>
+            `<div class="card-qty-ctrl" onclick="event.stopPropagation()">
+                <button onclick="upd('${p.id}',-1)">-</button>
+                <span>${q}</span>
+                <button onclick="upd('${p.id}',1)">+</button>
              </div>` 
         : `<button class="btn-big-action" onclick="event.stopPropagation(); upd('${p.id}',1)">ADICIONAR</button>`);
 
@@ -880,7 +891,6 @@ function upd(id, delta) {
     renderHome(); 
     updateTotals(); 
 
-    // NOVO: Se o modal de checkout estiver aberto, atualiza a tela dele instantaneamente
     if ($('modal-checkout').open) {
         openCheckout();
     }
@@ -981,7 +991,6 @@ function confirmBasket(isCustom, qty) {
     if (isCustom) {
         setTimeout(goToMinhaCesta, 300); 
     } else {
-        // NOVO: Se for cesta padrão (não customizada), abre direto o checkout
         setTimeout(openCheckout, 300);
     }
 }
@@ -1133,11 +1142,9 @@ function openCheckout() {
     
     renderDeliveryOptions(); 
     
-    // NOVO: Renderiza as ofertas da semana no modal de checkout
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     if (ofertas.length > 0) {
         $('checkout-ofertas-container').style.display = 'block';
-        // Usamos a função renderPaginated direcionando para o container chk-grid-ofertas
         renderPaginated('chk-grid-ofertas', 'ofertas_chk', ofertas, 10, 'PROD'); 
     } else {
         $('checkout-ofertas-container').style.display = 'none';
@@ -1148,7 +1155,7 @@ function openCheckout() {
         return `
         <div style="display:flex; justify-content:flex-start; align-items:flex-start; font-size:1rem; color:var(--c-p); padding:12px 0; border-bottom:1px dashed var(--c-bd); gap:10px;">
             <span style="color:var(--c-a); font-weight:900; min-width:25px; text-align:right;">${STATE.cart[id]}x</span>
-            <span style="font-weight:600; text-align:left; flex:1; line-height:1.3;">${formatName(p.name)}</span>
+            <span style="font-weight:600; text-align:left; flex:1; line-height:1.3; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${formatName(p.name)}</span>
         </div>`; 
     }).join(''); 
     
@@ -1289,7 +1296,6 @@ async function sendOrder() {
 
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`;
     
-    // Passo 1: Criamos a variável assumindo que é personalizada desde o início
     let tipoCestaTexto = "Cestas Personalizada"; 
     
     if (STATE.baseBasket) {
@@ -1324,7 +1330,6 @@ async function sendOrder() {
         if (rem.length > 0) obs += ` | ➖ RETIRADOS: ${rem.join(', ')}`;
         if (add.length > 0) obs += ` | ➕ ADD: ${add.join(', ')}`;
 
-        // Passo 2 e 3: Atualizamos o texto com base nas alterações
         if (rem.length > 0 || add.length > 0) {
             tipoCestaTexto = `Cesta ${STATE.baseBasket.nome} alterada`;
         } else {
@@ -1339,7 +1344,6 @@ async function sendOrder() {
     
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
-    // Passo 4: Incluímos a linha tracejada e a nossa variável no final da mensagem
     const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*\n\n------\n${tipoCestaTexto}`;
     
     try {
