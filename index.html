@@ -873,6 +873,47 @@ function renderPaginated(containerId, listKey, list, step, type) {
         }
     }
 }
+    // ==========================================
+// CARREGAMENTO INFINITO (SCROLL)
+// ==========================================
+window.loadMore = function(listKey) {
+    // 1. Pega as informações da lista que o usuário está rolando
+    let listData = STATE.lists[listKey];
+    if (!listData) return; // Se a lista não existir, não faz nada
+
+    // 2. Aumenta o limite de produtos que devem aparecer na tela
+    STATE.pageLimits[listKey] += listData.step;
+
+    let list = listData.data;
+    let limit = STATE.pageLimits[listKey];
+    
+    // Separa apenas os produtos que devem aparecer agora
+    let visibleList = list.slice(0, limit);
+
+    // 3. Monta o HTML dos cards (Verifica se é cesta, combo ou produto normal)
+    let html = visibleList.map(item => {
+        if (listData.type === 'BASKET') return cardBasket(item);
+        if (listData.type === 'COMBO') return cardCombo(item);
+        return cardProd(item);
+    }).join('');
+
+    // 4. Se a lista total for maior que o limite atual, adiciona o "sentinela" (olheiro) no final
+    if (limit < list.length) {
+        html += `<div class="infinite-sentinel" data-list="${listKey}" style="flex: 0 0 10px; height: 10px;"></div>`;
+    }
+
+    // 5. Atualiza a tela (injeta o novo HTML no carrossel)
+    let container = document.getElementById(listData.containerId);
+    if (container) {
+        container.innerHTML = html;
+        
+        // Pede para o observador voltar a vigiar o novo final da fila
+        let sentinel = container.querySelector('.infinite-sentinel');
+        if (sentinel && STATE.observer) {
+            STATE.observer.observe(sentinel);
+        }
+    }
+};
 
 // ==========================================
 // TEMPLATES DOS CARDS (PADRONIZADOS)
