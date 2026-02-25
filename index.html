@@ -1,895 +1,434 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
-<meta name="theme-color" content="#ffffff">
-<title>Super Cestas Básicas Dona Antônia</title>
-<style>
-:root {
-    /* PALETA PROFISSIONAL */
-    --c-p: #0f172a;      /* Texto Principal (Azul Escuro) */
-    --c-s: #334155;      /* Texto Secundário */
-    --c-t: #64748b;      /* Texto Terciário */
-    --c-a: #ea580c;      /* Ação Principal (Laranja) */
-    --c-ok: #15803d;     /* Sucesso */
-    --c-err: #dc2626;    /* Erro */
-    --c-bg: #e2e8f0;     /* Fundo Geral */
-    --c-surf: #ffffff;   /* Superfície Cards */
-    --c-bd: #e2e8f0;     /* Bordas sutis */
-    --font: 'Inter', system-ui, sans-serif;
-    
-    --sh-card: 0 4px 12px rgba(0, 0, 0, 0.04); 
-    --sh-float: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
-}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;outline:none}
-body{font-family:var(--font);background:var(--c-bg);color:var(--c-p);margin:0;padding:0;height:100dvh;display:flex;flex-direction:column;overflow:hidden;-webkit-font-smoothing:antialiased}
-img{user-select:none;} 
-button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight:600}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Catálogo Ultramoderno</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #fcfcfc;
+            --text-main: #1a1a1a;
+            --accent: #000000;
+            --radius-img: 16px;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.3);
+        }
 
-/* LAYOUT DESKTOP LIMITER */
-.layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-/* HEADER */
-.app-header{flex:0 0 auto;width:100%;background:#fff;border-bottom:1px solid var(--c-bd);z-index:20;display:flex;flex-direction:column;align-items:center; position:relative;}
-.header-inner{display:flex;align-items:center;padding:12px 20px 12px 20px;width:100%;gap:15px;}
-.header-brand{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.logo{width:65px;height:65px;border-radius:50%;object-fit:cover;border:1px solid var(--c-bd)}
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #e0e0e0; /* Fundo escuro fora do app mobile */
+            display: flex;
+            justify-content: center;
+        }
 
-/* SEARCH BAR & FAQ */
-.search-bar-area{flex:1; display:flex; gap:10px; align-items:center;}
-.search-wrapper{position:relative; flex:1;}
-.search-inp{width:100%;background:#f1f5f9;border:1px solid var(--c-bd);padding:12px 15px 12px 40px;border-radius:12px;font-weight:600;color:var(--c-p);transition:box-shadow .2s;font-size:0.95rem;}
-.search-inp:focus{box-shadow:0 0 0 2px rgba(15, 23, 42, 0.1); border-color:var(--c-p); background:#fff;}
-.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--c-t);pointer-events:none}
-.clear-search{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:#cbd5e1;color:#fff;border-radius:50%;width:24px;height:24px;font-size:12px;display:none;align-items:center;justify-content:center;cursor:pointer}
-.btn-faq{background:#f1f5f9; color:var(--c-p); width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--c-bd); transition:background 0.2s;}
-.btn-faq:active{background:#e2e8f0;}
+        /* Container que simula a tela do celular */
+        .app-container {
+            width: 100%;
+            max-width: 414px; /* Largura padrão iPhone Max */
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow-x: hidden;
+            padding-bottom: 100px; /* Espaço pro FAB */
+        }
 
-/* CHIPS BAR */
-#fixed-chips-container {
-    flex: 0 0 auto;
-    background: var(--c-p);
-    width: 100%;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    z-index: 15;
-}
-.chips-bar {
-    width: 100%; max-width: 1200px; margin: 0 auto;
-    padding: 12px 15px; display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 8px;
-    overflow-x: auto; -webkit-overflow-scrolling: touch;
-}
-.chip {
-    padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
-    background: rgba(255,255,255,0.1); color: #fff; white-space: nowrap;
-    border: 1px solid rgba(255,255,255,0.15); cursor: pointer; transition: 0.2s;
-}
-.chip.active {
-    background: var(--c-a); border-color: var(--c-a); box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
-}
+        /* Cestas Básicas Placeholder */
+        .hero-section {
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin-bottom: 20px;
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+        }
+        .hero-section h1 {
+            font-weight: 300;
+            font-size: 24px;
+            color: var(--text-main);
+        }
 
-/* PALCO CENTRAL */
-.main-stage{flex:1;position:relative;display:block;overflow-y:auto;overflow-x:hidden;background:var(--c-bg);padding-bottom:100px; scroll-behavior:auto;}
+        /* Lista de Categorias */
+        .catalog-container {
+            padding: 0 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
-/* SECTIONS PÁGINA ÚNICA */
-.page-section { margin-bottom: 10px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
-.section-title { font-size: 1.2rem; font-weight: 900; color: var(--c-p); padding: 15px 20px 10px; text-transform: uppercase; letter-spacing: -0.5px;}
-.cat-title { font-size: 1.05rem; font-weight: 800; padding: 10px 20px 5px; color: var(--c-s); text-transform: capitalize; }
+        /* O Card Horizontal Estreito */
+        .category-chip {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 56px;
+            cursor: pointer;
+            background: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 8px;
+        }
+        
+        .chip-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
 
-/* GRADES */
-.grid-wrapper, .grid-produtos {
-    display: grid; grid-template-columns: repeat(2, 1fr);
-    gap: 12px; padding: 5px 20px 15px; width: 100%; align-content: start;
-}
-@media(min-width: 800px) {
-    .grid-wrapper, .grid-produtos { grid-template-columns: repeat(5, 1fr); gap: 15px; }
-}
-@media(max-width:600px){
-    .grid-wrapper, .grid-produtos { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 5px 15px 15px; }
-    .section-title { padding: 15px 15px 10px; }
-    .cat-title { padding: 10px 15px 5px; }
-}
+        .chip-left img {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
 
-/* CARDS GRANDES (CESTAS E COMBOS - MANTIDOS INTACTOS) */
-.u-card{
-    background:var(--c-surf); border-radius:16px; border:1px solid #fff; box-shadow:var(--sh-card);
-    display:flex;flex-direction:column; position:relative; height: 100%; transition:transform .2s, box-shadow .2s;
-}
-.u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
-.u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid var(--c-bd); border-radius: 16px 16px 0 0;}
-.u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:5px 0;} 
-.u-img-cesta{object-fit:cover;padding:0;mix-blend-mode:normal}
-.offer-tag{position:absolute;bottom:0;left:0;background:var(--c-err);color:#fff;font-size:0.65rem;padding:4px 8px;border-top-right-radius:10px;font-weight:800;z-index:5;}
-.combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.75rem; font-weight: 600; }
-.combo-save { color: var(--c-ok); font-size: 0.7rem; font-weight: 800; background: #dcfce7; padding: 2px 4px; border-radius: 4px; display: inline-block; margin-top: 2px;}
-.u-info{padding:10px;display:flex;flex-direction:column;gap:4px;flex:1; border-radius: 0 0 16px 16px; background: var(--c-surf);}
-.u-name{font-size:0.75rem; font-weight:700; color:var(--c-p); line-height:1.2; display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; min-height:3.6em; flex-grow: 1; }
-.u-price{font-size:1.05rem;font-weight:900;color:var(--c-a);letter-spacing:-0.5px;}
+        .chip-title {
+            font-weight: 400;
+            font-size: 16px;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+        }
 
-/* ==========================================
-   CARDS DE PRODUTOS ESTILO PINTEREST / INSTAGRAM
-   Foco 100% na foto com overlay de pílula flutuante
-   ========================================== */
-.card-sq {
-    background: #fff; border-radius: 12px; position: relative;
-    overflow: hidden; border: 2px solid transparent; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-    display: flex; flex-direction: column; transition: all 0.2s;
-    aspect-ratio: 1; /* Força o quadrado perfeito */
-}
-.card-sq:active { transform: scale(0.98); }
-.card-sq.in-cart { border-color: rgba(21, 128, 61, 0.4); box-shadow: 0 2px 10px rgba(21, 128, 61, 0.15); }
+        .arrow-icon {
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+        .category-chip.active .arrow-icon {
+            transform: rotate(180deg);
+        }
 
-/* Área da Imagem Full-Bleed */
-.card-sq-img-area { 
-    width: 100%; height: 100%; padding: 0; 
-    display: flex; align-items: center; justify-content: center; 
-    cursor: pointer; position: absolute; top: 0; left: 0; z-index: 1;
-}
-.card-sq-img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; }
+        /* Carrossel Minimalista */
+        .carousel-wrapper {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+        }
+        .carousel-wrapper.open {
+            max-height: 800px; /* Valor alto para acomodar o conteúdo */
+            opacity: 1;
+            margin-top: 8px;
+            margin-bottom: 16px;
+        }
 
-/* Pílula Flutuante na base (Preço e Ação) */
-.card-sq-bottom { 
-    position: absolute; bottom: 8px; left: 8px; right: 8px; 
-    background: rgba(255, 255, 255, 0.95); /* Vidro embaçado */
-    backdrop-filter: blur(5px);
-    border-radius: 20px; 
-    display: flex; justify-content: space-between; align-items: center; 
-    padding: 4px 6px 4px 10px; 
-    z-index: 2; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    cursor: pointer;
-}
+        .carousel {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 10px;
+            padding-bottom: 10px; /* Espaço para a gaveta não cortar */
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .carousel::-webkit-scrollbar {
+            display: none;
+        }
 
-.card-sq-price { font-size: 0.95rem; font-weight: 900; color: var(--c-p); display: flex; flex-direction: column; line-height: 1.1; }
-.old-price-float { font-size: 0.65rem; color: var(--c-t); text-decoration: line-through; margin-bottom: 2px; }
+        /* Produto: A Regra do 2,2 (42% de largura do container) */
+        .product-card {
+            flex: 0 0 42%;
+            scroll-snap-align: start;
+            display: flex;
+            flex-direction: column;
+        }
 
-/* Controles miniaturizados para caber na pílula */
-.card-sq-ctrls { flex-shrink: 0; cursor: default; }
-.card-sq-plus { width: 28px; height: 28px; border-radius: 50%; background: var(--c-ok); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; transition: all 0.2s; border: none; cursor: pointer; }
-.card-sq-plus:active { transform: scale(0.9); }
+        .image-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+        }
 
-/* Box do carrinho miniaturizado */
-.card-sq-qty-box { display: flex; align-items: center; background: var(--c-ok); border-radius: 20px; height: 28px; padding: 0 2px; color: #fff; animation: popIn 0.2s ease-out; }
-@keyframes popIn { from { transform: scale(0.8); opacity: 0;} to { transform: scale(1); opacity: 1; } }
-.sq-btn { width: 24px; height: 24px; border-radius: 50%; background: transparent; border: none; color: #fff; font-weight: 900; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.sq-btn:active { background: rgba(0,0,0,0.1); }
-.sq-val { font-size: 0.85rem; font-weight: 900; min-width: 16px; text-align: center; color: #fff; }
+        .image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: var(--radius-img);
+        }
 
-/* Overlay de Estoque Esgotado */
-.out-of-stock-overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(255,255,255,0.7); z-index: 3; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.out-of-stock-badge { background: var(--c-err); color: #fff; padding: 6px 12px; font-weight: 900; font-size: 0.85rem; border-radius: 8px; transform: rotate(-10deg); box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3); }
+        /* Elementos flutuantes na imagem */
+        .price-tag {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--accent);
+            border: 1px solid var(--glass-border);
+        }
 
-/* BOTOES AUXILIARES */
-.btn-big-action{ width:100%; background:var(--c-p); color:#fff; padding:10px 8px; border-radius:10px; font-weight:800; font-size:0.75rem; display:flex; align-items:center; justify-content:center; gap:4px; transition:background .2s, transform .1s; }
-.btn-big-action:active:not(:disabled){transform:scale(0.95)}
+        .action-control {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            height: 32px;
+            min-width: 32px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
 
-/* APP TAB BAR */
-.bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 55px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); }
-.tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 60px; height: 100%; color: var(--c-t); cursor: pointer; gap: 4px; position: relative; transition: color 0.2s, transform 0.1s; }
-.tab-item:active { transform: scale(0.95); }
-.tab-item.active { color: var(--c-a); font-weight: 800; }
-.tab-icon { font-size: 1.25rem; line-height: 1; }
-.tab-label { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .action-control span.plus {
+            font-size: 18px;
+            font-weight: 300;
+        }
 
-/* BOTAO CENTRAL CARRINHO */
-.cart-fab-wrapper { position: relative; top: -15px; width: 60px; height: 60px; background: var(--c-p); color: #fff !important; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(15,23,42,0.25); border: 4px solid #fff; z-index: 110; flex-shrink: 0; }
-.cart-fab-wrapper:active { transform: scale(0.95); }
-.cart-fab-wrapper .tab-icon { font-size: 1.4rem; }
-.cart-badge { position: absolute; top: -2px; right: -2px; background: var(--c-err); color: #fff; font-size: 0.65rem; font-weight: 900; min-width: 20px; height: 20px; border-radius: 10px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); padding: 0 4px; display: none; }
+        .action-control.expanded {
+            min-width: 80px;
+            justify-content: space-between;
+            padding: 0 8px;
+            background: var(--accent);
+            color: #fff;
+        }
+        
+        .action-control.expanded .qty-btn {
+            font-size: 16px;
+            padding: 0 4px;
+        }
+        
+        .action-control.expanded .qty-number {
+            font-weight: 600;
+            font-size: 14px;
+        }
 
-/* AJUSTES PARA DESKTOP */
-@media(min-width: 800px) { .bottom-nav-bar { justify-content: center; gap: 30px; } }
+        /* A Gaveta Mágica (Progressive Disclosure) */
+        .product-details-drawer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            background: transparent;
+            padding: 0 4px;
+        }
 
-/* MODAIS */
-dialog{border:none;border-radius:24px;width:92%;max-width:420px;padding:0;box-shadow:0 25px 50px -12px rgba(0,0,0,0.4);background:#fff;animation:modalPop .2s}
-dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
-@keyframes modalPop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
-.modal-body{padding:25px 20px;text-align:center; position:relative;}
-.btn-close-modal { position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; background: #f1f5f9; border-radius: 50%; color: var(--c-p); font-weight: 800; font-size: 1rem; display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-bd); z-index: 10; transition: background 0.2s; cursor: pointer; }
-.btn-close-modal:active { background: #e2e8f0; }
+        .product-details-drawer.open {
+            max-height: 100px;
+            padding: 8px 4px 0 4px;
+        }
 
-.btn-modal{width:100%;padding:14px;border-radius:12px;font-weight:800;margin-bottom:10px;font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; cursor: pointer;}
-.btn-modal.primary{background:var(--c-p);color:#fff;}
-.btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
+        .product-name {
+            font-size: 13px;
+            font-weight: 400;
+            color: var(--text-main);
+            line-height: 1.2;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
 
-/* MODAL CHECKOUT E QUICK VIEW */
-#modal-checkout, #modal-quick-view { margin: auto auto 0 auto; border-radius: 24px 24px 0 0; width: 100%; max-width: 600px; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-#modal-checkout { height: 90dvh; max-height: 90dvh; }
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-#modal-checkout .modal-body { height: 100%; display: block; overflow-y: auto; padding: 25px 20px max(20px, env(safe-area-inset-bottom)); text-align: left; }
-.chk-list-area { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);}
-.chk-item-simple { display: flex; justify-content: flex-start; align-items: flex-start; font-size: 0.9rem; color: var(--c-p); padding: 10px 0; border-bottom: 1px dashed var(--c-bd); gap: 10px;}
-.chk-item-simple:last-child { border-bottom: none; }
-.chk-item-qtd { color: var(--c-a); font-weight: 800; min-width: 25px; text-align: right;}
-.chk-item-name { font-weight: 500; text-align: left; flex: 1; line-height: 1.3;}
+        .product-validity {
+            font-size: 11px;
+            font-weight: 600;
+            color: #757575;
+        }
 
-.del-option { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border: 2px solid var(--c-bd); border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #fff; }
-.del-option.selected { border-color: var(--c-ok); background: #f0fdf4; box-shadow: 0 4px 12px rgba(21,128,61,0.1); }
-.del-opt-title { font-weight: 800; font-size: 0.95rem; color: var(--c-p); }
-.del-opt-date { font-size: 0.8rem; color: var(--c-s); margin-top: 2px; font-weight: 500;}
-.del-opt-badge { font-size: 0.75rem; font-weight: 800; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; text-align: right; }
+        /* O FAB (Floating Action Button) do Carrinho */
+        .fab-cart {
+            position: fixed;
+            bottom: 30px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background-color: var(--accent);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            cursor: pointer;
+            z-index: 1000;
+            transition: transform 0.2s;
+        }
+        .fab-cart:active {
+            transform: scale(0.95);
+        }
+        .fab-cart svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
 
-#btn-send-order { background: #25D366; color: #fff; font-size: 1.05rem; padding: 16px; border-radius: 14px; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3); transition: transform 0.2s, box-shadow 0.2s; width: 100%; font-weight: 800; display:flex; align-items:center; justify-content:center; border:none; cursor:pointer; }
-#btn-send-order:active { transform: scale(0.98); }
-#btn-send-order:disabled { background: var(--c-bd); box-shadow: none; color: var(--c-s); }
-
-.btn-checkout-secondary { width: 100%; padding: 12px; background: transparent; border: none; color: var(--c-s); font-weight: 700; font-size: 0.95rem; margin-top: 5px; transition: color 0.2s; cursor: pointer; }
-.btn-checkout-secondary:active { color: var(--c-p); }
-.btn-checkout-clear { padding: 8px 15px; background: transparent; border: none; color: var(--c-err); font-size: 0.75rem; font-weight: 600; text-decoration: underline; cursor: pointer; display: inline-block; }
-.cupom-box { background: #f8fafc; padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed var(--c-bd); }
-
-#toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
-.toast { padding: 12px 20px; color: #fff; border-radius: 12px; font-weight: 700; font-size: 0.9rem; box-shadow: var(--sh-float); text-align: center; animation: toastPop 0.3s ease-out; pointer-events: auto; }
-@keyframes toastPop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-.modal-carousel-track { display: flex; overflow-x: auto; gap: 12px; padding: 10px 5px; scroll-snap-type: x mandatory; justify-content: flex-start; }
-.modal-carousel-track::-webkit-scrollbar{height:4px;background:transparent}
-.modal-card { flex: 0 0 120px; scroll-snap-align: start; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; background: #fff; display: flex; flex-direction: column; text-align: left; }
-.modal-card img { width: 100%; aspect-ratio: 1; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 6px; }
-.modal-card .mc-name { font-size: 0.7rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em; }
-.modal-card .mc-price { font-size: 0.9rem; font-weight: 800; color: var(--c-a); margin-top: auto; }
-.modal-card .mc-qty { font-size: 0.75rem; font-weight: 800; color: #fff; background: var(--c-ok); padding: 2px 6px; border-radius: 4px; width: fit-content; margin-top: 4px; }
-
-/* ==========================================
-   BANNERS PROMOCIONAIS ELEGANTES
-   ========================================== */
-.top-promo-wrap {
-    width: 100%;
-    height: 30px;
-    overflow: hidden;
-    position: relative;
-    z-index: 10;
-    background: var(--c-bg);
-}
-
-.top-promo-track {
-    display: flex;
-    flex-direction: column;
-    animation: slidePromo 15s infinite cubic-bezier(0.25, 1, 0.5, 1);
-}
-
-.promo-item {
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    flex-shrink: 0;
-}
-
-.promo-item.c1 { background: #e0e7ff; color: #3730a3; }
-.promo-item.c2 { background: #dcfce7; color: #166534; }
-.promo-item.c3 { background: #ffedd5; color: #9a3412; }
-.promo-item.c4 { background: #f3e8ff; color: #6b21a8; }
-.promo-item.c5 { background: #ccfbf1; color: #115e59; }
-
-@keyframes slidePromo {
-    0%, 16%   { transform: translateY(0); }
-    20%, 36%  { transform: translateY(-30px); }
-    40%, 56%  { transform: translateY(-60px); }
-    60%, 76%  { transform: translateY(-90px); }
-    80%, 96%  { transform: translateY(-120px); }
-    100%      { transform: translateY(0); }
-}
-
-@media(min-width: 800px) {
-    .top-promo-wrap { height: auto; }
-    .top-promo-track {
-        flex-direction: row;
-        animation: none;
-        transform: none !important;
-    }
-    .promo-item {
-        flex: 1;
-        border-right: 1px solid rgba(0,0,0,0.05);
-    }
-    .promo-item:last-child { border-right: none; }
-}
-</style>
+    </style>
 </head>
 <body>
 
-<header class="app-header">
-    <div class="layout-limit header-inner">
-        <div class="header-brand">
-            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" onclick="clearSearch()">
-        </div>
-        <div class="search-bar-area">
-            <div class="search-wrapper">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto..." oninput="handleSearch(this.value)">
-                <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
-            </div>
-            <button class="btn-faq" onclick="$('modal-faq').showModal()">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-            </button>
-        </div>
-    </div>
-</header>
-
-<div class="top-promo-wrap">
-    <div class="top-promo-track">
-        <div class="promo-item c1">Personalize a sua cesta básica</div>
-        <div class="promo-item c2">Pedidos a partir de R$ 75</div>
-        <div class="promo-item c3">Entrega Grátis em Cuiabá e VG</div>
-        <div class="promo-item c4">Parcele em 3x s/ juros no cartão</div>
-        <div class="promo-item c5">Pague somente na entrega</div>
-    </div>
-</div>
-
-<div id="fixed-chips-container">
-    <div class="chips-bar" id="chips-area"></div>
-</div>
-
-<main class="main-stage" id="scroll-stage">
-    <div id="section-busca" class="page-section" style="display:none; padding-top:15px;">
-        <div class="section-title">Resultados da Busca</div>
-        <div class="grid-produtos" id="grid-busca"></div>
-    </div>
-
-    <div id="wrapper-sections">
-        <div id="section-cestas" class="page-section" style="display:none; padding-top:15px;">
-            <div class="section-title">Cestas Básicas</div>
-            <div class="grid-wrapper" id="grid-cestas"></div>
-        </div>
-
-        <div id="section-cesta-ativa" class="page-section" style="display:none; background: #fff; padding: 15px 0; border-top: 1px solid var(--c-bd); border-bottom: 1px solid var(--c-bd);">
-            <div class="section-title" style="color:var(--c-a); padding-bottom:5px;">Minha Cesta Personalizada</div>
-            <div class="layout-limit" style="padding: 0 20px 10px; font-size:0.85rem; color:var(--c-s); font-weight:500;">Adicione ou edite as quantidades abaixo:</div>
-            <div class="grid-produtos" id="grid-cesta-ativa"></div>
-        </div>
-
-        <div id="section-ofertas" class="page-section" style="display:none; padding-top:15px;">
-            <div class="section-title">🔥 Ofertas da Semana</div>
-            <div class="grid-produtos" id="grid-ofertas"></div>
-        </div>
-
-        <div id="section-outlet" class="page-section" style="display:none; padding-top:15px;">
-            <div class="section-title">⏳ Últimas Unidades</div>
-            <div class="grid-produtos" id="grid-outlet"></div>
-        </div>
-
-        <div id="section-combos" class="page-section" style="display:none;">
-            <div class="section-title">🎁 Combos Especiais</div>
-            <div class="grid-wrapper" id="grid-combos"></div>
-        </div>
-
-        <div id="section-corredores" style="margin-top:5px;">
-            <div id="grid-corredores-wrap"></div>
-        </div>
-        
-        <div id="section-ate2" class="page-section" style="display:none; padding-top:15px;">
-            <div class="section-title">🤑 Até R$ 2,00</div>
-            <div class="grid-produtos" id="grid-ate2"></div>
-        </div>
-    </div>
-</main>
-
-<nav class="bottom-nav-bar">
-    <div class="tab-item" id="btn-nav-cesta" onclick="goToMinhaCesta()">
-        <div class="tab-icon">📦</div><div class="tab-label">Cesta</div>
-    </div>
-    <div class="tab-item" id="btn-nav-ofertas" onclick="instantScrollTo('section-ofertas', 'btn-nav-ofertas')">
-        <div class="tab-icon">🔥</div><div class="tab-label">Ofertas</div>
-    </div>
+<div class="app-container">
     
-    <div class="tab-item" id="btn-nav-combos" onclick="instantScrollTo('section-combos', 'btn-nav-combos')">
-        <div class="tab-icon">🎁</div><div class="tab-label">Combos</div>
-    </div>
-    
-    <div class="tab-item" id="btn-nav-outlet" onclick="instantScrollTo('section-outlet', 'btn-nav-outlet')">
-        <div class="tab-icon">⏳</div><div class="tab-label">Acabando</div>
+    <div class="hero-section">
+        <h1>Cestas<br>Básicas</h1>
     </div>
 
-    <div class="tab-item" id="btn-nav-ate2" onclick="instantScrollTo('section-ate2', 'btn-nav-ate2')">
-        <div class="tab-icon">🤑</div><div class="tab-label">R$ 2</div>
+    <div class="catalog-container" id="catalog">
+        </div>
+
+    <div class="fab-cart" onclick="alert('Abrindo modal de finalização...')">
+        <svg viewBox="0 0 24 24">
+            <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+        </svg>
     </div>
 
-    <div class="tab-item cart-fab-wrapper" onclick="openCheckout()">
-        <div class="cart-badge" id="badge-count">0</div>
-        <div class="tab-icon">🛒</div>
-    </div>
-</nav>
-
-<div id="toast-container"></div>
-
-<dialog id="modal-quick-view">
-    <div class="modal-body" style="padding: 30px 20px 25px max(20px, env(safe-area-inset-bottom));">
-        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <div style="display:flex; justify-content:center; margin-bottom: 20px;">
-            <img id="qv-img" src="" style="width: 270px; height: 270px; object-fit: contain; mix-blend-mode: multiply;">
-        </div>
-        <h3 id="qv-name" data-id="" style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 8px; line-height: 1.2;"></h3>
-        <div id="qv-price" style="font-size: 1.4rem; font-weight: 900; color: var(--c-a); margin-bottom: 25px;"></div>
-        <div id="qv-action-area"></div>
-    </div>
-</dialog>
-
-<dialog id="modal-faq" onclick="if(event.target===this)this.close()">
-    <div class="modal-body">
-        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
-            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);" alt="Logo">
-            <h3 style="font-weight:900;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
-            <div style="font-size: 0.85rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
-        </div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Qual o valor da entrega?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div></div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Quais as formas de pagamento?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div></div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Qual o prazo de entrega?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Entregas em até 24 horas úteis após a confirmação do pedido.</div></div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 0.9rem;">Posso personalizar a cesta?</div><div style="font-size: 0.85rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Sim! Você pode adicionar ou remover itens conforme sua necessidade.</div></div>
-        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px; margin-bottom: 15px;">
-            <button class="btn-modal primary" style="flex: 1; background:#25D366; font-size: 0.9rem;" onclick="window.open('https://wa.me/5565998150975','_blank')">WhatsApp</button>
-            <button class="btn-modal primary" style="flex: 1; background:#E1306C; font-size: 0.9rem;" onclick="alert('https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/')">Instagram</button>
-        </div>
-    </div>
-</dialog>
-
-<dialog id="modal-basket-preview">
-    <div class="modal-body">
-        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <h3 style="color:var(--c-p);font-size:1.4rem; font-weight:900; margin-top:10px;" id="prev-title"></h3>
-        <p style="color:var(--c-s);margin-bottom:15px; font-weight:600;" id="prev-desc"></p>
-        <div style="background:#f8fafc;padding:5px;border-radius:12px;border:1px solid var(--c-bd);margin-bottom:15px">
-            <div class="modal-carousel-track" id="prev-list"></div>
-        </div>
-        <div style="margin-top:20px">
-            <div style="font-size:1.8rem;font-weight:900;color:var(--c-a);margin-bottom:15px" id="prev-price"></div>
-            <button class="btn-modal primary" id="btn-confirm-preview">ENCOMENDAR CESTA PADRÃO</button>
-            <button class="btn-modal primary" id="btn-customize-preview" style="background:var(--c-a); display:none;">PERSONALIZAR CESTA</button>
-        </div>
-    </div>
-</dialog>
-
-<dialog id="modal-checkout">
-    <div class="modal-body">
-        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <div style="margin-bottom: 15px; margin-top: 10px; border-bottom: 1px solid var(--c-bd); padding-bottom: 10px; text-align: left;">
-            <h3 style="text-transform:uppercase; font-weight:900; color:var(--c-p); margin:0;">1. Receber quando?</h3>
-            <p style="font-size: 0.8rem; color: var(--c-t); margin-top: 4px; font-weight: 500;">Planeje sua entrega e ganhe desconto.</p>
-        </div>
-        <div id="delivery-options-container" style="margin-bottom: 20px;">
-            <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--c-bd); padding-bottom: 10px;">
-            <h3 style="text-transform:uppercase; font-weight:900; color:var(--c-p); margin:0;">2. Seu Pedido</h3>
-        </div>
-        <div class="chk-list-area" id="chk-list"></div>
-        <div style="text-align: right; margin-bottom: 10px;">
-             <button style="background:transparent; color:var(--c-p); border:1px solid var(--c-bd); padding:8px 14px; border-radius:8px; font-size:0.85rem; font-weight:700; cursor:pointer;" onclick="$('modal-checkout').close(); goToMinhaCesta();">✏️ Alterar quantidades</button>
-        </div>
-        <div id="chk-summary-lines" style="font-size: 0.9rem; color: var(--c-s); line-height: 1.6; margin-bottom: 15px; border-top: 1px dashed var(--c-bd); padding-top: 15px;"></div>
-        <div style="text-align:right; margin-bottom:15px;">
-            <div style="font-size:0.85rem; font-weight:700; color:var(--c-s); text-transform:uppercase;">Total a pagar</div>
-            <div style="font-size:2.2rem;font-weight:900; color:var(--c-p); line-height:1.1;" id="chk-total"></div>
-            <div style="font-size:0.7rem; color:var(--c-t); margin-top:4px; font-weight:600;" id="chk-installment">Parcele em até 3x sem juros no cartão de crédito</div>
-        </div>
-        <div id="chk-incentive-banner" style="margin-bottom:15px;"></div>
-        <div class="cupom-box">
-            <div id="coupon-toggle" onclick="this.style.display='none'; $('coupon-wrap').style.display='flex';" style="color:var(--c-a); font-size:0.85rem; font-weight:800; cursor:pointer; text-decoration:underline;">Tem um cupom de desconto?</div>
-            <div id="coupon-wrap" style="display:none; gap:5px;">
-                <input id="cupom-code" style="flex:1;padding:10px;border:1px solid var(--c-bd);border-radius:8px;text-transform:uppercase;font-weight:700; font-size:0.9rem;" placeholder="CÓDIGO">
-                <button class="btn-modal primary" onclick="applyCupom()" style="width:auto; margin:0; padding:0 15px; border-radius:8px; font-size:0.9rem;">OK</button>
-            </div>
-            <div id="cupom-msg" style="font-size:.85rem;font-weight:800; color:var(--c-ok);display:none; margin-top:5px;"></div>
-        </div>
-        <button id="btn-send-order" onclick="sendOrder()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-            ENVIAR PEDIDO NO WHATSAPP
-        </button>
-        <div style="display: flex; gap: 10px; align-items: center; margin-top: 10px;">
-            <button class="btn-checkout-secondary" style="margin: 0; flex: 1;" onclick="$('modal-checkout').close()">Continuar Comprando</button>
-            <button class="btn-checkout-clear" style="margin: 0; padding: 12px 15px;" onclick="clearCart()">Limpar Carrinho</button>
-        </div>
-    </div>
-</dialog>
+</div>
 
 <script>
-// ==========================================
-// CONFIGURAÇÃO DE ENTREGAS E REGRAS
-// ==========================================
-const CONFIG_ENTREGA = {
-    horaCorteHoje: 10,       // Até que horas aceita pedido para o mesmo dia (0 a 23)
-    descontoOpcao2: 3.00,    // Desconto para a segunda data disponível
-    descontoOpcao3: 6.00,    // Desconto para a terceira data disponível
-    diasSemanaInativos: [0], // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
-    feriados: ['01/01', '21/04', '01/05', '07/09', '12/10', '02/11', '15/11', '25/12']
-};
+    // SIMULAÇÃO DO SEU ARQUIVO palavra.json
+    // O sistema lerá isso para montar as "categorias imaginárias"
+    const database = [
+        {
+            palavra: "Café da Manhã",
+            produtos: [
+                { id: 1, nome: "Geleia Premium de Frutas Vermelhas Importada", preco: "R$ 34,90", validade: "12/08/2026", img: "https://images.unsplash.com/photo-1582293041079-7814c2f12063?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" },
+                { id: 2, nome: "Pão de Forma Artesanal Fermentação Natural", preco: "R$ 18,50", validade: "05/03/2026", img: "https://images.unsplash.com/photo-1509440159596-0249088772ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" },
+                { id: 3, nome: "Café em Grãos Torra Escura 500g", preco: "R$ 42,00", validade: "20/12/2026", img: "https://images.unsplash.com/photo-1559525839-b184a4d698c7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" },
+                { id: 4, nome: "Leite de Amêndoas Orgânico 1L", preco: "R$ 21,90", validade: "15/05/2026", img: "https://images.unsplash.com/photo-1563636619-e9143da7973b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" }
+            ]
+        },
+        {
+            palavra: "Sexta à Noite",
+            produtos: [
+                { id: 5, nome: "Vinho Tinto Cabernet Sauvignon Reserva", preco: "R$ 89,90", validade: "Indeterminada", img: "https://images.unsplash.com/photo-1584916201218-f4242ceb4809?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" },
+                { id: 6, nome: "Queijo Brie Maturado Peça 250g", preco: "R$ 45,00", validade: "10/04/2026", img: "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" },
+                { id: 7, nome: "Presunto Parma Fatiado 100g", preco: "R$ 38,50", validade: "22/03/2026", img: "https://images.unsplash.com/photo-1603048297172-c92544798d5e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" }
+            ]
+        },
+        {
+            palavra: "Banho e SPA",
+            produtos: [
+                { id: 8, nome: "Shampoo Darling Ceramidas Força & Brilho 350ml", preco: "R$ 15,90", validade: "01/10/2027", img: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" },
+                { id: 9, nome: "Sabonete Líquido Lavanda e Mel", preco: "R$ 22,90", validade: "15/11/2027", img: "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" }
+            ]
+        }
+    ];
 
-const MIN_ORDER = 75.00; // PEDIDO MÍNIMO
+    const catalogContainer = document.getElementById('catalog');
 
-const $=i=>document.getElementById(i);
-const STATE={
-    baskets:[], prods:[], coupons:[], combos:[], departamentos:{}, descontosValor:[],
-    cart:{}, cartOrder:[], observer: null,
-    mode:'zero', baseBasket:null, basketExtraFee:0, comboDiscount: 0, appliedCombos: [], coupon:null, valueDiscount: 0, nextDiscountIncentive: "",
-    lists: {}, pageLimits: {},
-    deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
-};
+    // Função para renderizar tudo na tela
+    function renderApp() {
+        database.forEach((categoria, index) => {
+            // Pega a foto do primeiro produto
+            const firstProductImg = categoria.produtos[0].img;
 
-function setupObserver() {
-    if(!STATE.observer) {
-        STATE.observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if(entry.isIntersecting) {
-                    let key = entry.target.dataset.list;
-                    if(key) { STATE.observer.unobserve(entry.target); loadMore(key); }
-                }
+            // Cria o wrapper do chip + carrossel
+            const section = document.createElement('div');
+            
+            // Cria os Cards dos Produtos (Carrossel)
+            let productsHTML = '';
+            categoria.produtos.forEach(prod => {
+                productsHTML += `
+                    <div class="product-card">
+                        <div class="image-container">
+                            <img src="${prod.img}" alt="${prod.nome}">
+                            <div class="price-tag">${prod.preco}</div>
+                            
+                            <div class="action-control" id="control-${prod.id}" onclick="toggleQuantity(event, ${prod.id})">
+                                <span class="plus">+</span>
+                            </div>
+                        </div>
+                        
+                        <div class="product-details-drawer" id="drawer-${prod.id}">
+                            <div class="product-name">${prod.nome}</div>
+                            <div class="product-validity">Validade: ${prod.validade}</div>
+                        </div>
+                    </div>
+                `;
             });
-        }, { root: $('scroll-stage'), rootMargin: '400px' });
-    }
-}
 
-async function init(){
-    setupObserver();
-    try{
-        const[r1,r2,r3,r4,r5,r6]=await Promise.all([
-            fetch('/site/produtos-cesta-basica.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('/site/produtos.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('/site/cupons.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('/site/combos.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('/site/departamento.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('/site/desconto-por-valor.json?v='+Date.now()).catch(()=>({ok:false}))
-        ]);
-        if(r1.ok) STATE.baskets = await r1.json();
-        if(r2.ok){
-            let t=(await r2.text()).trim().replace(/,(\s+)?$/,"");
-            let raw = JSON.parse(t.startsWith('[')?t:'['+t+']');
-            STATE.prods = raw.filter(x=>x.situacao==="A").map(p=>({
-                id:String(p.codigo||p.id), code:String(p.codigo||p.id), blingId: String(p.id),
-                name:p.nome, price:parseFloat(p.preco),
-                oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null,
-                stock:parseInt(p.estoque)||0,
-                validade: p.validade || null,
-                cat:(p.categoria||"Outros").trim(),
-                img:`/site/img/produtos/${p.codigo||p.id}.webp`
-            }));
-        }
-        if(r3&&r3.ok) STATE.coupons = await r3.json();
-        if(r4&&r4.ok) STATE.combos = await r4.json();
-        if(r5&&r5.ok) STATE.departamentos = await r5.json();
-        if(r6&&r6.ok) STATE.descontosValor = await r6.json();
+            // Estrutura HTML do Chip + Carrossel
+            section.innerHTML = `
+                <div class="category-chip" onclick="toggleCarousel(this, 'carousel-${index}')">
+                    <div class="chip-left">
+                        <img src="${firstProductImg}" alt="${categoria.palavra}">
+                        <h2 class="chip-title">${categoria.palavra}</h2>
+                    </div>
+                    <span class="arrow-icon">▼</span>
+                </div>
+                
+                <div class="carousel-wrapper" id="carousel-${index}">
+                    <div class="carousel">
+                        ${productsHTML}
+                    </div>
+                </div>
+            `;
 
-        renderHome();
-        updateTotals(); 
-    }catch(e){
-        $('scroll-stage').innerHTML='<p style="padding:20px;text-align:center;color:red;font-weight:bold;">Erro fatal na leitura dos arquivos.</p>';
-    }
-}
-
-function renderHome() {
-    STATE.lists = {}; 
-    if(STATE.baskets.length > 0) { $('section-cestas').style.display = 'block'; renderPaginated('grid-cestas', 'cestas', STATE.baskets, 10, 'BASKET'); }
-    renderCestaAtiva();
-    const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
-    if(ofertas.length > 0) { $('section-ofertas').style.display = 'block'; renderPaginated('grid-ofertas', 'ofertas', ofertas, 10, 'PROD'); }
-    
-    // REGRAS DO OUTLET APLICADAS (ESTOQUE MENOR QUE 3)
-    const outlet = STATE.prods.filter(p => p.stock > 0 && p.stock < 3);
-    if(outlet.length > 0) { $('section-outlet').style.display = 'block'; renderPaginated('grid-outlet', 'outlet', outlet, 10, 'PROD'); }
-
-    if(STATE.combos && STATE.combos.length > 0) { $('section-combos').style.display = 'block'; renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO'); }
-    const ate2 = STATE.prods.filter(p => p.price <= 2.00);
-    if(ate2.length > 0) { $('section-ate2').style.display = 'block'; renderPaginated('grid-ate2', 'ate2', ate2, 10, 'PROD'); }
-
-    let corredoresHtml = '';
-    Object.keys(STATE.departamentos).sort().forEach(m => {
-        let safeM = m.replace(/\s/g,'-');
-        let macroHtml = `<div id="macro-${safeM}" class="page-section" style="display:none; padding-top:10px;"><div class="section-title">🗂️ ${m}</div>`;
-        let hasProds = false;
-        STATE.departamentos[m].forEach(c => {
-            let safeC = c.replace(/[^a-zA-Z0-9]/g,'-');
-            let list = STATE.prods.filter(p => p.cat === c);
-            if(list.length > 0) { hasProds = true; macroHtml += `<div class="cat-title">${c}</div><div class="grid-produtos" id="grid-${safeM}-${safeC}"></div>`; }
+            catalogContainer.appendChild(section);
         });
-        macroHtml += `</div>`;
-        if(hasProds) corredoresHtml += macroHtml;
-    });
-    $('grid-corredores-wrap').innerHTML = corredoresHtml;
-
-    Object.keys(STATE.departamentos).forEach(m => {
-        let safeM = m.replace(/\s/g,'-');
-        STATE.departamentos[m].forEach(c => {
-            let safeC = c.replace(/[^a-zA-Z0-9]/g,'-');
-            let list = STATE.prods.filter(p => p.cat === c);
-            if(list.length > 0) { renderPaginated(`grid-${safeM}-${safeC}`, `macro_${safeM}_${safeC}`, list, 10, 'PROD'); $(`macro-${safeM}`).style.display = 'block'; }
-        });
-    });
-
-    let chipsHtml = Object.keys(STATE.departamentos).sort().map(m => `<div class="chip" id="chip-${m.replace(/\s/g,'-')}" onclick="instantScrollToMacro('${m.replace(/\s/g,'-')}')">${m}</div>`).join('');
-    $('chips-area').innerHTML = chipsHtml;
-}
-
-function renderPaginated(containerId, listKey, list, step, type) {
-    STATE.lists[listKey] = { data: list, type: type, containerId: containerId, step: step };
-    if(!STATE.pageLimits[listKey]) STATE.pageLimits[listKey] = step;
-    let visibleList = list.slice(0, STATE.pageLimits[listKey]);
-    let html = visibleList.map(item => type === 'BASKET' ? cardBasket(item) : (type === 'COMBO' ? cardCombo(item) : cardProdHoriz(item))).join('');
-    if(STATE.pageLimits[listKey] < list.length) html += `<div class="infinite-sentinel" data-list="${listKey}" style="grid-column: 1/-1; height: 10px;"></div>`;
-    let c = $(containerId);
-    if(c) { c.innerHTML = html || '<p>Nenhum produto encontrado.</p>'; let sentinel = c.querySelector('.infinite-sentinel'); if(sentinel && STATE.observer) STATE.observer.observe(sentinel); }
-}
-
-window.loadMore = function(listKey) {
-    const config = STATE.lists[listKey];
-    if(config) { STATE.pageLimits[listKey] += config.step; renderPaginated(config.containerId, listKey, config.data, config.step, config.type); }
-}
-
-function renderCestaAtiva() {
-    if(STATE.cartOrder.length > 0) { $('section-cesta-ativa').style.display = 'block'; renderPaginated('grid-cesta-ativa', 'cesta_ativa', STATE.cartOrder.map(id => STATE.prods.find(p => p.id === id)).filter(Boolean), 9999, 'PROD'); }
-    else $('section-cesta-ativa').style.display = 'none';
-}
-
-function instantScrollTo(elementId, btnId) { if(btnId) updateBottomNav(btnId); const el = $(elementId); if(el) el.scrollIntoView({ behavior: 'auto', block: 'start' }); }
-window.updateBottomNav = function(activeId) { document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); let el = $(activeId); if(el) el.classList.add('active'); }
-window.goToMinhaCesta = function() { instantScrollTo(STATE.cartOrder.length > 0 ? 'section-cesta-ativa' : 'section-cestas', 'btn-nav-cesta'); }
-window.instantScrollToMacro = function(safeM) { updateBottomNav(null); document.querySelectorAll('.chips-bar .chip').forEach(el => el.classList.remove('active')); let chip = $(`chip-${safeM}`); if(chip) chip.classList.add('active'); const el = $(`macro-${safeM}`); if(el) el.scrollIntoView({ behavior: 'auto', block: 'start' }); }
-
-function cardBasket(item){ return `<div class="u-card"><div class="u-img-area"><img src="${item.imagem}" class="u-img u-img-cesta" loading="lazy"></div><div class="u-info"><div class="u-name">${formatName(item.nome)}</div><div class="u-price">${fmt(item.preco)}</div><div class="u-action-row"><button class="btn-big-action" onclick="previewBasket('${item.id}')">VER ITENS</button></div></div></div>`; }
-function cardCombo(item){
-    let sum = 0; item.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x => x.id === ref.trim()); if(p) sum += p.price * parseInt(q); });
-    return `<div class="u-card"><div class="u-img-area"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" class="u-img u-img-cesta" loading="lazy"><div class="offer-tag">🔥 COMBO</div></div><div class="u-info"><div class="u-name">${formatName(item.nome)}</div><div style="margin-top:auto"><div class="combo-strike">De: ${fmt(sum)}</div><div class="u-price">Por: ${fmt(item.preco)}</div></div><div class="u-action-row"><button class="btn-big-action" onclick="previewCombo('${item.id}')">VER ITENS</button></div></div></div>`;
-}
-
-// ==========================================
-// CARDS ESTILO PINTEREST (SOMENTE FOTO E PREÇO)
-// ==========================================
-function cardProdHoriz(item){
-    const q = STATE.cart[item.id] || 0;
-    
-    // Controle de Botões e Estado (Esgotado vs Em Estoque)
-    let ctrlHtml = '';
-    let overlayHtml = '';
-
-    if (item.stock <= 0) {
-        // Película de Esgotado
-        overlayHtml = `<div class="out-of-stock-overlay" onclick="openQuickView('${item.id}')"><div class="out-of-stock-badge">ESGOTADO</div></div>`;
-        ctrlHtml = `<div style="width:28px;"></div>`; // Espaçador para manter o design da pílula
-    } else if (q > 0) {
-        // Selecionador de Quantidade Compacto
-        ctrlHtml = `<div class="card-sq-qty-box"><button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', -1)">-</button><span class="sq-val">${q}</span><button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button></div>`;
-    } else {
-        // Botão de Adicionar Circular
-        ctrlHtml = `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>`;
     }
 
-    // Tag de Desconto e formatação do Preço dentro da Pílula
-    let discountTag = '';
-    let priceHtml = '';
-    if (item.oldPrice > item.price) {
-        let perc = Math.round(((item.oldPrice - item.price) / item.oldPrice) * 100);
-        discountTag = `<div style="position:absolute;top:0;right:0;background:var(--c-err);color:#fff;font-size:0.65rem;font-weight:900;padding:4px 8px;border-bottom-left-radius:10px;z-index:10;">-${perc}%</div>`;
-        priceHtml = `<span class="card-sq-price"><span class="old-price-float">${fmt(item.oldPrice)}</span>${fmt(item.price)}</span>`;
-    } else {
-        priceHtml = `<span class="card-sq-price" style="padding-top:2px;">${fmt(item.price)}</span>`;
-    }
+    // Função para expandir/recolher o carrossel (O Acordeão)
+    window.toggleCarousel = function(chipElement, carouselId) {
+        chipElement.classList.toggle('active');
+        const carousel = document.getElementById(carouselId);
+        carousel.classList.toggle('open');
+    };
 
-    // Card Limpo: Apenas a foto, a pílula flutuante e o modal no clique.
-    return `<div class="card-sq card-sq-${item.id} ${q > 0 ? 'in-cart' : ''}">
-        ${overlayHtml}
-        ${discountTag}
-        <div class="card-sq-img-area" onclick="openQuickView('${item.id}')">
-            <img src="${item.img}" class="card-sq-img" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">
-        </div>
-        <div class="card-sq-bottom" ${item.stock <= 0 ? 'style="opacity: 0.5;"' : ''} onclick="openQuickView('${item.id}')">
-            ${priceHtml}
-            <div class="card-sq-ctrls">${ctrlHtml}</div>
-        </div>
-    </div>`;
-}
-
-window.openQuickView = function(id) {
-    const p = STATE.prods.find(x => x.id === id); if(!p) return;
-    $('qv-img').src = p.img; $('qv-name').innerText = formatName(p.name);
-    $('qv-price').innerHTML = p.oldPrice > p.price ? `<span style="font-size:0.9rem;text-decoration:line-through;margin-right:8px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
-    $('qv-action-area').innerHTML = p.stock <= 0 ? `<button class="btn-modal secondary" disabled>ESGOTADO</button>` : (STATE.cart[id] ? `<button class="btn-modal secondary" onclick="$('modal-quick-view').close()">FECHAR</button>` : `<button class="btn-modal primary" onclick="addFromQuickView('${id}')">ADICIONAR</button>`);
-    $('modal-quick-view').showModal();
-}
-window.addFromQuickView = function(id) { upd(id, 1); $('modal-quick-view').close(); }
-
-function upd(id, delta){
-    const p = STATE.prods.find(x=>x.id===id); if(!p) return;
-    const cur = STATE.cart[id] || 0; let next = Math.max(0, cur + delta);
-    if(next > p.stock) return showToast(`Apenas ${p.stock} un. disponíveis`, "r");
-    if(cur === 0 && next > 0) STATE.cartOrder.push(id);
-    STATE.cart[id] = next; if(next === 0){ delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x=>x!==id); }
-    renderHome(); updateTotals();
-}
-
-function previewBasket(id){
-    const c = STATE.baskets.find(x=>String(x.id)===String(id)); if(!c) return;
-    STATE.tempBasket = c; $('prev-title').innerText = formatName(c.nome); $('prev-desc').innerText = `${c.produtos.length} itens`; $('prev-price').innerText = fmt(c.preco);
-    $('prev-list').innerHTML = c.produtos.map(s=>{ const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); return `<div class="modal-card"><img src="${p?.img}"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${q}x</div></div>` }).join('');
-    $('btn-confirm-preview').onclick = () => { confirmBasket(false); openCheckout(); };
-    $('btn-customize-preview').style.display = 'block'; $('btn-customize-preview').onclick = () => confirmBasket(true);
-    $('modal-basket-preview').showModal();
-}
-
-function previewCombo(id){
-    const c = STATE.combos.find(x=>String(x.id)===String(id)); if(!c) return;
-    let sum = 0; $('prev-title').innerText = formatName(c.nome);
-    $('prev-list').innerHTML = c.produtos.map(s=>{ const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) sum += p.price * parseInt(q); return `<div class="modal-card"><img src="${p?.img}"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${q}x</div></div>` }).join('');
-    $('prev-desc').innerHTML = `<span class="combo-strike">De: ${fmt(sum)}</span>`; $('prev-price').innerText = fmt(c.preco);
-    $('btn-confirm-preview').innerText = "ADICIONAR COMBO"; $('btn-confirm-preview').onclick = () => confirmCombo(id);
-    $('btn-customize-preview').style.display = 'none'; $('modal-basket-preview').showModal();
-}
-
-function confirmBasket(isCustom){
-    const c = STATE.tempBasket; STATE.mode = 'custom'; STATE.baseBasket = c;
-    let itemsSum = 0;
-    c.produtos.forEach(s=>{
-        const [qStr, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim());
-        if(p){ let q = Math.min(parseInt(qStr), p.stock); if(q > 0) { if(!(STATE.cart[p.id])) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + q; itemsSum += (p.price * q); } }
-    });
-    STATE.basketExtraFee = Math.max(0, c.preco - itemsSum);
-    $('modal-basket-preview').close(); renderHome(); updateTotals();
-    if(isCustom) setTimeout(goToMinhaCesta, 300);
-}
-
-function confirmCombo(id){
-    const c = STATE.combos.find(x=>String(x.id)===String(id)); if(!c) return;
-    c.produtos.forEach(s=>{
-        const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim());
-        if(p){ if(!(STATE.cart[p.id])) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + parseInt(q); }
-    });
-    $('modal-basket-preview').close(); renderHome(); updateTotals();
-}
-
-function renderDeliveryOptions() {
-    let options = []; let date = new Date(); let checkDate = new Date(date);
-    if(date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) options.push({ index: 0, title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), dayName: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][date.getDay()], discount: 0 });
-    while(options.length < 3) {
-        checkDate.setDate(checkDate.getDate() + 1);
-        if(!CONFIG_ENTREGA.diasSemanaInativos.includes(checkDate.getDay())) {
-            let disc = options.length === 1 ? CONFIG_ENTREGA.descontoOpcao2 : (options.length === 2 ? CONFIG_ENTREGA.descontoOpcao3 : 0);
-            options.push({ index: options.length, title: 'Agendar Entrega', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), dayName: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][checkDate.getDay()], discount: disc });
-        }
-    }
-    STATE.deliveryOptions = options;
-    let sel = options[STATE.selectedDeliveryIndex]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = `${sel.dayName}, ${sel.dateStr}`;
-    $('delivery-options-list').innerHTML = options.map(opt => `<div class="del-option ${STATE.selectedDeliveryIndex===opt.index?'selected':''}" onclick="selectDeliveryOption(${opt.index})"><div><div class="del-opt-title">${opt.title}</div><div class="del-opt-date">${opt.dayName}, ${opt.dateStr}</div></div>${opt.discount > 0 ? `<div class="del-opt-badge">- ${fmt(opt.discount)}</div>` : ''}</div>`).join('');
-}
-window.selectDeliveryOption = function(idx) { STATE.selectedDeliveryIndex = idx; renderDeliveryOptions(); updateTotals(); }
-
-function updateTotals(){
-    let sum = 0; Object.entries(STATE.cart).forEach(([id,q])=>{ const p = STATE.prods.find(x=>x.id===id); if(p) sum += p.price * q; });
-    STATE.comboDiscount = 0; STATE.appliedCombos = [];
-    if(STATE.combos) STATE.combos.forEach(c => {
-        let possible = 9999; let comboSum = 0; let reqs = [];
-        c.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x => x.id === ref.trim()); if(p) { reqs.push({id:p.id, q:parseInt(q)}); comboSum += p.price * parseInt(q); } });
-        reqs.forEach(r => possible = Math.min(possible, Math.floor((STATE.cart[r.id]||0)/r.q)));
-        if(possible > 0) { STATE.comboDiscount += (comboSum - c.preco) * possible; for(let i=0; i<possible; i++) STATE.appliedCombos.push({nome:c.nome, desconto: comboSum - c.preco}); }
-    });
-
-    let subtotal = sum + STATE.basketExtraFee - STATE.comboDiscount;
-    let final = subtotal - STATE.deliveryDiscount;
-    STATE.valueDiscount = 0;
-    if(STATE.descontosValor) {
-        let disc = [...STATE.descontosValor].sort((a,b)=>a.minimo-b.minimo).filter(d => subtotal >= d.minimo).pop();
-        if(disc) STATE.valueDiscount = disc.desconto;
-    }
-    final -= STATE.valueDiscount;
-    if(STATE.coupon) final -= (final >= STATE.coupon.minimo ? STATE.coupon.desconto : 0);
-
-    $('chk-total').innerText = fmt(final);
-    $('badge-count').innerText = Object.values(STATE.cart).reduce((a,b)=>a+b,0);
-    $('badge-count').style.display = $('badge-count').innerText > 0 ? 'flex' : 'none';
-    
-    let missing = Math.max(0, MIN_ORDER - subtotal);
-    $('btn-send-order').disabled = missing > 0;
-    $('btn-send-order').innerHTML = missing > 0 ? `FALTAM ${fmt(missing)}` : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> ENVIAR PEDIDO NO WHATSAPP`;
-
-    let summary = `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(sum+STATE.basketExtraFee)}</span></div>`;
-    if(STATE.comboDiscount > 0) summary += `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Desconto Combo:</span><span>-${fmt(STATE.comboDiscount)}</span></div>`;
-    if(STATE.deliveryDiscount > 0) summary += `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Bônus Agendar:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>`;
-    if(STATE.valueDiscount > 0) summary += `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Desconto Valor:</span><span>-${fmt(STATE.valueDiscount)}</span></div>`;
-    $('chk-summary-lines').innerHTML = summary;
-}
-
-function openCheckout(){
-    if(STATE.cartOrder.length === 0) return showToast("Carrinho vazio!", "r");
-    renderDeliveryOptions();
-    $('chk-list').innerHTML = STATE.cartOrder.map(id=>{ const p = STATE.prods.find(x=>x.id===id); return `<div class="chk-item-simple"><span class="chk-item-qtd">${STATE.cart[id]}x</span><span class="chk-item-name">${formatName(p.name)}</span></div>` }).join('');
-    $('modal-checkout').showModal();
-}
-
-function clearCart(){ if(confirm("Esvaziar?")){ STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.baseBasket=null; STATE.basketExtraFee=0; updateTotals(); renderHome(); $('modal-checkout').close(); } }
-function handleSearch(q){ $('wrapper-sections').style.display = q ? 'none' : 'block'; $('section-busca').style.display = q ? 'block' : 'none'; if(q) renderPaginated('grid-busca', 'busca', STATE.prods.filter(p=>p.name.toUpperCase().includes(q.toUpperCase())), 20, 'PROD'); }
-function clearSearch(){ $('search-inp').value=''; handleSearch(''); }
-function applyCupom(){ const c=STATE.coupons.find(x=>x.codigo===$('cupom-code').value.toUpperCase().trim()); if(c && parseMoney($('chk-total').innerText)>=c.minimo){ STATE.coupon=c; updateTotals(); $('cupom-msg').innerText="APLICADO!"; $('cupom-msg').style.display='block'; } else showToast("Inválido", "r"); }
-
-async function sendOrder(){
-    const btnSubmit = $('btn-send-order');
-    if(btnSubmit.disabled) return;
-    
-    // Prevenção de duplo clique
-    btnSubmit.disabled = true;
-    btnSubmit.innerHTML = "⏳ ENVIANDO...";
-
-    // --- ESTRATÉGIA ANTI-BLOQUEIO: GERADOR DE ID ÚNICO ---
-    const orderId = String(Date.now()).slice(-6); 
-    
-    let itemsTxt="", apiItens=[]; 
-    let totalBruto = 0;
-    
-    Object.entries(STATE.cart).forEach(([id,q])=>{
-        const p=STATE.prods.find(x=>x.id===id);
-        if(p){ 
-            totalBruto += p.price * q; 
-            itemsTxt += `${q}x ${p.name}\n`; 
-            apiItens.push({id:p.blingId, nome:p.name, qtd:q, price:p.price});
-        }
-    });
-
-    // CORREÇÃO AQUI: Adicionar a taxa extra da cesta (basketExtraFee) ao totalBruto antes dos descontos
-    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount;
-
-    final -= STATE.deliveryDiscount;
-    final -= STATE.valueDiscount;
-    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
-    final -= cupomDesconto;
-
-    // Outras despesas agora captura diretamente a taxa da cesta para o seu sistema
-    let outras_despesas = STATE.basketExtraFee || 0;
-
-    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
-
-    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`;
-    if(STATE.baseBasket){
-        obs += ` | Cesta Base: ${STATE.baseBasket.nome}`;
-        let orig = {}; STATE.baseBasket.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) orig[p.id] = parseInt(q); });
-        let rem = []; let add = [];
+    // Função mágica do botão +
+    window.toggleQuantity = function(event, productId) {
+        // Evita que o clique "vaze" e feche algo sem querer
+        event.stopPropagation();
         
-        Object.keys(orig).forEach(id => { if((STATE.cart[id]||0) < orig[id]) rem.push(`${orig[id]-(STATE.cart[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
-        Object.keys(STATE.cart).forEach(id => { if(STATE.cart[id] > (orig[id]||0)) add.push(`${STATE.cart[id]-(orig[id]||0)}x ${STATE.prods.find(p=>p.id===id)?.name}`); });
+        const control = document.getElementById(`control-${productId}`);
+        const drawer = document.getElementById(`drawer-${productId}`);
+
+        // Se ainda não foi expandido (primeiro clique no +)
+        if (!control.classList.contains('expanded')) {
+            control.classList.add('expanded');
+            control.innerHTML = `
+                <span class="qty-btn" onclick="updateQty(event, ${productId}, -1)">-</span>
+                <span class="qty-number" id="qty-${productId}">1</span>
+                <span class="qty-btn" onclick="updateQty(event, ${productId}, 1)">+</span>
+            `;
+            // Abre a gaveta de informações ocultas (Nome e Validade)
+            drawer.classList.add('open');
+        }
+    };
+
+    // Função para gerenciar a quantidade dentro do botão expandido
+    window.updateQty = function(event, productId, change) {
+        event.stopPropagation(); // Não deixa fechar
         
-        if(rem.length) obs += ` | ➖ RETIRADOS: ${rem.join(', ')}`;
-        if(add.length) obs += ` | ➕ ADD: ${add.join(', ')}`;
-    }
+        const qtyElement = document.getElementById(`qty-${productId}`);
+        let currentQty = parseInt(qtyElement.innerText);
+        let newQty = currentQty + change;
 
-    if(STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-    if(STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
-    if(STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
-    if(STATE.coupon){ itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`; }
-    
-    // Adicionado no texto do WhatsApp para transparência do cliente
-    if(STATE.basketExtraFee > 0) itemsTxt += `\n`;
-    
-    const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
-    
-    try{
-        await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
-            method:"POST", headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-                cliente:{nome: "Cliente Site"},
-                pedido:{
-                    itens: apiItens,
-                    total: final,
-                    outras_despesas: outras_despesas,
-                    desconto: totalDescontos, 
-                    observacoes: obs 
-                }
-            })
-        });
-    }catch(e){}
-    
-    window.location.href=`https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`;
+        if (newQty <= 0) {
+            // Se zerar, volta o botão ao estado original (apenas "+") e fecha a gaveta
+            const control = document.getElementById(`control-${productId}`);
+            const drawer = document.getElementById(`drawer-${productId}`);
+            
+            control.classList.remove('expanded');
+            control.innerHTML = `<span class="plus">+</span>`;
+            drawer.classList.remove('open');
+        } else {
+            // Atualiza o número na tela
+            qtyElement.innerText = newQty;
+        }
+    };
 
-    setTimeout(() => {
-        btnSubmit.disabled = false;
-        btnSubmit.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg> ENVIAR PEDIDO NO WHATSAPP`;
-    }, 3000);
-}
-function formatName(s){ return s?s.toLowerCase().split(' ').map(w=>w.length<=3?w:w[0].toUpperCase()+w.slice(1)).join(' '):''; }
-function parseMoney(s){ return parseFloat(s.replace('R$','').replace('.','').replace(',','.').trim()); }
-function fmt(v){ return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-function showToast(m,t){ const d=document.createElement('div'); d.className='toast'; d.style.background=t==='r'?'#dc2626':'#15803d'; d.innerText=m; $('toast-container').appendChild(d); setTimeout(()=>d.remove(),2500); }
-
-init();
+    // Inicia o app
+    renderApp();
 
 </script>
+
 </body>
 </html>
