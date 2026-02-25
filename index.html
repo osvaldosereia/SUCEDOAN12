@@ -428,7 +428,7 @@ async function init() {
             fetch('/site/cupons.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('/site/termos.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
@@ -477,13 +477,22 @@ function setupObserver() {
 // RENDERIZAÇÃO DA HOME
 // ==========================================
 function renderHome() {
-    // 1. SALVA O ESTADO ATUAL (Retráteis abertos e rolagem)
+    // 1. SALVAR O ESTADO ATUAL (Acordeões abertos e Rolagem dos carrosséis)
     let openAccs = [];
     let scrolls = {};
     document.querySelectorAll('.term-accordion.open').forEach(el => openAccs.push(el.id));
     document.querySelectorAll('.carousel-track').forEach(el => { if(el.id) scrolls[el.id] = el.scrollLeft; });
-    
+
     STATE.lists = {}; 
+
+    // 2. EXTRAIR TODOS OS TERMOS (Para a regra do nome composto)
+    let allTerms = [];
+    if (STATE.termos && STATE.termos.length > 0) {
+        STATE.termos.forEach(item => {
+            let terms = item.termos || item;
+            allTerms.push(...String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t));
+        });
+    }
 
     if (STATE.baskets.length > 0) { 
         $('section-cestas').style.display = 'block'; 
@@ -518,9 +527,28 @@ function renderHome() {
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
             
+            // FILTRO INTELIGENTE REGEX
             let list = STATE.prods.filter(p => { 
                 let pName = norm(p.name); 
-                return subs.some(s => pName.includes(s)); 
+
+                return subs.some(s => {
+                    let checkMatch = (termo) => {
+                        let palavras = termo.split(' ');
+                        if (palavras.length === 1) {
+                            return new RegExp('^' + termo + '\\b').test(pName);
+                        } else {
+                            return palavras.every(w => new RegExp('\\b' + w + '\\b').test(pName));
+                        }
+                    };
+
+                    if (!checkMatch(s)) return false;
+
+                    let perdeParaComposto = allTerms.some(outroTermo => {
+                        return outroTermo !== s && outroTermo.includes(s) && checkMatch(outroTermo);
+                    });
+
+                    return !perdeParaComposto;
+                }); 
             });
             
             if (list.length > 0) {
@@ -553,30 +581,38 @@ function renderHome() {
             let terms = item.termos || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
-           // NOVO CÓDIGO (Copie e cole por cima do antigo)
-let list = STATE.prods.filter(p => { 
-    let pName = norm(p.name); 
-    return subs.some(s => {
-        let palavrasDoTermo = s.split(' '); // Conta quantas palavras tem o termo
-        
-        if (palavrasDoTermo.length === 1) {
-            // Regra 1 palavra: O produto DEVE COMEÇAR com este termo. 
-            // (Ex: "copo" pega "copo de vidro", mas recusa "molho copo")
-            return pName.startsWith(s);
-        } else {
-            // Regra 2+ palavras: O produto deve conter TODAS as palavras em qualquer lugar.
-            // (Ex: "leite pó" exige que tenha tanto "leite" quanto "pó" no nome)
-            return palavrasDoTermo.every(palavra => pName.includes(palavra));
-        }
-    }); 
-});
+            
+            // FILTRO INTELIGENTE REGEX
+            let list = STATE.prods.filter(p => { 
+                let pName = norm(p.name); 
+
+                return subs.some(s => {
+                    let checkMatch = (termo) => {
+                        let palavras = termo.split(' ');
+                        if (palavras.length === 1) {
+                            return new RegExp('^' + termo + '\\b').test(pName);
+                        } else {
+                            return palavras.every(w => new RegExp('\\b' + w + '\\b').test(pName));
+                        }
+                    };
+
+                    if (!checkMatch(s)) return false;
+
+                    let perdeParaComposto = allTerms.some(outroTermo => {
+                        return outroTermo !== s && outroTermo.includes(s) && checkMatch(outroTermo);
+                    });
+
+                    return !perdeParaComposto;
+                }); 
+            });
+
             if (list.length > 0) {
                 renderPaginated(`grid-${safe}`, `term_${safe}`, list, 10, 'PROD');
             }
         });
     }
 
-    // 2. RESTAURA O ESTADO (Abre os retráteis que estavam abertos e volta a rolagem)
+    // 3. RESTAURAR O ESTADO (Abre os acordeões e rola os carrosséis)
     openAccs.forEach(id => { let el = $(id); if(el) el.classList.add('open'); });
     Object.keys(scrolls).forEach(id => { let el = $(id); if(el) el.scrollLeft = scrolls[id]; });
 }
