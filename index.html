@@ -58,9 +58,26 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* GRADES (Apenas Busca) */
 .grid-produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 12px; padding: 5px 20px 15px; width: 100%; }
 
-/* CARROSSEL - Rolagem Livre */
+/* CARROSSEL E SETAS */
+.carousel-wrapper { position: relative; width: 100%; }
+.carousel-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 10; color: var(--c-p); transition: 0.2s; }
+.carousel-btn:hover { color: var(--c-a); border-color: var(--c-a); }
+.carousel-btn:active { transform: translateY(-50%) scale(0.9); }
+.carousel-btn.left { left: 5px; }
+.carousel-btn.right { right: 5px; }
+
 .carousel-track { display: flex; overflow-x: auto; gap: 12px; padding: 5px 20px 25px; -webkit-overflow-scrolling: touch; width: 100%; }
-.carousel-track::-webkit-scrollbar { display: none; }
+.carousel-track::-webkit-scrollbar { display: none; /* Esconde no mobile */ }
+
+@media(min-width: 800px) { 
+    .carousel-btn { display: flex; } /* Mostra setas no desktop */
+    .carousel-track::-webkit-scrollbar { display: block; height: 8px; } /* Mostra scrollbar no desktop */
+    .carousel-track::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; margin: 0 20px; }
+    .carousel-track::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .carousel-track::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    .carousel-track { padding-bottom: 15px; }
+}
+
 @media(max-width:600px) { 
     .carousel-track { padding: 5px 15px 25px; gap: 10px; } 
     .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); padding: 5px 15px 15px; }
@@ -200,7 +217,11 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
                     <div class="term-title">Cestas Básicas</div>
                 </div>
                 <div class="term-content" style="display: block;">
-                    <div class="carousel-track" id="grid-cestas"></div>
+                    <div class="carousel-wrapper">
+                        <button class="carousel-btn left" onclick="scrollCarousel('grid-cestas', -1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                        <div class="carousel-track" id="grid-cestas"></div>
+                        <button class="carousel-btn right" onclick="scrollCarousel('grid-cestas', 1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -212,7 +233,11 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
                     <div class="term-title" style="color:var(--c-a);">Minha Cesta Personalizada</div>
                 </div>
                 <div class="term-content" style="display: block; background: #fff7ed;">
-                    <div class="carousel-track" id="grid-cesta-ativa"></div>
+                    <div class="carousel-wrapper">
+                        <button class="carousel-btn left" onclick="scrollCarousel('grid-cesta-ativa', -1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                        <div class="carousel-track" id="grid-cesta-ativa"></div>
+                        <button class="carousel-btn right" onclick="scrollCarousel('grid-cesta-ativa', 1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -224,7 +249,13 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
                     <div class="term-title">Ofertas da Semana</div>
                     <div class="term-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
                 </div>
-                <div class="term-content"><div class="carousel-track" id="grid-ofertas"></div></div>
+                <div class="term-content">
+                    <div class="carousel-wrapper">
+                        <button class="carousel-btn left" onclick="scrollCarousel('grid-ofertas', -1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                        <div class="carousel-track" id="grid-ofertas"></div>
+                        <button class="carousel-btn right" onclick="scrollCarousel('grid-ofertas', 1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    </div>
+                </div>
             </div>
 
             <div class="term-accordion" id="acc-combos" style="display:none;">
@@ -233,7 +264,13 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
                     <div class="term-title">Combos Especiais</div>
                     <div class="term-arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
                 </div>
-                <div class="term-content"><div class="carousel-track" id="grid-combos"></div></div>
+                <div class="term-content">
+                    <div class="carousel-wrapper">
+                        <button class="carousel-btn left" onclick="scrollCarousel('grid-combos', -1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                        <div class="carousel-track" id="grid-combos"></div>
+                        <button class="carousel-btn right" onclick="scrollCarousel('grid-combos', 1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -398,6 +435,18 @@ let currentComboQty = 1;
 let currentComboId = null;
 let currentBasketQty = 1;
 
+// ==========================================
+// FUNÇÕES DE SCROLL PARA AS SETAS
+// ==========================================
+window.scrollCarousel = function(id, dir) {
+    const el = document.getElementById(id);
+    if(el) {
+        // Rola 75% da largura visível do carrossel por clique
+        const scrollAmount = el.clientWidth * 0.75;
+        el.scrollBy({ left: dir * scrollAmount, behavior: 'smooth' });
+    }
+};
+
 function norm(str) {
     if (!str) return "";
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -428,7 +477,7 @@ async function init() {
             fetch('/site/cupons.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('/site/termos.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
@@ -563,7 +612,11 @@ function renderHome() {
                         </div>
                     </div>
                     <div class="term-content">
-                        <div class="carousel-track" id="grid-${safe}"></div>
+                        <div class="carousel-wrapper">
+                            <button class="carousel-btn left" onclick="scrollCarousel('grid-${safe}', -1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="15 18 9 12 15 6"></polyline></svg></button>
+                            <div class="carousel-track" id="grid-${safe}"></div>
+                            <button class="carousel-btn right" onclick="scrollCarousel('grid-${safe}', 1)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"></polyline></svg></button>
+                        </div>
                     </div>
                 </div>`;
                 
