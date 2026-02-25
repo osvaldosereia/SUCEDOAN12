@@ -1254,6 +1254,9 @@ async function sendOrder() {
 
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`;
     
+    // Passo 1: Criamos a variável assumindo que é personalizada desde o início
+    let tipoCestaTexto = "Cestas Personalizada"; 
+    
     if (STATE.baseBasket) {
         obs += ` | Cesta Base: ${STATE.baseBasket.nome}`;
         let orig = {}; 
@@ -1285,6 +1288,13 @@ async function sendOrder() {
         
         if (rem.length > 0) obs += ` | ➖ RETIRADOS: ${rem.join(', ')}`;
         if (add.length > 0) obs += ` | ➕ ADD: ${add.join(', ')}`;
+
+        // Passo 2 e 3: Atualizamos o texto com base nas alterações
+        if (rem.length > 0 || add.length > 0) {
+            tipoCestaTexto = `Cesta ${STATE.baseBasket.nome} alterada`;
+        } else {
+            tipoCestaTexto = `Cesta ${STATE.baseBasket.nome} padrão`;
+        }
     }
 
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
@@ -1294,7 +1304,8 @@ async function sendOrder() {
     
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
-    const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
+    // Passo 4: Incluímos a linha tracejada e a nossa variável no final da mensagem
+    const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*\n\n------\n${tipoCestaTexto}`;
     
     try {
         await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
