@@ -78,11 +78,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .carousel-track { padding-bottom: 15px; }
 }
 
-@media(max-width:600px) { 
-    .carousel-track { padding: 5px 15px 25px; gap: 10px; } 
-    .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); padding: 5px 15px 15px; }
-}
-
 /* ACCORDIONS (ESTREITOS E ELEGANTES) */
 .term-accordion { margin: 8px 20px; background: var(--c-surf); border-radius: 12px; overflow: hidden; box-shadow: var(--sh-card); max-width: 1200px; transition: 0.2s; }
 @media(max-width:600px) { .term-accordion { margin: 8px 15px; } }
@@ -96,7 +91,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .term-content { display: none; background: var(--c-bg); border-top: 1px dashed var(--c-bd); }
 .term-accordion.open .term-content { display: block; }
 
-/* CARDS PADRONIZADOS */
+/* CARDS PADRONIZADOS (DESKTOP) */
 .u-card {
     background: var(--c-surf); 
     border-radius: 14px; 
@@ -109,18 +104,13 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-card.in-cart { border-color: rgba(21, 128, 61, 0.4); }
 .carousel-track .u-card { flex: 0 0 230px; } 
 
-@media(max-width: 600px) { 
-    .u-card { height: 330px; } 
-    .carousel-track .u-card { flex: 0 0 55vw; } 
-}
-
-/* Imagem Fixa */
+/* Imagem Fixa (DESKTOP) */
 .u-img-area { width: 100%; height: 160px; background: #fff; position: relative; overflow: hidden; border-bottom: 1px solid var(--c-bd); border-radius: 14px 14px 0 0; flex-shrink: 0; }
 .u-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 10px; } 
 .u-img-cesta { object-fit: cover; padding: 0; mix-blend-mode: normal; }
 .offer-tag { position: absolute; top: 0; right: 0; background: var(--c-err); color: #fff; font-size: 0.75rem; padding: 4px 10px; border-bottom-left-radius: 12px; font-weight: 900; z-index: 5; }
 
-/* Informações flexíveis */
+/* Informações flexíveis (DESKTOP) */
 .u-info { padding: 12px; display: flex; flex-direction: column; flex: 1; border-radius: 0 0 14px 14px; background: var(--c-surf); justify-content: space-between; }
 .u-name { font-size: 0.85rem; font-weight: 700; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .u-price { font-size: 1.35rem; font-weight: 900; color: var(--c-a); letter-spacing: -0.5px; }
@@ -128,10 +118,34 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .btn-big-action { width: 100%; background: var(--c-p); color: #fff; padding: 10px 8px; border-radius: 8px; font-weight: 900; font-size: 0.85rem; margin-top: 8px; display: flex; justify-content: center; align-items: center; height: 38px; }
 
-/* Controles de Quantidade Extraídos para CSS */
+/* Controles de Quantidade (DESKTOP) */
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; border:2px solid var(--c-ok); border-radius:8px; height:38px; margin-top:8px; padding:0 5px; width:100%; box-sizing:border-box; }
 .card-qty-ctrl button { font-size:1.6rem; color:var(--c-ok); font-weight:900; background:transparent; border:none; padding:0 10px; cursor:pointer; }
 .card-qty-ctrl span { font-weight:900; font-size:1.1rem; color:var(--c-p); }
+
+/* AJUSTES PARA MOBILE: 2.2 CARDS NA TELA E AJUSTE INTERNO */
+@media(max-width: 600px) { 
+    .carousel-track { padding: 5px 15px 25px; gap: 10px; } 
+    /* Grade de busca ajustada para bater com o tamanho menor do card mobile */
+    .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); padding: 5px 15px 15px; gap: 10px; }
+    
+    /* Card principal mobile: 42vw garante ~2.2 cards visíveis. Altura aumentada para comportar o texto estreito */
+    .u-card { height: 340px; } 
+    .carousel-track .u-card { flex: 0 0 42vw; } 
+    
+    /* Elementos internos redimensionados para o card mais estreito */
+    .u-img-area { height: 130px; }
+    .u-info { padding: 10px; }
+    .u-name { font-size: 0.8rem; }
+    .u-price { font-size: 1.15rem; }
+    .combo-strike { font-size: 0.65rem; }
+    
+    .btn-big-action { height: 34px; font-size: 0.75rem; margin-top: 6px; }
+    .card-qty-ctrl { height: 34px; margin-top: 6px; padding: 0 4px; }
+    .card-qty-ctrl button { font-size: 1.4rem; padding: 0 6px; }
+    .card-qty-ctrl span { font-size: 1rem; }
+    .offer-tag { font-size: 0.65rem; padding: 3px 6px; }
+}
 
 /* BOTTOM NAV */
 .bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 55px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); }
