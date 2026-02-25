@@ -89,7 +89,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     .section-title { padding: 15px 15px 10px; }
 }
 
-/* CARROSSEL DE PRODUTOS (Substitui o Grid nas seções retráteis) */
+/* CARROSSEL DE PRODUTOS */
 .carousel-track {
     display: flex; 
     overflow-x: auto; 
@@ -102,7 +102,7 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .carousel-track::-webkit-scrollbar { display: none; }
 @media(max-width:600px) { .carousel-track { padding: 5px 15px 25px; gap: 12px; } }
 
-/* ACCORDION DE TERMOS (Limpo, Sem Bordas Desnecessárias) */
+/* ACCORDION DE TERMOS */
 .term-accordion { 
     margin: 10px 20px; 
     background: var(--c-surf); 
@@ -129,8 +129,8 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
     display:flex;flex-direction:column; position:relative; height: 100%; transition:transform .2s, box-shadow .2s;
 }
 .u-card:hover{box-shadow:var(--sh-float);transform:translateY(-4px);z-index:10}
-.carousel-track .u-card { flex: 0 0 260px; scroll-snap-align: start; }
-@media(max-width: 600px) { .carousel-track .u-card { flex: 0 0 220px; } }
+.carousel-track .u-card { flex: 0 0 280px; scroll-snap-align: start; }
+@media(max-width: 600px) { .carousel-track .u-card { flex: 0 0 65vw; } }
 
 .u-img-area{width:100%;aspect-ratio:1;background:#fff;position:relative;overflow:hidden;border-bottom:1px solid var(--c-bd); border-radius: 16px 16px 0 0;}
 .u-img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;padding:5px 0;} 
@@ -141,37 +141,45 @@ button{cursor:pointer;border:none;background:0 0;font-family:inherit;font-weight
 .u-name{font-size:0.9rem; font-weight:800; color:var(--c-p); line-height:1.3; display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden; flex-grow: 1; }
 .u-price{font-size:1.15rem;font-weight:900;color:var(--c-a);letter-spacing:-0.5px;}
 
-/* CARDS DE PRODUTOS SIMPLES (MAIORES E LARGOS NO CARROSSEL) */
+/* CARDS DE PRODUTOS SIMPLES (MAIORES E LARGOS NO CARROSSEL - 1.7 CARDS VISÍVEIS) */
 .card-sq {
     background: #fff; border-radius: 16px; position: relative;
     overflow: hidden; box-shadow: var(--sh-card);
     display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s;
-    /* Ajustes Carrossel */
-    flex: 0 0 180px; 
+    /* 55vw dá exatamente ~1.7 cards na tela num celular */
+    flex: 0 0 55vw; 
     scroll-snap-align: start;
 }
-@media(min-width: 600px) { .card-sq { flex: 0 0 220px; } }
-.grid-produtos .card-sq { flex: auto; } /* Se estiver na grid, preenche o espaço normal */
+@media(min-width: 600px) { .card-sq { flex: 0 0 240px; } }
+.grid-produtos .card-sq { flex: auto; }
 
 .card-sq:active { transform: scale(0.98); }
-.card-sq.in-cart { box-shadow: 0 2px 12px rgba(21, 128, 61, 0.15); border: 2px solid rgba(21, 128, 61, 0.4); }
+.card-sq.in-cart { box-shadow: 0 4px 15px rgba(21, 128, 61, 0.12); border: 2px solid rgba(21, 128, 61, 0.4); }
 
-.card-sq-img-area { width: 100%; aspect-ratio: 1; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; border-bottom: 1px solid var(--c-bd); }
+.card-sq-img-area { position: relative; width: 100%; aspect-ratio: 1; padding: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; border-bottom: 1px solid var(--c-bd); }
 .card-sq-img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; }
 
-.card-sq-bottom { display: flex; justify-content: space-between; align-items: flex-end; padding: 10px 12px 14px 12px; width: 100%; margin-top: auto; cursor: pointer; gap: 8px;}
-.card-sq-price { font-size: 1.15rem; font-weight: 900; color: var(--c-p); display:block; }
-.card-sq-name-sub { font-size: 0.9rem; color: var(--c-s); font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; text-align: left; width: 100%; height: 5.2em; }
-
-/* BOTOES E CONTROLES GIGANTES E ERGONÔMICOS */
-.card-sq-ctrls { flex-shrink: 0; cursor: default; }
-.card-sq-plus { width: 44px; height: 44px; border-radius: 50%; background: #f1f5f9; color: var(--c-p); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 700; transition: all 0.2s; border: none; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+/* CONTROLES ESTOURAM PARA A ESQUERDA POR CIMA DA FOTO */
+.card-sq-ctrls { 
+    position: absolute; 
+    bottom: 8px; 
+    right: 8px; 
+    display: flex; 
+    justify-content: flex-end; 
+    z-index: 10;
+}
+.card-sq-plus { width: 48px; height: 48px; border-radius: 50%; background: #f1f5f9; color: var(--c-p); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; font-weight: 700; transition: all 0.2s; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
 .card-sq-plus:active { transform: scale(0.9); background: #e2e8f0; }
-.card-sq-qty-box { display: flex; align-items: center; background: #f0fdf4; border-radius: 22px; height: 44px; padding: 0 6px; color: var(--c-p); border: 1px solid rgba(21, 128, 61, 0.4); animation: popIn 0.2s ease-out; }
+.card-sq-qty-box { display: flex; align-items: center; background: #f0fdf4; border-radius: 24px; height: 48px; padding: 0 6px; color: var(--c-p); border: 1px solid rgba(21, 128, 61, 0.4); box-shadow: 0 4px 10px rgba(0,0,0,0.15); animation: popIn 0.2s ease-out; }
 @keyframes popIn { from { transform: scale(0.8); opacity: 0;} to { transform: scale(1); opacity: 1; } }
-.sq-btn { width: 34px; height: 34px; border-radius: 50%; background: transparent; border: none; color: var(--c-ok); font-weight: 900; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.sq-btn { width: 36px; height: 36px; border-radius: 50%; background: transparent; border: none; color: var(--c-ok); font-weight: 900; font-size: 1.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .sq-btn:active { background: rgba(21, 128, 61, 0.1); }
-.sq-val { font-size: 1rem; font-weight: 900; min-width: 24px; text-align: center; color: var(--c-p); }
+.sq-val { font-size: 1.1rem; font-weight: 900; min-width: 24px; text-align: center; color: var(--c-p); }
+
+/* TEXTO OCUPA LARGURA TOTAL E TEM 3 LINHAS */
+.card-sq-bottom { display: block; padding: 12px 12px 16px 12px; width: 100%; margin-top: auto; cursor: pointer; text-align: left; }
+.card-sq-price { font-size: 1.25rem; font-weight: 900; color: var(--c-p); display:block; }
+.card-sq-name-sub { font-size: 0.95rem; color: var(--c-s); font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px; width: 100%; height: 3.9em; }
 
 /* BOTOES AUXILIARES */
 .btn-big-action{ width:100%; background:var(--c-p); color:#fff; padding:12px 8px; border-radius:12px; font-weight:800; font-size:0.85rem; display:flex; align-items:center; justify-content:center; gap:4px; transition:background .2s, transform .1s; }
@@ -205,6 +213,10 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 .btn-modal{width:100%;padding:14px;border-radius:12px;font-weight:800;margin-bottom:10px;font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; cursor: pointer;}
 .btn-modal.primary{background:var(--c-p);color:#fff;}
 .btn-modal.secondary{background:#fff;border:2px solid var(--c-bd);color:var(--c-s)}
+
+/* BOTOES SELEÇÃO QTD CESTA */
+.btn-bqty { flex:1; padding: 15px 0; border-radius: 12px; border: 2px solid var(--c-bd); background: #fff; font-size: 1.5rem; font-weight: 900; color: var(--c-p); cursor: pointer; transition: all 0.2s; }
+.btn-bqty.selected { border-color: var(--c-a); background: #fff7ed; color: var(--c-a); box-shadow: 0 4px 12px rgba(234, 88, 12, 0.15); }
 
 /* MODAL CHECKOUT E QUICK VIEW */
 #modal-checkout, #modal-quick-view { margin: auto auto 0 auto; border-radius: 24px 24px 0 0; width: 100%; max-width: 600px; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
@@ -382,8 +394,7 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
 
         </div>
 
-        <div id="section-termos" style="padding-bottom: 20px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto;">
-            </div>
+        <div id="section-termos" style="padding-bottom: 20px; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto;"></div>
     </div>
 </main>
 
@@ -409,10 +420,10 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
     <div class="modal-body" style="padding: 30px 20px 25px max(20px, env(safe-area-inset-bottom));">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         <div style="display:flex; justify-content:center; margin-bottom: 20px;">
-            <img id="qv-img" src="" style="width: 270px; height: 270px; object-fit: contain; mix-blend-mode: multiply;">
+            <img id="qv-img" src="" style="width: 100%; max-height: 40vh; object-fit: contain; mix-blend-mode: multiply;">
         </div>
-        <h3 id="qv-name" data-id="" style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 8px; line-height: 1.2;"></h3>
-        <div id="qv-price" style="font-size: 1.4rem; font-weight: 900; color: var(--c-a); margin-bottom: 25px;"></div>
+        <h3 id="qv-name" data-id="" style="font-size: 1.25rem; font-weight: 800; color: var(--c-p); margin-bottom: 8px; line-height: 1.3;"></h3>
+        <div id="qv-price" style="font-size: 1.6rem; font-weight: 900; color: var(--c-a); margin-bottom: 25px;"></div>
         <div id="qv-action-area"></div>
     </div>
 </dialog>
@@ -445,10 +456,34 @@ dialog::backdrop{background:rgba(15,23,42,0.85);backdrop-filter:blur(4px)}
             <div class="modal-carousel-track" id="prev-list"></div>
         </div>
         <div style="margin-top:20px">
-            <div style="font-size:1.8rem;font-weight:900;color:var(--c-a);margin-bottom:15px" id="prev-price"></div>
+            <div style="font-size:1.8rem;font-weight:900;color:var(--c-a);margin-bottom:10px" id="prev-price"></div>
+            
+            <div id="combo-qty-controls" style="display:none; align-items:center; justify-content:center; gap:20px; margin-bottom:15px;">
+                <button class="sq-btn" style="background:#f1f5f9; width:44px; height:44px; font-size:1.8rem;" onclick="changeComboQty(-1)">-</button>
+                <span id="combo-modal-qty" style="font-size:1.5rem; font-weight:900; color:var(--c-p);">1</span>
+                <button class="sq-btn" style="background:#f1f5f9; width:44px; height:44px; font-size:1.8rem;" onclick="changeComboQty(1)">+</button>
+            </div>
+
             <button class="btn-modal primary" id="btn-confirm-preview">ENCOMENDAR CESTA PADRÃO</button>
             <button class="btn-modal primary" id="btn-customize-preview" style="background:var(--c-a); display:none;">PERSONALIZAR CESTA</button>
         </div>
+    </div>
+</dialog>
+
+<dialog id="modal-cesta-qty">
+    <div class="modal-body">
+        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
+        <h3 style="color:var(--c-p); font-size:1.3rem; font-weight:900; margin-top:10px; margin-bottom: 20px;">Quantas cestas você vai querer?</h3>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+            <button class="btn-bqty selected" id="btn-bqty-1" onclick="setBasketQty(1)">1</button>
+            <button class="btn-bqty" id="btn-bqty-2" onclick="setBasketQty(2)">2</button>
+            <button class="btn-bqty" id="btn-bqty-3" onclick="setBasketQty(3)">3</button>
+        </div>
+
+        <button class="btn-modal primary" id="btn-confirm-bqty" onclick="confirmBasket(false, currentBasketQty)" style="font-size: 1.1rem; padding: 16px;">
+            ENCOMENDAR 1 CESTA
+        </button>
     </div>
 </dialog>
 
@@ -518,6 +553,17 @@ const STATE={
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
 };
 
+// Variaveis de controle dos modais de quantidade
+let currentComboQty = 1;
+let currentComboId = null;
+let currentBasketQty = 1;
+
+// Normalizador (Remove Acentos e Cedilha)
+function norm(str) {
+    if(!str) return "";
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
 function setupObserver() {
     if(!STATE.observer) {
         STATE.observer = new IntersectionObserver((entries) => {
@@ -541,7 +587,7 @@ async function init(){
             fetch('/site/combos.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('/site/departamento.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('/site/desconto-por-valor.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('termos.json?v='+Date.now()).catch(()=>({ok:false})) 
+            fetch('/site/termos.json?v='+Date.now()).catch(()=>({ok:false})) 
         ]);
         if(r1.ok) STATE.baskets = await r1.json();
         if(r2.ok){
@@ -574,7 +620,6 @@ function renderHome() {
     if(STATE.baskets.length > 0) { $('section-cestas').style.display = 'block'; renderPaginated('grid-cestas', 'cestas', STATE.baskets, 10, 'BASKET'); }
     renderCestaAtiva();
     
-    // OFERTAS COMO ACCORDION
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     if(ofertas.length > 0) { 
         $('acc-ofertas').style.display = 'block'; 
@@ -583,7 +628,6 @@ function renderHome() {
         $('acc-ofertas').style.display = 'none';
     }
 
-    // COMBOS COMO ACCORDION
     if(STATE.combos && STATE.combos.length > 0) { 
         $('acc-combos').style.display = 'block'; 
         renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO'); 
@@ -591,14 +635,14 @@ function renderHome() {
         $('acc-combos').style.display = 'none';
     }
 
-    // RENDERIZAÇÃO DOS TERMOS COMO ACCORDIONS (CARROSSEL INTERNO)
     let termosHtml = '';
     let chipsHtml = '';
     
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach((term) => {
             let safeT = term.replace(/[^a-zA-Z0-9]/g,'-').toLowerCase();
-            let list = STATE.prods.filter(p => p.name.toLowerCase().includes(term.toLowerCase()));
+            // Aplica filtro ignorando acentos
+            let list = STATE.prods.filter(p => norm(p.name).includes(norm(term)));
             
             if(list.length > 0) {
                 let firstImg = list[0].img;
@@ -628,7 +672,7 @@ function renderHome() {
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach((term) => {
             let safeT = term.replace(/[^a-zA-Z0-9]/g,'-').toLowerCase();
-            let list = STATE.prods.filter(p => p.name.toLowerCase().includes(term.toLowerCase()));
+            let list = STATE.prods.filter(p => norm(p.name).includes(norm(term)));
             if(list.length > 0) {
                 renderPaginated(`grid-term-${safeT}`, `term_${safeT}`, list, 10, 'PROD');
             }
@@ -636,7 +680,6 @@ function renderHome() {
     }
 }
 
-// Funções para controle do Accordion
 window.toggleTerm = function(safeT) {
     const el = $(`acc-${safeT}`);
     if(el) {
@@ -694,11 +737,15 @@ function cardCombo(item){
 
 function cardProdHoriz(item){
     const q = STATE.cart[item.id] || 0;
-    let ctrlHtml = item.stock <= 0 ? `<div style="font-size:0.75rem; color:var(--c-err); font-weight:800; padding:10px 0;">ESGOTADO</div>` : (q > 0 ? `<div class="card-sq-qty-box"><button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', -1)">-</button><span class="sq-val">${q}</span><button class="sq-btn" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button></div>` : `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>`);
+    
+    // Controles movidos para dentro da área da imagem
+    let ctrlHtml = item.stock <= 0 ? 
+        `<div style="font-size:0.75rem; color:var(--c-err); font-weight:900; background:#fff; padding:6px 12px; border-radius:12px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">ESGOTADO</div>` : 
+        (q > 0 ? `<div class="card-sq-qty-box" onclick="event.stopPropagation();"><button class="sq-btn" onclick="upd('${item.id}', -1)">-</button><span class="sq-val">${q}</span><button class="sq-btn" onclick="upd('${item.id}', 1)">+</button></div>` : `<button class="card-sq-plus" onclick="event.stopPropagation(); upd('${item.id}', 1)">+</button>`);
     
     let extraInfoHtml = '';
     if (item.validade || (item.stock > 0 && item.stock < 3)) {
-        extraInfoHtml += `<div style="margin-top: 8px; border-top: 1px dashed var(--c-bd); padding-top: 6px; display: flex; flex-direction: column; gap: 4px;">`;
+        extraInfoHtml += `<div style="margin-top: 6px; border-top: 1px dashed var(--c-bd); padding-top: 4px; display: flex; flex-direction: column; gap: 2px;">`;
         if (item.validade) {
             extraInfoHtml += `<span style="font-size:0.7rem; color:var(--c-t); font-weight:600;">Val: ${item.validade}</span>`;
         }
@@ -708,7 +755,19 @@ function cardProdHoriz(item){
         extraInfoHtml += `</div>`;
     }
 
-    return `<div class="card-sq card-sq-${item.id} ${q > 0 ? 'in-cart' : ''}">${item.oldPrice > item.price ? `<div style="position:absolute;top:0;right:0;background:var(--c-err);color:#fff;font-size:0.8rem;font-weight:900;padding:6px 10px;border-bottom-left-radius:12px;z-index:10;">-${Math.round(((item.oldPrice-item.price)/item.oldPrice)*100)}%</div>`:''}<div class="card-sq-img-area" onclick="openQuickView('${item.id}')"><img src="${item.img}" class="card-sq-img" loading="lazy"></div><div class="card-sq-bottom" onclick="openQuickView('${item.id}')"><div style="flex:1;">${item.oldPrice > item.price ? `<div style="font-size:0.8rem;color:var(--c-t);text-decoration:line-through;">${fmt(item.oldPrice)}</div>`:''}<span class="card-sq-price">${fmt(item.price)}</span><div class="card-sq-name-sub">${formatName(item.name)}</div>${extraInfoHtml}</div><div class="card-sq-ctrls">${ctrlHtml}</div></div></div>`;
+    return `<div class="card-sq card-sq-${item.id} ${q > 0 ? 'in-cart' : ''}">
+        ${item.oldPrice > item.price ? `<div style="position:absolute;top:0;right:0;background:var(--c-err);color:#fff;font-size:0.8rem;font-weight:900;padding:6px 10px;border-bottom-left-radius:12px;z-index:10;">-${Math.round(((item.oldPrice-item.price)/item.oldPrice)*100)}%</div>`:''}
+        <div class="card-sq-img-area" onclick="openQuickView('${item.id}')">
+            <img src="${item.img}" class="card-sq-img" loading="lazy">
+            <div class="card-sq-ctrls">${ctrlHtml}</div>
+        </div>
+        <div class="card-sq-bottom" onclick="openQuickView('${item.id}')">
+            ${item.oldPrice > item.price ? `<div style="font-size:0.8rem;color:var(--c-t);text-decoration:line-through;">${fmt(item.oldPrice)}</div>`:''}
+            <span class="card-sq-price">${fmt(item.price)}</span>
+            <div class="card-sq-name-sub">${formatName(item.name)}</div>
+            ${extraInfoHtml}
+        </div>
+    </div>`;
 }
 
 window.openQuickView = function(id) {
@@ -729,41 +788,117 @@ function upd(id, delta){
     renderHome(); updateTotals();
 }
 
+// ===============================
+// FLUXO CESTA BÁSICA E COMBOS
+// ===============================
+
 function previewBasket(id){
     const c = STATE.baskets.find(x=>String(x.id)===String(id)); if(!c) return;
-    STATE.tempBasket = c; $('prev-title').innerText = formatName(c.nome); $('prev-desc').innerText = `${c.produtos.length} itens`; $('prev-price').innerText = fmt(c.preco);
-    $('prev-list').innerHTML = c.produtos.map(s=>{ const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); return `<div class="modal-card"><img src="${p?.img}"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${q}x</div></div>` }).join('');
-    $('btn-confirm-preview').onclick = () => { confirmBasket(false); openCheckout(); };
-    $('btn-customize-preview').style.display = 'block'; $('btn-customize-preview').onclick = () => confirmBasket(true);
+    STATE.tempBasket = c; 
+    $('prev-title').innerText = formatName(c.nome); 
+    $('prev-desc').innerText = `${c.produtos.length} itens`; 
+    $('prev-price').innerText = fmt(c.preco);
+    
+    $('prev-list').innerHTML = c.produtos.map(s=>{ 
+        const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); 
+        return `<div class="modal-card"><img src="${p?.img}"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${q}x</div></div>` 
+    }).join('');
+    
+    $('combo-qty-controls').style.display = 'none';
+    $('btn-confirm-preview').innerText = "ENCOMENDAR CESTA PADRÃO";
+    $('btn-confirm-preview').onclick = () => openBasketQtyModal();
+    $('btn-customize-preview').style.display = 'block'; 
+    $('btn-customize-preview').onclick = () => confirmBasket(true, 1);
+    
     $('modal-basket-preview').showModal();
+}
+
+function openBasketQtyModal() {
+    $('modal-basket-preview').close();
+    setBasketQty(1); // Default
+    $('modal-cesta-qty').showModal();
+}
+
+function setBasketQty(q) {
+    currentBasketQty = q;
+    [1, 2, 3].forEach(i => {
+        const btn = $(`btn-bqty-${i}`);
+        if(btn) {
+            if(i === q) btn.classList.add('selected');
+            else btn.classList.remove('selected');
+        }
+    });
+    $('btn-confirm-bqty').innerText = `ENCOMENDAR ${q} CESTA${q > 1 ? 'S' : ''}`;
 }
 
 function previewCombo(id){
     const c = STATE.combos.find(x=>String(x.id)===String(id)); if(!c) return;
+    currentComboId = id;
+    currentComboQty = 1;
+    $('combo-modal-qty').innerText = currentComboQty;
+
     let sum = 0; $('prev-title').innerText = formatName(c.nome);
-    $('prev-list').innerHTML = c.produtos.map(s=>{ const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); if(p) sum += p.price * parseInt(q); return `<div class="modal-card"><img src="${p?.img}"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${q}x</div></div>` }).join('');
-    $('prev-desc').innerHTML = `<span class="combo-strike">De: ${fmt(sum)}</span>`; $('prev-price').innerText = fmt(c.preco);
-    $('btn-confirm-preview').innerText = "ADICIONAR COMBO"; $('btn-confirm-preview').onclick = () => confirmCombo(id);
-    $('btn-customize-preview').style.display = 'none'; $('modal-basket-preview').showModal();
+    $('prev-list').innerHTML = c.produtos.map(s=>{ 
+        const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim()); 
+        if(p) sum += p.price * parseInt(q); 
+        return `<div class="modal-card"><img src="${p?.img}"><div class="mc-name">${p?formatName(p.name):ref}</div><div class="mc-qty">${q}x</div></div>` 
+    }).join('');
+    
+    $('prev-desc').innerHTML = `<span class="combo-strike">De: ${fmt(sum)}</span>`; 
+    $('prev-price').innerText = fmt(c.preco);
+    
+    $('combo-qty-controls').style.display = 'flex';
+    $('btn-confirm-preview').innerText = "ADICIONAR COMBO"; 
+    $('btn-confirm-preview').onclick = () => confirmCombo();
+    $('btn-customize-preview').style.display = 'none'; 
+    
+    $('modal-basket-preview').showModal();
 }
 
-function confirmBasket(isCustom){
+function changeComboQty(d) {
+    currentComboQty = Math.max(1, currentComboQty + d);
+    $('combo-modal-qty').innerText = currentComboQty;
+    const c = STATE.combos.find(x => x.id === currentComboId);
+    if(c) $('prev-price').innerText = fmt(c.preco * currentComboQty);
+}
+
+function confirmBasket(isCustom, qty){
     const c = STATE.tempBasket; STATE.mode = 'custom'; STATE.baseBasket = c;
     let itemsSum = 0;
+    
     c.produtos.forEach(s=>{
         const [qStr, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim());
-        if(p){ let q = Math.min(parseInt(qStr), p.stock); if(q > 0) { if(!(STATE.cart[p.id])) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + q; itemsSum += (p.price * q); } }
+        if(p){ 
+            let q = Math.min(parseInt(qStr), p.stock); 
+            if(q > 0) { 
+                if(!(STATE.cart[p.id])) STATE.cartOrder.push(p.id); 
+                // Multiplica a quantidade base pela quantidade de cestas pedidas
+                STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (q * qty); 
+                itemsSum += (p.price * q); 
+            } 
+        }
     });
-    STATE.basketExtraFee = Math.max(0, c.preco - itemsSum);
-    $('modal-basket-preview').close(); renderHome(); updateTotals();
+    
+    // Multiplica a taxa da cesta pela quantidade
+    STATE.basketExtraFee = Math.max(0, c.preco - itemsSum) * qty;
+    
+    $('modal-cesta-qty').close();
+    $('modal-basket-preview').close(); 
+    renderHome(); 
+    updateTotals();
+    
     if(isCustom) setTimeout(goToMinhaCesta, 300);
 }
 
-function confirmCombo(id){
-    const c = STATE.combos.find(x=>String(x.id)===String(id)); if(!c) return;
+function confirmCombo(){
+    const c = STATE.combos.find(x=>String(x.id)===String(currentComboId)); if(!c) return;
     c.produtos.forEach(s=>{
         const [q, ref] = s.split('x'); const p = STATE.prods.find(x=>x.id===ref.trim());
-        if(p){ if(!(STATE.cart[p.id])) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + parseInt(q); }
+        if(p){ 
+            if(!(STATE.cart[p.id])) STATE.cartOrder.push(p.id); 
+            // Adiciona a quantidade de itens do combo * a quantidade de combos escolhida
+            STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(q) * currentComboQty); 
+        }
     });
     $('modal-basket-preview').close(); renderHome(); updateTotals();
 }
@@ -827,7 +962,17 @@ function openCheckout(){
 }
 
 function clearCart(){ if(confirm("Esvaziar?")){ STATE.cart={}; STATE.cartOrder=[]; STATE.mode='zero'; STATE.baseBasket=null; STATE.basketExtraFee=0; updateTotals(); renderHome(); $('modal-checkout').close(); } }
-function handleSearch(q){ $('wrapper-sections').style.display = q ? 'none' : 'block'; $('section-busca').style.display = q ? 'block' : 'none'; if(q) renderPaginated('grid-busca', 'busca', STATE.prods.filter(p=>p.name.toUpperCase().includes(q.toUpperCase())), 20, 'PROD'); }
+
+// Busca normalizada
+function handleSearch(q){ 
+    $('wrapper-sections').style.display = q ? 'none' : 'block'; 
+    $('section-busca').style.display = q ? 'block' : 'none'; 
+    if(q) {
+        let qNorm = norm(q);
+        renderPaginated('grid-busca', 'busca', STATE.prods.filter(p=>norm(p.name).includes(qNorm)), 20, 'PROD'); 
+    }
+}
+
 function clearSearch(){ $('search-inp').value=''; handleSearch(''); }
 function applyCupom(){ const c=STATE.coupons.find(x=>x.codigo===$('cupom-code').value.toUpperCase().trim()); if(c && parseMoney($('chk-total').innerText)>=c.minimo){ STATE.coupon=c; updateTotals(); $('cupom-msg').innerText="APLICADO!"; $('cupom-msg').style.display='block'; } else showToast("Inválido", "r"); }
 
