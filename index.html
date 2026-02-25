@@ -124,7 +124,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 dialog { border: none; border-radius: 24px; width: 92%; max-width: 420px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); background: #fff; }
 dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); }
 .modal-body { padding: 25px 20px; text-align: center; position: relative; }
-.btn-close-modal { position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: var(--c-p); border: 1px solid var(--c-bd); }
+/* Botão X reforçado e com z-index alto */
+.btn-close-modal { position: absolute; top: 15px; right: 15px; width: 34px; height: 34px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; color: var(--c-p); border: 2px solid var(--c-bd); z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
 
 .btn-modal { width: 100%; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer; }
 .btn-modal.primary { background: var(--c-p); color: #fff; }
@@ -141,6 +142,13 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .top-promo-track { display: flex; flex-direction: column; animation: slidePromo 15s infinite; }
 .promo-item { height: 30px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; }
 @keyframes slidePromo { 0%, 16% { transform: translateY(0); } 20%, 36% { transform: translateY(-30px); } 40%, 56% { transform: translateY(-60px); } 60%, 76% { transform: translateY(-90px); } 80%, 96% { transform: translateY(-120px); } 100% { transform: translateY(0); } }
+
+/* Elementos do checkout original */
+.del-option { display: flex; justify-content: space-between; align-items: center; padding: 14px 15px; border: 2px solid var(--c-bd); border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #fff; }
+.del-option.selected { border-color: var(--c-ok); background: #f0fdf4; box-shadow: 0 4px 12px rgba(21,128,61,0.1); }
+.del-opt-title { font-weight: 900; font-size: 1.05rem; color: var(--c-p); }
+.del-opt-date { font-size: 0.9rem; color: var(--c-s); margin-top: 4px; font-weight: 600;}
+.del-opt-badge { font-size: 0.85rem; font-weight: 900; color: #fff; background: var(--c-ok); padding: 4px 12px; border-radius: 12px; text-align: right; }
 </style>
 </head>
 <body>
@@ -390,7 +398,6 @@ let currentComboQty = 1;
 let currentComboId = null;
 let currentBasketQty = 1;
 
-// Função para remover acentos e facilitar a busca
 function norm(str) {
     if (!str) return "";
     return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -421,7 +428,7 @@ async function init() {
             fetch('/site/cupons.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('/site/termos.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
@@ -472,16 +479,13 @@ function setupObserver() {
 function renderHome() {
     STATE.lists = {}; 
 
-    // Cestas Básicas
     if (STATE.baskets.length > 0) { 
         $('section-cestas').style.display = 'block'; 
         renderPaginated('grid-cestas', 'cestas', STATE.baskets, 10, 'BASKET'); 
     }
     
-    // Cesta Ativa (Personalizada)
     renderCestaAtiva();
     
-    // Ofertas da Semana
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     if (ofertas.length > 0) { 
         $('acc-ofertas').style.display = 'block'; 
@@ -490,7 +494,6 @@ function renderHome() {
         $('acc-ofertas').style.display = 'none';
     }
 
-    // Combos Especiais
     if (STATE.combos && STATE.combos.length > 0) { 
         $('acc-combos').style.display = 'block'; 
         renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO'); 
@@ -498,13 +501,11 @@ function renderHome() {
         $('acc-combos').style.display = 'none';
     }
     
-    // Termos Dinâmicos (Lógica da Etiqueta)
     let tHtml = '';
     let cHtml = '';
     
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
-            // Suporta o novo formato {etiqueta: "X", termos: "Y"} ou o antigo formato texto
             let label = item.etiqueta || item;
             let terms = item.termos || item;
             
@@ -540,7 +541,6 @@ function renderHome() {
     $('section-termos').innerHTML = tHtml; 
     $('chips-area').innerHTML = cHtml;
     
-    // Popula as listas dentro dos termos
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
@@ -597,7 +597,7 @@ function loadMore(listKey) {
 }
 
 // ==========================================
-// TEMPLATES DOS CARDS (100% PADRONIZADOS)
+// TEMPLATES DOS CARDS (PADRONIZADOS)
 // ==========================================
 function cardProd(p) {
     const q = STATE.cart[p.id] || 0;
@@ -606,7 +606,7 @@ function cardProd(p) {
     let ctrlHtml = isEsgotado ? 
         `<button class="btn-big-action" style="background:var(--c-bd); color:var(--c-s);" disabled>ESGOTADO</button>` : 
         (q > 0 ? 
-            `<div style="display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; border:2px solid var(--c-ok); border-radius:8px; height:38px; margin-top:8px; padding:0 5px;">
+            `<div style="display:flex; align-items:center; justify-content:space-between; background:#f0fdf4; border:2px solid var(--c-ok); border-radius:8px; height:38px; margin-top:8px; padding:0 5px; width:100%; box-sizing:border-box;">
                 <button style="font-size:1.6rem; color:var(--c-ok); font-weight:900; background:transparent; border:none; padding:0 10px; cursor:pointer;" onclick="event.stopPropagation(); upd('${p.id}',-1)">-</button>
                 <span style="font-weight:900; font-size:1.1rem; color:var(--c-p);">${q}</span>
                 <button style="font-size:1.6rem; color:var(--c-ok); font-weight:900; background:transparent; border:none; padding:0 10px; cursor:pointer;" onclick="event.stopPropagation(); upd('${p.id}',1)">+</button>
@@ -632,8 +632,10 @@ function cardProd(p) {
             ${extraInfoHtml}
             <div style="margin-top: auto;">
                 <div style="padding-top:6px;">
-                    ${p.oldPrice ? `<div class="combo-strike">De: ${fmt(p.oldPrice)}</div>` : ''}
-                    <div class="u-price">${fmt(p.price)}</div>
+                    <div class="u-price">
+                        ${p.oldPrice ? `<span class="combo-strike">De: ${fmt(p.oldPrice)}</span> <span style="color:var(--c-t); font-size:0.9rem; font-weight:700; margin: 0 4px;">|</span>` : ''}
+                        ${fmt(p.price)}
+                    </div>
                 </div>
                 ${ctrlHtml}
             </div>
@@ -677,8 +679,11 @@ function cardCombo(item) {
             <div class="u-name">${formatName(item.nome)}</div>
             <div style="margin-top: auto;">
                 <div style="padding-top:6px;">
-                    <div class="combo-strike">De: ${fmt(sum)}</div>
-                    <div class="u-price">Por: ${fmt(item.preco)}</div>
+                    <div class="u-price">
+                        <span class="combo-strike">De: ${fmt(sum)}</span>
+                        <span style="color:var(--c-t); font-size:0.9rem; font-weight:700; margin: 0 4px;">|</span>
+                        Por: ${fmt(item.preco)}
+                    </div>
                 </div>
                 <button class="btn-big-action">VER ITENS</button>
             </div>
@@ -1005,29 +1010,45 @@ function openCheckout() {
     $('modal-checkout').showModal(); 
 }
 
-function renderDeliveryOptions() { 
+function renderDeliveryOptions() {
+    let options = []; 
     let date = new Date(); 
+    let checkDate = new Date(date);
     
-    // Simplificando lógica da data para os próximos 2 dias úteis
-    let opts = [
-        { day: 'Hoje', date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), disc: 0 },
-        { day: 'Amanhã', date: new Date(date.getTime() + 86400000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), disc: 3 }
-    ]; 
+    if(date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) {
+        options.push({ index: 0, title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), dayName: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][date.getDay()], discount: 0 });
+    }
     
-    STATE.deliveryOptions = opts;
+    while(options.length < 3) {
+        checkDate.setDate(checkDate.getDate() + 1);
+        if(!CONFIG_ENTREGA.diasSemanaInativos.includes(checkDate.getDay())) {
+            let disc = options.length === 1 ? CONFIG_ENTREGA.descontoOpcao2 : (options.length === 2 ? CONFIG_ENTREGA.descontoOpcao3 : 0);
+            options.push({ index: options.length, title: 'Agendar Entrega', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), dayName: ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'][checkDate.getDay()], discount: disc });
+        }
+    }
     
-    $('delivery-options-list').innerHTML = opts.map((o, i) => `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 15px; border:2px solid ${i === STATE.selectedDeliveryIndex ? 'var(--c-ok)' : 'var(--c-bd)'}; background:${i === STATE.selectedDeliveryIndex ? '#f0fdf4' : '#fff'}; border-radius:12px; cursor:pointer; transition:0.2s;" onclick="STATE.selectedDeliveryIndex=${i}; STATE.deliveryDiscount=${o.disc}; STATE.deliveryDateStr='${o.date}'; renderDeliveryOptions(); updateTotals();">
+    STATE.deliveryOptions = options;
+    if(STATE.selectedDeliveryIndex >= options.length) STATE.selectedDeliveryIndex = 0;
+    
+    let sel = options[STATE.selectedDeliveryIndex]; 
+    STATE.deliveryDiscount = sel.discount; 
+    STATE.deliveryDateStr = `${sel.dayName}, ${sel.dateStr}`;
+    
+    $('delivery-options-list').innerHTML = options.map((opt, i) => `
+        <div class="del-option ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDeliveryOption(${i})">
             <div>
-                <div style="font-weight:900; font-size:1.05rem; color:var(--c-p);">Receber ${o.day}</div>
-                <div style="font-size:0.9rem; color:var(--c-s); margin-top:4px; font-weight:600;">${o.date}</div>
+                <div class="del-opt-title">${opt.title}</div>
+                <div class="del-opt-date">${opt.dayName}, ${opt.dateStr}</div>
             </div>
-            ${o.disc ? `<div style="font-size:0.85rem; font-weight:900; color:#fff; background:var(--c-ok); padding:4px 12px; border-radius:12px; text-align:right;">-${fmt(o.disc)}</div>` : ''}
+            ${opt.discount > 0 ? `<div class="del-opt-badge">- ${fmt(opt.discount)}</div>` : ''}
         </div>
-    `).join(''); 
-    
-    STATE.deliveryDiscount = opts[STATE.selectedDeliveryIndex].disc; 
-    STATE.deliveryDateStr = opts[STATE.selectedDeliveryIndex].date; 
+    `).join('');
+}
+
+window.selectDeliveryOption = function(idx) { 
+    STATE.selectedDeliveryIndex = idx; 
+    renderDeliveryOptions(); 
+    updateTotals(); 
 }
 
 function clearCart() { 
