@@ -522,7 +522,7 @@ async function init(){
             fetch('/site/combos.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('/site/departamento.json?v='+Date.now()).catch(()=>({ok:false})),
             fetch('/site/desconto-por-valor.json?v='+Date.now()).catch(()=>({ok:false})),
-            fetch('/site/termos.json?v='+Date.now()).catch(()=>({ok:false})) // <-- NOVO FETCH
+            fetch('termos.json?v='+Date.now()).catch(()=>({ok:false})) // <-- NOVO FETCH
         ]);
         if(r1.ok) STATE.baskets = await r1.json();
         if(r2.ok){
