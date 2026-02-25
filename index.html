@@ -477,6 +477,12 @@ function setupObserver() {
 // RENDERIZAÇÃO DA HOME
 // ==========================================
 function renderHome() {
+    // 1. SALVA O ESTADO ATUAL (Retráteis abertos e rolagem)
+    let openAccs = [];
+    let scrolls = {};
+    document.querySelectorAll('.term-accordion.open').forEach(el => openAccs.push(el.id));
+    document.querySelectorAll('.carousel-track').forEach(el => { if(el.id) scrolls[el.id] = el.scrollLeft; });
+    
     STATE.lists = {}; 
 
     if (STATE.baskets.length > 0) { 
@@ -556,6 +562,10 @@ function renderHome() {
             }
         });
     }
+
+    // 2. RESTAURA O ESTADO (Abre os retráteis que estavam abertos e volta a rolagem)
+    openAccs.forEach(id => { let el = $(id); if(el) el.classList.add('open'); });
+    Object.keys(scrolls).forEach(id => { let el = $(id); if(el) el.scrollLeft = scrolls[id]; });
 }
 
 // ==========================================
