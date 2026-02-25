@@ -616,7 +616,7 @@ function setupObserver() {
 }
 
 // ==========================================
-// RENDERIZAÇÃO DA HOME
+// RENDERIZAÇÃO DA HOME (ATUALIZADA)
 // ==========================================
 function renderHome() {
     let openAccs = [];
@@ -629,8 +629,11 @@ function renderHome() {
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
-            let terms = item.termos || item;
-            allTerms.push(...String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t));
+            // Só adiciona ao array de pesquisa de texto se o item tiver a propriedade "termos"
+            if (item.termos) {
+                let terms = item.termos || item;
+                allTerms.push(...String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t));
+            }
         });
     }
 
@@ -662,35 +665,48 @@ function renderHome() {
     let tHtml = '';
     let cHtml = '';
     
+    // PRIMEIRO LOOP: Cria o HTML dos acordeões e dos Chips (Botões do menu)
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
-            let terms = item.termos || item;
-            
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
-            let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
             
+            // LÓGICA DE FILTRO INTELIGENTE (Bifurcação)
             let list = STATE.prods.filter(p => { 
-                let pName = norm(p.name); 
+                // 1. Verifica se é uma busca por Preço Exato
+                if (item.tipo === 'preco_exato') {
+                    return p.price === item.valor;
+                } 
+                // 2. Verifica se é uma busca por Preço Máximo
+                else if (item.tipo === 'preco_maximo') {
+                    return p.price > 0 && p.price <= item.valor;
+                } 
+                // 3. Se não for preço, faz a busca normal por texto
+                else if (item.termos) {
+                    let terms = item.termos || item;
+                    let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
+                    let pName = norm(p.name); 
 
-                return subs.some(s => {
-                    let checkMatch = (termo) => {
-                        let palavras = termo.split(' ');
-                        if (palavras.length === 1) {
-                            return new RegExp('^' + termo + '\\b').test(pName);
-                        } else {
-                            return palavras.every(w => new RegExp('\\b' + w + '\\b').test(pName));
-                        }
-                    };
+                    return subs.some(s => {
+                        let checkMatch = (termo) => {
+                            let palavras = termo.split(' ');
+                            if (palavras.length === 1) {
+                                return new RegExp('^' + termo + '\\b').test(pName);
+                            } else {
+                                return palavras.every(w => new RegExp('\\b' + w + '\\b').test(pName));
+                            }
+                        };
 
-                    if (!checkMatch(s)) return false;
+                        if (!checkMatch(s)) return false;
 
-                    let perdeParaComposto = allTerms.some(outroTermo => {
-                        return outroTermo !== s && outroTermo.includes(s) && checkMatch(outroTermo);
-                    });
+                        let perdeParaComposto = allTerms.some(outroTermo => {
+                            return outroTermo !== s && outroTermo.includes(s) && checkMatch(outroTermo);
+                        });
 
-                    return !perdeParaComposto;
-                }); 
+                        return !perdeParaComposto;
+                    }); 
+                }
+                return false;
             });
             
             if (list.length > 0) {
@@ -721,34 +737,43 @@ function renderHome() {
     $('section-termos').innerHTML = tHtml; 
     $('chips-area').innerHTML = cHtml;
     
+    // SEGUNDO LOOP: Preenche as listas com os produtos
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
-            let terms = item.termos || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
-            let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
             
+            // MESMA LÓGICA DE FILTRO INTELIGENTE
             let list = STATE.prods.filter(p => { 
-                let pName = norm(p.name); 
+                if (item.tipo === 'preco_exato') {
+                    return p.price === item.valor;
+                } else if (item.tipo === 'preco_maximo') {
+                    return p.price > 0 && p.price <= item.valor;
+                } else if (item.termos) {
+                    let terms = item.termos || item;
+                    let subs = String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
+                    let pName = norm(p.name); 
 
-                return subs.some(s => {
-                    let checkMatch = (termo) => {
-                        let palavras = termo.split(' ');
-                        if (palavras.length === 1) {
-                            return new RegExp('^' + termo + '\\b').test(pName);
-                        } else {
-                            return palavras.every(w => new RegExp('\\b' + w + '\\b').test(pName));
-                        }
-                    };
+                    return subs.some(s => {
+                        let checkMatch = (termo) => {
+                            let palavras = termo.split(' ');
+                            if (palavras.length === 1) {
+                                return new RegExp('^' + termo + '\\b').test(pName);
+                            } else {
+                                return palavras.every(w => new RegExp('\\b' + w + '\\b').test(pName));
+                            }
+                        };
 
-                    if (!checkMatch(s)) return false;
+                        if (!checkMatch(s)) return false;
 
-                    let perdeParaComposto = allTerms.some(outroTermo => {
-                        return outroTermo !== s && outroTermo.includes(s) && checkMatch(outroTermo);
-                    });
+                        let perdeParaComposto = allTerms.some(outroTermo => {
+                            return outroTermo !== s && outroTermo.includes(s) && checkMatch(outroTermo);
+                        });
 
-                    return !perdeParaComposto;
-                }); 
+                        return !perdeParaComposto;
+                    }); 
+                }
+                return false;
             });
 
             if (list.length > 0) {
