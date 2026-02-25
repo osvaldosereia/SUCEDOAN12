@@ -154,15 +154,18 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button { font-size:1.6rem; color:var(--c-ok); font-weight:700; background:transparent; border:none; padding:0 10px; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1.1rem; color:var(--c-p); }
 
-/* AJUSTES PARA MOBILE */
+/* AJUSTES PARA MOBILE: AFFORDANCE VISUAL E POSICIONAMENTO */
 @media(max-width: 600px) { 
-    .carousel-track { padding: 5px 15px 25px; gap: 10px; } 
+    /* Calha começa com menos margem na esquerda (8px em vez de 15px) para dar espaço ao 3º card */
+    .carousel-track { padding: 5px 15px 25px 8px; gap: 10px; } 
     .grid-produtos { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); padding: 5px 15px 15px; gap: 10px; }
     
-    .u-card { height: 370px; } 
-    .carousel-track .u-card { flex: 0 0 42vw; } 
+    /* Altura reduzida ligeiramente e largura do card em 38vw garantindo que o 3º card seja sempre visível */
+    .u-card { height: 360px; } 
+    .carousel-track .u-card { flex: 0 0 38vw; } 
     
-    .u-img-area { height: 160px; } 
+    /* Imagem ajustada de forma proporcional a nova largura estreita do card */
+    .u-img-area { height: 145px; } 
     .u-info { padding: 10px; }
     .u-name { font-size: 0.8rem; }
     .u-price { font-size: 1.15rem; }
@@ -382,7 +385,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
             <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);" alt="Logo">
             <h3 style="font-weight:700;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
-            <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Vár Grande - MT<br>Tel: (65) 99815-0975</div>
+            <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
         </div>
         <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 600; color: var(--c-p); font-size: 1rem;">Qual o valor da entrega?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div></div>
         <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 600; color: var(--c-p); font-size: 1rem;">Quais as formas de pagamento?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div></div>
@@ -772,7 +775,7 @@ function renderBannerOfertas() {
     
     if (wrapper) wrapper.style.display = 'block';
     
-    let currentIndex = Math.floor(Math.random() * ofertas.length); // Inicia com uma oferta aleatória
+    let currentIndex = Math.floor(Math.random() * ofertas.length);
     
     function updateBanner() {
         let p = ofertas[currentIndex];
@@ -793,21 +796,20 @@ function renderBannerOfertas() {
             </div>
         </div>`;
         
-        // Reinicia a animação suave do banner
         let content = $('banner-oferta-content');
         if (content) {
             content.style.animation = 'none';
-            content.offsetHeight; // Força o reflow do navegador
+            content.offsetHeight; 
             content.style.animation = null; 
         }
         
-        currentIndex = (currentIndex + 1) % ofertas.length; // Avança pro próximo
+        currentIndex = (currentIndex + 1) % ofertas.length; 
     }
     
     updateBanner();
     
     if (promoBannerInterval) clearInterval(promoBannerInterval);
-    promoBannerInterval = setInterval(updateBanner, 4000); // Rotação automática a cada 4 segundos
+    promoBannerInterval = setInterval(updateBanner, 4000); 
 }
 
 // ==========================================
