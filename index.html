@@ -238,7 +238,10 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 </div>
 
 <main class="main-stage" id="scroll-stage">
-    
+
+    <div id="global-banner-container" class="layout-limit" style="line-height: 0; padding-bottom: 10px;">
+        <img src="site/img/banner.webp" alt="Promoção" style="width: 100%; height: auto; display: block;" onerror="this.parentElement.style.display='none'">
+    </div>
     <div id="section-busca" class="page-section" style="display:none;">
         <div class="section-title">Resultados da Busca</div>
         <div class="grid-produtos" id="grid-busca"></div>
@@ -480,7 +483,7 @@ async function init() {
             fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('/site/sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7; STATE.sohoje = r8 || [];
