@@ -78,6 +78,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .main-stage { height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 .section-title { font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
 
+/* OPTIMIZAÇÃO PARA NÃO CARREGAR O QUE ESTÁ FORA DA TELA E SCROLL MARGIN PARA ÂNCORAS */
+.tab-section { display: block; content-visibility: auto; contain-intrinsic-size: 800px; margin-bottom: 25px; scroll-margin-top: 135px; }
+
 /* GRADE DE PRODUTOS - LINHAS DIVISÓRIAS ÚNICAS */
 .grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
 @media(min-width: 800px) { .grid-produtos { grid-template-columns: repeat(4, 1fr); border-left: 1px solid var(--c-bd); } }
@@ -90,15 +93,18 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .u-card:nth-child(4n) { border-right: none; }
 }
 
-/* RECORTE MÁGICO COM CANTOS ARREDONDADOS INTERNOS */
-.u-img-area { width: 100%; aspect-ratio: 1; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+/* RECORTE COM BORDAS RETAS (CANTOS VIVOS) */
+.u-img-area { width: 100%; aspect-ratio: 1; background: var(--c-img-bg); border-radius: 0; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .u-img { width: 90%; height: 90%; object-fit: contain; mix-blend-mode: multiply; } 
-.u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; border-radius: 8px; }
-.offer-tag { position: absolute; top: 4px; right: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0 8px 0 8px;}
+.u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; border-radius: 0; }
+.offer-tag { position: absolute; top: 4px; right: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0;}
 
 /* INFO DENTRO DO CARD */
 .u-info { padding: 8px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
 .u-name { font-size: 0.85rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* FONTE MAIOR NO DESKTOP */
+@media(min-width: 800px) { .u-name { font-size: 1.05rem; } }
+
 .u-price { font-size: 1.25rem; font-weight: 700; color: var(--c-p); margin-top: 4px; }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: -2px; }
 
@@ -109,11 +115,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:38px; margin-top:10px; padding:0 4px; width:100%; }
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1rem; color:var(--c-p); }
-
-/* CARROSSEL CONTINUIDADE (VOCÊ TAMBÉM PODE GOSTAR) */
-.suggestions-track { display: flex; overflow-x: auto; gap: 8px; padding: 0 15px 15px; margin: 0; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
-.suggestions-track::-webkit-scrollbar { display: none; }
-.suggestions-track .u-card { flex: 0 0 160px; scroll-snap-align: start; border: 1px solid var(--c-bd); border-radius: 12px; }
 
 /* BOTTOM NAV (CARRINHO AO CENTRO) */
 .bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 60px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
@@ -229,7 +230,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 <dialog id="modal-quick-view">
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:12px; padding:20px;">
+        <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:0; padding:20px;">
             <img id="qv-img" src="" style="width: 100%; max-height: 35vh; object-fit: contain; mix-blend-mode: multiply;">
         </div>
         <h3 id="qv-name" style="font-size: 1.1rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
@@ -340,7 +341,7 @@ const $ = id => document.getElementById(id);
 
 const STATE = {
     baskets: [], prods: [], coupons: [], combos: [], termos: [], descontosValor: [],
-    cart: {}, cartOrder: [], observer: null,
+    cart: {}, cartOrder: [], observer: null, sectionObserver: null,
     baseBasket: null, basketExtraFee: 0, comboDiscount: 0, appliedCombos: [], coupon: null, valueDiscount: 0,
     lists: {}, pageLimits: {},
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
@@ -381,7 +382,7 @@ $('scroll-stage').addEventListener('scroll', function() {
 }, false);
 
 // ==========================================
-// INICIALIZAÇÃO
+// INICIALIZAÇÃO E OBSERVERS
 // ==========================================
 async function init() {
     setupObserver();
@@ -411,20 +412,27 @@ async function init() {
 }
 
 function setupObserver() {
-    if (!STATE.observer) {
-        STATE.observer = new IntersectionObserver((entries) => {
+    // Observer para atualizar os chips quando o usuário faz scroll contínuo
+    if (!STATE.sectionObserver) {
+        STATE.sectionObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    let key = entry.target.dataset.list;
-                    if (key) { STATE.observer.unobserve(entry.target); loadMore(key); }
+                if (entry.isIntersecting && $('wrapper-sections').style.display !== 'none') {
+                    let id = entry.target.id.replace('sec-', '');
+                    document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
+                    let chip = $('chip-' + id);
+                    if(chip) {
+                        chip.classList.add('active');
+                        // Rola os chips horizontalmente de forma suave para mostrar o ativo
+                        chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                    }
                 }
             });
-        }, { root: $('scroll-stage'), rootMargin: '400px' });
+        }, { root: $('scroll-stage'), rootMargin: '-20% 0px -70% 0px' });
     }
 }
 
 // ==========================================
-// ABAS E GRADES
+// ABAS E GRADES (SCROLL CONTÍNUO)
 // ==========================================
 function buildTabsAndSections() {
     let chipsHtml = '';
@@ -441,18 +449,18 @@ function buildTabsAndSections() {
 
     if (STATE.baskets.length > 0) {
         chipsHtml += `<button class="chip" id="chip-cestas" onclick="switchTab('cestas')">Cestas Básicas</button>`;
-        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div class="section-title">Cestas Básicas</div><div class="grid-produtos" id="grid-cestas"></div></div>`;
+        sectionsHtml += `<div id="sec-cestas" class="tab-section"><div class="section-title">Cestas Básicas</div><div class="grid-produtos" id="grid-cestas"></div></div>`;
     }
 
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     if (ofertas.length > 0) {
         chipsHtml += `<button class="chip" id="chip-ofertas" onclick="switchTab('ofertas')">Ofertas da Semana</button>`;
-        sectionsHtml += `<div id="sec-ofertas" class="tab-section" style="display:none;"><div class="section-title">Ofertas Especiais</div><div class="grid-produtos" id="grid-ofertas"></div></div>`;
+        sectionsHtml += `<div id="sec-ofertas" class="tab-section"><div class="section-title">Ofertas Especiais</div><div class="grid-produtos" id="grid-ofertas"></div></div>`;
     }
 
     if (STATE.combos.length > 0) {
         chipsHtml += `<button class="chip" id="chip-combos" onclick="switchTab('combos')">Combos</button>`;
-        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Combos</div><div class="grid-produtos" id="grid-combos"></div></div>`;
+        sectionsHtml += `<div id="sec-combos" class="tab-section"><div class="section-title">Combos</div><div class="grid-produtos" id="grid-combos"></div></div>`;
     }
 
     if (STATE.termos && STATE.termos.length > 0) {
@@ -476,7 +484,7 @@ function buildTabsAndSections() {
 
             if (list.length > 0) {
                 chipsHtml += `<button class="chip" id="chip-${safe}" onclick="switchTab('${safe}')">${label}</button>`;
-                sectionsHtml += `<div id="sec-${safe}" class="tab-section" style="display:none;"><div class="section-title">${label}</div><div class="grid-produtos" id="grid-${safe}"></div></div>`;
+                sectionsHtml += `<div id="sec-${safe}" class="tab-section"><div class="section-title">${label}</div><div class="grid-produtos" id="grid-${safe}"></div></div>`;
                 STATE.lists[`term_${safe}`] = { data: list, container: `grid-${safe}`, safeId: safe };
             }
         });
@@ -485,16 +493,20 @@ function buildTabsAndSections() {
     $('chips-area').innerHTML = chipsHtml;
     $('dynamic-sections').innerHTML = sectionsHtml;
 
-    if (STATE.baskets.length > 0) renderPaginated('grid-cestas', 'cestas', STATE.baskets, 10, 'BASKET');
-    if (ofertas.length > 0) renderPaginated('grid-ofertas', 'ofertas', ofertas, 10, 'PROD');
-    if (STATE.combos.length > 0) renderPaginated('grid-combos', 'combos', STATE.combos, 10, 'COMBO');
+    // Renderizando todas as grades completamente (sem limite de paginação artificial)
+    if (STATE.baskets.length > 0) renderPaginated('grid-cestas', 'cestas', STATE.baskets, 'BASKET');
+    if (ofertas.length > 0) renderPaginated('grid-ofertas', 'ofertas', ofertas, 'PROD');
+    if (STATE.combos.length > 0) renderPaginated('grid-combos', 'combos', STATE.combos, 'COMBO');
     
     Object.keys(STATE.lists).forEach(key => {
-        if(key.startsWith('term_')) renderPaginated(STATE.lists[key].container, key, STATE.lists[key].data, 10, 'PROD');
+        if(key.startsWith('term_')) renderPaginated(STATE.lists[key].container, key, STATE.lists[key].data, 'PROD');
     });
 
-    if(STATE.baskets.length > 0) switchTab('cestas');
-    else if(ofertas.length > 0) switchTab('ofertas');
+    // Observa as seções para atualizar o menu superior no scroll
+    document.querySelectorAll('.tab-section').forEach(sec => STATE.sectionObserver.observe(sec));
+
+    if(STATE.baskets.length > 0) $('chip-cestas').classList.add('active');
+    else if(ofertas.length > 0) $('chip-ofertas').classList.add('active');
 }
 
 window.switchTab = function(tabId) {
@@ -503,9 +515,11 @@ window.switchTab = function(tabId) {
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
 
-    document.querySelectorAll('.tab-section').forEach(el => el.style.display = 'none');
+    // Rola de forma nativa até a seção sem ocultar as outras
     let target = $('sec-' + tabId);
-    if(target) target.style.display = 'block';
+    if(target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+    }
 
     document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
     let chip = $('chip-' + tabId);
@@ -517,7 +531,6 @@ window.switchTab = function(tabId) {
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
     $('header-wrapper').classList.remove('hidden');
-    $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.goToHome = function() {
@@ -526,8 +539,8 @@ window.goToHome = function() {
     $('section-busca').style.display = 'none';
     $('search-inp').value = '';
     
-    if($('chip-cestas')) switchTab('cestas');
-    else if($('chip-ofertas')) switchTab('ofertas');
+    // Zera o scroll até o começo (volta para a primeira sessão)
+    $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
     
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
@@ -535,68 +548,40 @@ window.goToHome = function() {
 };
 
 window.goToMinhaCesta = function(doScroll) {
-    document.querySelectorAll('.tab-section, .page-section').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
     $('wrapper-sections').style.display = 'none';
+    $('section-busca').style.display = 'none';
+    document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
     
     $('sec-minha-cesta').style.display = 'block';
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     if($('btn-nav-cesta')) $('btn-nav-cesta').classList.add('active');
     
     let list = STATE.cartOrder.map(id => STATE.prods.find(p => p.id === id)).filter(Boolean);
-    renderPaginated('grid-minha-cesta', 'cesta_ativa', list, 9999, 'PROD');
+    renderPaginated('grid-minha-cesta', 'cesta_ativa', list, 'PROD');
     
     $('header-wrapper').classList.remove('hidden');
     if(doScroll) $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 // ==========================================
-// RENDERIZAÇÃO E CONTINUIDADE
+// RENDERIZAÇÃO
 // ==========================================
-function renderPaginated(containerId, listKey, list, step, type) {
-    if(!STATE.lists[listKey]) STATE.lists[listKey] = { data: list, type: type, containerId: containerId, step: step };
-    if (!STATE.pageLimits[listKey]) STATE.pageLimits[listKey] = step;
+function renderPaginated(containerId, listKey, list, type) {
+    if(!STATE.lists[listKey]) STATE.lists[listKey] = { data: list, type: type, containerId: containerId };
     
-    let visibleList = list.slice(0, STATE.pageLimits[listKey]);
-    let html = visibleList.map(item => {
+    // Não limitamos mais em arrays menores; mapeamos a lista completa para o HTML, 
+    // confiando no content-visibility e lazy-load de imagem para a velocidade
+    let html = list.map(item => {
         if (type === 'BASKET') return cardBasket(item);
         if (type === 'COMBO') return cardCombo(item);
         return cardProd(item);
     }).join('');
     
-    if (STATE.pageLimits[listKey] < list.length) {
-        html += `<div class="infinite-sentinel" data-list="${listKey}" style="grid-column: 1 / -1; height: 10px;"></div>`;
-    } else {
-        // CONTINUIDADE: Ofertas "Você Também Pode Gostar" no fim da grade
-        if (!['busca', 'cesta_ativa', 'ofertas', 'combos', 'cestas'].includes(listKey)) {
-            let suggestions = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price).slice(0, 8);
-            if(suggestions.length > 0) {
-                let sugHtml = suggestions.map(p => cardProd(p)).join('');
-                html += `
-                <div style="grid-column: 1 / -1; margin-top: 20px; padding: 25px 0; border-top: 1px solid var(--c-bd);">
-                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--c-p); padding: 0 15px 15px; text-transform: uppercase;">🔥 Você também pode gostar</div>
-                    <div class="suggestions-track">
-                        ${sugHtml}
-                    </div>
-                </div>`;
-            }
-        }
-    }
-    
     let c = $(containerId);
     if (c) { 
         c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>'; 
-        let sentinel = c.querySelector('.infinite-sentinel'); 
-        if (sentinel && STATE.observer) STATE.observer.observe(sentinel); 
     }
 }
-
-window.loadMore = function(listKey) {
-    let listData = STATE.lists[listKey];
-    if (!listData) return;
-    STATE.pageLimits[listKey] += listData.step;
-    renderPaginated(listData.containerId, listKey, listData.data, listData.step, listData.type);
-};
 
 // ==========================================
 // TEMPLATES E ATUALIZAÇÕES CIRÚRGICAS
@@ -652,7 +637,7 @@ function cardBasket(item) {
 function cardCombo(item) { 
     return `
     <div class="u-card" onclick="previewCombo('${item.id}')">
-        <div class="offer-tag" style="border-radius: 0 8px 0 8px;">COMBO</div>
+        <div class="offer-tag">COMBO</div>
         <div class="u-img-area"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" class="u-img-cesta" loading="lazy"></div>
         <div class="u-info">
             <div class="u-name">${formatName(item.nome)}</div>
@@ -737,7 +722,7 @@ function updateTotals() {
     
     let subtotal = sum + STATE.basketExtraFee;
     
-    // DESCONTO POR VALOR DA COMPRA (Corrigido para .minimo)
+    // DESCONTO POR VALOR DA COMPRA
     let valueDiscount = 0;
     if(STATE.descontosValor && STATE.descontosValor.length > 0) {
         STATE.descontosValor.forEach(d => { 
@@ -763,7 +748,7 @@ function handleSearch(q) {
     $('section-busca').style.display = q ? 'block' : 'none'; 
     if (q) { 
         let list = STATE.prods.filter(p => norm(p.name).includes(norm(q)));
-        renderPaginated('grid-busca', 'busca', list, 20, 'PROD'); 
+        renderPaginated('grid-busca', 'busca', list, 'PROD'); 
     } 
 }
 function clearSearch() { $('search-inp').value = ''; handleSearch(''); goToHome(); }
@@ -784,7 +769,7 @@ function previewBasket(id) {
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
         return `
         <div style="flex:0 0 130px; text-align:left;">
-            <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
+            <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:0px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
                 <img src="${p?p.img:''}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
             </div>
             <div style="font-size:0.85rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
@@ -815,8 +800,10 @@ function confirmBasket(isCustom, qty) {
     STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty; STATE.baseBasket = c;
     $('modal-cesta-qty').close(); $('modal-basket-preview').close(); 
     
-    let activeTab = document.querySelector('.chip.active');
-    if(activeTab) { let safe = activeTab.id.replace('chip-', ''); let listKey = (safe === 'cestas' || safe === 'ofertas' || safe === 'combos') ? safe : 'term_' + safe; if(STATE.lists[listKey]) renderPaginated(STATE.lists[listKey].containerId, listKey, STATE.lists[listKey].data, STATE.pageLimits[listKey], STATE.lists[listKey].type); }
+    // Atualiza os paineis visuais dos itens que mudaram de qtd
+    STATE.cartOrder.forEach(id => {
+        document.querySelectorAll(`.u-card[data-id="${id}"] .action-wrap`).forEach(el => { el.innerHTML = getCardControls(id); });
+    });
     
     updateTotals(); 
     if (!isCustom) openCheckout();
@@ -832,7 +819,7 @@ function previewCombo(id) {
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
         return `
         <div style="flex:0 0 130px; text-align:left;">
-            <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
+            <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:0px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
                 <img src="${p?p.img:''}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
             </div>
             <div style="font-size:0.85rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
@@ -844,6 +831,9 @@ function previewCombo(id) {
     $('btn-confirm-preview').innerText = "Adicionar Combo"; 
     $('btn-confirm-preview').onclick = () => {
         c.produtos.forEach(s => { let [qs, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) { if (!STATE.cart[p.id]) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(qs) * currentComboQty); } }); 
+        
+        STATE.cartOrder.forEach(id => { document.querySelectorAll(`.u-card[data-id="${id}"] .action-wrap`).forEach(el => { el.innerHTML = getCardControls(id); }); });
+
         $('modal-basket-preview').close(); updateTotals(); showToast("Combo adicionado!", "s");
     }; 
     $('btn-customize-preview').style.display = 'none'; $('modal-basket-preview').showModal(); 
