@@ -76,7 +76,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .chip.active { background: var(--c-p); color: #fff; }
 
 .main-stage { height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
-.section-title { font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
+
+/* TÍTULO DA SESSÃO: ALINHADO COM O CONTEÚDO (MAX-WIDTH) */
+.section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
 
 /* GRADE DE PRODUTOS - LINHAS DIVISÓRIAS ÚNICAS */
 .grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
@@ -113,19 +115,32 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1rem; color:var(--c-p); }
 
-/* CHIPS NO FINAL DA GRADE (MOBILE E DESKTOP) */
-.bottom-chips-wrapper { margin-top: 20px; padding: 30px 15px; border-top: 1px dashed var(--c-bd); text-align: center; width: 100%; max-width: 1200px; margin-left: auto; margin-right: auto; }
-.bottom-chips-title { font-size: 1.15rem; font-weight: 800; color: var(--c-p); margin-bottom: 20px; text-transform: uppercase; }
-.bottom-chips-container { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-
-/* Mobile: Botões mais largos (2 por linha geralmente) */
-.bottom-chip { padding: 14px 15px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; background: #fff; color: var(--c-p); border: 1px solid var(--c-bd); cursor: pointer; transition: 0.2s; flex: 1 1 calc(50% - 10px); }
-.bottom-chip:hover, .bottom-chip:active { border-color: var(--c-a); color: var(--c-a); background: #fff7ed; }
-
-/* Desktop: Botões lado a lado no centro */
+/* CHIPS NO FINAL DA GRADE (NOVO DESIGN ELEGANTE) */
+.bottom-chips-wrapper { margin-top: 10px; padding: 30px 15px 40px; text-align: left; width: 100%; max-width: 1200px; margin: 0 auto; }
+.bottom-chips-title { font-size: 1.15rem; font-weight: 800; color: var(--c-p); margin-bottom: 20px; text-transform: uppercase; border-bottom: 2px solid var(--c-bd); padding-bottom: 10px;}
+.bottom-chips-container { display: grid; grid-template-columns: 1fr; gap: 12px; }
 @media(min-width: 800px) {
-    .bottom-chip { flex: 0 1 auto; min-width: 160px; }
+    .bottom-chips-container { grid-template-columns: repeat(4, 1fr); gap: 16px; }
 }
+
+.bottom-chip { 
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 16px; background: #fff; 
+    border: 1px solid var(--c-bd); cursor: pointer; transition: all 0.2s; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04); text-align: left;
+}
+.bottom-chip:hover, .bottom-chip:active { 
+    border-color: var(--c-a); background: #fff7ed; transform: translateY(-2px);
+    box-shadow: 0 8px 12px -3px rgba(234, 88, 12, 0.12);
+}
+.bottom-chip img { 
+    width: 50px; height: 50px; border-radius: 12px; object-fit: contain; 
+    background: var(--c-img-bg); padding: 4px; mix-blend-mode: multiply; flex-shrink: 0;
+}
+.bottom-chip-info { display: flex; flex-direction: column; overflow: hidden; }
+.bottom-chip-title { font-size: 0.95rem; font-weight: 700; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bottom-chip:hover .bottom-chip-title { color: var(--c-a); }
+.bottom-chip-count { font-size: 0.8rem; font-weight: 600; color: var(--c-ok); margin-top: 2px; }
 
 /* BOTTOM NAV (CARRINHO AO CENTRO) */
 .bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 60px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
@@ -422,7 +437,7 @@ async function init() {
 }
 
 // ==========================================
-// ABAS E GRADES (ESTRATÉGIA 1 - SÓ EXIBE A ATIVA)
+// ABAS E GRADES 
 // ==========================================
 function buildTabsAndSections() {
     let chipsHtml = '';
@@ -462,7 +477,9 @@ function buildTabsAndSections() {
                 let precoProduto = Number(p.price); let valorAlvo = Number(item.valor);
                 if (item.tipo === 'preco_exato') return Math.abs(precoProduto - valorAlvo) < 0.01;
                 if (item.tipo === 'preco_maximo') return precoProduto > 0 && precoProduto <= (valorAlvo + 0.01);
-                if (item.termos) {
+                
+                // CORREÇÃO CIRÚRGICA DE LÓGICA: Aceita objetos de termos OU arrays com strings puras.
+                if (item.termos || typeof item === 'string') {
                     let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
                     return subs.some(s => {
                         let isMatch = s.split(' ').every(w => new RegExp('\\b' + w + '\\b').test(norm(p.name)));
@@ -483,7 +500,6 @@ function buildTabsAndSections() {
     $('chips-area').innerHTML = chipsHtml;
     $('dynamic-sections').innerHTML = sectionsHtml;
 
-    // Renderizando todas as grades completamente (sem limites de página)
     if (STATE.baskets.length > 0) renderPaginated('grid-cestas', 'cestas', STATE.baskets, 'BASKET');
     if (ofertas.length > 0) renderPaginated('grid-ofertas', 'ofertas', ofertas, 'PROD');
     if (STATE.combos.length > 0) renderPaginated('grid-combos', 'combos', STATE.combos, 'COMBO');
@@ -492,25 +508,41 @@ function buildTabsAndSections() {
         if(key.startsWith('term_')) renderPaginated(STATE.lists[key].container, key, STATE.lists[key].data, 'PROD');
     });
 
-    // Inicia pela primeira aba ativa
     if(STATE.baskets.length > 0) switchTab('cestas');
     else if(ofertas.length > 0) switchTab('ofertas');
 }
 
-// CRIA OS CHIPS NO FINAL DA PÁGINA
+// CRIA OS CHIPS NO FINAL DA PÁGINA COM NOVO VISUAL
 function renderBottomChips(activeTabId) {
     let html = `
     <div class="bottom-chips-wrapper">
         <div class="bottom-chips-title">Continue explorando</div>
         <div class="bottom-chips-container">`;
     
-    // Varre todos os chips de navegação do topo para replicá-los
     document.querySelectorAll('#chips-area .chip').forEach(chip => {
         let id = chip.id.replace('chip-', '');
         let name = chip.innerText;
-        // Desenha todos, menos a categoria que o cliente já está vendo
+        
         if(id !== activeTabId) {
-            html += `<button class="bottom-chip" onclick="switchTab('${id}')">${name}</button>`;
+            let firstItemImg = '';
+            let listKey = (id === 'cestas' || id === 'ofertas' || id === 'combos') ? id : 'term_' + id;
+            
+            // Tenta pegar a imagem do primeiro item da lista para compor o chip amigável
+            if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
+                let firstItem = STATE.lists[listKey].data[0];
+                if (listKey === 'cestas' || listKey === 'combos') firstItemImg = firstItem.imagem;
+                else firstItemImg = firstItem.img;
+            }
+            if(!firstItemImg) firstItemImg = '/site/img/produtos/cesta.webp'; // Fallback
+
+            html += `
+            <div class="bottom-chip" onclick="switchTab('${id}')">
+                <img src="${firstItemImg}" alt="${name}" loading="lazy">
+                <div class="bottom-chip-info">
+                    <div class="bottom-chip-title">${name}</div>
+                    <div class="bottom-chip-count">${STATE.lists[listKey] ? STATE.lists[listKey].data.length : 0} itens</div>
+                </div>
+            </div>`;
         }
     });
     
@@ -529,14 +561,11 @@ window.switchTab = function(tabId) {
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
 
-    // ESCONDE TODAS AS SESSÕES (Resolve o bug de travamento de altura)
     document.querySelectorAll('.tab-section').forEach(el => el.style.display = 'none');
     
-    // EXIBE APENAS A SESSÃO CLICADA
     let target = $('sec-' + tabId);
     if(target) target.style.display = 'block';
 
-    // ATUALIZA OS CHIPS DO TOPO
     document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
     let chip = $('chip-' + tabId);
     if(chip) {
@@ -544,10 +573,8 @@ window.switchTab = function(tabId) {
         chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
     
-    // CRIA OS CHIPS LÁ NO FINAL DA GRADE ATIVA
     renderBottomChips(tabId);
     
-    // ROLA A TELA DE VOLTA PARA O TOPO (Perfeito e sem erros)
     $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
 
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
@@ -561,7 +588,6 @@ window.goToHome = function() {
     $('section-busca').style.display = 'none';
     $('search-inp').value = '';
     
-    // Se voltar pra home, joga na primeira aba existente
     if($('chip-cestas')) switchTab('cestas');
     else if($('chip-ofertas')) switchTab('ofertas');
     
@@ -592,7 +618,6 @@ window.goToMinhaCesta = function(doScroll) {
 function renderPaginated(containerId, listKey, list, type) {
     if(!STATE.lists[listKey]) STATE.lists[listKey] = { data: list, type: type, containerId: containerId };
     
-    // Carrega tudo de uma vez. Sem mais paginação limitando.
     let html = list.map(item => {
         if (type === 'BASKET') return cardBasket(item);
         if (type === 'COMBO') return cardCombo(item);
