@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
 <meta name="theme-color" content="#ffffff">
 <title>Super Cestas Básicas Dona Antônia</title>
@@ -193,7 +193,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     <header class="app-header">
         <div class="layout-limit header-inner">
             <div class="header-brand">
-                <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" onclick="goToHome()">
+                <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo Dona Antônia" width="45" height="45" onclick="goToHome()">
             </div>
             <div class="search-bar-area">
                 <div class="search-wrapper">
@@ -257,7 +257,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:0px; padding:20px;">
-            <img id="qv-img" src="" style="width: 100%; max-height: 35vh; object-fit: contain; mix-blend-mode: multiply;">
+            <img id="qv-img" src="" alt="Produto em destaque" style="width: 100%; max-height: 35vh; object-fit: contain; mix-blend-mode: multiply;">
         </div>
         <h3 id="qv-name" style="font-size: 1.1rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
         <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-a); margin-bottom: 8px; font-weight: 600; text-align: left; display: none;"></div>
@@ -270,7 +270,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
-            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);" alt="Logo">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);">
             <h3 style="font-weight:700;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
             <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
         </div>
@@ -437,7 +437,7 @@ async function init() {
 }
 
 // ==========================================
-// ABAS E GRADES 
+// ABAS E GRADES (DOM OTIMIZADO)
 // ==========================================
 function buildTabsAndSections() {
     let chipsHtml = '';
@@ -455,17 +455,20 @@ function buildTabsAndSections() {
     if (STATE.baskets.length > 0) {
         chipsHtml += `<button class="chip" id="chip-cestas" onclick="switchTab('cestas')">Cestas Básicas</button>`;
         sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div class="section-title">Cestas Básicas</div><div class="grid-produtos" id="grid-cestas"></div><div class="bottom-category-nav"></div></div>`;
+        STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     if (ofertas.length > 0) {
         chipsHtml += `<button class="chip" id="chip-ofertas" onclick="switchTab('ofertas')">Ofertas da Semana</button>`;
         sectionsHtml += `<div id="sec-ofertas" class="tab-section" style="display:none;"><div class="section-title">Ofertas Especiais</div><div class="grid-produtos" id="grid-ofertas"></div><div class="bottom-category-nav"></div></div>`;
+        STATE.lists['ofertas'] = { data: ofertas, type: 'PROD' };
     }
 
     if (STATE.combos.length > 0) {
         chipsHtml += `<button class="chip" id="chip-combos" onclick="switchTab('combos')">Combos</button>`;
         sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Combos</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
+        STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
     }
 
     if (STATE.termos && STATE.termos.length > 0) {
@@ -478,7 +481,6 @@ function buildTabsAndSections() {
                 if (item.tipo === 'preco_exato') return Math.abs(precoProduto - valorAlvo) < 0.01;
                 if (item.tipo === 'preco_maximo') return precoProduto > 0 && precoProduto <= (valorAlvo + 0.01);
                 
-                // REGRA ORIGINAL EXATA RESTAURADA
                 if (item.termos) {
                     let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
                     return subs.some(s => {
@@ -492,7 +494,7 @@ function buildTabsAndSections() {
             if (list.length > 0) {
                 chipsHtml += `<button class="chip" id="chip-${safe}" onclick="switchTab('${safe}')">${label}</button>`;
                 sectionsHtml += `<div id="sec-${safe}" class="tab-section" style="display:none;"><div class="section-title">${label}</div><div class="grid-produtos" id="grid-${safe}"></div><div class="bottom-category-nav"></div></div>`;
-                STATE.lists[`term_${safe}`] = { data: list, container: `grid-${safe}`, safeId: safe };
+                STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
         });
     }
@@ -500,14 +502,7 @@ function buildTabsAndSections() {
     $('chips-area').innerHTML = chipsHtml;
     $('dynamic-sections').innerHTML = sectionsHtml;
 
-    if (STATE.baskets.length > 0) renderPaginated('grid-cestas', 'cestas', STATE.baskets, 'BASKET');
-    if (ofertas.length > 0) renderPaginated('grid-ofertas', 'ofertas', ofertas, 'PROD');
-    if (STATE.combos.length > 0) renderPaginated('grid-combos', 'combos', STATE.combos, 'COMBO');
-    
-    Object.keys(STATE.lists).forEach(key => {
-        if(key.startsWith('term_')) renderPaginated(STATE.lists[key].container, key, STATE.lists[key].data, 'PROD');
-    });
-
+    // Inicia pela primeira categoria disponível
     if(STATE.baskets.length > 0) switchTab('cestas');
     else if(ofertas.length > 0) switchTab('ofertas');
 }
@@ -527,17 +522,16 @@ function renderBottomChips(activeTabId) {
             let firstItemImg = '';
             let listKey = (id === 'cestas' || id === 'ofertas' || id === 'combos') ? id : 'term_' + id;
             
-            // Tenta pegar a imagem do primeiro item da lista para compor o chip amigável
             if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
                 let firstItem = STATE.lists[listKey].data[0];
                 if (listKey === 'cestas' || listKey === 'combos') firstItemImg = firstItem.imagem;
                 else firstItemImg = firstItem.img;
             }
-            if(!firstItemImg) firstItemImg = '/site/img/produtos/cesta.webp'; // Fallback
+            if(!firstItemImg) firstItemImg = '/site/img/produtos/cesta.webp'; 
 
             html += `
             <div class="bottom-chip" onclick="switchTab('${id}')">
-                <img src="${firstItemImg}" alt="${name}" loading="lazy">
+                <img src="${firstItemImg}" alt="Categoria ${name}" width="50" height="50" loading="lazy">
                 <div class="bottom-chip-info">
                     <div class="bottom-chip-title">${name}</div>
                     <div class="bottom-chip-count">${STATE.lists[listKey] ? STATE.lists[listKey].data.length : 0} itens</div>
@@ -561,10 +555,21 @@ window.switchTab = function(tabId) {
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
 
-    document.querySelectorAll('.tab-section').forEach(el => el.style.display = 'none');
+    // CORREÇÃO DOM: Limpa o conteúdo das abas inativas para salvar memória do celular
+    document.querySelectorAll('.tab-section').forEach(el => {
+        el.style.display = 'none';
+        let grid = el.querySelector('.grid-produtos');
+        if(grid && el.id !== 'sec-' + tabId) grid.innerHTML = ''; 
+    });
     
     let target = $('sec-' + tabId);
     if(target) target.style.display = 'block';
+
+    // RENDERIZA APENAS O GRID ATIVO
+    let listKey = (tabId === 'cestas' || tabId === 'ofertas' || tabId === 'combos') ? tabId : 'term_' + tabId;
+    if(STATE.lists[listKey]) {
+        renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
+    }
 
     document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
     let chip = $('chip-' + tabId);
@@ -613,15 +618,14 @@ window.goToMinhaCesta = function(doScroll) {
 };
 
 // ==========================================
-// RENDERIZAÇÃO 
+// RENDERIZAÇÃO OTIMIZADA
 // ==========================================
 function renderPaginated(containerId, listKey, list, type) {
-    if(!STATE.lists[listKey]) STATE.lists[listKey] = { data: list, type: type, containerId: containerId };
-    
-    let html = list.map(item => {
-        if (type === 'BASKET') return cardBasket(item);
-        if (type === 'COMBO') return cardCombo(item);
-        return cardProd(item);
+    // Agora o index é passado para os templates para controle de prioridade da imagem (LCP)
+    let html = list.map((item, index) => {
+        if (type === 'BASKET') return cardBasket(item, index);
+        if (type === 'COMBO') return cardCombo(item, index);
+        return cardProd(item, index);
     }).join('');
     
     let c = $(containerId);
@@ -631,7 +635,7 @@ function renderPaginated(containerId, listKey, list, type) {
 }
 
 // ==========================================
-// TEMPLATES E ATUALIZAÇÕES CIRÚRGICAS
+// TEMPLATES E ATUALIZAÇÕES CIRÚRGICAS (CORRIGIDOS PARA LCP E A11Y)
 // ==========================================
 function getCardControls(id) {
     let p = STATE.prods.find(x => x.id === id);
@@ -647,11 +651,13 @@ function getCardControls(id) {
     return `<button class="btn-big-action" onclick="event.stopPropagation(); upd('${id}',1)">Adicionar</button>`;
 }
 
-function cardProd(p) {
+function cardProd(p, index) {
+    // CORREÇÃO LCP: As primeiras 4 imagens não usam lazy loading para aparecerem mais rápido
+    let imgLoadAttr = index < 4 ? 'fetchpriority="high"' : 'loading="lazy"';
     return `
     <div class="u-card" data-id="${p.id}" onclick="openQuickView('${p.id}')">
         ${p.oldPrice ? `<div class="offer-tag">-${Math.round((1 - p.price / p.oldPrice) * 100)}%</div>` : ''}
-        <div class="u-img-area"><img src="${p.img}" class="u-img" loading="lazy"></div>
+        <div class="u-img-area"><img src="${p.img}" class="u-img" alt="${formatName(p.name)}" width="345" height="345" ${imgLoadAttr}></div>
         <div class="u-info">
             <div class="u-name">${formatName(p.name)}</div>
             <div style="margin-top: auto;">
@@ -667,10 +673,11 @@ function cardProd(p) {
     </div>`;
 }
 
-function cardBasket(item) { 
+function cardBasket(item, index) { 
+    let imgLoadAttr = index < 4 ? 'fetchpriority="high"' : 'loading="lazy"';
     return `
     <div class="u-card" onclick="previewBasket('${item.id}')">
-        <div class="u-img-area"><img src="${item.imagem}" class="u-img-cesta" loading="lazy"></div>
+        <div class="u-img-area"><img src="${item.imagem}" class="u-img-cesta" alt="${formatName(item.nome)}" width="345" height="345" ${imgLoadAttr}></div>
         <div class="u-info">
             <div class="u-name">${formatName(item.nome)}</div>
             <div style="margin-top: auto;">
@@ -681,11 +688,12 @@ function cardBasket(item) {
     </div>`; 
 }
 
-function cardCombo(item) { 
+function cardCombo(item, index) { 
+    let imgLoadAttr = index < 4 ? 'fetchpriority="high"' : 'loading="lazy"';
     return `
     <div class="u-card" onclick="previewCombo('${item.id}')">
         <div class="offer-tag" style="border-radius: 0px;">COMBO</div>
-        <div class="u-img-area"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" class="u-img-cesta" loading="lazy"></div>
+        <div class="u-img-area"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" class="u-img-cesta" alt="${formatName(item.nome)}" width="345" height="345" ${imgLoadAttr}></div>
         <div class="u-info">
             <div class="u-name">${formatName(item.nome)}</div>
             <div style="margin-top: auto;">
@@ -768,7 +776,6 @@ function updateTotals() {
     
     let subtotal = sum + STATE.basketExtraFee;
     
-    // DESCONTO POR VALOR DA COMPRA
     let valueDiscount = 0;
     if(STATE.descontosValor && STATE.descontosValor.length > 0) {
         STATE.descontosValor.forEach(d => { 
@@ -815,8 +822,8 @@ function previewBasket(id) {
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
         return `
         <div style="flex:0 0 130px; text-align:left;">
-            <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:0px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
-                <img src="${p?p.img:''}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
+            <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
+                <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" width="100" height="100" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
             </div>
             <div style="font-size:0.85rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
             <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:4px;">x${q}</div>
@@ -847,7 +854,14 @@ function confirmBasket(isCustom, qty) {
     $('modal-cesta-qty').close(); $('modal-basket-preview').close(); 
     
     let activeTab = document.querySelector('.chip.active');
-    if(activeTab) { let safe = activeTab.id.replace('chip-', ''); let listKey = (safe === 'cestas' || safe === 'ofertas' || safe === 'combos') ? safe : 'term_' + safe; if(STATE.lists[listKey]) renderPaginated(STATE.lists[listKey].containerId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type); }
+    if(activeTab) { 
+        let safe = activeTab.id.replace('chip-', ''); 
+        let listKey = (safe === 'cestas' || safe === 'ofertas' || safe === 'combos') ? safe : 'term_' + safe; 
+        // Atualiza a renderização apenas se a grade do item ativo estiver montada
+        if(STATE.lists[listKey]) {
+            renderPaginated('grid-' + safe, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
+        }
+    }
     
     updateTotals(); 
     if (!isCustom) openCheckout();
@@ -863,8 +877,8 @@ function previewCombo(id) {
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
         return `
         <div style="flex:0 0 130px; text-align:left;">
-            <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:0px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
-                <img src="${p?p.img:''}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
+            <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
+                <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" width="100" height="100" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
             </div>
             <div style="font-size:0.85rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
             <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:4px;">x${q}</div>
