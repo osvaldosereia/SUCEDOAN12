@@ -31,6 +31,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
 
+/* SPLASH SCREEN (TIPO APP NATIVO) */
+#splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
+#splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.splash-logo { width: 110px; height: 110px; border-radius: 50%; border: 1px solid var(--c-bd); object-fit: cover; animation: splashPulse 1s ease-in-out infinite alternate; box-shadow: var(--sh-float); }
+.splash-text { margin-top: 15px; font-size: 1.4rem; font-weight: 800; color: var(--c-p); text-transform: uppercase; letter-spacing: -0.5px; opacity: 0; animation: fadeUp 0.5s forwards 0.3s; }
+@keyframes splashPulse { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
+@keyframes fadeUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
 /* HEADER AUTO-HIDE */
 #header-wrapper {
     position: fixed;
@@ -80,11 +88,16 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* TÍTULO DA SESSÃO */
 .section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
 
-/* GRADE DE PRODUTOS - LINHAS DIVISÓRIAS ÚNICAS */
+/* GRADE DE PRODUTOS E MINI OFERTAS */
 .grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
 @media(min-width: 800px) { .grid-produtos { grid-template-columns: repeat(4, 1fr); border-left: 1px solid var(--c-bd); } }
 
-/* CARDS: PADDING DE 4PX PARA AFASTAR A IMAGEM DA LINHA SEPARADORA */
+.grid-mini .u-card:nth-child(n+3) { display: none !important; }
+@media(min-width: 800px) { .grid-mini .u-card:nth-child(n+3) { display: flex !important; } }
+.btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+.btn-ver-todas-ofertas:hover { background: var(--c-a); color: #fff; }
+
+/* CARDS */
 .u-card { background: #fff; border: none; border-bottom: 1px solid var(--c-bd); border-right: 1px solid var(--c-bd); padding: 4px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; }
 .u-card:nth-child(2n) { border-right: none; } 
 @media(min-width: 800px) {
@@ -92,7 +105,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .u-card:nth-child(4n) { border-right: none; }
 }
 
-/* SKELETON LOADING (SHIMMER) PARA O CARREGAMENTO INICIAL */
+/* SKELETON LOADING (SHIMMER) À PROVA DE FALHAS */
 @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
 .skeleton-card { background: #fff; padding: 4px; border-bottom: 1px solid var(--c-bd); border-right: 1px solid var(--c-bd); display: flex; flex-direction: column; }
 @media(min-width: 800px) { .skeleton-card:nth-child(2n) { border-right: 1px solid var(--c-bd); } .skeleton-card:nth-child(4n) { border-right: none; } }
@@ -102,42 +115,29 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .sk-t2 { height: 18px; margin-top: 8px; border-radius: 4px; width: 40%; }
 .sk-btn { height: 38px; margin-top: 14px; border-radius: 8px; width: 100%; }
 
-/* RECORTE MÁGICO COM BORDAS RETAS (CANTOS VIVOS) */
+/* IMAGENS E INFORMAÇÕES */
 .u-img-area { width: 100%; aspect-ratio: 1; background: var(--c-img-bg); border-radius: 0px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .u-img { width: 90%; height: 90%; object-fit: contain; mix-blend-mode: multiply; } 
 .u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; border-radius: 0px; }
 .offer-tag { position: absolute; top: 4px; right: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0px;}
-
-/* INFO DENTRO DO CARD */
 .u-info { padding: 8px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
 .u-name { font-size: 0.85rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-/* TAMANHO MAIOR DA FONTE SOMENTE NO DESKTOP */
 @media(min-width: 800px) { .u-name { font-size: 1.05rem; } }
-
 .u-price { font-size: 1.25rem; font-weight: 700; color: var(--c-p); margin-top: 4px; }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: -2px; }
 
-/* BOTÕES TAMANHO PADRÃO GOOGLE (38px altura) */
+/* CONTROLES E BOTÕES */
 .btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 38px; transition: 0.2s;}
 .btn-big-action:hover { background: #cbd5e1; }
-
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:38px; margin-top:10px; padding:0 4px; width:100%; }
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1rem; color:var(--c-p); }
 
-/* MINI OFERTAS (1 LINHA) */
-.grid-mini .u-card:nth-child(n+3) { display: none !important; }
-@media(min-width: 800px) { .grid-mini .u-card:nth-child(n+3) { display: flex !important; } }
-.btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
-.btn-ver-todas-ofertas:hover { background: var(--c-a); color: #fff; }
-
-/* CHIPS NO FINAL DA GRADE (NOVO DESIGN ELEGANTE) */
+/* CHIPS NO FINAL DA GRADE (CONTINUE EXPLORANDO) */
 .bottom-chips-wrapper { margin-top: 10px; padding: 30px 15px 40px; text-align: left; width: 100%; max-width: 1200px; margin: 0 auto; }
 .bottom-chips-title { font-size: 1.15rem; font-weight: 800; color: var(--c-p); margin-bottom: 20px; text-transform: uppercase; border-bottom: 2px solid var(--c-bd); padding-bottom: 10px;}
 .bottom-chips-container { display: grid; grid-template-columns: 1fr; gap: 12px; }
-@media(min-width: 800px) {
-    .bottom-chips-container { grid-template-columns: repeat(4, 1fr); gap: 16px; }
-}
+@media(min-width: 800px) { .bottom-chips-container { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
 
 .bottom-chip { 
     display: flex; align-items: center; gap: 12px;
@@ -190,10 +190,14 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .del-opt-title { font-weight: 700; font-size: 1rem; color: var(--c-p); }
 .del-opt-date { font-size: 0.85rem; color: var(--c-s); margin-top: 4px; }
 .del-opt-badge { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; }
-
 </style>
 </head>
 <body>
+
+<div id="splash-screen">
+    <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="splash-logo" onerror="this.style.display='none'">
+    <div class="splash-text">Dona Antônia</div>
+</div>
 
 <div id="header-wrapper">
     <div class="top-promo-wrap">
@@ -241,11 +245,9 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     </div>
 
     <div id="wrapper-sections">
-        <div id="skeleton-loader" class="tab-section" style="display:block;">
+        <div id="skeleton-loader" style="display:block; padding-top: 10px;">
             <div class="section-title skeleton-el" style="width: 220px; height: 26px; margin: 20px 15px 10px; border-radius: 6px;"></div>
             <div class="grid-produtos">
-                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
-                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
@@ -387,6 +389,22 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 
 <script>
 // ==========================================
+// CONTROLE INTELIGENTE DE SPLASH SCREEN
+// ==========================================
+let splashRemoved = false;
+function removeSplash() {
+    if(splashRemoved) return;
+    splashRemoved = true;
+    const splash = document.getElementById('splash-screen');
+    if(splash) {
+        splash.classList.add('hidden');
+        setTimeout(() => splash.remove(), 600);
+    }
+}
+// Remove obrigatoriamente a tela da frente do cliente em 1.2 segundos!
+setTimeout(removeSplash, 1200);
+
+// ==========================================
 // CONFIGURAÇÃO
 // ==========================================
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0], feriados: [] };
@@ -410,7 +428,7 @@ function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
 
 // ==========================================
-// ANIMAÇÃO E SCROLL DO HEADER
+// ANIMAÇÃO HEADER
 // ==========================================
 function startPromoBanner() {
     const items = document.querySelectorAll('.promo-item');
@@ -461,14 +479,16 @@ async function init() {
         }
         buildTabsAndSections(); 
         updateTotals();
-    } catch (e) { console.error("Erro na inicialização:", e); }
+    } catch (e) { 
+        console.error("Erro na inicialização:", e);
+    }
 }
 
 // ==========================================
 // ABAS E GRADES (DOM OTIMIZADO)
 // ==========================================
 function buildTabsAndSections() {
-    // Esconde o Skeleton Loader assim que os dados chegarem
+    // Apaga o Esqueleto de Carregamento pois os dados chegaram
     let skel = $('skeleton-loader');
     if(skel) skel.style.display = 'none';
 
@@ -562,12 +582,11 @@ function buildTabsAndSections() {
     $('chips-area').innerHTML = chipsHtml;
     $('dynamic-sections').innerHTML = sectionsHtml;
 
-    // Inicia pela primeira categoria disponível
     if(STATE.baskets.length > 0) switchTab('cestas');
     else if(ofertas.length > 0) switchTab('ofertas');
 }
 
-// CRIA OS CHIPS NO FINAL DA PÁGINA (E AS MINI OFERTAS)
+// CRIA OS CHIPS NO FINAL DA PÁGINA E A MINI VITRINE
 function renderBottomChips(activeTabId) {
     let html = '';
 
@@ -631,10 +650,11 @@ window.switchTab = function(tabId) {
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
 
+    // Limpa abas inativas (Mas pula o Esqueleto para não apagar a animação)
     document.querySelectorAll('.tab-section').forEach(el => {
         el.style.display = 'none';
         let grid = el.querySelector('.grid-produtos');
-        if(grid && el.id !== 'sec-' + tabId) grid.innerHTML = ''; 
+        if(grid && el.id !== 'sec-' + tabId && el.id !== 'skeleton-loader') grid.innerHTML = ''; 
     });
     
     let target = $('sec-' + tabId);
@@ -691,9 +711,6 @@ window.goToMinhaCesta = function(doScroll) {
     if(doScroll) $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// ==========================================
-// RENDERIZAÇÃO OTIMIZADA
-// ==========================================
 function renderPaginated(containerId, listKey, list, type) {
     let html = list.map((item, index) => {
         if (type === 'BASKET') return cardBasket(item, index);
@@ -702,14 +719,9 @@ function renderPaginated(containerId, listKey, list, type) {
     }).join('');
     
     let c = $(containerId);
-    if (c) { 
-        c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>'; 
-    }
+    if (c) c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>'; 
 }
 
-// ==========================================
-// TEMPLATES E ATUALIZAÇÕES CIRÚRGICAS
-// ==========================================
 function getCardControls(id) {
     let p = STATE.prods.find(x => x.id === id);
     if (!p) return '';
@@ -879,9 +891,6 @@ function handleSearch(q) {
 function clearSearch() { $('search-inp').value = ''; handleSearch(''); goToHome(); }
 function showToast(m, t) { let d = document.createElement('div'); d.className = 'toast'; d.style.background = (t === 'r') ? '#dc2626' : '#15803d'; d.innerText = m; $('toast-container').appendChild(d); setTimeout(() => d.remove(), 2500); }
 
-// ==========================================
-// FLUXO DE COMPRA E CESTAS
-// ==========================================
 function previewBasket(id) { 
     let c = STATE.baskets.find(x => String(x.id) === String(id)); 
     if (!c) return; 
