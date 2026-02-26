@@ -118,8 +118,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* MINI OFERTAS (1 LINHA) */
 .grid-mini .u-card:nth-child(n+3) { display: none !important; }
 @media(min-width: 800px) { .grid-mini .u-card:nth-child(n+3) { display: flex !important; } }
-.btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 20px auto 10px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
-.btn-ver-todas-ofertas:hover { background: var(--c-a); color: #fff; }
+.btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+    .btn-ver-todas-ofertas:hover { background: var(--c-a); color: #fff; }
 
 /* CHIPS NO FINAL DA GRADE (NOVO DESIGN ELEGANTE) */
 .bottom-chips-wrapper { margin-top: 10px; padding: 30px 15px 40px; text-align: left; width: 100%; max-width: 1200px; margin: 0 auto; }
@@ -140,10 +140,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     box-shadow: 0 8px 12px -3px rgba(234, 88, 12, 0.12);
 }
 .bottom-chip img { 
-    width: 50px; height: 50px; border-radius: 12px; object-fit: contain; 
+    width: 65px; height: 65px; border-radius: 14px; object-fit: contain; 
     background: var(--c-img-bg); padding: 4px; mix-blend-mode: multiply; flex-shrink: 0;
 }
-.bottom-chip-info { display: flex; flex-direction: column; overflow: hidden; }
+    .bottom-chip-info { display: flex; flex-direction: column; overflow: hidden; }
 .bottom-chip-title { font-size: 0.95rem; font-weight: 700; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bottom-chip:hover .bottom-chip-title { color: var(--c-a); }
 .bottom-chip-count { font-size: 0.8rem; font-weight: 600; color: var(--c-ok); margin-top: 2px; }
@@ -583,9 +583,9 @@ function renderBottomChips(activeTabId) {
             }
             if(!firstItemImg) firstItemImg = '/site/img/produtos/cesta.webp'; 
 
-            html += `
+           html += `
             <div class="bottom-chip" onclick="switchTab('${id}')">
-                <img src="${firstItemImg}" alt="Categoria ${name}" width="50" height="50" loading="lazy">
+                <img src="${firstItemImg}" alt="Categoria ${name}" width="65" height="65" loading="lazy">
                 <div class="bottom-chip-info">
                     <div class="bottom-chip-title">${name}</div>
                     <div class="bottom-chip-count">${STATE.lists[listKey] ? STATE.lists[listKey].data.length : 0} itens</div>
