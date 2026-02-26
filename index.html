@@ -481,14 +481,42 @@ function buildTabsAndSections() {
                 if (item.tipo === 'preco_exato') return Math.abs(precoProduto - valorAlvo) < 0.01;
                 if (item.tipo === 'preco_maximo') return precoProduto > 0 && precoProduto <= (valorAlvo + 0.01);
                 
-                if (item.termos) {
+                if (item.termos || typeof item === 'string') {
                     let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
-                    return subs.some(s => {
-                        let isMatch = s.split(' ').every(w => new RegExp('\\b' + w + '\\b').test(norm(p.name)));
-                        let notOverridden = !allTerms.some(o => o !== s && o.includes(s) && o.split(' ').every(w => new RegExp('\\b' + w + '\\b').test(norm(p.name))));
-                        return isMatch && notOverridden;
-                    }); 
-                } return false;
+                    let pName = norm(p.name);
+                    
+                    // 1. Encontra TODOS os termos (de todas as categorias) que existem neste produto
+                    let matches = [];
+                    allTerms.forEach(t => {
+                        let words = t.split(' ');
+                        // Verifica se todas as palavras do termo estão no nome do produto
+                        let isMatch = words.every(w => new RegExp('\\b' + w + '\\b').test(pName));
+                        
+                        if (isMatch) {
+                            // Descobre a posição em que a palavra aparece pela primeira vez
+                            let firstWordIndex = pName.search(new RegExp('\\b' + words[0] + '\\b'));
+                            matches.push({ term: t, wordCount: words.length, index: firstWordIndex });
+                        }
+                    });
+
+                    if (matches.length > 0) {
+                        // 2. Aplica suas duas Regras de Ouro no Torneio:
+                        matches.sort((a, b) => {
+                            // Regra 1: Quem aparece primeiro no nome ganha (ex: Biscoito vem antes de Sal)
+                            if (a.index !== b.index) return a.index - b.index;
+                            
+                            // Regra 2: Se começam no mesmo lugar, a palavra composta ganha (ex: Molho de Tomate ganha de Molho)
+                            return b.wordCount - a.wordCount;
+                        });
+                        
+                        // O termo vencedor é o primeiro da lista após o torneio
+                        let termoVencedor = matches[0].term;
+                        
+                        // O produto SÓ entra nesta sessão se o termo vencedor for um dos termos desta sessão
+                        return subs.includes(termoVencedor);
+                    }
+                } 
+                return false;
             });
 
             if (list.length > 0) {
