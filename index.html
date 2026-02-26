@@ -167,6 +167,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .cart-fab-wrapper svg { stroke: #fff; width: 22px; height: 22px; }
 .cart-badge { position: absolute; top: 0px; right: 0px; background: var(--c-err); color: #fff; font-size: 0.65rem; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
 
+@media(min-width: 800px) { .bottom-nav-bar { justify-content: center; gap: 40px; } }
 
 /* MODAIS */
 dialog { border: none; border-radius: 20px; width: 92%; max-width: 420px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); background: #fff; }
@@ -188,6 +189,9 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .del-opt-title { font-weight: 700; font-size: 1rem; color: var(--c-p); }
 .del-opt-date { font-size: 0.85rem; color: var(--c-s); margin-top: 4px; }
 .del-opt-badge { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; }
+
+/* ESTILO SÓ HOJE (SCROLL INVISIVEL) */
+#sohoje-list::-webkit-scrollbar { display: none; }
 </style>
 </head>
 <body>
@@ -360,6 +364,15 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <p style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px;">Planeje a entrega e ganhe desconto.</p>
         <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
         
+        <div id="checkout-sohoje-container" style="display:none; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed var(--c-bd);">
+            <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 8px;">
+                <span style="background: var(--c-err); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Só Hoje</span>
+                <span style="font-size: 0.85rem; color: var(--c-s); font-weight: 600;">Aproveite antes de fechar!</span>
+            </div>
+            <div id="sohoje-list" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 5px; scroll-snap-type: x mandatory;">
+                </div>
+        </div>
+        
         <h3 style="font-weight: 600; font-size: 1.1rem; color: var(--c-p);">2. O Seu Pedido</h3>
         <div id="chk-list" style="background: #f8fafc; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; margin-bottom: 10px; margin-top: 10px;"></div>
         
@@ -410,7 +423,7 @@ const MIN_ORDER = 75.00;
 const $ = id => document.getElementById(id);
 
 const STATE = {
-    baskets: [], prods: [], coupons: [], combos: [], termos: [], descontosValor: [],
+    baskets: [], prods: [], coupons: [], combos: [], termos: [], descontosValor: [], sohoje: [],
     cart: {}, cartOrder: [], 
     baseBasket: null, basketExtraFee: 0, comboDiscount: 0, appliedCombos: [], coupon: null, valueDiscount: 0,
     lists: {}, pageLimits: {},
@@ -456,16 +469,17 @@ $('scroll-stage').addEventListener('scroll', function() {
 // ==========================================
 async function init() {
     try {
-        const [r1, r2, r3, r4, r6, r7] = await Promise.all([
+        const [r1, r2, r3, r4, r6, r7, r8] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/cupons.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('/site/sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
-        STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7;
+        STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7; STATE.sohoje = r8 || [];
         
         if (r2 && r2.length > 0) {
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => ({
@@ -855,7 +869,14 @@ window.clearCart = function() {
 
 function updateTotals() {
     let sum = 0; 
-    Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => x.id === id); if (p) sum += p.price * q; });
+    Object.entries(STATE.cart).forEach(([id, q]) => { 
+        let p = STATE.prods.find(x => x.id === id); 
+        if (p) {
+            let sh = STATE.sohoje ? STATE.sohoje.find(x => String(x.id) === id) : null;
+            let unitPrice = (sh && sh.preco_so_hoje) ? parseFloat(sh.preco_so_hoje) : p.price;
+            sum += unitPrice * q; 
+        }
+    });
     
     let subtotal = sum + STATE.basketExtraFee;
     
@@ -974,6 +995,38 @@ function previewCombo(id) {
 }
 function changeComboQty(d) { currentComboQty = Math.max(1, currentComboQty + d); $('combo-modal-qty').innerText = currentComboQty; let c = STATE.combos.find(x => x.id === currentComboId); if (c) $('prev-price').innerText = fmt(c.preco * currentComboQty); }
 
+function renderSoHoje() {
+    if (!STATE.sohoje || STATE.sohoje.length === 0) {
+        $('checkout-sohoje-container').style.display = 'none';
+        return;
+    }
+    
+    let html = STATE.sohoje.map((sh, idx) => {
+        let p = STATE.prods.find(x => x.id === String(sh.id));
+        if (!p) return '';
+        let price = sh.preco_so_hoje ? parseFloat(sh.preco_so_hoje) : p.price;
+        let isLast = idx === STATE.sohoje.length - 1;
+        let borderRight = isLast ? 'none' : '1px solid var(--c-bd)';
+        
+        return `
+        <div style="flex: 0 0 240px; display: flex; align-items: center; gap: 10px; border-right: ${borderRight}; padding-right: 15px; scroll-snap-align: start;">
+            <img src="${p.img}" alt="${formatName(p.name)}" style="width: 50px; height: 50px; object-fit: contain; mix-blend-mode: multiply; background: var(--c-img-bg); border-radius: 8px; flex-shrink: 0;" loading="lazy">
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 0.8rem; font-weight: 600; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${formatName(p.name)}</div>
+                <div style="font-size: 0.95rem; font-weight: 800; color: var(--c-err); margin-top: 2px;">${fmt(price)}</div>
+            </div>
+            <button onclick="upd('${p.id}', 1); showToast('Adicionado!', 's');" style="background: #fff; border: 2px solid var(--c-ok); color: var(--c-ok); width: 34px; height: 34px; border-radius: 10px; font-size: 1.4rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; cursor: pointer;">+</button>
+        </div>`;
+    }).join('');
+    
+    if(html) {
+        $('sohoje-list').innerHTML = html;
+        $('checkout-sohoje-container').style.display = 'block';
+    } else {
+        $('checkout-sohoje-container').style.display = 'none';
+    }
+}
+
 function openCheckout() { 
     if (STATE.cartOrder.length === 0) return showToast("Seu carrinho está vazio", "r"); 
     
@@ -998,9 +1051,20 @@ function openCheckout() {
         </div>
     `).join('');
     
+    renderSoHoje();
+    
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { let p = STATE.prods.find(x => x.id === id); return `<div style="display:flex; padding:8px 0; border-bottom:1px solid var(--c-bd);"><span style="color:var(--c-a); font-weight:700; min-width:30px;">${STATE.cart[id]}x</span><span style="font-size:0.9rem; flex:1;">${formatName(p.name)}</span></div>`; }).join(''); 
     
-    let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => x.id === id); if (p) sum += p.price * q; });
+    let sum = 0; 
+    Object.entries(STATE.cart).forEach(([id, q]) => { 
+        let p = STATE.prods.find(x => x.id === id); 
+        if (p) {
+            let sh = STATE.sohoje ? STATE.sohoje.find(x => String(x.id) === id) : null;
+            let unitPrice = (sh && sh.preco_so_hoje) ? parseFloat(sh.preco_so_hoje) : p.price;
+            sum += unitPrice * q; 
+        }
+    });
+    
     let subtotal = sum + STATE.basketExtraFee;
     
     $('chk-summary-lines').innerHTML = 
@@ -1047,9 +1111,13 @@ async function sendOrder() {
     Object.entries(STATE.cart).forEach(([id, q]) => {
         const p = STATE.prods.find(x => x.id === id);
         if (p) { 
-            totalBruto += p.price * q; 
-            itemsTxt += `${q}x ${p.name}\n`; 
-            apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: p.price});
+            let sh = STATE.sohoje ? STATE.sohoje.find(x => String(x.id) === id) : null;
+            let unitPrice = (sh && sh.preco_so_hoje) ? parseFloat(sh.preco_so_hoje) : p.price;
+            totalBruto += unitPrice * q; 
+            
+            let priceInfo = (unitPrice < p.price) ? ` (Oferta Só Hoje)` : '';
+            itemsTxt += `${q}x ${p.name}${priceInfo}\n`; 
+            apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice});
         }
     });
 
@@ -1141,6 +1209,7 @@ async function sendOrder() {
         btnSubmit.innerHTML = `ENVIAR PEDIDO`;
     }, 3000);
 }
+
 init();
 </script>
 </body>
