@@ -238,7 +238,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     </div>
 
     <div id="sec-minha-cesta" class="page-section" style="display:none; padding-top:10px;">
-        <div class="section-title" style="color: var(--c-a);">📦 Minha Cesta Personalizada</div>
+        <div class="section-title" style="color: var(--c-a);">📦 Minha Cesta</div>
         <div class="grid-produtos" id="grid-minha-cesta"></div>
         <div class="bottom-category-nav"></div>
     </div>
@@ -333,7 +333,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         </div>
 
         <button class="btn-modal primary" id="btn-confirm-preview" style="font-size: 1.05rem; padding: 16px;"></button>
-        <button class="btn-modal secondary" id="btn-customize-preview" style="display:none; font-size: 1.05rem; padding: 16px;">Personalizar Cesta</button>
+        <button class="btn-modal secondary" id="btn-customize-preview" style="display:none; font-size: 1.05rem; padding: 16px;">Personalizar Minha Cesta</button>
     </div>
 </dialog>
 
@@ -912,7 +912,7 @@ function previewBasket(id) {
     }).join(''); 
     
     $('combo-qty-controls').style.display = 'none'; 
-    $('btn-confirm-preview').innerText = "Adicionar Padrão"; 
+    $('btn-confirm-preview').innerText = "Encomendar Cesta Normal"; 
     $('btn-confirm-preview').onclick = () => { $('modal-basket-preview').close(); setBasketQty(1); $('modal-cesta-qty').showModal(); };
     $('btn-customize-preview').style.display = 'block'; 
     $('btn-customize-preview').onclick = () => { confirmBasket(true, 1); setTimeout(() => goToMinhaCesta(true), 100); };
