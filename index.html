@@ -34,10 +34,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* SPLASH SCREEN (TIPO APP NATIVO) */
 #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
 #splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.splash-logo { width: 110px; height: 110px; border-radius: 50%; border: 1px solid var(--c-bd); object-fit: cover; animation: splashPulse 1s ease-in-out infinite alternate; box-shadow: var(--sh-float); }
-.splash-text { margin-top: 15px; font-size: 1.4rem; font-weight: 800; color: var(--c-p); text-transform: uppercase; letter-spacing: -0.5px; opacity: 0; animation: fadeUp 0.5s forwards 0.3s; }
+.splash-logo { width: 170px; height: 170px; border-radius: 50%; border: 1px solid var(--c-bd); object-fit: cover; animation: splashPulse 1s ease-in-out infinite alternate; box-shadow: var(--sh-float); }
 @keyframes splashPulse { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
-@keyframes fadeUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 /* HEADER AUTO-HIDE */
 #header-wrapper {
@@ -180,6 +178,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .btn-modal { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer; transition: 0.2s;}
 .btn-modal.primary { background: var(--c-a); color: #fff; }
 .btn-modal.secondary { background: #fff; border: 1px solid var(--c-bd); color: var(--c-p); }
+.btn-modal:disabled { opacity: 0.7; pointer-events: none; }
 
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
 .toast { padding: 12px 20px; color: #fff; border-radius: 12px; font-weight: 600; text-align: center; box-shadow: var(--sh-float); animation: toastPop 0.3s ease-out; }
@@ -196,7 +195,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 
 <div id="splash-screen">
     <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="splash-logo" onerror="this.style.display='none'">
-    <div class="splash-text">Dona Antônia</div>
 </div>
 
 <div id="header-wrapper">
@@ -242,6 +240,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     <div id="sec-minha-cesta" class="page-section" style="display:none; padding-top:10px;">
         <div class="section-title" style="color: var(--c-a);">📦 Minha Cesta Personalizada</div>
         <div class="grid-produtos" id="grid-minha-cesta"></div>
+        <div class="bottom-category-nav"></div>
     </div>
 
     <div id="wrapper-sections">
@@ -376,7 +375,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
             <div style="font-weight: 700; font-size: 2.2rem; color: var(--c-p); line-height: 1.1;" id="chk-total"></div>
         </div>
 
-        <button id="btn-send-order" onclick="sendOrder()" class="btn-modal primary" style="font-size: 1.1rem; padding: 16px; background: #15803d;">ENVIAR PEDIDO</button>
+        <button id="btn-send-order" onclick="sendOrder()" class="btn-modal primary" style="font-size: 1.1rem; padding: 16px; transition: 0.2s;"></button>
         
         <div style="display: flex; gap: 10px; margin-top: 5px;">
             <button class="btn-modal secondary" style="margin: 0; flex: 1; border: none; background: var(--c-bd); font-size: 0.85rem;" onclick="document.getElementById('modal-checkout').close()">Mais produtos</button>
@@ -401,8 +400,8 @@ function removeSplash() {
         setTimeout(() => splash.remove(), 600);
     }
 }
-// Remove obrigatoriamente a tela da frente do cliente em 1.2 segundos!
-setTimeout(removeSplash, 1200);
+// Remove obrigatoriamente a tela da frente do cliente em 2.2 segundos
+setTimeout(removeSplash, 2200);
 
 // ==========================================
 // CONFIGURAÇÃO
@@ -488,7 +487,6 @@ async function init() {
 // ABAS E GRADES (DOM OTIMIZADO)
 // ==========================================
 function buildTabsAndSections() {
-    // Apaga o Esqueleto de Carregamento pois os dados chegaram
     let skel = $('skeleton-loader');
     if(skel) skel.style.display = 'none';
 
@@ -650,7 +648,6 @@ window.switchTab = function(tabId) {
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
 
-    // Limpa abas inativas (Mas pula o Esqueleto para não apagar a animação)
     document.querySelectorAll('.tab-section').forEach(el => {
         el.style.display = 'none';
         let grid = el.querySelector('.grid-produtos');
@@ -706,6 +703,9 @@ window.goToMinhaCesta = function(doScroll) {
     
     let list = STATE.cartOrder.map(id => STATE.prods.find(p => p.id === id)).filter(Boolean);
     renderPaginated('grid-minha-cesta', 'cesta_ativa', list, 'PROD');
+    
+    // Injeta as Mini Ofertas e Chips de Navegação na Aba Minha Cesta
+    renderBottomChips('minha-cesta'); 
     
     $('header-wrapper').classList.remove('hidden');
     if(doScroll) $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
@@ -1002,12 +1002,29 @@ function openCheckout() {
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { let p = STATE.prods.find(x => x.id === id); return `<div style="display:flex; padding:8px 0; border-bottom:1px solid var(--c-bd);"><span style="color:var(--c-a); font-weight:700; min-width:30px;">${STATE.cart[id]}x</span><span style="font-size:0.9rem; flex:1;">${formatName(p.name)}</span></div>`; }).join(''); 
     
     let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => x.id === id); if (p) sum += p.price * q; });
+    let subtotal = sum + STATE.basketExtraFee;
     
     $('chk-summary-lines').innerHTML = 
-        `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(sum + STATE.basketExtraFee)}</span></div>` + 
+        `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
         (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Extra:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') +
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus de Entrega:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
     
+    // REGRA DE PEDIDO MÍNIMO E BOTÃO INTELIGENTE
+    let btn = $('btn-send-order');
+    if (subtotal < MIN_ORDER) {
+        btn.disabled = true;
+        btn.innerText = `PEDIDO MÍNIMO ${fmt(MIN_ORDER)}`;
+        btn.style.background = 'var(--c-bd)';
+        btn.style.color = 'var(--c-s)';
+        btn.style.cursor = 'not-allowed';
+    } else {
+        btn.disabled = false;
+        btn.innerText = 'ENVIAR PEDIDO';
+        btn.style.background = '#15803d';
+        btn.style.color = '#fff';
+        btn.style.cursor = 'pointer';
+    }
+
     updateTotals(); 
     if (!$('modal-checkout').open) $('modal-checkout').showModal(); 
 }
