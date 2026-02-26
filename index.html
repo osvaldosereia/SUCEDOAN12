@@ -480,7 +480,7 @@ async function init() {
             fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7; STATE.sohoje = r8 || [];
