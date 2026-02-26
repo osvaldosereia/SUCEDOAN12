@@ -473,13 +473,13 @@ function buildTabsAndSections() {
             let label = item.etiqueta || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             
-            let list = STATE.prods.filter(p => { 
+           let list = STATE.prods.filter(p => { 
                 let precoProduto = Number(p.price); let valorAlvo = Number(item.valor);
                 if (item.tipo === 'preco_exato') return Math.abs(precoProduto - valorAlvo) < 0.01;
                 if (item.tipo === 'preco_maximo') return precoProduto > 0 && precoProduto <= (valorAlvo + 0.01);
                 
-                // CORREÇÃO CIRÚRGICA DE LÓGICA: Aceita objetos de termos OU arrays com strings puras.
-                if (item.termos || typeof item === 'string') {
+                // REGRA ORIGINAL EXATA RESTAURADA
+                if (item.termos) {
                     let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
                     return subs.some(s => {
                         let isMatch = s.split(' ').every(w => new RegExp('\\b' + w + '\\b').test(norm(p.name)));
