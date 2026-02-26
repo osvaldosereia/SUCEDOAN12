@@ -190,8 +190,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .del-opt-date { font-size: 0.85rem; color: var(--c-s); margin-top: 4px; }
 .del-opt-badge { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; }
 
-/* ESTILO SÓ HOJE (SCROLL INVISIVEL) */
-#sohoje-list::-webkit-scrollbar { display: none; }
 </style>
 </head>
 <body>
@@ -364,12 +362,12 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <p style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px;">Planeje a entrega e ganhe desconto.</p>
         <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
         
-        <div id="checkout-sohoje-container" style="display:none; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px dashed var(--c-bd);">
-            <div style="display: flex; align-items: center; margin-bottom: 15px; gap: 8px;">
+        <div id="checkout-sohoje-container" style="display:none; margin-bottom: 25px; padding-bottom: 5px; border-bottom: 1px dashed var(--c-bd);">
+            <div style="display: flex; align-items: center; margin-bottom: 5px; gap: 8px;">
                 <span style="background: var(--c-err); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Só Hoje</span>
                 <span style="font-size: 0.85rem; color: var(--c-s); font-weight: 600;">Aproveite antes de fechar!</span>
             </div>
-            <div id="sohoje-list" style="display: flex; overflow-x: auto; gap: 15px; padding-bottom: 5px; scroll-snap-type: x mandatory;">
+            <div id="sohoje-list" style="display: flex; flex-direction: column;">
                 </div>
         </div>
         
@@ -476,7 +474,7 @@ async function init() {
             fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('/site/sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7; STATE.sohoje = r8 || [];
@@ -1006,16 +1004,40 @@ function renderSoHoje() {
         if (!p) return '';
         let price = sh.preco_so_hoje ? parseFloat(sh.preco_so_hoje) : p.price;
         let isLast = idx === STATE.sohoje.length - 1;
-        let borderRight = isLast ? 'none' : '1px solid var(--c-bd)';
         
+        // Define a linha divisória - não mostra no último
+        let borderBottom = isLast ? 'none' : '1px solid var(--c-bd)';
+        
+        let qty = STATE.cart[p.id] || 0;
+        
+        let controlHtml = '';
+        if (qty > 0) {
+            // Se já tem no carrinho, mostra o seletor de quantidade
+            controlHtml = `
+            <div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:34px; padding:0 4px; width: 85px; flex-shrink: 0;">
+                <button onclick="upd('${p.id}',-1)" style="font-size:1.4rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 8px; height: 100%; cursor:pointer;">-</button>
+                <span style="font-weight:700; font-size:0.95rem; color:var(--c-p);">${qty}</span>
+                <button onclick="upd('${p.id}',1)" style="font-size:1.4rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 8px; height: 100%; cursor:pointer;">+</button>
+            </div>`;
+        } else {
+            // Se não tem no carrinho, mostra apenas o botão +
+            controlHtml = `<button onclick="upd('${p.id}', 1);" style="background: #fff; border: 2px solid var(--c-ok); color: var(--c-ok); width: 34px; height: 34px; border-radius: 10px; font-size: 1.4rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; cursor: pointer;">+</button>`;
+        }
+
+        // Mensagem de adicionado (aparece se qty > 0)
+        let msgHtml = qty > 0 ? `<div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 600; margin-top: 6px;">✓ Adicionado ao pedido</div>` : '';
+
         return `
-        <div style="flex: 0 0 240px; display: flex; align-items: center; gap: 10px; border-right: ${borderRight}; padding-right: 15px; scroll-snap-align: start;">
-            <img src="${p.img}" alt="${formatName(p.name)}" style="width: 50px; height: 50px; object-fit: contain; mix-blend-mode: multiply; background: var(--c-img-bg); border-radius: 8px; flex-shrink: 0;" loading="lazy">
-            <div style="flex: 1; min-width: 0;">
-                <div style="font-size: 0.8rem; font-weight: 600; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${formatName(p.name)}</div>
-                <div style="font-size: 0.95rem; font-weight: 800; color: var(--c-err); margin-top: 2px;">${fmt(price)}</div>
+        <div style="display: flex; flex-direction: column; border-bottom: ${borderBottom}; padding: 12px 0;">
+            <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+                <img src="${p.img}" alt="${formatName(p.name)}" style="width: 50px; height: 50px; object-fit: contain; mix-blend-mode: multiply; background: var(--c-img-bg); border-radius: 8px; flex-shrink: 0;" loading="lazy">
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 0.85rem; font-weight: 600; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${formatName(p.name)}</div>
+                    <div style="font-size: 0.95rem; font-weight: 800; color: var(--c-err); margin-top: 2px;">${fmt(price)}</div>
+                </div>
+                ${controlHtml}
             </div>
-            <button onclick="upd('${p.id}', 1); showToast('Adicionado!', 's');" style="background: #fff; border: 2px solid var(--c-ok); color: var(--c-ok); width: 34px; height: 34px; border-radius: 10px; font-size: 1.4rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; cursor: pointer;">+</button>
+            ${msgHtml}
         </div>`;
     }).join('');
     
