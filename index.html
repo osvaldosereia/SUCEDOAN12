@@ -77,7 +77,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .main-stage { height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 
-/* TÍTULO DA SESSÃO: ALINHADO COM O CONTEÚDO (MAX-WIDTH) */
+/* TÍTULO DA SESSÃO */
 .section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
 
 /* GRADE DE PRODUTOS - LINHAS DIVISÓRIAS ÚNICAS */
@@ -91,6 +91,16 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd); }
     .u-card:nth-child(4n) { border-right: none; }
 }
+
+/* SKELETON LOADING (SHIMMER) PARA O CARREGAMENTO INICIAL */
+@keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
+.skeleton-card { background: #fff; padding: 4px; border-bottom: 1px solid var(--c-bd); border-right: 1px solid var(--c-bd); display: flex; flex-direction: column; }
+@media(min-width: 800px) { .skeleton-card:nth-child(2n) { border-right: 1px solid var(--c-bd); } .skeleton-card:nth-child(4n) { border-right: none; } }
+.skeleton-el { background: #f1f5f9; background-image: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%); background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s infinite linear forwards; }
+.sk-img { width: 100%; aspect-ratio: 1; border-radius: 0px; }
+.sk-t1 { height: 14px; margin-top: 12px; border-radius: 4px; width: 90%; }
+.sk-t2 { height: 18px; margin-top: 8px; border-radius: 4px; width: 40%; }
+.sk-btn { height: 38px; margin-top: 14px; border-radius: 8px; width: 100%; }
 
 /* RECORTE MÁGICO COM BORDAS RETAS (CANTOS VIVOS) */
 .u-img-area { width: 100%; aspect-ratio: 1; background: var(--c-img-bg); border-radius: 0px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -119,7 +129,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .grid-mini .u-card:nth-child(n+3) { display: none !important; }
 @media(min-width: 800px) { .grid-mini .u-card:nth-child(n+3) { display: flex !important; } }
 .btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
-    .btn-ver-todas-ofertas:hover { background: var(--c-a); color: #fff; }
+.btn-ver-todas-ofertas:hover { background: var(--c-a); color: #fff; }
 
 /* CHIPS NO FINAL DA GRADE (NOVO DESIGN ELEGANTE) */
 .bottom-chips-wrapper { margin-top: 10px; padding: 30px 15px 40px; text-align: left; width: 100%; max-width: 1200px; margin: 0 auto; }
@@ -143,7 +153,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     width: 65px; height: 65px; border-radius: 14px; object-fit: contain; 
     background: var(--c-img-bg); padding: 4px; mix-blend-mode: multiply; flex-shrink: 0;
 }
-    .bottom-chip-info { display: flex; flex-direction: column; overflow: hidden; }
+.bottom-chip-info { display: flex; flex-direction: column; overflow: hidden; }
 .bottom-chip-title { font-size: 0.95rem; font-weight: 700; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bottom-chip:hover .bottom-chip-title { color: var(--c-a); }
 .bottom-chip-count { font-size: 0.8rem; font-weight: 600; color: var(--c-ok); margin-top: 2px; }
@@ -231,6 +241,18 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     </div>
 
     <div id="wrapper-sections">
+        <div id="skeleton-loader" class="tab-section" style="display:block;">
+            <div class="section-title skeleton-el" style="width: 220px; height: 26px; margin: 20px 15px 10px; border-radius: 6px;"></div>
+            <div class="grid-produtos">
+                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
+                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
+                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
+                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
+                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
+                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
+            </div>
+        </div>
+
         <div id="dynamic-sections"></div>
     </div>
 
@@ -446,11 +468,14 @@ async function init() {
 // ABAS E GRADES (DOM OTIMIZADO)
 // ==========================================
 function buildTabsAndSections() {
+    // Esconde o Skeleton Loader assim que os dados chegarem
+    let skel = $('skeleton-loader');
+    if(skel) skel.style.display = 'none';
+
     let chipsHtml = '';
     let sectionsHtml = '';
     STATE.lists = {};
 
-    // 1. GERAÇÃO SEGURA DOS TERMOS
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
@@ -546,9 +571,7 @@ function buildTabsAndSections() {
 function renderBottomChips(activeTabId) {
     let html = '';
 
-    // MINI OFERTAS (Injeta 1 linha de ofertas se o cliente não estiver na própria página de ofertas)
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
-        // Pega os primeiros 4 itens (para preencher as 4 colunas do desktop e as 2 de mobile)
         let miniOfertas = STATE.lists['ofertas'].data.slice(0, 4);
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
         
@@ -562,7 +585,6 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
-    // LISTA DE CHIPS INFERIOR (Continue Explorando)
     html += `
     <div class="bottom-chips-wrapper">
         <div class="bottom-chips-title">Continue explorando</div>
@@ -583,7 +605,7 @@ function renderBottomChips(activeTabId) {
             }
             if(!firstItemImg) firstItemImg = '/site/img/produtos/cesta.webp'; 
 
-           html += `
+            html += `
             <div class="bottom-chip" onclick="switchTab('${id}')">
                 <img src="${firstItemImg}" alt="Categoria ${name}" width="65" height="65" loading="lazy">
                 <div class="bottom-chip-info">
@@ -609,7 +631,6 @@ window.switchTab = function(tabId) {
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
 
-    // Limpa o conteúdo das abas inativas para salvar memória do celular
     document.querySelectorAll('.tab-section').forEach(el => {
         el.style.display = 'none';
         let grid = el.querySelector('.grid-produtos');
@@ -619,7 +640,6 @@ window.switchTab = function(tabId) {
     let target = $('sec-' + tabId);
     if(target) target.style.display = 'block';
 
-    // RENDERIZA APENAS O GRID ATIVO
     let listKey = (tabId === 'cestas' || tabId === 'ofertas' || tabId === 'combos') ? tabId : 'term_' + tabId;
     if(STATE.lists[listKey]) {
         renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
@@ -788,7 +808,6 @@ function upd(id, delta) {
     STATE.cart[id] = n; 
     if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); } 
     
-    // Atualiza os paineis visuais de forma cirurgica em todos os lugares (grid e mini grid)
     document.querySelectorAll(`.u-card[data-id="${id}"] .action-wrap`).forEach(el => {
         el.innerHTML = getCardControls(id);
     });
