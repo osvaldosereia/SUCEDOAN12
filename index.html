@@ -115,6 +115,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1rem; color:var(--c-p); }
 
+/* MINI OFERTAS (1 LINHA) */
+.grid-mini .u-card:nth-child(n+3) { display: none !important; }
+@media(min-width: 800px) { .grid-mini .u-card:nth-child(n+3) { display: flex !important; } }
+.btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 20px auto 10px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+.btn-ver-todas-ofertas:hover { background: var(--c-a); color: #fff; }
+
 /* CHIPS NO FINAL DA GRADE (NOVO DESIGN ELEGANTE) */
 .bottom-chips-wrapper { margin-top: 10px; padding: 30px 15px 40px; text-align: left; width: 100%; max-width: 1200px; margin: 0 auto; }
 .bottom-chips-title { font-size: 1.15rem; font-weight: 800; color: var(--c-p); margin-bottom: 20px; text-transform: uppercase; border-bottom: 2px solid var(--c-bd); padding-bottom: 10px;}
@@ -444,13 +450,12 @@ function buildTabsAndSections() {
     let sectionsHtml = '';
     STATE.lists = {};
 
-    // 1. GERAÇÃO SEGURA DOS TERMOS (Evita quebrar o site com pontuações)
+    // 1. GERAÇÃO SEGURA DOS TERMOS
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             if (item.termos || typeof item === 'string') {
                 let terms = item.termos || item;
-                // Remove qualquer pontuação e substitui por espaço limpo
                 let cleanTerms = String(terms).split(/\s*,\s*|\s+e\s+/i)
                     .map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim())
                     .filter(t => t);
@@ -458,7 +463,6 @@ function buildTabsAndSections() {
             }
         });
     }
-    // Remove palavras repetidas para acelerar o processamento do celular
     allTerms = [...new Set(allTerms)];
 
     if (STATE.baskets.length > 0) {
@@ -491,17 +495,14 @@ function buildTabsAndSections() {
                 if (item.tipo === 'preco_maximo') return precoProduto > 0 && precoProduto <= (valorAlvo + 0.01);
                 
                 if (item.termos || typeof item === 'string') {
-                    // Limpa e prepara os termos desta sessão
                     let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i)
                         .map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim())
                         .filter(t => t);
                     
-                    // 2. FILTRO BLINDADO E TORNEIO DE PALAVRAS
                     let pName = norm(p.name).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
                     let pNamePadded = ' ' + pName + ' ';
                     
                     let matches = [];
-                    // Verifica onde cada palavra existe no produto
                     allTerms.forEach(t => {
                         let words = t.split(' ');
                         let isMatch = words.every(w => pNamePadded.includes(' ' + w + ' '));
@@ -512,17 +513,12 @@ function buildTabsAndSections() {
                         }
                     });
 
-                    // O Torneio: Se ele der match com vários termos (ex: Biscoito e Sal)
                     if (matches.length > 0) {
                         matches.sort((a, b) => {
-                            // Regra 1: Quem aparece primeiro no texto, ganha (ex: Biscoito ganha de Sal)
                             if (a.index !== b.index) return a.index - b.index;
-                            
-                            // Regra 2: Se começar junto, o nome composto ganha (ex: Molho de Tomate ganha de Molho)
                             return b.wordCount - a.wordCount;
                         });
                         
-                        // Envia o produto APENAS para a categoria campeã
                         let termoVencedor = matches[0].term;
                         return subs.includes(termoVencedor);
                     }
@@ -546,9 +542,28 @@ function buildTabsAndSections() {
     else if(ofertas.length > 0) switchTab('ofertas');
 }
 
-// CRIA OS CHIPS NO FINAL DA PÁGINA COM NOVO VISUAL
+// CRIA OS CHIPS NO FINAL DA PÁGINA (E AS MINI OFERTAS)
 function renderBottomChips(activeTabId) {
-    let html = `
+    let html = '';
+
+    // MINI OFERTAS (Injeta 1 linha de ofertas se o cliente não estiver na própria página de ofertas)
+    if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
+        // Pega os primeiros 4 itens (para preencher as 4 colunas do desktop e as 2 de mobile)
+        let miniOfertas = STATE.lists['ofertas'].data.slice(0, 4);
+        let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
+        
+        html += `
+        <div style="margin-top: 40px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
+            <div class="section-title" style="color: var(--c-err);">🔥 Ofertas da Semana</div>
+            <div class="grid-produtos grid-mini">
+                ${miniHtml}
+            </div>
+            <button class="btn-ver-todas-ofertas" onclick="switchTab('ofertas')">Ver todas as ofertas</button>
+        </div>`;
+    }
+
+    // LISTA DE CHIPS INFERIOR (Continue Explorando)
+    html += `
     <div class="bottom-chips-wrapper">
         <div class="bottom-chips-title">Continue explorando</div>
         <div class="bottom-chips-container">`;
@@ -594,7 +609,7 @@ window.switchTab = function(tabId) {
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
 
-    // CORREÇÃO DOM: Limpa o conteúdo das abas inativas para salvar memória do celular
+    // Limpa o conteúdo das abas inativas para salvar memória do celular
     document.querySelectorAll('.tab-section').forEach(el => {
         el.style.display = 'none';
         let grid = el.querySelector('.grid-produtos');
@@ -660,7 +675,6 @@ window.goToMinhaCesta = function(doScroll) {
 // RENDERIZAÇÃO OTIMIZADA
 // ==========================================
 function renderPaginated(containerId, listKey, list, type) {
-    // Agora o index é passado para os templates para controle de prioridade da imagem (LCP)
     let html = list.map((item, index) => {
         if (type === 'BASKET') return cardBasket(item, index);
         if (type === 'COMBO') return cardCombo(item, index);
@@ -674,7 +688,7 @@ function renderPaginated(containerId, listKey, list, type) {
 }
 
 // ==========================================
-// TEMPLATES E ATUALIZAÇÕES CIRÚRGICAS (CORRIGIDOS PARA LCP E A11Y)
+// TEMPLATES E ATUALIZAÇÕES CIRÚRGICAS
 // ==========================================
 function getCardControls(id) {
     let p = STATE.prods.find(x => x.id === id);
@@ -691,7 +705,6 @@ function getCardControls(id) {
 }
 
 function cardProd(p, index) {
-    // CORREÇÃO LCP: As primeiras 4 imagens não usam lazy loading para aparecerem mais rápido
     let imgLoadAttr = index < 4 ? 'fetchpriority="high"' : 'loading="lazy"';
     return `
     <div class="u-card" data-id="${p.id}" onclick="openQuickView('${p.id}')">
@@ -775,6 +788,7 @@ function upd(id, delta) {
     STATE.cart[id] = n; 
     if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); } 
     
+    // Atualiza os paineis visuais de forma cirurgica em todos os lugares (grid e mini grid)
     document.querySelectorAll(`.u-card[data-id="${id}"] .action-wrap`).forEach(el => {
         el.innerHTML = getCardControls(id);
     });
@@ -896,7 +910,6 @@ function confirmBasket(isCustom, qty) {
     if(activeTab) { 
         let safe = activeTab.id.replace('chip-', ''); 
         let listKey = (safe === 'cestas' || safe === 'ofertas' || safe === 'combos') ? safe : 'term_' + safe; 
-        // Atualiza a renderização apenas se a grade do item ativo estiver montada
         if(STATE.lists[listKey]) {
             renderPaginated('grid-' + safe, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
         }
