@@ -444,13 +444,22 @@ function buildTabsAndSections() {
     let sectionsHtml = '';
     STATE.lists = {};
 
+    // 1. GERAÇÃO SEGURA DOS TERMOS (Evita quebrar o site com pontuações)
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
-            let terms = item.termos || item;
-            allTerms.push(...String(terms).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t));
+            if (item.termos || typeof item === 'string') {
+                let terms = item.termos || item;
+                // Remove qualquer pontuação e substitui por espaço limpo
+                let cleanTerms = String(terms).split(/\s*,\s*|\s+e\s+/i)
+                    .map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim())
+                    .filter(t => t);
+                allTerms.push(...cleanTerms);
+            }
         });
     }
+    // Remove palavras repetidas para acelerar o processamento do celular
+    allTerms = [...new Set(allTerms)];
 
     if (STATE.baskets.length > 0) {
         chipsHtml += `<button class="chip" id="chip-cestas" onclick="switchTab('cestas')">Cestas Básicas</button>`;
@@ -476,43 +485,45 @@ function buildTabsAndSections() {
             let label = item.etiqueta || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             
-           let list = STATE.prods.filter(p => { 
+            let list = STATE.prods.filter(p => { 
                 let precoProduto = Number(p.price); let valorAlvo = Number(item.valor);
                 if (item.tipo === 'preco_exato') return Math.abs(precoProduto - valorAlvo) < 0.01;
                 if (item.tipo === 'preco_maximo') return precoProduto > 0 && precoProduto <= (valorAlvo + 0.01);
                 
                 if (item.termos || typeof item === 'string') {
-                    let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t.trim())).filter(t => t);
-                    let pName = norm(p.name);
+                    // Limpa e prepara os termos desta sessão
+                    let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i)
+                        .map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim())
+                        .filter(t => t);
                     
-                    // 1. Encontra TODOS os termos (de todas as categorias) que existem neste produto
+                    // 2. FILTRO BLINDADO E TORNEIO DE PALAVRAS
+                    let pName = norm(p.name).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+                    let pNamePadded = ' ' + pName + ' ';
+                    
                     let matches = [];
+                    // Verifica onde cada palavra existe no produto
                     allTerms.forEach(t => {
                         let words = t.split(' ');
-                        // Verifica se todas as palavras do termo estão no nome do produto
-                        let isMatch = words.every(w => new RegExp('\\b' + w + '\\b').test(pName));
+                        let isMatch = words.every(w => pNamePadded.includes(' ' + w + ' '));
                         
                         if (isMatch) {
-                            // Descobre a posição em que a palavra aparece pela primeira vez
-                            let firstWordIndex = pName.search(new RegExp('\\b' + words[0] + '\\b'));
+                            let firstWordIndex = pNamePadded.indexOf(' ' + words[0] + ' ');
                             matches.push({ term: t, wordCount: words.length, index: firstWordIndex });
                         }
                     });
 
+                    // O Torneio: Se ele der match com vários termos (ex: Biscoito e Sal)
                     if (matches.length > 0) {
-                        // 2. Aplica suas duas Regras de Ouro no Torneio:
                         matches.sort((a, b) => {
-                            // Regra 1: Quem aparece primeiro no nome ganha (ex: Biscoito vem antes de Sal)
+                            // Regra 1: Quem aparece primeiro no texto, ganha (ex: Biscoito ganha de Sal)
                             if (a.index !== b.index) return a.index - b.index;
                             
-                            // Regra 2: Se começam no mesmo lugar, a palavra composta ganha (ex: Molho de Tomate ganha de Molho)
+                            // Regra 2: Se começar junto, o nome composto ganha (ex: Molho de Tomate ganha de Molho)
                             return b.wordCount - a.wordCount;
                         });
                         
-                        // O termo vencedor é o primeiro da lista após o torneio
+                        // Envia o produto APENAS para a categoria campeã
                         let termoVencedor = matches[0].term;
-                        
-                        // O produto SÓ entra nesta sessão se o termo vencedor for um dos termos desta sessão
                         return subs.includes(termoVencedor);
                     }
                 } 
