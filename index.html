@@ -31,7 +31,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; }
 
-/* HEADER AUTO-HIDE (ESTILO MERCADO LIVRE) */
+/* HEADER AUTO-HIDE */
 #header-wrapper {
     position: fixed;
     top: 0; left: 0; right: 0;
@@ -75,34 +75,29 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .chip { padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: var(--c-img-bg); color: var(--c-p); white-space: nowrap; cursor: pointer; transition: 0.2s; border: none; }
 .chip.active { background: var(--c-p); color: #fff; }
 
-.main-stage { 
-    height: 100dvh; 
-    padding-top: 135px; /* Espaço do header compactado */
-    padding-bottom: 80px; /* Espaço do nav inferior */
-    overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; 
-}
+.main-stage { height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 .section-title { font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
 
 /* GRADE DE PRODUTOS - LINHAS DIVISÓRIAS ÚNICAS */
 .grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
 @media(min-width: 800px) { .grid-produtos { grid-template-columns: repeat(4, 1fr); border-left: 1px solid var(--c-bd); } }
 
-/* CARDS: FUNDO MAIOR, SEM ARREDONDAMENTO NA IMAGEM */
-.u-card { background: #fff; border: none; border-bottom: 1px solid var(--c-bd); border-right: 1px solid var(--c-bd); padding: 0; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; }
+/* CARDS: PADDING DE 4PX PARA AFASTAR A IMAGEM DA LINHA SEPARADORA */
+.u-card { background: #fff; border: none; border-bottom: 1px solid var(--c-bd); border-right: 1px solid var(--c-bd); padding: 4px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; }
 .u-card:nth-child(2n) { border-right: none; } 
 @media(min-width: 800px) {
     .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd); }
     .u-card:nth-child(4n) { border-right: none; }
 }
 
-/* RECORTE MÁGICO CLAREADO (FUNDO QUADRADO COMPLETO) */
-.u-img-area { width: 100%; aspect-ratio: 1; background: var(--c-img-bg); border-radius: 0; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+/* RECORTE MÁGICO COM CANTOS ARREDONDADOS INTERNOS */
+.u-img-area { width: 100%; aspect-ratio: 1; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .u-img { width: 90%; height: 90%; object-fit: contain; mix-blend-mode: multiply; } 
-.u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; border-radius: 0; }
-.offer-tag { position: absolute; top: 0; right: 0; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-bottom-left-radius: 8px;}
+.u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; border-radius: 8px; }
+.offer-tag { position: absolute; top: 4px; right: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0 8px 0 8px;}
 
 /* INFO DENTRO DO CARD */
-.u-info { padding: 12px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
+.u-info { padding: 8px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
 .u-name { font-size: 0.85rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .u-price { font-size: 1.25rem; font-weight: 700; color: var(--c-p); margin-top: 4px; }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: -2px; }
@@ -114,6 +109,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:38px; margin-top:10px; padding:0 4px; width:100%; }
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1rem; color:var(--c-p); }
+
+/* CARROSSEL CONTINUIDADE (VOCÊ TAMBÉM PODE GOSTAR) */
+.suggestions-track { display: flex; overflow-x: auto; gap: 8px; padding: 0 15px 15px; margin: 0; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
+.suggestions-track::-webkit-scrollbar { display: none; }
+.suggestions-track .u-card { flex: 0 0 160px; scroll-snap-align: start; border: 1px solid var(--c-bd); border-radius: 12px; }
 
 /* BOTTOM NAV (CARRINHO AO CENTRO) */
 .bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 60px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
@@ -247,10 +247,13 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
             <h3 style="font-weight:700;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
             <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
         </div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 600; color: var(--c-p); font-size: 1rem;">Qual o valor da entrega?</div><div style="font-size: 0.95rem; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div></div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 600; color: var(--c-p); font-size: 1rem;">Quais as formas de pagamento?</div><div style="font-size: 0.95rem; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div></div>
-        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px; margin-bottom: 10px;">
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 600; color: var(--c-p); font-size: 1rem;">Qual o valor da entrega?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div></div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 600; color: var(--c-p); font-size: 1rem;">Quais as formas de pagamento?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div></div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 600; color: var(--c-p); font-size: 1rem;">Qual o prazo de entrega?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Entregas em até 24 horas úteis após a confirmação do pedido.</div></div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 600; color: var(--c-p); font-size: 1rem;">Posso personalizar a cesta?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Sim! Você pode adicionar ou remover itens conforme sua necessidade.</div></div>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px; margin-bottom: 15px;">
             <button class="btn-modal primary" style="flex: 1; background:#25D366; font-size: 1rem;" onclick="window.open('https://wa.me/5565998150975','_blank')">WhatsApp</button>
+            <button class="btn-modal primary" style="flex: 1; background:#E1306C; font-size: 1rem;" onclick="alert('https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/')">Instagram</button>
         </div>
     </div>
 </dialog>
@@ -352,7 +355,7 @@ function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
 
 // ==========================================
-// ANIMAÇÃO E SCROLL DO HEADER (MERCADO LIVRE)
+// ANIMAÇÃO E SCROLL DO HEADER
 // ==========================================
 function startPromoBanner() {
     const items = document.querySelectorAll('.promo-item');
@@ -421,7 +424,7 @@ function setupObserver() {
 }
 
 // ==========================================
-// ABAS (TABS)
+// ABAS E GRADES
 // ==========================================
 function buildTabsAndSections() {
     let chipsHtml = '';
@@ -547,15 +550,8 @@ window.goToMinhaCesta = function(doScroll) {
     if(doScroll) $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.clearCart = function() {
-    if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
-        STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; 
-        goToHome(); updateTotals(); $('modal-checkout').close(); 
-    }
-};
-
 // ==========================================
-// RENDERIZAÇÃO
+// RENDERIZAÇÃO E CONTINUIDADE
 // ==========================================
 function renderPaginated(containerId, listKey, list, step, type) {
     if(!STATE.lists[listKey]) STATE.lists[listKey] = { data: list, type: type, containerId: containerId, step: step };
@@ -570,11 +566,26 @@ function renderPaginated(containerId, listKey, list, step, type) {
     
     if (STATE.pageLimits[listKey] < list.length) {
         html += `<div class="infinite-sentinel" data-list="${listKey}" style="grid-column: 1 / -1; height: 10px;"></div>`;
+    } else {
+        // CONTINUIDADE: Ofertas "Você Também Pode Gostar" no fim da grade
+        if (!['busca', 'cesta_ativa', 'ofertas', 'combos', 'cestas'].includes(listKey)) {
+            let suggestions = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price).slice(0, 8);
+            if(suggestions.length > 0) {
+                let sugHtml = suggestions.map(p => cardProd(p)).join('');
+                html += `
+                <div style="grid-column: 1 / -1; margin-top: 20px; padding: 25px 0; border-top: 1px solid var(--c-bd);">
+                    <div style="font-size: 1.15rem; font-weight: 800; color: var(--c-p); padding: 0 15px 15px; text-transform: uppercase;">🔥 Você também pode gostar</div>
+                    <div class="suggestions-track">
+                        ${sugHtml}
+                    </div>
+                </div>`;
+            }
+        }
     }
     
     let c = $(containerId);
     if (c) { 
-        c.innerHTML = html || '<p style="grid-column: 1/-1;">Nenhum item encontrado.</p>'; 
+        c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>'; 
         let sentinel = c.querySelector('.infinite-sentinel'); 
         if (sentinel && STATE.observer) STATE.observer.observe(sentinel); 
     }
@@ -588,7 +599,7 @@ window.loadMore = function(listKey) {
 };
 
 // ==========================================
-// TEMPLATES CIRÚRGICOS (SEM PULOS DE TELA)
+// TEMPLATES E ATUALIZAÇÕES CIRÚRGICAS
 // ==========================================
 function getCardControls(id) {
     let p = STATE.prods.find(x => x.id === id);
@@ -641,7 +652,7 @@ function cardBasket(item) {
 function cardCombo(item) { 
     return `
     <div class="u-card" onclick="previewCombo('${item.id}')">
-        <div class="offer-tag">COMBO</div>
+        <div class="offer-tag" style="border-radius: 0 8px 0 8px;">COMBO</div>
         <div class="u-img-area"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" class="u-img-cesta" loading="lazy"></div>
         <div class="u-info">
             <div class="u-name">${formatName(item.nome)}</div>
@@ -685,7 +696,6 @@ function upd(id, delta) {
     STATE.cart[id] = n; 
     if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); } 
     
-    // ATUALIZAÇÃO CIRÚRGICA DE UI (Impede saltos e corrige bugs de outras abas)
     document.querySelectorAll(`.u-card[data-id="${id}"] .action-wrap`).forEach(el => {
         el.innerHTML = getCardControls(id);
     });
@@ -694,7 +704,6 @@ function upd(id, delta) {
         $('qv-action-area').innerHTML = getCardControls(id);
     }
 
-    // Se estiver na Cesta e a quantia for 0, ele remove o item sem subir a tela
     if($('sec-minha-cesta').style.display === 'block' && n === 0) {
         goToMinhaCesta(false); 
     }
@@ -703,16 +712,40 @@ function upd(id, delta) {
     if ($('modal-checkout').open) openCheckout();
 }
 
+window.clearCart = function() {
+    if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
+        STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; 
+        
+        // CIRÚRGIA: Limpa visualmente todos os botões sem recarregar a tela
+        document.querySelectorAll('.u-card').forEach(card => {
+            let id = card.dataset.id;
+            if(id) {
+                let aw = card.querySelector('.action-wrap');
+                if(aw) aw.innerHTML = getCardControls(id);
+            }
+        });
+
+        goToHome(); 
+        updateTotals(); 
+        $('modal-checkout').close(); 
+    }
+};
+
 function updateTotals() {
     let sum = 0; 
     Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => x.id === id); if (p) sum += p.price * q; });
     
     let subtotal = sum + STATE.basketExtraFee;
+    
+    // DESCONTO POR VALOR DA COMPRA (Corrigido para .minimo)
     let valueDiscount = 0;
     if(STATE.descontosValor && STATE.descontosValor.length > 0) {
-        STATE.descontosValor.forEach(d => { if(subtotal >= d.valorMinimo && d.desconto > valueDiscount) valueDiscount = d.desconto; });
+        STATE.descontosValor.forEach(d => { 
+            if(subtotal >= d.minimo && d.desconto > valueDiscount) valueDiscount = d.desconto; 
+        });
     }
     STATE.valueDiscount = valueDiscount;
+    
     let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount;
     $('chk-total').innerText = fmt(final);
     
@@ -747,7 +780,6 @@ function previewBasket(id) {
     $('prev-desc').innerText = `${c.produtos.length} itens inclusos`; 
     $('prev-price').innerText = fmt(c.preco); 
     
-    // FOTOS NO CARROSSEL AGORA RECORTADAS NO FUNDO CLARO
     $('prev-list').innerHTML = c.produtos.map(s => { 
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
         return `
