@@ -76,9 +76,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .btn-top-help:hover { background: #e2e8f0; }
 .btn-top-help svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-/* --------------------------------------------------- */
 /* SLIDER DE ATALHOS (BOLINHAS) */
-/* --------------------------------------------------- */
 #fixed-chips-container { background: #fff; width: 100%; border-bottom: 1px solid var(--c-bd); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); transition: 0.3s; }
 .slider-wrap { position: relative; width: 100%; max-width: 1200px; margin: 0 auto; display: flex; align-items: center; background: #fff; padding: 12px 0 8px; transition: 0.3s; }
 .slider-track { flex: 1; display: flex; gap: 14px; overflow-x: auto; scroll-behavior: smooth; padding: 0 15px; -webkit-overflow-scrolling: touch; scrollbar-width: none; transition: 0.3s; }
@@ -107,23 +105,21 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 
 /* Fundo bege bem clarinho e contornos em tons pastéis (Estilo Stories) */
-.bg-p-1 { background-color: #fcfbf8; border-color: #fde047; } /* Contorno Amarelo Pastel */
-.bg-p-2 { background-color: #fcfbf8; border-color: #fca5a5; } /* Contorno Rosa Pastel */
-.bg-p-3 { background-color: #fcfbf8; border-color: #93c5fd; } /* Contorno Azul Pastel */
-.bg-p-4 { background-color: #fcfbf8; border-color: #86efac; } /* Contorno Verde Pastel */
-.bg-p-5 { background-color: #fcfbf8; border-color: #fdba74; } /* Contorno Laranja Pastel */
-.bg-p-6 { background-color: #fcfbf8; border-color: #d8b4fe; } /* Contorno Roxo Pastel */
+.bg-p-1 { background-color: #fcfbf8; border-color: #fde047; } 
+.bg-p-2 { background-color: #fcfbf8; border-color: #fca5a5; } 
+.bg-p-3 { background-color: #fcfbf8; border-color: #93c5fd; } 
+.bg-p-4 { background-color: #fcfbf8; border-color: #86efac; } 
+.bg-p-5 { background-color: #fcfbf8; border-color: #fdba74; } 
+.bg-p-6 { background-color: #fcfbf8; border-color: #d8b4fe; } 
     
-/* --------------------------------------------------- */
-/* LÓGICA DO MODO COMPACTO (AO ROLAR A PÁGINA)         */
-/* --------------------------------------------------- */
+/* LÓGICA DO MODO COMPACTO (AO ROLAR A PÁGINA) */
 #header-wrapper.compact { box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
 #header-wrapper.compact .top-promo-wrap { display: none; }
 #header-wrapper.compact #fixed-chips-container { box-shadow: none; border-bottom: none; }
 
 .search-compact-overlay { display: none; position: absolute; inset: 0; z-index: 10; cursor: pointer; border-radius: 20px;}
 
-/* MOBILE COMPACT (Lupa + Chips) */
+/* MOBILE COMPACT */
 @media(max-width: 799px) {
     #header-wrapper.compact .search-compact-overlay { display: block; }
     #header-wrapper.compact .header-content-wrapper { flex-direction: row; height: 60px; }
@@ -143,7 +139,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     #header-wrapper.compact .slider-label { font-size: 0.9rem; font-weight: 600; white-space: nowrap; -webkit-line-clamp: unset; overflow: visible; display: block; }
 }
 
-/* DESKTOP COMPACT (30% Busca + 70% Bolinhas) */
+/* DESKTOP COMPACT */
 @media(min-width: 800px) {
     #header-wrapper.compact .search-compact-overlay { display: none !important; }
     #header-wrapper.compact .header-content-wrapper { flex-direction: row; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--c-bd); }
@@ -245,14 +241,15 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .bottom-chip:hover .bottom-chip-title { color: var(--c-a); }
 .bottom-chip-count { font-size: 0.8rem; font-weight: 600; color: var(--c-ok); margin-top: 2px; }
 
-/* BOTTOM NAV (CARRINHO AO CENTRO) */
+/* BOTTOM NAV */
 .bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 60px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-.tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--c-t); gap: 4px; width: 20%; cursor: pointer; }
+.tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--c-t); gap: 4px; width: 20%; cursor: pointer; transition: 0.2s; }
 .tab-item svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
 .tab-label { font-size: 0.65rem; font-weight: 600; }
 .tab-item.active { color: var(--c-a); }
 
-.cart-fab-wrapper { position: relative; top: -15px; width: 60px; height: 60px; background: var(--c-p); color: #fff !important; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+.cart-fab-wrapper { position: relative; top: -15px; width: 60px; height: 60px; background: var(--c-p); color: #fff !important; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.2s; }
+.cart-fab-wrapper:active { transform: scale(0.95); }
 .cart-fab-wrapper svg { stroke: #fff; width: 22px; height: 22px; }
 .cart-badge { position: absolute; top: 0px; right: 0px; background: var(--c-err); color: #fff; font-size: 0.65rem; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
 
@@ -267,6 +264,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .btn-modal { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;}
 .btn-modal.primary { background: var(--c-a); color: #fff; }
 .btn-modal.secondary { background: #fff; border: 1px solid var(--c-bd); color: var(--c-p); }
+.btn-modal.secondary:hover { background: #f8fafc; }
 .btn-modal:disabled { opacity: 0.7; pointer-events: none; }
 
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
@@ -390,21 +388,21 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
         <div class="tab-label">Início</div>
     </div>
-    <div class="tab-item" id="btn-nav-search" onclick="document.getElementById('search-inp').focus(); window.scrollTo(0,0);">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <div class="tab-label">Busca</div>
+    <div class="tab-item" id="btn-nav-cesta" onclick="goToMinhaCesta(true)">
+        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+        <div class="tab-label">Cesta</div>
     </div>
     <div class="tab-item cart-fab-wrapper" onclick="openCheckout()">
         <div class="cart-badge" id="badge-count" style="display:none;">0</div>
         <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
     </div>
-    <div class="tab-item" id="btn-nav-cesta" onclick="goToMinhaCesta(true)">
-        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-        <div class="tab-label">Cesta</div>
-    </div>
     <div class="tab-item" id="btn-nav-kits" onclick="switchTab('combos');">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
         <div class="tab-label">Kits</div>
+    </div>
+    <div class="tab-item" id="btn-nav-pedidos" onclick="openHistoricoPedidos()">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <div class="tab-label">Pedidos</div>
     </div>
 </nav>
 
@@ -516,6 +514,14 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
     </div>
 </dialog>
 
+<dialog id="modal-pedidos">
+    <div class="modal-body" style="text-align: left; padding: 25px 20px;">
+        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
+        <h2 style="font-weight: 700; font-size: 1.3rem; color: var(--c-p); margin-top: 5px; margin-bottom: 20px;">Meus Pedidos</h2>
+        <div id="pedidos-list" style="display: flex; flex-direction: column; gap: 15px;"></div>
+    </div>
+</dialog>
+
 <div id="toast-container"></div>
 
 <script>
@@ -537,8 +543,8 @@ const $ = id => document.getElementById(id);
 
 const STATE = {
     baskets: [], prods: [], coupons: [], combos: [], termos: [], descontosValor: [], sohoje: [],
-    cart: {}, cartOrder: [], 
-    baseBasket: null, basketExtraFee: 0, comboDiscount: 0, appliedCombos: [], coupon: null, valueDiscount: 0,
+    cart: {}, cartOrder: [], appliedCombos: [], // <- appliedCombos agora inicia sempre vazio
+    baseBasket: null, basketExtraFee: 0, comboDiscount: 0, coupon: null, valueDiscount: 0,
     lists: {}, pageLimits: {},
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
 };
@@ -564,21 +570,16 @@ function startPromoBanner() {
 }
 startPromoBanner();
 
-// ==========================================
-// FUNÇÃO MÁGICA: CENTRALIZAR O MENU MATEMATICAMENTE
-// ==========================================
 function centerActiveTab() {
     const track = document.getElementById('nav-track');
     if (!track) return;
     const activeItem = track.querySelector('.slider-item.active');
     if (!activeItem) return;
     
-    // Calcula o meio do botão em relação ao tamanho total do ecrã e posiciona lá
     const centerPos = activeItem.offsetLeft - (track.clientWidth / 2) + (activeItem.clientWidth / 2);
     track.scrollTo({ left: centerPos, behavior: 'smooth' });
 }
 
-// === LÓGICA DE DETEÇÃO DE SCROLL (NOVO MODO COMPACTO) ===
 let isCompact = false;
 $('scroll-stage').addEventListener('scroll', function() {
     let st = this.scrollTop;
@@ -589,13 +590,13 @@ $('scroll-stage').addEventListener('scroll', function() {
         if (!isCompact) {
             hw.classList.add('compact');
             isCompact = true;
-            setTimeout(centerActiveTab, 300); // Puxa o botão para o meio após encolher
+            setTimeout(centerActiveTab, 300); 
         }
     } else { 
         if (isCompact) {
             hw.classList.remove('compact');
             isCompact = false;
-            setTimeout(centerActiveTab, 300); // Puxa o botão para o meio após aumentar
+            setTimeout(centerActiveTab, 300); 
         }
     }
 }, false);
@@ -624,7 +625,7 @@ async function init() {
         }
         buildTabsAndSections(); 
         updateTotals();
-        setTimeout(centerActiveTab, 200); // Garante o alinhamento no carregamento inicial
+        setTimeout(centerActiveTab, 200); 
     } catch (e) { 
         console.error("Erro na inicialização:", e);
     }
@@ -897,7 +898,6 @@ window.switchTab = function(tabId) {
     let navItem = $('nav-' + tabId);
     if(navItem) {
         navItem.classList.add('active');
-        // REMOVIDO o scrollIntoView nativo que falhava, agora usamos a função matemática
     }
     
     $('fixed-chips-container').style.display = 'block';
@@ -912,7 +912,6 @@ window.switchTab = function(tabId) {
         if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
     }
 
-    // Chama o alinhamento matemático (com um atrasozinho para o CSS renderizar)
     setTimeout(centerActiveTab, 50);
 };
 
@@ -1085,6 +1084,37 @@ function upd(id, delta) {
     if (!p) return; 
     let cur = STATE.cart[id] || 0; 
     let n = Math.max(0, cur + delta); 
+
+    // --- INÍCIO DA VERIFICAÇÃO DO KIT ---
+    // Se está reduzindo e tem algum kit ativo
+    if (delta < 0 && STATE.appliedCombos && STATE.appliedCombos.length > 0) {
+        let reqTotal = 0; // Quantidade total deste item exigida pelos kits
+        
+        STATE.appliedCombos.forEach(ac => {
+            let c = STATE.combos.find(x => String(x.id) === String(ac.id));
+            if (c) {
+                c.produtos.forEach(s => {
+                    let [q, r] = s.split('x');
+                    if (r.trim() === id) {
+                        reqTotal += parseInt(q) * ac.qty;
+                    }
+                });
+            }
+        });
+
+        // Se o item pertence a um kit e a nova quantidade é menor do que o kit exige
+        if (reqTotal > 0 && n < reqTotal) {
+            if (confirm("Atenção: Ao reduzir ou remover este item, você perderá o desconto especial do Kit. Deseja continuar?")) {
+                STATE.comboDiscount = 0; // Remove o desconto
+                STATE.appliedCombos = []; // Zera os kits para não alertar novamente noutros itens
+                showToast("Desconto do kit removido", "r");
+            } else {
+                return; // Cancela a ação! Mantém a quantidade e o desconto intactos
+            }
+        }
+    }
+    // --- FIM DA VERIFICAÇÃO DO KIT ---
+
     if (n > p.stock) return showToast("Estoque insuficiente", "r"); 
     if (cur === 0 && n > 0) STATE.cartOrder.push(id); 
     
@@ -1177,7 +1207,8 @@ function triggerSmartSuggestion(sourceId) {
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
         STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; 
-        STATE.basketExtraFee = 0; STATE.comboDiscount = 0; // Reset ao desconto do kit
+        STATE.basketExtraFee = 0; STATE.comboDiscount = 0; 
+        STATE.appliedCombos = []; // Zera a memória de kits aplicados
         
         document.querySelectorAll('.u-card').forEach(card => {
             let id = card.dataset.id;
@@ -1214,7 +1245,6 @@ function updateTotals() {
     }
     STATE.valueDiscount = valueDiscount;
     
-    // Matemática corrigida: Subtrai também o comboDiscount
     let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0);
     $('chk-total').innerText = fmt(final);
     
@@ -1225,7 +1255,6 @@ function updateTotals() {
 
 function handleSearch(q) { 
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-    if($('btn-nav-search')) $('btn-nav-search').classList.add('active');
 
     $('wrapper-sections').style.display = q ? 'none' : 'block'; 
     $('sec-minha-cesta').style.display = 'none';
@@ -1324,13 +1353,16 @@ function previewCombo(id) {
             if (p) { 
                 if (!STATE.cart[p.id]) STATE.cartOrder.push(p.id); 
                 STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(qs) * currentComboQty); 
-                sumAvulso += p.price * parseInt(qs); // Soma o valor original dos produtos
+                sumAvulso += p.price * parseInt(qs);
             } 
         }); 
         
         // Calcula a diferença (Desconto) e guarda na memória
         let diferenca = Math.max(0, sumAvulso - c.preco) * currentComboQty;
         STATE.comboDiscount = (STATE.comboDiscount || 0) + diferenca;
+        
+        // Guarda o kit aplicado na memória
+        STATE.appliedCombos.push({ id: c.id, qty: currentComboQty });
 
         $('modal-basket-preview').close(); updateTotals(); showToast("Kit adicionado!", "s");
     }; 
@@ -1439,7 +1471,6 @@ function openCheckout() {
     }
     STATE.valueDiscount = valueDiscount;
     
-    // --- O MOSTRADOR DO CHECKLIST COMPLETAMENTE RECUPERADO ---
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
         (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto do Kit:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') +
@@ -1466,6 +1497,69 @@ function openCheckout() {
 
     updateTotals(); 
     if (!$('modal-checkout').open) $('modal-checkout').showModal(); 
+}
+
+// === HISTÓRICO DE PEDIDOS ===
+function openHistoricoPedidos() {
+    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
+    $('btn-nav-pedidos').classList.add('active');
+
+    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]');
+    let html = '';
+    
+    if(history.length === 0) {
+        html = '<p style="color: var(--c-s); text-align: center; margin-top: 20px; font-weight: 500;">Você ainda não tem pedidos salvos.</p>';
+    } else {
+        html = history.map(o => `
+            <div style="border: 1px solid var(--c-bd); border-radius: 12px; padding: 16px; background: #fff;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.85rem; color: var(--c-t); font-weight: 600;">📅 ${o.date}</span>
+                    <span style="font-size: 0.85rem; background: var(--c-img-bg); padding: 4px 8px; border-radius: 6px; color: var(--c-p); font-weight: 700;">#${o.id}</span>
+                </div>
+                <div style="font-weight: 700; color: var(--c-p); margin-bottom: 4px;">${o.basketName}</div>
+                <div style="font-size: 1.3rem; font-weight: 800; color: var(--c-err); margin-bottom: 15px;">${fmt(o.total)}</div>
+                <button class="btn-modal secondary" style="margin:0; padding: 12px; font-size: 0.95rem; display:flex; align-items:center; justify-content:center; gap: 8px;" onclick="reorder('${o.id}')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                    Pedir Novamente
+                </button>
+            </div>
+        `).join('');
+    }
+    
+    $('pedidos-list').innerHTML = html;
+    $('modal-pedidos').showModal();
+}
+
+function reorder(orderId) {
+    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]');
+    let order = history.find(o => o.id === orderId);
+    if(!order) return;
+
+    STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null;
+    STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.appliedCombos = [];
+
+    let missing = false;
+    order.items.forEach(item => {
+        let p = STATE.prods.find(x => x.id === item.id);
+        if(p && p.stock > 0) {
+            let addQty = Math.min(item.qty, p.stock); // Limita pelo stock se necessário
+            STATE.cart[p.id] = addQty;
+            STATE.cartOrder.push(p.id);
+        } else {
+            missing = true;
+        }
+    });
+
+    $('modal-pedidos').close();
+    updateTotals();
+
+    if(missing) {
+        alert("Atenção: Alguns produtos do seu pedido antigo não estão mais disponíveis e foram removidos. Os preços dos demais foram atualizados para os valores de hoje. Confirme os itens antes de fechar.");
+    } else {
+        showToast("Cesta carregada com preços atualizados!", "s");
+    }
+
+    goToMinhaCesta(true);
 }
 
 async function sendOrder() {
@@ -1556,6 +1650,19 @@ async function sendOrder() {
     
     const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*\n\n------\n${tipoCestaTexto}`;
     
+    // GUARDA O PEDIDO NO HISTÓRICO LOCAL ANTES DE ENVIAR
+    const orderData = {
+        id: orderId,
+        date: new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}),
+        total: final,
+        basketName: STATE.baseBasket ? STATE.baseBasket.nome : 'Itens Avulsos/Kits',
+        items: Object.entries(STATE.cart).map(([id, qty]) => ({ id, qty }))
+    };
+    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]');
+    history.unshift(orderData); // Coloca no topo
+    if(history.length > 20) history.pop(); // Mantém apenas os 20 últimos pedidos para não pesar
+    localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
+
     try {
         await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method: "POST", 
