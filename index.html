@@ -133,6 +133,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* CONTROLES E BOTÕES */
 .btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 38px; transition: 0.2s;}
 .btn-big-action:hover { background: #cbd5e1; }
+
+/* NOVO BOTÃO MAIS CHAMATIVO PARA VER ITENS / VER KITS */
+.btn-view-details { width: 100%; background: var(--c-a); color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 38px; transition: 0.2s; box-shadow: 0 4px 6px rgba(234, 88, 12, 0.2); }
+.btn-view-details:hover { background: #c2410c; transform: translateY(-1px); }
+
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:38px; margin-top:10px; padding:0 4px; width:100%; }
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1rem; color:var(--c-p); }
@@ -184,7 +189,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* MODAIS */
 dialog { border: none; border-radius: 20px; width: 92%; max-width: 420px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); background: #fff; }
 dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); }
-.modal-body { padding: 25px 20px; text-align: center; position: relative; }
+/* ASSEGURAR O SCROLL SUAVE NO MODAL E LIMITAR A ALTURA */
+.modal-body { padding: 25px 20px; text-align: center; position: relative; max-height: 85vh; overflow-y: auto; overflow-x: hidden; }
 .btn-close-modal { position: absolute; top: 15px; right: 15px; width: 34px; height: 34px; background: var(--c-img-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; color: var(--c-p); border: none; z-index: 50; }
 
 .btn-modal { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer; transition: 0.2s;}
@@ -361,9 +367,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <h3 id="prev-title" style="font-weight: 700; margin-top: 10px; color: var(--c-p); font-size: 1.4rem;"></h3>
         <p id="prev-desc" style="color: var(--c-s); font-size: 0.95rem; margin-bottom: 15px;"></p>
         
-        <div style="background:#f8fafc; border-radius:12px; margin-bottom:15px; text-align: left;">
-            <div id="prev-list" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px; scroll-snap-type: x mandatory;"></div>
-        </div>
+        <div id="prev-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px;"></div>
         
         <div id="prev-price" style="font-size: 1.8rem; font-weight: 700; color: var(--c-p); margin-bottom: 15px;"></div>
         
@@ -561,7 +565,7 @@ function buildTabsAndSections() {
 
     if (STATE.baskets.length > 0) {
         chipsHtml += `<button class="chip" id="chip-cestas" onclick="switchTab('cestas')">Cestas Básicas</button>`;
-        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div class="section-title">Cestas Básicas</div><div class="grid-produtos" id="grid-cestas"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div class="grid-produtos" id="grid-cestas"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
@@ -823,15 +827,59 @@ window.goToMinhaCesta = function(doScroll) {
     if(doScroll) $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// ==========================================
+// FUNÇÃO DE RENDERIZAR COM INTELIGÊNCIA (GRUPOS DE ARROZ)
+// ==========================================
 function renderPaginated(containerId, listKey, list, type) {
+    let c = $(containerId);
+    if (!c) return;
+
+    // LÓGICA EXCLUSIVA PARA A ABA DE CESTAS (SUBDIVISÃO INTELIGENTE)
+    if (listKey === 'cestas') {
+        let groups = {};
+        
+        // 1. Ordena todas as cestas do preço MAIOR para o MENOR
+        let sortedList = [...list].sort((a, b) => parseFloat(b.preco) - parseFloat(a.preco));
+        
+        // 2. Lê os nomes e agrupa pelo tipo de arroz
+        sortedList.forEach(item => {
+            let match = item.nome.match(/arroz\s+([a-zA-ZÀ-ÿ0-9]+(?:\s+[a-zA-ZÀ-ÿ0-9]+)?)/i);
+            let brand = match ? formatName("Arroz " + match[1]) : "Outras Cestas";
+            
+            if(!groups[brand]) groups[brand] = [];
+            groups[brand].push(item);
+        });
+
+        let html = '';
+        
+        // 3. Monta o visual de cada grupo (garantindo que "Outras Cestas" fica no final)
+        let groupKeys = Object.keys(groups).sort((a, b) => a === "Outras Cestas" ? 1 : b === "Outras Cestas" ? -1 : a.localeCompare(b));
+        
+        groupKeys.forEach(gName => {
+            let title = gName === "Outras Cestas" ? "Outras Cestas" : `Cestas com ${gName}`;
+            
+            // Título da Subdivisão
+            html += `
+            <div style="grid-column: 1/-1; padding: 25px 15px 10px; font-size: 1.15rem; font-weight: 800; color: var(--c-p); display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--c-img-bg); margin-bottom: 10px; background: #fff;">
+                <span style="background:var(--c-a); width:4px; height:18px; border-radius:4px;"></span>${title}
+            </div>`;
+            
+            // Desenha os cards deste grupo (usando cardBasket)
+            html += groups[gName].map((item, index) => cardBasket(item, index)).join('');
+        });
+        
+        c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhuma cesta encontrada.</p>';
+        return;
+    }
+
+    // RENDERIZAÇÃO NORMAL PARA OFERTAS, KITS E RESTO
     let html = list.map((item, index) => {
         if (type === 'BASKET') return cardBasket(item, index);
         if (type === 'COMBO') return cardCombo(item, index);
         return cardProd(item, index);
     }).join('');
     
-    let c = $(containerId);
-    if (c) c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>'; 
+    c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>'; 
 }
 
 function getCardControls(id) {
@@ -878,7 +926,7 @@ function cardBasket(item, index) {
             <div class="u-name">${formatName(item.nome)}</div>
             <div style="margin-top: auto;">
                 <div class="u-price">${fmt(item.preco)}</div>
-                <button class="btn-big-action">Ver Itens</button>
+                <button class="btn-view-details">Ver Itens</button>
             </div>
         </div>
     </div>`; 
@@ -894,7 +942,7 @@ function cardCombo(item, index) {
             <div class="u-name">${formatName(item.nome)}</div>
             <div style="margin-top: auto;">
                 <div class="u-price">${fmt(item.preco)}</div>
-                <button class="btn-big-action">Ver Kit</button>
+                <button class="btn-view-details">Ver Kit</button>
             </div>
         </div>
     </div>`; 
@@ -1094,6 +1142,7 @@ function handleSearch(q) {
 function clearSearch() { $('search-inp').value = ''; handleSearch(''); goToHome(); }
 function showToast(m, t) { let d = document.createElement('div'); d.className = 'toast'; d.style.background = (t === 'r') ? '#dc2626' : '#15803d'; d.innerText = m; $('toast-container').appendChild(d); setTimeout(() => d.remove(), 2500); }
 
+// RENDERIZAÇÃO DO MODAL EM FORMATO GRADE (Cestas Básicas)
 function previewBasket(id) { 
     let c = STATE.baskets.find(x => String(x.id) === String(id)); 
     if (!c) return; 
@@ -1105,12 +1154,12 @@ function previewBasket(id) {
     $('prev-list').innerHTML = c.produtos.map(s => { 
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
         return `
-        <div style="flex:0 0 130px; text-align:left;">
+        <div style="text-align:center;">
             <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
-                <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" width="100" height="100" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
+                <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
             </div>
-            <div style="font-size:0.85rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
-            <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:4px;">x${q}</div>
+            <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
+            <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">x${q}</div>
         </div>`;
     }).join(''); 
     
@@ -1150,6 +1199,7 @@ function confirmBasket(isCustom, qty) {
     if (!isCustom) openCheckout();
 }
 
+// RENDERIZAÇÃO DO MODAL EM FORMATO GRADE (Kits/Combos)
 function previewCombo(id) { 
     let c = STATE.combos.find(x => String(x.id) === String(id)); 
     if (!c) return; 
@@ -1159,12 +1209,12 @@ function previewCombo(id) {
     $('prev-list').innerHTML = c.produtos.map(s => { 
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
         return `
-        <div style="flex:0 0 130px; text-align:left;">
+        <div style="text-align:center;">
             <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
-                <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" width="100" height="100" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
+                <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
             </div>
-            <div style="font-size:0.85rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
-            <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:4px;">x${q}</div>
+            <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
+            <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">x${q}</div>
         </div>`;
     }).join(''); 
     
