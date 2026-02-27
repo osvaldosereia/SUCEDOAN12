@@ -88,6 +88,25 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .main-stage { position: relative; height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 
+/* ------------------------------------- */
+/* MENU DE ATALHOS RÁPIDOS (QUICK LINKS) */
+/* ------------------------------------- */
+.quick-links-wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 15px 15px 5px; display: flex; gap: 18px; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+.quick-links-wrap::-webkit-scrollbar { display: none; }
+@media(min-width: 800px) { .quick-links-wrap { justify-content: center; gap: 35px; } }
+.ql-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0; transition: transform 0.2s; }
+.ql-item:hover { transform: translateY(-3px); }
+.ql-circle { width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); }
+/* O mix-blend-mode: multiply retira fundos brancos nativos das imagens */
+.ql-circle img { width: 70%; height: 70%; object-fit: contain; mix-blend-mode: multiply; }
+.ql-label { font-size: 0.75rem; font-weight: 700; color: var(--c-p); text-align: center; white-space: nowrap; }
+
+/* Cores de Fundo dos Atalhos (Estilo App) */
+.bg-sh { background: #fef08a; } /* Amarelo - Só Hoje */
+.bg-of { background: #fecaca; } /* Vermelho/Rosa - Ofertas */
+.bg-kt { background: #bfdbfe; } /* Azul - Kits */
+.bg-2r { background: #bbf7d0; } /* Verde - Até 2 Reais */
+
 /* TÍTULO DA SESSÃO */
 .section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
 
@@ -134,7 +153,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 38px; transition: 0.2s;}
 .btn-big-action:hover { background: #cbd5e1; }
 
-/* NOVO BOTÃO MAIS CHAMATIVO PARA VER ITENS / VER KITS */
 .btn-view-details { width: 100%; background: var(--c-a); color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 38px; transition: 0.2s; box-shadow: 0 4px 6px rgba(234, 88, 12, 0.2); }
 .btn-view-details:hover { background: #c2410c; transform: translateY(-1px); }
 
@@ -189,11 +207,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* MODAIS */
 dialog { border: none; border-radius: 20px; width: 92%; max-width: 420px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); background: #fff; }
 dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); }
-/* ASSEGURAR O SCROLL SUAVE NO MODAL E LIMITAR A ALTURA */
 .modal-body { padding: 25px 20px; text-align: center; position: relative; max-height: 85vh; overflow-y: auto; overflow-x: hidden; }
 .btn-close-modal { position: absolute; top: 15px; right: 15px; width: 34px; height: 34px; background: var(--c-img-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; color: var(--c-p); border: none; z-index: 50; }
 
-.btn-modal { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; cursor: pointer; transition: 0.2s;}
+.btn-modal { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;}
 .btn-modal.primary { background: var(--c-a); color: #fff; }
 .btn-modal.secondary { background: #fff; border: 1px solid var(--c-bd); color: var(--c-p); }
 .btn-modal:disabled { opacity: 0.7; pointer-events: none; }
@@ -265,8 +282,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         </div>
         <div id="fixed-chips-container">
             <div class="chips-wrapper">
-                <div class="chips-bar" id="chips-area">
-                    </div>
+                <div class="chips-bar" id="chips-area"></div>
             </div>
         </div>
     </header>
@@ -274,9 +290,12 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 
 <main class="main-stage" id="scroll-stage">
 
+    <div id="quick-links-container" style="display:none; background:#fff; margin-bottom: 5px;"></div>
+
     <div id="global-banner-container" class="layout-limit" style="line-height: 0; padding-bottom: 10px;">
         <img src="site/img/produtos/banner.webp" alt="Promoção" style="width: 100%; height: auto; display: block;" onerror="this.parentElement.style.display='none'">
     </div>
+    
     <div id="section-busca" class="page-section" style="display:none;">
         <div class="section-title">Resultados da Busca</div>
         <div class="grid-produtos" id="grid-busca"></div>
@@ -377,8 +396,8 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
             <button class="sq-btn" style="background:var(--c-bd); width:48px; height:48px; font-size:1.8rem; color:var(--c-a); border-radius:12px; border:none; cursor: pointer;" onclick="changeComboQty(1)">+</button>
         </div>
 
-        <button class="btn-modal primary" id="btn-confirm-preview" style="font-size: 1.05rem; padding: 16px;"></button>
-        <button class="btn-modal secondary" id="btn-customize-preview" style="display:none; font-size: 1.05rem; padding: 16px;">Personalizar Minha Cesta</button>
+        <button class="btn-modal primary" id="btn-customize-preview" style="display:none; font-size: 1.05rem; padding: 16px; margin-bottom: 10px;">Personalizar Minha Cesta</button>
+        <button class="btn-modal secondary" id="btn-confirm-preview" style="font-size: 1.05rem; padding: 16px; margin-bottom: 0;"></button>
     </div>
 </dialog>
 
@@ -411,8 +430,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
                 <span style="background: var(--c-err); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Só Hoje</span>
                 <span style="font-size: 0.85rem; color: var(--c-s); font-weight: 600;">Aproveite antes de fechar!</span>
             </div>
-            <div id="sohoje-list" style="display: flex; flex-direction: column;">
-                </div>
+            <div id="sohoje-list" style="display: flex; flex-direction: column;"></div>
         </div>
         
         <h3 style="font-weight: 600; font-size: 1.1rem; color: var(--c-p);">2. O Seu Pedido</h3>
@@ -441,9 +459,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 <div id="toast-container"></div>
 
 <script>
-// ==========================================
-// CONTROLE INTELIGENTE DE SPLASH SCREEN
-// ==========================================
 let splashRemoved = false;
 function removeSplash() {
     if(splashRemoved) return;
@@ -454,12 +469,8 @@ function removeSplash() {
         setTimeout(() => splash.remove(), 600);
     }
 }
-// Remove obrigatoriamente a tela da frente do cliente em 2.2 segundos
 setTimeout(removeSplash, 2200);
 
-// ==========================================
-// CONFIGURAÇÃO
-// ==========================================
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0], feriados: [] };
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
@@ -480,9 +491,6 @@ function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/
 function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
 
-// ==========================================
-// ANIMAÇÃO HEADER
-// ==========================================
 function startPromoBanner() {
     const items = document.querySelectorAll('.promo-item');
     if (items.length === 0) return;
@@ -506,9 +514,6 @@ $('scroll-stage').addEventListener('scroll', function() {
     lastScrollTop = st <= 0 ? 0 : st;
 }, false);
 
-// ==========================================
-// INICIALIZAÇÃO
-// ==========================================
 async function init() {
     try {
         const [r1, r2, r3, r4, r6, r7, r8] = await Promise.all([
@@ -532,15 +537,17 @@ async function init() {
             }));
         }
         buildTabsAndSections(); 
+        
+        // Chamamos a criação do Menu Deslizante depois de construir as abas
+        let startTab = STATE.baskets.length > 0 ? 'cestas' : (STATE.prods.filter(p=>p.oldPrice).length > 0 ? 'ofertas' : '');
+        if(startTab) renderQuickLinks(startTab);
+
         updateTotals();
     } catch (e) { 
         console.error("Erro na inicialização:", e);
     }
 }
 
-// ==========================================
-// ABAS E GRADES (DOM OTIMIZADO)
-// ==========================================
 function buildTabsAndSections() {
     let skel = $('skeleton-loader');
     if(skel) skel.style.display = 'none';
@@ -639,11 +646,89 @@ function buildTabsAndSections() {
     else if(ofertas.length > 0) switchTab('ofertas');
 }
 
-// CRIA OS CHIPS NO FINAL DA PÁGINA E O SÓ HOJE / MINI VITRINE
+// --------------------------------------------------------
+// LÓGICA DO MENU DE ATALHOS RÁPIDOS (QUICK LINKS)
+// --------------------------------------------------------
+function renderQuickLinks(activeTabId) {
+    const qlContainer = $('quick-links-container');
+    if (!qlContainer) return;
+
+    // Se estivermos na Cesta, escondemos tudo.
+    if (activeTabId === 'minha-cesta') {
+        qlContainer.style.display = 'none';
+        return;
+    }
+
+    let links = [];
+
+    // 1. Só Hoje (Scrolla para a secção no fim da página)
+    if (STATE.sohoje && STATE.sohoje.length > 0) {
+        let pId = STATE.sohoje[0].id;
+        let p = STATE.prods.find(x => x.id === String(pId));
+        if (p) {
+            links.push({ id: 'sohoje', label: 'Só Hoje', colorClass: 'bg-sh', img: p.img, action: "scrollToSoHoje()" });
+        }
+    }
+
+    // 2. Ofertas
+    if (STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0 && activeTabId !== 'ofertas') {
+        links.push({ id: 'ofertas', label: 'Ofertas', colorClass: 'bg-of', img: STATE.lists['ofertas'].data[0].img, action: "switchTab('ofertas')" });
+    }
+
+    // 3. Kits (Combos)
+    if (STATE.lists['combos'] && STATE.lists['combos'].data.length > 0 && activeTabId !== 'combos') {
+        links.push({ id: 'combos', label: 'Kits', colorClass: 'bg-kt', img: STATE.lists['combos'].data[0].imagem || '/site/img/produtos/cesta.webp', action: "switchTab('combos')" });
+    }
+
+    // 4. Até 2 Reais (Procura dinamicamente a aba que tenha '2' ou 'reais' no nome)
+    let ate2Id = null;
+    let ate2Img = '';
+    Object.keys(STATE.lists).forEach(key => {
+        if (key.includes('term_') && (key.includes('2') || key.includes('reais') || key.includes('ate'))) {
+            ate2Id = key.replace('term_', '');
+            ate2Img = STATE.lists[key].data[0]?.img || '';
+        }
+    });
+    if (ate2Id && activeTabId !== ate2Id && ate2Img) {
+        links.push({ id: ate2Id, label: 'Até R$ 2', colorClass: 'bg-2r', img: ate2Img, action: `switchTab('${ate2Id}')` });
+    }
+
+    // Monta o HTML se houver atalhos para mostrar
+    if (links.length > 0) {
+        qlContainer.innerHTML = `
+            <div class="quick-links-wrap">
+                ${links.map(l => `
+                    <div class="ql-item" onclick="${l.action}">
+                        <div class="ql-circle ${l.colorClass}">
+                            <img src="${l.img}" alt="${l.label}" loading="lazy">
+                        </div>
+                        <div class="ql-label">${l.label}</div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        qlContainer.style.display = 'block';
+    } else {
+        qlContainer.style.display = 'none';
+    }
+}
+
+window.scrollToSoHoje = function() {
+    let shGrid = document.querySelector('.sohoje-page-grid');
+    if(shGrid) {
+        shGrid.parentElement.parentElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+    } else {
+        goToHome();
+        setTimeout(() => {
+            let s = document.querySelector('.sohoje-page-grid');
+            if(s) s.parentElement.parentElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+        }, 300);
+    }
+};
+
 function renderBottomChips(activeTabId) {
     let html = '';
 
-    // 1. SESSÃO SÓ HOJE (Página Inicial)
     if (STATE.sohoje && STATE.sohoje.length > 0) {
         let shHtml = STATE.sohoje.map((sh, idx) => {
             let p = STATE.prods.find(x => x.id === String(sh.id));
@@ -695,7 +780,6 @@ function renderBottomChips(activeTabId) {
         }
     }
 
-    // 2. OFERTAS DA SEMANA (Apenas na aba Cestas/Combos, e NÃO na própria aba de ofertas)
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
         let miniOfertas = STATE.lists['ofertas'].data.slice(0, 4);
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
@@ -710,7 +794,6 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
-    // 3. MAIS PRODUTOS (Navegação Final)
     html += `
     <div class="bottom-chips-wrapper">
         <div class="bottom-chips-title">Mais Produtos</div>
@@ -720,7 +803,6 @@ function renderBottomChips(activeTabId) {
         let id = chip.id.replace('chip-', '');
         let name = chip.innerText;
         
-        // Regra de Ocultação: Esconde a aba ativa E a aba Ofertas (pois já tem bloco de ofertas)
         if(id !== activeTabId && id !== 'ofertas') {
             let firstItemImg = '';
             let listKey = (id === 'cestas' || id === 'ofertas' || id === 'combos') ? id : 'term_' + id;
@@ -779,11 +861,11 @@ window.switchTab = function(tabId) {
         chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
     
+    renderQuickLinks(tabId); // Atualiza os atalhos rápidos
     renderBottomChips(tabId);
     
     $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
 
-    // ATUALIZAÇÃO DO MENU INFERIOR
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     if (tabId === 'combos') {
         if($('btn-nav-kits')) $('btn-nav-kits').classList.add('active');
@@ -800,9 +882,12 @@ window.goToHome = function() {
     $('section-busca').style.display = 'none';
     $('search-inp').value = '';
     
-    if($('chip-cestas')) switchTab('cestas');
-    else if($('chip-ofertas')) switchTab('ofertas');
+    let targetTab = '';
+    if($('chip-cestas')) { switchTab('cestas'); targetTab = 'cestas'; }
+    else if($('chip-ofertas')) { switchTab('ofertas'); targetTab = 'ofertas'; }
     
+    if(targetTab) renderQuickLinks(targetTab);
+
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
     $('header-wrapper').classList.remove('hidden');
@@ -820,28 +905,22 @@ window.goToMinhaCesta = function(doScroll) {
     let list = STATE.cartOrder.map(id => STATE.prods.find(p => p.id === id)).filter(Boolean);
     renderPaginated('grid-minha-cesta', 'cesta_ativa', list, 'PROD');
     
-    // Injeta as Mini Ofertas e Chips de Navegação na Aba Minha Cesta
+    renderQuickLinks('minha-cesta'); // Esconde os atalhos rápidos
     renderBottomChips('minha-cesta'); 
     
     $('header-wrapper').classList.remove('hidden');
     if(doScroll) $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// ==========================================
-// FUNÇÃO DE RENDERIZAR COM INTELIGÊNCIA (GRUPOS DE ARROZ)
-// ==========================================
 function renderPaginated(containerId, listKey, list, type) {
     let c = $(containerId);
     if (!c) return;
 
-    // LÓGICA EXCLUSIVA PARA A ABA DE CESTAS (SUBDIVISÃO INTELIGENTE)
     if (listKey === 'cestas') {
         let groups = {};
         
-        // 1. Ordena todas as cestas do preço MAIOR para o MENOR
         let sortedList = [...list].sort((a, b) => parseFloat(b.preco) - parseFloat(a.preco));
         
-        // 2. Lê os nomes e agrupa pelo tipo de arroz
         sortedList.forEach(item => {
             let match = item.nome.match(/arroz\s+([a-zA-ZÀ-ÿ0-9]+(?:\s+[a-zA-ZÀ-ÿ0-9]+)?)/i);
             let brand = match ? formatName("Arroz " + match[1]) : "Outras Cestas";
@@ -852,19 +931,16 @@ function renderPaginated(containerId, listKey, list, type) {
 
         let html = '';
         
-        // 3. Monta o visual de cada grupo (garantindo que "Outras Cestas" fica no final)
         let groupKeys = Object.keys(groups).sort((a, b) => a === "Outras Cestas" ? 1 : b === "Outras Cestas" ? -1 : a.localeCompare(b));
         
         groupKeys.forEach(gName => {
             let title = gName === "Outras Cestas" ? "Outras Cestas" : `Cestas com ${gName}`;
             
-            // Título da Subdivisão
             html += `
             <div style="grid-column: 1/-1; padding: 25px 15px 10px; font-size: 1.15rem; font-weight: 800; color: var(--c-p); display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--c-img-bg); margin-bottom: 10px; background: #fff;">
                 <span style="background:var(--c-a); width:4px; height:18px; border-radius:4px;"></span>${title}
             </div>`;
             
-            // Desenha os cards deste grupo (usando cardBasket)
             html += groups[gName].map((item, index) => cardBasket(item, index)).join('');
         });
         
@@ -872,7 +948,6 @@ function renderPaginated(containerId, listKey, list, type) {
         return;
     }
 
-    // RENDERIZAÇÃO NORMAL PARA OFERTAS, KITS E RESTO
     let html = list.map((item, index) => {
         if (type === 'BASKET') return cardBasket(item, index);
         if (type === 'COMBO') return cardCombo(item, index);
@@ -969,9 +1044,6 @@ function openQuickView(id) {
     $('modal-quick-view').showModal(); 
 }
 
-// ==========================================
-// FUNÇÃO UPD MODIFICADA + LÓGICA DE SUGESTÃO
-// ==========================================
 let suggestionTimeout = null;
 
 function upd(id, delta) { 
@@ -1009,13 +1081,10 @@ function upd(id, delta) {
         renderBottomChips('minha-cesta');
     }
 
-    // --- LÓGICA INTELIGENTE DE SUGESTÃO (CROSS-SELLING) ---
     let isCestasOrCombos = activeChip && (activeChip.id === 'chip-cestas' || activeChip.id === 'chip-combos');
     let isMinhaCesta = $('sec-minha-cesta').style.display === 'block';
 
-    // Dispara apenas se não for Cestas/Combos ou Minha Cesta
     if (!isCestasOrCombos && !isMinhaCesta) {
-        // Dispara apenas ao adicionar o 1º item OU ao zerar a quantidade
         if ((cur === 0 && n > 0) || (cur > 0 && n === 0)) {
             triggerSmartSuggestion(id);
         }
@@ -1026,14 +1095,12 @@ function triggerSmartSuggestion(sourceId) {
     const sourceCard = document.querySelector(`.u-card[data-id="${sourceId}"]`);
     if (!sourceCard) return;
 
-    // Escolhe 1 produto diferente, que tenha stock e que não esteja no carrinho
     let candidates = STATE.prods.filter(p => p.id !== sourceId && p.stock > 0 && !STATE.cart[p.id]);
     if (candidates.length === 0) candidates = STATE.prods.filter(p => p.id !== sourceId && p.stock > 0);
     if (candidates.length === 0) return;
 
     let sugProd = candidates[Math.floor(Math.random() * candidates.length)];
 
-    // Monta o visual Mini Card da Sugestão
     const sugHtml = `
         <div style="font-size: 0.75rem; color: var(--c-s); font-weight: 800; margin-bottom: 6px; text-transform: uppercase;">
             Experimente também:
@@ -1052,34 +1119,27 @@ function triggerSmartSuggestion(sourceId) {
     const stage = $('scroll-stage');
     sugBox.innerHTML = sugHtml;
 
-    // Posicionamento Matemático
     const rect = sourceCard.getBoundingClientRect();
     const stageRect = stage.getBoundingClientRect();
     const isMobile = window.innerWidth < 800;
 
     if (isMobile) {
-        sugBox.style.width = 'calc(100% - 20px)'; // Largura da tela menos as margens
-        sugBox.style.left = '10px'; // Fica centrado no ecrã
+        sugBox.style.width = 'calc(100% - 20px)'; 
+        sugBox.style.left = '10px'; 
     } else {
-        sugBox.style.width = rect.width + 'px'; // Largura exata do card no Computador
+        sugBox.style.width = rect.width + 'px'; 
         sugBox.style.left = (rect.left - stageRect.left + stage.scrollLeft) + 'px';
     }
 
-    // Calcula a posição Vertical exata (Logo abaixo do card)
     const topPos = rect.bottom - stageRect.top + stage.scrollTop + 5;
     sugBox.style.top = topPos + 'px';
 
-    // Mostra a caixa
     sugBox.classList.add('show');
 
-    // Remove automaticamente após 6 segundos (O Efeito Fantasma)
     if (suggestionTimeout) clearTimeout(suggestionTimeout);
     suggestionTimeout = setTimeout(() => { sugBox.classList.remove('show'); }, 6000);
 }
 
-// ==========================================
-// RESTO DAS FUNÇÕES
-// ==========================================
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
         STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; 
@@ -1142,7 +1202,6 @@ function handleSearch(q) {
 function clearSearch() { $('search-inp').value = ''; handleSearch(''); goToHome(); }
 function showToast(m, t) { let d = document.createElement('div'); d.className = 'toast'; d.style.background = (t === 'r') ? '#dc2626' : '#15803d'; d.innerText = m; $('toast-container').appendChild(d); setTimeout(() => d.remove(), 2500); }
 
-// RENDERIZAÇÃO DO MODAL EM FORMATO GRADE (Cestas Básicas)
 function previewBasket(id) { 
     let c = STATE.baskets.find(x => String(x.id) === String(id)); 
     if (!c) return; 
@@ -1164,10 +1223,15 @@ function previewBasket(id) {
     }).join(''); 
     
     $('combo-qty-controls').style.display = 'none'; 
+    
+    // Configura Botão Padrão (Secundário - Abaixo)
     $('btn-confirm-preview').innerText = "Encomendar Cesta Normal"; 
     $('btn-confirm-preview').onclick = () => { $('modal-basket-preview').close(); setBasketQty(1); $('modal-cesta-qty').showModal(); };
+    
+    // Configura Botão Personalizar (Primário - Destaque acima)
     $('btn-customize-preview').style.display = 'block'; 
     $('btn-customize-preview').onclick = () => { confirmBasket(true, 1); setTimeout(() => goToMinhaCesta(true), 100); };
+    
     $('modal-basket-preview').showModal(); 
 }
 
@@ -1199,7 +1263,6 @@ function confirmBasket(isCustom, qty) {
     if (!isCustom) openCheckout();
 }
 
-// RENDERIZAÇÃO DO MODAL EM FORMATO GRADE (Kits/Combos)
 function previewCombo(id) { 
     let c = STATE.combos.find(x => String(x.id) === String(id)); 
     if (!c) return; 
@@ -1335,7 +1398,6 @@ function openCheckout() {
     $('badge-count').innerText = totalItems;
     $('badge-count').style.display = totalItems > 0 ? 'flex' : 'none';
     
-    // REGRA DE PEDIDO MÍNIMO E BOTÃO INTELIGENTE
     let btn = $('btn-send-order');
     if (subtotal < MIN_ORDER) {
         btn.disabled = true;
@@ -1355,9 +1417,6 @@ function openCheckout() {
     if (!$('modal-checkout').open) $('modal-checkout').showModal(); 
 }
 
-// ==========================================
-// FINALIZAÇÃO E ENVIO DO PEDIDO
-// ==========================================
 async function sendOrder() {
     const btnSubmit = $('btn-send-order');
     if (btnSubmit.disabled) return;
