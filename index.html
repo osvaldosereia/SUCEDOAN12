@@ -1550,8 +1550,27 @@ function reorder(orderId) {
         }
     });
 
+    // --- NOVO: RESGATAR A CESTA BASE E RECALCULAR A TAXA EXTRA ---
+    if (order.baseBasketId) {
+        let c = STATE.baskets.find(x => String(x.id) === String(order.baseBasketId));
+        if (c) {
+            STATE.baseBasket = c;
+            let sum = 0;
+            // Simula o valor dos itens originais da cesta com os preços de HOJE
+            c.produtos.forEach(s => {
+                let [qs, r] = s.split('x'); 
+                let p = STATE.prods.find(x => x.id === r.trim());
+                if (p) { sum += p.price * parseInt(qs); }
+            });
+            let qty = order.basketQty || 1;
+            // Calcula a diferença oculta novamente (Preço atual da cesta - Soma dos produtos soltos hoje)
+            STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty;
+        }
+    }
+    // -----------------------------------------------------------
+
     $('modal-pedidos').close();
-    updateTotals();
+    updateTotals(); // Agora quando o updateTotals rodar, ele já vai incluir o STATE.basketExtraFee correto!
 
     if(missing) {
         alert("Atenção: Alguns produtos do seu pedido antigo não estão mais disponíveis e foram removidos. Os preços dos demais foram atualizados para os valores de hoje. Confirme os itens antes de fechar.");
