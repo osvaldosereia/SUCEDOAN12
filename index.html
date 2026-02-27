@@ -1431,7 +1431,7 @@ function openCheckout() {
     
     let subtotal = sum + STATE.basketExtraFee;
     
-   let valueDiscount = 0;
+    let valueDiscount = 0;
     if(STATE.descontosValor && STATE.descontosValor.length > 0) {
         STATE.descontosValor.forEach(d => { 
             if(subtotal >= d.minimo && d.desconto > valueDiscount) valueDiscount = d.desconto; 
@@ -1439,19 +1439,15 @@ function openCheckout() {
     }
     STATE.valueDiscount = valueDiscount;
     
-    // --- O MOSTRADOR DO CHECKLIST QUE ESTAVA EM FALTA ---
+    // --- O MOSTRADOR DO CHECKLIST COMPLETAMENTE RECUPERADO ---
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
+        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto do Kit:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') +
         (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Progressivo:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') +
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
-    // ----------------------------------------------------
-
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount;
-    $('chk-total').innerText = fmt(final);
     
-    let totalItems = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
-    $('badge-count').innerText = totalItems;
-    $('badge-count').style.display = totalItems > 0 ? 'flex' : 'none';
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0);
+    $('chk-total').innerText = fmt(final);
     
     let btn = $('btn-send-order');
     if (subtotal < MIN_ORDER) {
