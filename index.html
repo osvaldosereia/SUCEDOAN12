@@ -1415,7 +1415,7 @@ function openCheckout() {
     
     let subtotal = sum + STATE.basketExtraFee;
     
-    let valueDiscount = 0;
+   let valueDiscount = 0;
     if(STATE.descontosValor && STATE.descontosValor.length > 0) {
         STATE.descontosValor.forEach(d => { 
             if(subtotal >= d.minimo && d.desconto > valueDiscount) valueDiscount = d.desconto; 
@@ -1423,6 +1423,13 @@ function openCheckout() {
     }
     STATE.valueDiscount = valueDiscount;
     
+    // --- O MOSTRADOR DO CHECKLIST QUE ESTAVA EM FALTA ---
+    $('chk-summary-lines').innerHTML = 
+        `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
+        (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Progressivo:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') +
+        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
+    // ----------------------------------------------------
+
     let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount;
     $('chk-total').innerText = fmt(final);
     
