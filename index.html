@@ -78,34 +78,48 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .btn-top-help:hover { background: #e2e8f0; }
 .btn-top-help svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-#fixed-chips-container { background: #fff; width: 100%; border-bottom: 1px solid var(--c-bd); }
-.chips-wrapper { position: relative; width: 100%; max-width: 1200px; margin: 0 auto; display: flex; align-items: center; }
-.chips-bar { flex: 1; padding: 8px 15px; display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 8px; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
-.chips-bar::-webkit-scrollbar { display: none; }
+/* --------------------------------------------------- */
+/* NOVO MENU PRINCIPAL COM BOLINHAS (SLIDER DE ATALHOS) */
+/* --------------------------------------------------- */
+#fixed-chips-container { background: #fff; width: 100%; border-bottom: 1px solid var(--c-bd); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+.slider-wrap { position: relative; width: 100%; max-width: 1200px; margin: 0 auto; display: flex; align-items: center; background: #fff; padding: 12px 0 8px; }
+.slider-track { flex: 1; display: flex; gap: 14px; overflow-x: auto; scroll-behavior: smooth; padding: 0 15px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.slider-track::-webkit-scrollbar { display: none; }
 
-.chip { padding: 8px 16px; border-radius: 20px; font-size: 1rem; font-weight: 600; background: var(--c-img-bg); color: var(--c-p); white-space: nowrap; cursor: pointer; transition: 0.2s; border: none; }
-.chip.active { background: var(--c-p); color: #fff; }
+.slider-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; flex-shrink: 0; transition: transform 0.2s; width: 68px; }
+.slider-item:active { transform: scale(0.95); }
+.slider-circle { width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 2px solid transparent; transition: 0.2s; background-color: var(--c-img-bg); }
+.slider-circle img { width: 65%; height: 65%; object-fit: contain; mix-blend-mode: multiply; }
+.slider-label { font-size: 0.72rem; font-weight: 700; color: var(--c-p); text-align: center; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-.main-stage { position: relative; height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
+/* Estado Ativo (Focado) */
+.slider-item.active .slider-circle { border-color: var(--c-a); box-shadow: 0 0 0 2px #fff inset, 0 4px 10px rgba(234, 88, 12, 0.2); }
+.slider-item.active .slider-label { color: var(--c-a); }
 
-/* ------------------------------------- */
-/* MENU DE ATALHOS RÁPIDOS (QUICK LINKS) */
-/* ------------------------------------- */
-.quick-links-wrap { width: 100%; max-width: 1200px; margin: 0 auto; padding: 15px 15px 5px; display: flex; gap: 18px; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
-.quick-links-wrap::-webkit-scrollbar { display: none; }
-@media(min-width: 800px) { .quick-links-wrap { justify-content: center; gap: 35px; } }
-.ql-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; flex-shrink: 0; transition: transform 0.2s; }
-.ql-item:hover { transform: translateY(-3px); }
-.ql-circle { width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.06); overflow: hidden; border: 1px solid rgba(0,0,0,0.05); }
-/* O mix-blend-mode: multiply retira fundos brancos nativos das imagens */
-.ql-circle img { width: 70%; height: 70%; object-fit: contain; mix-blend-mode: multiply; }
-.ql-label { font-size: 0.75rem; font-weight: 700; color: var(--c-p); text-align: center; white-space: nowrap; }
+/* Setas de Navegação (Apenas Desktop) */
+.slider-arrow { display: none; width: 34px; height: 34px; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; align-items: center; justify-content: center; cursor: pointer; position: absolute; top: 40%; transform: translateY(-50%); z-index: 10; box-shadow: 0 4px 6px rgba(0,0,0,0.1); color: var(--c-p); transition: 0.2s; font-size: 0.8rem; font-weight: 900;}
+.slider-arrow:hover { background: var(--c-img-bg); color: var(--c-a); }
+.slider-arrow.left { left: 5px; }
+.slider-arrow.right { right: 5px; }
 
-/* Cores de Fundo dos Atalhos (Estilo App) */
-.bg-sh { background: #fef08a; } /* Amarelo - Só Hoje */
-.bg-of { background: #fecaca; } /* Vermelho/Rosa - Ofertas */
-.bg-kt { background: #bfdbfe; } /* Azul - Kits */
-.bg-2r { background: #bbf7d0; } /* Verde - Até 2 Reais */
+@media(min-width: 800px) {
+    .slider-arrow { display: flex; }
+    .slider-track { padding: 0 45px; gap: 20px; } 
+    .slider-item { width: 80px; gap: 8px; }
+    .slider-circle { width: 68px; height: 68px; }
+    .slider-label { font-size: 0.85rem; }
+}
+
+/* Cores Pasteis Rotativas para o Fundo das Bolinhas */
+.bg-p-1 { background-color: #fef08a; } /* Amarelo */
+.bg-p-2 { background-color: #fecaca; } /* Vermelho/Rosa */
+.bg-p-3 { background-color: #bfdbfe; } /* Azul */
+.bg-p-4 { background-color: #bbf7d0; } /* Verde */
+.bg-p-5 { background-color: #fed7aa; } /* Laranja Claro */
+.bg-p-6 { background-color: #e9d5ff; } /* Roxo */
+
+/* O padding top foi aumentado de 135px para 195px para acomodar o novo menu maior */
+.main-stage { position: relative; height: 100dvh; padding-top: 195px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 
 /* TÍTULO DA SESSÃO */
 .section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
@@ -280,17 +294,19 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
                 <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
             </button>
         </div>
+        
         <div id="fixed-chips-container">
-            <div class="chips-wrapper">
-                <div class="chips-bar" id="chips-area"></div>
+            <div class="slider-wrap">
+                <button class="slider-arrow left" onclick="document.getElementById('nav-track').scrollBy({left: -200, behavior: 'smooth'})">❮</button>
+                <div class="slider-track" id="nav-track">
+                    </div>
+                <button class="slider-arrow right" onclick="document.getElementById('nav-track').scrollBy({left: 200, behavior: 'smooth'})">❯</button>
             </div>
         </div>
     </header>
 </div>
 
 <main class="main-stage" id="scroll-stage">
-
-    <div id="quick-links-container" style="display:none; background:#fff; margin-bottom: 5px;"></div>
 
     <div id="global-banner-container" class="layout-limit" style="line-height: 0; padding-bottom: 10px;">
         <img src="site/img/produtos/banner.webp" alt="Promoção" style="width: 100%; height: auto; display: block;" onerror="this.parentElement.style.display='none'">
@@ -537,24 +553,23 @@ async function init() {
             }));
         }
         buildTabsAndSections(); 
-        
-        // Chamamos a criação do Menu Deslizante depois de construir as abas
-        let startTab = STATE.baskets.length > 0 ? 'cestas' : (STATE.prods.filter(p=>p.oldPrice).length > 0 ? 'ofertas' : '');
-        if(startTab) renderQuickLinks(startTab);
-
         updateTotals();
     } catch (e) { 
         console.error("Erro na inicialização:", e);
     }
 }
 
+// ----------------------------------------------------
+// CRIAÇÃO DO MENU DE BOLINHAS (SLIDER) E DAS SECÇÕES
+// ----------------------------------------------------
 function buildTabsAndSections() {
     let skel = $('skeleton-loader');
     if(skel) skel.style.display = 'none';
 
-    let chipsHtml = '';
+    let navHtml = '';
     let sectionsHtml = '';
     STATE.lists = {};
+    let colorIndex = 1; // Para rodar as cores de fundo
 
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
@@ -570,25 +585,47 @@ function buildTabsAndSections() {
     }
     allTerms = [...new Set(allTerms)];
 
+    // 1. Cestas
     if (STATE.baskets.length > 0) {
-        chipsHtml += `<button class="chip" id="chip-cestas" onclick="switchTab('cestas')">Cestas Básicas</button>`;
+        let img = STATE.baskets[0].imagem || '/site/img/produtos/cesta.webp';
+        navHtml += `
+            <div class="slider-item" id="nav-cestas" onclick="switchTab('cestas')">
+                <div class="slider-circle bg-p-${colorIndex}"><img src="${img}" alt="Cestas Básicas" loading="lazy"></div>
+                <div class="slider-label">Cestas Básicas</div>
+            </div>`;
+        colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
         sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div class="grid-produtos" id="grid-cestas"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
+    // 2. Ofertas
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     if (ofertas.length > 0) {
-        chipsHtml += `<button class="chip" id="chip-ofertas" onclick="switchTab('ofertas')">Ofertas da Semana</button>`;
+        let img = ofertas[0].img;
+        navHtml += `
+            <div class="slider-item" id="nav-ofertas" onclick="switchTab('ofertas')">
+                <div class="slider-circle bg-p-${colorIndex}"><img src="${img}" alt="Ofertas" loading="lazy"></div>
+                <div class="slider-label">Ofertas</div>
+            </div>`;
+        colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
         sectionsHtml += `<div id="sec-ofertas" class="tab-section" style="display:none;"><div class="section-title">Ofertas Especiais</div><div class="grid-produtos" id="grid-ofertas"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['ofertas'] = { data: ofertas, type: 'PROD' };
     }
 
+    // 3. Kits
     if (STATE.combos.length > 0) {
-        chipsHtml += `<button class="chip" id="chip-combos" onclick="switchTab('combos')">Kits</button>`;
+        let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
+        navHtml += `
+            <div class="slider-item" id="nav-combos" onclick="switchTab('combos')">
+                <div class="slider-circle bg-p-${colorIndex}"><img src="${img}" alt="Kits" loading="lazy"></div>
+                <div class="slider-label">Kits</div>
+            </div>`;
+        colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
         sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Kits</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
     }
 
+    // 4. Termos / Categorias dinâmicas
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
@@ -623,112 +660,40 @@ function buildTabsAndSections() {
                             if (a.index !== b.index) return a.index - b.index;
                             return b.wordCount - a.wordCount;
                         });
-                        
-                        let termoVencedor = matches[0].term;
-                        return subs.includes(termoVencedor);
+                        return subs.includes(matches[0].term);
                     }
                 } 
                 return false;
             });
 
             if (list.length > 0) {
-                chipsHtml += `<button class="chip" id="chip-${safe}" onclick="switchTab('${safe}')">${label}</button>`;
+                let img = list[0].img;
+                navHtml += `
+                    <div class="slider-item" id="nav-${safe}" onclick="switchTab('${safe}')">
+                        <div class="slider-circle bg-p-${colorIndex}"><img src="${img}" alt="${label}" loading="lazy"></div>
+                        <div class="slider-label">${label}</div>
+                    </div>`;
+                colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
                 sectionsHtml += `<div id="sec-${safe}" class="tab-section" style="display:none;"><div class="section-title">${label}</div><div class="grid-produtos" id="grid-${safe}"></div><div class="bottom-category-nav"></div></div>`;
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
         });
     }
 
-    $('chips-area').innerHTML = chipsHtml;
+    $('nav-track').innerHTML = navHtml;
     $('dynamic-sections').innerHTML = sectionsHtml;
 
     if(STATE.baskets.length > 0) switchTab('cestas');
     else if(ofertas.length > 0) switchTab('ofertas');
 }
 
-// --------------------------------------------------------
-// LÓGICA DO MENU DE ATALHOS RÁPIDOS (QUICK LINKS)
-// --------------------------------------------------------
-function renderQuickLinks(activeTabId) {
-    const qlContainer = $('quick-links-container');
-    if (!qlContainer) return;
-
-    // Se estivermos na Cesta, escondemos tudo.
-    if (activeTabId === 'minha-cesta') {
-        qlContainer.style.display = 'none';
-        return;
-    }
-
-    let links = [];
-
-    // 1. Só Hoje (Scrolla para a secção no fim da página)
-    if (STATE.sohoje && STATE.sohoje.length > 0) {
-        let pId = STATE.sohoje[0].id;
-        let p = STATE.prods.find(x => x.id === String(pId));
-        if (p) {
-            links.push({ id: 'sohoje', label: 'Só Hoje', colorClass: 'bg-sh', img: p.img, action: "scrollToSoHoje()" });
-        }
-    }
-
-    // 2. Ofertas
-    if (STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0 && activeTabId !== 'ofertas') {
-        links.push({ id: 'ofertas', label: 'Ofertas', colorClass: 'bg-of', img: STATE.lists['ofertas'].data[0].img, action: "switchTab('ofertas')" });
-    }
-
-    // 3. Kits (Combos)
-    if (STATE.lists['combos'] && STATE.lists['combos'].data.length > 0 && activeTabId !== 'combos') {
-        links.push({ id: 'combos', label: 'Kits', colorClass: 'bg-kt', img: STATE.lists['combos'].data[0].imagem || '/site/img/produtos/cesta.webp', action: "switchTab('combos')" });
-    }
-
-    // 4. Até 2 Reais (Procura dinamicamente a aba que tenha '2' ou 'reais' no nome)
-    let ate2Id = null;
-    let ate2Img = '';
-    Object.keys(STATE.lists).forEach(key => {
-        if (key.includes('term_') && (key.includes('2') || key.includes('reais') || key.includes('ate'))) {
-            ate2Id = key.replace('term_', '');
-            ate2Img = STATE.lists[key].data[0]?.img || '';
-        }
-    });
-    if (ate2Id && activeTabId !== ate2Id && ate2Img) {
-        links.push({ id: ate2Id, label: 'Até R$ 2', colorClass: 'bg-2r', img: ate2Img, action: `switchTab('${ate2Id}')` });
-    }
-
-    // Monta o HTML se houver atalhos para mostrar
-    if (links.length > 0) {
-        qlContainer.innerHTML = `
-            <div class="quick-links-wrap">
-                ${links.map(l => `
-                    <div class="ql-item" onclick="${l.action}">
-                        <div class="ql-circle ${l.colorClass}">
-                            <img src="${l.img}" alt="${l.label}" loading="lazy">
-                        </div>
-                        <div class="ql-label">${l.label}</div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-        qlContainer.style.display = 'block';
-    } else {
-        qlContainer.style.display = 'none';
-    }
-}
-
-window.scrollToSoHoje = function() {
-    let shGrid = document.querySelector('.sohoje-page-grid');
-    if(shGrid) {
-        shGrid.parentElement.parentElement.scrollIntoView({behavior: 'smooth', block: 'start'});
-    } else {
-        goToHome();
-        setTimeout(() => {
-            let s = document.querySelector('.sohoje-page-grid');
-            if(s) s.parentElement.parentElement.scrollIntoView({behavior: 'smooth', block: 'start'});
-        }, 300);
-    }
-};
-
+// ----------------------------------------------------
+// LISTAGENS FINAIS DA PÁGINA ("SÓ HOJE", "OFERTAS", "KITS")
+// ----------------------------------------------------
 function renderBottomChips(activeTabId) {
     let html = '';
 
+    // 1. SESSÃO SÓ HOJE (Página Inicial)
     if (STATE.sohoje && STATE.sohoje.length > 0) {
         let shHtml = STATE.sohoje.map((sh, idx) => {
             let p = STATE.prods.find(x => x.id === String(sh.id));
@@ -780,6 +745,7 @@ function renderBottomChips(activeTabId) {
         }
     }
 
+    // 2. OFERTAS DA SEMANA (Se não estivermos na aba de ofertas)
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
         let miniOfertas = STATE.lists['ofertas'].data.slice(0, 4);
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
@@ -794,16 +760,33 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
+    // 3. KITS ESPECIAIS (Se não estivermos na aba de kits) -> NOVO BLOCO
+    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+        let miniKits = STATE.lists['combos'].data.slice(0, 4);
+        let miniHtml = miniKits.map((item, index) => cardCombo(item, index)).join('');
+        
+        html += `
+        <div style="margin-top: 10px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
+            <div class="section-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
+            <div class="grid-produtos grid-mini">
+                ${miniHtml}
+            </div>
+            <button class="btn-ver-todas-ofertas" onclick="switchTab('combos')" style="color: var(--c-p); border-color: var(--c-bd); background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">Ver todos os kits</button>
+        </div>`;
+    }
+
+    // 4. MAIS PRODUTOS (Categorias que sobraram)
     html += `
     <div class="bottom-chips-wrapper">
         <div class="bottom-chips-title">Mais Produtos</div>
         <div class="bottom-chips-container">`;
     
-    document.querySelectorAll('#chips-area .chip').forEach(chip => {
-        let id = chip.id.replace('chip-', '');
-        let name = chip.innerText;
+    document.querySelectorAll('#nav-track .slider-item').forEach(navItem => {
+        let id = navItem.id.replace('nav-', '');
+        let name = navItem.querySelector('.slider-label').innerText;
         
-        if(id !== activeTabId && id !== 'ofertas') {
+        // Esconde a aba ativa, Ofertas e Combos (pois já apareceram em cima)
+        if(id !== activeTabId && id !== 'ofertas' && id !== 'combos') {
             let firstItemImg = '';
             let listKey = (id === 'cestas' || id === 'ofertas' || id === 'combos') ? id : 'term_' + id;
             
@@ -854,18 +837,22 @@ window.switchTab = function(tabId) {
         renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
     }
 
-    document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
-    let chip = $('chip-' + tabId);
-    if(chip) {
-        chip.classList.add('active');
-        chip.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    // ATUALIZAÇÃO VISUAL DA BOLINHA DO TOPO
+    document.querySelectorAll('.slider-item').forEach(el => el.classList.remove('active'));
+    let navItem = $('nav-' + tabId);
+    if(navItem) {
+        navItem.classList.add('active');
+        navItem.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
     
-    renderQuickLinks(tabId); // Atualiza os atalhos rápidos
+    // MOSTRA NOVAMENTE O MENU SE ESTAVA NA CESTA
+    $('fixed-chips-container').style.display = 'block';
+    
     renderBottomChips(tabId);
     
     $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
 
+    // ATUALIZAÇÃO DO MENU INFERIOR
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     if (tabId === 'combos') {
         if($('btn-nav-kits')) $('btn-nav-kits').classList.add('active');
@@ -882,11 +869,8 @@ window.goToHome = function() {
     $('section-busca').style.display = 'none';
     $('search-inp').value = '';
     
-    let targetTab = '';
-    if($('chip-cestas')) { switchTab('cestas'); targetTab = 'cestas'; }
-    else if($('chip-ofertas')) { switchTab('ofertas'); targetTab = 'ofertas'; }
-    
-    if(targetTab) renderQuickLinks(targetTab);
+    if($('nav-cestas')) switchTab('cestas');
+    else if($('nav-ofertas')) switchTab('ofertas');
 
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
@@ -895,8 +879,11 @@ window.goToHome = function() {
 
 window.goToMinhaCesta = function(doScroll) {
     document.querySelectorAll('.tab-section, .page-section').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.chip').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.slider-item').forEach(el => el.classList.remove('active'));
     $('wrapper-sections').style.display = 'none';
+    
+    // ESCONDE O NOVO MENU DO TOPO PARA DEIXAR A TELA LIMPA NO CHECKOUT
+    $('fixed-chips-container').style.display = 'none';
     
     $('sec-minha-cesta').style.display = 'block';
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
@@ -905,20 +892,21 @@ window.goToMinhaCesta = function(doScroll) {
     let list = STATE.cartOrder.map(id => STATE.prods.find(p => p.id === id)).filter(Boolean);
     renderPaginated('grid-minha-cesta', 'cesta_ativa', list, 'PROD');
     
-    renderQuickLinks('minha-cesta'); // Esconde os atalhos rápidos
     renderBottomChips('minha-cesta'); 
     
     $('header-wrapper').classList.remove('hidden');
     if(doScroll) $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
+// ==========================================
+// FUNÇÃO DE RENDERIZAR COM INTELIGÊNCIA (GRUPOS DE ARROZ)
+// ==========================================
 function renderPaginated(containerId, listKey, list, type) {
     let c = $(containerId);
     if (!c) return;
 
     if (listKey === 'cestas') {
         let groups = {};
-        
         let sortedList = [...list].sort((a, b) => parseFloat(b.preco) - parseFloat(a.preco));
         
         sortedList.forEach(item => {
@@ -930,7 +918,6 @@ function renderPaginated(containerId, listKey, list, type) {
         });
 
         let html = '';
-        
         let groupKeys = Object.keys(groups).sort((a, b) => a === "Outras Cestas" ? 1 : b === "Outras Cestas" ? -1 : a.localeCompare(b));
         
         groupKeys.forEach(gName => {
@@ -1073,15 +1060,15 @@ function upd(id, delta) {
     if ($('modal-checkout').open) openCheckout();
     if($('checkout-sohoje-container') && $('checkout-sohoje-container').style.display !== 'none') { renderSoHoje(); }
     
-    let activeChip = document.querySelector('.chip.active');
-    if (activeChip) {
-        let activeTabId = activeChip.id.replace('chip-', '');
+    let activeNav = document.querySelector('.slider-item.active');
+    if (activeNav) {
+        let activeTabId = activeNav.id.replace('nav-', '');
         if (activeTabId !== 'minha-cesta') renderBottomChips(activeTabId);
     } else if ($('sec-minha-cesta').style.display === 'block') {
         renderBottomChips('minha-cesta');
     }
 
-    let isCestasOrCombos = activeChip && (activeChip.id === 'chip-cestas' || activeChip.id === 'chip-combos');
+    let isCestasOrCombos = activeNav && (activeNav.id === 'nav-cestas' || activeNav.id === 'nav-combos');
     let isMinhaCesta = $('sec-minha-cesta').style.display === 'block';
 
     if (!isCestasOrCombos && !isMinhaCesta) {
@@ -1250,9 +1237,9 @@ function confirmBasket(isCustom, qty) {
     STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty; STATE.baseBasket = c;
     $('modal-cesta-qty').close(); $('modal-basket-preview').close(); 
     
-    let activeTab = document.querySelector('.chip.active');
-    if(activeTab) { 
-        let safe = activeTab.id.replace('chip-', ''); 
+    let activeNav = document.querySelector('.slider-item.active');
+    if(activeNav) { 
+        let safe = activeNav.id.replace('nav-', ''); 
         let listKey = (safe === 'cestas' || safe === 'ofertas' || safe === 'combos') ? safe : 'term_' + safe; 
         if(STATE.lists[listKey]) {
             renderPaginated('grid-' + safe, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
