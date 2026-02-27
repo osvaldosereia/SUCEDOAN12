@@ -1176,7 +1176,8 @@ function triggerSmartSuggestion(sourceId) {
 
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
-        STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; 
+        STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; 
+        STATE.basketExtraFee = 0; STATE.comboDiscount = 0; // Reset ao desconto do kit
         
         document.querySelectorAll('.u-card').forEach(card => {
             let id = card.dataset.id;
@@ -1213,7 +1214,8 @@ function updateTotals() {
     }
     STATE.valueDiscount = valueDiscount;
     
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount;
+    // Matemática corrigida: Subtrai também o comboDiscount
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0);
     $('chk-total').innerText = fmt(final);
     
     let totalItems = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
@@ -1316,11 +1318,25 @@ function previewCombo(id) {
     $('prev-price').innerText = fmt(c.preco); $('combo-qty-controls').style.display = 'flex'; 
     $('btn-confirm-preview').innerText = "Adicionar Kit"; 
     $('btn-confirm-preview').onclick = () => {
-        c.produtos.forEach(s => { let [qs, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) { if (!STATE.cart[p.id]) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(qs) * currentComboQty); } }); 
+        let sumAvulso = 0;
+        c.produtos.forEach(s => { 
+            let [qs, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
+            if (p) { 
+                if (!STATE.cart[p.id]) STATE.cartOrder.push(p.id); 
+                STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(qs) * currentComboQty); 
+                sumAvulso += p.price * parseInt(qs); // Soma o valor original dos produtos
+            } 
+        }); 
+        
+        // Calcula a diferença (Desconto) e guarda na memória
+        let diferenca = Math.max(0, sumAvulso - c.preco) * currentComboQty;
+        STATE.comboDiscount = (STATE.comboDiscount || 0) + diferenca;
+
         $('modal-basket-preview').close(); updateTotals(); showToast("Kit adicionado!", "s");
     }; 
     $('btn-customize-preview').style.display = 'none'; $('modal-basket-preview').showModal(); 
 }
+    
 function changeComboQty(d) { currentComboQty = Math.max(1, currentComboQty + d); $('combo-modal-qty').innerText = currentComboQty; let c = STATE.combos.find(x => x.id === currentComboId); if (c) $('prev-price').innerText = fmt(c.preco * currentComboQty); }
 
 function renderSoHoje() {
