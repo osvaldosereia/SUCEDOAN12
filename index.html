@@ -73,15 +73,20 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--c-t); pointer-events: none; }
 .clear-search { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #cbd5e1; color: #fff; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: none; align-items: center; justify-content: center; cursor: pointer; }
 
+/* BOTAO DE AJUDA NA BARRA DE TOPO */
+.btn-top-help { width: 40px; height: 40px; border-radius: 50%; background: var(--c-img-bg); color: var(--c-p); display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-bd); cursor: pointer; flex-shrink: 0; transition: 0.2s; }
+.btn-top-help:hover { background: #e2e8f0; }
+.btn-top-help svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
 #fixed-chips-container { background: #fff; width: 100%; border-bottom: 1px solid var(--c-bd); }
 .chips-wrapper { position: relative; width: 100%; max-width: 1200px; margin: 0 auto; display: flex; align-items: center; }
 .chips-bar { flex: 1; padding: 8px 15px; display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 8px; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
 .chips-bar::-webkit-scrollbar { display: none; }
 
-.chip { padding: 8px 14px; border-radius: 20px; font-size: 0.90rem; font-weight: 600; background: var(--c-img-bg); color: var(--c-p); white-space: nowrap; cursor: pointer; transition: 0.2s; border: none; }
+.chip { padding: 8px 16px; border-radius: 20px; font-size: 1rem; font-weight: 600; background: var(--c-img-bg); color: var(--c-p); white-space: nowrap; cursor: pointer; transition: 0.2s; border: none; }
 .chip.active { background: var(--c-p); color: #fff; }
 
-.main-stage { height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
+.main-stage { position: relative; height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 
 /* TÍTULO DA SESSÃO */
 .section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
@@ -119,7 +124,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; border-radius: 0px; }
 .offer-tag { position: absolute; top: 4px; right: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0px;}
 .u-info { padding: 8px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
-.u-name { font-size: 1.00rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+.u-name { font-size: 1rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media(min-width: 800px) { .u-name { font-size: 1.25rem; } }
 .u-price { font-size: 1.25rem; font-weight: 700; color: var(--c-p); margin-top: 4px; }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: -2px; }
@@ -196,6 +202,26 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .del-opt-date { font-size: 0.85rem; color: var(--c-s); margin-top: 4px; }
 .del-opt-badge { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; }
 
+/* SUGESTÃO FLUTUANTE INTELIGENTE */
+#floating-suggestion {
+    position: absolute;
+    z-index: 90;
+    background: #ffffff;
+    border: 2px solid var(--c-a);
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    padding: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#floating-suggestion.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
 </style>
 </head>
 <body>
@@ -227,6 +253,9 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
                     <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
                 </div>
             </div>
+            <button class="btn-top-help" onclick="document.getElementById('modal-faq').showModal()" aria-label="Ajuda">
+                <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            </button>
         </div>
         <div id="fixed-chips-container">
             <div class="chips-wrapper">
@@ -267,6 +296,8 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div id="dynamic-sections"></div>
     </div>
 
+    <div id="floating-suggestion"></div>
+
 </main>
 
 <nav class="bottom-nav-bar">
@@ -286,9 +317,9 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
         <div class="tab-label">Cesta</div>
     </div>
-    <div class="tab-item" id="btn-nav-faq" onclick="document.getElementById('modal-faq').showModal()">
-        <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-        <div class="tab-label">Ajuda</div>
+    <div class="tab-item" id="btn-nav-kits" onclick="switchTab('combos');">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+        <div class="tab-label">Kits</div>
     </div>
 </nav>
 
@@ -298,7 +329,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:0px; padding:20px;">
             <img id="qv-img" src="" alt="Produto em destaque" style="width: 100%; max-height: 35vh; object-fit: contain; mix-blend-mode: multiply;">
         </div>
-        <h3 id="qv-name" style="font-size: 1.1rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
+        <h3 id="qv-name" style="font-size: 1.3rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
         <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-a); margin-bottom: 8px; font-weight: 600; text-align: left; display: none;"></div>
         <div id="qv-price" style="font-size: 1.8rem; font-weight: 700; color: var(--c-p); margin-bottom: 25px; text-align: left;"></div>
         <div id="qv-action-area" data-id=""></div>
@@ -542,8 +573,8 @@ function buildTabsAndSections() {
     }
 
     if (STATE.combos.length > 0) {
-        chipsHtml += `<button class="chip" id="chip-combos" onclick="switchTab('combos')">Combos</button>`;
-        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Combos</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
+        chipsHtml += `<button class="chip" id="chip-combos" onclick="switchTab('combos')">Kits</button>`;
+        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Kits</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
     }
 
@@ -748,8 +779,14 @@ window.switchTab = function(tabId) {
     
     $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
 
+    // ATUALIZAÇÃO DO MENU INFERIOR
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
+    if (tabId === 'combos') {
+        if($('btn-nav-kits')) $('btn-nav-kits').classList.add('active');
+    } else {
+        if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
+    }
+    
     $('header-wrapper').classList.remove('hidden');
 };
 
@@ -851,13 +888,13 @@ function cardCombo(item, index) {
     let imgLoadAttr = index < 4 ? 'fetchpriority="high"' : 'loading="lazy"';
     return `
     <div class="u-card" onclick="previewCombo('${item.id}')">
-        <div class="offer-tag" style="border-radius: 0px;">COMBO</div>
+        <div class="offer-tag" style="border-radius: 0px;">KIT</div>
         <div class="u-img-area"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" class="u-img-cesta" alt="${formatName(item.nome)}" width="345" height="345" ${imgLoadAttr}></div>
         <div class="u-info">
             <div class="u-name">${formatName(item.nome)}</div>
             <div style="margin-top: auto;">
                 <div class="u-price">${fmt(item.preco)}</div>
-                <button class="btn-big-action">Ver Combo</button>
+                <button class="btn-big-action">Ver Kit</button>
             </div>
         </div>
     </div>`; 
@@ -884,6 +921,11 @@ function openQuickView(id) {
     $('modal-quick-view').showModal(); 
 }
 
+// ==========================================
+// FUNÇÃO UPD MODIFICADA + LÓGICA DE SUGESTÃO
+// ==========================================
+let suggestionTimeout = null;
+
 function upd(id, delta) { 
     let p = STATE.prods.find(x => x.id === id); 
     if (!p) return; 
@@ -908,26 +950,88 @@ function upd(id, delta) {
     }
     
     updateTotals(); 
-    
-    // Atualiza Modal de Checkout Dinamicamente (se estiver aberto)
     if ($('modal-checkout').open) openCheckout();
-
-    // Atualiza a visualização da seção Só Hoje e os Controles de Página Dinamicamente
-    if($('checkout-sohoje-container') && $('checkout-sohoje-container').style.display !== 'none') {
-        renderSoHoje();
-    }
+    if($('checkout-sohoje-container') && $('checkout-sohoje-container').style.display !== 'none') { renderSoHoje(); }
     
     let activeChip = document.querySelector('.chip.active');
     if (activeChip) {
         let activeTabId = activeChip.id.replace('chip-', '');
-        if (activeTabId !== 'minha-cesta') {
-            renderBottomChips(activeTabId);
-        }
+        if (activeTabId !== 'minha-cesta') renderBottomChips(activeTabId);
     } else if ($('sec-minha-cesta').style.display === 'block') {
         renderBottomChips('minha-cesta');
     }
+
+    // --- LÓGICA INTELIGENTE DE SUGESTÃO (CROSS-SELLING) ---
+    let isCestasOrCombos = activeChip && (activeChip.id === 'chip-cestas' || activeChip.id === 'chip-combos');
+    let isMinhaCesta = $('sec-minha-cesta').style.display === 'block';
+
+    // Dispara apenas se não for Cestas/Combos ou Minha Cesta
+    if (!isCestasOrCombos && !isMinhaCesta) {
+        // Dispara apenas ao adicionar o 1º item OU ao zerar a quantidade
+        if ((cur === 0 && n > 0) || (cur > 0 && n === 0)) {
+            triggerSmartSuggestion(id);
+        }
+    }
 }
 
+function triggerSmartSuggestion(sourceId) {
+    const sourceCard = document.querySelector(`.u-card[data-id="${sourceId}"]`);
+    if (!sourceCard) return;
+
+    // Escolhe 1 produto diferente, que tenha stock e que não esteja no carrinho
+    let candidates = STATE.prods.filter(p => p.id !== sourceId && p.stock > 0 && !STATE.cart[p.id]);
+    if (candidates.length === 0) candidates = STATE.prods.filter(p => p.id !== sourceId && p.stock > 0);
+    if (candidates.length === 0) return;
+
+    let sugProd = candidates[Math.floor(Math.random() * candidates.length)];
+
+    // Monta o visual Mini Card da Sugestão
+    const sugHtml = `
+        <div style="font-size: 0.75rem; color: var(--c-s); font-weight: 800; margin-bottom: 6px; text-transform: uppercase;">
+            Experimente também:
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+            <img src="${sugProd.img}" alt="${formatName(sugProd.name)}" style="width: 45px; height: 45px; object-fit: contain; mix-blend-mode: multiply; background: var(--c-img-bg); border-radius: 8px; flex-shrink: 0;">
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${formatName(sugProd.name)}</div>
+                <div style="font-size: 1rem; font-weight: 800; color: var(--c-err); margin-top: 2px;">${fmt(sugProd.price)}</div>
+            </div>
+            <button onclick="upd('${sugProd.id}', 1); document.getElementById('floating-suggestion').classList.remove('show');" style="background: #fff; border: 2px solid var(--c-ok); color: var(--c-ok); width: 34px; height: 34px; border-radius: 10px; font-size: 1.4rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">+</button>
+        </div>
+    `;
+
+    const sugBox = $('floating-suggestion');
+    const stage = $('scroll-stage');
+    sugBox.innerHTML = sugHtml;
+
+    // Posicionamento Matemático
+    const rect = sourceCard.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    const isMobile = window.innerWidth < 800;
+
+    if (isMobile) {
+        sugBox.style.width = 'calc(100% - 20px)'; // Largura da tela menos as margens
+        sugBox.style.left = '10px'; // Fica centrado no ecrã
+    } else {
+        sugBox.style.width = rect.width + 'px'; // Largura exata do card no Computador
+        sugBox.style.left = (rect.left - stageRect.left + stage.scrollLeft) + 'px';
+    }
+
+    // Calcula a posição Vertical exata (Logo abaixo do card)
+    const topPos = rect.bottom - stageRect.top + stage.scrollTop + 5;
+    sugBox.style.top = topPos + 'px';
+
+    // Mostra a caixa
+    sugBox.classList.add('show');
+
+    // Remove automaticamente após 6 segundos (O Efeito Fantasma)
+    if (suggestionTimeout) clearTimeout(suggestionTimeout);
+    suggestionTimeout = setTimeout(() => { sugBox.classList.remove('show'); }, 6000);
+}
+
+// ==========================================
+// RESTO DAS FUNÇÕES
+// ==========================================
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
         STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; 
@@ -1065,10 +1169,10 @@ function previewCombo(id) {
     }).join(''); 
     
     $('prev-price').innerText = fmt(c.preco); $('combo-qty-controls').style.display = 'flex'; 
-    $('btn-confirm-preview').innerText = "Adicionar Combo"; 
+    $('btn-confirm-preview').innerText = "Adicionar Kit"; 
     $('btn-confirm-preview').onclick = () => {
         c.produtos.forEach(s => { let [qs, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) { if (!STATE.cart[p.id]) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(qs) * currentComboQty); } }); 
-        $('modal-basket-preview').close(); updateTotals(); showToast("Combo adicionado!", "s");
+        $('modal-basket-preview').close(); updateTotals(); showToast("Kit adicionado!", "s");
     }; 
     $('btn-customize-preview').style.display = 'none'; $('modal-basket-preview').showModal(); 
 }
@@ -1166,10 +1270,20 @@ function openCheckout() {
     
     let subtotal = sum + STATE.basketExtraFee;
     
-    $('chk-summary-lines').innerHTML = 
-        `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
-        (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Extra:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') +
-        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus de Entrega:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
+    let valueDiscount = 0;
+    if(STATE.descontosValor && STATE.descontosValor.length > 0) {
+        STATE.descontosValor.forEach(d => { 
+            if(subtotal >= d.minimo && d.desconto > valueDiscount) valueDiscount = d.desconto; 
+        });
+    }
+    STATE.valueDiscount = valueDiscount;
+    
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount;
+    $('chk-total').innerText = fmt(final);
+    
+    let totalItems = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
+    $('badge-count').innerText = totalItems;
+    $('badge-count').style.display = totalItems > 0 ? 'flex' : 'none';
     
     // REGRA DE PEDIDO MÍNIMO E BOTÃO INTELIGENTE
     let btn = $('btn-send-order');
@@ -1274,7 +1388,7 @@ async function sendOrder() {
     }
 
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-    if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMBO: -${fmt(STATE.comboDiscount)}`;
+    if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KIT: -${fmt(STATE.comboDiscount)}`;
     if (STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
     if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
     
