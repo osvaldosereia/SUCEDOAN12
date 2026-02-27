@@ -78,12 +78,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .chips-bar { flex: 1; padding: 8px 15px; display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 8px; overflow-x: auto; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
 .chips-bar::-webkit-scrollbar { display: none; }
 
-/* CHIPS AUMENTADOS CONFORME SOLICITADO */
-.chip { padding: 8px 16px; border-radius: 20px; font-size: 1rem; font-weight: 600; background: var(--c-img-bg); color: var(--c-p); white-space: nowrap; cursor: pointer; transition: 0.2s; border: none; }
+.chip { padding: 8px 14px; border-radius: 20px; font-size: 0.90rem; font-weight: 600; background: var(--c-img-bg); color: var(--c-p); white-space: nowrap; cursor: pointer; transition: 0.2s; border: none; }
 .chip.active { background: var(--c-p); color: #fff; }
 
-/* ADICIONADO POSITION RELATIVE PARA A CAIXA FLUTUANTE ACOMPANHAR O SCROLL */
-.main-stage { position: relative; height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
+.main-stage { height: 100dvh; padding-top: 135px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 
 /* TÍTULO DA SESSÃO */
 .section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
@@ -121,9 +119,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; border-radius: 0px; }
 .offer-tag { position: absolute; top: 4px; right: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0px;}
 .u-info { padding: 8px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
-
-/* FONTES AUMENTADAS CONFORME SOLICITADO */
-.u-name { font-size: 1rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.u-name { font-size: 1.00rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 @media(min-width: 800px) { .u-name { font-size: 1.25rem; } }
 .u-price { font-size: 1.25rem; font-weight: 700; color: var(--c-p); margin-top: 4px; }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: -2px; }
@@ -200,26 +196,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .del-opt-date { font-size: 0.85rem; color: var(--c-s); margin-top: 4px; }
 .del-opt-badge { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; }
 
-/* SUGESTÃO FLUTUANTE INTELIGENTE */
-#floating-suggestion {
-    position: absolute;
-    z-index: 90;
-    background: #ffffff;
-    border: 2px solid var(--c-a);
-    border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-    padding: 12px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-#floating-suggestion.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
 </style>
 </head>
 <body>
@@ -291,8 +267,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div id="dynamic-sections"></div>
     </div>
 
-    <div id="floating-suggestion"></div>
-
 </main>
 
 <nav class="bottom-nav-bar">
@@ -324,7 +298,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:0px; padding:20px;">
             <img id="qv-img" src="" alt="Produto em destaque" style="width: 100%; max-height: 35vh; object-fit: contain; mix-blend-mode: multiply;">
         </div>
-        <h3 id="qv-name" style="font-size: 1.3rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
+        <h3 id="qv-name" style="font-size: 1.1rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
         <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-a); margin-bottom: 8px; font-weight: 600; text-align: left; display: none;"></div>
         <div id="qv-price" style="font-size: 1.8rem; font-weight: 700; color: var(--c-p); margin-bottom: 25px; text-align: left;"></div>
         <div id="qv-action-area" data-id=""></div>
@@ -910,11 +884,6 @@ function openQuickView(id) {
     $('modal-quick-view').showModal(); 
 }
 
-// ==========================================
-// FUNÇÃO UPD MODIFICADA + LÓGICA DE SUGESTÃO
-// ==========================================
-let suggestionTimeout = null;
-
 function upd(id, delta) { 
     let p = STATE.prods.find(x => x.id === id); 
     if (!p) return; 
@@ -939,88 +908,26 @@ function upd(id, delta) {
     }
     
     updateTotals(); 
+    
+    // Atualiza Modal de Checkout Dinamicamente (se estiver aberto)
     if ($('modal-checkout').open) openCheckout();
-    if($('checkout-sohoje-container') && $('checkout-sohoje-container').style.display !== 'none') { renderSoHoje(); }
+
+    // Atualiza a visualização da seção Só Hoje e os Controles de Página Dinamicamente
+    if($('checkout-sohoje-container') && $('checkout-sohoje-container').style.display !== 'none') {
+        renderSoHoje();
+    }
     
     let activeChip = document.querySelector('.chip.active');
     if (activeChip) {
         let activeTabId = activeChip.id.replace('chip-', '');
-        if (activeTabId !== 'minha-cesta') renderBottomChips(activeTabId);
+        if (activeTabId !== 'minha-cesta') {
+            renderBottomChips(activeTabId);
+        }
     } else if ($('sec-minha-cesta').style.display === 'block') {
         renderBottomChips('minha-cesta');
     }
-
-    // --- LÓGICA INTELIGENTE DE SUGESTÃO (CROSS-SELLING) ---
-    let isCestasOrCombos = activeChip && (activeChip.id === 'chip-cestas' || activeChip.id === 'chip-combos');
-    let isMinhaCesta = $('sec-minha-cesta').style.display === 'block';
-
-    // Dispara apenas se não for Cestas/Combos ou Minha Cesta
-    if (!isCestasOrCombos && !isMinhaCesta) {
-        // Dispara apenas ao adicionar o 1º item OU ao zerar a quantidade
-        if ((cur === 0 && n > 0) || (cur > 0 && n === 0)) {
-            triggerSmartSuggestion(id);
-        }
-    }
 }
 
-function triggerSmartSuggestion(sourceId) {
-    const sourceCard = document.querySelector(`.u-card[data-id="${sourceId}"]`);
-    if (!sourceCard) return;
-
-    // Escolhe 1 produto diferente, que tenha stock e que não esteja no carrinho
-    let candidates = STATE.prods.filter(p => p.id !== sourceId && p.stock > 0 && !STATE.cart[p.id]);
-    if (candidates.length === 0) candidates = STATE.prods.filter(p => p.id !== sourceId && p.stock > 0);
-    if (candidates.length === 0) return;
-
-    let sugProd = candidates[Math.floor(Math.random() * candidates.length)];
-
-    // Monta o visual Mini Card da Sugestão
-    const sugHtml = `
-        <div style="font-size: 0.75rem; color: var(--c-s); font-weight: 800; margin-bottom: 6px; text-transform: uppercase;">
-            Experimente também:
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-            <img src="${sugProd.img}" alt="${formatName(sugProd.name)}" style="width: 45px; height: 45px; object-fit: contain; mix-blend-mode: multiply; background: var(--c-img-bg); border-radius: 8px; flex-shrink: 0;">
-            <div style="flex: 1; min-width: 0;">
-                <div style="font-size: 0.85rem; font-weight: 600; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${formatName(sugProd.name)}</div>
-                <div style="font-size: 1rem; font-weight: 800; color: var(--c-err); margin-top: 2px;">${fmt(sugProd.price)}</div>
-            </div>
-            <button onclick="upd('${sugProd.id}', 1); document.getElementById('floating-suggestion').classList.remove('show');" style="background: #fff; border: 2px solid var(--c-ok); color: var(--c-ok); width: 34px; height: 34px; border-radius: 10px; font-size: 1.4rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">+</button>
-        </div>
-    `;
-
-    const sugBox = $('floating-suggestion');
-    const stage = $('scroll-stage');
-    sugBox.innerHTML = sugHtml;
-
-    // Posicionamento Matemático
-    const rect = sourceCard.getBoundingClientRect();
-    const stageRect = stage.getBoundingClientRect();
-    const isMobile = window.innerWidth < 800;
-
-    if (isMobile) {
-        sugBox.style.width = 'calc(100% - 20px)'; // Largura da tela menos as margens
-        sugBox.style.left = '10px'; // Fica centrado no ecrã
-    } else {
-        sugBox.style.width = rect.width + 'px'; // Largura exata do card no Computador
-        sugBox.style.left = (rect.left - stageRect.left + stage.scrollLeft) + 'px';
-    }
-
-    // Calcula a posição Vertical exata (Logo abaixo do card)
-    const topPos = rect.bottom - stageRect.top + stage.scrollTop + 5;
-    sugBox.style.top = topPos + 'px';
-
-    // Mostra a caixa
-    sugBox.classList.add('show');
-
-    // Remove automaticamente após 6 segundos (O Efeito Fantasma)
-    if (suggestionTimeout) clearTimeout(suggestionTimeout);
-    suggestionTimeout = setTimeout(() => { sugBox.classList.remove('show'); }, 6000);
-}
-
-// ==========================================
-// RESTO DAS FUNÇÕES
-// ==========================================
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
         STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; 
