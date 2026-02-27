@@ -1651,12 +1651,14 @@ async function sendOrder() {
     const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*\n\n------\n${tipoCestaTexto}`;
     
     // GUARDA O PEDIDO NO HISTÓRICO LOCAL ANTES DE ENVIAR
-    const orderData = {
+   const orderData = {
         id: orderId,
         date: new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}),
         total: final,
         basketName: STATE.baseBasket ? STATE.baseBasket.nome : 'Itens Avulsos/Kits',
-        items: Object.entries(STATE.cart).map(([id, qty]) => ({ id, qty }))
+        items: Object.entries(STATE.cart).map(([id, qty]) => ({ id, qty })),
+        baseBasketId: STATE.baseBasket ? STATE.baseBasket.id : null, // Guarda o ID da cesta
+        basketQty: currentBasketQty // Guarda a quantidade de cestas
     };
     let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]');
     history.unshift(orderData); // Coloca no topo
