@@ -277,25 +277,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .del-opt-date { font-size: 0.85rem; color: var(--c-s); margin-top: 4px; }
 .del-opt-badge { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; }
 
-/* SUGESTÃO FLUTUANTE INTELIGENTE */
-#floating-suggestion {
-    position: absolute;
-    z-index: 90;
-    background: #ffffff;
-    border: 2px solid var(--c-a);
-    border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-    padding: 12px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-#floating-suggestion.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
 
 </style>
 </head>
@@ -379,7 +360,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div id="dynamic-sections"></div>
     </div>
 
-    <div id="floating-suggestion"></div>
 
 </main>
 
@@ -1077,7 +1057,6 @@ function openQuickView(id) {
     $('modal-quick-view').showModal(); 
 }
 
-let suggestionTimeout = null;
 
 function upd(id, delta) { 
     let p = STATE.prods.find(x => x.id === id); 
@@ -1155,54 +1134,6 @@ function upd(id, delta) {
     }
 }
 
-function triggerSmartSuggestion(sourceId) {
-    const sourceCard = document.querySelector(`.u-card[data-id="${sourceId}"]`);
-    if (!sourceCard) return;
-
-    let candidates = STATE.prods.filter(p => p.id !== sourceId && p.stock > 0 && !STATE.cart[p.id]);
-    if (candidates.length === 0) candidates = STATE.prods.filter(p => p.id !== sourceId && p.stock > 0);
-    if (candidates.length === 0) return;
-
-    let sugProd = candidates[Math.floor(Math.random() * candidates.length)];
-
-    const sugHtml = `
-        <div style="font-size: 0.75rem; color: var(--c-s); font-weight: 800; margin-bottom: 6px; text-transform: uppercase;">
-            Experimente também:
-        </div>
-        <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
-            <img src="${sugProd.img}" alt="${formatName(sugProd.name)}" style="width: 45px; height: 45px; object-fit: contain; mix-blend-mode: multiply; background: var(--c-img-bg); border-radius: 8px; flex-shrink: 0;">
-            <div style="flex: 1; min-width: 0;">
-                <div style="font-size: 0.85rem; font-weight: 600; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${formatName(sugProd.name)}</div>
-                <div style="font-size: 1rem; font-weight: 800; color: var(--c-err); margin-top: 2px;">${fmt(sugProd.price)}</div>
-            </div>
-            <button onclick="upd('${sugProd.id}', 1); document.getElementById('floating-suggestion').classList.remove('show');" style="background: #fff; border: 2px solid var(--c-ok); color: var(--c-ok); width: 34px; height: 34px; border-radius: 10px; font-size: 1.4rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer;">+</button>
-        </div>
-    `;
-
-    const sugBox = $('floating-suggestion');
-    const stage = $('scroll-stage');
-    sugBox.innerHTML = sugHtml;
-
-    const rect = sourceCard.getBoundingClientRect();
-    const stageRect = stage.getBoundingClientRect();
-    const isMobile = window.innerWidth < 800;
-
-    if (isMobile) {
-        sugBox.style.width = 'calc(100% - 20px)'; 
-        sugBox.style.left = '10px'; 
-    } else {
-        sugBox.style.width = rect.width + 'px'; 
-        sugBox.style.left = (rect.left - stageRect.left + stage.scrollLeft) + 'px';
-    }
-
-    const topPos = rect.bottom - stageRect.top + stage.scrollTop + 5;
-    sugBox.style.top = topPos + 'px';
-
-    sugBox.classList.add('show');
-
-    if (suggestionTimeout) clearTimeout(suggestionTimeout);
-    suggestionTimeout = setTimeout(() => { sugBox.classList.remove('show'); }, 6000);
-}
 
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
