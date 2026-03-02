@@ -195,6 +195,11 @@
                     <option value="markup_desc">Markup (Maior % &rarr; Menor %)</option>
                 </select>
             </div>
+            
+            <button class="nav-btn" onclick="openOrderModal()" style="background:#fef08a; border-color:#fde047; color:#854d0e; margin-left: 15px;">
+                <i data-lucide="shopping-cart" size="14"></i> PROCESSAR PEDIDO
+            </button>
+
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
                 <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local ou Estoque...">
@@ -210,6 +215,22 @@
             <div id="total-count">0</div>
         </div>
         <div class="product-grid" id="product-grid"></div>
+    </div>
+
+    <div id="modal-order" class="modal-overlay">
+        <div class="modal-card" style="width: 500px;">
+            <div class="modal-header">
+                <span>Processar Pedido (Baixar Estoque e Imprimir 80mm)</span>
+                <button class="close-btn" onclick="closeModal('modal-order')"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">
+                    Cole o texto do pedido do WhatsApp abaixo. O sistema identificará os itens, abaterá o estoque do sistema e gerará a impressão agrupada por localização.
+                </p>
+                <textarea id="order-text-input" style="width: 100%; height: 250px; padding: 10px; font-family: monospace; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; resize: vertical;" placeholder="Cole o pedido aqui..."></textarea>
+                <button class="btn-full" onclick="processOrder()" style="background: var(--success);">PROCESSAR E IMPRIMIR</button>
+            </div>
+        </div>
     </div>
 
     <div id="modal-product-card" class="modal-overlay">
@@ -1048,7 +1069,6 @@
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
         function searchGoogle(term) { window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(term)}`, '_blank'); }
         
-        // NOVA FUNÇÃO: Busca por NCM no Google de forma textual (não imagem)
         function searchNCM(name, ean) { 
             const term = "NCM " + name + " " + (ean ? ean : "");
             window.open(`https://www.google.com/search?q=${encodeURIComponent(term)}`, '_blank'); 
@@ -1731,6 +1751,201 @@
                 alert("Sistema limpo com sucesso! A página será recarregada para iniciar do zero.");
                 window.location.reload();
             }
+        }
+
+        // --- NOVAS FUNÇÕES: PROCESSAMENTO DE PEDIDO (WHATSAPP) E IMPRESSÃO 80MM --- //
+
+        // 1. Função para abrir o modal
+        function openOrderModal() {
+            document.getElementById('order-text-input').value = '';
+            openModal('modal-order');
+        }
+
+        // 2. Lógica para extrair as informações do texto e abater no sistema
+        function processOrder() {
+            const text = document.getElementById('order-text-input').value;
+            if(!text.trim()) return alert('Por favor, cole o texto do pedido!');
+
+            // Regex (Expressão Regular) que procura exatamente as tags (com ou sem os *) para resgatar Valores Únicos
+            const orderNumMatch = text.match(/\*?PEDIDO\s+(#[0-9]+)\*?/i);
+            const deliveryMatch = text.match(/\*?ENTREGA AGENDADA PARA:\*?\s+(.+)/i);
+            const discountMatch = text.match(/DESCONTO[^:]*:\s*(-?R\$\s*[0-9,]+)/i) || text.match(/DESCONTO[^:]*:\s*([^\n]+)/i);
+            const totalMatch = text.match(/\*?TOTAL:\s*(R\$\s*[0-9,]+)\*?/i) || text.match(/\*?TOTAL:\s*([^\n\*]+)/i);
+
+            // Resgatando o final do arquivo que possui os comentários e notas. (Após os traços "------")
+            let footerText = "";
+            const footerSplit = text.split(/------/);
+            if(footerSplit.length > 1) {
+                footerText = footerSplit[1].trim();
+            }
+
+            const lines = text.split('\n');
+            let items = [];
+            let inItemsSection = false;
+
+            // Varrendo as linhas da caixa de texto
+            for(let line of lines) {
+                line = line.trim();
+                
+                // Se detectar "ITENS" então entramos na zona dos produtos
+                if(line.includes('*ITENS:*') || line.includes('ITENS:')) {
+                    inItemsSection = true;
+                    continue;
+                }
+                
+                if(inItemsSection) {
+                    // Tenta capturar o padrão: Numero + x + Espaço + Nome (Ex: 1x Feijão)
+                    const itemMatch = line.match(/^(\d+)x\s+(.+)$/i);
+                    if(itemMatch) {
+                        items.push({
+                            qtd: parseInt(itemMatch[1]),
+                            nomeOriginal: itemMatch[2].trim(),
+                            foundProduct: null
+                        });
+                    } else if (line === '' || line.includes('DESCONTO') || line.includes('TOTAL') || line.includes('------')) {
+                        // Se encostou em desconto, total ou traços quer dizer que a lista de itens acabou
+                        if(line.includes('TOTAL') || line.includes('------')) inItemsSection = false;
+                    }
+                }
+            }
+
+            if(items.length === 0) return alert("Nenhum item encontrado. Verifique se o formato tem '*ITENS:*' e '1x PRODUTO'.");
+
+            let changedAny = false;
+            
+            // Cruzando informações com o seu array de "products"
+            items.forEach(item => {
+                // Tenta achar com nome EXATO
+                let bestMatch = products.find(p => p.nome && p.nome.toUpperCase() === item.nomeOriginal.toUpperCase());
+                
+                // Se não achou exato, busca se tem uma parte contida no nome
+                if(!bestMatch) {
+                    bestMatch = products.find(p => p.nome && (p.nome.toUpperCase().includes(item.nomeOriginal.toUpperCase()) || item.nomeOriginal.toUpperCase().includes(p.nome.toUpperCase())));
+                }
+
+                if(bestMatch) {
+                    item.foundProduct = bestMatch; // Salva quem ele encontrou
+                    
+                    // ABATE DE ESTOQUE
+                    let currentStock = parseFloat(bestMatch.estoque) || 0;
+                    bestMatch.estoque = currentStock - item.qtd; // Subtrai o que acabou de ler
+                    bestMatch['Estoque'] = bestMatch.estoque;
+                    bestMatch._changed = true; // Força uma sinalização visual de alteração
+                    bestMatch._lastChange = "Abate " + (orderNumMatch ? orderNumMatch[1] : "Sistema");
+                    changedAny = true;
+                }
+            });
+
+            // Se alteramos o estoque, salvamos os dados atuais no Cache.
+            if(changedAny) {
+                saveData();
+                renderGrid(document.getElementById('search-input').value, true); // Atualiza os botõezinhos na tela
+            }
+
+            const grouped = {};
+            const notFound = [];
+
+            // Agrupando por Gôndola/Localização
+            items.forEach(item => {
+                if(item.foundProduct) {
+                    const loc = item.foundProduct.localizacao || "SEM LOCAL";
+                    if(!grouped[loc]) grouped[loc] = [];
+                    grouped[loc].push(item);
+                } else {
+                    notFound.push(item);
+                }
+            });
+
+            // Direciona os dados para abrir a janela de impressão em formato 80mm
+            printOrderReceipt(orderNumMatch, deliveryMatch, discountMatch, totalMatch, grouped, notFound, footerText);
+            closeModal('modal-order');
+        }
+
+        // 3. Monta a rotina e o CSS para emissor na largura térmica.
+        function printOrderReceipt(orderNum, delivery, discount, total, grouped, notFound, footerText) {
+            const w = window.open('', '', 'width=400,height=600');
+            
+            let html = `
+                <html><head>
+                <title>Imprimir Pedido</title>
+                <style>
+                    @page { size: 80mm auto; margin: 0; }
+                    body { font-family: 'Courier New', Courier, monospace; width: 80mm; margin: 0; padding: 4mm; box-sizing: border-box; font-size: 12px; color: #000; }
+                    .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 12px; }
+                    .header h2 { margin: 0 0 5px 0; font-size: 18px; }
+                    .loc-group { margin-bottom: 15px; }
+                    .loc-title { font-weight: 900; font-size: 14px; background: #000; color: #fff; padding: 4px; text-align: center; margin-bottom: 6px; }
+                    .item { margin-bottom: 8px; border-bottom: 1px dotted #888; padding-bottom: 4px; }
+                    .item-name { font-weight: bold; font-size: 13px; line-height: 1.2; }
+                    .item-details { display: flex; justify-content: space-between; font-size: 10px; margin-top: 3px; color: #333; }
+                    .footer { margin-top: 15px; border-top: 2px dashed #000; padding-top: 8px; }
+                    .finance-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+                    .total { font-size: 16px; font-weight: 900; }
+                    .notes { margin-top: 15px; font-size: 12px; text-align: center; border: 1px solid #000; padding: 5px; }
+                </style>
+                </head><body>
+                
+                <div class="header">
+                    <h2>${orderNum ? 'PEDIDO ' + orderNum[1] : 'PEDIDO AVULSO'}</h2>
+                    <div><strong>ENTREGA:</strong> ${delivery ? delivery[1] : 'Não informada'}</div>
+                </div>
+            `;
+
+            const locs = Object.keys(grouped).sort(); // Ordena em ordem alfabética os blocos das gôndolas
+            
+            locs.forEach(loc => {
+                html += `<div class="loc-group"><div class="loc-title">LOCAL: ${loc}</div>`;
+                grouped[loc].forEach(item => {
+                    const p = item.foundProduct;
+                    html += `
+                        <div class="item">
+                            <div class="item-name">[ ${item.qtd}x ] ${p.nome}</div>
+                            <div class="item-details">
+                                <span>SKU: ${p.codigo || '---'}</span>
+                                <span>EAN: ${p.gtin || '---'}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            });
+
+            // Imprime os itens que o sistema não localizou para separar os papéis
+            if(notFound.length > 0) {
+                html += `<div class="loc-group"><div class="loc-title" style="background:#fff; color:#000; border: 2px solid #000;">❓ NÃO ENCONTRADOS NO SISTEMA</div>`;
+                notFound.forEach(item => {
+                    html += `
+                        <div class="item">
+                            <div class="item-name">[ ${item.qtd}x ] ${item.nomeOriginal}</div>
+                            <div class="item-details"><span>Estoque NÃO abatido.</span></div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            html += `<div class="footer">`;
+            if(discount) {
+                html += `<div class="finance-row"><span>DESCONTO:</span> <span>${discount[1]}</span></div>`;
+            }
+            if(total) {
+                html += `<div class="finance-row total"><span>TOTAL:</span> <span>${total[1]}</span></div>`;
+            }
+            
+            if(footerText) {
+                html += `<div class="notes"><strong>OBSERVAÇÕES:</strong><br>${footerText.replace(/\n/g, '<br>')}</div>`;
+            }
+            
+            html += `
+                </div>
+                <script>
+                    window.onload = function() { window.print(); }
+                <\/script>
+                </body></html>
+            `;
+
+            w.document.write(html);
+            w.document.close();
         }
     </script>
 </body>
