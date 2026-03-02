@@ -1124,14 +1124,7 @@ function upd(id, delta) {
         renderBottomChips('minha-cesta');
     }
 
-    let isCestasOrCombos = activeNav && (activeNav.id === 'nav-cestas' || activeNav.id === 'nav-combos');
-    let isMinhaCesta = $('sec-minha-cesta').style.display === 'block';
-
-    if (!isCestasOrCombos && !isMinhaCesta) {
-        if ((cur === 0 && n > 0) || (cur > 0 && n === 0)) {
-            triggerSmartSuggestion(id);
-        }
-    }
+   
 }
 
 
