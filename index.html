@@ -1592,7 +1592,56 @@ async function sendOrder() {
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
     const msg = `*PEDIDO #${orderId}*\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*\n\n------\n${tipoCestaTexto}`;
+
+    // GUARDA O PEDIDO NO HISTÓRICO LOCAL ANTES DE ENVIAR
+    const orderData = {
+        id: orderId,
+        date: new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}),
+        total: final,
+        basketName: STATE.baseBasket ? STATE.baseBasket.nome : 'Itens Avulsos/Kits',
+        items: Object.entries(STATE.cart).map(([id, qty]) => ({ id, qty })),
+        baseBasketId: STATE.baseBasket ? STATE.baseBasket.id : null,
+        basketQty: currentBasketQty 
+    };
     
+    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]');
+    history.unshift(orderData); 
+    if(history.length > 20) history.pop(); 
+    localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
+
+    try {
+        const response = await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
+            method: "POST", 
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                cliente: {nome: "Cliente Site"},
+                pedido: {
+                    itens: apiItens,
+                    total: final,
+                    outras_despesas: outras_despesas,
+                    desconto: totalDescontos, 
+                    observacoes: obs 
+                }
+            })
+        });
+
+        if (!response.ok) {
+            console.error("Make.com recusou o payload. HTTP Status:", response.status);
+        }
+    } catch(e) {
+        console.error("Erro na rede ao tentar atingir o webhook:", e);
+    }
+    
+    // DELAY ARQUITETURAL: Garante que o fetch POST termine antes do navegador mudar de tela e matar o processo
+    setTimeout(() => {
+        window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`;
+
+        setTimeout(() => {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = `ENVIAR PEDIDO`;
+        }, 3000);
+    }, 400);
+}  
     // GUARDA O PEDIDO NO HISTÓRICO LOCAL ANTES DE ENVIAR
    const orderData = {
         id: orderId,
