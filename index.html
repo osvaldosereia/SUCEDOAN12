@@ -1022,6 +1022,21 @@ function cardBasket(item, index) {
 
 function cardCombo(item, index) { 
     let imgLoadAttr = index < 4 ? 'fetchpriority="high"' : 'loading="lazy"';
+    let precoDe = 0;
+    if (item.produtos) {
+        item.produtos.forEach(s => {
+            let [q, r] = s.split('x'); 
+            let p = STATE.prods.find(x => x.id === r.trim()); 
+            if (p) precoDe += p.price * parseInt(q); 
+        });
+    }
+    let precoHtml = '';
+    if (precoDe > item.preco) {
+        precoHtml = `<span class="combo-strike">${fmt(precoDe)}</span> ${fmt(item.preco)}`;
+    } else {
+        precoHtml = `${fmt(item.preco)}`;
+    }
+
     return `
     <div class="u-card" onclick="previewCombo('${item.id}')">
         <div class="offer-tag" style="border-radius: 0px;">KIT</div>
@@ -1029,7 +1044,7 @@ function cardCombo(item, index) {
         <div class="u-info">
             <div class="u-name">${formatName(item.nome)}</div>
             <div style="margin-top: auto;">
-                <div class="u-price">${fmt(item.preco)}</div>
+                <div class="u-price">${precoHtml}</div>
                 <button class="btn-view-details">Ver Kit</button>
             </div>
         </div>
@@ -1252,8 +1267,13 @@ function previewCombo(id) {
     currentComboId = id; currentComboQty = 1; $('combo-modal-qty').innerText = 1; 
     $('prev-title').innerText = formatName(c.nome); $('prev-desc').innerText = "Itens inclusos:";
     
+    let precoDe = 0;
+    
     $('prev-list').innerHTML = c.produtos.map(s => { 
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
+        
+        if (p) precoDe += p.price * parseInt(q); 
+        
         return `
         <div style="text-align:center;">
             <div style="width:100%; aspect-ratio:1; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
@@ -1264,7 +1284,13 @@ function previewCombo(id) {
         </div>`;
     }).join(''); 
     
-    $('prev-price').innerText = fmt(c.preco); $('combo-qty-controls').style.display = 'flex'; 
+    if (precoDe > c.preco) {
+        $('prev-price').innerHTML = `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:500;">${fmt(precoDe)}</span>${fmt(c.preco)}`;
+    } else {
+        $('prev-price').innerHTML = fmt(c.preco);
+    }
+
+    $('combo-qty-controls').style.display = 'flex'; 
     $('btn-confirm-preview').innerText = "Adicionar Kit"; 
     $('btn-confirm-preview').onclick = () => {
         let sumAvulso = 0;
@@ -1289,7 +1315,26 @@ function previewCombo(id) {
     $('btn-customize-preview').style.display = 'none'; $('modal-basket-preview').showModal(); 
 }
     
-function changeComboQty(d) { currentComboQty = Math.max(1, currentComboQty + d); $('combo-modal-qty').innerText = currentComboQty; let c = STATE.combos.find(x => x.id === currentComboId); if (c) $('prev-price').innerText = fmt(c.preco * currentComboQty); }
+function changeComboQty(d) { 
+    currentComboQty = Math.max(1, currentComboQty + d); 
+    $('combo-modal-qty').innerText = currentComboQty; 
+    let c = STATE.combos.find(x => x.id === currentComboId); 
+    
+    if (c) {
+        let precoDe = 0;
+        c.produtos.forEach(s => {
+            let [q, r] = s.split('x');
+            let p = STATE.prods.find(x => x.id === r.trim());
+            if (p) precoDe += p.price * parseInt(q);
+        });
+        
+        if (precoDe > c.preco) {
+            $('prev-price').innerHTML = `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:500;">${fmt(precoDe * currentComboQty)}</span>${fmt(c.preco * currentComboQty)}`;
+        } else {
+            $('prev-price').innerHTML = fmt(c.preco * currentComboQty);
+        }
+    } 
+}
 
 function renderSoHoje() {
     if (!STATE.sohoje || STATE.sohoje.length === 0) {
