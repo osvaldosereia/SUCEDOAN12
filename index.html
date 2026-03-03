@@ -523,7 +523,7 @@ const $ = id => document.getElementById(id);
 
 const STATE = {
     baskets: [], prods: [], coupons: [], combos: [], termos: [], descontosValor: [], sohoje: [],
-    cart: {}, cartOrder: [], appliedCombos: [], // <- appliedCombos agora inicia sempre vazio
+    cart: {}, cartOrder: [], appliedCombos: [],
     baseBasket: null, basketExtraFee: 0, comboDiscount: 0, coupon: null, valueDiscount: 0,
     lists: {}, pageLimits: {},
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
@@ -1065,9 +1065,8 @@ function upd(id, delta) {
     let n = Math.max(0, cur + delta); 
 
     // --- INÍCIO DA VERIFICAÇÃO DO KIT ---
-    // Se está reduzindo e tem algum kit ativo
     if (delta < 0 && STATE.appliedCombos && STATE.appliedCombos.length > 0) {
-        let reqTotal = 0; // Quantidade total deste item exigida pelos kits
+        let reqTotal = 0; 
         
         STATE.appliedCombos.forEach(ac => {
             let c = STATE.combos.find(x => String(x.id) === String(ac.id));
@@ -1081,14 +1080,13 @@ function upd(id, delta) {
             }
         });
 
-        // Se o item pertence a um kit e a nova quantidade é menor do que o kit exige
         if (reqTotal > 0 && n < reqTotal) {
             if (confirm("Atenção: Ao reduzir ou remover este item, você perderá o desconto especial do Kit. Deseja continuar?")) {
-                STATE.comboDiscount = 0; // Remove o desconto
-                STATE.appliedCombos = []; // Zera os kits para não alertar novamente noutros itens
+                STATE.comboDiscount = 0; 
+                STATE.appliedCombos = []; 
                 showToast("Desconto do kit removido", "r");
             } else {
-                return; // Cancela a ação! Mantém a quantidade e o desconto intactos
+                return; 
             }
         }
     }
@@ -1123,8 +1121,6 @@ function upd(id, delta) {
     } else if ($('sec-minha-cesta').style.display === 'block') {
         renderBottomChips('minha-cesta');
     }
-
-   
 }
 
 
@@ -1132,7 +1128,7 @@ window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
         STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; 
         STATE.basketExtraFee = 0; STATE.comboDiscount = 0; 
-        STATE.appliedCombos = []; // Zera a memória de kits aplicados
+        STATE.appliedCombos = [];
         
         document.querySelectorAll('.u-card').forEach(card => {
             let id = card.dataset.id;
@@ -1474,27 +1470,23 @@ function reorder(orderId) {
         }
     });
 
-    // --- NOVO: RESGATAR A CESTA BASE E RECALCULAR A TAXA EXTRA ---
     if (order.baseBasketId) {
         let c = STATE.baskets.find(x => String(x.id) === String(order.baseBasketId));
         if (c) {
             STATE.baseBasket = c;
             let sum = 0;
-            // Simula o valor dos itens originais da cesta com os preços de HOJE
             c.produtos.forEach(s => {
                 let [qs, r] = s.split('x'); 
                 let p = STATE.prods.find(x => x.id === r.trim());
                 if (p) { sum += p.price * parseInt(qs); }
             });
             let qty = order.basketQty || 1;
-            // Calcula a diferença oculta novamente (Preço atual da cesta - Soma dos produtos soltos hoje)
             STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty;
         }
     }
-    // -----------------------------------------------------------
 
     $('modal-pedidos').close();
-    updateTotals(); // Agora quando o updateTotals rodar, ele já vai incluir o STATE.basketExtraFee correto!
+    updateTotals(); 
 
     if(missing) {
         alert("Atenção: Alguns produtos do seu pedido antigo não estão mais disponíveis e foram removidos. Os preços dos demais foram atualizados para os valores de hoje. Confirme os itens antes de fechar.");
@@ -1632,7 +1624,7 @@ async function sendOrder() {
         console.error("Erro na rede ao tentar atingir o webhook:", e);
     }
     
-    // DELAY ARQUITETURAL: Garante que o fetch POST termine antes do navegador mudar de tela e matar o processo
+    // DELAY ARQUITETURAL: Garante que o fetch POST termine antes do navegador mudar de tela
     setTimeout(() => {
         window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`;
 
@@ -1641,47 +1633,6 @@ async function sendOrder() {
             btnSubmit.innerHTML = `ENVIAR PEDIDO`;
         }, 3000);
     }, 400);
-}  
-    // GUARDA O PEDIDO NO HISTÓRICO LOCAL ANTES DE ENVIAR
-   const orderData = {
-        id: orderId,
-        date: new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}),
-        total: final,
-        basketName: STATE.baseBasket ? STATE.baseBasket.nome : 'Itens Avulsos/Kits',
-        items: Object.entries(STATE.cart).map(([id, qty]) => ({ id, qty })),
-        baseBasketId: STATE.baseBasket ? STATE.baseBasket.id : null, // Guarda o ID da cesta
-        basketQty: currentBasketQty // Guarda a quantidade de cestas
-    };
-    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]');
-    history.unshift(orderData); // Coloca no topo
-    if(history.length > 20) history.pop(); // Mantém apenas os 20 últimos pedidos para não pesar
-    localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
-
-    try {
-        await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
-            method: "POST", 
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                cliente: {nome: "Cliente Site"},
-                pedido: {
-                    itens: apiItens,
-                    total: final,
-                    outras_despesas: outras_despesas,
-                    desconto: totalDescontos, 
-                    observacoes: obs 
-                }
-            })
-        });
-    } catch(e) {
-        console.log("Erro ao enviar para webhook", e);
-    }
-    
-    window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`;
-
-    setTimeout(() => {
-        btnSubmit.disabled = false;
-        btnSubmit.innerHTML = `ENVIAR PEDIDO`;
-    }, 3000);
 }
 
 init();
