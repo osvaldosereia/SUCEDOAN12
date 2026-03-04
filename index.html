@@ -817,12 +817,12 @@ function buildTabsAndSections() {
         });
     }
 
-    $('nav-track').innerHTML = navHtml;
+   $('nav-track').innerHTML = navHtml;
     $('dynamic-sections').innerHTML = sectionsHtml;
 
-    // ABRIR ABA DE OFERTAS PRIMEIRO SE HOUVEREM OFERTAS
-    if(ofertas.length > 0) switchTab('ofertas');
-    else if(STATE.baskets.length > 0) switchTab('cestas');
+    // ABRIR A ABA DE CESTAS PRIMEIRO COMO TELA INICIAL
+    if(STATE.baskets.length > 0) switchTab('cestas');
+    else if(ofertas.length > 0) switchTab('ofertas');
 }
 
 function renderBottomChips(activeTabId) {
