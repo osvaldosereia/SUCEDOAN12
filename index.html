@@ -596,8 +596,7 @@ async function init() {
         ]);
         
         STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7; STATE.sohoje = r8 || [];
-        STATE.bloqueados = r9 || []; // Salvamos a lista de bloqueados no STATE
-        
+        STATE.bloqueados = (r9 || []).map(String); // Força tudo a ser texto para não falhar a comparação        
         if (r2 && r2.length > 0) {
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => ({
                 id: String(p.codigo || p.id), blingId: String(p.id), name: p.nome, price: parseFloat(p.preco), 
