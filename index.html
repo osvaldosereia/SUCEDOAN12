@@ -535,6 +535,24 @@ let currentComboQty = 1;
 let currentComboId = null;
 let currentBasketQty = 1;
 
+// LIMITADOR DE OFERTAS: Adicionamos a variável global de controle das ofertas
+window.currentOfertasLimit = 10;
+
+window.loadMoreOfertas = function() {
+    window.currentOfertasLimit += 10;
+    let grid = $('grid-mini-ofertas');
+    let btn = $('btn-more-ofertas');
+    if(!grid) return;
+    
+    let ofertas = STATE.lists['ofertas'].data;
+    let html = ofertas.slice(0, window.currentOfertasLimit).map((item, i) => cardProd(item, i)).join('');
+    grid.innerHTML = html;
+    
+    if(window.currentOfertasLimit >= ofertas.length && btn) {
+        btn.style.display = 'none'; // Esconde o botão se não houver mais
+    }
+};
+
 function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
@@ -593,8 +611,8 @@ async function init() {
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => []) 
+            fetch('/site/bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('/site/carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => []) 
         ]);
         
         STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7; STATE.sohoje = r8 || [];
@@ -665,7 +683,7 @@ function buildCarouselsHtml() {
             let pName = norm(p.name);
             let pCat = norm(p.categoria);
             return keywords.some(kw => pName.includes(kw) || pCat.includes(kw));
-        }).slice(0, 15); // Limite de 15 produtos para manter super rápido
+        }).slice(0, 15); // Limite de 15 produtos
 
         if (matchedProds.length > 0) {
             let trackHtml = matchedProds.map(p => {
@@ -680,7 +698,7 @@ function buildCarouselsHtml() {
                                 ${p.oldPrice ? `<span class="combo-strike">${fmt(p.oldPrice)}</span>` : ''}
                                 ${fmt(p.price)}
                             </div>
-                            <div class="action-wrap">${getCardControls(p.id)}</div>
+                            <div class="action-wrap" data-id="${p.id}">${getCardControls(p.id)}</div>
                         </div>
                     </div>
                 </div>`;
@@ -735,8 +753,6 @@ function buildTabsAndSections() {
     }
 
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
-    
-    // MISTURA AS OFERTAS PARA APARECEREM SEMPRE DIFERENTES
     ofertas.sort(() => Math.random() - 0.5);
 
     if (ofertas.length > 0) {
@@ -817,10 +833,10 @@ function buildTabsAndSections() {
         });
     }
 
-   $('nav-track').innerHTML = navHtml;
+    $('nav-track').innerHTML = navHtml;
     $('dynamic-sections').innerHTML = sectionsHtml;
 
-    // ABRIR A ABA DE CESTAS PRIMEIRO COMO TELA INICIAL
+    // ABRIR ABA DE CESTAS PRIMEIRO COMO TELA INICIAL
     if(STATE.baskets.length > 0) switchTab('cestas');
     else if(ofertas.length > 0) switchTab('ofertas');
 }
@@ -880,34 +896,33 @@ function renderBottomChips(activeTabId) {
     }
 
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
-        // Agora exibe TODOS os itens e não usa a classe .grid-mini
-        let miniOfertas = STATE.lists['ofertas'].data; 
+        window.currentOfertasLimit = 10; // Reseta sempre que renderizar
+        let miniOfertas = STATE.lists['ofertas'].data.slice(0, window.currentOfertasLimit); 
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
+        let hasMore = STATE.lists['ofertas'].data.length > window.currentOfertasLimit;
         
         html += `
         <div style="margin-top: 20px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
             <div class="section-title" style="color: var(--c-err);">🔥 Ofertas da Semana</div>
-            <div class="grid-produtos">
+            <div class="grid-produtos" id="grid-mini-ofertas">
                 ${miniHtml}
             </div>
+            ${hasMore ? `<button id="btn-more-ofertas" class="btn-ver-todas-ofertas" onclick="loadMoreOfertas()">Veja mais</button>` : ''}
         </div>`;
     }
 
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        let miniKits = STATE.lists['combos'].data.slice(0, 4);
+        let miniKits = STATE.lists['combos'].data; // Mostra TODOS
         let miniHtml = miniKits.map((item, index) => cardCombo(item, index)).join('');
         
         html += `
         <div style="margin-top: 10px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
             <div class="section-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
-            <div class="grid-produtos grid-mini">
-                ${miniHtml}
+            <div class="grid-produtos"> ${miniHtml}
             </div>
-            <button class="btn-ver-todas-ofertas" onclick="switchTab('combos')" style="color: var(--c-p); border-color: var(--c-bd); background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">Ver todos os kits</button>
         </div>`;
     }
     
-    // INJETA OS CARROSSÉIS LIDOS DO JSON
     html += buildCarouselsHtml();
 
     html += `
@@ -1207,7 +1222,6 @@ function upd(id, delta) {
     STATE.cart[id] = n; 
     if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); } 
     
-    // Atualiza todos os botões que pertençam a esse ID (cards da grade e dos carrosseis)
     document.querySelectorAll(`[data-id="${id}"] .action-wrap`).forEach(el => {
         el.innerHTML = getCardControls(id);
     });
