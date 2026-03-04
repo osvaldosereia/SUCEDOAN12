@@ -849,17 +849,19 @@ function renderBottomChips(activeTabId) {
     }
 
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
-        let miniOfertas = STATE.lists['ofertas'].data.slice(0, 4);
+        // 1. Removemos o .slice(0, 4) para pegar TODOS os produtos da lista de ofertas
+        let miniOfertas = STATE.lists['ofertas'].data; 
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
         
         html += `
         <div style="margin-top: 20px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
             <div class="section-title" style="color: var(--c-err);">🔥 Ofertas da Semana</div>
-            <div class="grid-produtos grid-mini">
+            
+            <div class="grid-produtos">
                 ${miniHtml}
             </div>
-            <button class="btn-ver-todas-ofertas" onclick="switchTab('ofertas')">Ver todas as ofertas</button>
-        </div>`;
+            
+            </div>`;
     }
 
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
