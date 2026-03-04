@@ -705,6 +705,10 @@ function buildTabsAndSections() {
     }
 
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
+    
+    // BARAHA OS PRODUTOS DE FORMA ALEATÓRIA SEMPRE QUE A PÁGINA CARREGA
+    ofertas.sort(() => Math.random() - 0.5);
+
     if (ofertas.length > 0) {
         let img = ofertas[0].img;
         navHtml += `
