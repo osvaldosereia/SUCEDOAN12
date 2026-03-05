@@ -153,21 +153,33 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .main-stage { position: relative; height: 100dvh; padding-top: 195px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 .section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
 
-/* GRADE 5 COLUNAS DESKTOP */
-.grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
-@media(min-width: 800px) { .grid-produtos { grid-template-columns: repeat(5, 1fr); border-left: 1px solid var(--c-bd); } }
+/* GRADE 3 COLUNAS MÓVEL / 5 COLUNAS DESKTOP */
+.grid-produtos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
 
-.grid-mini .u-card:nth-child(n+3) { display: none !important; }
-@media(min-width: 800px) { .grid-mini .u-card:nth-child(n+3) { display: flex !important; } }
+/* EXCEÇÃO: Cestas e Kits com 2 colunas no telemóvel */
+#grid-cestas, #grid-combos { grid-template-columns: repeat(2, 1fr); }
+
+@media(min-width: 800px) { 
+    .grid-produtos, #grid-cestas, #grid-combos { grid-template-columns: repeat(5, 1fr) !important; border-left: 1px solid var(--c-bd); } 
+}
+
 .btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
 .btn-ver-todas-ofertas:hover { background: var(--c-a); color: #fff; }
 
 /* CARDS */
 .u-card { background: #fff; border: none; border-bottom: 1px solid var(--c-bd); border-right: 1px solid var(--c-bd); padding: 4px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; }
-.u-card:nth-child(2n) { border-right: none; } 
+
+/* Bordas para o móvel (3 colunas padrão) */
+.u-card:nth-child(3n) { border-right: none; } 
+
+/* Repor as bordas corretas para o móvel (2 colunas - Cestas e Kits) */
+#grid-cestas .u-card:nth-child(3n), #grid-combos .u-card:nth-child(3n) { border-right: 1px solid var(--c-bd); }
+#grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n) { border-right: none; }
+
 @media(min-width: 800px) {
-    .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd); }
-    .u-card:nth-child(5n) { border-right: none; }
+    /* No desktop volta tudo ao normal para 5 colunas */
+    .u-card:nth-child(3n), #grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd) !important; }
+    .u-card:nth-child(5n) { border-right: none !important; }
 }
 
 /* CARROSSEIS HORIONTAIS (SWIMLANES) */
@@ -188,7 +200,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* SKELETON LOADING */
 @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
 .skeleton-card { background: #fff; padding: 4px; border-bottom: 1px solid var(--c-bd); border-right: 1px solid var(--c-bd); display: flex; flex-direction: column; }
-@media(min-width: 800px) { .skeleton-card:nth-child(2n) { border-right: 1px solid var(--c-bd); } .skeleton-card:nth-child(5n) { border-right: none; } }
+.skeleton-card:nth-child(3n) { border-right: none; }
+@media(min-width: 800px) { 
+    .skeleton-card:nth-child(3n) { border-right: 1px solid var(--c-bd) !important; } 
+    .skeleton-card:nth-child(5n) { border-right: none !important; } 
+}
 .skeleton-el { background: #f1f5f9; background-image: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%); background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s infinite linear forwards; }
 .sk-img { width: 100%; aspect-ratio: 1; border-radius: 0px; }
 .sk-t1 { height: 14px; margin-top: 12px; border-radius: 4px; width: 90%; }
@@ -215,6 +231,26 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:38px; margin-top:10px; padding:0 4px; width:100%; }
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1rem; color:var(--c-p); }
+
+/* AJUSTES FINOS PARA 3 COLUNAS NO TELEMÓVEL */
+@media(max-width: 799px) {
+    .u-info { padding: 4px; }
+    .u-name { font-size: 0.75rem; line-height: 1.2; margin-bottom: 2px; }
+    .u-price { font-size: 0.95rem; font-weight: 800; }
+    .btn-big-action { font-size: 0.75rem; padding: 4px; height: 32px; margin-top: 6px; }
+    .card-qty-ctrl { height: 32px; margin-top: 6px; }
+    .card-qty-ctrl button { font-size: 1.2rem; padding: 0 6px; }
+    .card-qty-ctrl span { font-size: 0.85rem; }
+    .combo-strike { font-size: 0.7rem; }
+    
+    /* Garantir que as cestas/kits continuem com proporções confortáveis nas suas 2 colunas */
+    #grid-cestas .u-name, #grid-combos .u-name { font-size: 0.9rem; }
+    #grid-cestas .u-price, #grid-combos .u-price { font-size: 1.15rem; }
+    #grid-cestas .btn-view-details, #grid-combos .btn-view-details { height: 36px; font-size: 0.85rem; }
+    
+    /* Skeleton */
+    .sk-btn { height: 32px; margin-top: 6px; }
+}
 
 .sohoje-page-grid { display: flex; flex-direction: column; }
 @media(min-width: 800px) { 
@@ -611,8 +647,8 @@ async function init() {
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => []) 
+            fetch('/site/bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('/site/carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => []) 
         ]);
         
         STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7; STATE.sohoje = r8 || [];
@@ -918,7 +954,8 @@ function renderBottomChips(activeTabId) {
         html += `
         <div style="margin-top: 10px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
             <div class="section-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
-            <div class="grid-produtos"> ${miniHtml}
+            <div class="grid-produtos" id="grid-combos">
+                ${miniHtml}
             </div>
         </div>`;
     }
@@ -1774,7 +1811,7 @@ async function sendOrder() {
             console.error("Make.com recusou o payload. HTTP Status:", response.status);
         }
     } catch(e) {
-        console.error("Erro na rede:", e);
+        console.error("Erro na rede ao tentar atingir o webhook:", e);
     }
     
     setTimeout(() => {
