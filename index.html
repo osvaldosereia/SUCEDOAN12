@@ -786,7 +786,7 @@ function buildCarouselsHtml() {
             let pName = norm(p.name);
             let pCat = norm(p.categoria);
             return keywords.some(kw => pName.includes(kw) || pCat.includes(kw));
-        }).slice(0, 15); 
+        }); // Limite removido
 
         if (matchedProds.length > 0) {
             let trackHtml = matchedProds.map(p => getProdCarouselItem(p)).join('');
@@ -1017,10 +1017,10 @@ function renderBottomChips(activeTabId) {
         let id = navItem.id.replace('nav-', '');
         let name = navItem.querySelector('.slider-label').innerText;
         
-        if(id !== activeTabId && id !== 'ofertas' && id !== 'combos' && id !== 'cestas') {
+       if(id !== activeTabId && id !== 'ofertas' && id !== 'combos' && id !== 'cestas') {
             let listKey = 'term_' + id;
             if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                let trackHtml = STATE.lists[listKey].data.slice(0, 15).map(p => getProdCarouselItem(p)).join('');
+                let trackHtml = STATE.lists[listKey].data.map(p => getProdCarouselItem(p)).join('');
                 html += `
                 <div class="carousel-wrapper">
                     <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
@@ -1029,8 +1029,8 @@ function renderBottomChips(activeTabId) {
                     <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
                 </div>`;
             }
-        } else if(id === 'cestas' && activeTabId !== 'cestas' && STATE.lists['cestas'] && STATE.lists['cestas'].data.length > 0) {
-            let trackHtml = STATE.lists['cestas'].data.slice(0, 15).map(c => getBasketCarouselItem(c)).join('');
+       } else if(id === 'cestas' && activeTabId !== 'cestas' && STATE.lists['cestas'] && STATE.lists['cestas'].data.length > 0) {
+            let trackHtml = STATE.lists['cestas'].data.map(c => getBasketCarouselItem(c)).join('');
             html += `
             <div class="carousel-wrapper">
                 <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
