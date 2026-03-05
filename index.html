@@ -587,10 +587,13 @@ let currentBasketQty = 1;
 // LIMITADOR DE OFERTAS: Adicionamos a variável global de controle das ofertas
 window.currentOfertasLimit = window.currentOfertasLimit || 10;
 
-window.loadMoreOfertas = function() {
+// Agora a função recebe o ID exato da aba onde foi clicada
+window.loadMoreOfertas = function(tabId) {
     window.currentOfertasLimit += 10;
-    let grid = $('grid-mini-ofertas');
-    let btn = $('btn-more-ofertas');
+    
+    let grid = $(`grid-mini-ofertas-${tabId}`);
+    let btn = $(`btn-more-ofertas-${tabId}`);
+    
     if(!grid) return;
     
     let ofertas = STATE.lists['ofertas'].data;
@@ -944,6 +947,7 @@ function renderBottomChips(activeTabId) {
         }
     }
 
+    // CORREÇÃO: Adicionamos o activeTabId na string do ID para criar grelhas e botões únicos por aba!
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
         let miniOfertas = STATE.lists['ofertas'].data.slice(0, window.currentOfertasLimit); 
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
@@ -952,10 +956,10 @@ function renderBottomChips(activeTabId) {
         html += `
         <div style="margin-top: 20px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
             <div class="section-title" style="color: var(--c-err);">🔥 Ofertas da Semana</div>
-            <div class="grid-produtos" id="grid-mini-ofertas">
+            <div class="grid-produtos" id="grid-mini-ofertas-${activeTabId}">
                 ${miniHtml}
             </div>
-            ${hasMore ? `<button id="btn-more-ofertas" class="btn-ver-todas-ofertas" onclick="loadMoreOfertas()">Veja mais</button>` : ''}
+            ${hasMore ? `<button id="btn-more-ofertas-${activeTabId}" class="btn-ver-todas-ofertas" onclick="loadMoreOfertas('${activeTabId}')">Veja mais</button>` : ''}
         </div>`;
     }
 
