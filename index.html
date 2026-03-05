@@ -1844,20 +1844,23 @@ async function sendOrder() {
     if(history.length > 20) history.pop(); 
     localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
 
-    try {
+   try {
+        // Formatação rigorosa: garante que campos vazios virem zero numérico
+        const payload = {
+            cliente: { nome: "Cliente Site" },
+            pedido: {
+                itens: apiItens,
+                total: Number(final) || 0,
+                outras_despesas: Number(outras_despesas) || 0,
+                desconto: Number(totalDescontos) || 0, 
+                observacoes: obs || ""
+            }
+        };
+
         const response = await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method: "POST", 
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                cliente: {nome: "Cliente Site"},
-                pedido: {
-                    itens: apiItens,
-                    total: final,
-                    outras_despesas: outras_despesas,
-                    desconto: totalDescontos, 
-                    observacoes: obs 
-                }
-            })
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
