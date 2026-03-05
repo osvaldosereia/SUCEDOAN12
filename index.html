@@ -189,7 +189,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 
 /* CARROSSEIS HORIONTAIS (SWIMLANES) */
-.carousel-wrapper { width: 100%; max-width: 1200px; margin: 20px auto 0; border-top: 8px solid var(--c-img-bg); padding-top: 15px; }
+.carousel-wrapper { width: 100%; max-width: 1200px; margin: 20px auto 0; border-top: 8px solid var(--c-img-bg); padding-top: 15px; position: relative; }
 .carousel-title { font-size: 1.15rem; font-weight: 800; color: var(--c-p); margin: 0 15px 15px; text-transform: uppercase; letter-spacing: -0.5px; }
 .carousel-track { display: flex; gap: 12px; overflow-x: auto; padding: 0 15px 25px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .carousel-track::-webkit-scrollbar { display: none; }
@@ -201,7 +201,18 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .c-price { font-size: 1.05rem; font-weight: 800; color: var(--c-p); margin-top: 6px; }
 .c-item .btn-big-action, .c-item .card-qty-ctrl { height: 32px; font-size: 0.8rem; margin-top: 8px; }
 .c-item .card-qty-ctrl button { font-size: 1.2rem; padding: 0 8px; }
-@media(min-width: 800px) { .c-item { width: 160px; } .c-name { font-size: 0.9rem; } .c-price { font-size: 1.15rem; } }
+
+/* Setas de navegação do carrossel */
+.carousel-nav-arrow { display: none; position: absolute; top: 55%; transform: translateY(-50%); width: 40px; height: 40px; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; font-size: 1.2rem; font-weight: 900; color: var(--c-p); align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; transition: 0.2s; }
+.carousel-nav-arrow:hover { background: var(--c-img-bg); color: var(--c-a); }
+.carousel-nav-arrow.left { left: 5px; }
+.carousel-nav-arrow.right { right: 5px; }
+
+@media(min-width: 800px) { 
+    .c-item { width: 160px; } .c-name { font-size: 0.9rem; } .c-price { font-size: 1.15rem; } 
+    .carousel-nav-arrow { display: flex; }
+    .carousel-track { padding: 0 50px 25px; }
+}
 
 /* SKELETON LOADING */
 @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
@@ -269,30 +280,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .sohoje-page-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 40px; } 
 }
 
-.bottom-chips-wrapper { margin-top: 10px; padding: 30px 15px 40px; text-align: left; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 8px solid var(--c-img-bg); }
-.bottom-chips-title { font-size: 1.15rem; font-weight: 800; color: var(--c-p); margin-bottom: 20px; text-transform: uppercase; border-bottom: 2px solid var(--c-bd); padding-bottom: 10px;}
-.bottom-chips-container { display: grid; grid-template-columns: 1fr; gap: 12px; }
-@media(min-width: 800px) { .bottom-chips-container { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
-
-.bottom-chip { 
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 14px; border-radius: 16px; background: #fff; 
-    border: 1px solid var(--c-bd); cursor: pointer; transition: all 0.2s; 
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04); text-align: left;
-}
-.bottom-chip:hover, .bottom-chip:active { 
-    border-color: var(--c-a); background: #fff7ed; transform: translateY(-2px);
-    box-shadow: 0 8px 12px -3px rgba(234, 88, 12, 0.12);
-}
-.bottom-chip img { 
-    width: 65px; height: 65px; border-radius: 14px; object-fit: contain; 
-    background: var(--c-img-bg); padding: 4px; mix-blend-mode: multiply; flex-shrink: 0;
-}
-.bottom-chip-info { display: flex; flex-direction: column; overflow: hidden; }
-.bottom-chip-title { font-size: 0.95rem; font-weight: 700; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bottom-chip:hover .bottom-chip-title { color: var(--c-a); }
-.bottom-chip-count { font-size: 0.8rem; font-weight: 600; color: var(--c-ok); margin-top: 2px; }
-
 .bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-around; align-items: center; height: 60px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
 .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--c-t); gap: 4px; width: 20%; cursor: pointer; transition: 0.2s; }
 .tab-item svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
@@ -355,7 +342,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
                 <div class="search-bar-area">
                     <div class="search-wrapper">
                         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto..." oninput="handleSearch(this.value)">
+                        <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto ou kit..." oninput="handleSearch(this.value)">
                         <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
                         
                         <div class="search-compact-overlay" onclick="document.getElementById('search-inp').focus(); document.getElementById('scroll-stage').scrollTo({top:0, behavior:'smooth'});"></div>
@@ -584,10 +571,8 @@ let currentComboQty = 1;
 let currentComboId = null;
 let currentBasketQty = 1;
 
-// LIMITADOR DE OFERTAS: Adicionamos a variável global de controle das ofertas
 window.currentOfertasLimit = window.currentOfertasLimit || 10;
 
-// Agora a função recebe o ID exato da aba onde foi clicada
 window.loadMoreOfertas = function(tabId) {
     window.currentOfertasLimit += 10;
     
@@ -601,7 +586,15 @@ window.loadMoreOfertas = function(tabId) {
     grid.innerHTML = html;
     
     if(window.currentOfertasLimit >= ofertas.length && btn) {
-        btn.style.display = 'none'; // Esconde o botão se não houver mais
+        btn.style.display = 'none'; 
+    }
+};
+
+// Nova função para rolar os carrosseis através das setas no Desktop
+window.scrollCarousel = function(btn, dir) {
+    let track = btn.parentElement.querySelector('.carousel-track');
+    if(track) {
+        track.scrollBy({left: dir * 300, behavior: 'smooth'});
     }
 };
 
@@ -663,8 +656,8 @@ async function init() {
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => []) 
+            fetch('/site/bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('/site/carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => []) 
         ]);
         
         STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7; STATE.sohoje = r8 || [];
@@ -724,6 +717,64 @@ async function init() {
     }
 }
 
+// Funções de apoio para criar os itens dos carrosséis
+function getProdCarouselItem(p) {
+    return `
+    <div class="c-item" data-id="${p.id}" onclick="openQuickView('${p.id}')">
+        ${p.oldPrice ? `<div class="offer-tag" style="border-radius: 8px 0 8px 0;">-${Math.round((1 - p.price / p.oldPrice) * 100)}%</div>` : ''}
+        <div class="c-img-wrap"><img src="${p.img}" alt="${formatName(p.name)}" loading="lazy"></div>
+        <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between;">
+            <div class="c-name">${formatName(p.name)}</div>
+            <div>
+                <div class="c-price">
+                    ${p.oldPrice ? `<span class="combo-strike">${fmt(p.oldPrice)}</span>` : ''}
+                    ${fmt(p.price)}
+                </div>
+                <div class="action-wrap" data-id="${p.id}">${getCardControls(p.id)}</div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function getComboCarouselItem(item) {
+    let precoDe = 0;
+    if (item.produtos) {
+        item.produtos.forEach(s => {
+            let [q, r] = s.split('x'); 
+            let p = STATE.prods.find(x => x.id === r.trim()); 
+            if (p) precoDe += p.price * parseInt(q); 
+        });
+    }
+    let precoHtml = precoDe > item.preco ? `<span class="combo-strike">${fmt(precoDe)}</span> ${fmt(item.preco)}` : `${fmt(item.preco)}`;
+
+    return `
+    <div class="c-item" onclick="previewCombo('${item.id}')">
+        <div class="offer-tag" style="border-radius: 8px 0 8px 0;">KIT</div>
+        <div class="c-img-wrap"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" alt="${formatName(item.nome)}" loading="lazy" style="object-fit:cover; mix-blend-mode:normal;"></div>
+        <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between;">
+            <div class="c-name">${formatName(item.nome)}</div>
+            <div>
+                <div class="c-price">${precoHtml}</div>
+                <button class="btn-view-details" style="font-size: 0.8rem; height: 32px; margin-top: 8px; width: 100%;">Ver Kit</button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function getBasketCarouselItem(item) {
+    return `
+    <div class="c-item" onclick="previewBasket('${item.id}')">
+        <div class="c-img-wrap"><img src="${item.imagem}" alt="${formatName(item.nome)}" loading="lazy" style="object-fit:cover; mix-blend-mode:normal;"></div>
+        <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between;">
+            <div class="c-name">${formatName(item.nome)}</div>
+            <div>
+                <div class="c-price">${fmt(item.preco)}</div>
+                <button class="btn-view-details" style="font-size: 0.8rem; height: 32px; margin-top: 8px; width: 100%;">Ver Itens</button>
+            </div>
+        </div>
+    </div>`;
+}
+
 function buildCarouselsHtml() {
     if (!STATE.carrosseis || STATE.carrosseis.length === 0) return '';
     let html = '';
@@ -735,33 +786,19 @@ function buildCarouselsHtml() {
             let pName = norm(p.name);
             let pCat = norm(p.categoria);
             return keywords.some(kw => pName.includes(kw) || pCat.includes(kw));
-        }).slice(0, 15); // Limite de 15 produtos
+        }).slice(0, 15); 
 
         if (matchedProds.length > 0) {
-            let trackHtml = matchedProds.map(p => {
-                return `
-                <div class="c-item" data-id="${p.id}" onclick="openQuickView('${p.id}')">
-                    ${p.oldPrice ? `<div class="offer-tag" style="border-radius: 8px 0 8px 0;">-${Math.round((1 - p.price / p.oldPrice) * 100)}%</div>` : ''}
-                    <div class="c-img-wrap"><img src="${p.img}" alt="${formatName(p.name)}" loading="lazy"></div>
-                    <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between;">
-                        <div class="c-name">${formatName(p.name)}</div>
-                        <div>
-                            <div class="c-price">
-                                ${p.oldPrice ? `<span class="combo-strike">${fmt(p.oldPrice)}</span>` : ''}
-                                ${fmt(p.price)}
-                            </div>
-                            <div class="action-wrap" data-id="${p.id}">${getCardControls(p.id)}</div>
-                        </div>
-                    </div>
-                </div>`;
-            }).join('');
+            let trackHtml = matchedProds.map(p => getProdCarouselItem(p)).join('');
 
             html += `
             <div class="carousel-wrapper">
+                <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
                 <div class="carousel-title">${carro.titulo}</div>
                 <div class="carousel-track">
                     ${trackHtml}
                 </div>
+                <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
             </div>`;
         }
     });
@@ -888,7 +925,6 @@ function buildTabsAndSections() {
     $('nav-track').innerHTML = navHtml;
     $('dynamic-sections').innerHTML = sectionsHtml;
 
-    // ABRIR ABA DE CESTAS PRIMEIRO COMO TELA INICIAL
     if(STATE.baskets.length > 0) switchTab('cestas');
     else if(ofertas.length > 0) switchTab('ofertas');
 }
@@ -947,7 +983,6 @@ function renderBottomChips(activeTabId) {
         }
     }
 
-    // CORREÇÃO: Adicionamos o activeTabId na string do ID para criar grelhas e botões únicos por aba!
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
         let miniOfertas = STATE.lists['ofertas'].data.slice(0, window.currentOfertasLimit); 
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
@@ -963,53 +998,48 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
-   if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        let miniKits = STATE.lists['combos'].data; // Mostra TODOS
-        let miniHtml = miniKits.map((item, index) => cardCombo(item, index)).join('');
-        
+    // Transformado os Kits em Carrossel com Setas
+    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+        let trackHtml = STATE.lists['combos'].data.map(item => getComboCarouselItem(item)).join('');
         html += `
-        <div style="margin-top: 10px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
-            <div class="section-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
-            <div class="grid-produtos">
-                ${miniHtml}
-            </div>
+        <div class="carousel-wrapper">
+            <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
+            <div class="carousel-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
+            <div class="carousel-track">${trackHtml}</div>
+            <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
         </div>`;
     }
     
     html += buildCarouselsHtml();
 
-    html += `
-    <div class="bottom-chips-wrapper">
-        <div class="bottom-chips-title">Mais Produtos</div>
-        <div class="bottom-chips-container">`;
-    
+    // Transformado as Outras Categorias em Carrosséis Dinâmicos
     document.querySelectorAll('#nav-track .slider-item').forEach(navItem => {
         let id = navItem.id.replace('nav-', '');
         let name = navItem.querySelector('.slider-label').innerText;
         
-        if(id !== activeTabId && id !== 'ofertas' && id !== 'combos') {
-            let firstItemImg = '';
-            let listKey = (id === 'cestas' || id === 'ofertas' || id === 'combos') ? id : 'term_' + id;
-            
+        if(id !== activeTabId && id !== 'ofertas' && id !== 'combos' && id !== 'cestas') {
+            let listKey = 'term_' + id;
             if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                let firstItem = STATE.lists[listKey].data[0];
-                if (listKey === 'cestas' || listKey === 'combos') firstItemImg = firstItem.imagem;
-                else firstItemImg = firstItem.img;
+                let trackHtml = STATE.lists[listKey].data.slice(0, 15).map(p => getProdCarouselItem(p)).join('');
+                html += `
+                <div class="carousel-wrapper">
+                    <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
+                    <div class="carousel-title">${name}</div>
+                    <div class="carousel-track">${trackHtml}</div>
+                    <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+                </div>`;
             }
-            if(!firstItemImg) firstItemImg = '/site/img/produtos/cesta.webp'; 
-
+        } else if(id === 'cestas' && activeTabId !== 'cestas' && STATE.lists['cestas'] && STATE.lists['cestas'].data.length > 0) {
+            let trackHtml = STATE.lists['cestas'].data.slice(0, 15).map(c => getBasketCarouselItem(c)).join('');
             html += `
-            <div class="bottom-chip" onclick="switchTab('${id}')">
-                <img src="${firstItemImg}" alt="Categoria ${name}" width="65" height="65" loading="lazy">
-                <div class="bottom-chip-info">
-                    <div class="bottom-chip-title">${name}</div>
-                    <div class="bottom-chip-count">${STATE.lists[listKey] ? STATE.lists[listKey].data.length : 0} itens</div>
-                </div>
+            <div class="carousel-wrapper">
+                <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
+                <div class="carousel-title">${name}</div>
+                <div class="carousel-track">${trackHtml}</div>
+                <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
             </div>`;
         }
     });
-    
-    html += `</div></div>`;
     
     let activeSec = $('sec-' + activeTabId);
     if(activeSec) {
@@ -1019,7 +1049,7 @@ function renderBottomChips(activeTabId) {
 }
 
 window.switchTab = function(tabId) {
-    window.currentOfertasLimit = 10; // Reset ao mudar de aba
+    window.currentOfertasLimit = 10; 
     
     $('wrapper-sections').style.display = 'block';
     $('section-busca').style.display = 'none';
@@ -1129,7 +1159,8 @@ function renderPaginated(containerId, listKey, list, type) {
 
     let html = list.map((item, index) => {
         if (type === 'BASKET') return cardBasket(item, index);
-        if (type === 'COMBO') return cardCombo(item, index);
+        // Atualizado para considerar a busca mista (PROD + COMBO)
+        if (type === 'COMBO' || item._isCombo) return cardCombo(item, index);
         return cardProd(item, index);
     }).join('');
     
@@ -1359,8 +1390,12 @@ function handleSearch(q) {
     $('sec-minha-cesta').style.display = 'none';
     $('section-busca').style.display = q ? 'block' : 'none'; 
     if (q) { 
-        let list = STATE.prods.filter(p => norm(p.name).includes(norm(q)));
-        renderPaginated('grid-busca', 'busca', list, 'PROD'); 
+        let listProds = STATE.prods.filter(p => norm(p.name).includes(norm(q)));
+        // Agora busca também pelos nomes dos Kits Especiais (Combos) e adiciona um identificador
+        let listCombos = STATE.combos.filter(c => norm(c.nome).includes(norm(q))).map(c => ({...c, _isCombo: true}));
+        
+        let combined = [...listCombos, ...listProds];
+        renderPaginated('grid-busca', 'busca', combined, 'MIXED'); 
     } 
 }
 function clearSearch() { $('search-inp').value = ''; handleSearch(''); goToHome(); }
