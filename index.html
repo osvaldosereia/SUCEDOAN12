@@ -153,14 +153,15 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .main-stage { position: relative; height: 100dvh; padding-top: 195px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; background: var(--c-bg); scroll-behavior: smooth; }
 .section-title { width: 100%; max-width: 1200px; margin: 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--c-p); padding: 20px 15px 10px; text-transform: uppercase; letter-spacing: -0.5px; }
 
-/* GRADE 3 COLUNAS MÓVEL / 5 COLUNAS DESKTOP */
+/* GRADE 3 COLUNAS MÓVEL / 6 COLUNAS DESKTOP */
 .grid-produtos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
 
 /* EXCEÇÃO: Cestas e Kits com 2 colunas no telemóvel */
 #grid-cestas, #grid-combos { grid-template-columns: repeat(2, 1fr); }
 
 @media(min-width: 800px) { 
-    .grid-produtos, #grid-cestas, #grid-combos { grid-template-columns: repeat(5, 1fr) !important; border-left: 1px solid var(--c-bd); } 
+    .grid-produtos { grid-template-columns: repeat(6, 1fr) !important; border-left: 1px solid var(--c-bd); } 
+    #grid-cestas, #grid-combos { grid-template-columns: repeat(5, 1fr) !important; }
 }
 
 .btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
@@ -177,9 +178,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 #grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n) { border-right: none; }
 
 @media(min-width: 800px) {
-    /* No desktop volta tudo ao normal para 5 colunas */
+    /* No desktop volta tudo ao normal das margens para resetar o móvel */
     .u-card:nth-child(3n), #grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd) !important; }
-    .u-card:nth-child(5n) { border-right: none !important; }
+    /* Desktop 6 Colunas */
+    .u-card:nth-child(6n) { border-right: none !important; }
+    
+    /* Desktop Exceção Cestas/Kits 5 Colunas */
+    #grid-cestas .u-card:nth-child(6n), #grid-combos .u-card:nth-child(6n) { border-right: 1px solid var(--c-bd) !important; }
+    #grid-cestas .u-card:nth-child(5n), #grid-combos .u-card:nth-child(5n) { border-right: none !important; }
 }
 
 /* CARROSSEIS HORIONTAIS (SWIMLANES) */
@@ -191,7 +197,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .c-item:active { transform: scale(0.98); }
 .c-img-wrap { width: 100%; aspect-ratio: 1; border-radius: 8px; background: var(--c-img-bg); margin-bottom: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
 .c-img-wrap img { width: 90%; height: 90%; object-fit: contain; mix-blend-mode: multiply; }
-.c-name { font-size: 0.8rem; font-weight: 500; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.5em; }
+.c-name { font-size: 0.8rem; font-weight: 500; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 3.75em; }
 .c-price { font-size: 1.05rem; font-weight: 800; color: var(--c-p); margin-top: 6px; }
 .c-item .btn-big-action, .c-item .card-qty-ctrl { height: 32px; font-size: 0.8rem; margin-top: 8px; }
 .c-item .card-qty-ctrl button { font-size: 1.2rem; padding: 0 8px; }
@@ -203,7 +209,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .skeleton-card:nth-child(3n) { border-right: none; }
 @media(min-width: 800px) { 
     .skeleton-card:nth-child(3n) { border-right: 1px solid var(--c-bd) !important; } 
-    .skeleton-card:nth-child(5n) { border-right: none !important; } 
+    .skeleton-card:nth-child(6n) { border-right: none !important; } 
 }
 .skeleton-el { background: #f1f5f9; background-image: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%); background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s infinite linear forwards; }
 .sk-img { width: 100%; aspect-ratio: 1; border-radius: 0px; }
@@ -217,8 +223,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .offer-tag { position: absolute; top: 4px; right: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0px;}
 .u-info { padding: 8px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
 
-.u-name { font-size: 0.9rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-@media(min-width: 800px) { .u-name { font-size: 1.25rem; } }
+/* TÍTULO EM 3 LINHAS E ALINHAMENTO */
+.u-name { font-size: 0.9rem; font-weight: 400; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 3.9em; }
+
+@media(min-width: 800px) { 
+    .u-name { font-size: 1.05rem; } 
+    #grid-cestas .u-name, #grid-combos .u-name { font-size: 1.15rem; } 
+}
+
 .u-price { font-size: 1.25rem; font-weight: 700; color: var(--c-p); margin-top: 4px; }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: -2px; }
 
@@ -235,7 +247,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* AJUSTES FINOS PARA 3 COLUNAS NO TELEMÓVEL */
 @media(max-width: 799px) {
     .u-info { padding: 4px; }
-    .u-name { font-size: 0.75rem; line-height: 1.2; margin-bottom: 2px; }
+    .u-name { font-size: 0.75rem; line-height: 1.2; margin-bottom: 2px; min-height: 3.6em; -webkit-line-clamp: 3; }
     .u-price { font-size: 0.95rem; font-weight: 800; }
     .btn-big-action { font-size: 0.75rem; padding: 4px; height: 32px; margin-top: 6px; }
     .card-qty-ctrl { height: 32px; margin-top: 6px; }
@@ -387,6 +399,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div id="skeleton-loader" style="display:block; padding-top: 10px;">
             <div class="section-title skeleton-el" style="width: 220px; height: 26px; margin: 20px 15px 10px; border-radius: 6px;"></div>
             <div class="grid-produtos">
+                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div style="padding:8px;"><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div><div class="sk-btn skeleton-el"></div></div></div>
@@ -572,7 +585,7 @@ let currentComboId = null;
 let currentBasketQty = 1;
 
 // LIMITADOR DE OFERTAS: Adicionamos a variável global de controle das ofertas
-window.currentOfertasLimit = 10;
+window.currentOfertasLimit = window.currentOfertasLimit || 10;
 
 window.loadMoreOfertas = function() {
     window.currentOfertasLimit += 10;
@@ -932,7 +945,6 @@ function renderBottomChips(activeTabId) {
     }
 
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
-        window.currentOfertasLimit = 10; // Reseta sempre que renderizar
         let miniOfertas = STATE.lists['ofertas'].data.slice(0, window.currentOfertasLimit); 
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
         let hasMore = STATE.lists['ofertas'].data.length > window.currentOfertasLimit;
@@ -1003,6 +1015,8 @@ function renderBottomChips(activeTabId) {
 }
 
 window.switchTab = function(tabId) {
+    window.currentOfertasLimit = 10; // Reset ao mudar de aba
+    
     $('wrapper-sections').style.display = 'block';
     $('section-busca').style.display = 'none';
     $('sec-minha-cesta').style.display = 'none';
