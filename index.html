@@ -1324,13 +1324,23 @@ function upd(id, delta) {
     if ($('modal-checkout').open) openCheckout();
     if($('checkout-sohoje-container') && $('checkout-sohoje-container').style.display !== 'none') { renderSoHoje(); }
     
-    let activeNav = document.querySelector('.slider-item.active');
-    if (activeNav) {
-        let activeTabId = activeNav.id.replace('nav-', '');
-        if (activeTabId !== 'minha-cesta') renderBottomChips(activeTabId);
-    } else if ($('sec-minha-cesta').style.display === 'block') {
-        renderBottomChips('minha-cesta');
-    }
+    // 1. MEMÓRIA DE ESTADO: Salva a posição exata do scroll de todos os carrosseis na tela
+    let carrosseisAtuais = document.querySelectorAll('.carousel-track');
+    let posicoesScroll = Array.from(carrosseisAtuais).map(c => c.scrollLeft);
+
+    let activeNav = document.querySelector('.slider-item.active');
+    if (activeNav) {
+        let activeTabId = activeNav.id.replace('nav-', '');
+        if (activeTabId !== 'minha-cesta') renderBottomChips(activeTabId);
+    } else if ($('sec-minha-cesta').style.display === 'block') {
+        renderBottomChips('minha-cesta');
+    }
+
+    // 2. RESTAURAÇÃO: Após o DOM ser recriado pela função acima, injeta as posições de volta
+    let carrosseisNovos = document.querySelectorAll('.carousel-track');
+    carrosseisNovos.forEach((c, index) => {
+        if (posicoesScroll[index]) c.scrollLeft = posicoesScroll[index];
+    });
 }
 
 
