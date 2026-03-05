@@ -963,14 +963,14 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
-    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+   if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
         let miniKits = STATE.lists['combos'].data; // Mostra TODOS
         let miniHtml = miniKits.map((item, index) => cardCombo(item, index)).join('');
         
         html += `
         <div style="margin-top: 10px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
             <div class="section-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
-            <div class="grid-produtos" id="grid-combos">
+            <div class="grid-produtos">
                 ${miniHtml}
             </div>
         </div>`;
