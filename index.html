@@ -502,8 +502,8 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         
         <div id="checkout-sohoje-container" style="display:none; margin-bottom: 25px; padding-bottom: 5px; border-bottom: 1px dashed var(--c-bd);">
             <div style="display: flex; align-items: center; margin-bottom: 5px; gap: 8px;">
-                <span style="background: var(--c-err); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">SUPER OFERTA</span>
-                <span style="font-size: 0.85rem; color: var(--c-s); font-weight: 600;">Aproveite antes de fechar!</span>
+                <span style="background: var(--c-err); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">DESTAQUE</span>
+                <span style="font-size: 0.85rem; color: var(--c-s); font-weight: 600;">Perto da validade, com grande desconto!</span>
             </div>
             <div id="sohoje-list" style="display: flex; flex-direction: column;"></div>
         </div>
@@ -646,6 +646,45 @@ $('scroll-stage').addEventListener('scroll', function() {
     }
 }, false);
 
+// --- INÍCIO DA INTELIGÊNCIA DE DESTAQUES (VALIDADE) ---
+function gerarDestaquesDaValidade() {
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+
+    let elegiveis = STATE.prods.filter(p => {
+        if (p.stock <= 0) return false; 
+        if (!p.validade) return false;  
+
+        let partes = p.validade.split('/');
+        if (partes.length !== 3) return false;
+
+        let dataVal = new Date(partes[2], partes[1] - 1, partes[0]);
+
+        if (dataVal < hoje) return false;
+
+        p.dataValidadeObj = dataVal;
+        return true;
+    });
+
+    elegiveis.sort((a, b) => a.dataValidadeObj - b.dataValidadeObj);
+
+    let candidatos = elegiveis.slice(0, 15);
+
+    candidatos.sort(() => Math.random() - 0.5);
+
+    let destaques = candidatos.slice(0, 5);
+
+    STATE.sohoje = destaques.map(p => {
+        let precoComDesconto = parseFloat((p.price * 0.80).toFixed(2));
+
+        return {
+            id: String(p.id),
+            preco_so_hoje: precoComDesconto 
+        };
+    });
+}
+// --- FIM DA INTELIGÊNCIA ---
+
 async function init() {
     try {
         const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
@@ -707,6 +746,9 @@ async function init() {
                 p.oldPrice = p.price; 
                 p.price = parseFloat((p.oldPrice * (1 - percentual)).toFixed(2)); 
             });
+            
+            // --- NOVA CHAMADA AQUI PARA SUBSTITUIR OS DADOS DO JSON ---
+            gerarDestaquesDaValidade();
         }
 
         buildTabsAndSections(); 
@@ -972,8 +1014,8 @@ function renderBottomChips(activeTabId) {
             <div style="margin-top: 40px; border-top: 8px solid var(--c-img-bg); padding-top: 20px;">
                 <div class="layout-limit" style="padding: 0 15px;">
                     <div style="display: flex; align-items: center; margin-bottom: 10px; gap: 8px;">
-                        <span style="background: var(--c-err); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 800; text-transform: uppercase;">Só Hoje</span>
-                        <span style="font-size: 0.95rem; color: var(--c-s); font-weight: 600;">Aproveite agora!</span>
+                        <span style="background: var(--c-err); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 800; text-transform: uppercase;">Destaques</span>
+                        <span style="font-size: 0.95rem; color: var(--c-s); font-weight: 600;">Perto da validade, com grande desconto!</span>
                     </div>
                     <div class="sohoje-page-grid">
                         ${shHtml}
@@ -1325,22 +1367,22 @@ function upd(id, delta) {
     if($('checkout-sohoje-container') && $('checkout-sohoje-container').style.display !== 'none') { renderSoHoje(); }
     
     // 1. MEMÓRIA DE ESTADO: Salva a posição exata do scroll de todos os carrosseis na tela
-    let carrosseisAtuais = document.querySelectorAll('.carousel-track');
-    let posicoesScroll = Array.from(carrosseisAtuais).map(c => c.scrollLeft);
+    let carrosseisAtuais = document.querySelectorAll('.carousel-track');
+    let posicoesScroll = Array.from(carrosseisAtuais).map(c => c.scrollLeft);
 
-    let activeNav = document.querySelector('.slider-item.active');
-    if (activeNav) {
-        let activeTabId = activeNav.id.replace('nav-', '');
-        if (activeTabId !== 'minha-cesta') renderBottomChips(activeTabId);
-    } else if ($('sec-minha-cesta').style.display === 'block') {
-        renderBottomChips('minha-cesta');
-    }
+    let activeNav = document.querySelector('.slider-item.active');
+    if (activeNav) {
+        let activeTabId = activeNav.id.replace('nav-', '');
+        if (activeTabId !== 'minha-cesta') renderBottomChips(activeTabId);
+    } else if ($('sec-minha-cesta').style.display === 'block') {
+        renderBottomChips('minha-cesta');
+    }
 
-    // 2. RESTAURAÇÃO: Após o DOM ser recriado pela função acima, injeta as posições de volta
-    let carrosseisNovos = document.querySelectorAll('.carousel-track');
-    carrosseisNovos.forEach((c, index) => {
-        if (posicoesScroll[index]) c.scrollLeft = posicoesScroll[index];
-    });
+    // 2. RESTAURAÇÃO: Após o DOM ser recriado pela função acima, injeta as posições de volta
+    let carrosseisNovos = document.querySelectorAll('.carousel-track');
+    carrosseisNovos.forEach((c, index) => {
+        if (posicoesScroll[index]) c.scrollLeft = posicoesScroll[index];
+    });
 }
 
 
