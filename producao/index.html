@@ -155,9 +155,92 @@
         .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         .badge-pendente { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
         .badge-conferido { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+   /* --- TELA INICIAL DE PERFIS --- */
+        .profile-overlay { position: fixed; inset: 0; background: var(--bg-body); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; transition: opacity 0.3s; }
+        .profile-card-modal { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); max-width: 500px; width: 100%; text-align: center; border: 1px solid var(--border); }
+        .profile-card-modal h2 { color: var(--text-primary); margin-top: 0; font-weight: 900; font-size: 24px; }
+        .profile-card-modal p { color: var(--text-secondary); margin-bottom: 24px; font-size: 14px; }
+        .profile-buttons { display: flex; flex-direction: column; gap: 15px; }
+        .btn-profile { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; border-radius: 8px; border: 2px solid var(--border); background: #f8fafc; cursor: pointer; transition: 0.2s; outline: none; }
+        .btn-profile:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
+        .btn-profile.pedidos { border-color: #fde047; background: #fefce8; color: #854d0e; }
+        .btn-profile.admin { border-color: #bae6fd; background: #f0f9ff; color: #0369a1; }
+        .btn-profile span { font-weight: 900; font-size: 18px; }
+        .btn-profile small { font-weight: 600; font-size: 12px; opacity: 0.8; }
+
+        /* Oculta elementos do Admin se estiver no perfil de Pedidos */
+        body.profile-pedidos .admin-only { display: none !important; }
+
+        /* --- RESPONSIVIDADE MOBILE (Telas menores que 768px) --- */
+        @media (max-width: 768px) {
+            /* Ajuste do Cabeçalho e Botões Iniciais */
+            header { padding: 10px; height: auto; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+            .brand { width: 100%; text-align: center; margin-bottom: 5px; }
+            .nav-btn { flex: 1; justify-content: center; padding: 12px 8px; font-size: 11px; }
+            .nav-btn.config { flex: 0 0 auto; }
+            
+            /* Ajuste da Barra de Ferramentas */
+            .toolbar { flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; }
+            .toolbar > div { margin-left: 0 !important; width: 100%; justify-content: space-between; border-left: none !important; padding-left: 0 !important; }
+            .search-container { order: -1; } /* Joga a barra de busca para o topo */
+            .toolbar-select, .search-input { height: 44px; font-size: 14px; }
+            
+            /* MÁGICA: Transformando a Tabela em Cards Verticais */
+            .list-header { display: none; } /* Esconde o cabeçalho original */
+            .list-row {
+                display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+                padding: 15px; border: 1px solid var(--border); border-radius: 8px;
+                margin-bottom: 12px; align-items: start;
+            }
+            .list-row > div { width: 100%; display: flex; flex-direction: column; }
+            
+            /* Criando rótulos artificiais baseados na ordem das colunas */
+            .list-row > div::before { font-size: 10px; color: var(--accent); font-weight: bold; margin-bottom: 4px; }
+            .list-row > div:nth-child(1)::before { content: "CÓDIGO"; }
+            .list-row > div:nth-child(2) { grid-column: span 2; }
+            .list-row > div:nth-child(2)::before { content: "PRODUTO"; }
+            .list-row > div:nth-child(3)::before { content: "CATEGORIA"; }
+            .list-row > div:nth-child(4)::before { content: "EAN"; }
+            .list-row > div:nth-child(5)::before { content: "NCM"; }
+            .list-row > div:nth-child(6)::before { content: "LOCAL"; }
+            .list-row > div:nth-child(7)::before { content: "ESTOQUE"; }
+            .list-row > div:nth-child(8)::before { content: "VALIDADE"; }
+            .list-row > div:nth-child(9)::before { content: "CUSTO (R$)"; }
+            .list-row > div:nth-child(10)::before { content: "LUCRO"; }
+            .list-row > div:nth-child(11)::before { content: "PREÇO (R$)"; }
+            .list-row > div:nth-child(12) { grid-column: span 2; flex-direction: row; justify-content: center; margin-top: 10px; }
+            
+            /* Aumentando a área de toque para os dedos (44px) */
+            .list-input, .list-select { border: 1px solid var(--border); background: #f8fafc; padding: 10px; min-height: 44px; border-radius: 6px; }
+            .list-btn-icon, .btn-mini-action { min-height: 44px; padding: 10px; font-size: 14px; }
+            
+            /* Ajuste dos Modais */
+            .modal-card { width: 95% !important; max-height: 90vh; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    
     </style>
 </head>
 <body>
+
+    <div id="profile-selector" class="profile-overlay">
+        <div class="profile-card-modal">
+            <h2>Selecione seu Perfil</h2>
+            <p>Como você deseja utilizar o sistema neste dispositivo?</p>
+            <div class="profile-buttons">
+                <button onclick="selecionarPerfil('pedidos')" class="btn-profile pedidos">
+                    <i data-lucide="package-check" size="36"></i>
+                    <span>Separação de Pedidos</span>
+                    <small>Apenas conferência e baixa de fila</small>
+                </button>
+                <button onclick="selecionarPerfil('admin')" class="btn-profile admin">
+                    <i data-lucide="settings" size="36"></i>
+                    <span>Painel Administrativo</span>
+                    <small>Gestão completa e edição de produtos</small>
+                </button>
+            </div>
+        </div>
+    </div>
     <script>
         let availableCategories = []; 
         let pendingOrders = []; // Fila de Pedidos agora será sincronizada!
@@ -172,8 +255,7 @@
     <header>
         <div class="brand">SUCEDOAN <span>PRO</span></div>
         <button class="nav-btn active" onclick="showSection('products', this)"><i data-lucide="package" size="14"></i> PRODUTOS</button>
-        <button id="btn-nav-orders" class="nav-btn" onclick="showSection('orders', this)"><i data-lucide="list-checks" size="14"></i> PEDIDOS</button>
-        <div style="flex-grow:1"></div>
+<button id="btn-nav-products" class="nav-btn active admin-only" onclick="showSection('products', this)"><i data-lucide="package" size="14"></i> PRODUTOS</button>        <div style="flex-grow:1"></div>
         <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings" size="14"></i></button>
     </header>
 
@@ -423,6 +505,30 @@
                 e.returnValue = 'Você tem envios pendentes para o site na fila. Se sair, eles não serão enviados. Deseja sair?';
             }
         });
+
+        // --- GERENCIAMENTO DE PERFIL ---
+        function selecionarPerfil(perfil) {
+            const overlay = document.getElementById('profile-selector');
+            overlay.style.opacity = '0'; // Faz o efeito suave de sumir
+            
+            setTimeout(() => {
+                overlay.style.display = 'none'; // Some de vez
+                
+                if (perfil === 'pedidos') {
+                    // Adiciona a classe que vai ocultar os botões de admin via CSS
+                    document.body.classList.add('profile-pedidos');
+                    // Força o sistema a abrir direto na tela de Pedidos
+                    showSection('orders', document.getElementById('btn-nav-orders'));
+                } else {
+                    // Modo Admin puro
+                    document.body.classList.remove('profile-pedidos');
+                    showSection('products', document.getElementById('btn-nav-products'));
+                }
+                
+                // Recria os ícones caso precisem atualizar
+                lucide.createIcons();
+            }, 300);
+        }
 
         function updateQueueUI(msg) {
             const el = document.getElementById('queue-status');
