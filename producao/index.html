@@ -139,7 +139,7 @@
 
         .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); margin-top: 50px; }
 
-        /* --- ESTILOS DO CHECKOUT DE SEPARAÇÃO --- */
+        /* --- ESTILOS DO CHECKOUT DE SEPARAÇÃO E FILA --- */
         .pick-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; background: white; margin-bottom: 8px; transition: 0.2s; cursor: pointer; }
         .pick-item:hover { border-color: var(--accent); }
         .pick-item.partial { background: #fef08a; border-color: #fde047; }
@@ -156,6 +156,7 @@
 <body>
     <script>
         let availableCategories = []; 
+        let pendingOrders = []; // Fila de Pedidos
         const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
         const GONDOLAS = Array.from({length: 20}, (_, i) => String(i + 1).padStart(2, '0'));
@@ -166,6 +167,7 @@
     <header>
         <div class="brand">SUCEDOAN <span>PRO</span></div>
         <button class="nav-btn active" onclick="showSection('products', this)"><i data-lucide="package" size="14"></i> PRODUTOS</button>
+        <button id="btn-nav-orders" class="nav-btn" onclick="showSection('orders', this)"><i data-lucide="list-checks" size="14"></i> PEDIDOS</button>
         <div style="flex-grow:1"></div>
         <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings" size="14"></i></button>
     </header>
@@ -210,7 +212,7 @@
             </div>
             
             <button class="nav-btn" onclick="openOrderModal()" style="background:#fef08a; border-color:#fde047; color:#854d0e; margin-left: 15px;">
-                <i data-lucide="shopping-cart" size="14"></i> PROCESSAR PEDIDO
+                <i data-lucide="plus" size="14"></i> NOVO PEDIDO
             </button>
 
             <div class="search-container" style="margin-left: 15px;">
@@ -230,18 +232,30 @@
         <div class="product-grid" id="product-grid"></div>
     </div>
 
+    <div id="section-orders" class="view-section">
+        <div class="toolbar">
+            <button class="nav-btn" onclick="openOrderModal()" style="background:#fef08a; border-color:#fde047; color:#854d0e;">
+                <i data-lucide="plus" size="14"></i> COLAR NOVO PEDIDO (WHATSAPP)
+            </button>
+            <div style="flex-grow:1"></div>
+            <div id="orders-count" style="font-size: 12px; color: var(--text-secondary); font-weight: bold; background: white; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">0 PEDIDOS NA FILA</div>
+        </div>
+        <div class="product-grid" id="orders-grid" style="display: flex; flex-direction: column; gap: 12px; align-items: center; padding-top: 20px;">
+            </div>
+    </div>
+
     <div id="modal-order" class="modal-overlay">
         <div class="modal-card" style="width: 500px;">
             <div class="modal-header">
-                <span>Processar Pedido (Baixar Estoque e Imprimir 80mm)</span>
+                <span>Gerar Novo Pedido (WhatsApp)</span>
                 <button class="close-btn" onclick="closeModal('modal-order')"><i data-lucide="x"></i></button>
             </div>
             <div class="modal-body">
                 <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">
-                    Cole o texto do pedido do WhatsApp abaixo. O sistema identificará os itens, abaterá o estoque do sistema e gerará a impressão agrupada por localização.
+                    Cole o texto do pedido. O sistema abaterá o estoque imediatamente e enviará o pedido para a Fila de Separação.
                 </p>
                 <textarea id="order-text-input" style="width: 100%; height: 250px; padding: 10px; font-family: monospace; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; resize: vertical;" placeholder="Cole o pedido aqui..."></textarea>
-                <button class="btn-full" onclick="processOrder()" style="background: var(--success);">PROCESSAR E INICIAR SEPARAÇÃO</button>
+                <button class="btn-full" onclick="processOrder()" style="background: var(--success);">GERAR PEDIDO E ENVIAR PARA FILA</button>
             </div>
         </div>
     </div>
@@ -249,7 +263,7 @@
     <div id="modal-picking" class="modal-overlay">
         <div class="modal-card" style="width: 800px; max-width: 95%; height: 85vh; display: flex; flex-direction: column;">
             <div class="modal-header">
-                <span>Checkout de Separação (Biper)</span>
+                <span id="picking-modal-title">Checkout de Separação</span>
                 <button class="close-btn" onclick="closeModal('modal-picking')"><i data-lucide="x"></i></button>
             </div>
             
@@ -263,7 +277,7 @@
                     </div>
                 
                 <button class="btn-full" onclick="finishPicking()" style="background: var(--accent); font-size: 16px; padding: 15px; margin-top: 15px;">
-                    <i data-lucide="check-circle" style="margin-right: 8px;"></i> FINALIZAR E IMPRIMIR
+                    <i data-lucide="check-circle" style="margin-right: 8px;"></i> FINALIZAR CONFERÊNCIA
                 </button>
             </div>
         </div>
@@ -476,6 +490,7 @@
             loadCategoriesFromGithub();
             setupEditorEvents();
             document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value, true), 300));
+            renderOrdersQueue(); // Desenha a fila caso haja algo salvo ou para mostrar estado vazio
         };
 
         function showSection(id, btn) {
@@ -1789,26 +1804,24 @@
             }
         }
 
-        // --- NOVAS FUNÇÕES: PROCESSAMENTO DE PEDIDO (WHATSAPP) E IMPRESSÃO 80MM --- //
+        // --- SISTEMA DE FILA E CHECKOUT DE SEPARAÇÃO --- //
 
-        // 1. Função para abrir o modal
         function openOrderModal() {
             document.getElementById('order-text-input').value = '';
             openModal('modal-order');
         }
 
-        // 2. Lógica para extrair as informações do texto e abater no sistema
         function processOrder() {
             const text = document.getElementById('order-text-input').value;
             if(!text.trim()) return alert('Por favor, cole o texto do pedido!');
 
-            // Regex (Expressão Regular) que procura exatamente as tags (com ou sem os *) para resgatar Valores Únicos
+            // Regex para resgatar Valores Únicos
             const orderNumMatch = text.match(/\*?PEDIDO\s+(#[0-9]+)\*?/i);
             const deliveryMatch = text.match(/\*?ENTREGA AGENDADA PARA:\*?\s+(.+)/i);
             const discountMatch = text.match(/DESCONTO[^:]*:\s*(-?R\$\s*[0-9,]+)/i) || text.match(/DESCONTO[^:]*:\s*([^\n]+)/i);
             const totalMatch = text.match(/\*?TOTAL:\s*(R\$\s*[0-9,]+)\*?/i) || text.match(/\*?TOTAL:\s*([^\n\*]+)/i);
 
-            // Resgatando o final do arquivo que possui os comentários e notas. (Após os traços "------")
+            // Resgatando o final do arquivo que possui notas.
             let footerText = "";
             const footerSplit = text.split(/------/);
             if(footerSplit.length > 1) {
@@ -1819,18 +1832,14 @@
             let items = [];
             let inItemsSection = false;
 
-            // Varrendo as linhas da caixa de texto
             for(let line of lines) {
                 line = line.trim();
-                
-                // Se detectar "ITENS" então entramos na zona dos produtos
                 if(line.includes('*ITENS:*') || line.includes('ITENS:')) {
                     inItemsSection = true;
                     continue;
                 }
                 
                 if(inItemsSection) {
-                    // Tenta capturar o padrão: Numero + x + Espaço + Nome (Ex: 1x Feijão)
                     const itemMatch = line.match(/^(\d+)x\s+(.+)$/i);
                     if(itemMatch) {
                         items.push({
@@ -1839,7 +1848,6 @@
                             foundProduct: null
                         });
                     } else if (line === '' || line.includes('DESCONTO') || line.includes('TOTAL') || line.includes('------')) {
-                        // Se encostou em desconto, total ou traços quer dizer que a lista de itens acabou
                         if(line.includes('TOTAL') || line.includes('------')) inItemsSection = false;
                     }
                 }
@@ -1849,39 +1857,32 @@
 
             let changedAny = false;
             
-            // Cruzando informações com o seu array de "products"
+            // Cruzando informações e Abatendo Estoque
             items.forEach(item => {
-                // Tenta achar com nome EXATO
                 let bestMatch = products.find(p => p.nome && p.nome.toUpperCase() === item.nomeOriginal.toUpperCase());
-                
-                // Se não achou exato, busca se tem uma parte contida no nome
                 if(!bestMatch) {
                     bestMatch = products.find(p => p.nome && (p.nome.toUpperCase().includes(item.nomeOriginal.toUpperCase()) || item.nomeOriginal.toUpperCase().includes(p.nome.toUpperCase())));
                 }
 
                 if(bestMatch) {
-                    item.foundProduct = bestMatch; // Salva quem ele encontrou
-                    
-                    // ABATE DE ESTOQUE
+                    item.foundProduct = bestMatch; 
                     let currentStock = parseFloat(bestMatch.estoque) || 0;
-                    bestMatch.estoque = currentStock - item.qtd; // Subtrai o que acabou de ler
+                    bestMatch.estoque = currentStock - item.qtd; 
                     bestMatch['Estoque'] = bestMatch.estoque;
-                    bestMatch._changed = true; // Força uma sinalização visual de alteração
+                    bestMatch._changed = true; 
                     bestMatch._lastChange = "Abate " + (orderNumMatch ? orderNumMatch[1] : "Sistema");
                     changedAny = true;
                 }
             });
 
-            // Se alteramos o estoque, salvamos os dados atuais no Cache.
             if(changedAny) {
                 saveData();
-                renderGrid(document.getElementById('search-input').value, true); // Atualiza os botõezinhos na tela
+                renderGrid(document.getElementById('search-input').value, true); 
             }
 
             const grouped = {};
             const notFound = [];
 
-            // Agrupando por Gôndola/Localização
             items.forEach(item => {
                 if(item.foundProduct) {
                     const loc = item.foundProduct.localizacao || "SEM LOCAL";
@@ -1892,12 +1893,83 @@
                 }
             });
 
-            // Em vez de imprimir direto, inicia a Sessão de Separação
-            startPickingSession(orderNumMatch, deliveryMatch, discountMatch, totalMatch, grouped, notFound, items, footerText);
+            // Cria o objeto do Pedido e envia para a fila
+            const newOrder = {
+                id: Date.now(),
+                orderNumMatch: orderNumMatch,
+                orderNum: orderNumMatch ? orderNumMatch[1] : `AVULSO-${Math.floor(Math.random()*1000)}`,
+                deliveryMatch, discountMatch, totalMatch, grouped, notFound, items, footerText
+            };
+
+            pendingOrders.push(newOrder);
+            
             closeModal('modal-order');
+            showSection('orders', document.getElementById('btn-nav-orders'));
+            renderOrdersQueue();
         }
 
-        // 3. Monta a rotina e o CSS para emissor na largura térmica.
+        function renderOrdersQueue() {
+            const grid = document.getElementById('orders-grid');
+            grid.innerHTML = '';
+            
+            const countLabel = document.getElementById('orders-count');
+            countLabel.innerText = `${pendingOrders.length} PEDIDOS NA FILA`;
+            if(pendingOrders.length > 0) {
+                countLabel.style.color = "var(--warning)";
+                countLabel.style.borderColor = "var(--warning)";
+            } else {
+                countLabel.style.color = "var(--text-secondary)";
+                countLabel.style.borderColor = "var(--border)";
+            }
+
+            if (pendingOrders.length === 0) {
+                grid.innerHTML = `<div class="empty-state"><i data-lucide="clipboard-check" size="48" style="opacity:0.3; margin-bottom:15px;"></i><h3>Nenhum pedido na fila</h3><p style="font-size:12px; margin-top:5px;">Cole um pedido para iniciar a separação.</p></div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            pendingOrders.forEach(order => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.minHeight = 'auto';
+                card.style.width = '100%';
+                card.style.maxWidth = '800px';
+                card.style.padding = '15px 20px';
+                card.style.display = 'flex';
+                card.style.flexDirection = 'row';
+                card.style.justifyContent = 'space-between';
+                card.style.alignItems = 'center';
+                
+                const totalItems = order.items.reduce((acc, item) => acc + item.qtd, 0);
+
+                card.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                        <h3 style="margin:0; font-size:16px; color:var(--accent);">PEDIDO ${order.orderNum}</h3>
+                        <span style="font-size:12px; color:var(--text-secondary); font-weight:bold;">${totalItems} unidades de ${order.items.length} produtos</span>
+                        ${order.deliveryMatch ? `<span style="font-size:11px; color:var(--text-secondary);"><i data-lucide="truck" size="12"></i> ${order.deliveryMatch[1]}</span>` : ''}
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-act" onclick="printQueueOrder(${order.id})" style="width:auto; padding:8px 15px;"><i data-lucide="printer" size="14"></i> IMPRIMIR LISTA</button>
+                        <button class="btn-act primary" onclick="startQueuePicking(${order.id})" style="width:auto; padding:8px 15px;"><i data-lucide="check-square" size="14"></i> CONFERIR (BIPAR)</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function printQueueOrder(id) {
+            const order = pendingOrders.find(o => o.id === id);
+            if(!order) return;
+            printOrderReceipt(order.orderNumMatch, order.deliveryMatch, order.discountMatch, order.totalMatch, order.grouped, order.notFound, order.footerText);
+        }
+
+        function startQueuePicking(id) {
+            const order = pendingOrders.find(o => o.id === id);
+            if(!order) return;
+            startPickingSession(order);
+        }
+
         function printOrderReceipt(orderNum, delivery, discount, total, grouped, notFound, footerText) {
             const w = window.open('', '', 'width=400,height=600');
             
@@ -1927,7 +1999,7 @@
                 </div>
             `;
 
-            const locs = Object.keys(grouped).sort(); // Ordena em ordem alfabética os blocos das gôndolas
+            const locs = Object.keys(grouped).sort(); 
             
             locs.forEach(loc => {
                 html += `<div class="loc-group"><div class="loc-title">LOCAL: ${loc}</div>`;
@@ -1946,7 +2018,6 @@
                 html += `</div>`;
             });
 
-            // Imprime os itens que o sistema não localizou para separar os papéis
             if(notFound.length > 0) {
                 html += `<div class="loc-group"><div class="loc-title" style="background:#fff; color:#000; border: 2px solid #000;">❓ NÃO ENCONTRADOS NO SISTEMA</div>`;
                 notFound.forEach(item => {
@@ -1961,51 +2032,41 @@
             }
 
             html += `<div class="footer">`;
-            if(discount) {
-                html += `<div class="finance-row"><span>DESCONTO:</span> <span>${discount[1]}</span></div>`;
-            }
-            if(total) {
-                html += `<div class="finance-row total"><span>TOTAL:</span> <span>${total[1]}</span></div>`;
-            }
+            if(discount) { html += `<div class="finance-row"><span>DESCONTO:</span> <span>${discount[1]}</span></div>`; }
+            if(total) { html += `<div class="finance-row total"><span>TOTAL:</span> <span>${total[1]}</span></div>`; }
+            if(footerText) { html += `<div class="notes"><strong>OBSERVAÇÕES:</strong><br>${footerText.replace(/\n/g, '<br>')}</div>`; }
             
-            if(footerText) {
-                html += `<div class="notes"><strong>OBSERVAÇÕES:</strong><br>${footerText.replace(/\n/g, '<br>')}</div>`;
-            }
-            
-            html += `
-                </div>
-                <script>
-                    window.onload = function() { window.print(); }
-                <\/script>
-                </body></html>
-            `;
-
+            html += `</div><script>window.onload = function() { window.print(); }<\/script></body></html>`;
             w.document.write(html);
             w.document.close();
         }
 
-        // --- SISTEMA DE CHECKOUT DE SEPARAÇÃO ---
-        let currentPickingSession = null;
-
         // 1. Prepara os dados e abre a tela
-        function startPickingSession(orderNum, delivery, discount, total, grouped, notFound, items, footerText) {
-            // Adicionamos a propriedade 'scanned' valendo 0 para cada item
-            const itemsToPick = items.map(i => ({
+        function startPickingSession(order) {
+            const itemsToPick = order.items.map(i => ({
                 ...i,
                 scanned: 0 
             }));
 
             currentPickingSession = {
-                orderNum, delivery, discount, total, grouped, notFound, items, footerText,
+                id: order.id,
+                orderNumMatch: order.orderNumMatch,
+                orderNum: order.orderNum,
+                delivery: order.deliveryMatch,
+                discount: order.discountMatch,
+                total: order.totalMatch,
+                grouped: order.grouped,
+                notFound: order.notFound,
+                footerText: order.footerText,
                 itemsToPick: itemsToPick
             };
 
+            document.getElementById('picking-modal-title').innerText = `Checkout de Separação - PEDIDO ${order.orderNum}`;
             document.getElementById('picking-alert').style.display = 'none';
             document.getElementById('picking-scanner').value = '';
             renderPickingList();
             openModal('modal-picking');
             
-            // Foca no input para o leitor automaticamente
             setTimeout(() => document.getElementById('picking-scanner').focus(), 100);
         }
 
@@ -2017,7 +2078,6 @@
             currentPickingSession.itemsToPick.forEach((item, index) => {
                 const p = item.foundProduct;
                 
-                // Determina o status visual (Pendente, Parcial ou Finalizado)
                 let statusClass = '';
                 if (item.scanned >= item.qtd) statusClass = 'done';
                 else if (item.scanned > 0) statusClass = 'partial';
@@ -2026,11 +2086,10 @@
                 const ean = p && p.gtin ? p.gtin : 'SEM EAN';
                 const code = p ? p.codigo : 'NÃO CADASTRADO';
                 
-                // Criamos a linha. Clicar nela adiciona manualmente (caso o leitor falhe)
                 const row = document.createElement('div');
                 row.className = `pick-item ${statusClass}`;
                 row.onclick = (e) => { 
-                    e.stopPropagation(); // Evita perder o foco do input
+                    e.stopPropagation(); 
                     manualPick(index); 
                 };
                 
@@ -2058,15 +2117,13 @@
             
             const input = e.target;
             const val = input.value.trim().toUpperCase();
-            input.value = ''; // Limpa instantaneamente para o próximo bip
+            input.value = ''; 
 
             if (!val) return;
 
-            // Busca todos os itens que batem com o código lido (EAN, Código interno ou Nome)
             const matches = currentPickingSession.itemsToPick.filter(item => {
                 const p = item.foundProduct;
                 if (!p) {
-                    // Se for um produto não cadastrado, tenta buscar pelo nome
                     return item.nomeOriginal.toUpperCase().includes(val);
                 }
                 return (p.gtin === val || p.codigo.toUpperCase() === val || p.nome.toUpperCase().includes(val));
@@ -2077,7 +2134,6 @@
                 return;
             }
 
-            // Procura na lista de encontrados, o primeiro que ainda falta bipar
             const pendingMatch = matches.find(m => m.scanned < m.qtd);
 
             if (!pendingMatch) {
@@ -2085,7 +2141,6 @@
                 return;
             }
 
-            // Sucesso! Incrementa a quantidade
             pendingMatch.scanned++;
             const prodName = pendingMatch.foundProduct ? pendingMatch.foundProduct.nome : pendingMatch.nomeOriginal;
             showPickingAlert(`✅ CONFERIDO: ${prodName}`, 'var(--success)');
@@ -2093,7 +2148,6 @@
             renderPickingList();
         }
 
-        // Permite conferir clicando no item (se o EAN estiver rasgado, por exemplo)
         function manualPick(index) {
             const item = currentPickingSession.itemsToPick[index];
             if (item.scanned < item.qtd) {
@@ -2107,47 +2161,36 @@
             }
         }
 
-        // Exibe a mensagem colorida no topo
         function showPickingAlert(msg, color) {
             const alertBox = document.getElementById('picking-alert');
             alertBox.innerText = msg;
             alertBox.style.background = color;
             alertBox.style.display = 'block';
             
-            // Esconde depois de 2.5 segundos
             clearTimeout(alertBox.timer);
             alertBox.timer = setTimeout(() => {
                 alertBox.style.display = 'none';
             }, 2500);
         }
 
-        // 4. Finaliza a separação, checa se falta algo e manda imprimir
+        // 4. Finaliza a separação e remove da fila
         function finishPicking() {
-            // Checa se tem algum produto cuja quantidade bipada é menor que a quantidade do pedido
             const missingItems = currentPickingSession.itemsToPick.filter(item => item.scanned < item.qtd);
             
             if (missingItems.length > 0) {
-                // Monta os nomes do que faltou para o alerta
                 let missingText = missingItems.map(m => `- ${m.qtd - m.scanned}x ${m.foundProduct ? m.foundProduct.nome : m.nomeOriginal}`).join('\n');
                 
-                const confirmResult = confirm(`ATENÇÃO! Há produtos faltando na separação:\n\n${missingText}\n\nDeseja finalizar o pedido e imprimir mesmo assim?`);
+                const confirmResult = confirm(`ATENÇÃO! Há produtos faltando na separação:\n\n${missingText}\n\nDeseja dar baixa no pedido mesmo assim?`);
                 
                 if (!confirmResult) {
                     document.getElementById('picking-scanner').focus();
-                    return; // Cancela a finalização
+                    return; 
                 }
             }
 
-            // Tudo OK ou usuário forçou. Chama a impressão que existia antes.
-            printOrderReceipt(
-                currentPickingSession.orderNum, 
-                currentPickingSession.delivery, 
-                currentPickingSession.discount, 
-                currentPickingSession.total, 
-                currentPickingSession.grouped, 
-                currentPickingSession.notFound, 
-                currentPickingSession.footerText
-            );
+            // Remove o pedido da Fila e atualiza
+            pendingOrders = pendingOrders.filter(o => o.id !== currentPickingSession.id);
+            renderOrdersQueue();
             
             closeModal('modal-picking');
         }
