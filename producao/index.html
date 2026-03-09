@@ -1337,6 +1337,7 @@
             let changedAny = false;
             
             // Cruzando informações e Abatendo Estoque
+            // Cruzando informações e Abatendo Estoque
             items.forEach(item => {
                 let bestMatch = products.find(p => p.nome && p.nome.toUpperCase() === item.nomeOriginal.toUpperCase());
                 if(!bestMatch) {
@@ -1344,7 +1345,18 @@
                 }
 
                 if(bestMatch) {
-                    item.foundProduct = bestMatch; 
+                    // ---------------------------------------------------------
+                    // OTIMIZAÇÃO: Criando um "Mini-Produto" super leve.
+                    // Pegamos apenas o que vai para a tela de impressão e conferência!
+                    // ---------------------------------------------------------
+                    item.foundProduct = {
+                        nome: bestMatch.nome,
+                        codigo: bestMatch.codigo,
+                        gtin: bestMatch.gtin,
+                        localizacao: bestMatch.localizacao || "SEM LOCAL"
+                    };
+                    
+                    // O abate de estoque continua funcionando normalmente no produto original do banco
                     let currentStock = parseFloat(bestMatch.estoque) || 0;
                     bestMatch.estoque = currentStock - item.qtd; 
                     bestMatch['Estoque'] = bestMatch.estoque;
