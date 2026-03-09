@@ -138,6 +138,19 @@
         .list-btn-icon:hover { color: var(--accent); border-color: var(--accent); }
 
         .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); margin-top: 50px; }
+
+        /* --- ESTILOS DO CHECKOUT DE SEPARAÇÃO --- */
+        .pick-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; background: white; margin-bottom: 8px; transition: 0.2s; cursor: pointer; }
+        .pick-item:hover { border-color: var(--accent); }
+        .pick-item.partial { background: #fef08a; border-color: #fde047; }
+        .pick-item.done { background: #dcfce7; border-color: #86efac; opacity: 0.6; }
+        .pick-info { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }
+        .pick-name { font-weight: 800; font-size: 14px; color: var(--text-primary); }
+        .pick-meta { font-size: 11px; color: var(--text-secondary); display: flex; gap: 10px; }
+        .pick-qtd-box { display: flex; align-items: center; gap: 10px; }
+        .pick-qtd { font-size: 24px; font-weight: 900; min-width: 60px; text-align: center; }
+        .pick-qtd span { font-size: 14px; color: var(--text-secondary); }
+        #picking-alert { padding: 12px; border-radius: 6px; font-weight: 900; text-align: center; color: white; margin-bottom: 10px; display: none; text-transform: uppercase; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -228,7 +241,30 @@
                     Cole o texto do pedido do WhatsApp abaixo. O sistema identificará os itens, abaterá o estoque do sistema e gerará a impressão agrupada por localização.
                 </p>
                 <textarea id="order-text-input" style="width: 100%; height: 250px; padding: 10px; font-family: monospace; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; resize: vertical;" placeholder="Cole o pedido aqui..."></textarea>
-                <button class="btn-full" onclick="processOrder()" style="background: var(--success);">PROCESSAR E IMPRIMIR</button>
+                <button class="btn-full" onclick="processOrder()" style="background: var(--success);">PROCESSAR E INICIAR SEPARAÇÃO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-picking" class="modal-overlay">
+        <div class="modal-card" style="width: 800px; max-width: 95%; height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <span>Checkout de Separação (Biper)</span>
+                <button class="close-btn" onclick="closeModal('modal-picking')"><i data-lucide="x"></i></button>
+            </div>
+            
+            <div class="modal-body" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; padding: 20px;" onclick="document.getElementById('picking-scanner').focus()">
+                
+                <div id="picking-alert"></div>
+                
+                <input type="text" id="picking-scanner" onkeydown="handlePickingScan(event)" placeholder="Bipe o EAN, digite o Código ou Nome e aperte Enter..." style="width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border: 2px solid var(--accent); border-radius: 8px; outline: none; margin-bottom: 15px; text-align: center; background: #f8fafc;">
+                
+                <div id="picking-list" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+                    </div>
+                
+                <button class="btn-full" onclick="finishPicking()" style="background: var(--accent); font-size: 16px; padding: 15px; margin-top: 15px;">
+                    <i data-lucide="check-circle" style="margin-right: 8px;"></i> FINALIZAR E IMPRIMIR
+                </button>
             </div>
         </div>
     </div>
@@ -1856,8 +1892,8 @@
                 }
             });
 
-            // Direciona os dados para abrir a janela de impressão em formato 80mm
-            printOrderReceipt(orderNumMatch, deliveryMatch, discountMatch, totalMatch, grouped, notFound, footerText);
+            // Em vez de imprimir direto, inicia a Sessão de Separação
+            startPickingSession(orderNumMatch, deliveryMatch, discountMatch, totalMatch, grouped, notFound, items, footerText);
             closeModal('modal-order');
         }
 
@@ -1947,6 +1983,175 @@
             w.document.write(html);
             w.document.close();
         }
+
+        // --- SISTEMA DE CHECKOUT DE SEPARAÇÃO ---
+        let currentPickingSession = null;
+
+        // 1. Prepara os dados e abre a tela
+        function startPickingSession(orderNum, delivery, discount, total, grouped, notFound, items, footerText) {
+            // Adicionamos a propriedade 'scanned' valendo 0 para cada item
+            const itemsToPick = items.map(i => ({
+                ...i,
+                scanned: 0 
+            }));
+
+            currentPickingSession = {
+                orderNum, delivery, discount, total, grouped, notFound, items, footerText,
+                itemsToPick: itemsToPick
+            };
+
+            document.getElementById('picking-alert').style.display = 'none';
+            document.getElementById('picking-scanner').value = '';
+            renderPickingList();
+            openModal('modal-picking');
+            
+            // Foca no input para o leitor automaticamente
+            setTimeout(() => document.getElementById('picking-scanner').focus(), 100);
+        }
+
+        // 2. Desenha a lista de produtos na tela
+        function renderPickingList() {
+            const listContainer = document.getElementById('picking-list');
+            listContainer.innerHTML = '';
+
+            currentPickingSession.itemsToPick.forEach((item, index) => {
+                const p = item.foundProduct;
+                
+                // Determina o status visual (Pendente, Parcial ou Finalizado)
+                let statusClass = '';
+                if (item.scanned >= item.qtd) statusClass = 'done';
+                else if (item.scanned > 0) statusClass = 'partial';
+
+                const name = p ? p.nome : item.nomeOriginal;
+                const ean = p && p.gtin ? p.gtin : 'SEM EAN';
+                const code = p ? p.codigo : 'NÃO CADASTRADO';
+                
+                // Criamos a linha. Clicar nela adiciona manualmente (caso o leitor falhe)
+                const row = document.createElement('div');
+                row.className = `pick-item ${statusClass}`;
+                row.onclick = (e) => { 
+                    e.stopPropagation(); // Evita perder o foco do input
+                    manualPick(index); 
+                };
+                
+                row.innerHTML = `
+                    <div class="pick-info">
+                        <div class="pick-name">${name}</div>
+                        <div class="pick-meta">
+                            <span><strong>CÓD:</strong> ${code}</span>
+                            <span><strong>EAN:</strong> ${ean}</span>
+                        </div>
+                    </div>
+                    <div class="pick-qtd-box">
+                        <div class="pick-qtd">${item.scanned} <span>/ ${item.qtd}</span></div>
+                    </div>
+                `;
+                listContainer.appendChild(row);
+            });
+            
+            lucide.createIcons();
+        }
+
+        // 3. Lê o código de barras, busca o produto e altera o status
+        function handlePickingScan(e) {
+            if (e.key !== 'Enter') return;
+            
+            const input = e.target;
+            const val = input.value.trim().toUpperCase();
+            input.value = ''; // Limpa instantaneamente para o próximo bip
+
+            if (!val) return;
+
+            // Busca todos os itens que batem com o código lido (EAN, Código interno ou Nome)
+            const matches = currentPickingSession.itemsToPick.filter(item => {
+                const p = item.foundProduct;
+                if (!p) {
+                    // Se for um produto não cadastrado, tenta buscar pelo nome
+                    return item.nomeOriginal.toUpperCase().includes(val);
+                }
+                return (p.gtin === val || p.codigo.toUpperCase() === val || p.nome.toUpperCase().includes(val));
+            });
+
+            if (matches.length === 0) {
+                showPickingAlert('PRODUTO ERRADO OU NÃO PERTENCE AO PEDIDO!', 'var(--danger)');
+                return;
+            }
+
+            // Procura na lista de encontrados, o primeiro que ainda falta bipar
+            const pendingMatch = matches.find(m => m.scanned < m.qtd);
+
+            if (!pendingMatch) {
+                showPickingAlert('QUANTIDADE MÁXIMA JÁ CONFERIDA PARA ESTE ITEM!', 'var(--warning)');
+                return;
+            }
+
+            // Sucesso! Incrementa a quantidade
+            pendingMatch.scanned++;
+            const prodName = pendingMatch.foundProduct ? pendingMatch.foundProduct.nome : pendingMatch.nomeOriginal;
+            showPickingAlert(`✅ CONFERIDO: ${prodName}`, 'var(--success)');
+            
+            renderPickingList();
+        }
+
+        // Permite conferir clicando no item (se o EAN estiver rasgado, por exemplo)
+        function manualPick(index) {
+            const item = currentPickingSession.itemsToPick[index];
+            if (item.scanned < item.qtd) {
+                item.scanned++;
+                const prodName = item.foundProduct ? item.foundProduct.nome : item.nomeOriginal;
+                showPickingAlert(`👆 CONFERÊNCIA MANUAL: ${prodName}`, 'var(--accent)');
+                renderPickingList();
+                document.getElementById('picking-scanner').focus();
+            } else {
+                showPickingAlert('ESTE ITEM JÁ ESTÁ COMPLETO!', 'var(--warning)');
+            }
+        }
+
+        // Exibe a mensagem colorida no topo
+        function showPickingAlert(msg, color) {
+            const alertBox = document.getElementById('picking-alert');
+            alertBox.innerText = msg;
+            alertBox.style.background = color;
+            alertBox.style.display = 'block';
+            
+            // Esconde depois de 2.5 segundos
+            clearTimeout(alertBox.timer);
+            alertBox.timer = setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 2500);
+        }
+
+        // 4. Finaliza a separação, checa se falta algo e manda imprimir
+        function finishPicking() {
+            // Checa se tem algum produto cuja quantidade bipada é menor que a quantidade do pedido
+            const missingItems = currentPickingSession.itemsToPick.filter(item => item.scanned < item.qtd);
+            
+            if (missingItems.length > 0) {
+                // Monta os nomes do que faltou para o alerta
+                let missingText = missingItems.map(m => `- ${m.qtd - m.scanned}x ${m.foundProduct ? m.foundProduct.nome : m.nomeOriginal}`).join('\n');
+                
+                const confirmResult = confirm(`ATENÇÃO! Há produtos faltando na separação:\n\n${missingText}\n\nDeseja finalizar o pedido e imprimir mesmo assim?`);
+                
+                if (!confirmResult) {
+                    document.getElementById('picking-scanner').focus();
+                    return; // Cancela a finalização
+                }
+            }
+
+            // Tudo OK ou usuário forçou. Chama a impressão que existia antes.
+            printOrderReceipt(
+                currentPickingSession.orderNum, 
+                currentPickingSession.delivery, 
+                currentPickingSession.discount, 
+                currentPickingSession.total, 
+                currentPickingSession.grouped, 
+                currentPickingSession.notFound, 
+                currentPickingSession.footerText
+            );
+            
+            closeModal('modal-picking');
+        }
+
     </script>
 </body>
 </html>
