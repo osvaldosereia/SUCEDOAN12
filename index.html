@@ -739,7 +739,7 @@ async function init() {
                 [produtosElegiveis[i], produtosElegiveis[j]] = [produtosElegiveis[j], produtosElegiveis[i]];
             }
 
-            let produtosSorteados = produtosElegiveis.slice(0, 50);
+            let produtosSorteados = produtosElegiveis.slice(0, 100);
 
             produtosSorteados.forEach(p => {
                 let percentual = 0.05 + (rand() * 0.15); 
