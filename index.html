@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
 <meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.json">
 <title>Super Cestas Básicas Dona Antônia</title>
 <style>
 :root {
@@ -317,6 +318,17 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 </style>
 </head>
 <body>
+
+<div id="install-banner" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: var(--c-p); color: #fff; padding: 12px 20px; border-radius: 20px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); align-items: center; gap: 10px; font-weight: 500; width: 90%; max-width: 400px; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.5rem;">📲</span>
+        <span style="font-size: 0.9rem;">Instalar App Dona Antônia</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <button id="btn-install" style="background: var(--c-a); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; transition: 0.2s;">Instalar</button>
+        <button id="btn-close-install" style="background: transparent; color: var(--c-t); border: none; font-size: 1.2rem; padding: 0 5px;">✕</button>
+    </div>
+</div>
 
 <div id="splash-screen">
     <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="splash-logo" onerror="this.style.display='none'">
@@ -1933,6 +1945,46 @@ async function sendOrder() {
 }
 
 init();
+
+// --- ADICIONADO: REGISTRO DO SERVICE WORKER ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+            .then((registro) => {
+                console.log('Service Worker registrado com sucesso! Escopo:', registro.scope);
+            })
+            .catch((erro) => {
+                console.error('Falha ao registrar o Service Worker:', erro);
+            });
+    });
+}
+
+// --- ADICIONADO: LÓGICA DO BOTÃO DE INSTALAÇÃO ---
+let eventoInstalacao;
+const bannerInstalacao = document.getElementById('install-banner');
+const btnInstalar = document.getElementById('btn-install');
+const btnFecharInstalacao = document.getElementById('btn-close-install');
+
+window.addEventListener('beforeinstallprompt', (evento) => {
+    evento.preventDefault();
+    eventoInstalacao = evento;
+    bannerInstalacao.style.display = 'flex';
+});
+
+btnInstalar.addEventListener('click', async () => {
+    if (!eventoInstalacao) return;
+    eventoInstalacao.prompt();
+    const escolha = await eventoInstalacao.userChoice;
+    if (escolha.outcome === 'accepted') {
+        console.log('O cliente instalou o app!');
+    }
+    bannerInstalacao.style.display = 'none';
+    eventoInstalacao = null;
+});
+
+btnFecharInstalacao.addEventListener('click', () => {
+    bannerInstalacao.style.display = 'none';
+});
 </script>
 </body>
 </html>
