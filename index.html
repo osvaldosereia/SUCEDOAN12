@@ -583,10 +583,10 @@ let currentComboQty = 1;
 let currentComboId = null;
 let currentBasketQty = 1;
 
-window.currentOfertasLimit = window.currentOfertasLimit || 10;
+window.currentOfertasLimit = window.currentOfertasLimit || 50;
 
 window.loadMoreOfertas = function(tabId) {
-    window.currentOfertasLimit += 10;
+    window.currentOfertasLimit += 50;
     
     let grid = $(`grid-mini-ofertas-${tabId}`);
     let btn = $(`btn-more-ofertas-${tabId}`);
@@ -751,10 +751,10 @@ async function init() {
                 [produtosElegiveis[i], produtosElegiveis[j]] = [produtosElegiveis[j], produtosElegiveis[i]];
             }
 
-            let produtosSorteados = produtosElegiveis.slice(0, 100);
+            let produtosSorteados = produtosElegiveis.slice(0, 200);
 
             produtosSorteados.forEach(p => {
-                let percentual = 0.05 + (rand() * 0.15); 
+                let percentual = 0.03 + (rand() * 0.13); 
                 p.oldPrice = p.price; 
                 p.price = parseFloat((p.oldPrice * (1 - percentual)).toFixed(2)); 
             });
