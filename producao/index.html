@@ -1506,7 +1506,7 @@
             startPickingSession(order);
         }
 
-        function printOrderReceipt(orderNum, delivery, discount, total, grouped, notFound, footerText) {
+       function printOrderReceipt(orderNum, delivery, discount, total, grouped, notFound, footerText) {
             const w = window.open('', '', 'width=400,height=600');
             
             let html = `
@@ -1520,20 +1520,32 @@
                     .header h2 { margin: 0 0 5px 0; font-size: 22px; }
                     
                     .loc-group { margin-bottom: 15px; }
-                    .loc-title { font-weight: 900; font-size: 17px; background: #000; color: #fff; padding: 4px; text-align: center; margin-bottom: 8px; }
+                    
+                    /* --- DESTAQUE DA LOCALIZAÇÃO --- */
+                    .loc-title { 
+                        font-weight: 900; 
+                        font-size: 26px; /* Aumentado de 17px para 26px (gigante) */
+                        background: #000; 
+                        color: #fff; 
+                        padding: 10px; /* Mais espaço para criar um bloco preto bem visível */
+                        text-align: center; 
+                        margin-bottom: 12px; 
+                        text-transform: uppercase;
+                        border-radius: 4px;
+                        letter-spacing: 1px; /* Espaço entre as letras para facilitar a leitura */
+                    }
                     
                     .item { margin-bottom: 12px; border-bottom: 1px dotted #888; padding-bottom: 6px; }
                     .item-name { font-weight: bold; font-size: 16px; line-height: 1.2; }
                     
-                    /* AQUI ESTÁ A MÁGICA DO SKU E EAN */
                     .item-details { 
                         display: flex; 
-                        flex-direction: column; /* Coloca um abaixo do outro */
+                        flex-direction: column; 
                         gap: 4px; 
-                        font-size: 18px; /* Fonte super grande */
+                        font-size: 18px; 
                         margin-top: 6px; 
                         color: #000; 
-                        font-weight: 900; /* Texto bem forte */
+                        font-weight: 900; 
                     }
                     
                     .footer { margin-top: 15px; border-top: 2px dashed #000; padding-top: 8px; }
@@ -1569,7 +1581,8 @@
             });
 
             if(notFound.length > 0) {
-                html += `<div class="loc-group"><div class="loc-title" style="background:#fff; color:#000; border: 2px solid #000;">❓ NÃO ENCONTRADOS NO SISTEMA</div>`;
+                /* Ajuste também o aviso de não encontrados para manter a proporção */
+                html += `<div class="loc-group"><div class="loc-title" style="background:#fff; color:#000; border: 3px solid #000; font-size: 20px;">❓ NÃO ENCONTRADOS</div>`;
                 notFound.forEach(item => {
                     html += `
                         <div class="item">
