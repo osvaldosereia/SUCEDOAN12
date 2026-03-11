@@ -1635,7 +1635,8 @@
             if (e.key !== 'Enter') return;
             
             const input = e.target;
-            const val = input.value.trim().toUpperCase();
+            // 1. Forçamos o que foi bipado a ser Texto Limpo e em Maiúsculas
+            const val = String(input.value).trim().toUpperCase();
             input.value = ''; 
 
             if (!val) return;
@@ -1643,15 +1644,17 @@
             const matches = currentPickingSession.itemsToPick.filter(item => {
                 const p = item.foundProduct;
                 if (!p) {
-                    return item.nomeOriginal.toUpperCase().includes(val);
+                    return item.nomeOriginal ? String(item.nomeOriginal).toUpperCase().includes(val) : false;
                 }
                 
-                // CORREÇÃO: Previne o "crash" validando a existência da informação antes de transformar em Maiúscula
-                const matchEan = p.gtin ? (p.gtin === val) : false;
-                const matchCodigo = p.codigo ? (p.codigo.toUpperCase() === val) : false;
-                const matchNome = p.nome ? p.nome.toUpperCase().includes(val) : false;
-                const matchOriginal = item.nomeOriginal ? item.nomeOriginal.toUpperCase().includes(val) : false;
+                // 2. CORREÇÃO DE TIPO: Forçamos o EAN e o Código que vêm da base de dados 
+                // a passarem pelo conversor String() e a removerem espaços trim()
+                const matchEan = p.gtin ? (String(p.gtin).trim().toUpperCase() === val) : false;
+                const matchCodigo = p.codigo ? (String(p.codigo).trim().toUpperCase() === val) : false;
+                const matchNome = p.nome ? String(p.nome).toUpperCase().includes(val) : false;
+                const matchOriginal = item.nomeOriginal ? String(item.nomeOriginal).toUpperCase().includes(val) : false;
 
+                // 3. Se qualquer uma das condições for verdadeira, ele encontra o produto
                 return matchEan || matchCodigo || matchNome || matchOriginal;
             });
 
@@ -1669,7 +1672,6 @@
 
             pendingMatch.scanned++;
             
-            // Tratamento de segurança para o nome no alerta
             const prodName = (pendingMatch.foundProduct && pendingMatch.foundProduct.nome) ? pendingMatch.foundProduct.nome : pendingMatch.nomeOriginal;
             showPickingAlert(`✅ CONFERIDO: ${prodName}`, 'var(--success)');
             
