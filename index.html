@@ -157,12 +157,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* GRADE 3 COLUNAS MÓVEL / 6 COLUNAS DESKTOP */
 .grid-produtos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
 
-/* EXCEÇÃO: Cestas, Kits e Mini Ofertas com 2 colunas no telemóvel */
-#grid-cestas, #grid-combos, [id^="grid-mini-ofertas"] { grid-template-columns: repeat(2, 1fr); }
+/* EXCEÇÃO: Cestas, Kits, Mini Ofertas e Destaques com 2 colunas no telemóvel */
+#grid-cestas, #grid-combos, [id^="grid-mini-ofertas"], [id^="grid-destaques"] { grid-template-columns: repeat(2, 1fr); }
 
 @media(min-width: 800px) { 
     .grid-produtos { grid-template-columns: repeat(6, 1fr) !important; border-left: 1px solid var(--c-bd); } 
-    #grid-cestas, #grid-combos, [id^="grid-mini-ofertas"] { grid-template-columns: repeat(5, 1fr) !important; }
+    #grid-cestas, #grid-combos, [id^="grid-mini-ofertas"], [id^="grid-destaques"] { grid-template-columns: repeat(5, 1fr) !important; }
 }
 
 .btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
@@ -174,19 +174,19 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* Bordas para o móvel (3 colunas padrão) */
 .u-card:nth-child(3n) { border-right: none; } 
 
-/* Repor as bordas corretas para o móvel (2 colunas - Cestas, Kits, Ofertas da semana) */
-#grid-cestas .u-card:nth-child(3n), #grid-combos .u-card:nth-child(3n), [id^="grid-mini-ofertas"] .u-card:nth-child(3n) { border-right: 1px solid var(--c-bd); }
-#grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n), [id^="grid-mini-ofertas"] .u-card:nth-child(2n) { border-right: none; }
+/* Repor as bordas corretas para o móvel (2 colunas - Cestas, Kits, Ofertas da semana, Destaques) */
+#grid-cestas .u-card:nth-child(3n), #grid-combos .u-card:nth-child(3n), [id^="grid-mini-ofertas"] .u-card:nth-child(3n), [id^="grid-destaques"] .u-card:nth-child(3n) { border-right: 1px solid var(--c-bd); }
+#grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n), [id^="grid-mini-ofertas"] .u-card:nth-child(2n), [id^="grid-destaques"] .u-card:nth-child(2n) { border-right: none; }
 
 @media(min-width: 800px) {
     /* No desktop volta tudo ao normal das margens para resetar o móvel */
-    .u-card:nth-child(3n), #grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n), [id^="grid-mini-ofertas"] .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd) !important; }
+    .u-card:nth-child(3n), #grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n), [id^="grid-mini-ofertas"] .u-card:nth-child(2n), [id^="grid-destaques"] .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd) !important; }
     /* Desktop 6 Colunas */
     .u-card:nth-child(6n) { border-right: none !important; }
     
-    /* Desktop Exceção Cestas/Kits/Ofertas 5 Colunas */
-    #grid-cestas .u-card:nth-child(6n), #grid-combos .u-card:nth-child(6n), [id^="grid-mini-ofertas"] .u-card:nth-child(6n) { border-right: 1px solid var(--c-bd) !important; }
-    #grid-cestas .u-card:nth-child(5n), #grid-combos .u-card:nth-child(5n), [id^="grid-mini-ofertas"] .u-card:nth-child(5n) { border-right: none !important; }
+    /* Desktop Exceção Cestas/Kits/Ofertas/Destaques 5 Colunas */
+    #grid-cestas .u-card:nth-child(6n), #grid-combos .u-card:nth-child(6n), [id^="grid-mini-ofertas"] .u-card:nth-child(6n), [id^="grid-destaques"] .u-card:nth-child(6n) { border-right: 1px solid var(--c-bd) !important; }
+    #grid-cestas .u-card:nth-child(5n), #grid-combos .u-card:nth-child(5n), [id^="grid-mini-ofertas"] .u-card:nth-child(5n), [id^="grid-destaques"] .u-card:nth-child(5n) { border-right: none !important; }
 }
 
 /* CARROSSEIS HORIONTAIS (SWIMLANES) */
@@ -682,11 +682,16 @@ function gerarDestaquesDaValidade() {
 
     elegiveis.sort((a, b) => a.dataValidadeObj - b.dataValidadeObj);
 
-    let candidatos = elegiveis.slice(0, 15);
-
+    let candidatos = elegiveis.slice(0, 30);
     candidatos.sort(() => Math.random() - 0.5);
+    
+    let destaques = candidatos.slice(0, 10);
 
-    let destaques = candidatos.slice(0, 5);
+    if (destaques.length < 10) {
+        let outros = STATE.prods.filter(p => p.stock > 0 && !destaques.some(d => d.id === p.id));
+        outros.sort(() => Math.random() - 0.5);
+        destaques = [...destaques, ...outros.slice(0, 10 - destaques.length)];
+    }
 
     STATE.sohoje = destaques.map(p => {
         let precoComDesconto = parseFloat((p.price * 0.80).toFixed(2));
@@ -984,52 +989,43 @@ function buildTabsAndSections() {
 function renderBottomChips(activeTabId) {
     let html = '';
 
+    let maioresDescontos = STATE.prods.filter(p => p.stock > 0 && p.oldPrice && (1 - (p.price / p.oldPrice)) > 0.10);
+    if (maioresDescontos.length > 0) {
+        maioresDescontos.sort((a, b) => (1 - (b.price / b.oldPrice)) - (1 - (a.price / a.oldPrice)));
+        let trackHtml = maioresDescontos.map(p => getProdCarouselItem(p)).join('');
+        html += `
+        <div class="carousel-wrapper" style="border-top: 8px solid var(--c-img-bg); padding-top: 20px;">
+            <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
+            <div class="carousel-title" style="color: var(--c-err);">💸 Maiores Descontos</div>
+            <div class="carousel-track">${trackHtml}</div>
+            <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+        </div>`;
+    }
+
     if (STATE.sohoje && STATE.sohoje.length > 0) {
-        let shHtml = STATE.sohoje.map((sh, idx) => {
+        let shProds = STATE.sohoje.map(sh => {
             let p = STATE.prods.find(x => x.id === String(sh.id));
-            if (!p) return '';
-            let price = sh.preco_so_hoje ? parseFloat(sh.preco_so_hoje) : p.price;
-            let qty = STATE.cart[p.id] || 0;
-            
-            let controlHtml = '';
-            if (qty > 0) {
-                controlHtml = `
-                <div style="display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:36px; padding:0 4px; width: 90px; flex-shrink: 0;">
-                    <button onclick="upd('${p.id}',-1)" style="font-size:1.4rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 8px; height: 100%; cursor:pointer;">-</button>
-                    <span style="font-weight:700; font-size:1rem; color:var(--c-p);">${qty}</span>
-                    <button onclick="upd('${p.id}',1)" style="font-size:1.4rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 8px; height: 100%; cursor:pointer;">+</button>
-                </div>`;
-            } else {
-                controlHtml = `<button onclick="upd('${p.id}', 1);" style="background: #fff; border: 2px solid var(--c-ok); color: var(--c-ok); width: 36px; height: 36px; border-radius: 10px; font-size: 1.5rem; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: 0.2s; cursor: pointer;">+</button>`;
-            }
+            if (!p) return null;
+            return {
+                ...p,
+                oldPrice: p.price,
+                price: sh.preco_so_hoje ? parseFloat(sh.preco_so_hoje) : p.price
+            };
+        }).filter(Boolean);
 
-            let msgHtml = qty > 0 ? `<div style="font-size: 0.8rem; color: var(--c-ok); font-weight: 600; margin-top: 6px;">✓ Adicionado ao pedido</div>` : '';
-
-            return `
-            <div class="sohoje-page-item" style="display: flex; flex-direction: column; border-bottom: 1px solid var(--c-bd); padding: 15px 0;">
-                <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
-                    <img src="${p.img}" alt="${formatName(p.name)}" style="width: 60px; height: 60px; object-fit: contain; mix-blend-mode: multiply; background: var(--c-img-bg); border-radius: 8px; flex-shrink: 0;" loading="lazy">
-                    <div style="flex: 1; min-width: 0;">
-                        <div style="font-size: 0.95rem; font-weight: 600; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${formatName(p.name)}</div>
-                        <div style="font-size: 1.1rem; font-weight: 800; color: var(--c-err); margin-top: 2px;">${fmt(price)}</div>
-                    </div>
-                    ${controlHtml}
-                </div>
-                ${msgHtml}
-            </div>`;
-        }).join('');
+        let shHtml = shProds.map((p, idx) => cardProd(p, idx)).join('');
         
         if(shHtml) {
             html += `
-            <div style="margin-top: 40px; border-top: 8px solid var(--c-img-bg); padding-top: 20px;">
-                <div class="layout-limit" style="padding: 0 15px;">
-                    <div style="display: flex; align-items: center; margin-bottom: 10px; gap: 8px;">
+            <div style="margin-top: 20px; border-top: 8px solid var(--c-img-bg); padding-top: 20px;">
+                <div class="layout-limit" style="padding: 0 15px 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="background: var(--c-err); color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 800; text-transform: uppercase;">Destaques</span>
                         <span style="font-size: 0.95rem; color: var(--c-s); font-weight: 600;">Aproveite!</span>
                     </div>
-                    <div class="sohoje-page-grid">
-                        ${shHtml}
-                    </div>
+                </div>
+                <div class="grid-produtos" id="grid-destaques-${activeTabId}">
+                    ${shHtml}
                 </div>
             </div>`;
         }
