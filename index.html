@@ -195,9 +195,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .carousel-track { display: flex; gap: 12px; overflow-x: auto; padding: 0 15px 25px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .carousel-track::-webkit-scrollbar { display: none; }
 
-/* Item configurado dinamicamente para ocupar ~1.7 na tela mobile */
-.c-item { width: 55vw; max-width: 220px; flex-shrink: 0; background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+/* Item configurado dinamicamente para ocupar ~1.7 na tela mobile (Versão Sem Borda/Com Divisória) */
+.c-item { width: 55vw; max-width: 220px; flex-shrink: 0; background: #fff; border: none; border-right: 1px solid var(--c-bd); border-radius: 0; padding: 0 12px 0 0; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; position: relative; box-shadow: none; }
+.c-item:last-child { border-right: none; padding-right: 0; }
 .c-item:active { transform: scale(0.98); }
+.c-item .offer-tag { right: 16px; top: 4px; border-radius: 0 8px 0 8px !important; }
+
 .c-img-wrap { width: 100%; aspect-ratio: 1; border-radius: 8px; background: var(--c-img-bg); margin-bottom: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
 .c-img-wrap img { width: 90%; height: 90%; object-fit: contain; mix-blend-mode: multiply; }
 .c-name { font-size: 0.95rem; font-weight: 500; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 3.75em; }
@@ -694,7 +697,9 @@ function gerarDestaquesDaValidade() {
     }
 
     STATE.sohoje = destaques.map(p => {
-        let precoComDesconto = parseFloat((p.price * 0.80).toFixed(2));
+        // CORREÇÃO DA OFERTA: Sempre calcula os 20% com base no preço original sem descontos acumulados
+        let precoBase = p.oldPrice ? p.oldPrice : p.price;
+        let precoComDesconto = parseFloat((precoBase * 0.80).toFixed(2));
 
         return {
             id: String(p.id),
@@ -1008,7 +1013,7 @@ function renderBottomChips(activeTabId) {
             if (!p) return null;
             return {
                 ...p,
-                oldPrice: p.price,
+                oldPrice: p.oldPrice ? p.oldPrice : p.price,
                 price: sh.preco_so_hoje ? parseFloat(sh.preco_so_hoje) : p.price
             };
         }).filter(Boolean);
