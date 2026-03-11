@@ -1514,25 +1514,26 @@
                 <title>Imprimir Pedido</title>
                 <style>
                     @page { size: 80mm auto; margin: 0; }
-                    body { font-family: 'Courier New', Courier, monospace; width: 80mm; margin: 0; padding: 4mm; box-sizing: border-box; font-size: 14px; color: #000; }
+                    body { font-family: 'Courier New', Courier, monospace; width: 80mm; margin: 0; padding: 4mm; box-sizing: border-box; font-size: 14px; color: #000; background: #fff; }
                     
                     .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 12px; }
                     .header h2 { margin: 0 0 5px 0; font-size: 22px; }
                     
                     .loc-group { margin-bottom: 15px; }
                     
-                    /* --- DESTAQUE DA LOCALIZAÇÃO --- */
+                    /* --- DESTAQUE DA LOCALIZAÇÃO: FUNDO BRANCO E TEXTO PRETO --- */
                     .loc-title { 
                         font-weight: 900; 
-                        font-size: 26px; /* Aumentado de 17px para 26px (gigante) */
-                        background: #000; 
-                        color: #fff; 
-                        padding: 10px; /* Mais espaço para criar um bloco preto bem visível */
+                        font-size: 26px; 
+                        background: #ffffff; /* Fundo branco */
+                        color: #000000;      /* Texto preto */
+                        border: 2px solid #000000; /* Linha em volta para destacar */
+                        padding: 10px; 
                         text-align: center; 
                         margin-bottom: 12px; 
                         text-transform: uppercase;
                         border-radius: 4px;
-                        letter-spacing: 1px; /* Espaço entre as letras para facilitar a leitura */
+                        letter-spacing: 1px; 
                     }
                     
                     .item { margin-bottom: 12px; border-bottom: 1px dotted #888; padding-bottom: 6px; }
@@ -1581,8 +1582,7 @@
             });
 
             if(notFound.length > 0) {
-                /* Ajuste também o aviso de não encontrados para manter a proporção */
-                html += `<div class="loc-group"><div class="loc-title" style="background:#fff; color:#000; border: 3px solid #000; font-size: 20px;">❓ NÃO ENCONTRADOS</div>`;
+                html += `<div class="loc-group"><div class="loc-title" style="font-size: 20px;">❓ NÃO ENCONTRADOS</div>`;
                 notFound.forEach(item => {
                     html += `
                         <div class="item">
