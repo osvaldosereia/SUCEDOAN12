@@ -157,12 +157,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* GRADE 3 COLUNAS MÓVEL / 6 COLUNAS DESKTOP */
 .grid-produtos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; padding: 0 0 25px 0; width: 100%; max-width: 1200px; margin: 0 auto; border-top: 1px solid var(--c-bd); }
 
-/* EXCEÇÃO: Cestas e Kits com 2 colunas no telemóvel */
-#grid-cestas, #grid-combos { grid-template-columns: repeat(2, 1fr); }
+/* EXCEÇÃO: Cestas, Kits e Mini Ofertas com 2 colunas no telemóvel */
+#grid-cestas, #grid-combos, [id^="grid-mini-ofertas"] { grid-template-columns: repeat(2, 1fr); }
 
 @media(min-width: 800px) { 
     .grid-produtos { grid-template-columns: repeat(6, 1fr) !important; border-left: 1px solid var(--c-bd); } 
-    #grid-cestas, #grid-combos { grid-template-columns: repeat(5, 1fr) !important; }
+    #grid-cestas, #grid-combos, [id^="grid-mini-ofertas"] { grid-template-columns: repeat(5, 1fr) !important; }
 }
 
 .btn-ver-todas-ofertas { width: calc(100% - 30px); max-width: 400px; margin: 0 auto 20px; display: flex; justify-content: center; align-items: center; background: #fff7ed; color: var(--c-a); border: 1px solid var(--c-a); padding: 12px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; }
@@ -174,19 +174,19 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* Bordas para o móvel (3 colunas padrão) */
 .u-card:nth-child(3n) { border-right: none; } 
 
-/* Repor as bordas corretas para o móvel (2 colunas - Cestas e Kits) */
-#grid-cestas .u-card:nth-child(3n), #grid-combos .u-card:nth-child(3n) { border-right: 1px solid var(--c-bd); }
-#grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n) { border-right: none; }
+/* Repor as bordas corretas para o móvel (2 colunas - Cestas, Kits, Ofertas da semana) */
+#grid-cestas .u-card:nth-child(3n), #grid-combos .u-card:nth-child(3n), [id^="grid-mini-ofertas"] .u-card:nth-child(3n) { border-right: 1px solid var(--c-bd); }
+#grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n), [id^="grid-mini-ofertas"] .u-card:nth-child(2n) { border-right: none; }
 
 @media(min-width: 800px) {
     /* No desktop volta tudo ao normal das margens para resetar o móvel */
-    .u-card:nth-child(3n), #grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd) !important; }
+    .u-card:nth-child(3n), #grid-cestas .u-card:nth-child(2n), #grid-combos .u-card:nth-child(2n), [id^="grid-mini-ofertas"] .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd) !important; }
     /* Desktop 6 Colunas */
     .u-card:nth-child(6n) { border-right: none !important; }
     
-    /* Desktop Exceção Cestas/Kits 5 Colunas */
-    #grid-cestas .u-card:nth-child(6n), #grid-combos .u-card:nth-child(6n) { border-right: 1px solid var(--c-bd) !important; }
-    #grid-cestas .u-card:nth-child(5n), #grid-combos .u-card:nth-child(5n) { border-right: none !important; }
+    /* Desktop Exceção Cestas/Kits/Ofertas 5 Colunas */
+    #grid-cestas .u-card:nth-child(6n), #grid-combos .u-card:nth-child(6n), [id^="grid-mini-ofertas"] .u-card:nth-child(6n) { border-right: 1px solid var(--c-bd) !important; }
+    #grid-cestas .u-card:nth-child(5n), #grid-combos .u-card:nth-child(5n), [id^="grid-mini-ofertas"] .u-card:nth-child(5n) { border-right: none !important; }
 }
 
 /* CARROSSEIS HORIONTAIS (SWIMLANES) */
@@ -194,14 +194,16 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .carousel-title { font-size: 1.15rem; font-weight: 800; color: var(--c-p); margin: 0 15px 15px; text-transform: uppercase; letter-spacing: -0.5px; }
 .carousel-track { display: flex; gap: 12px; overflow-x: auto; padding: 0 15px 25px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .carousel-track::-webkit-scrollbar { display: none; }
-.c-item { width: 140px; flex-shrink: 0; background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+
+/* Item configurado dinamicamente para ocupar ~1.7 na tela mobile */
+.c-item { width: 55vw; max-width: 220px; flex-shrink: 0; background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; cursor: pointer; transition: 0.2s; position: relative; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
 .c-item:active { transform: scale(0.98); }
-.c-img-wrap { width: 100%; aspect-ratio: 1; border-radius: 8px; background: var(--c-img-bg); margin-bottom: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+.c-img-wrap { width: 100%; aspect-ratio: 1; border-radius: 8px; background: var(--c-img-bg); margin-bottom: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
 .c-img-wrap img { width: 90%; height: 90%; object-fit: contain; mix-blend-mode: multiply; }
-.c-name { font-size: 0.8rem; font-weight: 500; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 3.75em; }
-.c-price { font-size: 1.05rem; font-weight: 800; color: var(--c-p); margin-top: 6px; }
-.c-item .btn-big-action, .c-item .card-qty-ctrl { height: 32px; font-size: 0.8rem; margin-top: 8px; }
-.c-item .card-qty-ctrl button { font-size: 1.2rem; padding: 0 8px; }
+.c-name { font-size: 0.95rem; font-weight: 500; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 3.75em; }
+.c-price { font-size: 1.2rem; font-weight: 800; color: var(--c-p); margin-top: 8px; }
+.c-item .btn-big-action, .c-item .card-qty-ctrl { height: 38px; font-size: 0.9rem; margin-top: 10px; }
+.c-item .card-qty-ctrl button { font-size: 1.4rem; padding: 0 10px; }
 
 /* Setas de navegação do carrossel */
 .carousel-nav-arrow { display: none; position: absolute; top: 55%; transform: translateY(-50%); width: 40px; height: 40px; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; font-size: 1.2rem; font-weight: 900; color: var(--c-p); align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; transition: 0.2s; }
@@ -210,7 +212,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .carousel-nav-arrow.right { right: 5px; }
 
 @media(min-width: 800px) { 
-    .c-item { width: 160px; } .c-name { font-size: 0.9rem; } .c-price { font-size: 1.15rem; } 
+    .c-item { width: 220px; max-width: none; } 
+    .c-name { font-size: 1.05rem; } 
+    .c-price { font-size: 1.25rem; } 
     .carousel-nav-arrow { display: flex; }
     .carousel-track { padding: 0 50px 25px; }
 }
@@ -267,7 +271,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .card-qty-ctrl span { font-size: 0.85rem; }
     .combo-strike { font-size: 0.7rem; }
     
-    /* Garantir que as cestas/kits continuem com proporções confortáveis nas suas 2 colunas */
+    /* Garantir que as cestas/kits continuem com proporções confortáveis nas suas colunas */
     #grid-cestas .u-name, #grid-combos .u-name { font-size: 0.9rem; }
     #grid-cestas .u-price, #grid-combos .u-price { font-size: 1.15rem; }
     #grid-cestas .btn-view-details, #grid-combos .btn-view-details { height: 36px; font-size: 0.85rem; }
@@ -602,7 +606,6 @@ window.loadMoreOfertas = function(tabId) {
     }
 };
 
-// Nova função para rolar os carrosseis através das setas no Desktop
 window.scrollCarousel = function(btn, dir) {
     let track = btn.parentElement.querySelector('.carousel-track');
     if(track) {
@@ -658,7 +661,6 @@ $('scroll-stage').addEventListener('scroll', function() {
     }
 }, false);
 
-// --- INÍCIO DA INTELIGÊNCIA DE DESTAQUES (VALIDADE) ---
 function gerarDestaquesDaValidade() {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -695,7 +697,6 @@ function gerarDestaquesDaValidade() {
         };
     });
 }
-// --- FIM DA INTELIGÊNCIA ---
 
 async function init() {
     try {
@@ -724,7 +725,6 @@ async function init() {
                 categoria: p.categoria || "" 
             }));
 
-            // MOTOR DE OFERTAS AUTOMÁTICAS DIÁRIAS
             const hoje = new Date();
             const sementeDoDia = hoje.getFullYear() * 10000 + (hoje.getMonth() + 1) * 100 + hoje.getDate();
             
@@ -759,7 +759,6 @@ async function init() {
                 p.price = parseFloat((p.oldPrice * (1 - percentual)).toFixed(2)); 
             });
             
-            // --- NOVA CHAMADA AQUI PARA SUBSTITUIR OS DADOS DO JSON ---
             gerarDestaquesDaValidade();
         }
 
@@ -771,7 +770,6 @@ async function init() {
     }
 }
 
-// Funções de apoio para criar os itens dos carrosséis
 function getProdCarouselItem(p) {
     return `
     <div class="c-item" data-id="${p.id}" onclick="openQuickView('${p.id}')">
@@ -809,7 +807,7 @@ function getComboCarouselItem(item) {
             <div class="c-name">${formatName(item.nome)}</div>
             <div>
                 <div class="c-price">${precoHtml}</div>
-                <button class="btn-view-details" style="font-size: 0.8rem; height: 32px; margin-top: 8px; width: 100%;">Ver Kit</button>
+                <button class="btn-view-details">Ver Kit</button>
             </div>
         </div>
     </div>`;
@@ -823,7 +821,7 @@ function getBasketCarouselItem(item) {
             <div class="c-name">${formatName(item.nome)}</div>
             <div>
                 <div class="c-price">${fmt(item.preco)}</div>
-                <button class="btn-view-details" style="font-size: 0.8rem; height: 32px; margin-top: 8px; width: 100%;">Ver Itens</button>
+                <button class="btn-view-details">Ver Itens</button>
             </div>
         </div>
     </div>`;
@@ -840,7 +838,7 @@ function buildCarouselsHtml() {
             let pName = norm(p.name);
             let pCat = norm(p.categoria);
             return keywords.some(kw => pName.includes(kw) || pCat.includes(kw));
-        }); // Limite removido
+        }); 
 
         if (matchedProds.length > 0) {
             let trackHtml = matchedProds.map(p => getProdCarouselItem(p)).join('');
@@ -891,7 +889,7 @@ function buildTabsAndSections() {
                 <div class="slider-label">Cestas Básicas</div>
             </div>`;
         colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
-        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div class="grid-produtos" id="grid-cestas"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
@@ -1052,7 +1050,6 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
-    // Transformado os Kits em Carrossel com Setas
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
         let trackHtml = STATE.lists['combos'].data.map(item => getComboCarouselItem(item)).join('');
         html += `
@@ -1066,7 +1063,6 @@ function renderBottomChips(activeTabId) {
     
     html += buildCarouselsHtml();
 
-    // Transformado as Outras Categorias em Carrosséis Dinâmicos
     document.querySelectorAll('#nav-track .slider-item').forEach(navItem => {
         let id = navItem.id.replace('nav-', '');
         let name = navItem.querySelector('.slider-label').innerText;
@@ -1199,21 +1195,25 @@ function renderPaginated(containerId, listKey, list, type) {
         groupKeys.forEach(gName => {
             let title = gName === "Outras Cestas" ? "Outras Cestas" : `Cestas com ${gName}`;
             
-            html += `
-            <div style="grid-column: 1/-1; padding: 25px 15px 10px; font-size: 1.15rem; font-weight: 800; color: var(--c-p); display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--c-img-bg); margin-bottom: 10px; background: #fff;">
-                <span style="background:var(--c-a); width:4px; height:18px; border-radius:4px;"></span>${title}
-            </div>`;
+            let trackHtml = groups[gName].map(item => getBasketCarouselItem(item)).join('');
             
-            html += groups[gName].map((item, index) => cardBasket(item, index)).join('');
+            html += `
+            <div class="carousel-wrapper" style="margin-top: 15px; border-top: none; padding-top: 0;">
+                <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
+                <div class="carousel-title" style="display:flex; align-items:center; gap:8px; border-bottom: 2px solid var(--c-img-bg); padding-bottom: 10px; margin: 0 15px 15px;"><span style="background:var(--c-a); width:4px; height:18px; border-radius:4px;"></span>${title}</div>
+                <div class="carousel-track">
+                    ${trackHtml}
+                </div>
+                <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+            </div>`;
         });
         
-        c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhuma cesta encontrada.</p>';
+        c.innerHTML = html || '<p style="padding: 15px;">Nenhuma cesta encontrada.</p>';
         return;
     }
 
     let html = list.map((item, index) => {
         if (type === 'BASKET') return cardBasket(item, index);
-        // Atualizado para considerar a busca mista (PROD + COMBO)
         if (type === 'COMBO' || item._isCombo) return cardCombo(item, index);
         return cardProd(item, index);
     }).join('');
@@ -1378,7 +1378,6 @@ function upd(id, delta) {
     if ($('modal-checkout').open) openCheckout();
     if($('checkout-sohoje-container') && $('checkout-sohoje-container').style.display !== 'none') { renderSoHoje(); }
     
-    // 1. MEMÓRIA DE ESTADO: Salva a posição exata do scroll de todos os carrosseis na tela
     let carrosseisAtuais = document.querySelectorAll('.carousel-track');
     let posicoesScroll = Array.from(carrosseisAtuais).map(c => c.scrollLeft);
 
@@ -1390,7 +1389,6 @@ function upd(id, delta) {
         renderBottomChips('minha-cesta');
     }
 
-    // 2. RESTAURAÇÃO: Após o DOM ser recriado pela função acima, injeta as posições de volta
     let carrosseisNovos = document.querySelectorAll('.carousel-track');
     carrosseisNovos.forEach((c, index) => {
         if (posicoesScroll[index]) c.scrollLeft = posicoesScroll[index];
@@ -1455,7 +1453,6 @@ function handleSearch(q) {
     $('section-busca').style.display = q ? 'block' : 'none'; 
     if (q) { 
         let listProds = STATE.prods.filter(p => norm(p.name).includes(norm(q)));
-        // Agora busca também pelos nomes dos Kits Especiais (Combos) e adiciona um identificador
         let listCombos = STATE.combos.filter(c => norm(c.nome).includes(norm(q))).map(c => ({...c, _isCombo: true}));
         
         let combined = [...listCombos, ...listProds];
@@ -1566,11 +1563,9 @@ function previewCombo(id) {
             } 
         }); 
         
-        // Calcula a diferença (Desconto) e guarda na memória
         let diferenca = Math.max(0, sumAvulso - c.preco) * currentComboQty;
         STATE.comboDiscount = (STATE.comboDiscount || 0) + diferenca;
         
-        // Guarda o kit aplicado na memória
         STATE.appliedCombos.push({ id: c.id, qty: currentComboQty });
 
         $('modal-basket-preview').close(); updateTotals(); showToast("Kit adicionado!", "s");
@@ -1727,7 +1722,6 @@ function openCheckout() {
     if (!$('modal-checkout').open) $('modal-checkout').showModal(); 
 }
 
-// === HISTÓRICO DE PEDIDOS ===
 function openHistoricoPedidos() {
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     $('btn-nav-pedidos').classList.add('active');
@@ -1909,7 +1903,6 @@ async function sendOrder() {
     localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
 
    try {
-        // Formatação rigorosa: garante que campos vazios virem zero numérico
         const payload = {
             cliente: { nome: "Cliente Site" },
             pedido: {
@@ -1946,7 +1939,6 @@ async function sendOrder() {
 
 init();
 
-// --- ADICIONADO: REGISTRO DO SERVICE WORKER ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -1959,7 +1951,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// --- ADICIONADO: LÓGICA DO BOTÃO DE INSTALAÇÃO ---
 let eventoInstalacao;
 const bannerInstalacao = document.getElementById('install-banner');
 const btnInstalar = document.getElementById('btn-install');
