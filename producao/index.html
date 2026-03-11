@@ -253,10 +253,22 @@
     </script>
 
     <header>
+        <header>
         <div class="brand">SUCEDOAN <span>PRO</span></div>
-        <button class="nav-btn active" onclick="showSection('products', this)"><i data-lucide="package" size="14"></i> PRODUTOS</button>
-<button id="btn-nav-products" class="nav-btn active admin-only" onclick="showSection('products', this)"><i data-lucide="package" size="14"></i> PRODUTOS</button>        <div style="flex-grow:1"></div>
-        <button class="nav-btn config" onclick="openConfigModal()"><i data-lucide="settings" size="14"></i></button>
+        
+        <button id="btn-nav-products" class="nav-btn active admin-only" onclick="showSection('products', this)">
+            <i data-lucide="package" size="14"></i> PRODUTOS
+        </button>
+        
+        <button id="btn-nav-orders" class="nav-btn" onclick="showSection('orders', this)">
+            <i data-lucide="package-check" size="14"></i> SEPARAÇÃO
+        </button>
+        
+        <div style="flex-grow:1"></div>
+        
+        <button class="nav-btn config" onclick="openConfigModal()">
+            <i data-lucide="settings" size="14"></i>
+        </button>
     </header>
 
     <div id="section-products" class="view-section active">
