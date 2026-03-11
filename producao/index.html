@@ -1410,7 +1410,7 @@
             renderOrdersQueue();
         }
 
-        function renderOrdersQueue() {
+       function renderOrdersQueue() {
             const grid = document.getElementById('orders-grid');
             grid.innerHTML = '';
             
@@ -1441,6 +1441,10 @@
             filteredOrders.forEach(order => {
                 const card = document.createElement('div');
                 card.className = 'card';
+                
+                // 👉 A CORREÇÃO ESTÁ AQUI: Impede que os cartões diminuam de tamanho e encavalem
+                card.style.flexShrink = '0';
+                
                 card.style.minHeight = 'auto';
                 card.style.width = '100%';
                 card.style.maxWidth = '800px';
