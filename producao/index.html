@@ -1601,9 +1601,10 @@
                 if (item.scanned >= item.qtd) statusClass = 'done';
                 else if (item.scanned > 0) statusClass = 'partial';
 
-                const name = p ? p.nome : item.nomeOriginal;
-                const ean = p && p.gtin ? p.gtin : 'SEM EAN';
-                const code = p ? p.codigo : 'NÃO CADASTRADO';
+                // CORREÇÃO: Validação estrita. Só usa a info do banco se ela realmente existir e não for vazia.
+                const name = (p && p.nome && p.nome.trim() !== '') ? p.nome : item.nomeOriginal;
+                const ean = (p && p.gtin && p.gtin.trim() !== '') ? p.gtin : 'SEM EAN';
+                const code = (p && p.codigo && p.codigo.trim() !== '') ? p.codigo : 'NÃO CADASTRADO';
                 
                 const row = document.createElement('div');
                 row.className = `pick-item ${statusClass}`;
@@ -1630,7 +1631,7 @@
             lucide.createIcons();
         }
 
-        function handlePickingScan(e) {
+       function handlePickingScan(e) {
             if (e.key !== 'Enter') return;
             
             const input = e.target;
@@ -1644,7 +1645,14 @@
                 if (!p) {
                     return item.nomeOriginal.toUpperCase().includes(val);
                 }
-                return (p.gtin === val || p.codigo.toUpperCase() === val || p.nome.toUpperCase().includes(val));
+                
+                // CORREÇÃO: Previne o "crash" validando a existência da informação antes de transformar em Maiúscula
+                const matchEan = p.gtin ? (p.gtin === val) : false;
+                const matchCodigo = p.codigo ? (p.codigo.toUpperCase() === val) : false;
+                const matchNome = p.nome ? p.nome.toUpperCase().includes(val) : false;
+                const matchOriginal = item.nomeOriginal ? item.nomeOriginal.toUpperCase().includes(val) : false;
+
+                return matchEan || matchCodigo || matchNome || matchOriginal;
             });
 
             if (matches.length === 0) {
@@ -1660,7 +1668,9 @@
             }
 
             pendingMatch.scanned++;
-            const prodName = pendingMatch.foundProduct ? pendingMatch.foundProduct.nome : pendingMatch.nomeOriginal;
+            
+            // Tratamento de segurança para o nome no alerta
+            const prodName = (pendingMatch.foundProduct && pendingMatch.foundProduct.nome) ? pendingMatch.foundProduct.nome : pendingMatch.nomeOriginal;
             showPickingAlert(`✅ CONFERIDO: ${prodName}`, 'var(--success)');
             
             renderPickingList();
