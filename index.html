@@ -1015,6 +1015,7 @@ function buildTabsAndSections() {
     }
     allTerms = [...new Set(allTerms)];
 
+    // 1. CESTAS BÁSICAS (Fica em primeiro lugar)
     if (STATE.baskets.length > 0) {
         let img = STATE.baskets[0].imagem || '/site/img/produtos/cesta.webp';
         navHtml += `
@@ -1027,6 +1028,20 @@ function buildTabsAndSections() {
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
+    // 2. KITS / COMBOS (Movido para aqui, logo a seguir às Cestas!)
+    if (STATE.combos.length > 0) {
+        let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
+        navHtml += `
+            <div class="slider-item" id="nav-combos" onclick="switchTab('combos')">
+                <div class="slider-circle bg-p-${colorIndex}"><img src="${img}" alt="Kits" loading="lazy"></div>
+                <div class="slider-label">Kits</div>
+            </div>`;
+        colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
+        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Kits</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
+        STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
+    }
+
+    // 3. OFERTAS (Agora aparece depois dos Kits)
     const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price);
     ofertas.sort(() => Math.random() - 0.5);
 
@@ -1042,18 +1057,7 @@ function buildTabsAndSections() {
         STATE.lists['ofertas'] = { data: ofertas, type: 'PROD' };
     }
 
-    if (STATE.combos.length > 0) {
-        let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
-        navHtml += `
-            <div class="slider-item" id="nav-combos" onclick="switchTab('combos')">
-                <div class="slider-circle bg-p-${colorIndex}"><img src="${img}" alt="Kits" loading="lazy"></div>
-                <div class="slider-label">Kits</div>
-            </div>`;
-        colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
-        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Kits</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
-        STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
-    }
-
+    // 4. TERMOS E CATEGORIAS ADICIONAIS
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
@@ -1118,6 +1122,22 @@ function buildTabsAndSections() {
 function renderBottomChips(activeTabId) {
     let html = '';
 
+    // 1. KITS ESPECIAIS (Movido para o topo, para aparecer logo abaixo da grelha principal!)
+    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+        let trackId = 'track-kits';
+        let trackHtml = STATE.lists['combos'].data.map((item, idx) => getComboCarouselItem(item, idx)).join('');
+        let btnHtml = STATE.lists['combos'].data.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
+        html += `
+        <div class="carousel-wrapper">
+            <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
+            <div class="carousel-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
+            <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
+            <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+            ${btnHtml}
+        </div>`;
+    }
+
+    // 2. MAIORES DESCONTOS
     let maioresDescontos = STATE.prods.filter(p => p.stock > 0 && p.oldPrice && (1 - (p.price / p.oldPrice)) > 0.10);
     if (maioresDescontos.length > 0) {
         maioresDescontos.sort((a, b) => (1 - (b.price / b.oldPrice)) - (1 - (a.price / a.oldPrice)));
@@ -1134,6 +1154,7 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
+    // 3. DESTAQUES SÓ HOJE
     if (STATE.sohoje && STATE.sohoje.length > 0) {
         let shProds = STATE.sohoje.map(sh => {
             let p = STATE.prods.find(x => x.id === String(sh.id));
@@ -1163,6 +1184,7 @@ function renderBottomChips(activeTabId) {
         }
     }
 
+    // 4. OFERTAS DA SEMANA
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
         let miniOfertas = STATE.lists['ofertas'].data.slice(0, window.currentOfertasLimit); 
         let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
@@ -1178,20 +1200,7 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
-    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        let trackId = 'track-kits';
-        let trackHtml = STATE.lists['combos'].data.map((item, idx) => getComboCarouselItem(item, idx)).join('');
-        let btnHtml = STATE.lists['combos'].data.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
-        html += `
-        <div class="carousel-wrapper">
-            <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
-            <div class="carousel-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
-            <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
-            <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
-            ${btnHtml}
-        </div>`;
-    }
-    
+    // 5. CARROSSÉIS DINÂMICOS ADICIONAIS
     html += buildCarouselsHtml();
 
     document.querySelectorAll('#nav-track .slider-item').forEach(navItem => {
@@ -1234,7 +1243,6 @@ function renderBottomChips(activeTabId) {
         if(navContainer) navContainer.innerHTML = html;
     }
 }
-
 window.switchTab = function(tabId) {
     window.currentOfertasLimit = 10; 
     
