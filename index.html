@@ -699,7 +699,7 @@ function gerarDestaquesDaValidade() {
     STATE.sohoje = destaques.map(p => {
         // CORREÇÃO DA OFERTA: Sempre calcula os 20% com base no preço original sem descontos acumulados
         let precoBase = p.oldPrice ? p.oldPrice : p.price;
-        let precoComDesconto = parseFloat((precoBase * 0.80).toFixed(2));
+        let precoComDesconto = parseFloat((precoBase * 0.87).toFixed(2));
 
         return {
             id: String(p.id),
