@@ -215,11 +215,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .carousel-nav-arrow.right { right: 5px; }
 
 @media(min-width: 800px) { 
-    .c-item { width: 220px; max-width: none; } 
+    .c-item { width: 220px; max-width: none; display: flex !important; } /* Força display flex no desktop para anular o hidden do mobile */
     .c-name { font-size: 1.05rem; } 
     .c-price { font-size: 1.25rem; } 
     .carousel-nav-arrow { display: flex; }
     .carousel-track { padding: 0 50px 25px; }
+    .btn-mobile-more { display: none !important; }
 }
 
 /* SKELETON LOADING */
@@ -263,7 +264,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1rem; color:var(--c-p); }
 
-/* AJUSTES FINOS PARA 3 COLUNAS NO TELEMÓVEL */
+/* AJUSTES FINOS PARA 3 COLUNAS NO TELEMÓVEL E CARROSSEIS COMO GRADE */
 @media(max-width: 799px) {
     .u-info { padding: 4px; }
     .u-name { font-size: 0.75rem; line-height: 1.2; margin-bottom: 2px; min-height: 3.6em; -webkit-line-clamp: 3; }
@@ -281,6 +282,66 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     
     /* Skeleton */
     .sk-btn { height: 32px; margin-top: 6px; }
+
+    /* Classes novas para transformar Carrossel em Grade de 2 colunas apenas no telemóvel */
+    .mobile-hidden {
+        display: none !important;
+    }
+    .mobile-grid-mode {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        border-top: 1px solid var(--c-bd);
+    }
+    .mobile-grid-mode .c-item {
+        width: 100% !important;
+        max-width: none !important;
+        border-right: 1px solid var(--c-bd) !important;
+        border-bottom: 1px solid var(--c-bd) !important;
+        padding: 4px !important;
+        border-radius: 0 !important;
+    }
+    .mobile-grid-mode .c-item:nth-child(2n) {
+        border-right: none !important;
+    }
+    .btn-mobile-more {
+        display: flex !important;
+        margin-top: 15px !important;
+        margin-bottom: 5px !important;
+    }
+    /* Estilos internos para se assemelhar aos cartões de grade (u-card) */
+    .mobile-grid-mode .c-img-wrap {
+        margin-bottom: 4px !important;
+    }
+    .mobile-grid-mode .c-name {
+        font-size: 0.75rem !important;
+        line-height: 1.2 !important;
+        min-height: 3.6em !important;
+        -webkit-line-clamp: 3 !important;
+    }
+    .mobile-grid-mode .c-price {
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+    }
+    .mobile-grid-mode .btn-big-action {
+        font-size: 0.75rem !important;
+        padding: 4px !important;
+        height: 32px !important;
+        margin-top: 6px !important;
+    }
+    .mobile-grid-mode .card-qty-ctrl {
+        height: 32px !important;
+        margin-top: 6px !important;
+    }
+    .mobile-grid-mode .card-qty-ctrl button {
+        font-size: 1.2rem !important;
+        padding: 0 6px !important;
+    }
+    .mobile-grid-mode .card-qty-ctrl span {
+        font-size: 0.85rem !important;
+    }
 }
 
 .sohoje-page-grid { display: flex; flex-direction: column; }
@@ -590,10 +651,33 @@ let currentComboQty = 1;
 let currentComboId = null;
 let currentBasketQty = 1;
 
-window.currentOfertasLimit = window.currentOfertasLimit || 50;
+window.currentOfertasLimit = window.currentOfertasLimit || 10;
+
+/* LÓGICA DE CARREGAMENTO PARA CARROSSEIS TRANSFORMADOS EM GRADE NO MOBILE */
+window.loadMoreMobileLimits = window.loadMoreMobileLimits || {};
+window.loadMoreMobile = function(trackId, btnElement) {
+    if (!window.loadMoreMobileLimits[trackId]) {
+        window.loadMoreMobileLimits[trackId] = 10;
+    }
+    window.loadMoreMobileLimits[trackId] += 20;
+    let limit = window.loadMoreMobileLimits[trackId];
+    
+    let track = document.getElementById(trackId);
+    if(track) {
+        let items = track.querySelectorAll('.c-item');
+        items.forEach((item, index) => {
+            if (index < limit) {
+                item.classList.remove('mobile-hidden');
+            }
+        });
+        if (limit >= items.length && btnElement) {
+            btnElement.style.display = 'none';
+        }
+    }
+};
 
 window.loadMoreOfertas = function(tabId) {
-    window.currentOfertasLimit += 50;
+    window.currentOfertasLimit += 20;
     
     let grid = $(`grid-mini-ofertas-${tabId}`);
     let btn = $(`btn-more-ofertas-${tabId}`);
@@ -697,7 +781,6 @@ function gerarDestaquesDaValidade() {
     }
 
     STATE.sohoje = destaques.map(p => {
-        // CORREÇÃO DA OFERTA: Sempre calcula os 20% com base no preço original sem descontos acumulados
         let precoBase = p.oldPrice ? p.oldPrice : p.price;
         let precoComDesconto = parseFloat((precoBase * 0.87).toFixed(2));
 
@@ -780,9 +863,10 @@ async function init() {
     }
 }
 
-function getProdCarouselItem(p) {
+function getProdCarouselItem(p, idx = 0) {
+    let hiddenClass = idx >= 10 ? 'mobile-hidden' : '';
     return `
-    <div class="c-item" data-id="${p.id}" onclick="openQuickView('${p.id}')">
+    <div class="c-item ${hiddenClass}" data-id="${p.id}" onclick="openQuickView('${p.id}')">
         ${p.oldPrice ? `<div class="offer-tag" style="border-radius: 8px 0 8px 0;">-${Math.round((1 - p.price / p.oldPrice) * 100)}%</div>` : ''}
         <div class="c-img-wrap"><img src="${p.img}" alt="${formatName(p.name)}" loading="lazy"></div>
         <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between;">
@@ -798,7 +882,8 @@ function getProdCarouselItem(p) {
     </div>`;
 }
 
-function getComboCarouselItem(item) {
+function getComboCarouselItem(item, idx = 0) {
+    let hiddenClass = idx >= 10 ? 'mobile-hidden' : '';
     let precoDe = 0;
     if (item.produtos) {
         item.produtos.forEach(s => {
@@ -810,7 +895,7 @@ function getComboCarouselItem(item) {
     let precoHtml = precoDe > item.preco ? `<span class="combo-strike">${fmt(precoDe)}</span> ${fmt(item.preco)}` : `${fmt(item.preco)}`;
 
     return `
-    <div class="c-item" onclick="previewCombo('${item.id}')">
+    <div class="c-item ${hiddenClass}" onclick="previewCombo('${item.id}')">
         <div class="offer-tag" style="border-radius: 8px 0 8px 0;">KIT</div>
         <div class="c-img-wrap"><img src="${item.imagem || '/site/img/produtos/cesta.webp'}" alt="${formatName(item.nome)}" loading="lazy" style="object-fit:cover; mix-blend-mode:normal;"></div>
         <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between;">
@@ -823,9 +908,10 @@ function getComboCarouselItem(item) {
     </div>`;
 }
 
-function getBasketCarouselItem(item) {
+function getBasketCarouselItem(item, idx = 0) {
+    let hiddenClass = idx >= 10 ? 'mobile-hidden' : '';
     return `
-    <div class="c-item" onclick="previewBasket('${item.id}')">
+    <div class="c-item ${hiddenClass}" onclick="previewBasket('${item.id}')">
         <div class="c-img-wrap"><img src="${item.imagem}" alt="${formatName(item.nome)}" loading="lazy" style="object-fit:cover; mix-blend-mode:normal;"></div>
         <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between;">
             <div class="c-name">${formatName(item.nome)}</div>
@@ -841,7 +927,7 @@ function buildCarouselsHtml() {
     if (!STATE.carrosseis || STATE.carrosseis.length === 0) return '';
     let html = '';
     
-    STATE.carrosseis.forEach(carro => {
+    STATE.carrosseis.forEach((carro, cIdx) => {
         let keywords = carro.palavras_chave.split(',').map(k => norm(k.trim())).filter(k => k);
         let matchedProds = STATE.prods.filter(p => {
             if (p.stock <= 0) return false;
@@ -851,16 +937,19 @@ function buildCarouselsHtml() {
         }); 
 
         if (matchedProds.length > 0) {
-            let trackHtml = matchedProds.map(p => getProdCarouselItem(p)).join('');
+            let trackId = 'track-carro-' + cIdx;
+            let trackHtml = matchedProds.map((p, idx) => getProdCarouselItem(p, idx)).join('');
+            let btnHtml = matchedProds.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
 
             html += `
             <div class="carousel-wrapper">
                 <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
                 <div class="carousel-title">${carro.titulo}</div>
-                <div class="carousel-track">
+                <div class="carousel-track mobile-grid-mode" id="${trackId}">
                     ${trackHtml}
                 </div>
                 <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+                ${btnHtml}
             </div>`;
         }
     });
@@ -997,13 +1086,16 @@ function renderBottomChips(activeTabId) {
     let maioresDescontos = STATE.prods.filter(p => p.stock > 0 && p.oldPrice && (1 - (p.price / p.oldPrice)) > 0.10);
     if (maioresDescontos.length > 0) {
         maioresDescontos.sort((a, b) => (1 - (b.price / b.oldPrice)) - (1 - (a.price / a.oldPrice)));
-        let trackHtml = maioresDescontos.map(p => getProdCarouselItem(p)).join('');
+        let trackId = 'track-maiores';
+        let trackHtml = maioresDescontos.map((p, idx) => getProdCarouselItem(p, idx)).join('');
+        let btnHtml = maioresDescontos.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
         html += `
         <div class="carousel-wrapper" style="border-top: 8px solid var(--c-img-bg); padding-top: 20px;">
             <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
             <div class="carousel-title" style="color: var(--c-err);">💸 Maiores Descontos</div>
-            <div class="carousel-track">${trackHtml}</div>
+            <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
             <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+            ${btnHtml}
         </div>`;
     }
 
@@ -1047,18 +1139,21 @@ function renderBottomChips(activeTabId) {
             <div class="grid-produtos" id="grid-mini-ofertas-${activeTabId}">
                 ${miniHtml}
             </div>
-            ${hasMore ? `<button id="btn-more-ofertas-${activeTabId}" class="btn-ver-todas-ofertas" onclick="loadMoreOfertas('${activeTabId}')">Veja mais</button>` : ''}
+            ${hasMore ? `<button id="btn-more-ofertas-${activeTabId}" class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreOfertas('${activeTabId}')">Veja mais</button>` : ''}
         </div>`;
     }
 
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        let trackHtml = STATE.lists['combos'].data.map(item => getComboCarouselItem(item)).join('');
+        let trackId = 'track-kits';
+        let trackHtml = STATE.lists['combos'].data.map((item, idx) => getComboCarouselItem(item, idx)).join('');
+        let btnHtml = STATE.lists['combos'].data.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
         html += `
         <div class="carousel-wrapper">
             <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
             <div class="carousel-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
-            <div class="carousel-track">${trackHtml}</div>
+            <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
             <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+            ${btnHtml}
         </div>`;
     }
     
@@ -1071,23 +1166,29 @@ function renderBottomChips(activeTabId) {
        if(id !== activeTabId && id !== 'ofertas' && id !== 'combos' && id !== 'cestas') {
             let listKey = 'term_' + id;
             if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                let trackHtml = STATE.lists[listKey].data.map(p => getProdCarouselItem(p)).join('');
+                let trackId = 'track-cat-' + id;
+                let trackHtml = STATE.lists[listKey].data.map((p, idx) => getProdCarouselItem(p, idx)).join('');
+                let btnHtml = STATE.lists[listKey].data.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
                 html += `
                 <div class="carousel-wrapper">
                     <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
                     <div class="carousel-title">${name}</div>
-                    <div class="carousel-track">${trackHtml}</div>
+                    <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
                     <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+                    ${btnHtml}
                 </div>`;
             }
        } else if(id === 'cestas' && activeTabId !== 'cestas' && STATE.lists['cestas'] && STATE.lists['cestas'].data.length > 0) {
-            let trackHtml = STATE.lists['cestas'].data.map(c => getBasketCarouselItem(c)).join('');
+            let trackId = 'track-cestas';
+            let trackHtml = STATE.lists['cestas'].data.map((c, idx) => getBasketCarouselItem(c, idx)).join('');
+            let btnHtml = STATE.lists['cestas'].data.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
             html += `
             <div class="carousel-wrapper">
                 <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
                 <div class="carousel-title">${name}</div>
-                <div class="carousel-track">${trackHtml}</div>
+                <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
                 <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+                ${btnHtml}
             </div>`;
         }
     });
@@ -1193,19 +1294,22 @@ function renderPaginated(containerId, listKey, list, type) {
         let html = '';
         let groupKeys = Object.keys(groups).sort((a, b) => a === "Outras Cestas" ? 1 : b === "Outras Cestas" ? -1 : a.localeCompare(b));
         
-        groupKeys.forEach(gName => {
+        groupKeys.forEach((gName, gIdx) => {
             let title = gName === "Outras Cestas" ? "Outras Cestas" : `Cestas com ${gName}`;
             
-            let trackHtml = groups[gName].map(item => getBasketCarouselItem(item)).join('');
+            let trackId = 'track-g-cesta-' + gIdx;
+            let trackHtml = groups[gName].map((item, idx) => getBasketCarouselItem(item, idx)).join('');
+            let btnHtml = groups[gName].length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
             
             html += `
             <div class="carousel-wrapper" style="margin-top: 15px; border-top: none; padding-top: 0;">
                 <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
                 <div class="carousel-title" style="display:flex; align-items:center; gap:8px; border-bottom: 2px solid var(--c-img-bg); padding-bottom: 10px; margin: 0 15px 15px;"><span style="background:var(--c-a); width:4px; height:18px; border-radius:4px;"></span>${title}</div>
-                <div class="carousel-track">
+                <div class="carousel-track mobile-grid-mode" id="${trackId}">
                     ${trackHtml}
                 </div>
                 <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
+                ${btnHtml}
             </div>`;
         });
         
