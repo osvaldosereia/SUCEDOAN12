@@ -597,20 +597,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         <h2 style="font-weight: 700; font-size: 1.3rem; color: var(--c-p); margin-top: 5px; margin-bottom: 20px;">Finalizar Pedido</h2>
         
-        <h3 style="font-weight: 600; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">Meus Dados</h3>
-        <input type="text" id="chk-nome" placeholder="Nome Completo" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 10px; font-family: inherit; font-size: 0.95rem;">
-        <input type="text" id="chk-cpf" placeholder="CPF (opcional)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 20px; font-family: inherit; font-size: 0.95rem;">
-
-        <h3 style="font-weight: 600; font-size: 1.1rem; color: var(--c-p);">Forma de Pagamento</h3>
-        <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
-            <div class="pay-opt" onclick="selectPayment('Dinheiro', this)">💵 Dinheiro</div>
-            <div class="pay-opt" onclick="selectPayment('PIX', this)">💠 PIX</div>
-            <div class="pay-opt" onclick="selectPayment('Débito', this)">💳 Débito</div>
-            <div class="pay-opt" onclick="selectPayment('Crédito', this)">💳 Crédito</div>
-            <div class="pay-opt" onclick="selectPayment('Alimentação', this)">🍽️ Alimentação</div>
-        </div>
-        <input type="hidden" id="chk-pagamento" value="">
-
         <h3 style="font-weight: 600; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">1. Receber quando?</h3>
         <p style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px;">Planeje a entrega e ganhe desconto.</p>
         <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
@@ -632,11 +618,24 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         
         <div id="chk-summary-lines" style="border-top: 1px dashed var(--c-bd); padding-top: 15px; margin-bottom: 15px; font-size: 0.9rem; color: var(--c-s);"></div>
         
-        <div style="text-align: right; margin-bottom: 25px;">
+        <div style="text-align: right; margin-bottom: 25px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 20px;">
             <div style="font-size:0.85rem; font-weight:600; color:var(--c-s); text-transform:uppercase;">Total a pagar</div>
             <div style="font-weight: 700; font-size: 2.2rem; color: var(--c-p); line-height: 1.1;" id="chk-total"></div>
         </div>
 
+        <h3 style="font-weight: 600; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">3. Meus Dados</h3>
+        <input type="text" id="chk-nome" placeholder="Nome Completo" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 10px; font-family: inherit; font-size: 0.95rem;">
+        <input type="text" id="chk-cpf" placeholder="CPF" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 20px; font-family: inherit; font-size: 0.95rem;">
+
+        <h3 style="font-weight: 600; font-size: 1.1rem; color: var(--c-p);">4. Forma de Pagamento</h3>
+        <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px;">
+            <div class="pay-opt" onclick="selectPayment('Dinheiro', this)">💵 Dinheiro</div>
+            <div class="pay-opt" onclick="selectPayment('PIX', this)">💠 PIX</div>
+            <div class="pay-opt" onclick="selectPayment('Débito', this)">💳 Débito</div>
+            <div class="pay-opt" onclick="selectPayment('Crédito', this)">💳 Crédito</div>
+            <div class="pay-opt" onclick="selectPayment('Alimentação', this)">🍽️ Alimentação</div>
+        </div>
+        <input type="hidden" id="chk-pagamento" value="">
         <button id="btn-send-order" onclick="sendOrder()" class="btn-modal primary" style="font-size: 1.1rem; padding: 16px; transition: 0.2s;"></button>
         
         <div style="display: flex; gap: 10px; margin-top: 5px;">
@@ -1957,6 +1956,9 @@ async function sendOrder() {
 
     if (!nomeCliente) {
         return showToast("Por favor, preencha o seu nome.", "r");
+    }
+    if (!cpfCliente) {
+        return showToast("Por favor, preencha o seu CPF.", "r");
     }
     if (!formaPagamento) {
         return showToast("Por favor, escolha uma forma de pagamento.", "r");
