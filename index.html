@@ -1680,9 +1680,9 @@ function previewCombo(id) {
                 <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
             </div>
             <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
-            <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">x${q}</div>
+            <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">${q} unidade(s)</div>
         </div>`;
-    }).join(''); 
+    }).join('');
     
     if (precoDe > c.preco) {
         $('prev-price').innerHTML = `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:500;">${fmt(precoDe)}</span>${fmt(c.preco)}`;
@@ -1812,7 +1812,7 @@ function openCheckout() {
     
     renderSoHoje();
     
-    $('chk-list').innerHTML = STATE.cartOrder.map(id => { let p = STATE.prods.find(x => x.id === id); return `<div style="display:flex; padding:8px 0; border-bottom:1px solid var(--c-bd);"><span style="color:var(--c-a); font-weight:700; min-width:30px;">${STATE.cart[id]}x</span><span style="font-size:0.9rem; flex:1;">${formatName(p.name)}</span></div>`; }).join(''); 
+$('chk-list').innerHTML = STATE.cartOrder.map(id => { let p = STATE.prods.find(x => x.id === id); return `<div style="display:flex; padding:8px 0; border-bottom:1px solid var(--c-bd);"><span style="color:var(--c-a); font-weight:700; margin-right:8px;">${STATE.cart[id]} unidade(s)</span><span style="font-size:0.9rem; flex:1;">${formatName(p.name)}</span></div>`; }).join('');
     
     let sum = 0; 
     Object.entries(STATE.cart).forEach(([id, q]) => { 
