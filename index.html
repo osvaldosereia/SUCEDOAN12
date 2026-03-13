@@ -345,6 +345,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     }
 }
 
+.general-hidden {
+    display: none !important;
+}
+
 .sohoje-page-grid { display: flex; flex-direction: column; }
 @media(min-width: 800px) { 
     .sohoje-page-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 40px; } 
@@ -686,46 +690,41 @@ let currentComboQty = 1;
 let currentComboId = null;
 let currentBasketQty = 1;
 
-window.currentOfertasLimit = window.currentOfertasLimit || 10;
-
-/* LÓGICA DE CARREGAMENTO PARA CARROSSEIS TRANSFORMADOS EM GRADE NO MOBILE */
-window.loadMoreMobileLimits = window.loadMoreMobileLimits || {};
-window.loadMoreMobile = function(trackId, btnElement) {
-    if (!window.loadMoreMobileLimits[trackId]) {
-        window.loadMoreMobileLimits[trackId] = 10;
-    }
-    window.loadMoreMobileLimits[trackId] += 20;
-    let limit = window.loadMoreMobileLimits[trackId];
-    
+/* NOVA LÓGICA DE CARREGAMENTO INFINITO */
+window.loadMoreGridItems = function(trackId, sentinel) {
     let track = document.getElementById(trackId);
-    if(track) {
-        let items = track.querySelectorAll('.c-item');
-        items.forEach((item, index) => {
-            if (index < limit) {
-                item.classList.remove('mobile-hidden');
-            }
-        });
-        if (limit >= items.length && btnElement) {
-            btnElement.style.display = 'none';
+    if(!track) return;
+    
+    let hiddenItems = track.querySelectorAll('.mobile-hidden, .general-hidden');
+    let revealed = 0;
+    hiddenItems.forEach((item) => {
+        if (revealed < 10) {
+            item.classList.remove('mobile-hidden', 'general-hidden');
+            revealed++;
         }
+    });
+    
+    let remainingHidden = track.querySelectorAll('.mobile-hidden, .general-hidden').length;
+    if (remainingHidden === 0 && sentinel) {
+        if(window.gridObserver) window.gridObserver.unobserve(sentinel);
+        sentinel.remove();
     }
 };
 
-window.loadMoreOfertas = function(tabId) {
-    window.currentOfertasLimit += 20;
-    
-    let grid = $(`grid-mini-ofertas-${tabId}`);
-    let btn = $(`btn-more-ofertas-${tabId}`);
-    
-    if(!grid) return;
-    
-    let ofertas = STATE.lists['ofertas'].data;
-    let html = ofertas.slice(0, window.currentOfertasLimit).map((item, i) => cardProd(item, i)).join('');
-    grid.innerHTML = html;
-    
-    if(window.currentOfertasLimit >= ofertas.length && btn) {
-        btn.style.display = 'none'; 
+window.setupInfiniteScroll = function() {
+    if(!window.gridObserver) {
+        window.gridObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    let trackId = entry.target.getAttribute('data-target-track');
+                    if(trackId) window.loadMoreGridItems(trackId, entry.target);
+                }
+            });
+        }, { root: document.getElementById('scroll-stage'), rootMargin: '0px 0px 400px 0px' });
+    } else {
+        window.gridObserver.disconnect();
     }
+    document.querySelectorAll('.scroll-sentinel').forEach(el => window.gridObserver.observe(el));
 };
 
 window.scrollCarousel = function(btn, dir) {
@@ -804,16 +803,7 @@ function gerarDestaquesDaValidade() {
 
     elegiveis.sort((a, b) => a.dataValidadeObj - b.dataValidadeObj);
 
-    let candidatos = elegiveis.slice(0, 30);
-    candidatos.sort(() => Math.random() - 0.5);
-    
-    let destaques = candidatos.slice(0, 10);
-
-    if (destaques.length < 10) {
-        let outros = STATE.prods.filter(p => p.stock > 0 && !destaques.some(d => d.id === p.id));
-        outros.sort(() => Math.random() - 0.5);
-        destaques = [...destaques, ...outros.slice(0, 10 - destaques.length)];
-    }
+    let destaques = elegiveis.slice(0, 20);
 
     STATE.sohoje = destaques.map(p => {
         let precoBase = p.oldPrice ? p.oldPrice : p.price;
@@ -974,7 +964,7 @@ function buildCarouselsHtml() {
         if (matchedProds.length > 0) {
             let trackId = 'track-carro-' + cIdx;
             let trackHtml = matchedProds.map((p, idx) => getProdCarouselItem(p, idx)).join('');
-            let btnHtml = matchedProds.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
+            let sentinelHtml = matchedProds.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="height:1px; width:100%; flex-shrink:0;"></div>` : '';
 
             html += `
             <div class="carousel-wrapper">
@@ -984,7 +974,7 @@ function buildCarouselsHtml() {
                     ${trackHtml}
                 </div>
                 <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
-                ${btnHtml}
+                ${sentinelHtml}
             </div>`;
         }
     });
@@ -1126,14 +1116,14 @@ function renderBottomChips(activeTabId) {
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
         let trackId = 'track-kits';
         let trackHtml = STATE.lists['combos'].data.map((item, idx) => getComboCarouselItem(item, idx)).join('');
-        let btnHtml = STATE.lists['combos'].data.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
+        let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="height:1px;"></div>` : '';
         html += `
         <div class="carousel-wrapper">
             <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
             <div class="carousel-title" style="color: var(--c-a);">🎁 Kits Especiais</div>
             <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
             <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
-            ${btnHtml}
+            ${sentinelHtml}
         </div>`;
     }
 
@@ -1141,16 +1131,17 @@ function renderBottomChips(activeTabId) {
     let maioresDescontos = STATE.prods.filter(p => p.stock > 0 && p.oldPrice && (1 - (p.price / p.oldPrice)) > 0.10);
     if (maioresDescontos.length > 0) {
         maioresDescontos.sort((a, b) => (1 - (b.price / b.oldPrice)) - (1 - (a.price / a.oldPrice)));
+        maioresDescontos = maioresDescontos.slice(0, 20); // Limite de 20 produtos
         let trackId = 'track-maiores';
         let trackHtml = maioresDescontos.map((p, idx) => getProdCarouselItem(p, idx)).join('');
-        let btnHtml = maioresDescontos.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
+        let sentinelHtml = maioresDescontos.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="height:1px;"></div>` : '';
         html += `
         <div class="carousel-wrapper" style="border-top: 8px solid var(--c-img-bg); padding-top: 20px;">
             <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
             <div class="carousel-title" style="color: var(--c-err);">💸 Maiores Descontos</div>
             <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
             <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
-            ${btnHtml}
+            ${sentinelHtml}
         </div>`;
     }
 
@@ -1186,17 +1177,26 @@ function renderBottomChips(activeTabId) {
 
     // 4. OFERTAS DA SEMANA
     if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
-        let miniOfertas = STATE.lists['ofertas'].data.slice(0, window.currentOfertasLimit); 
-        let miniHtml = miniOfertas.map((item, index) => cardProd(item, index)).join('');
-        let hasMore = STATE.lists['ofertas'].data.length > window.currentOfertasLimit;
+        let trackId = `grid-mini-ofertas-${activeTabId}`;
+        let maxOfertas = Math.min(STATE.lists['ofertas'].data.length, 100);
+        let miniOfertas = STATE.lists['ofertas'].data.slice(0, maxOfertas); 
+        let miniHtml = miniOfertas.map((item, index) => {
+            let cardHtml = cardProd(item, index);
+            if(index >= 10) {
+                cardHtml = cardHtml.replace('class="u-card"', 'class="u-card general-hidden"');
+            }
+            return cardHtml;
+        }).join('');
+        let hasMore = miniOfertas.length > 10;
+        let sentinelHtml = hasMore ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="height:1px; width:100%; grid-column:1/-1;"></div>` : '';
         
         html += `
         <div style="margin-top: 20px; border-top: 8px solid var(--c-img-bg); padding-top: 15px;">
             <div class="section-title" style="color: var(--c-err);">🔥 Ofertas da Semana</div>
-            <div class="grid-produtos" id="grid-mini-ofertas-${activeTabId}">
+            <div class="grid-produtos" id="${trackId}">
                 ${miniHtml}
             </div>
-            ${hasMore ? `<button id="btn-more-ofertas-${activeTabId}" class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreOfertas('${activeTabId}')">Veja mais</button>` : ''}
+            ${sentinelHtml}
         </div>`;
     }
 
@@ -1212,27 +1212,27 @@ function renderBottomChips(activeTabId) {
             if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
                 let trackId = 'track-cat-' + id;
                 let trackHtml = STATE.lists[listKey].data.map((p, idx) => getProdCarouselItem(p, idx)).join('');
-                let btnHtml = STATE.lists[listKey].data.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
+                let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="height:1px;"></div>` : '';
                 html += `
                 <div class="carousel-wrapper">
                     <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
                     <div class="carousel-title">${name}</div>
                     <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
                     <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
-                    ${btnHtml}
+                    ${sentinelHtml}
                 </div>`;
             }
        } else if(id === 'cestas' && activeTabId !== 'cestas' && STATE.lists['cestas'] && STATE.lists['cestas'].data.length > 0) {
             let trackId = 'track-cestas';
             let trackHtml = STATE.lists['cestas'].data.map((c, idx) => getBasketCarouselItem(c, idx)).join('');
-            let btnHtml = STATE.lists['cestas'].data.length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
+            let sentinelHtml = STATE.lists['cestas'].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="height:1px;"></div>` : '';
             html += `
             <div class="carousel-wrapper">
                 <button class="carousel-nav-arrow left" onclick="scrollCarousel(this, -1)">❮</button>
                 <div class="carousel-title">${name}</div>
                 <div class="carousel-track mobile-grid-mode" id="${trackId}">${trackHtml}</div>
                 <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
-                ${btnHtml}
+                ${sentinelHtml}
             </div>`;
         }
     });
@@ -1242,10 +1242,11 @@ function renderBottomChips(activeTabId) {
         let navContainer = activeSec.querySelector('.bottom-category-nav');
         if(navContainer) navContainer.innerHTML = html;
     }
+
+    setTimeout(window.setupInfiniteScroll, 100);
 }
+
 window.switchTab = function(tabId) {
-    window.currentOfertasLimit = 10; 
-    
     $('wrapper-sections').style.display = 'block';
     $('section-busca').style.display = 'none';
     $('sec-minha-cesta').style.display = 'none';
@@ -1342,7 +1343,7 @@ function renderPaginated(containerId, listKey, list, type) {
             
             let trackId = 'track-g-cesta-' + gIdx;
             let trackHtml = groups[gName].map((item, idx) => getBasketCarouselItem(item, idx)).join('');
-            let btnHtml = groups[gName].length > 10 ? `<button class="btn-ver-todas-ofertas btn-mobile-more" onclick="loadMoreMobile('${trackId}', this)">Veja mais</button>` : '';
+            let sentinelHtml = groups[gName].length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="height:1px;"></div>` : '';
             
             html += `
             <div class="carousel-wrapper" style="margin-top: 15px; border-top: none; padding-top: 0;">
@@ -1352,21 +1353,39 @@ function renderPaginated(containerId, listKey, list, type) {
                     ${trackHtml}
                 </div>
                 <button class="carousel-nav-arrow right" onclick="scrollCarousel(this, 1)">❯</button>
-                ${btnHtml}
+                ${sentinelHtml}
             </div>`;
         });
         
         c.innerHTML = html || '<p style="padding: 15px;">Nenhuma cesta encontrada.</p>';
+        setTimeout(window.setupInfiniteScroll, 100);
         return;
     }
 
-    let html = list.map((item, index) => {
-        if (type === 'BASKET') return cardBasket(item, index);
-        if (type === 'COMBO' || item._isCombo) return cardCombo(item, index);
-        return cardProd(item, index);
+    let isOfertasFull = (containerId === 'grid-ofertas');
+    let maxItems = isOfertasFull ? Math.min(list.length, 100) : list.length;
+    let displayList = list.slice(0, maxItems);
+    
+    let html = displayList.map((item, index) => {
+        let cardHtml = '';
+        if (type === 'BASKET') cardHtml = cardBasket(item, index);
+        else if (type === 'COMBO' || item._isCombo) cardHtml = cardCombo(item, index);
+        else cardHtml = cardProd(item, index);
+        
+        if (index >= 10) {
+            if (isOfertasFull) {
+                cardHtml = cardHtml.replace('class="u-card"', 'class="u-card general-hidden"');
+            } else {
+                cardHtml = cardHtml.replace('class="u-card"', 'class="u-card mobile-hidden"');
+            }
+        }
+        return cardHtml;
     }).join('');
     
-    c.innerHTML = html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>'; 
+    let sentinelHtml = displayList.length > 10 ? `<div class="scroll-sentinel" data-target-track="${containerId}" style="height:1px; width: 100%; grid-column: 1/-1;"></div>` : '';
+    
+    c.innerHTML = (html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>') + sentinelHtml;
+    setTimeout(window.setupInfiniteScroll, 100);
 }
 
 function getCardControls(id) {
@@ -1820,7 +1839,7 @@ function openCheckout() {
     
     renderSoHoje();
     
-$('chk-list').innerHTML = STATE.cartOrder.map(id => { let p = STATE.prods.find(x => x.id === id); return `<div style="display:flex; padding:8px 0; border-bottom:1px solid var(--c-bd);"><span style="color:var(--c-a); font-weight:700; margin-right:8px;">${STATE.cart[id]} unidade(s)</span><span style="font-size:0.9rem; flex:1;">${formatName(p.name)}</span></div>`; }).join('');
+$('chk-list').innerHTML = STATE.cartOrder.map(id => { let p = STATE.prods.find(x => x.id === id); return `<div style="display:flex; padding:8px 0; border-bottom:1px solid var(--c-bd);"><span style="color:var(--c-a); font-weight:700; margin-right:8px;">${STATE.cart[id]} un</span><span style="font-size:0.9rem; flex:1;">${formatName(p.name)}</span></div>`; }).join('');
     
     let sum = 0; 
     Object.entries(STATE.cart).forEach(([id, q]) => { 
