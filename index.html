@@ -34,7 +34,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* HEADER PRINCIPAL REFORMULADO */
 #header-wrapper { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
 
-/* MOBILE: 2 Camadas / DESKTOP: 1 Linha (Achatada via display: contents) */
+/* MOBILE: 2 Camadas / DESKTOP: 1 Linha */
 .mob-layer-1 { background: var(--c-p); padding: 12px 15px; width: 100%; }
 .search-wrapper { position: relative; width: 100%; }
 .search-inp { width: 100%; background: #ffffff; border: 2px solid transparent; padding: 12px 15px 12px 42px; border-radius: 25px; font-weight: 600; color: var(--c-p); transition: border-color .2s; font-size: 0.95rem; }
@@ -61,40 +61,34 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     #header-wrapper { background: #fff; border-bottom: 1px solid var(--c-bd); }
     .desk-header-flex { display: flex; align-items: center; padding: 10px 15px; gap: 20px; }
     
-    /* Remove a estrutura de 2 camadas no Desktop para colocar tudo em 1 linha */
     .mob-layer-1, .mob-layer-2 { display: contents; }
     
-    /* Ordem dos elementos na linha */
     .logo { order: 1; }
     .search-wrapper { order: 2; flex: 1; }
     .mobile-category-dropdown { order: 3; flex: none; width: 260px; }
     .btn-top-help { order: 4; }
     
-    /* Estilo de busca adaptado para o branco do desktop */
     .search-inp { background: var(--c-img-bg); border: 1px solid var(--c-bd); color: var(--c-p); }
 }
 
 .main-stage { position: relative; height: 100dvh; padding-top: 140px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
 @media(min-width: 800px) { .main-stage { padding-top: 90px; } }
 
-.section-title { width: 100%; max-width: 1000px; margin: 0 auto; font-size: 1.15rem; font-weight: 800; color: var(--c-p); padding: 25px 15px 15px; text-transform: uppercase; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+.section-title { width: 100%; max-width: 1000px; margin: 0 auto; font-size: 1.15rem; font-weight: 800; color: var(--c-p); padding: 25px 10px 15px; text-transform: uppercase; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
 .section-marker { background: var(--c-a); width: 4px; height: 18px; border-radius: 4px; display: inline-block;}
 
-/* GRADES UNIFICADAS */
-.grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 15px 25px; width: 100%; max-width: 1000px; margin: 0 auto; }
+/* GRADES UNIFICADAS COM MENOS RESPIRO */
+.grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 0 10px 25px; width: 100%; max-width: 1000px; margin: 0 auto; }
 
 @media(min-width: 800px) { 
-    .grid-produtos { grid-template-columns: repeat(5, 1fr); } 
+    .grid-produtos { grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 0 15px 25px; } 
+    .section-title { padding-left: 15px; }
 }
 
-/* 1 Coluna Forçada para Cestas e Kits em Desktop e Mobile */
-.grid-1-col { grid-template-columns: 1fr !important; }
-
-/* CARD COM IMAGEM VERTICAL */
+/* CARD PADRÃO PARA TODOS OS ITENS */
 .u-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
 .u-card:active { transform: scale(0.98); }
 
-/* CONTENEDOR DA IMAGEM VERTICAL */
 .u-img-area { 
     width: 100%; 
     aspect-ratio: 4/5; 
@@ -102,7 +96,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     border-radius: 8px; 
     position: relative; 
     overflow: hidden; 
-    margin-bottom: 12px; 
+    margin-bottom: 8px; 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -110,13 +104,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .u-img { object-fit: contain; mix-blend-mode: multiply; padding: 5%; } 
 .u-img-cesta { object-fit: cover; }
-
-/* ESTILO ESPECÍFICO CARD LISTA (CESTA E KITS) */
-.u-card-list { flex-direction: row; align-items: center; padding: 12px; gap: 15px; }
-.u-card-list .u-img-area { width: 140px; aspect-ratio: 4/3; margin-bottom: 0; flex-shrink: 0; }
-@media(max-width: 799px) {
-    .u-card-list .u-img-area { width: 115px; }
-}
 
 /* ETIQUETA INLINE */
 .inline-discount { background: var(--c-err); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 800; border-radius: 6px; }
@@ -148,13 +135,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-add-btn:active { transform: scale(0.85); background: #b91c1c; }
 
 .u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 100%; }
-.u-name { font-size: 0.95rem; font-weight: 600; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
+.u-name { font-size: 0.95rem; font-weight: 600; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px; }
 .u-price { font-size: 1.3rem; font-weight: 800; color: var(--c-p); }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: -2px; }
 
 @media(min-width: 800px) { 
     .u-name { font-size: 1.05rem; } 
-    .u-card-list .u-name { font-size: 1.2rem; } 
 }
 
 .btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 42px; transition: 0.2s;}
@@ -171,7 +157,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
 .skeleton-card { background: #fff; padding: 12px; border: 1px solid var(--c-bd); border-radius: 12px; display: flex; flex-direction: column; }
 .skeleton-el { background: #f1f5f9; background-image: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%); background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s infinite linear forwards; }
-.sk-img { width: 100%; aspect-ratio: 4/5; border-radius: 8px; margin-bottom: 12px; }
+.sk-img { width: 100%; aspect-ratio: 4/5; border-radius: 8px; margin-bottom: 8px; }
 .sk-t1 { height: 14px; border-radius: 4px; width: 90%; }
 .sk-t2 { height: 18px; margin-top: 8px; border-radius: 4px; width: 40%; }
 
@@ -281,7 +267,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 
     <div id="wrapper-sections">
         <div id="skeleton-loader" style="display:block; padding-top: 10px;" class="layout-limit">
-            <div class="section-title skeleton-el" style="width: 220px; height: 26px; margin: 20px 15px 10px; border-radius: 6px;"></div>
+            <div class="section-title skeleton-el" style="width: 220px; height: 26px; margin: 20px 10px 10px; border-radius: 6px;"></div>
             <div class="grid-produtos">
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
@@ -558,7 +544,6 @@ async function init() {
                 categoria: p.categoria || "" 
             }));
 
-            // Lógica de Semente Única por Utilizador (Mantém descontos estáveis por dia)
             let userSeed = localStorage.getItem('donaAntoniaUserSeed');
             if (!userSeed) {
                 userSeed = Math.floor(Math.random() * 1000000);
@@ -578,7 +563,6 @@ async function init() {
             }
             const rand = geradorAleatorio(sementeDoDia);
 
-            // Identifica produtos que fazem parte de Kits para não lhes dar desconto fora do kit
             let produtosEmKits = new Set();
             STATE.combos.forEach(c => {
                 if (c.produtos) {
@@ -589,7 +573,6 @@ async function init() {
                 }
             });
 
-            // Aplica desconto aleatório (3% a 12%) diário e único por utilizador
             STATE.prods.forEach(p => {
                 let cat = norm(p.categoria);
                 if (cat.includes("mercearia basica")) return;
@@ -673,8 +656,6 @@ function buildCardHtml(item, type, isHidden = false) {
     let onClick = '';
     let isKit = type === 'COMBO';
     let isBasket = type === 'BASKET';
-    let isListCard = isKit || isBasket;
-    let cardClass = isListCard ? ' u-card-list' : '';
 
     let addBtnHtml = '';
     let qty = STATE.cart[id] || 0;
@@ -713,10 +694,10 @@ function buildCardHtml(item, type, isHidden = false) {
     }
 
     return `
-    <div class="u-card${cardClass} ${hiddenClass}" data-id="${id}" onclick="${onClick}">
+    <div class="u-card ${hiddenClass}" data-id="${id}" onclick="${onClick}">
         <div class="u-img-area">
             <img src="${img}" class="${(isKit||isBasket)?'u-img-cesta':'u-img'}" alt="${formatName(name)}" loading="lazy">
-            ${!isListCard ? addBtnHtml : ''}
+            ${addBtnHtml}
         </div>
         <div class="u-info">
             <div class="u-name">${formatName(name)}</div>
@@ -727,7 +708,6 @@ function buildCardHtml(item, type, isHidden = false) {
                 </div>
                 ${tagHtml}
             </div>
-            ${isListCard ? `<div style="margin-top: 10px; display:flex; justify-content:flex-end;">${addBtnHtml}</div>` : ''}
         </div>
     </div>`;
 }
@@ -788,14 +768,14 @@ function buildTabsAndSections() {
     if (STATE.baskets.length > 0) {
         let img = STATE.baskets[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('cestas')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Cestas Básicas</div>`;
-        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas" class="grid-produtos grid-1-col"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas" class="grid-produtos"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
     if (STATE.combos.length > 0) {
         let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
-        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title"><span class="section-marker"></span>Kits Promocionais</div><div class="grid-produtos grid-1-col" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title"><span class="section-marker"></span>Kits Promocionais</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
     }
 
@@ -851,7 +831,7 @@ function renderBottomChips(activeTabId) {
         html += `
         <div style="margin-top: 15px;">
             <div class="section-title" style="color: var(--c-a);"><span class="section-marker"></span>🎁 Kits Especiais</div>
-            <div class="grid-produtos grid-1-col" id="${trackId}">${trackHtml}${sentinelHtml}</div>
+            <div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div>
         </div>`;
     }
 
@@ -903,7 +883,7 @@ function renderBottomChips(activeTabId) {
             html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>${name}</div>
-                <div class="grid-produtos grid-1-col" id="${trackId}">${trackHtml}${sentinelHtml}</div>
+                <div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div>
             </div>`;
         }
     });
@@ -1003,7 +983,7 @@ function renderPaginated(containerId, listKey, list, type) {
             html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>${title}</div>
-                <div class="grid-produtos grid-1-col" id="${trackId}">
+                <div class="grid-produtos" id="${trackId}">
                     ${trackHtml}
                     ${sentinelHtml}
                 </div>
@@ -1314,7 +1294,6 @@ function openCheckout() {
         </div>
     `).join('');
     
-    // Lista em Cards Modal Finalização / Imagem Vertical Alta / Sem Bolinha
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { 
         let p = STATE.prods.find(x => x.id === id); 
         let qty = STATE.cart[id];
