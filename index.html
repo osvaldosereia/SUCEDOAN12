@@ -555,6 +555,11 @@ button {
     display: none !important; 
 }
 
+/* CLASSE PARA ESCONDER OS PRODUTOS ALÉM DOS 10 PRIMEIROS */
+.general-hidden { 
+    display: none !important; 
+}
+
 /* NOVO BOTÃO: VER TODOS OS PRODUTOS (ESTILO CHECKOUT) */
 .btn-ver-todos {
     grid-column: 1 / -1; 
@@ -1189,7 +1194,7 @@ window.revealAllGridItems = function(trackId, btn) {
     
     let hiddenItems = track.querySelectorAll('.general-hidden');
     
-    // Loop tradicional, à prova de falhas em qualquer telemóvel
+    // Loop tradicional (funciona em 100% dos telemóveis)
     for (let i = 0; i < hiddenItems.length; i++) {
         hiddenItems[i].classList.remove('general-hidden');
     }
