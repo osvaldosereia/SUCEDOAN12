@@ -1186,11 +1186,17 @@ let currentBasketQty = 1;
 window.revealAllGridItems = function(trackId, btn) {
     let track = document.getElementById(trackId);
     if (!track) return;
+    
     let hiddenItems = track.querySelectorAll('.general-hidden');
-    hiddenItems.forEach(item => {
-        item.classList.remove('general-hidden');
-    });
-    btn.style.display = 'none'; // Esconde o botão depois de clicar
+    
+    // Loop tradicional, à prova de falhas em qualquer telemóvel
+    for (let i = 0; i < hiddenItems.length; i++) {
+        hiddenItems[i].classList.remove('general-hidden');
+    }
+    
+    if (btn) {
+        btn.style.display = 'none'; // Esconde o botão após clicar
+    }
 };
 
 function norm(str) { 
