@@ -125,13 +125,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .cat-dropdown-list.open { display: flex; }
     .cat-dropdown-item { padding: 14px 15px; border-bottom: 1px solid var(--c-bd); color: var(--c-p); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 12px; cursor: pointer; }
     .cat-dropdown-item:active { background: var(--c-img-bg); }
-    
-    /* Cestas e Kits em 1 Coluna Horizontal */
-    #grid-cestas, #grid-combos { grid-template-columns: 1fr !important; }
-    #grid-cestas .u-card, #grid-combos .u-card { flex-direction: row; padding: 12px; gap: 15px; align-items: center; border-right: none; }
-    #grid-cestas .u-img-area, #grid-combos .u-img-area { width: 110px; height: 110px; border-radius: 8px; flex-shrink: 0; }
-    #grid-cestas .u-info, #grid-combos .u-info { padding: 0; flex: 1; display: flex; flex-direction: column; justify-content: center; height: 100%; }
-    #grid-cestas .btn-view-details, #grid-combos .btn-view-details { margin-top: 6px; }
 }
 
 @media(min-width: 800px) {
@@ -165,8 +158,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 
 @media(max-width: 799px) {
-    .grid-produtos { padding: 0 12px 25px 12px !important; }
-    .grid-produtos.spaced { padding: 0 15px 25px !important; grid-template-columns: repeat(2, 1fr); }
+    /* TODAS AS SEÇÕES 2 COLUNAS NO MOBILE */
+    .grid-produtos { grid-template-columns: repeat(2, 1fr) !important; padding: 0 12px 25px 12px !important; }
+    .grid-produtos.spaced { grid-template-columns: repeat(2, 1fr) !important; padding: 0 15px 25px !important; }
 }
 
 /* CARD UNIFICADO */
@@ -178,9 +172,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .u-card:nth-child(3n) { border-right: 1px solid var(--c-bd) !important; }
     .u-card:nth-child(6n) { border-right: none !important; }
     #grid-cestas .u-card:nth-child(5n), #grid-combos .u-card:nth-child(5n) { border-right: none !important; }
-    .grid-produtos.spaced .u-card:nth-child(n) { border-right: 1px solid var(--c-bd) !important; } /* Reset for spaced */
+    .grid-produtos.spaced .u-card:nth-child(n) { border-right: 1px solid var(--c-bd) !important; }
 }
 @media(max-width: 799px) {
+    .u-card:nth-child(2n) { border-right: none !important; }
     .grid-produtos.spaced .u-card:nth-child(2n) { border-right: 1px solid var(--c-bd) !important; }
 }
 
@@ -189,7 +184,30 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-img { width: 90%; height: 90%; object-fit: contain; mix-blend-mode: multiply; } 
 .u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; }
 
-.offer-tag { position: absolute; top: 4px; right: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0px;}
+/* NOVO BOTÃO DE ADICIONAR REDONDO (+) */
+.card-add-btn {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 32px;
+    height: 32px;
+    background: var(--c-a);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+    z-index: 10;
+    transition: transform 0.15s ease, background 0.15s;
+    border: none;
+    cursor: pointer;
+}
+.card-add-btn:active { transform: scale(0.85); background: #c2410c; }
+
+.offer-tag { position: absolute; top: 4px; left: 4px; background: var(--c-err); color: #fff; font-size: 0.7rem; padding: 4px 8px; font-weight: 600; z-index: 5; border-radius: 0px;}
 .grid-produtos.spaced .offer-tag { border-radius: 6px 0 6px 0; }
 
 .u-info { padding: 8px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
@@ -202,11 +220,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     #grid-cestas .u-name, #grid-combos .u-name { font-size: 1.15rem; } 
 }
 
-/* BOTÕES DOS CARDS */
+/* BOTÕES DOS CARDS (MANUTIDOS PARA QUICK VIEW) */
 .btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 38px; transition: 0.2s;}
 .btn-big-action:hover { background: #cbd5e1; }
-.btn-view-details { width: 100%; background: var(--c-a); color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 38px; transition: 0.2s; box-shadow: 0 4px 6px rgba(234, 88, 12, 0.2); }
-.btn-view-details:hover { background: #c2410c; transform: translateY(-1px); }
 
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:38px; margin-top:10px; padding:0 4px; width:100%; }
 .card-qty-ctrl button { font-size:1.5rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 12px; height: 100%; cursor:pointer; }
@@ -214,7 +230,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 @media(max-width: 799px) {
     .u-info { padding: 4px; }
-    .grid-produtos.spaced .u-info { padding: 0; }
+    .grid-produtos.spaced .u-info { padding: 0; margin-top: 4px; }
     .u-name { font-size: 0.9rem; line-height: 1.2; margin-bottom: 2px; min-height: 3.6em; -webkit-line-clamp: 3; }
     .u-price { font-size: 1.1rem; font-weight: 800; }
     .btn-big-action { font-size: 0.75rem; padding: 4px; height: 32px; margin-top: 6px; }
@@ -741,6 +757,58 @@ async function init() {
     }
 }
 
+// ---- ANIMAÇÃO ESTILO MERCADO LIVRE ----
+function animateToCart(startX, startY) {
+    const cartBtn = document.querySelector('.cart-fab-wrapper');
+    if(!cartBtn) return;
+    const rect = cartBtn.getBoundingClientRect();
+    const endX = rect.left + rect.width / 2;
+    const endY = rect.top + rect.height / 2;
+
+    const dot = document.createElement('div');
+    dot.style.position = 'fixed';
+    dot.style.left = (startX - 10) + 'px';
+    dot.style.top = (startY - 10) + 'px';
+    dot.style.width = '20px';
+    dot.style.height = '20px';
+    dot.style.backgroundColor = 'var(--c-a)';
+    dot.style.borderRadius = '50%';
+    dot.style.zIndex = '999999';
+    dot.style.pointerEvents = 'none';
+    dot.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)';
+    dot.style.transition = 'top 0.5s cubic-bezier(0.5, -0.5, 0.2, 1), left 0.5s linear, transform 0.5s, opacity 0.5s';
+    
+    document.body.appendChild(dot);
+
+    // Forçar reflow para aplicar animação
+    dot.getBoundingClientRect();
+
+    dot.style.left = (endX - 10) + 'px';
+    dot.style.top = (endY - 10) + 'px';
+    dot.style.transform = 'scale(0.3)';
+    dot.style.opacity = '0.5';
+
+    setTimeout(() => {
+        dot.remove();
+        cartBtn.style.transform = 'scale(1.15)';
+        setTimeout(() => cartBtn.style.transform = '', 150);
+    }, 500);
+}
+
+// Função de clique no botão +
+window.handleAddClick = function(e, id) {
+    let p = STATE.prods.find(x => x.id === id);
+    if (!p || p.stock <= (STATE.cart[id] || 0)) return showToast("Estoque insuficiente", "r");
+    
+    upd(id, 1);
+    
+    // Pegar posições para animação
+    const rect = e.target.getBoundingClientRect();
+    const startX = rect.left + rect.width / 2;
+    const startY = rect.top + rect.height / 2;
+    animateToCart(startX, startY);
+};
+
 // ---- UNIFICAÇÃO DE CARDS (1 ÚNICA FUNÇÃO) ----
 function buildCardHtml(item, type, isHidden = false) {
     let hiddenClass = isHidden ? 'general-hidden' : '';
@@ -752,10 +820,13 @@ function buildCardHtml(item, type, isHidden = false) {
     let tagHtml = '';
     let oldPriceHtml = '';
     let priceHtml = fmt(pPrice);
-    let actionHtml = '';
     let onClick = '';
     let isKit = type === 'COMBO';
     let isBasket = type === 'BASKET';
+
+    let addBtnHtml = '';
+    let qty = STATE.cart[id] || 0;
+    let btnText = qty > 0 ? qty : '+';
 
     if(isKit || isBasket) {
         let precoDe = 0;
@@ -770,35 +841,37 @@ function buildCardHtml(item, type, isHidden = false) {
             tagHtml = `<div class="offer-tag" style="border-radius: 0px;">KIT</div>`;
             onClick = `previewCombo('${id}')`;
             if(precoDe > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`;
-            actionHtml = `<button class="btn-view-details">Ver Kit</button>`;
         } else {
             onClick = `previewBasket('${id}')`;
-            actionHtml = `<button class="btn-view-details">Ver Itens</button>`;
         }
+        // Para Cestas/Kits o + também abre o modal
+        addBtnHtml = `<button class="card-add-btn" onclick="event.stopPropagation(); ${onClick}">+</button>`;
     } else {
         onClick = `openQuickView('${id}')`;
         if(item.oldPrice && item.oldPrice > pPrice) {
             tagHtml = `<div class="offer-tag">-${Math.round((1 - pPrice / item.oldPrice) * 100)}%</div>`;
             oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
         }
-        actionHtml = `<div class="action-wrap" data-id="${id}">${getCardControls(id)}</div>`;
+        // Para produtos o botão + adiciona ao carrinho
+        addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnText}</button>`;
     }
 
     return `
     <div class="u-card ${hiddenClass}" data-id="${id}" onclick="${onClick}">
         ${tagHtml}
-        <div class="u-img-area"><img src="${img}" class="${(isKit||isBasket)?'u-img-cesta':'u-img'}" alt="${formatName(name)}" loading="lazy"></div>
+        <div class="u-img-area">
+            <img src="${img}" class="${(isKit||isBasket)?'u-img-cesta':'u-img'}" alt="${formatName(name)}" loading="lazy">
+            ${addBtnHtml}
+        </div>
         <div class="u-info">
             <div class="u-name">${formatName(name)}</div>
             <div style="margin-top: auto;">
                 <div class="u-price">${oldPriceHtml} ${priceHtml}</div>
-                ${actionHtml}
             </div>
         </div>
     </div>`;
 }
 
-// ---- UNIFICAÇÃO DE GRELHAS BÁSICAS DA HOME ----
 function buildCarouselsHtml() {
     if (!STATE.carrosseis || STATE.carrosseis.length === 0) return '';
     let html = '';
@@ -857,7 +930,7 @@ function buildTabsAndSections() {
         navHtml += `<div class="slider-item" id="nav-cestas" onclick="switchTab('cestas')"><div class="slider-circle bg-p-${colorIndex}"><img src="${img}" loading="lazy"></div><div class="slider-label">Cestas Básicas</div></div>`;
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('cestas')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Cestas Básicas</div>`;
         colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
-        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas" class="grid-produtos grid-1-col"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas" class="grid-produtos"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
@@ -866,7 +939,7 @@ function buildTabsAndSections() {
         navHtml += `<div class="slider-item" id="nav-combos" onclick="switchTab('combos')"><div class="slider-circle bg-p-${colorIndex}"><img src="${img}" loading="lazy"></div><div class="slider-label">Kits</div></div>`;
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
         colorIndex = colorIndex > 5 ? 1 : colorIndex + 1;
-        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Kits</div><div class="grid-produtos grid-1-col" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Kits</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
     }
 
@@ -938,21 +1011,9 @@ function renderBottomChips(activeTabId) {
             <div class="grid-produtos spaced" id="${trackId}">${trackHtml}${sentinelHtml}</div>
         </div>`;
     }
-
-    let maioresDescontos = STATE.prods.filter(p => p.stock > 0 && p.oldPrice && (1 - (p.price / p.oldPrice)) > 0.10);
-    if (maioresDescontos.length > 0) {
-        maioresDescontos.sort((a, b) => (1 - (b.price / b.oldPrice)) - (1 - (a.price / a.oldPrice)));
-        maioresDescontos = maioresDescontos.slice(0, 20); 
-        let trackId = 'grid-maiores';
-        let trackHtml = maioresDescontos.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 20)).join('');
-        let sentinelHtml = maioresDescontos.length > 20 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
-        html += `
-        <div style="margin-top: 15px; border-top: 8px solid var(--c-img-bg); padding-top: 10px;">
-            <div class="section-title" style="color: var(--c-err);"><span class="section-marker" style="background:var(--c-err)"></span>💸 Maiores Descontos</div>
-            <div class="grid-produtos spaced" id="${trackId}">${trackHtml}${sentinelHtml}</div>
-        </div>`;
-    }
     
+    // Maiores Descontos Removidos como Solicitado
+
     if (STATE.sohoje && STATE.sohoje.length > 0) {
         let shProds = STATE.sohoje.map(sh => {
             let p = STATE.prods.find(x => x.id === String(sh.id));
@@ -1015,7 +1076,7 @@ function renderBottomChips(activeTabId) {
             html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>${name}</div>
-                <div class="grid-produtos spaced grid-1-col" id="${trackId}">${trackHtml}${sentinelHtml}</div>
+                <div class="grid-produtos spaced" id="${trackId}">${trackHtml}${sentinelHtml}</div>
             </div>`;
         }
     });
@@ -1125,7 +1186,7 @@ function renderPaginated(containerId, listKey, list, type) {
             html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>${title}</div>
-                <div class="grid-produtos grid-1-col spaced" id="${trackId}">
+                <div class="grid-produtos spaced" id="${trackId}">
                     ${trackHtml}
                     ${sentinelHtml}
                 </div>
@@ -1220,13 +1281,16 @@ function upd(id, delta) {
     STATE.cart[id] = n; 
     if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); } 
     
-    document.querySelectorAll(`[data-id="${id}"] .action-wrap`).forEach(el => {
-        el.innerHTML = getCardControls(id);
-    });
-
+    // Atualiza modal se estiver aberto
     if ($('modal-quick-view').open && $('qv-action-area').dataset.id === String(id)) {
         $('qv-action-area').innerHTML = getCardControls(id);
     }
+
+    // Atualiza número no botão + do Card
+    document.querySelectorAll(`.add-btn-${id}`).forEach(el => {
+        let qty = STATE.cart[id] || 0;
+        el.innerText = qty > 0 ? qty : '+';
+    });
 
     if($('sec-minha-cesta').style.display === 'block' && n === 0) goToMinhaCesta(false); 
     updateTotals(); 
@@ -1242,8 +1306,8 @@ window.clearCart = function() {
         document.querySelectorAll('[data-id]').forEach(el => {
             let id = el.dataset.id;
             if(id) {
-                let aw = el.querySelector('.action-wrap');
-                if(aw) aw.innerHTML = getCardControls(id);
+                let addBtn = el.querySelector(`.add-btn-${id}`);
+                if(addBtn) addBtn.innerText = '+';
             }
         });
 
