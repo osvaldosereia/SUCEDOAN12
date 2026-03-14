@@ -9,157 +9,867 @@
 <title>Super Cestas Básicas Dona Antônia</title>
 <style>
 :root {
-    --c-p: #0f172a; --c-s: #475569; --c-t: #64748b; 
-    --c-a: #ea580c; --c-ok: #15803d; --c-err: #dc2626; 
-    --c-bg: #f8fafc; --c-surf: #ffffff; --c-bd: #e2e8f0; 
-    --c-img-bg: #fafaf9; --font: 'Inter', system-ui, sans-serif;
+    --c-p: #0f172a; 
+    --c-s: #475569; 
+    --c-t: #64748b; 
+    --c-a: #ea580c; 
+    --c-ok: #15803d; 
+    --c-err: #dc2626; 
+    --c-bg: #f8fafc; 
+    --c-surf: #ffffff; 
+    --c-bd: #e2e8f0; 
+    --c-img-bg: #fafaf9; 
+    --font: 'Inter', system-ui, sans-serif;
     --sh-float: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
 }
 
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
-body { font-family: var(--font); background: var(--c-bg); color: var(--c-p); margin: 0; padding: 0; height: 100dvh; overflow: hidden; -webkit-font-smoothing: antialiased; }
-img { user-select: none; } 
-button { cursor: pointer; border: none; background: 0 0; font-family: inherit; font-weight: 500; }
+* { 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
+    outline: none; 
+}
 
-.layout-limit { width: 100%; max-width: 1000px; margin: 0 auto; position: relative; } 
+body { 
+    font-family: var(--font); 
+    background: var(--c-bg); 
+    color: var(--c-p); 
+    margin: 0; 
+    padding: 0; 
+    height: 100dvh; 
+    overflow: hidden; 
+    -webkit-font-smoothing: antialiased; 
+}
+
+img { 
+    user-select: none; 
+} 
+
+button { 
+    cursor: pointer; 
+    border: none; 
+    background: 0 0; 
+    font-family: inherit; 
+    font-weight: 500; 
+}
+
+.layout-limit { 
+    width: 100%; 
+    max-width: 1000px; 
+    margin: 0 auto; 
+    position: relative; 
+} 
 
 /* SPLASH SCREEN */
-#splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
-#splash-screen.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.splash-logo { width: 170px; height: 170px; border-radius: 50%; border: 1px solid var(--c-bd); object-fit: cover; animation: splashPulse 1s ease-in-out infinite alternate; box-shadow: var(--sh-float); }
-@keyframes splashPulse { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
+#splash-screen { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: #ffffff; 
+    z-index: 999999; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    transition: opacity 0.5s ease, visibility 0.5s; 
+}
 
-/* HEADER PRINCIPAL */
-#header-wrapper { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
-.mob-layer-1 { background: var(--c-p); padding: 12px 15px; width: 100%; }
-.search-wrapper { position: relative; width: 100%; }
-.search-inp { width: 100%; background: #ffffff; border: 2px solid transparent; padding: 12px 15px 12px 42px; border-radius: 25px; font-weight: 600; color: var(--c-p); transition: border-color .2s; font-size: 0.95rem; }
-.search-inp:focus { border-color: var(--c-a); }
-.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--c-t); pointer-events: none; }
-.clear-search { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #cbd5e1; color: #fff; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 20; }
-.mob-layer-2 { background: #fff; padding: 10px 15px; width: 100%; border-bottom: 1px solid var(--c-bd); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.logo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid var(--c-bd); flex-shrink: 0; cursor: pointer; }
+#splash-screen.hidden { 
+    opacity: 0; 
+    visibility: hidden; 
+    pointer-events: none; 
+}
 
-/* Dropdown Menu */
-.mobile-category-dropdown { flex: 1; position: relative; }
-.btn-cat-dropdown { width: 100%; padding: 12px 15px; font-weight: 700; text-align: left; display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; color: var(--c-p); border-radius: 10px; font-size: 0.95rem; border: 1px solid var(--c-bd); }
-.cat-dropdown-list { display: none; position: absolute; top: calc(100% + 5px); left: 0; width: 100%; background: #fff; border-radius: 10px; border: 1px solid var(--c-bd); box-shadow: 0 15px 30px rgba(0,0,0,0.15); max-height: 60vh; overflow-y: auto; z-index: 100; flex-direction: column; }
-.cat-dropdown-list.open { display: flex; }
-.cat-dropdown-item { padding: 14px 15px; border-bottom: 1px solid var(--c-bd); color: var(--c-p); font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; }
-.cat-dropdown-item:active { background: var(--c-img-bg); }
+.splash-logo { 
+    width: 170px; 
+    height: 170px; 
+    border-radius: 50%; 
+    border: 1px solid var(--c-bd); 
+    object-fit: cover; 
+    animation: splashPulse 1s ease-in-out infinite alternate; 
+    box-shadow: var(--sh-float); 
+}
 
-.btn-top-help { width: 44px; height: 44px; border-radius: 50%; background: var(--c-img-bg); color: var(--c-p); display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-bd); cursor: pointer; flex-shrink: 0; transition: 0.3s; }
-.btn-top-help:hover { background: #e2e8f0; }
-.btn-top-help svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@keyframes splashPulse { 
+    0% { transform: scale(0.95); } 
+    100% { transform: scale(1.05); } 
+}
+
+/* HEADER PRINCIPAL REFORMULADO */
+#header-wrapper { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    z-index: 50; 
+    background: #fff; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.06); 
+}
+
+/* MOBILE: 2 Camadas / DESKTOP: 1 Linha */
+.mob-layer-1 { 
+    background: var(--c-p); 
+    padding: 12px 15px; 
+    width: 100%; 
+}
+
+.search-wrapper { 
+    position: relative; 
+    width: 100%; 
+}
+
+.search-inp { 
+    width: 100%; 
+    background: #ffffff; 
+    border: 2px solid transparent; 
+    padding: 12px 15px 12px 42px; 
+    border-radius: 25px; 
+    font-weight: 600; 
+    color: var(--c-p); 
+    transition: border-color .2s; 
+    font-size: 0.95rem; 
+}
+
+.search-inp:focus { 
+    border-color: var(--c-a); 
+}
+
+.search-icon { 
+    position: absolute; 
+    left: 14px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    color: var(--c-t); 
+    pointer-events: none; 
+}
+
+.clear-search { 
+    position: absolute; 
+    right: 8px; 
+    top: 50%; 
+    transform: translateY(-50%); 
+    background: #cbd5e1; 
+    color: #fff; 
+    border-radius: 50%; 
+    width: 22px; 
+    height: 22px; 
+    font-size: 11px; 
+    display: none; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer; 
+    z-index: 20; 
+}
+
+.mob-layer-2 { 
+    background: #fff; 
+    padding: 10px 15px; 
+    width: 100%; 
+    border-bottom: 1px solid var(--c-bd); 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    gap: 12px; 
+}
+
+.logo { 
+    width: 48px; 
+    height: 48px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 1px solid var(--c-bd); 
+    flex-shrink: 0; 
+    cursor: pointer; 
+}
+
+/* Dropdown */
+.mobile-category-dropdown { 
+    flex: 1; 
+    position: relative; 
+}
+
+.btn-cat-dropdown { 
+    width: 100%; 
+    padding: 12px 15px; 
+    font-weight: 700; 
+    text-align: left; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: #f1f5f9; 
+    color: var(--c-p); 
+    border-radius: 10px; 
+    font-size: 0.95rem; 
+    border: 1px solid var(--c-bd); 
+}
+
+.cat-dropdown-list { 
+    display: none; 
+    position: absolute; 
+    top: calc(100% + 5px); 
+    left: 0; 
+    width: 100%; 
+    background: #fff; 
+    border-radius: 10px; 
+    border: 1px solid var(--c-bd); 
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15); 
+    max-height: 60vh; 
+    overflow-y: auto; 
+    z-index: 100; 
+    flex-direction: column; 
+}
+
+.cat-dropdown-list.open { 
+    display: flex; 
+}
+
+.cat-dropdown-item { 
+    padding: 14px 15px; 
+    border-bottom: 1px solid var(--c-bd); 
+    color: var(--c-p); 
+    font-size: 0.95rem; 
+    font-weight: 600; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    cursor: pointer; 
+    transition: 0.2s; 
+}
+
+.cat-dropdown-item:hover, .cat-dropdown-item:active { 
+    background: var(--c-img-bg); 
+}
+
+.btn-top-help { 
+    width: 44px; 
+    height: 44px; 
+    border-radius: 50%; 
+    background: var(--c-img-bg); 
+    color: var(--c-p); 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: 1px solid var(--c-bd); 
+    cursor: pointer; 
+    flex-shrink: 0; 
+    transition: 0.3s; 
+}
+
+.btn-top-help:hover { 
+    background: #e2e8f0; 
+}
+
+.btn-top-help svg { 
+    width: 24px; 
+    height: 24px; 
+    stroke: currentColor; 
+    fill: none; 
+    stroke-width: 2; 
+    stroke-linecap: round; 
+    stroke-linejoin: round; 
+}
 
 @media(min-width: 800px) {
-    #header-wrapper { background: #fff; border-bottom: 1px solid var(--c-bd); }
-    .desk-header-flex { display: flex; align-items: center; padding: 10px 15px; gap: 20px; }
-    .mob-layer-1, .mob-layer-2 { display: contents; }
+    #header-wrapper { 
+        background: #fff; 
+        border-bottom: 1px solid var(--c-bd); 
+    }
+    
+    .desk-header-flex { 
+        display: flex; 
+        align-items: center; 
+        padding: 10px 15px; 
+        gap: 20px; 
+    }
+    
+    .mob-layer-1, .mob-layer-2 { 
+        display: contents; 
+    }
+    
     .logo { order: 1; }
     .search-wrapper { order: 2; flex: 1; }
     .mobile-category-dropdown { order: 3; flex: none; width: 260px; }
     .btn-top-help { order: 4; }
-    .search-inp { background: var(--c-img-bg); border: 1px solid var(--c-bd); color: var(--c-p); }
+    
+    .search-inp { 
+        background: var(--c-img-bg); 
+        border: 1px solid var(--c-bd); 
+        color: var(--c-p); 
+    }
 }
 
-.main-stage { position: relative; height: 100dvh; padding-top: 140px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
-@media(min-width: 800px) { .main-stage { padding-top: 90px; } }
+.main-stage { 
+    position: relative; 
+    height: 100dvh; 
+    padding-top: 140px; 
+    padding-bottom: 80px; 
+    overflow-y: auto; 
+    overflow-x: hidden; 
+    scroll-behavior: smooth; 
+}
+
+@media(min-width: 800px) { 
+    .main-stage { padding-top: 90px; } 
+}
 
 /* TÍTULOS DE SESSÃO MEGA DESTACADOS */
 .section-title { 
-    width: calc(100% - 20px); max-width: 1000px; margin: 25px auto 15px; 
-    font-size: 1.1rem; font-weight: 800; color: var(--c-p); 
-    padding: 12px 15px; text-transform: uppercase; letter-spacing: 0.5px; 
-    background: #f1f5f9; border: 1px solid var(--c-bd); border-left: 6px solid var(--c-a); border-radius: 8px;
+    width: calc(100% - 20px); 
+    max-width: 1000px; 
+    margin: 25px auto 15px; 
+    font-size: 1.1rem; 
+    font-weight: 800; 
+    color: var(--c-p); 
+    padding: 12px 15px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+    background: #f1f5f9; 
+    border: 1px solid var(--c-bd); 
+    border-left: 6px solid var(--c-a); 
+    border-radius: 8px;
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
 }
 
-/* GRADES UNIFICADAS E BLINDADAS */
-.grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 0 10px 25px; width: 100%; max-width: 1000px; margin: 0 auto; align-items: stretch; }
+/* GRADES UNIFICADAS */
+.grid-produtos { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 8px; 
+    padding: 0 10px 25px; 
+    width: 100%; 
+    max-width: 1000px; 
+    margin: 0 auto; 
+    align-items: stretch; 
+}
+
 @media(min-width: 800px) { 
-    .grid-produtos { grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 0 15px 25px; } 
-    .section-title { width: calc(100% - 30px); }
+    .grid-produtos { 
+        grid-template-columns: repeat(5, 1fr); 
+        gap: 12px; 
+        padding: 0 15px 25px; 
+    } 
+    .section-title { 
+        width: calc(100% - 30px); 
+    }
 }
 
 /* CARD UNIVERSAL IDENTICO PARA TUDO */
-.u-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03); height: 100%; }
-.u-card:active { transform: scale(0.98); }
+.u-card { 
+    background: #fff; 
+    border: 1px solid var(--c-bd); 
+    border-radius: 12px; 
+    padding: 8px; 
+    display: flex; 
+    flex-direction: column; 
+    position: relative; 
+    transition: 0.2s; 
+    cursor: pointer; 
+    overflow: hidden; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03); 
+    height: 100%; 
+}
 
-.u-img-area { width: 100%; aspect-ratio: 4/5; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; }
-.u-img-area.square { aspect-ratio: 1/1; } /* A única diferença para Cestas e Kits */
+.u-card:active { 
+    transform: scale(0.98); 
+}
 
-.u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-.u-img { object-fit: contain; mix-blend-mode: multiply; padding: 5%; } 
-.u-img-cesta { object-fit: cover !important; mix-blend-mode: normal !important; padding: 0 !important; }
+.u-img-area { 
+    width: 100%; 
+    aspect-ratio: 4/5; 
+    background: var(--c-img-bg); 
+    border-radius: 8px; 
+    position: relative; 
+    overflow: hidden; 
+    margin-bottom: 8px; 
+    display: flex;
+    align-items: center;
+    justify-content: center; 
+}
 
-.inline-discount { background: var(--c-err); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 800; border-radius: 6px; }
-.kit-tag { background: var(--c-a); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 800; border-radius: 6px; }
+/* Imagem quadrada para Cestas e Kits */
+.u-img-area.square { 
+    aspect-ratio: 1/1; 
+} 
+
+.u-img-area img { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+}
+
+.u-img { 
+    object-fit: contain; 
+    mix-blend-mode: multiply; 
+    padding: 5%; 
+} 
+
+.u-img-cesta { 
+    object-fit: cover !important; 
+    mix-blend-mode: normal !important; 
+    padding: 0 !important; 
+}
+
+.inline-discount { 
+    background: var(--c-err); 
+    color: #fff; 
+    font-size: 0.75rem; 
+    padding: 4px 8px; 
+    font-weight: 800; 
+    border-radius: 6px; 
+}
+
+.kit-tag { 
+    background: var(--c-a); 
+    color: #fff; 
+    font-size: 0.75rem; 
+    padding: 4px 8px; 
+    font-weight: 800; 
+    border-radius: 6px; 
+}
 
 /* BOTÃO DE ADICIONAR (+) */
-.card-add-btn { position: absolute; bottom: 8px; right: 8px; width: 40px; height: 40px; background: var(--c-err); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 1.5rem; font-weight: 700; box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4); z-index: 10; transition: 0.15s; border: none; cursor: pointer; padding: 0; }
-.card-add-btn:active { transform: scale(0.85); background: #b91c1c; }
+.card-add-btn { 
+    position: absolute; 
+    bottom: 8px; 
+    right: 8px; 
+    width: 40px; 
+    height: 40px; 
+    background: var(--c-err); 
+    color: #fff; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    line-height: 1; 
+    font-size: 1.5rem; 
+    font-weight: 700; 
+    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4); 
+    z-index: 10; 
+    transition: 0.15s; 
+    border: none; 
+    cursor: pointer; 
+    padding: 0; 
+}
 
-.u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 100%; }
-.u-name { font-size: 0.95rem; font-weight: 600; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px; }
-.u-price { font-size: 1.3rem; font-weight: 800; color: var(--c-p); }
-.combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: -2px; }
+.card-add-btn:active { 
+    transform: scale(0.85); 
+    background: #b91c1c; 
+}
 
-@media(min-width: 800px) { .u-name { font-size: 1.05rem; } }
+.u-info { 
+    display: flex; 
+    flex-direction: column; 
+    flex: 1; 
+    justify-content: space-between; 
+    height: 100%; 
+}
 
-.btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 42px; transition: 0.2s;}
-.card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:42px; margin-top:10px; padding:0 4px; width:100%; }
-.card-qty-ctrl button { font-size:1.6rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 15px; height: 100%; cursor:pointer; }
-.card-qty-ctrl span { font-weight:700; font-size:1.1rem; color:var(--c-p); }
+.u-name { 
+    font-size: 0.95rem; 
+    font-weight: 600; 
+    color: var(--c-p); 
+    line-height: 1.25; 
+    display: -webkit-box; 
+    -webkit-line-clamp: 3; 
+    -webkit-box-orient: vertical; 
+    overflow: hidden; 
+    margin-bottom: 6px; 
+}
 
-.general-hidden { display: none !important; }
+.u-price { 
+    font-size: 1.3rem; 
+    font-weight: 800; 
+    color: var(--c-p); 
+}
+
+.combo-strike { 
+    text-decoration: line-through; 
+    color: var(--c-t); 
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    display: block; 
+    margin-bottom: -2px; 
+}
+
+@media(min-width: 800px) { 
+    .u-name { font-size: 1.05rem; } 
+}
+
+.btn-big-action { 
+    width: 100%; 
+    background: #e2e8f0; 
+    color: var(--c-p); 
+    padding: 8px; 
+    border-radius: 8px; 
+    font-weight: 700; 
+    font-size: 0.9rem; 
+    margin-top: 10px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 42px; 
+    transition: 0.2s;
+}
+
+.card-qty-ctrl { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    background: #f8fafc; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 8px; 
+    height: 42px; 
+    margin-top: 10px; 
+    padding: 0 4px; 
+    width: 100%; 
+}
+
+.card-qty-ctrl button { 
+    font-size: 1.6rem; 
+    color: var(--c-a); 
+    font-weight: 500; 
+    background: transparent; 
+    border: none; 
+    padding: 0 15px; 
+    height: 100%; 
+    cursor: pointer; 
+}
+
+.card-qty-ctrl span { 
+    font-weight: 700; 
+    font-size: 1.1rem; 
+    color: var(--c-p); 
+}
+
+.general-hidden { 
+    display: none !important; 
+}
 
 /* SKELETON LOADING */
-@keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
-.skeleton-card { background: #fff; padding: 8px; border: 1px solid var(--c-bd); border-radius: 12px; display: flex; flex-direction: column; }
-.skeleton-el { background: #f1f5f9; background-image: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%); background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s infinite linear forwards; }
-.sk-img { width: 100%; aspect-ratio: 4/5; border-radius: 8px; margin-bottom: 8px; }
-.sk-t1 { height: 14px; border-radius: 4px; width: 90%; }
-.sk-t2 { height: 18px; margin-top: 8px; border-radius: 4px; width: 40%; }
+@keyframes shimmer { 
+    0% { background-position: -468px 0; } 
+    100% { background-position: 468px 0; } 
+}
 
-/* MENU INFERIOR REFORMULADO (Kits Removido) */
-.bottom-nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; display: flex; justify-content: space-between; align-items: center; height: 60px; border-top: 1px solid var(--c-bd); z-index: 100; padding-bottom: env(safe-area-inset-bottom); padding-left: 15px; padding-right: 20px; }
-.nav-group-left { display: flex; justify-content: space-around; flex: 1; padding-right: 20px; }
-.tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--c-t); gap: 4px; cursor: pointer; transition: 0.2s; flex: 1; }
-.tab-item svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-.tab-label { font-size: 0.65rem; font-weight: 600; }
-.tab-item.active { color: var(--c-a); }
+.skeleton-card { 
+    background: #fff; 
+    padding: 8px; 
+    border: 1px solid var(--c-bd); 
+    border-radius: 12px; 
+    display: flex; 
+    flex-direction: column; 
+}
 
-.cart-fab-wrapper { position: relative; top: -15px; width: 60px; height: 60px; background: var(--c-p); color: #fff !important; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 4px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.2s; flex-shrink: 0; cursor: pointer; }
-.cart-fab-wrapper:active { transform: scale(0.95); }
-.cart-fab-wrapper svg { stroke: #fff; width: 22px; height: 22px; }
-.cart-badge { position: absolute; top: 0px; right: 0px; background: var(--c-err); color: #fff; font-size: 0.65rem; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+.skeleton-el { 
+    background: #f1f5f9; 
+    background-image: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%); 
+    background-repeat: no-repeat; 
+    background-size: 800px 100%; 
+    animation: shimmer 1.5s infinite linear forwards; 
+}
 
-dialog { border: none; border-radius: 20px; width: 92%; max-width: 420px; padding: 0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); background: #fff; }
-dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); }
-.modal-body { padding: 25px 20px; text-align: center; position: relative; max-height: 85vh; overflow-y: auto; overflow-x: hidden; }
-.btn-close-modal { position: absolute; top: 15px; right: 15px; width: 34px; height: 34px; background: var(--c-img-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; color: var(--c-p); border: none; z-index: 50; }
+.sk-img { 
+    width: 100%; 
+    aspect-ratio: 4/5; 
+    border-radius: 8px; 
+    margin-bottom: 8px; 
+}
 
-.btn-modal { width: 100%; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;}
-.btn-modal.primary { background: var(--c-a); color: #fff; }
-.btn-modal.secondary { background: #fff; border: 1px solid var(--c-bd); color: var(--c-p); }
-.btn-modal:disabled { opacity: 0.7; pointer-events: none; }
+.sk-t1 { 
+    height: 14px; 
+    border-radius: 4px; 
+    width: 90%; 
+}
 
-#toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
-.toast { padding: 12px 20px; color: #fff; border-radius: 12px; font-weight: 600; text-align: center; box-shadow: var(--sh-float); animation: toastPop 0.3s ease-out; z-index: 99999; }
-@keyframes toastPop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.sk-t2 { 
+    height: 18px; 
+    margin-top: 8px; 
+    border-radius: 4px; 
+    width: 40%; 
+}
 
-.del-option { display: flex; justify-content: space-between; align-items: center; padding: 14px 15px; border: 1px solid var(--c-bd); border-radius: 12px; cursor: pointer; transition: all 0.2s; background: #fff; }
-.del-option.selected { border-color: var(--c-a); background: #fff7ed; border-width: 2px; }
-.del-opt-title { font-weight: 700; font-size: 1rem; color: var(--c-p); }
-.del-opt-date { font-size: 0.85rem; color: var(--c-s); margin-top: 4px; }
-.del-opt-badge { font-size: 0.75rem; font-weight: 700; color: #fff; background: var(--c-ok); padding: 4px 10px; border-radius: 12px; }
+/* MENU INFERIOR COM FOCO EM VENDAS (4 Itens + Carrinho) */
+.bottom-nav-bar { 
+    position: fixed; 
+    bottom: 0; 
+    left: 0; 
+    width: 100%; 
+    background: #fff; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    height: 60px; 
+    border-top: 1px solid var(--c-bd); 
+    z-index: 100; 
+    padding-bottom: env(safe-area-inset-bottom); 
+    padding-left: 10px; 
+    padding-right: 20px; 
+}
 
-.pay-opt { padding: 12px 14px; border: 1px solid var(--c-bd); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--c-s); background: #fff; transition: all 0.2s; user-select: none; }
-.pay-opt.selected { border-color: var(--c-a); background: #fff7ed; color: var(--c-a); border-width: 2px; }
+.nav-group-left { 
+    display: flex; 
+    justify-content: space-around; 
+    flex: 1; 
+    padding-right: 15px; 
+}
 
-#chk-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; margin-top: 10px; }
-.input-error { border-color: var(--c-err) !important; background-color: #fef2f2 !important; }
+.tab-item { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    color: var(--c-t); 
+    gap: 4px; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    flex: 1; 
+}
+
+.tab-item svg { 
+    width: 24px; 
+    height: 24px; 
+    stroke: currentColor; 
+    fill: none; 
+    stroke-width: 2; 
+    stroke-linecap: round; 
+    stroke-linejoin: round; 
+    transition: 0.2s; 
+}
+
+.tab-label { 
+    font-size: 0.6rem; 
+    font-weight: 600; 
+}
+
+.tab-item.active { 
+    color: var(--c-a); 
+}
+
+.cart-fab-wrapper { 
+    position: relative; 
+    top: -15px; 
+    width: 60px; 
+    height: 60px; 
+    background: var(--c-p); 
+    color: #fff !important; 
+    border-radius: 50%; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    border: 4px solid #fff; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
+    transition: 0.2s; 
+    flex-shrink: 0; 
+    cursor: pointer; 
+}
+
+.cart-fab-wrapper:active { 
+    transform: scale(0.95); 
+}
+
+.cart-fab-wrapper svg { 
+    stroke: #fff; 
+    width: 22px; 
+    height: 22px; 
+}
+
+.cart-badge { 
+    position: absolute; 
+    top: 0px; 
+    right: 0px; 
+    background: var(--c-err); 
+    color: #fff; 
+    font-size: 0.65rem; 
+    font-weight: 700; 
+    min-width: 18px; 
+    height: 18px; 
+    border-radius: 9px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: 2px solid #fff; 
+}
+
+dialog { 
+    border: none; 
+    border-radius: 20px; 
+    width: 92%; 
+    max-width: 420px; 
+    padding: 0; 
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); 
+    background: #fff; 
+}
+
+dialog::backdrop { 
+    background: rgba(15,23,42,0.85); 
+    backdrop-filter: blur(4px); 
+}
+
+.modal-body { 
+    padding: 25px 20px; 
+    text-align: center; 
+    position: relative; 
+    max-height: 85vh; 
+    overflow-y: auto; 
+    overflow-x: hidden; 
+}
+
+.btn-close-modal { 
+    position: absolute; 
+    top: 15px; 
+    right: 15px; 
+    width: 34px; 
+    height: 34px; 
+    background: var(--c-img-bg); 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-weight: 600; 
+    cursor: pointer; 
+    color: var(--c-p); 
+    border: none; 
+    z-index: 50; 
+}
+
+.btn-modal { 
+    width: 100%; 
+    padding: 14px; 
+    border-radius: 12px; 
+    font-weight: 600; 
+    font-size: 1rem; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer; 
+    transition: 0.2s;
+}
+
+.btn-modal.primary { 
+    background: var(--c-a); 
+    color: #fff; 
+}
+
+.btn-modal.secondary { 
+    background: #fff; 
+    border: 1px solid var(--c-bd); 
+    color: var(--c-p); 
+}
+
+.btn-modal:disabled { 
+    opacity: 0.7; 
+    pointer-events: none; 
+}
+
+#toast-container { 
+    position: fixed; 
+    top: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    z-index: 9999; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    width: 90%; 
+    max-width: 400px; 
+    pointer-events: none; 
+}
+
+.toast { 
+    padding: 12px 20px; 
+    color: #fff; 
+    border-radius: 12px; 
+    font-weight: 600; 
+    text-align: center; 
+    box-shadow: var(--sh-float); 
+    animation: toastPop 0.3s ease-out; 
+    z-index: 99999; 
+}
+
+@keyframes toastPop { 
+    from { transform: translateY(-20px); opacity: 0; } 
+    to { transform: translateY(0); opacity: 1; } 
+}
+
+.del-option { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 14px 15px; 
+    border: 1px solid var(--c-bd); 
+    border-radius: 12px; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    background: #fff; 
+}
+
+.del-option.selected { 
+    border-color: var(--c-a); 
+    background: #fff7ed; 
+    border-width: 2px; 
+}
+
+.del-opt-title { 
+    font-weight: 700; 
+    font-size: 1rem; 
+    color: var(--c-p); 
+}
+
+.del-opt-date { 
+    font-size: 0.85rem; 
+    color: var(--c-s); 
+    margin-top: 4px; 
+}
+
+.del-opt-badge { 
+    font-size: 0.75rem; 
+    font-weight: 700; 
+    color: #fff; 
+    background: var(--c-ok); 
+    padding: 4px 10px; 
+    border-radius: 12px; 
+}
+
+.pay-opt { 
+    padding: 12px 14px; 
+    border: 1px solid var(--c-bd); 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-size: 0.9rem; 
+    font-weight: 600; 
+    color: var(--c-s); 
+    background: #fff; 
+    transition: all 0.2s; 
+    user-select: none; 
+}
+
+.pay-opt.selected { 
+    border-color: var(--c-a); 
+    background: #fff7ed; 
+    color: var(--c-a); 
+    border-width: 2px; 
+}
+
+#chk-list { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px; 
+    margin-bottom: 10px; 
+    margin-top: 10px; 
+}
+
+.input-error { 
+    border-color: var(--c-err) !important; 
+    background-color: #fef2f2 !important; 
+}
+
 </style>
 </head>
 <body>
@@ -170,18 +880,23 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <span style="font-size: 0.9rem;">Instalar App Dona Antônia</span>
     </div>
     <div style="display: flex; align-items: center; gap: 8px;">
-        <button id="btn-install" style="background: var(--c-a); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem;">Instalar</button>
+        <button id="btn-install" style="background: var(--c-a); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; transition: 0.2s;">Instalar</button>
         <button id="btn-close-install" style="background: transparent; color: var(--c-t); border: none; font-size: 1.2rem; padding: 0 5px;">✕</button>
     </div>
 </div>
 
-<div id="splash-screen"><img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="splash-logo" onerror="this.style.display='none'"></div>
+<div id="splash-screen">
+    <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="splash-logo" onerror="this.style.display='none'">
+</div>
 
 <div id="header-wrapper">
     <div class="layout-limit desk-header-flex">
         <div class="mob-layer-1">
             <div class="search-wrapper">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
                 <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto ou kit..." oninput="handleSearch(this.value)">
                 <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
             </div>
@@ -191,31 +906,26 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
             <div class="mobile-category-dropdown">
                 <button class="btn-cat-dropdown" onclick="document.getElementById('cat-dropdown-list').classList.toggle('open')">
                     <span id="btn-cat-dropdown-text">Todas as Categorias</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
                 </button>
                 <div id="cat-dropdown-list" class="cat-dropdown-list"></div>
             </div>
             <button class="btn-top-help" onclick="document.getElementById('modal-faq').showModal()" aria-label="Ajuda">
-                <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                <svg viewBox="0 0 24 24">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                </svg>
             </button>
         </div>
     </div>
 </div>
 
 <main class="main-stage" id="scroll-stage">
-    <div id="global-banner-container" class="layout-limit" style="line-height: 0; padding-bottom: 10px;">
-        <img src="site/img/produtos/banner.webp" alt="Promoção" style="width: 100%; height: auto; display: block;" onerror="this.parentElement.style.display='none'">
-    </div>
     
     <div id="section-busca" class="page-section" style="display:none;">
         <div class="section-title">Resultados da Busca</div>
         <div class="grid-produtos" id="grid-busca"></div>
-    </div>
-
-    <div id="sec-minha-cesta" class="page-section" style="display:none; padding-top:10px;">
-        <div class="section-title" style="color: var(--c-a); border-left-color: var(--c-a);">📦 Minha Cesta</div>
-        <div class="grid-produtos" id="grid-minha-cesta"></div>
-        <div class="bottom-category-nav"></div>
     </div>
 
     <div id="wrapper-sections">
@@ -238,9 +948,13 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
             <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
             <div class="tab-label">Início</div>
         </div>
-        <div class="tab-item" id="btn-nav-cesta" onclick="goToMinhaCesta(true)">
+        <div class="tab-item" id="btn-nav-cestas-nav" onclick="switchTab('cestas')">
             <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-            <div class="tab-label">Cesta</div>
+            <div class="tab-label">Cestas</div>
+        </div>
+        <div class="tab-item" id="btn-nav-kits" onclick="switchTab('combos')">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+            <div class="tab-label">Kits</div>
         </div>
         <div class="tab-item" id="btn-nav-pedidos" onclick="openHistoricoPedidos()">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
@@ -274,10 +988,22 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
             <h3 style="font-weight:800;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
             <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
         </div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Qual o valor da entrega?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div></div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Quais as formas de pagamento?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div></div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Qual o prazo de entrega?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Entregas em até 24 horas úteis após a confirmação do pedido.</div></div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Posso personalizar a cesta?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Sim! Você pode adicionar ou remover itens conforme sua necessidade.</div></div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;">
+            <div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Qual o valor da entrega?</div>
+            <div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div>
+        </div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;">
+            <div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Quais as formas de pagamento?</div>
+            <div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div>
+        </div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;">
+            <div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Qual o prazo de entrega?</div>
+            <div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Entregas em até 24 horas úteis após a confirmação do pedido.</div>
+        </div>
+        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;">
+            <div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Posso personalizar a cesta?</div>
+            <div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Sim! Você pode adicionar ou remover itens conforme sua necessidade.</div>
+        </div>
         <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px; margin-bottom: 15px;">
             <button class="btn-modal primary" style="flex: 1; background:#25D366; font-size: 1rem;" onclick="window.open('https://wa.me/5565998150975','_blank')">WhatsApp</button>
             <button class="btn-modal primary" style="flex: 1; background:#E1306C; font-size: 1rem;" onclick="alert('https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/')">Instagram</button>
@@ -301,7 +1027,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 
         <button class="btn-modal primary" id="btn-customize-preview" style="display:none; font-size: 1.05rem; padding: 16px; margin-bottom: 10px;">Personalizar Minha Cesta</button>
         <button class="btn-modal secondary" id="btn-confirm-preview" style="font-size: 1.05rem; padding: 16px; margin-bottom: 0;"></button>
-        <button class="btn-modal" style="background: transparent; color: var(--c-s); margin-top: 8px; padding: 12px; font-weight: 600; font-size: 1rem;" onclick="this.closest('dialog').close()">Fechar</button>
+        <button class="btn-modal" style="background: transparent; border: none; color: var(--c-s); margin-top: 8px; padding: 12px; font-weight: 600; font-size: 1rem;" onclick="this.closest('dialog').close()">Fechar</button>
     </div>
 </dialog>
 
@@ -317,7 +1043,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         </div>
 
         <button class="btn-modal primary" id="btn-confirm-bqty" onclick="confirmBasket(false, currentBasketQty)" style="padding: 16px; font-size: 1.05rem;"></button>
-        <button class="btn-modal" style="background: transparent; color: var(--c-s); margin-top: 8px; padding: 12px; font-weight: 600; font-size: 1rem;" onclick="this.closest('dialog').close()">Fechar</button>
+        <button class="btn-modal" style="background: transparent; border: none; color: var(--c-s); margin-top: 8px; padding: 12px; font-weight: 600; font-size: 1rem;" onclick="this.closest('dialog').close()">Fechar</button>
     </div>
 </dialog>
 
@@ -326,17 +1052,17 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         <h2 style="font-weight: 800; font-size: 1.4rem; color: var(--c-p); margin-top: 5px; margin-bottom: 20px;">Finalizar Pedido</h2>
         
-        <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">1. Receber quando?</h3>
+        <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">1. O Seu Pedido</h3>
+        <div id="chk-list"></div>
+        
+        <button class="btn-modal secondary" style="margin-bottom: 25px; border: 2px dashed var(--c-a); color: var(--c-a); background: #fff7ed; padding: 16px;" onclick="document.getElementById('modal-checkout').close()">+ Adicionar Produtos</button>
+        
+        <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">2. Receber quando?</h3>
         <p style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px; font-weight: 500;">Planeje a entrega e ganhe desconto.</p>
         <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
         
-        <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">2. O Seu Pedido</h3>
-        <div id="chk-list"></div>
-        <div style="text-align: right; margin-bottom: 20px;">
-            <button style="border:none; background:transparent; font-weight:700; color: var(--c-a); font-size:0.95rem;" onclick="document.getElementById('modal-checkout').close(); goToMinhaCesta(true);">✏️ Ver cesta completa</button>
-        </div>
-        
         <div id="chk-summary-lines" style="border-top: 1px dashed var(--c-bd); padding-top: 15px; margin-bottom: 15px; font-size: 0.95rem; font-weight: 500; color: var(--c-s);"></div>
+        
         <div style="text-align: right; margin-bottom: 25px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 20px;">
             <div style="font-size:0.85rem; font-weight:700; color:var(--c-s); text-transform:uppercase;">Total a pagar</div>
             <div style="font-weight: 800; font-size: 2.2rem; color: var(--c-p); line-height: 1.1;" id="chk-total"></div>
@@ -357,9 +1083,9 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <input type="hidden" id="chk-pagamento" value="">
         
         <button id="btn-send-order" onclick="sendOrder()" class="btn-modal primary" style="font-size: 1.1rem; padding: 16px; transition: 0.2s;"></button>
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="btn-modal secondary" style="margin: 0; flex: 1; border: none; background: var(--c-bd); font-size: 0.9rem;" onclick="document.getElementById('modal-checkout').close()">Mais produtos</button>
-            <button class="btn-modal secondary" style="margin: 0; flex: 1; border: none; background: #fef2f2; color: var(--c-err); font-size: 0.9rem;" onclick="clearCart()">Limpar Cesta</button>
+        
+        <div style="display: flex; justify-content: center; margin-top: 15px;">
+            <button class="btn-modal" style="background: transparent; color: var(--c-err); font-size: 0.95rem; border: none; text-decoration: underline;" onclick="clearCart()">Limpar Cesta</button>
         </div>
     </div>
 </dialog>
@@ -377,85 +1103,156 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 <script>
 let splashRemoved = false;
 function removeSplash() {
-    if(splashRemoved) return;
+    if (splashRemoved) return;
     splashRemoved = true;
     const splash = document.getElementById('splash-screen');
-    if(splash) { splash.classList.add('hidden'); setTimeout(() => splash.remove(), 600); }
+    if (splash) {
+        splash.classList.add('hidden');
+        setTimeout(() => splash.remove(), 600);
+    }
 }
 setTimeout(removeSplash, 2200);
 
-const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0], feriados: [] };
+const CONFIG_ENTREGA = { 
+    horaCorteHoje: 10, 
+    descontoOpcao2: 3.00, 
+    descontoOpcao3: 6.00, 
+    diasSemanaInativos: [0], 
+    feriados: [] 
+};
+
 const MIN_ORDER = 75.00; 
+
 const $ = id => document.getElementById(id);
 
 const STATE = {
-    baskets: [], prods: [], coupons: [], combos: [], termos: [], descontosValor: [], sohoje: [],
-    carrosseis: [], cart: {}, cartOrder: [], appliedCombos: [],
-    baseBasket: null, basketExtraFee: 0, comboDiscount: 0, coupon: null, valueDiscount: 0,
-    lists: {}, pageLimits: {}, deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
+    baskets: [], 
+    prods: [], 
+    coupons: [], 
+    combos: [], 
+    termos: [], 
+    descontosValor: [], 
+    sohoje: [],
+    carrosseis: [], 
+    cart: {}, 
+    cartOrder: [], 
+    appliedCombos: [],
+    baseBasket: null, 
+    basketExtraFee: 0, 
+    comboDiscount: 0, 
+    coupon: null, 
+    valueDiscount: 0,
+    lists: {}, 
+    pageLimits: {}, 
+    deliveryOptions: [], 
+    selectedDeliveryIndex: 0, 
+    deliveryDiscount: 0, 
+    deliveryDateStr: ''
 };
 
-let currentComboQty = 1; let currentComboId = null; let currentBasketQty = 1;
+let currentComboQty = 1; 
+let currentComboId = null; 
+let currentBasketQty = 1;
 
 window.loadMoreGridItems = function(trackId, sentinel) {
     let track = document.getElementById(trackId);
-    if(!track) return;
+    if (!track) return;
     
     let hiddenItems = track.querySelectorAll('.general-hidden');
     let revealed = 0;
+    
     hiddenItems.forEach((item) => {
-        if (revealed < 10) { item.classList.remove('general-hidden'); revealed++; }
+        if (revealed < 10) {
+            item.classList.remove('general-hidden');
+            revealed++;
+        }
     });
     
     let remainingHidden = track.querySelectorAll('.general-hidden').length;
     if (remainingHidden === 0 && sentinel) {
-        if(window.gridObserver) window.gridObserver.unobserve(sentinel);
+        if (window.gridObserver) {
+            window.gridObserver.unobserve(sentinel);
+        }
         sentinel.remove();
     }
 };
 
 window.setupInfiniteScroll = function() {
-    if(!window.gridObserver) {
+    if (!window.gridObserver) {
         window.gridObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if(entry.isIntersecting) {
+                if (entry.isIntersecting) {
                     let trackId = entry.target.getAttribute('data-target-track');
-                    if(trackId) window.loadMoreGridItems(trackId, entry.target);
+                    if (trackId) {
+                        window.loadMoreGridItems(trackId, entry.target);
+                    }
                 }
             });
         }, { root: document.getElementById('scroll-stage'), rootMargin: '0px 0px 400px 0px' });
     } else {
         window.gridObserver.disconnect();
     }
-    document.querySelectorAll('.scroll-sentinel').forEach(el => window.gridObserver.observe(el));
+    
+    document.querySelectorAll('.scroll-sentinel').forEach(el => {
+        window.gridObserver.observe(el);
+    });
 };
 
-function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
-function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
+function norm(str) { 
+    if (!str) return "";
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); 
+}
+
+function fmt(v) { 
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); 
+}
+
+function formatName(s) { 
+    if (!s) return '';
+    return s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' '); 
+}
 
 async function init() {
     try {
-        const [r1, r2, r3, r4, r6, r7] = await Promise.all([
+        const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/cupons.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
             fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
-        STATE.baskets = r1; STATE.coupons = r3; STATE.combos = r4; STATE.descontosValor = r6; STATE.termos = r7;
+        STATE.baskets = r1; 
+        STATE.coupons = r3; 
+        STATE.combos = r4; 
+        STATE.descontosValor = r6; 
+        STATE.termos = r7;
+        STATE.sohoje = r8 || [];
+        STATE.bloqueados = (r9 || []).map(String);
+        STATE.carrosseis = r10 || [];
         
         if (r2 && r2.length > 0) {
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => ({
-                id: String(p.codigo || p.id), blingId: String(p.id), name: p.nome, price: parseFloat(p.preco), 
-                oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, stock: parseInt(p.estoque) || 0, 
-                validade: p.validade || null, img: `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "" 
+                id: String(p.codigo || p.id), 
+                blingId: String(p.id), 
+                name: p.nome, 
+                price: parseFloat(p.preco), 
+                oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, 
+                stock: parseInt(p.estoque) || 0, 
+                validade: p.validade || null,
+                img: `/site/img/produtos/${p.codigo || p.id}.webp`,
+                categoria: p.categoria || "" 
             }));
 
             let userSeed = localStorage.getItem('donaAntoniaUserSeed');
-            if (!userSeed) { userSeed = Math.floor(Math.random() * 1000000); localStorage.setItem('donaAntoniaUserSeed', userSeed); }
+            if (!userSeed) { 
+                userSeed = Math.floor(Math.random() * 1000000); 
+                localStorage.setItem('donaAntoniaUserSeed', userSeed); 
+            }
 
             const hoje = new Date();
             const sementeDoDia = hoje.getFullYear() * 10000 + (hoje.getMonth() + 1) * 100 + hoje.getDate() + parseInt(userSeed);
@@ -472,45 +1269,81 @@ async function init() {
 
             let produtosEmKits = new Set();
             STATE.combos.forEach(c => {
-                if (c.produtos) { c.produtos.forEach(s => { let parts = s.split('x'); if(parts.length === 2) produtosEmKits.add(parts[1].trim()); }); }
+                if (c.produtos) { 
+                    c.produtos.forEach(s => { 
+                        let parts = s.split('x'); 
+                        if(parts.length === 2) {
+                            produtosEmKits.add(parts[1].trim()); 
+                        }
+                    }); 
+                }
             });
 
             STATE.prods.forEach(p => {
                 let cat = norm(p.categoria);
                 if (cat.includes("mercearia basica")) return;
                 if (produtosEmKits.has(p.id)) return;
+                if (STATE.bloqueados.includes(p.id) || STATE.bloqueados.includes(p.blingId)) return;
                 if (p.stock <= 0) return;
+                
                 let percentual = 0.03 + (rand() * 0.09); 
                 p.oldPrice = p.price; 
                 p.price = parseFloat((p.oldPrice * (1 - percentual)).toFixed(2)); 
             });
         }
-        buildTabsAndSections(); updateTotals();
-    } catch (e) { console.error("Erro na inicialização:", e); }
+        
+        buildTabsAndSections(); 
+        updateTotals();
+        
+    } catch (e) { 
+        console.error("Erro na inicialização:", e); 
+    }
 }
 
 function animateToCart(startX, startY) {
     const cartBtn = document.querySelector('.cart-fab-wrapper');
-    if(!cartBtn) return;
+    if (!cartBtn) return;
+    
     const rect = cartBtn.getBoundingClientRect();
     const endX = rect.left + rect.width / 2;
     const endY = rect.top + rect.height / 2;
 
     const dot = document.createElement('div');
-    dot.style.position = 'fixed'; dot.style.left = (startX - 15) + 'px'; dot.style.top = (startY - 15) + 'px';
-    dot.style.width = '30px'; dot.style.height = '30px'; dot.style.backgroundColor = 'var(--c-a)'; dot.style.borderRadius = '50%';
-    dot.style.zIndex = '999999'; dot.style.pointerEvents = 'none'; dot.style.boxShadow = '0 4px 15px rgba(234, 88, 12, 0.6)';
+    dot.style.position = 'fixed'; 
+    dot.style.left = (startX - 15) + 'px'; 
+    dot.style.top = (startY - 15) + 'px';
+    dot.style.width = '30px'; 
+    dot.style.height = '30px'; 
+    dot.style.backgroundColor = 'var(--c-a)'; 
+    dot.style.borderRadius = '50%';
+    dot.style.zIndex = '999999'; 
+    dot.style.pointerEvents = 'none'; 
+    dot.style.boxShadow = '0 4px 15px rgba(234, 88, 12, 0.6)';
     dot.style.transition = 'top 0.5s cubic-bezier(0.5, -0.5, 0.2, 1), left 0.5s linear, transform 0.5s, opacity 0.5s';
+    
     document.body.appendChild(dot);
+    
     dot.getBoundingClientRect();
-    dot.style.left = (endX - 15) + 'px'; dot.style.top = (endY - 15) + 'px'; dot.style.transform = 'scale(0.3)'; dot.style.opacity = '0.5';
+    
+    dot.style.left = (endX - 15) + 'px'; 
+    dot.style.top = (endY - 15) + 'px'; 
+    dot.style.transform = 'scale(0.3)'; 
+    dot.style.opacity = '0.5';
 
-    setTimeout(() => { dot.remove(); cartBtn.style.transform = 'scale(1.2)'; setTimeout(() => cartBtn.style.transform = '', 150); }, 500);
+    setTimeout(() => { 
+        dot.remove(); 
+        cartBtn.style.transform = 'scale(1.2)'; 
+        setTimeout(() => {
+            cartBtn.style.transform = '';
+        }, 150); 
+    }, 500);
 }
 
 window.handleAddClick = function(e, id) {
     let p = STATE.prods.find(x => x.id === id);
-    if (!p || p.stock <= (STATE.cart[id] || 0)) return showToast("Estoque insuficiente", "r");
+    if (!p || p.stock <= (STATE.cart[id] || 0)) {
+        return showToast("Estoque insuficiente", "r");
+    }
     upd(id, 1);
     const rect = e.target.getBoundingClientRect();
     animateToCart(rect.left + rect.width / 2, rect.top + rect.height / 2);
@@ -518,33 +1351,52 @@ window.handleAddClick = function(e, id) {
 
 function buildCardHtml(item, type, isHidden = false) {
     let hiddenClass = isHidden ? 'general-hidden' : '';
-    let id = item.id; let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
-    let name = item.name || item.nome; let pPrice = item.price || item.preco;
-    let tagHtml = ''; let oldPriceHtml = ''; let priceHtml = fmt(pPrice); let onClick = '';
-    let isKit = type === 'COMBO'; let isBasket = type === 'BASKET';
+    let id = item.id; 
+    let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
+    let name = item.name || item.nome; 
+    let pPrice = item.price || item.preco;
+    let tagHtml = ''; 
+    let oldPriceHtml = ''; 
+    let priceHtml = fmt(pPrice); 
+    let onClick = '';
+    let isKit = type === 'COMBO'; 
+    let isBasket = type === 'BASKET';
+    
     let areaClass = (isKit || isBasket) ? 'u-img-area square' : 'u-img-area';
-    let addBtnHtml = ''; let qty = STATE.cart[id] || 0; let btnText = qty > 0 ? qty : '+';
+    
+    let addBtnHtml = ''; 
+    let qty = STATE.cart[id] || 0; 
+    let btnText = qty > 0 ? qty : '+';
 
-    if(isKit || isBasket) {
+    if (isKit || isBasket) {
         let precoDe = 0;
-        if(item.produtos) {
+        if (item.produtos) {
              item.produtos.forEach(s => { 
-                 let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
-                 if (p) precoDe += (p.oldPrice || p.price) * parseInt(q); 
+                 let [q, r] = s.split('x'); 
+                 let p = STATE.prods.find(x => x.id === r.trim()); 
+                 if (p) {
+                     precoDe += (p.oldPrice || p.price) * parseInt(q); 
+                 }
              });
         }
-        if(isKit) {
+        if (isKit) {
             onClick = `previewCombo('${id}')`;
-            if(precoDe > pPrice) {
+            if (precoDe > pPrice) {
                 oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`;
                 let perc = Math.round((1 - pPrice / precoDe) * 100);
-                if(perc > 0) tagHtml = `<div class="inline-discount">-${perc}%</div>`;
-            } else { tagHtml = `<div class="kit-tag">KIT</div>`; }
-        } else { onClick = `previewBasket('${id}')`; }
+                if (perc > 0) {
+                    tagHtml = `<div class="inline-discount">-${perc}%</div>`;
+                }
+            } else { 
+                tagHtml = `<div class="kit-tag">KIT</div>`; 
+            }
+        } else { 
+            onClick = `previewBasket('${id}')`; 
+        }
         addBtnHtml = `<button class="card-add-btn" onclick="event.stopPropagation(); ${onClick}">+</button>`;
     } else {
         onClick = `openQuickView('${id}')`;
-        if(item.oldPrice && item.oldPrice > pPrice) {
+        if (item.oldPrice && item.oldPrice > pPrice) {
             let perc = Math.round((1 - pPrice / item.oldPrice) * 100);
             tagHtml = `<div class="inline-discount">-${perc}%</div>`;
             oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
@@ -555,13 +1407,16 @@ function buildCardHtml(item, type, isHidden = false) {
     return `
     <div class="u-card ${hiddenClass}" data-id="${id}" onclick="${onClick}">
         <div class="${areaClass}">
-            <img src="${img}" class="${(isKit||isBasket)?'u-img-cesta':'u-img'}" alt="${formatName(name)}" loading="lazy">
+            <img src="${img}" class="${(isKit || isBasket) ? 'u-img-cesta' : 'u-img'}" alt="${formatName(name)}" loading="lazy">
             ${addBtnHtml}
         </div>
         <div class="u-info">
             <div class="u-name">${formatName(name)}</div>
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
-                <div>${oldPriceHtml}<div class="u-price">${priceHtml}</div></div>
+                <div>
+                    ${oldPriceHtml}
+                    <div class="u-price">${priceHtml}</div>
+                </div>
                 ${tagHtml}
             </div>
         </div>
@@ -569,12 +1424,21 @@ function buildCardHtml(item, type, isHidden = false) {
 }
 
 function buildTabsAndSections() {
-    let skel = $('skeleton-loader'); if(skel) skel.style.display = 'none';
-    let dropHtml = ''; let sectionsHtml = ''; STATE.lists = {};
+    let skel = $('skeleton-loader'); 
+    if (skel) {
+        skel.style.display = 'none';
+    }
+    
+    let dropHtml = ''; 
+    let sectionsHtml = ''; 
+    STATE.lists = {};
+    
     let allTerms = [];
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
-            let cleanTerms = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()).filter(t => t);
+            let cleanTerms = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i)
+                .map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim())
+                .filter(t => t);
             allTerms.push(...cleanTerms);
         });
     }
@@ -583,15 +1447,24 @@ function buildTabsAndSections() {
     if (STATE.baskets.length > 0) {
         let img = STATE.baskets[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('cestas')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Cestas Básicas</div>`;
-        // Sem a classe grid-produtos na div wrapper para não encavalar os grids internos
-        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas"></div><div class="bottom-category-nav"></div></div>`;
+        
+        sectionsHtml += `
+            <div id="sec-cestas" class="tab-section" style="display:none;">
+                <div id="wrapper-cestas"></div>
+                <div class="bottom-category-nav"></div>
+            </div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
     if (STATE.combos.length > 0) {
         let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
-        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Kits Promocionais</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `
+            <div id="sec-combos" class="tab-section" style="display:none;">
+                <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
+                <div class="grid-produtos" id="grid-combos"></div>
+                <div class="bottom-category-nav"></div>
+            </div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
     }
 
@@ -599,168 +1472,358 @@ function buildTabsAndSections() {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+            
             let list = STATE.prods.filter(p => { 
-                let pre = Number(p.price); let trg = Number(item.valor);
-                if (item.tipo === 'preco_exato') return Math.abs(pre - trg) < 0.01;
-                if (item.tipo === 'preco_maximo') return pre > 0 && pre <= (trg + 0.01);
+                let pre = Number(p.price); 
+                let trg = Number(item.valor);
+                
+                if (item.tipo === 'preco_exato') {
+                    return Math.abs(pre - trg) < 0.01;
+                }
+                if (item.tipo === 'preco_maximo') {
+                    return pre > 0 && pre <= (trg + 0.01);
+                }
+                
                 if (item.termos || typeof item === 'string') {
-                    let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i).map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()).filter(t => t);
+                    let subs = String(item.termos || item).split(/\s*,\s*|\s+e\s+/i)
+                        .map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim())
+                        .filter(t => t);
+                    
                     let pNamePadded = ' ' + norm(p.name).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
                     let matches = [];
+                    
                     allTerms.forEach(t => {
                         let words = t.split(' ');
-                        if (words.every(w => pNamePadded.includes(' ' + w + ' '))) matches.push({ term: t, wordCount: words.length });
+                        if (words.every(w => pNamePadded.includes(' ' + w + ' '))) {
+                            matches.push({ term: t, wordCount: words.length });
+                        }
                     });
-                    if (matches.length > 0) { matches.sort((a, b) => b.wordCount - a.wordCount); return subs.includes(matches[0].term); }
-                } return false;
+                    
+                    if (matches.length > 0) { 
+                        matches.sort((a, b) => b.wordCount - a.wordCount); 
+                        return subs.includes(matches[0].term); 
+                    }
+                } 
+                return false;
             });
+
             if (list.length > 0) {
                 let img = list[0].img;
                 dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('${safe}')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> ${label}</div>`;
-                sectionsHtml += `<div id="sec-${safe}" class="tab-section" style="display:none;"><div class="section-title">${label}</div><div class="grid-produtos" id="grid-${safe}"></div><div class="bottom-category-nav"></div></div>`;
+                sectionsHtml += `
+                    <div id="sec-${safe}" class="tab-section" style="display:none;">
+                        <div class="section-title"><span class="section-marker"></span>${label}</div>
+                        <div class="grid-produtos" id="grid-${safe}"></div>
+                        <div class="bottom-category-nav"></div>
+                    </div>`;
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
         });
     }
-    $('cat-dropdown-list').innerHTML = dropHtml; $('dynamic-sections').innerHTML = sectionsHtml; goToHome();
+    
+    $('cat-dropdown-list').innerHTML = dropHtml; 
+    $('dynamic-sections').innerHTML = sectionsHtml; 
+    goToHome();
 }
 
 function renderBottomChips(activeTabId) {
     let html = '';
+    
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
         let trackId = 'grid-kits-bottom';
         let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10)).join('');
         let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
-        html += `<div style="margin-top: 15px;"><div class="section-title">🎁 Kits Especiais</div><div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div></div>`;
+        html += `
+            <div style="margin-top: 15px;">
+                <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
+                <div class="grid-produtos" id="${trackId}">
+                    ${trackHtml}
+                    ${sentinelHtml}
+                </div>
+            </div>`;
     }
 
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
-            if(safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
+            
+            if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
                 let listKey = 'term_' + safe;
-                if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
+                
+                if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
                     let trackId = 'grid-cat-' + safe;
                     let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10)).join('');
                     let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
-                    html += `<div style="margin-top: 15px;"><div class="section-title">${label}</div><div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div></div>`;
+                    html += `
+                        <div style="margin-top: 15px;">
+                            <div class="section-title"><span class="section-marker"></span>${label}</div>
+                            <div class="grid-produtos" id="${trackId}">
+                                ${trackHtml}
+                                ${sentinelHtml}
+                            </div>
+                        </div>`;
                 }
             }
         });
     }
+    
     let activeSec = $('sec-' + activeTabId);
-    if(activeSec) { let navContainer = activeSec.querySelector('.bottom-category-nav'); if(navContainer) navContainer.innerHTML = html; }
+    if (activeSec) { 
+        let navContainer = activeSec.querySelector('.bottom-category-nav'); 
+        if (navContainer) {
+            navContainer.innerHTML = html; 
+        }
+    }
+    
     setTimeout(window.setupInfiniteScroll, 100);
 }
 
 window.switchTab = function(tabId) {
-    $('wrapper-sections').style.display = 'block'; $('section-busca').style.display = 'none'; $('sec-minha-cesta').style.display = 'none'; $('search-inp').value = '';
-    document.querySelectorAll('.tab-section').forEach(el => { el.style.display = 'none'; let grid = el.querySelector('.grid-produtos'); if(grid && el.id !== 'sec-' + tabId && el.id !== 'skeleton-loader') grid.innerHTML = ''; });
-    let target = $('sec-' + tabId); if(target) target.style.display = 'block';
+    $('wrapper-sections').style.display = 'block'; 
+    $('section-busca').style.display = 'none'; 
+    $('search-inp').value = '';
+    
+    document.querySelectorAll('.tab-section').forEach(el => { 
+        el.style.display = 'none'; 
+        let grid = el.querySelector('.grid-produtos'); 
+        
+        if (el.id === 'sec-cestas') {
+            let wrap = el.querySelector('#wrapper-cestas');
+            if(wrap) wrap.innerHTML = '';
+        }
+        
+        if (grid && el.id !== 'sec-' + tabId && el.id !== 'skeleton-loader') {
+            grid.innerHTML = ''; 
+        }
+    });
+    
+    let target = $('sec-' + tabId); 
+    if (target) {
+        target.style.display = 'block';
+    }
+    
     let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
-    if(STATE.lists[listKey]) renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
-    document.querySelectorAll('.cat-dropdown-item').forEach(el => { if(el.getAttribute('onclick').includes(tabId)) $('btn-cat-dropdown-text').innerText = el.innerText.trim(); });
-    $('cat-dropdown-list').classList.remove('open'); renderBottomChips(tabId); $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
+    
+    if (STATE.lists[listKey]) {
+        renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
+    }
+    
+    document.querySelectorAll('.cat-dropdown-item').forEach(el => { 
+        if (el.getAttribute('onclick').includes(tabId)) {
+            $('btn-cat-dropdown-text').innerText = el.innerText.trim(); 
+        }
+    });
+    
+    $('cat-dropdown-list').classList.remove('open'); 
+    renderBottomChips(tabId); 
+    
+    $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
+    
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
+    
+    if (tabId === 'cestas' && $('btn-nav-cestas-nav')) {
+        $('btn-nav-cestas-nav').classList.add('active');
+    } else if (tabId === 'combos' && $('btn-nav-kits')) {
+        $('btn-nav-kits').classList.add('active');
+    }
 };
 
-window.goToHome = function() { switchTab('cestas'); document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active')); if($('btn-nav-home')) $('btn-nav-home').classList.add('active'); };
-
-window.goToMinhaCesta = function(doScroll) {
-    document.querySelectorAll('.tab-section, .page-section').forEach(el => el.style.display = 'none');
-    $('wrapper-sections').style.display = 'none'; $('cat-dropdown-list').classList.remove('open');
-    $('sec-minha-cesta').style.display = 'block';
+window.goToHome = function() { 
+    switchTab('cestas'); 
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    if($('btn-nav-cesta')) $('btn-nav-cesta').classList.add('active');
-    let list = STATE.cartOrder.map(id => STATE.prods.find(p => p.id === id)).filter(Boolean);
-    renderPaginated('grid-minha-cesta', 'cesta_ativa', list, 'PROD');
-    renderBottomChips('minha-cesta'); if(doScroll) $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
+    if ($('btn-nav-home')) {
+        $('btn-nav-home').classList.add('active');
+    }
 };
 
 function renderPaginated(containerId, listKey, list, type) {
-    let c = $(containerId); if (!c) return;
-
     if (listKey === 'cestas') {
+        let c = $('wrapper-cestas');
+        if (!c) return;
+        
         let groups = {};
         let sortedList = [...list].sort((a, b) => parseFloat(b.preco) - parseFloat(a.preco));
+        
         sortedList.forEach(item => {
             let match = item.nome.match(/arroz\s+([a-zA-ZÀ-ÿ0-9]+(?:\s+[a-zA-ZÀ-ÿ0-9]+)?)/i);
             let brand = match ? formatName("Arroz " + match[1]) : "Outras Cestas";
-            if(!groups[brand]) groups[brand] = [];
+            if (!groups[brand]) groups[brand] = [];
             groups[brand].push(item);
         });
 
         let html = '';
         let groupKeys = Object.keys(groups).sort((a, b) => a === "Outras Cestas" ? 1 : b === "Outras Cestas" ? -1 : a.localeCompare(b));
+        
         groupKeys.forEach((gName, gIdx) => {
             let title = gName === "Outras Cestas" ? "Outras Cestas" : `Cestas com ${gName}`;
             let trackId = 'grid-g-cesta-' + gIdx;
             let trackHtml = groups[gName].map((item, idx) => buildCardHtml(item, 'BASKET', idx >= 10)).join('');
             let sentinelHtml = groups[gName].length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
-            html += `<div style="margin-top: 15px;"><div class="section-title">${title}</div><div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div></div>`;
+            
+            html += `
+                <div class="section-title"><span class="section-marker"></span>${title}</div>
+                <div class="grid-produtos" id="${trackId}">
+                    ${trackHtml}
+                    ${sentinelHtml}
+                </div>`;
         });
+        
         c.innerHTML = html || '<p style="padding: 15px;">Nenhuma cesta encontrada.</p>';
         setTimeout(window.setupInfiniteScroll, 100);
         return;
     }
+
+    let c = $(containerId); 
+    if (!c) return;
 
     let displayList = list;
     let html = displayList.map((item, index) => {
         let itemType = type === 'MIXED' ? (item._isCombo ? 'COMBO' : 'PROD') : type;
         return buildCardHtml(item, itemType, index >= 10);
     }).join('');
+    
     let sentinelHtml = displayList.length > 10 ? `<div class="scroll-sentinel" data-target-track="${containerId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
+    
     c.innerHTML = (html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>') + sentinelHtml;
+    
     setTimeout(window.setupInfiniteScroll, 100);
 }
 
 function getCardControls(id) {
-    let p = STATE.prods.find(x => x.id === id); if (!p) return '';
+    let p = STATE.prods.find(x => x.id === id); 
+    if (!p) return '';
+    
     const q = STATE.cart[id] || 0;
-    if (p.stock <= 0) return `<button class="btn-big-action" disabled onclick="event.stopPropagation()">ESGOTADO</button>`;
-    if (q > 0) return `<div class="card-qty-ctrl" onclick="event.stopPropagation()"><button onclick="upd('${id}',-1)">-</button><span>${q}</span><button onclick="upd('${id}',1)">+</button></div>`;
+    
+    if (p.stock <= 0) {
+        return `<button class="btn-big-action" disabled onclick="event.stopPropagation()">ESGOTADO</button>`;
+    }
+    
+    if (q > 0) {
+        return `
+            <div class="card-qty-ctrl" onclick="event.stopPropagation()">
+                <button onclick="upd('${id}',-1)">-</button>
+                <span>${q}</span>
+                <button onclick="upd('${id}',1)">+</button>
+            </div>`;
+    }
+    
     return `<button class="btn-big-action" onclick="event.stopPropagation(); upd('${id}',1)">Adicionar</button>`;
 }
 
 function openQuickView(id) { 
-    let p = STATE.prods.find(x => x.id === id); if (!p) return; 
-    $('qv-img').src = p.img; $('qv-name').innerText = formatName(p.name); 
-    if(p.validade) { $('qv-validade').innerText = "Validade: " + p.validade; $('qv-validade').style.display = 'block'; } else { $('qv-validade').style.display = 'none'; }
+    let p = STATE.prods.find(x => x.id === id); 
+    if (!p) return; 
+    
+    $('qv-img').src = p.img; 
+    $('qv-name').innerText = formatName(p.name); 
+    
+    if (p.validade) { 
+        $('qv-validade').innerText = "Validade: " + p.validade; 
+        $('qv-validade').style.display = 'block'; 
+    } else { 
+        $('qv-validade').style.display = 'none'; 
+    }
+    
     $('qv-price').innerHTML = p.oldPrice ? `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:600;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
-    $('qv-action-area').dataset.id = id; $('qv-action-area').innerHTML = getCardControls(id); $('modal-quick-view').showModal(); 
+    
+    $('qv-action-area').dataset.id = id; 
+    $('qv-action-area').innerHTML = getCardControls(id); 
+    
+    $('modal-quick-view').showModal(); 
 }
 
 function upd(id, delta) { 
-    let p = STATE.prods.find(x => x.id === id); if (!p) return; 
-    let cur = STATE.cart[id] || 0; let n = Math.max(0, cur + delta); 
+    let p = STATE.prods.find(x => x.id === id); 
+    if (!p) return; 
+    
+    let cur = STATE.cart[id] || 0; 
+    let n = Math.max(0, cur + delta); 
 
     if (delta < 0 && STATE.appliedCombos && STATE.appliedCombos.length > 0) {
         let reqTotal = 0; 
         STATE.appliedCombos.forEach(ac => {
             let c = STATE.combos.find(x => String(x.id) === String(ac.id));
-            if (c) { c.produtos.forEach(s => { let [q, r] = s.split('x'); if (r.trim() === id) reqTotal += parseInt(q) * ac.qty; }); }
+            if (c) { 
+                c.produtos.forEach(s => { 
+                    let [q, r] = s.split('x'); 
+                    if (r.trim() === id) {
+                        reqTotal += parseInt(q) * ac.qty; 
+                    }
+                }); 
+            }
         });
+        
         if (reqTotal > 0 && n < reqTotal) {
-            if (confirm("Atenção: Ao reduzir ou remover este item, você perderá o desconto especial do Kit. Deseja continuar?")) { STATE.comboDiscount = 0; STATE.appliedCombos = []; showToast("Desconto do kit removido", "r"); } else { return; }
+            if (confirm("Atenção: Ao reduzir ou remover este item, você perderá o desconto especial do Kit. Deseja continuar?")) { 
+                STATE.comboDiscount = 0; 
+                STATE.appliedCombos = []; 
+                showToast("Desconto do kit removido", "r"); 
+            } else { 
+                return; 
+            }
         }
     }
-    if (n > p.stock) return showToast("Estoque insuficiente", "r"); 
-    if (cur === 0 && n > 0) STATE.cartOrder.push(id); 
+    
+    if (n > p.stock) {
+        return showToast("Estoque insuficiente", "r"); 
+    }
+    
+    if (cur === 0 && n > 0) {
+        STATE.cartOrder.push(id); 
+    }
+    
     STATE.cart[id] = n; 
-    if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); } 
-    if ($('modal-quick-view').open && $('qv-action-area').dataset.id === String(id)) $('qv-action-area').innerHTML = getCardControls(id);
-    document.querySelectorAll(`.add-btn-${id}`).forEach(el => { let qty = STATE.cart[id] || 0; el.innerText = qty > 0 ? qty : '+'; });
-    if($('sec-minha-cesta').style.display === 'block' && n === 0) goToMinhaCesta(false); 
-    updateTotals(); if ($('modal-checkout').open) openCheckout();
+    
+    if (n === 0) { 
+        delete STATE.cart[id]; 
+        STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); 
+    } 
+    
+    if ($('modal-quick-view').open && $('qv-action-area').dataset.id === String(id)) {
+        $('qv-action-area').innerHTML = getCardControls(id);
+    }
+    
+    document.querySelectorAll(`.add-btn-${id}`).forEach(el => { 
+        let qty = STATE.cart[id] || 0; 
+        el.innerText = qty > 0 ? qty : '+'; 
+    });
+    
+    updateTotals(); 
+    
+    if ($('modal-checkout').open) {
+        if (STATE.cartOrder.length === 0) {
+            $('modal-checkout').close();
+            goToHome();
+        } else {
+            openCheckout();
+        }
+    }
 }
 
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
-        STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.appliedCombos = [];
-        document.querySelectorAll('[data-id]').forEach(el => { let id = el.dataset.id; if(id) { let addBtn = el.querySelector(`.add-btn-${id}`); if(addBtn) addBtn.innerText = '+'; } });
-        goToHome(); updateTotals(); $('modal-checkout').close(); 
+        STATE.cart = {}; 
+        STATE.cartOrder = []; 
+        STATE.baseBasket = null; 
+        STATE.basketExtraFee = 0; 
+        STATE.comboDiscount = 0; 
+        STATE.appliedCombos = [];
+        
+        document.querySelectorAll('[data-id]').forEach(el => { 
+            let id = el.dataset.id; 
+            if (id) { 
+                let addBtn = el.querySelector(`.add-btn-${id}`); 
+                if (addBtn) {
+                    addBtn.innerText = '+'; 
+                }
+            } 
+        });
+        
+        goToHome(); 
+        updateTotals(); 
+        $('modal-checkout').close(); 
     }
 };
 
@@ -768,90 +1831,243 @@ function updateTotals() {
     let sum = 0; 
     Object.entries(STATE.cart).forEach(([id, q]) => { 
         let p = STATE.prods.find(x => x.id === id); 
-        if (p) { let sh = STATE.sohoje ? STATE.sohoje.find(x => String(x.id) === id) : null; let unitPrice = (sh && sh.preco_so_hoje) ? parseFloat(sh.preco_so_hoje) : p.price; sum += unitPrice * q; }
+        if (p) { 
+            let unitPrice = p.price; 
+            sum += unitPrice * q; 
+        }
     });
-    let subtotal = sum + STATE.basketExtraFee; let valueDiscount = 0;
-    if(STATE.descontosValor && STATE.descontosValor.length > 0) { STATE.descontosValor.forEach(d => { if(subtotal >= d.minimo && d.desconto > valueDiscount) valueDiscount = d.desconto; }); }
+    
+    let subtotal = sum + STATE.basketExtraFee; 
+    let valueDiscount = 0;
+    
+    if (STATE.descontosValor && STATE.descontosValor.length > 0) { 
+        STATE.descontosValor.forEach(d => { 
+            if (subtotal >= d.minimo && d.desconto > valueDiscount) {
+                valueDiscount = d.desconto; 
+            }
+        }); 
+    }
+    
     STATE.valueDiscount = valueDiscount;
     let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0);
-    $('chk-total').innerText = fmt(final);
+    
+    if ($('chk-total')) {
+        $('chk-total').innerText = fmt(final);
+    }
+    
     let totalItems = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
-    $('badge-count').innerText = totalItems; $('badge-count').style.display = totalItems > 0 ? 'flex' : 'none';
+    $('badge-count').innerText = totalItems; 
+    $('badge-count').style.display = totalItems > 0 ? 'flex' : 'none';
 }
 
 function handleSearch(q) { 
-    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); $('wrapper-sections').style.display = q ? 'none' : 'block'; $('sec-minha-cesta').style.display = 'none'; $('section-busca').style.display = q ? 'block' : 'none'; 
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); 
+    $('wrapper-sections').style.display = q ? 'none' : 'block'; 
+    $('section-busca').style.display = q ? 'block' : 'none'; 
+    
     if (q) { 
-        let listProds = STATE.prods.filter(p => norm(p.name).includes(norm(q))); let listCombos = STATE.combos.filter(c => norm(c.nome).includes(norm(q))).map(c => ({...c, _isCombo: true})); let combined = [...listCombos, ...listProds]; renderPaginated('grid-busca', 'busca', combined, 'MIXED'); 
-    } else { goToHome(); }
+        let listProds = STATE.prods.filter(p => norm(p.name).includes(norm(q))); 
+        let listCombos = STATE.combos.filter(c => norm(c.nome).includes(norm(q))).map(c => ({...c, _isCombo: true})); 
+        let combined = [...listCombos, ...listProds]; 
+        renderPaginated('grid-busca', 'busca', combined, 'MIXED'); 
+    } else { 
+        goToHome(); 
+    }
 }
-function clearSearch() { $('search-inp').value = ''; handleSearch(''); }
-function showToast(m, t) { let d = document.createElement('div'); d.className = 'toast'; d.style.background = (t === 'r') ? '#dc2626' : '#15803d'; d.innerText = m; $('toast-container').appendChild(d); setTimeout(() => d.remove(), 2500); }
+
+function clearSearch() { 
+    $('search-inp').value = ''; 
+    handleSearch(''); 
+}
+
+function showToast(m, t) { 
+    let d = document.createElement('div'); 
+    d.className = 'toast'; 
+    d.style.background = (t === 'r') ? '#dc2626' : '#15803d'; 
+    d.innerText = m; 
+    $('toast-container').appendChild(d); 
+    setTimeout(() => d.remove(), 2500); 
+}
 
 function previewBasket(id) { 
-    let c = STATE.baskets.find(x => String(x.id) === String(id)); if (!c) return; 
-    STATE.tempBasket = c; $('prev-title').innerText = formatName(c.nome); $('prev-desc').innerText = `${c.produtos.length} itens inclusos`; $('prev-price').innerText = fmt(c.preco); 
+    let c = STATE.baskets.find(x => String(x.id) === String(id)); 
+    if (!c) return; 
+    
+    STATE.tempBasket = c; 
+    $('prev-title').innerText = formatName(c.nome); 
+    $('prev-desc').innerText = `${c.produtos.length} itens inclusos`; 
+    $('prev-price').innerText = fmt(c.preco); 
+    
     $('prev-list').innerHTML = c.produtos.map(s => { 
-        let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
-        return `<div style="text-align:center;"><div style="width:100%; aspect-ratio:4/5; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;"><img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy"></div><div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div><div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">${q} unidade(s)</div></div>`;
+        let [q, r] = s.split('x'); 
+        let p = STATE.prods.find(x => x.id === r.trim()); 
+        return `
+            <div style="text-align:center;">
+                <div style="width:100%; aspect-ratio:4/5; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
+                    <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
+                </div>
+                <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
+                <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">${q} unidade(s)</div>
+            </div>`;
     }).join('');
-    $('combo-qty-controls').style.display = 'none'; $('btn-confirm-preview').innerText = "Encomendar Cesta"; $('btn-confirm-preview').onclick = () => { $('modal-basket-preview').close(); setBasketQty(1); $('modal-cesta-qty').showModal(); };
-    $('btn-customize-preview').style.display = 'block'; $('btn-customize-preview').onclick = () => { confirmBasket(true, 1); setTimeout(() => goToMinhaCesta(true), 100); };
+    
+    $('combo-qty-controls').style.display = 'none'; 
+    $('btn-confirm-preview').innerText = "Encomendar Cesta"; 
+    $('btn-confirm-preview').onclick = () => { 
+        $('modal-basket-preview').close(); 
+        setBasketQty(1); 
+        $('modal-cesta-qty').showModal(); 
+    };
+    
+    $('btn-customize-preview').style.display = 'block'; 
+    $('btn-customize-preview').onclick = () => { 
+        confirmBasket(true, 1); 
+    };
+    
     $('modal-basket-preview').showModal(); 
 }
 
 function setBasketQty(q) { 
     currentBasketQty = q; 
-    [1, 2, 3].forEach(i => { let btn = $(`btn-bqty-${i}`); if(btn) { btn.style.background = (i===q)?'#fff7ed':'#fff'; btn.style.color = (i===q)?'var(--c-a)':'var(--c-p)'; btn.style.borderColor = (i===q)?'var(--c-a)':'var(--c-bd)'; }}); 
+    [1, 2, 3].forEach(i => { 
+        let btn = $(`btn-bqty-${i}`); 
+        if (btn) { 
+            btn.style.background = (i===q) ? '#fff7ed' : '#fff'; 
+            btn.style.color = (i===q) ? 'var(--c-a)' : 'var(--c-p)'; 
+            btn.style.borderColor = (i===q) ? 'var(--c-a)' : 'var(--c-bd)'; 
+        }
+    }); 
     $('btn-confirm-bqty').innerText = `Adicionar ${q} Cesta${q > 1 ? 's' : ''}`; 
 }
 
 function confirmBasket(isCustom, qty) { 
-    let c = STATE.tempBasket; let sum = 0; 
+    let c = STATE.tempBasket; 
+    let sum = 0; 
+    
     c.produtos.forEach(s => { 
-        let [qs, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
-        if (p) { let n = parseInt(qs) * qty; if (!STATE.cart[p.id]) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + n; sum += p.price * parseInt(qs); } 
+        let [qs, r] = s.split('x'); 
+        let p = STATE.prods.find(x => x.id === r.trim()); 
+        if (p) { 
+            let n = parseInt(qs) * qty; 
+            if (!STATE.cart[p.id]) {
+                STATE.cartOrder.push(p.id); 
+            }
+            STATE.cart[p.id] = (STATE.cart[p.id] || 0) + n; 
+            sum += p.price * parseInt(qs); 
+        } 
     }); 
-    STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty; STATE.baseBasket = c;
-    $('modal-cesta-qty').close(); $('modal-basket-preview').close(); updateTotals(); if (!isCustom) openCheckout();
+    
+    STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty; 
+    STATE.baseBasket = c;
+    
+    $('modal-cesta-qty').close(); 
+    $('modal-basket-preview').close(); 
+    
+    updateTotals(); 
+    openCheckout(); // Agora o Custom e o Normal abrem o checkout direto
 }
 
 function previewCombo(id) { 
-    let c = STATE.combos.find(x => String(x.id) === String(id)); if (!c) return; 
-    currentComboId = id; currentComboQty = 1; $('combo-modal-qty').innerText = 1; $('prev-title').innerText = formatName(c.nome); $('prev-desc').innerText = "Itens inclusos:";
+    let c = STATE.combos.find(x => String(x.id) === String(id)); 
+    if (!c) return; 
+    
+    currentComboId = id; 
+    currentComboQty = 1; 
+    $('combo-modal-qty').innerText = 1; 
+    $('prev-title').innerText = formatName(c.nome); 
+    $('prev-desc').innerText = "Itens inclusos:";
+    
     let precoDe = 0;
+    
     $('prev-list').innerHTML = c.produtos.map(s => { 
-        let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) precoDe += (p.oldPrice || p.price) * parseInt(q); 
-        return `<div style="text-align:center;"><div style="width:100%; aspect-ratio:4/5; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;"><img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy"></div><div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div><div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">${q} unidade(s)</div></div>`;
+        let [q, r] = s.split('x'); 
+        let p = STATE.prods.find(x => x.id === r.trim()); 
+        if (p) {
+            precoDe += (p.oldPrice || p.price) * parseInt(q); 
+        }
+        return `
+            <div style="text-align:center;">
+                <div style="width:100%; aspect-ratio:4/5; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
+                    <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
+                </div>
+                <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
+                <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">${q} unidade(s)</div>
+            </div>`;
     }).join('');
-    if (precoDe > c.preco) $('prev-price').innerHTML = `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:600;">${fmt(precoDe)}</span>${fmt(c.preco)}`; else $('prev-price').innerHTML = fmt(c.preco);
-    $('combo-qty-controls').style.display = 'flex'; $('btn-confirm-preview').innerText = "Adicionar Kit"; 
+    
+    if (precoDe > c.preco) {
+        $('prev-price').innerHTML = `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:600;">${fmt(precoDe)}</span>${fmt(c.preco)}`; 
+    } else {
+        $('prev-price').innerHTML = fmt(c.preco);
+    }
+    
+    $('combo-qty-controls').style.display = 'flex'; 
+    $('btn-confirm-preview').innerText = "Adicionar Kit"; 
+    
     $('btn-confirm-preview').onclick = () => {
         let sumAvulso = 0;
         c.produtos.forEach(s => { 
-            let [qs, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
-            if (p) { if (!STATE.cart[p.id]) STATE.cartOrder.push(p.id); STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(qs) * currentComboQty); sumAvulso += (p.oldPrice || p.price) * parseInt(qs); } 
+            let [qs, r] = s.split('x'); 
+            let p = STATE.prods.find(x => x.id === r.trim()); 
+            if (p) { 
+                if (!STATE.cart[p.id]) {
+                    STATE.cartOrder.push(p.id); 
+                }
+                STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(qs) * currentComboQty); 
+                sumAvulso += (p.oldPrice || p.price) * parseInt(qs); 
+            } 
         }); 
-        let diferenca = Math.max(0, sumAvulso - c.preco) * currentComboQty; STATE.comboDiscount = (STATE.comboDiscount || 0) + diferenca; STATE.appliedCombos.push({ id: c.id, qty: currentComboQty });
-        $('modal-basket-preview').close(); updateTotals(); showToast("Kit adicionado!", "s");
+        
+        let diferenca = Math.max(0, sumAvulso - c.preco) * currentComboQty; 
+        STATE.comboDiscount = (STATE.comboDiscount || 0) + diferenca; 
+        STATE.appliedCombos.push({ id: c.id, qty: currentComboQty });
+        
+        $('modal-basket-preview').close(); 
+        updateTotals(); 
+        showToast("Kit adicionado!", "s");
     }; 
-    $('btn-customize-preview').style.display = 'none'; $('modal-basket-preview').showModal(); 
+    
+    $('btn-customize-preview').style.display = 'none'; 
+    $('modal-basket-preview').showModal(); 
 }
     
 function changeComboQty(d) { 
-    currentComboQty = Math.max(1, currentComboQty + d); $('combo-modal-qty').innerText = currentComboQty; 
+    currentComboQty = Math.max(1, currentComboQty + d); 
+    $('combo-modal-qty').innerText = currentComboQty; 
+    
     let c = STATE.combos.find(x => x.id === currentComboId); 
     if (c) {
-        let precoDe = 0; c.produtos.forEach(s => { let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) precoDe += (p.oldPrice || p.price) * parseInt(q); });
-        if (precoDe > c.preco) $('prev-price').innerHTML = `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:600;">${fmt(precoDe * currentComboQty)}</span>${fmt(c.preco * currentComboQty)}`;
-        else $('prev-price').innerHTML = fmt(c.preco * currentComboQty);
+        let precoDe = 0; 
+        c.produtos.forEach(s => { 
+            let [q, r] = s.split('x'); 
+            let p = STATE.prods.find(x => x.id === r.trim()); 
+            if (p) precoDe += (p.oldPrice || p.price) * parseInt(q); 
+        });
+        
+        if (precoDe > c.preco) {
+            $('prev-price').innerHTML = `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:600;">${fmt(precoDe * currentComboQty)}</span>${fmt(c.preco * currentComboQty)}`;
+        } else {
+            $('prev-price').innerHTML = fmt(c.preco * currentComboQty);
+        }
     } 
 }
 
 function openCheckout() { 
-    if (STATE.cartOrder.length === 0) return showToast("Seu carrinho está vazio", "r"); 
-    let options = []; let date = new Date(); let checkDate = new Date(date);
-    if(date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
+    if (STATE.cartOrder.length === 0) {
+        showToast("Seu carrinho está vazio", "r");
+        let m = document.getElementById('modal-checkout');
+        if(m.open) m.close();
+        return; 
+    }
+    
+    let options = []; 
+    let date = new Date(); 
+    let checkDate = new Date(date);
+    
+    if (date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) {
+        options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
+    }
+    
     while(options.length < 3) { 
         checkDate.setDate(checkDate.getDate() + 1); 
         if(!CONFIG_ENTREGA.diasSemanaInativos.includes(checkDate.getDay())) {
@@ -859,84 +2075,272 @@ function openCheckout() {
             options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); 
         }
     }
-    STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
-    $('delivery-options-list').innerHTML = options.map((opt, i) => `<div class="del-option ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="STATE.selectedDeliveryIndex=${i}; openCheckout();"><div><div class="del-opt-title">${opt.title}</div><div class="del-opt-date">${opt.dateStr}</div></div>${opt.discount > 0 ? `<div class="del-opt-badge">- ${fmt(opt.discount)}</div>` : ''}</div>`).join('');
+    
+    STATE.deliveryOptions = options; 
+    let sel = options[STATE.selectedDeliveryIndex || 0]; 
+    STATE.deliveryDiscount = sel.discount; 
+    STATE.deliveryDateStr = sel.dateStr;
+    
+    $('delivery-options-list').innerHTML = options.map((opt, i) => `
+        <div class="del-option ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="STATE.selectedDeliveryIndex=${i}; openCheckout();">
+            <div>
+                <div class="del-opt-title">${opt.title}</div>
+                <div class="del-opt-date">${opt.dateStr}</div>
+            </div>
+            ${opt.discount > 0 ? `<div class="del-opt-badge">- ${fmt(opt.discount)}</div>` : ''}
+        </div>
+    `).join('');
     
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { 
-        let p = STATE.prods.find(x => x.id === id); let qty = STATE.cart[id];
-        return `<div style="display:flex; flex-direction:column; align-items:center; border:1px solid var(--c-bd); border-radius:8px; padding:10px 8px; background:#fff; text-align:center; position:relative;"><img src="${p.img}" style="width:100%; aspect-ratio:4/5; object-fit:contain; margin-bottom:8px; background: var(--c-img-bg); border-radius: 6px;"><div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; height:2.4em; overflow:hidden; margin-bottom:10px; width:100%; font-weight: 600;">${formatName(p.name)}</div><div class="card-qty-ctrl" style="margin-top:auto; height:36px; width:100%; padding:0; display:flex; justify-content:space-between; align-items:center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;"><button onclick="upd('${id}',-1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">-</button><span style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">${qty}</span><button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">+</button></div></div>`; 
+        let p = STATE.prods.find(x => x.id === id); 
+        let qty = STATE.cart[id];
+        return `
+        <div style="display:flex; flex-direction:column; align-items:center; border:1px solid var(--c-bd); border-radius:8px; padding:10px 8px; background:#fff; text-align:center; position:relative;">
+            <img src="${p.img}" style="width:100%; aspect-ratio:4/5; object-fit:contain; margin-bottom:8px; background: var(--c-img-bg); border-radius: 6px;">
+            <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; height:2.4em; overflow:hidden; margin-bottom:10px; width:100%; font-weight: 600;">${formatName(p.name)}</div>
+            <div class="card-qty-ctrl" style="margin-top:auto; height:36px; width:100%; padding:0; display:flex; justify-content:space-between; align-items:center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+                <button onclick="upd('${id}',-1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">-</button>
+                <span style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">${qty}</span>
+                <button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">+</button>
+            </div>
+        </div>`; 
     }).join('');
     
     let sum = 0; 
-    Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => x.id === id); if (p) { let sh = STATE.sohoje ? STATE.sohoje.find(x => String(x.id) === id) : null; let unitPrice = (sh && sh.preco_so_hoje) ? parseFloat(sh.preco_so_hoje) : p.price; sum += unitPrice * q; } });
-    let subtotal = sum + STATE.basketExtraFee; let valueDiscount = 0;
-    if(STATE.descontosValor && STATE.descontosValor.length > 0) STATE.descontosValor.forEach(d => { if(subtotal >= d.minimo && d.desconto > valueDiscount) valueDiscount = d.desconto; });
+    Object.entries(STATE.cart).forEach(([id, q]) => { 
+        let p = STATE.prods.find(x => x.id === id); 
+        if (p) { 
+            let unitPrice = p.price; 
+            sum += unitPrice * q; 
+        } 
+    });
+    
+    let subtotal = sum + STATE.basketExtraFee; 
+    let valueDiscount = 0;
+    
+    if (STATE.descontosValor && STATE.descontosValor.length > 0) {
+        STATE.descontosValor.forEach(d => { 
+            if (subtotal >= d.minimo && d.desconto > valueDiscount) {
+                valueDiscount = d.desconto; 
+            }
+        }); 
+    }
+    
     STATE.valueDiscount = valueDiscount;
     
-    $('chk-summary-lines').innerHTML = `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto do Kit:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Progressivo:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') + (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0); $('chk-total').innerText = fmt(final);
+    $('chk-summary-lines').innerHTML = 
+        `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
+        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto do Kit:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
+        (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Progressivo:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') + 
+        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
+        
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0); 
+    $('chk-total').innerText = fmt(final);
+    
     let btn = $('btn-send-order');
-    if (subtotal < MIN_ORDER) { btn.disabled = true; btn.innerText = `PEDIDO MÍNIMO ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--c-bd)'; btn.style.color = 'var(--c-s)'; btn.style.cursor = 'not-allowed'; } else { btn.disabled = false; btn.innerText = 'ENVIAR PEDIDO'; btn.style.background = '#15803d'; btn.style.color = '#fff'; btn.style.cursor = 'pointer'; }
-    updateTotals(); if (!$('modal-checkout').open) $('modal-checkout').showModal(); 
+    if (subtotal < MIN_ORDER) { 
+        btn.disabled = true; 
+        btn.innerText = `PEDIDO MÍNIMO ${fmt(MIN_ORDER)}`; 
+        btn.style.background = 'var(--c-bd)'; 
+        btn.style.color = 'var(--c-s)'; 
+        btn.style.cursor = 'not-allowed'; 
+    } else { 
+        btn.disabled = false; 
+        btn.innerText = 'ENVIAR PEDIDO'; 
+        btn.style.background = '#15803d'; 
+        btn.style.color = '#fff'; 
+        btn.style.cursor = 'pointer'; 
+    }
+    
+    updateTotals(); 
+    
+    if (!$('modal-checkout').open) {
+        $('modal-checkout').showModal(); 
+    }
 }
 
 function openHistoricoPedidos() {
-    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active')); $('btn-nav-pedidos').classList.add('active');
-    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); let html = '';
-    if(history.length === 0) html = '<p style="color: var(--c-s); text-align: center; margin-top: 20px; font-weight: 500;">Você ainda não tem pedidos salvos.</p>';
-    else html = history.map(o => `<div style="border: 1px solid var(--c-bd); border-radius: 12px; padding: 16px; background: #fff;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><span style="font-size: 0.85rem; color: var(--c-t); font-weight: 600;">📅 ${o.date}</span><span style="font-size: 0.85rem; background: var(--c-img-bg); padding: 4px 8px; border-radius: 6px; color: var(--c-p); font-weight: 700;">#${o.id}</span></div><div style="font-weight: 700; color: var(--c-p); margin-bottom: 4px;">${o.basketName}</div><div style="font-size: 1.3rem; font-weight: 800; color: var(--c-err); margin-bottom: 15px;">${fmt(o.total)}</div><button class="btn-modal secondary" style="margin:0; padding: 12px; font-size: 0.95rem; display:flex; align-items:center; justify-content:center; gap: 8px;" onclick="reorder('${o.id}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg> Pedir Novamente</button></div>`).join('');
-    $('pedidos-list').innerHTML = html; $('modal-pedidos').showModal();
+    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active')); 
+    $('btn-nav-pedidos').classList.add('active');
+    
+    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); 
+    let html = '';
+    
+    if (history.length === 0) {
+        html = '<p style="color: var(--c-s); text-align: center; margin-top: 20px; font-weight: 500;">Você ainda não tem pedidos salvos.</p>';
+    } else {
+        html = history.map(o => `
+            <div style="border: 1px solid var(--c-bd); border-radius: 12px; padding: 16px; background: #fff;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.85rem; color: var(--c-t); font-weight: 600;">📅 ${o.date}</span>
+                    <span style="font-size: 0.85rem; background: var(--c-img-bg); padding: 4px 8px; border-radius: 6px; color: var(--c-p); font-weight: 700;">#${o.id}</span>
+                </div>
+                <div style="font-weight: 700; color: var(--c-p); margin-bottom: 4px;">${o.basketName}</div>
+                <div style="font-size: 1.3rem; font-weight: 800; color: var(--c-err); margin-bottom: 15px;">${fmt(o.total)}</div>
+                <button class="btn-modal secondary" style="margin:0; padding: 12px; font-size: 0.95rem; display:flex; align-items:center; justify-content:center; gap: 8px;" onclick="reorder('${o.id}')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                    Pedir Novamente
+                </button>
+            </div>`).join('');
+    }
+    
+    $('pedidos-list').innerHTML = html; 
+    $('modal-pedidos').showModal();
 }
 
 function reorder(orderId) {
-    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); let order = history.find(o => o.id === orderId); if(!order) return;
-    STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.appliedCombos = [];
+    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); 
+    let order = history.find(o => o.id === orderId); 
+    if(!order) return;
+
+    STATE.cart = {}; 
+    STATE.cartOrder = []; 
+    STATE.baseBasket = null; 
+    STATE.basketExtraFee = 0; 
+    STATE.comboDiscount = 0; 
+    STATE.appliedCombos = [];
+
     let missing = false;
-    order.items.forEach(item => { let p = STATE.prods.find(x => x.id === item.id); if(p && p.stock > 0) { let addQty = Math.min(item.qty, p.stock); STATE.cart[p.id] = addQty; STATE.cartOrder.push(p.id); } else missing = true; });
+    order.items.forEach(item => { 
+        let p = STATE.prods.find(x => x.id === item.id); 
+        if (p && p.stock > 0) { 
+            let addQty = Math.min(item.qty, p.stock); 
+            STATE.cart[p.id] = addQty; 
+            STATE.cartOrder.push(p.id); 
+        } else {
+            missing = true;
+        } 
+    });
+
     if (order.baseBasketId) {
         let c = STATE.baskets.find(x => String(x.id) === String(order.baseBasketId));
-        if (c) { STATE.baseBasket = c; let sum = 0; c.produtos.forEach(s => { let [qs, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) sum += p.price * parseInt(qs); }); let qty = order.basketQty || 1; STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty; }
+        if (c) { 
+            STATE.baseBasket = c; 
+            let sum = 0; 
+            c.produtos.forEach(s => { 
+                let [qs, r] = s.split('x'); 
+                let p = STATE.prods.find(x => x.id === r.trim()); 
+                if (p) {
+                    sum += p.price * parseInt(qs); 
+                }
+            }); 
+            let qty = order.basketQty || 1; 
+            STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty; 
+        }
     }
-    $('modal-pedidos').close(); updateTotals(); 
-    if(missing) alert("Atenção: Alguns produtos do seu pedido antigo não estão mais disponíveis e foram removidos. Os preços dos demais foram atualizados para os valores de hoje. Confirme os itens antes de fechar."); else showToast("Cesta carregada com preços atualizados!", "s");
-    goToMinhaCesta(true);
+
+    $('modal-pedidos').close(); 
+    updateTotals(); 
+
+    if (missing) {
+        alert("Atenção: Alguns produtos do seu pedido antigo não estão mais disponíveis e foram removidos. Os preços dos demais foram atualizados para os valores de hoje. Confirme os itens antes de fechar."); 
+    } else {
+        showToast("Cesta carregada com preços atualizados!", "s");
+    }
+
+    openCheckout();
 }
 
-function selectPayment(metodo, elemento) { document.getElementById('chk-pagamento').value = metodo; document.querySelectorAll('.pay-opt').forEach(el => el.classList.remove('selected')); elemento.classList.add('selected'); document.getElementById('payment-options').classList.remove('input-error'); }
+function selectPayment(metodo, elemento) { 
+    document.getElementById('chk-pagamento').value = metodo; 
+    document.querySelectorAll('.pay-opt').forEach(el => el.classList.remove('selected')); 
+    elemento.classList.add('selected'); 
+    document.getElementById('payment-options').classList.remove('input-error'); 
+}
 
 async function sendOrder() {
-    const btnSubmit = $('btn-send-order'); if (btnSubmit.disabled) return;
-    const inpNome = document.getElementById('chk-nome'); const inpCpf = document.getElementById('chk-cpf'); const inpPagamento = document.getElementById('chk-pagamento'); const divPagamento = document.getElementById('payment-options');
-    const nomeCliente = inpNome.value.trim(); const cpfCliente = inpCpf.value.trim(); const formaPagamento = inpPagamento.value;
-    inpNome.classList.remove('input-error'); inpCpf.classList.remove('input-error'); divPagamento.classList.remove('input-error');
+    const btnSubmit = $('btn-send-order'); 
+    if (btnSubmit.disabled) return;
+    
+    const inpNome = document.getElementById('chk-nome'); 
+    const inpCpf = document.getElementById('chk-cpf'); 
+    const inpPagamento = document.getElementById('chk-pagamento'); 
+    const divPagamento = document.getElementById('payment-options');
 
-    if (!nomeCliente) { inpNome.classList.add('input-error'); return showToast("Por favor, preencha o seu nome.", "r"); }
-    if (!cpfCliente) { inpCpf.classList.add('input-error'); return showToast("Por favor, preencha o seu CPF.", "r"); }
-    if (!formaPagamento) { divPagamento.classList.add('input-error'); return showToast("Por favor, escolha a forma de pagamento.", "r"); }
+    const nomeCliente = inpNome.value.trim(); 
+    const cpfCliente = inpCpf.value.trim(); 
+    const formaPagamento = inpPagamento.value;
 
-    btnSubmit.disabled = true; btnSubmit.innerHTML = "⏳ ENVIANDO...";
+    inpNome.classList.remove('input-error'); 
+    inpCpf.classList.remove('input-error'); 
+    divPagamento.classList.remove('input-error');
+
+    if (!nomeCliente) { 
+        inpNome.classList.add('input-error'); 
+        return showToast("Por favor, preencha o seu nome.", "r"); 
+    }
+    if (!cpfCliente) { 
+        inpCpf.classList.add('input-error'); 
+        return showToast("Por favor, preencha o seu CPF.", "r"); 
+    }
+    if (!formaPagamento) { 
+        divPagamento.classList.add('input-error'); 
+        return showToast("Por favor, escolha a forma de pagamento.", "r"); 
+    }
+
+    btnSubmit.disabled = true; 
+    btnSubmit.innerHTML = "⏳ ENVIANDO...";
+
     const orderId = String(Date.now()).slice(-6); 
-    let itemsTxt = ""; let apiItens = []; let totalBruto = 0;
+    let itemsTxt = ""; 
+    let apiItens = []; 
+    let totalBruto = 0;
     
     Object.entries(STATE.cart).forEach(([id, q]) => {
         const p = STATE.prods.find(x => x.id === id);
         if (p) { 
-            let sh = STATE.sohoje ? STATE.sohoje.find(x => String(x.id) === id) : null; let unitPrice = (sh && sh.preco_so_hoje) ? parseFloat(sh.preco_so_hoje) : p.price; totalBruto += unitPrice * q; 
-            let priceInfo = (unitPrice < p.price) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice});
+            let unitPrice = p.price; 
+            totalBruto += unitPrice * q; 
+            let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; 
+            itemsTxt += `${q}x ${p.name}${priceInfo}\n`; 
+            apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice});
         }
     });
 
-    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount; final -= STATE.deliveryDiscount; final -= STATE.valueDiscount; let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; final -= cupomDesconto;
-    let outras_despesas = STATE.basketExtraFee || 0; let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
-    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; let tipoCestaTexto = "Cestas Personalizada"; 
+    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount; 
+    final -= STATE.deliveryDiscount; 
+    final -= STATE.valueDiscount; 
+    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
+    final -= cupomDesconto;
+
+    let outras_despesas = STATE.basketExtraFee || 0; 
+    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
+
+    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
+    let tipoCestaTexto = "Cestas Personalizada"; 
     
     if (STATE.baseBasket) {
-        obs += ` | Cesta Base: ${STATE.baseBasket.nome}`; let orig = {}; 
-        STATE.baseBasket.produtos.forEach(s => { const [q, ref] = s.split('x'); const p = STATE.prods.find(x => x.id === ref.trim()); if (p) orig[p.id] = parseInt(q); });
-        let rem = []; let add = [];
-        Object.keys(orig).forEach(id => { let inCart = STATE.cart[id] || 0; if (inCart < orig[id]) { let p = STATE.prods.find(prod => prod.id === id); rem.push(`${orig[id] - inCart}x ${p ? p.name : id}`); } });
-        Object.keys(STATE.cart).forEach(id => { let inOrig = orig[id] || 0; if (STATE.cart[id] > inOrig) { let p = STATE.prods.find(prod => prod.id === id); add.push(`${STATE.cart[id] - inOrig}x ${p ? p.name : id}`); } });
-        if (rem.length > 0) obs += ` | ➖ RETIRADOS: ${rem.join(', ')}`; if (add.length > 0) obs += ` | ➕ ADD: ${add.join(', ')}`;
+        obs += ` | Cesta Base: ${STATE.baseBasket.nome}`; 
+        let orig = {}; 
+        
+        STATE.baseBasket.produtos.forEach(s => { 
+            const [q, ref] = s.split('x'); 
+            const p = STATE.prods.find(x => x.id === ref.trim()); 
+            if (p) orig[p.id] = parseInt(q); 
+        });
+        
+        let rem = []; 
+        let add = [];
+        
+        Object.keys(orig).forEach(id => { 
+            let inCart = STATE.cart[id] || 0; 
+            if (inCart < orig[id]) { 
+                let p = STATE.prods.find(prod => prod.id === id); 
+                rem.push(`${orig[id] - inCart}x ${p ? p.name : id}`); 
+            } 
+        });
+        
+        Object.keys(STATE.cart).forEach(id => { 
+            let inOrig = orig[id] || 0; 
+            if (STATE.cart[id] > inOrig) { 
+                let p = STATE.prods.find(prod => prod.id === id); 
+                add.push(`${STATE.cart[id] - inOrig}x ${p ? p.name : id}`); 
+            } 
+        });
+        
+        if (rem.length > 0) obs += ` | ➖ RETIRADOS: ${rem.join(', ')}`; 
+        if (add.length > 0) obs += ` | ➕ ADD: ${add.join(', ')}`;
+        
         tipoCestaTexto = (rem.length > 0 || add.length > 0) ? `Cesta ${STATE.baseBasket.nome} alterada` : `Cesta ${STATE.baseBasket.nome} padrão`;
     }
 
@@ -947,26 +2351,75 @@ async function sendOrder() {
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
     const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nomeCliente}\n*CPF:* ${cpfCliente || 'Não informado'}\n*PAGAMENTO:* ${formaPagamento}\n\n*ENTREGA AGENDADA PARA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*\n\n------\n${tipoCestaTexto}`;
-    const orderData = { id: orderId, date: new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}), total: final, basketName: STATE.baseBasket ? STATE.baseBasket.nome : 'Itens Avulsos/Kits', items: Object.entries(STATE.cart).map(([id, qty]) => ({ id, qty })), baseBasketId: STATE.baseBasket ? STATE.baseBasket.id : null, basketQty: currentBasketQty };
-    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); history.unshift(orderData); if(history.length > 20) history.pop(); localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
+
+    const orderData = { 
+        id: orderId, 
+        date: new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}), 
+        total: final, 
+        basketName: STATE.baseBasket ? STATE.baseBasket.nome : 'Itens Avulsos/Kits', 
+        items: Object.entries(STATE.cart).map(([id, qty]) => ({ id, qty })), 
+        baseBasketId: STATE.baseBasket ? STATE.baseBasket.id : null, 
+        basketQty: currentBasketQty 
+    };
+    
+    let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); 
+    history.unshift(orderData); 
+    if(history.length > 20) history.pop(); 
+    localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
 
    try {
-        const payload = { cliente: { nome: nomeCliente, cpf: cpfCliente, pagamento: formaPagamento }, pedido: { itens: apiItens, total: Number(final) || 0, outras_despesas: Number(outras_despesas) || 0, desconto: Number(totalDescontos) || 0, observacoes: obs || "" } };
-        await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
-    } catch(e) { console.error("Erro na rede:", e); }
+        const payload = { 
+            cliente: { nome: nomeCliente, cpf: cpfCliente, pagamento: formaPagamento }, 
+            pedido: { itens: apiItens, total: Number(final) || 0, outras_despesas: Number(outras_despesas) || 0, desconto: Number(totalDescontos) || 0, observacoes: obs || "" } 
+        };
+        await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { 
+            method: "POST", 
+            headers: {"Content-Type": "application/json"}, 
+            body: JSON.stringify(payload) 
+        });
+    } catch(e) { 
+        console.error("Erro na rede:", e); 
+    }
     
-    setTimeout(() => { window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`; setTimeout(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = `ENVIAR PEDIDO`; }, 3000); }, 400);
+    setTimeout(() => { 
+        window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`; 
+        setTimeout(() => { 
+            btnSubmit.disabled = false; 
+            btnSubmit.innerHTML = `ENVIAR PEDIDO`; 
+        }, 3000); 
+    }, 400);
 }
 
 init();
 
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').then((registro) => { console.log('SW registrado'); }).catch((erro) => { console.error('Erro SW', erro); }); }); }
+if ('serviceWorker' in navigator) { 
+    window.addEventListener('load', () => { 
+        navigator.serviceWorker.register('/sw.js')
+            .then((registro) => { console.log('SW registrado'); })
+            .catch((erro) => { console.error('Erro SW', erro); }); 
+    }); 
+}
 
 let eventoInstalacao;
 const bannerInstalacao = document.getElementById('install-banner');
-window.addEventListener('beforeinstallprompt', (evento) => { evento.preventDefault(); eventoInstalacao = evento; bannerInstalacao.style.display = 'flex'; });
-document.getElementById('btn-install').addEventListener('click', async () => { if (!eventoInstalacao) return; eventoInstalacao.prompt(); await eventoInstalacao.userChoice; bannerInstalacao.style.display = 'none'; eventoInstalacao = null; });
-document.getElementById('btn-close-install').addEventListener('click', () => bannerInstalacao.style.display = 'none');
+
+window.addEventListener('beforeinstallprompt', (evento) => { 
+    evento.preventDefault(); 
+    eventoInstalacao = evento; 
+    bannerInstalacao.style.display = 'flex'; 
+});
+
+document.getElementById('btn-install').addEventListener('click', async () => { 
+    if (!eventoInstalacao) return; 
+    eventoInstalacao.prompt(); 
+    await eventoInstalacao.userChoice; 
+    bannerInstalacao.style.display = 'none'; 
+    eventoInstalacao = null; 
+});
+
+document.getElementById('btn-close-install').addEventListener('click', () => {
+    bannerInstalacao.style.display = 'none';
+});
 </script>
 </body>
 </html>
