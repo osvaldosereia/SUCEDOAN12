@@ -2370,15 +2370,16 @@ async function sendOrder() {
     if(history.length > 20) history.pop(); 
     localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
 
-   try {
-        const payload = { 
-            cliente: { nome: nomeCliente, cpf: cpfCliente, pagamento: formaPagamento }, 
-            pedido: { itens: apiItens, total: Number(final) || 0, outras_despesas: Number(outras_despesas) || 0, desconto: Number(totalDescontos) || 0, observacoes: obs || "" } 
+  try {
+        const payload = {
+            cliente: { nome: nomeCliente, cpf: cpfCliente, pagamento: formaPagamento },
+            pedido: { itens: apiItens, total: Number(final) || 0, outras_despesas: Number(outras_despesas) || 0, desconto: Number(totalDescontos) || 0, observacoes: obs || "" }
         };
-        await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { 
+        
+        await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
             method: "POST", 
             headers: {"Content-Type": "application/json"}, 
-            body: JSON.stringify(payload) 
+            body: JSON.stringify(payload)
         });
     } catch(e) { 
         console.error("Erro na rede:", e); 
