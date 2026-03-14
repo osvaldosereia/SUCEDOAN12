@@ -11,7 +11,7 @@
 :root {
     --c-p: #0f172a; --c-s: #475569; --c-t: #64748b; 
     --c-a: #ea580c; --c-ok: #15803d; --c-err: #dc2626; 
-    --c-bg: #f8fafc; /* Fundo levemente cinza para destacar os cards brancos */
+    --c-bg: #f8fafc; 
     --c-surf: #ffffff; --c-bd: #e2e8f0; 
     --c-img-bg: #fafaf9; 
     --font: 'Inter', system-ui, sans-serif;
@@ -23,7 +23,7 @@ body { font-family: var(--font); background: var(--c-bg); color: var(--c-p); mar
 img { user-select: none; } 
 button { cursor: pointer; border: none; background: 0 0; font-family: inherit; font-weight: 500; }
 
-.layout-limit { width: 100%; max-width: 1000px; margin: 0 auto; position: relative; } /* Largura contida no desktop */
+.layout-limit { width: 100%; max-width: 1000px; margin: 0 auto; position: relative; } 
 
 /* SPLASH SCREEN */
 #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s; }
@@ -42,7 +42,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--c-t); pointer-events: none; }
 .clear-search { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #cbd5e1; color: #fff; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 20; }
 
-/* Camada 2: Info e Categorias */
+/* Camada 2: Logo, Categorias e Ajuda */
 .topbar-layer-2 { background: #fff; padding: 10px 15px; width: 100%; border-bottom: 1px solid var(--c-bd); }
 .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .logo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid var(--c-bd); flex-shrink: 0; cursor: pointer; }
@@ -64,22 +64,47 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .section-title { width: 100%; max-width: 1000px; margin: 0 auto; font-size: 1.15rem; font-weight: 800; color: var(--c-p); padding: 25px 15px 15px; text-transform: uppercase; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
 .section-marker { background: var(--c-a); width: 4px; height: 18px; border-radius: 4px; display: inline-block;}
 
-/* GRADES UNIFICADAS (Cards Soltos) */
+/* GRADES UNIFICADAS */
 .grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 0 15px 25px; width: 100%; max-width: 1000px; margin: 0 auto; }
 
 @media(min-width: 800px) { 
     .grid-produtos { grid-template-columns: repeat(5, 1fr); } 
 }
 
-/* CARD COM RESPIRO E IMAGEM VERTICAL */
-.u-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+@media(max-width: 799px) {
+    .grid-1-col-mobile { grid-template-columns: 1fr !important; }
+}
+
+/* CARD COM IMAGEM VERTICAL */
+.u-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
 .u-card:active { transform: scale(0.98); }
 
-.u-img-area { width: 100%; aspect-ratio: 4/5; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: 12px; }
-.u-img { width: 90%; height: 90%; object-fit: contain; mix-blend-mode: multiply; } 
-.u-img-cesta { object-fit: cover; width: 100%; height: 100%; mix-blend-mode: normal; }
+/* CONTENEDOR DA IMAGEM BLINDADO CONTRA QUEBRAS */
+.u-img-area { 
+    width: 100%; 
+    aspect-ratio: 4/5; /* Imagem Vertical Imponente */
+    background: var(--c-img-bg); 
+    border-radius: 8px; 
+    position: relative; 
+    overflow: hidden; 
+    margin-bottom: 12px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.u-img-area img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+}
+.u-img { object-fit: contain; mix-blend-mode: multiply; padding: 5%; } 
+.u-img-cesta { object-fit: cover; }
 
-/* NOVO BOTÃO DE ADICIONAR REDONDO MAIOR (+) */
+/* ETIQUETA INLINE (Ao lado do preço) */
+.inline-discount { background: var(--c-err); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 800; border-radius: 6px; }
+.kit-tag { background: var(--c-a); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 800; border-radius: 6px; }
+
+/* BOTÃO DE ADICIONAR (+) */
 .card-add-btn {
     position: absolute;
     bottom: 8px;
@@ -102,17 +127,20 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .card-add-btn:active { transform: scale(0.85); background: #b91c1c; }
 
-.offer-tag { position: absolute; top: 0px; left: 0px; background: var(--c-a); color: #fff; font-size: 0.7rem; padding: 4px 10px; font-weight: 700; z-index: 5; border-radius: 8px 0 8px 0;}
-
 .u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
-.u-name { font-size: 0.95rem; font-weight: 500; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; min-height: 3.7em; margin-bottom: 6px; }
+.u-name { font-size: 0.95rem; font-weight: 600; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
 .u-price { font-size: 1.3rem; font-weight: 800; color: var(--c-p); }
-.combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: -2px; }
+.combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: -2px; }
 
-/* Botoes de Ação dentro do Modal de Quick View */
+@media(min-width: 800px) { 
+    .u-name { font-size: 1.05rem; } 
+    #grid-cestas .u-name, #grid-combos .u-name { font-size: 1.15rem; } 
+}
+
 .btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 42px; transition: 0.2s;}
 .btn-big-action:hover { background: #cbd5e1; }
 .btn-view-details { width: 100%; background: var(--c-a); color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 42px; transition: 0.2s; box-shadow: 0 4px 6px rgba(234, 88, 12, 0.2); }
+
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:42px; margin-top:10px; padding:0 4px; width:100%; }
 .card-qty-ctrl button { font-size:1.6rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 15px; height: 100%; cursor:pointer; }
 .card-qty-ctrl span { font-weight:700; font-size:1.1rem; color:var(--c-p); }
@@ -238,14 +266,14 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div onclick="switchTab('cestas')" style="background: linear-gradient(135deg, var(--c-p), #334155); border-radius: 12px; padding: 35px 20px; color: #fff; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: space-between;">
             <div>
                 <div style="font-weight: 800; font-size: 1.4rem;">Cestas Básicas</div>
-                <div style="font-size: 0.9rem; margin-top: 8px; color: #cbd5e1; font-weight: 500;">Clique para ver opções 👉</div>
+                <div style="font-size: 0.95rem; margin-top: 8px; color: #cbd5e1; font-weight: 500;">Clique para ver opções 👉</div>
             </div>
             <span style="font-size: 2.5rem;">📦</span>
         </div>
         <div onclick="switchTab('combos')" style="background: linear-gradient(135deg, var(--c-a), #f97316); border-radius: 12px; padding: 35px 20px; color: #fff; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: space-between;">
             <div>
                 <div style="font-weight: 800; font-size: 1.4rem;">Kits Promocionais</div>
-                <div style="font-size: 0.9rem; margin-top: 8px; color: #fed7aa; font-weight: 500;">Clique para ver opções 👉</div>
+                <div style="font-size: 0.95rem; margin-top: 8px; color: #fed7aa; font-weight: 500;">Clique para ver opções 👉</div>
             </div>
             <span style="font-size: 2.5rem;">🎁</span>
         </div>
@@ -296,7 +324,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:12px; padding:20px;">
             <img id="qv-img" src="" alt="Produto em destaque" style="width: 100%; max-height: 35vh; object-fit: contain; mix-blend-mode: multiply;">
         </div>
-        <h3 id="qv-name" style="font-size: 1.3rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
+        <h3 id="qv-name" style="font-size: 1.3rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
         <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-a); margin-bottom: 8px; font-weight: 600; text-align: left; display: none;"></div>
         <div id="qv-price" style="font-size: 1.8rem; font-weight: 800; color: var(--c-p); margin-bottom: 25px; text-align: left;"></div>
         <div id="qv-action-area" data-id=""></div>
@@ -309,7 +337,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
             <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);">
             <h3 style="font-weight:800;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
-            <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
+            <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Vár Grande - MT<br>Tel: (65) 99815-0975</div>
         </div>
         <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Qual o valor da entrega?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div></div>
         <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Quais as formas de pagamento?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div></div>
@@ -384,7 +412,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <input type="text" id="chk-cpf" placeholder="CPF" style="width: 100%; padding: 14px 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 20px; font-family: inherit; font-size: 0.95rem; font-weight: 500;">
 
         <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">4. Forma de Pagamento</h3>
-        <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px;">
+        <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; padding: 4px;">
             <div class="pay-opt" onclick="selectPayment('Dinheiro', this)">💵 Dinheiro</div>
             <div class="pay-opt" onclick="selectPayment('PIX', this)">💠 PIX</div>
             <div class="pay-opt" onclick="selectPayment('Débito', this)">💳 Débito</div>
@@ -444,7 +472,6 @@ window.loadMoreGridItems = function(trackId, sentinel) {
     
     let hiddenItems = track.querySelectorAll('.general-hidden');
     let revealed = 0;
-    // Agora revela de 10 em 10 itens
     hiddenItems.forEach((item) => {
         if (revealed < 10) {
             item.classList.remove('general-hidden');
@@ -531,8 +558,15 @@ async function init() {
                 categoria: p.categoria || "" 
             }));
 
+            // Lógica de Semente Única por Utilizador (Garante que descontos são consistentes durante o dia para o mesmo utilizador, mas diferentes de outros)
+            let userSeed = localStorage.getItem('donaAntoniaUserSeed');
+            if (!userSeed) {
+                userSeed = Math.floor(Math.random() * 1000000);
+                localStorage.setItem('donaAntoniaUserSeed', userSeed);
+            }
+
             const hoje = new Date();
-            const sementeDoDia = hoje.getFullYear() * 10000 + (hoje.getMonth() + 1) * 100 + hoje.getDate();
+            const sementeDoDia = hoje.getFullYear() * 10000 + (hoje.getMonth() + 1) * 100 + hoje.getDate() + parseInt(userSeed);
             
             function geradorAleatorio(semente) {
                 return function() {
@@ -544,23 +578,26 @@ async function init() {
             }
             const rand = geradorAleatorio(sementeDoDia);
 
-            let produtosElegiveis = STATE.prods.filter(p => {
-                if (p.oldPrice && p.oldPrice > p.price) return false;
-                if (STATE.bloqueados.includes(p.id) || STATE.bloqueados.includes(p.blingId)) return false;
-                if (norm(p.categoria).includes("mercearia basica")) return false;
-                if (p.stock <= 0) return false;
-                return true; 
+            // Identificar produtos que estão em KITS para não receberem descontos individuais
+            let produtosEmKits = new Set();
+            STATE.combos.forEach(c => {
+                if (c.produtos) {
+                    c.produtos.forEach(s => {
+                        let parts = s.split('x');
+                        if(parts.length === 2) produtosEmKits.add(parts[1].trim());
+                    });
+                }
             });
 
-            for (let i = produtosElegiveis.length - 1; i > 0; i--) {
-                const j = Math.floor(rand() * (i + 1));
-                [produtosElegiveis[i], produtosElegiveis[j]] = [produtosElegiveis[j], produtosElegiveis[i]];
-            }
+            // Aplicar desconto de 3% a 12% a TODOS os produtos elegíveis
+            STATE.prods.forEach(p => {
+                let cat = norm(p.categoria);
+                if (cat.includes("mercearia basica")) return;
+                if (produtosEmKits.has(p.id)) return;
+                if (STATE.bloqueados.includes(p.id) || STATE.bloqueados.includes(p.blingId)) return;
+                if (p.stock <= 0) return;
 
-            let produtosSorteados = produtosElegiveis.slice(0, 200);
-
-            produtosSorteados.forEach(p => {
-                let percentual = 0.03 + (rand() * 0.13); 
+                let percentual = 0.03 + (rand() * 0.09); // 3% a 12%
                 p.oldPrice = p.price; 
                 p.price = parseFloat((p.oldPrice * (1 - percentual)).toFixed(2)); 
             });
@@ -575,7 +612,7 @@ async function init() {
     }
 }
 
-// ---- ANIMAÇÃO ESTILO MERCADO LIVRE (BOLINHA MAIOR) ----
+// ---- ANIMAÇÃO ESTILO MERCADO LIVRE (BOLINHA MAIOR E MAIS VISÍVEL) ----
 function animateToCart(startX, startY) {
     const cartBtn = document.querySelector('.cart-fab-wrapper');
     if(!cartBtn) return;
@@ -585,10 +622,10 @@ function animateToCart(startX, startY) {
 
     const dot = document.createElement('div');
     dot.style.position = 'fixed';
-    dot.style.left = (startX - 15) + 'px'; // Centro da bolinha
+    dot.style.left = (startX - 15) + 'px'; 
     dot.style.top = (startY - 15) + 'px';
-    dot.style.width = '30px';  // Aumentado
-    dot.style.height = '30px'; // Aumentado
+    dot.style.width = '30px'; 
+    dot.style.height = '30px'; 
     dot.style.backgroundColor = 'var(--c-a)';
     dot.style.borderRadius = '50%';
     dot.style.zIndex = '999999';
@@ -598,8 +635,7 @@ function animateToCart(startX, startY) {
     
     document.body.appendChild(dot);
 
-    // Forçar reflow para aplicar animação
-    dot.getBoundingClientRect();
+    dot.getBoundingClientRect(); // Reflow
 
     dot.style.left = (endX - 15) + 'px';
     dot.style.top = (endY - 15) + 'px';
@@ -613,7 +649,6 @@ function animateToCart(startX, startY) {
     }, 500);
 }
 
-// Função de clique no botão +
 window.handleAddClick = function(e, id) {
     let p = STATE.prods.find(x => x.id === id);
     if (!p || p.stock <= (STATE.cart[id] || 0)) return showToast("Estoque insuficiente", "r");
@@ -626,7 +661,7 @@ window.handleAddClick = function(e, id) {
     animateToCart(startX, startY);
 };
 
-// ---- UNIFICAÇÃO DE CARDS ----
+// ---- UNIFICAÇÃO DE CARDS (IMAGENS VETICAIS E DESCONTO NA MESMA LINHA) ----
 function buildCardHtml(item, type, isHidden = false) {
     let hiddenClass = isHidden ? 'general-hidden' : '';
     let id = item.id;
@@ -651,39 +686,46 @@ function buildCardHtml(item, type, isHidden = false) {
              item.produtos.forEach(s => { 
                  let [q, r] = s.split('x'); 
                  let p = STATE.prods.find(x => x.id === r.trim()); 
-                 if (p) precoDe += p.price * parseInt(q); 
+                 if (p) precoDe += (p.oldPrice || p.price) * parseInt(q); 
              });
         }
         if(isKit) {
-            tagHtml = `<div class="offer-tag">KIT</div>`;
             onClick = `previewCombo('${id}')`;
-            if(precoDe > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`;
+            if(precoDe > pPrice) {
+                oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`;
+                let perc = Math.round((1 - pPrice / precoDe) * 100);
+                if(perc > 0) tagHtml = `<div class="inline-discount">-${perc}%</div>`;
+            } else {
+                tagHtml = `<div class="kit-tag">KIT</div>`;
+            }
         } else {
             onClick = `previewBasket('${id}')`;
         }
-        // Para Cestas/Kits o + também abre o modal
         addBtnHtml = `<button class="card-add-btn" onclick="event.stopPropagation(); ${onClick}">+</button>`;
     } else {
         onClick = `openQuickView('${id}')`;
         if(item.oldPrice && item.oldPrice > pPrice) {
-            tagHtml = `<div class="offer-tag">-${Math.round((1 - pPrice / item.oldPrice) * 100)}%</div>`;
+            let perc = Math.round((1 - pPrice / item.oldPrice) * 100);
+            tagHtml = `<div class="inline-discount">-${perc}%</div>`;
             oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
         }
-        // Para produtos o botão + adiciona ao carrinho
         addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnText}</button>`;
     }
 
     return `
     <div class="u-card ${hiddenClass}" data-id="${id}" onclick="${onClick}">
-        ${tagHtml}
         <div class="u-img-area">
             <img src="${img}" class="${(isKit||isBasket)?'u-img-cesta':'u-img'}" alt="${formatName(name)}" loading="lazy">
             ${addBtnHtml}
         </div>
         <div class="u-info">
             <div class="u-name">${formatName(name)}</div>
-            <div>
-                <div class="u-price">${oldPriceHtml} ${priceHtml}</div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
+                <div>
+                    ${oldPriceHtml}
+                    <div class="u-price">${priceHtml}</div>
+                </div>
+                ${tagHtml}
             </div>
         </div>
     </div>`;
@@ -704,7 +746,6 @@ function buildCarouselsHtml() {
 
         if (matchedProds.length > 0) {
             let trackId = 'grid-carro-' + cIdx;
-            // Carrega primeiros 10
             let trackHtml = matchedProds.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10)).join('');
             let sentinelHtml = matchedProds.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
 
@@ -746,23 +787,15 @@ function buildTabsAndSections() {
     if (STATE.baskets.length > 0) {
         let img = STATE.baskets[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('cestas')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Cestas Básicas</div>`;
-        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas" class="grid-produtos"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas" class="grid-produtos grid-1-col-mobile"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
     if (STATE.combos.length > 0) {
         let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
-        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title">Kits</div><div class="grid-produtos" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title"><span class="section-marker"></span>Kits Promocionais</div><div class="grid-produtos grid-1-col-mobile" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
-    }
-
-    const ofertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price).sort(() => Math.random() - 0.5);
-    if (ofertas.length > 0) {
-        let img = ofertas[0].img;
-        dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('ofertas')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Ofertas</div>`;
-        sectionsHtml += `<div id="sec-ofertas" class="tab-section" style="display:none;"><div class="section-title">Ofertas Especiais</div><div class="grid-produtos" id="grid-ofertas"></div><div class="bottom-category-nav"></div></div>`;
-        STATE.lists['ofertas'] = { data: ofertas, type: 'PROD' };
     }
 
     if (STATE.termos && STATE.termos.length > 0) {
@@ -795,7 +828,7 @@ function buildTabsAndSections() {
             if (list.length > 0) {
                 let img = list[0].img;
                 dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('${safe}')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> ${label}</div>`;
-                sectionsHtml += `<div id="sec-${safe}" class="tab-section" style="display:none;"><div class="section-title">${label}</div><div class="grid-produtos" id="grid-${safe}"></div><div class="bottom-category-nav"></div></div>`;
+                sectionsHtml += `<div id="sec-${safe}" class="tab-section" style="display:none;"><div class="section-title"><span class="section-marker"></span>${label}</div><div class="grid-produtos" id="grid-${safe}"></div><div class="bottom-category-nav"></div></div>`;
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
         });
@@ -817,11 +850,10 @@ function renderBottomChips(activeTabId) {
         html += `
         <div style="margin-top: 15px;">
             <div class="section-title" style="color: var(--c-a);"><span class="section-marker"></span>🎁 Kits Especiais</div>
-            <div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div>
+            <div class="grid-produtos grid-1-col-mobile" id="${trackId}">${trackHtml}${sentinelHtml}</div>
         </div>`;
     }
-    
-    // Ofertas Relâmpago (Só Hoje)
+
     if (STATE.sohoje && STATE.sohoje.length > 0) {
         let shProds = STATE.sohoje.map(sh => {
             let p = STATE.prods.find(x => x.id === String(sh.id));
@@ -840,24 +872,6 @@ function renderBottomChips(activeTabId) {
                 </div>
             </div>`;
         }
-    }
-
-    if (activeTabId !== 'ofertas' && STATE.lists['ofertas'] && STATE.lists['ofertas'].data.length > 0) {
-        let trackId = `grid-mini-ofertas-${activeTabId}`;
-        // Limite rígido de 40 para ofertas
-        let maxOfertas = Math.min(STATE.lists['ofertas'].data.length, 40);
-        let miniOfertas = STATE.lists['ofertas'].data.slice(0, maxOfertas); 
-        let miniHtml = miniOfertas.map((item, index) => buildCardHtml(item, 'PROD', index >= 10)).join('');
-        let sentinelHtml = miniOfertas.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column:1/-1; height:1px;"></div>` : '';
-        
-        html += `
-        <div style="margin-top: 15px; border-top: 8px solid var(--c-img-bg); padding-top: 10px;">
-            <div class="section-title" style="color: var(--c-err);"><span class="section-marker" style="background:var(--c-err)"></span>🔥 Ofertas da Semana</div>
-            <div class="grid-produtos" id="${trackId}">
-                ${miniHtml}
-                ${sentinelHtml}
-            </div>
-        </div>`;
     }
 
     html += buildCarouselsHtml();
@@ -888,7 +902,7 @@ function renderBottomChips(activeTabId) {
             html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>${name}</div>
-                <div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div>
+                <div class="grid-produtos grid-1-col-mobile" id="${trackId}">${trackHtml}${sentinelHtml}</div>
             </div>`;
         }
     });
@@ -908,7 +922,6 @@ window.switchTab = function(tabId, isHome = false) {
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
 
-    // Banners agora visíveis no Desktop também
     if($('mobile-home-banners')) $('mobile-home-banners').style.display = isHome ? 'flex' : 'none';
 
     document.querySelectorAll('.tab-section').forEach(el => {
@@ -920,12 +933,11 @@ window.switchTab = function(tabId, isHome = false) {
     let target = $('sec-' + tabId);
     if(target) target.style.display = 'block';
 
-    let listKey = (tabId === 'cestas' || tabId === 'ofertas' || tabId === 'combos') ? tabId : 'term_' + tabId;
+    let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
     if(STATE.lists[listKey]) {
         renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
     }
 
-    // Atualiza nome no Dropdown
     document.querySelectorAll('.cat-dropdown-item').forEach(el => {
         if(el.getAttribute('onclick').includes(tabId)) {
             $('btn-cat-dropdown-text').innerText = el.innerText.trim();
@@ -943,8 +955,7 @@ window.switchTab = function(tabId, isHome = false) {
 };
 
 window.goToHome = function() {
-    if($('sec-ofertas')) switchTab('ofertas', true);
-    else switchTab('cestas', true);
+    switchTab('cestas', true);
 
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     if($('btn-nav-home')) $('btn-nav-home').classList.add('active');
@@ -994,7 +1005,7 @@ function renderPaginated(containerId, listKey, list, type) {
             html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>${title}</div>
-                <div class="grid-produtos" id="${trackId}">
+                <div class="grid-produtos grid-1-col-mobile" id="${trackId}">
                     ${trackHtml}
                     ${sentinelHtml}
                 </div>
@@ -1006,9 +1017,7 @@ function renderPaginated(containerId, listKey, list, type) {
         return;
     }
 
-    let isOfertasFull = (containerId === 'grid-ofertas');
-    // Limite 40 se for aba ofertas
-    let maxItems = isOfertasFull ? Math.min(list.length, 40) : list.length;
+    let maxItems = list.length;
     let displayList = list.slice(0, maxItems);
     
     let html = displayList.map((item, index) => {
@@ -1090,12 +1099,10 @@ function upd(id, delta) {
     STATE.cart[id] = n; 
     if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); } 
     
-    // Atualiza modal se estiver aberto
     if ($('modal-quick-view').open && $('qv-action-area').dataset.id === String(id)) {
         $('qv-action-area').innerHTML = getCardControls(id);
     }
 
-    // Atualiza número no botão + do Card na página
     document.querySelectorAll(`.add-btn-${id}`).forEach(el => {
         let qty = STATE.cart[id] || 0;
         el.innerText = qty > 0 ? qty : '+';
@@ -1192,7 +1199,7 @@ function previewBasket(id) {
     }).join('');
     
     $('combo-qty-controls').style.display = 'none'; 
-    $('btn-confirm-preview').innerText = "Encomendar Cesta Normal"; 
+    $('btn-confirm-preview').innerText = "Encomendar Cesta"; 
     $('btn-confirm-preview').onclick = () => { $('modal-basket-preview').close(); setBasketQty(1); $('modal-cesta-qty').showModal(); };
     $('btn-customize-preview').style.display = 'block'; 
     $('btn-customize-preview').onclick = () => { confirmBasket(true, 1); setTimeout(() => goToMinhaCesta(true), 100); };
@@ -1214,9 +1221,6 @@ function confirmBasket(isCustom, qty) {
     STATE.basketExtraFee = Math.max(0, c.preco - sum) * qty; STATE.baseBasket = c;
     $('modal-cesta-qty').close(); $('modal-basket-preview').close(); 
     
-    let activeDropdown = $('btn-cat-dropdown-text').innerText;
-    // Se quiser recarregar a visualização pode usar o activeDropdown aqui.
-    
     updateTotals(); 
     if (!isCustom) openCheckout();
 }
@@ -1231,7 +1235,7 @@ function previewCombo(id) {
     
     $('prev-list').innerHTML = c.produtos.map(s => { 
         let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); 
-        if (p) precoDe += p.price * parseInt(q); 
+        if (p) precoDe += (p.oldPrice || p.price) * parseInt(q); 
         return `
         <div style="text-align:center;">
             <div style="width:100%; aspect-ratio:4/5; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
@@ -1257,7 +1261,7 @@ function previewCombo(id) {
             if (p) { 
                 if (!STATE.cart[p.id]) STATE.cartOrder.push(p.id); 
                 STATE.cart[p.id] = (STATE.cart[p.id] || 0) + (parseInt(qs) * currentComboQty); 
-                sumAvulso += p.price * parseInt(qs);
+                sumAvulso += (p.oldPrice || p.price) * parseInt(qs);
             } 
         }); 
         
@@ -1279,7 +1283,7 @@ function changeComboQty(d) {
         c.produtos.forEach(s => {
             let [q, r] = s.split('x');
             let p = STATE.prods.find(x => x.id === r.trim());
-            if (p) precoDe += p.price * parseInt(q);
+            if (p) precoDe += (p.oldPrice || p.price) * parseInt(q);
         });
         if (precoDe > c.preco) {
             $('prev-price').innerHTML = `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:600;">${fmt(precoDe * currentComboQty)}</span>${fmt(c.preco * currentComboQty)}`;
@@ -1313,7 +1317,6 @@ function openCheckout() {
         </div>
     `).join('');
     
-    // Lista em Cards / 2 Colunas no Finalizar Compra
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { 
         let p = STATE.prods.find(x => x.id === id); 
         let qty = STATE.cart[id];
@@ -1474,7 +1477,6 @@ async function sendOrder() {
     const cpfCliente = inpCpf.value.trim();
     const formaPagamento = inpPagamento.value;
 
-    // Reseta erros visuais
     inpNome.classList.remove('input-error');
     inpCpf.classList.remove('input-error');
     divPagamento.classList.remove('input-error');
