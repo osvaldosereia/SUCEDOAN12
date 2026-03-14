@@ -1538,7 +1538,8 @@ function renderBottomChips(activeTabId) {
     let html = '';
     
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        let trackId = 'grid-kits-bottom';
+        // CORREÇÃO: Adicionado o activeTabId ao ID para evitar duplicação no DOM
+        let trackId = 'grid-kits-bottom-' + activeTabId; 
         let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10, idx)).join('');
         let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
         html += `
@@ -1560,7 +1561,8 @@ function renderBottomChips(activeTabId) {
                 let listKey = 'term_' + safe;
                 
                 if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                    let trackId = 'grid-cat-' + safe;
+                    // CORREÇÃO: Adicionado o activeTabId ao ID para evitar duplicação no DOM
+                    let trackId = 'grid-cat-' + safe + '-' + activeTabId; 
                     let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10, idx)).join('');
                     let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
                     html += `
