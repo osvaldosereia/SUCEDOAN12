@@ -31,23 +31,21 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .splash-logo { width: 170px; height: 170px; border-radius: 50%; border: 1px solid var(--c-bd); object-fit: cover; animation: splashPulse 1s ease-in-out infinite alternate; box-shadow: var(--sh-float); }
 @keyframes splashPulse { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
 
-/* HEADER PRINCIPAL REFORMULADO (2 CAMADAS) */
+/* HEADER PRINCIPAL REFORMULADO */
 #header-wrapper { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
 
-/* Camada 1: Busca em destaque */
-.topbar-layer-1 { background: var(--c-p); padding: 12px 15px; width: 100%; }
+/* MOBILE: 2 Camadas / DESKTOP: 1 Linha (Achatada via display: contents) */
+.mob-layer-1 { background: var(--c-p); padding: 12px 15px; width: 100%; }
 .search-wrapper { position: relative; width: 100%; }
 .search-inp { width: 100%; background: #ffffff; border: 2px solid transparent; padding: 12px 15px 12px 42px; border-radius: 25px; font-weight: 600; color: var(--c-p); transition: border-color .2s; font-size: 0.95rem; }
 .search-inp:focus { border-color: var(--c-a); }
 .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--c-t); pointer-events: none; }
 .clear-search { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: #cbd5e1; color: #fff; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 20; }
 
-/* Camada 2: Logo, Categorias e Ajuda */
-.topbar-layer-2 { background: #fff; padding: 10px 15px; width: 100%; border-bottom: 1px solid var(--c-bd); }
-.header-inner { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mob-layer-2 { background: #fff; padding: 10px 15px; width: 100%; border-bottom: 1px solid var(--c-bd); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .logo { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 1px solid var(--c-bd); flex-shrink: 0; cursor: pointer; }
 
-/* Dropdown Unificado */
+/* Dropdown */
 .mobile-category-dropdown { flex: 1; position: relative; }
 .btn-cat-dropdown { width: 100%; padding: 12px 15px; font-weight: 700; text-align: left; display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; color: var(--c-p); border-radius: 10px; font-size: 0.95rem; border: 1px solid var(--c-bd); }
 .cat-dropdown-list { display: none; position: absolute; top: calc(100% + 5px); left: 0; width: 100%; background: #fff; border-radius: 10px; border: 1px solid var(--c-bd); box-shadow: 0 15px 30px rgba(0,0,0,0.15); max-height: 60vh; overflow-y: auto; z-index: 100; flex-direction: column; }
@@ -59,7 +57,25 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .btn-top-help:hover { background: #e2e8f0; }
 .btn-top-help svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
+@media(min-width: 800px) {
+    #header-wrapper { background: #fff; border-bottom: 1px solid var(--c-bd); }
+    .desk-header-flex { display: flex; align-items: center; padding: 10px 15px; gap: 20px; }
+    
+    /* Remove a estrutura de 2 camadas no Desktop para colocar tudo em 1 linha */
+    .mob-layer-1, .mob-layer-2 { display: contents; }
+    
+    /* Ordem dos elementos na linha */
+    .logo { order: 1; }
+    .search-wrapper { order: 2; flex: 1; }
+    .mobile-category-dropdown { order: 3; flex: none; width: 260px; }
+    .btn-top-help { order: 4; }
+    
+    /* Estilo de busca adaptado para o branco do desktop */
+    .search-inp { background: var(--c-img-bg); border: 1px solid var(--c-bd); color: var(--c-p); }
+}
+
 .main-stage { position: relative; height: 100dvh; padding-top: 140px; padding-bottom: 80px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; }
+@media(min-width: 800px) { .main-stage { padding-top: 90px; } }
 
 .section-title { width: 100%; max-width: 1000px; margin: 0 auto; font-size: 1.15rem; font-weight: 800; color: var(--c-p); padding: 25px 15px 15px; text-transform: uppercase; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
 .section-marker { background: var(--c-a); width: 4px; height: 18px; border-radius: 4px; display: inline-block;}
@@ -71,18 +87,17 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .grid-produtos { grid-template-columns: repeat(5, 1fr); } 
 }
 
-@media(max-width: 799px) {
-    .grid-1-col-mobile { grid-template-columns: 1fr !important; }
-}
+/* 1 Coluna Forçada para Cestas e Kits em Desktop e Mobile */
+.grid-1-col { grid-template-columns: 1fr !important; }
 
 /* CARD COM IMAGEM VERTICAL */
 .u-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
 .u-card:active { transform: scale(0.98); }
 
-/* CONTENEDOR DA IMAGEM BLINDADO CONTRA QUEBRAS */
+/* CONTENEDOR DA IMAGEM VERTICAL */
 .u-img-area { 
     width: 100%; 
-    aspect-ratio: 4/5; /* Imagem Vertical Imponente */
+    aspect-ratio: 4/5; 
     background: var(--c-img-bg); 
     border-radius: 8px; 
     position: relative; 
@@ -92,19 +107,22 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     align-items: center;
     justify-content: center;
 }
-.u-img-area img {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-}
+.u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .u-img { object-fit: contain; mix-blend-mode: multiply; padding: 5%; } 
 .u-img-cesta { object-fit: cover; }
 
-/* ETIQUETA INLINE (Ao lado do preço) */
+/* ESTILO ESPECÍFICO CARD LISTA (CESTA E KITS) */
+.u-card-list { flex-direction: row; align-items: center; padding: 12px; gap: 15px; }
+.u-card-list .u-img-area { width: 140px; aspect-ratio: 4/3; margin-bottom: 0; flex-shrink: 0; }
+@media(max-width: 799px) {
+    .u-card-list .u-img-area { width: 115px; }
+}
+
+/* ETIQUETA INLINE */
 .inline-discount { background: var(--c-err); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 800; border-radius: 6px; }
 .kit-tag { background: var(--c-a); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 800; border-radius: 6px; }
 
-/* BOTÃO DE ADICIONAR (+) */
+/* BOTÃO DE ADICIONAR (+) CENTRALIZADO */
 .card-add-btn {
     position: absolute;
     bottom: 8px;
@@ -117,6 +135,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     display: flex;
     align-items: center;
     justify-content: center;
+    line-height: 1;
     font-size: 1.5rem;
     font-weight: 700;
     box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4);
@@ -124,17 +143,18 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     transition: transform 0.15s ease, background 0.15s;
     border: none;
     cursor: pointer;
+    padding: 0;
 }
 .card-add-btn:active { transform: scale(0.85); background: #b91c1c; }
 
-.u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
+.u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 100%; }
 .u-name { font-size: 0.95rem; font-weight: 600; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
 .u-price { font-size: 1.3rem; font-weight: 800; color: var(--c-p); }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: -2px; }
 
 @media(min-width: 800px) { 
     .u-name { font-size: 1.05rem; } 
-    #grid-cestas .u-name, #grid-combos .u-name { font-size: 1.15rem; } 
+    .u-card-list .u-name { font-size: 1.2rem; } 
 }
 
 .btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 42px; transition: 0.2s;}
@@ -192,10 +212,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 .pay-opt { padding: 12px 14px; border: 1px solid var(--c-bd); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: var(--c-s); background: #fff; transition: all 0.2s; user-select: none; }
 .pay-opt.selected { border-color: var(--c-a); background: #fff7ed; color: var(--c-a); border-width: 2px; }
 
-/* Grid de Produtos Checkout (2 Colunas) */
 #chk-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; margin-top: 10px; }
-
-/* Avisos Validacao Form */
 .input-error { border-color: var(--c-err) !important; background-color: #fef2f2 !important; }
 
 </style>
@@ -218,16 +235,16 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
 </div>
 
 <div id="header-wrapper">
-    <div class="topbar-layer-1">
-        <div class="layout-limit search-wrapper">
-            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto ou kit..." oninput="handleSearch(this.value)">
-            <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
+    <div class="layout-limit desk-header-flex">
+        <div class="mob-layer-1">
+            <div class="search-wrapper">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto ou kit..." oninput="handleSearch(this.value)">
+                <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
+            </div>
         </div>
-    </div>
 
-    <div class="topbar-layer-2">
-        <div class="layout-limit header-inner">
+        <div class="mob-layer-2">
             <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" onclick="goToHome()">
             
             <div class="mobile-category-dropdown">
@@ -260,23 +277,6 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div class="section-title" style="color: var(--c-a);"><span class="section-marker"></span>📦 Minha Cesta</div>
         <div class="grid-produtos" id="grid-minha-cesta"></div>
         <div class="bottom-category-nav"></div>
-    </div>
-
-    <div id="mobile-home-banners" class="layout-limit" style="display: none; padding: 15px; gap: 15px; flex-direction: column;">
-        <div onclick="switchTab('cestas')" style="background: linear-gradient(135deg, var(--c-p), #334155); border-radius: 12px; padding: 35px 20px; color: #fff; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <div style="font-weight: 800; font-size: 1.4rem;">Cestas Básicas</div>
-                <div style="font-size: 0.95rem; margin-top: 8px; color: #cbd5e1; font-weight: 500;">Clique para ver opções 👉</div>
-            </div>
-            <span style="font-size: 2.5rem;">📦</span>
-        </div>
-        <div onclick="switchTab('combos')" style="background: linear-gradient(135deg, var(--c-a), #f97316); border-radius: 12px; padding: 35px 20px; color: #fff; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: space-between;">
-            <div>
-                <div style="font-weight: 800; font-size: 1.4rem;">Kits Promocionais</div>
-                <div style="font-size: 0.95rem; margin-top: 8px; color: #fed7aa; font-weight: 500;">Clique para ver opções 👉</div>
-            </div>
-            <span style="font-size: 2.5rem;">🎁</span>
-        </div>
     </div>
 
     <div id="wrapper-sections">
@@ -337,7 +337,7 @@ dialog::backdrop { background: rgba(15,23,42,0.85); backdrop-filter: blur(4px); 
         <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
             <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);">
             <h3 style="font-weight:800;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
-            <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Vár Grande - MT<br>Tel: (65) 99815-0975</div>
+            <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
         </div>
         <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Qual o valor da entrega?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div></div>
         <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;"><div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Quais as formas de pagamento?</div><div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div></div>
@@ -558,7 +558,7 @@ async function init() {
                 categoria: p.categoria || "" 
             }));
 
-            // Lógica de Semente Única por Utilizador (Garante que descontos são consistentes durante o dia para o mesmo utilizador, mas diferentes de outros)
+            // Lógica de Semente Única por Utilizador (Mantém descontos estáveis por dia)
             let userSeed = localStorage.getItem('donaAntoniaUserSeed');
             if (!userSeed) {
                 userSeed = Math.floor(Math.random() * 1000000);
@@ -578,7 +578,7 @@ async function init() {
             }
             const rand = geradorAleatorio(sementeDoDia);
 
-            // Identificar produtos que estão em KITS para não receberem descontos individuais
+            // Identifica produtos que fazem parte de Kits para não lhes dar desconto fora do kit
             let produtosEmKits = new Set();
             STATE.combos.forEach(c => {
                 if (c.produtos) {
@@ -589,7 +589,7 @@ async function init() {
                 }
             });
 
-            // Aplicar desconto de 3% a 12% a TODOS os produtos elegíveis
+            // Aplica desconto aleatório (3% a 12%) diário e único por utilizador
             STATE.prods.forEach(p => {
                 let cat = norm(p.categoria);
                 if (cat.includes("mercearia basica")) return;
@@ -612,7 +612,6 @@ async function init() {
     }
 }
 
-// ---- ANIMAÇÃO ESTILO MERCADO LIVRE (BOLINHA MAIOR E MAIS VISÍVEL) ----
 function animateToCart(startX, startY) {
     const cartBtn = document.querySelector('.cart-fab-wrapper');
     if(!cartBtn) return;
@@ -635,7 +634,7 @@ function animateToCart(startX, startY) {
     
     document.body.appendChild(dot);
 
-    dot.getBoundingClientRect(); // Reflow
+    dot.getBoundingClientRect();
 
     dot.style.left = (endX - 15) + 'px';
     dot.style.top = (endY - 15) + 'px';
@@ -661,7 +660,6 @@ window.handleAddClick = function(e, id) {
     animateToCart(startX, startY);
 };
 
-// ---- UNIFICAÇÃO DE CARDS (IMAGENS VETICAIS E DESCONTO NA MESMA LINHA) ----
 function buildCardHtml(item, type, isHidden = false) {
     let hiddenClass = isHidden ? 'general-hidden' : '';
     let id = item.id;
@@ -675,6 +673,8 @@ function buildCardHtml(item, type, isHidden = false) {
     let onClick = '';
     let isKit = type === 'COMBO';
     let isBasket = type === 'BASKET';
+    let isListCard = isKit || isBasket;
+    let cardClass = isListCard ? ' u-card-list' : '';
 
     let addBtnHtml = '';
     let qty = STATE.cart[id] || 0;
@@ -713,10 +713,10 @@ function buildCardHtml(item, type, isHidden = false) {
     }
 
     return `
-    <div class="u-card ${hiddenClass}" data-id="${id}" onclick="${onClick}">
+    <div class="u-card${cardClass} ${hiddenClass}" data-id="${id}" onclick="${onClick}">
         <div class="u-img-area">
             <img src="${img}" class="${(isKit||isBasket)?'u-img-cesta':'u-img'}" alt="${formatName(name)}" loading="lazy">
-            ${addBtnHtml}
+            ${!isListCard ? addBtnHtml : ''}
         </div>
         <div class="u-info">
             <div class="u-name">${formatName(name)}</div>
@@ -727,6 +727,7 @@ function buildCardHtml(item, type, isHidden = false) {
                 </div>
                 ${tagHtml}
             </div>
+            ${isListCard ? `<div style="margin-top: 10px; display:flex; justify-content:flex-end;">${addBtnHtml}</div>` : ''}
         </div>
     </div>`;
 }
@@ -787,14 +788,14 @@ function buildTabsAndSections() {
     if (STATE.baskets.length > 0) {
         let img = STATE.baskets[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('cestas')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Cestas Básicas</div>`;
-        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas" class="grid-produtos grid-1-col-mobile"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-cestas" class="tab-section" style="display:none;"><div id="grid-cestas" class="grid-produtos grid-1-col"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
     if (STATE.combos.length > 0) {
         let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
-        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title"><span class="section-marker"></span>Kits Promocionais</div><div class="grid-produtos grid-1-col-mobile" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
+        sectionsHtml += `<div id="sec-combos" class="tab-section" style="display:none;"><div class="section-title"><span class="section-marker"></span>Kits Promocionais</div><div class="grid-produtos grid-1-col" id="grid-combos"></div><div class="bottom-category-nav"></div></div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
     }
 
@@ -850,7 +851,7 @@ function renderBottomChips(activeTabId) {
         html += `
         <div style="margin-top: 15px;">
             <div class="section-title" style="color: var(--c-a);"><span class="section-marker"></span>🎁 Kits Especiais</div>
-            <div class="grid-produtos grid-1-col-mobile" id="${trackId}">${trackHtml}${sentinelHtml}</div>
+            <div class="grid-produtos grid-1-col" id="${trackId}">${trackHtml}${sentinelHtml}</div>
         </div>`;
     }
 
@@ -883,7 +884,7 @@ function renderBottomChips(activeTabId) {
         if(!idMatch) return;
         let id = idMatch[1];
         
-       if(id !== activeTabId && id !== 'ofertas' && id !== 'combos' && id !== 'cestas') {
+       if(id !== activeTabId && id !== 'combos' && id !== 'cestas') {
             let listKey = 'term_' + id;
             if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
                 let trackId = 'grid-cat-' + id;
@@ -902,7 +903,7 @@ function renderBottomChips(activeTabId) {
             html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>${name}</div>
-                <div class="grid-produtos grid-1-col-mobile" id="${trackId}">${trackHtml}${sentinelHtml}</div>
+                <div class="grid-produtos grid-1-col" id="${trackId}">${trackHtml}${sentinelHtml}</div>
             </div>`;
         }
     });
@@ -921,8 +922,6 @@ window.switchTab = function(tabId, isHome = false) {
     $('section-busca').style.display = 'none';
     $('sec-minha-cesta').style.display = 'none';
     $('search-inp').value = '';
-
-    if($('mobile-home-banners')) $('mobile-home-banners').style.display = isHome ? 'flex' : 'none';
 
     document.querySelectorAll('.tab-section').forEach(el => {
         el.style.display = 'none';
@@ -964,7 +963,6 @@ window.goToHome = function() {
 window.goToMinhaCesta = function(doScroll) {
     document.querySelectorAll('.tab-section, .page-section').forEach(el => el.style.display = 'none');
     $('wrapper-sections').style.display = 'none';
-    if($('mobile-home-banners')) $('mobile-home-banners').style.display = 'none';
     $('cat-dropdown-list').classList.remove('open');
     
     $('sec-minha-cesta').style.display = 'block';
@@ -1005,7 +1003,7 @@ function renderPaginated(containerId, listKey, list, type) {
             html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>${title}</div>
-                <div class="grid-produtos grid-1-col-mobile" id="${trackId}">
+                <div class="grid-produtos grid-1-col" id="${trackId}">
                     ${trackHtml}
                     ${sentinelHtml}
                 </div>
@@ -1166,7 +1164,6 @@ function handleSearch(q) {
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     $('wrapper-sections').style.display = q ? 'none' : 'block'; 
     $('sec-minha-cesta').style.display = 'none';
-    if($('mobile-home-banners')) $('mobile-home-banners').style.display = 'none';
     $('section-busca').style.display = q ? 'block' : 'none'; 
     if (q) { 
         let listProds = STATE.prods.filter(p => norm(p.name).includes(norm(q)));
@@ -1317,17 +1314,18 @@ function openCheckout() {
         </div>
     `).join('');
     
+    // Lista em Cards Modal Finalização / Imagem Vertical Alta / Sem Bolinha
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { 
         let p = STATE.prods.find(x => x.id === id); 
         let qty = STATE.cart[id];
         return `
         <div style="display:flex; flex-direction:column; align-items:center; border:1px solid var(--c-bd); border-radius:8px; padding:10px 8px; background:#fff; text-align:center; position:relative;">
-            <div style="position:absolute; top:4px; right:4px; background:var(--c-a); color:#fff; font-size:0.75rem; font-weight:800; width:22px; height:22px; border-radius:11px; display:flex; align-items:center; justify-content:center;">${qty}</div>
-            <img src="${p.img}" style="width:100%; height:60px; object-fit:contain; margin-bottom:8px; background: var(--c-img-bg); border-radius: 6px;">
-            <div style="font-size:0.7rem; color:var(--c-p); line-height:1.2; height:2.4em; overflow:hidden; margin-bottom:10px; width:100%; font-weight: 600;">${formatName(p.name)}</div>
-            <div class="card-qty-ctrl" style="margin-top:auto; height:32px; width:100%; padding:0; display:flex; justify-content:space-between; align-items:center;">
-                <button onclick="upd('${id}',-1); event.stopPropagation();" style="padding:0 8px; font-size:1.5rem;">-</button>
-                <button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 8px; font-size:1.5rem;">+</button>
+            <img src="${p.img}" style="width:100%; aspect-ratio:4/5; object-fit:contain; margin-bottom:8px; background: var(--c-img-bg); border-radius: 6px;">
+            <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; height:2.4em; overflow:hidden; margin-bottom:10px; width:100%; font-weight: 600;">${formatName(p.name)}</div>
+            <div class="card-qty-ctrl" style="margin-top:auto; height:36px; width:100%; padding:0; display:flex; justify-content:space-between; align-items:center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+                <button onclick="upd('${id}',-1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">-</button>
+                <span style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">${qty}</span>
+                <button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">+</button>
             </div>
         </div>`; 
     }).join('');
