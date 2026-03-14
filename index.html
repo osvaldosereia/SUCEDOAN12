@@ -77,18 +77,19 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .section-title { width: 100%; max-width: 1000px; margin: 0 auto; font-size: 1.15rem; font-weight: 800; color: var(--c-p); padding: 25px 10px 15px; text-transform: uppercase; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
 .section-marker { background: var(--c-a); width: 4px; height: 18px; border-radius: 4px; display: inline-block;}
 
-/* GRADES UNIFICADAS COM MENOS RESPIRO */
-.grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 0 10px 25px; width: 100%; max-width: 1000px; margin: 0 auto; }
+/* GRADES UNIFICADAS (Com Respiro Menor) */
+.grid-produtos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 0 10px 25px; width: 100%; max-width: 1000px; margin: 0 auto; align-items: stretch; }
 
 @media(min-width: 800px) { 
     .grid-produtos { grid-template-columns: repeat(5, 1fr); gap: 12px; padding: 0 15px 25px; } 
     .section-title { padding-left: 15px; }
 }
 
-/* CARD PADRÃO PARA TODOS OS ITENS */
-.u-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+/* CARD UNIVERSAL (Garante altura igual p/ todos na mesma linha da grelha) */
+.u-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; position: relative; transition: 0.2s; cursor: pointer; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.03); height: 100%; }
 .u-card:active { transform: scale(0.98); }
 
+/* CONTENEDOR DA IMAGEM UNIVERSAL */
 .u-img-area { 
     width: 100%; 
     aspect-ratio: 4/5; 
@@ -101,9 +102,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     align-items: center;
     justify-content: center;
 }
+.u-img-area.square { aspect-ratio: 1/1; } /* Única diferença pras Cestas/Kits */
+
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .u-img { object-fit: contain; mix-blend-mode: multiply; padding: 5%; } 
-.u-img-cesta { object-fit: cover; }
+.u-img-cesta { object-fit: cover !important; mix-blend-mode: normal !important; padding: 0 !important; }
 
 /* ETIQUETA INLINE */
 .inline-discount { background: var(--c-err); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 800; border-radius: 6px; }
@@ -134,7 +137,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .card-add-btn:active { transform: scale(0.85); background: #b91c1c; }
 
-.u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 100%; }
+.u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
 .u-name { font-size: 0.95rem; font-weight: 600; color: var(--c-p); line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px; }
 .u-price { font-size: 1.3rem; font-weight: 800; color: var(--c-p); }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: -2px; }
@@ -145,7 +148,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .btn-big-action { width: 100%; background: #e2e8f0; color: var(--c-p); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 42px; transition: 0.2s;}
 .btn-big-action:hover { background: #cbd5e1; }
-.btn-view-details { width: 100%; background: var(--c-a); color: #fff; border: none; padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; margin-top: 10px; display: flex; justify-content: center; align-items: center; height: 42px; transition: 0.2s; box-shadow: 0 4px 6px rgba(234, 88, 12, 0.2); }
 
 .card-qty-ctrl { display:flex; align-items:center; justify-content:space-between; background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; height:42px; margin-top:10px; padding:0 4px; width:100%; }
 .card-qty-ctrl button { font-size:1.6rem; color: var(--c-a); font-weight:500; background:transparent; border:none; padding:0 15px; height: 100%; cursor:pointer; }
@@ -155,7 +157,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 /* SKELETON LOADING */
 @keyframes shimmer { 0% { background-position: -468px 0; } 100% { background-position: 468px 0; } }
-.skeleton-card { background: #fff; padding: 12px; border: 1px solid var(--c-bd); border-radius: 12px; display: flex; flex-direction: column; }
+.skeleton-card { background: #fff; padding: 8px; border: 1px solid var(--c-bd); border-radius: 12px; display: flex; flex-direction: column; }
 .skeleton-el { background: #f1f5f9; background-image: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%); background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s infinite linear forwards; }
 .sk-img { width: 100%; aspect-ratio: 4/5; border-radius: 8px; margin-bottom: 8px; }
 .sk-t1 { height: 14px; border-radius: 4px; width: 90%; }
@@ -492,31 +494,6 @@ function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/
 function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
 
-function gerarDestaquesDaValidade() {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-
-    let elegiveis = STATE.prods.filter(p => {
-        if (p.stock <= 0) return false; 
-        if (!p.validade) return false;  
-        let partes = p.validade.split('/');
-        if (partes.length !== 3) return false;
-        let dataVal = new Date(partes[2], partes[1] - 1, partes[0]);
-        if (dataVal < hoje) return false;
-        p.dataValidadeObj = dataVal;
-        return true;
-    });
-
-    elegiveis.sort((a, b) => a.dataValidadeObj - b.dataValidadeObj);
-    let destaques = elegiveis.slice(0, 20);
-
-    STATE.sohoje = destaques.map(p => {
-        let precoBase = p.oldPrice ? p.oldPrice : p.price;
-        let precoComDesconto = parseFloat((precoBase * 0.87).toFixed(2));
-        return { id: String(p.id), preco_so_hoje: precoComDesconto };
-    });
-}
-
 async function init() {
     try {
         const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
@@ -580,12 +557,10 @@ async function init() {
                 if (STATE.bloqueados.includes(p.id) || STATE.bloqueados.includes(p.blingId)) return;
                 if (p.stock <= 0) return;
 
-                let percentual = 0.03 + (rand() * 0.09); // 3% a 12%
+                let percentual = 0.03 + (rand() * 0.09); 
                 p.oldPrice = p.price; 
                 p.price = parseFloat((p.oldPrice * (1 - percentual)).toFixed(2)); 
             });
-            
-            gerarDestaquesDaValidade();
         }
 
         buildTabsAndSections(); 
@@ -657,6 +632,8 @@ function buildCardHtml(item, type, isHidden = false) {
     let isKit = type === 'COMBO';
     let isBasket = type === 'BASKET';
 
+    let areaClass = (isKit || isBasket) ? 'u-img-area square' : 'u-img-area';
+    
     let addBtnHtml = '';
     let qty = STATE.cart[id] || 0;
     let btnText = qty > 0 ? qty : '+';
@@ -695,7 +672,7 @@ function buildCardHtml(item, type, isHidden = false) {
 
     return `
     <div class="u-card ${hiddenClass}" data-id="${id}" onclick="${onClick}">
-        <div class="u-img-area">
+        <div class="${areaClass}">
             <img src="${img}" class="${(isKit||isBasket)?'u-img-cesta':'u-img'}" alt="${formatName(name)}" loading="lazy">
             ${addBtnHtml}
         </div>
@@ -710,38 +687,6 @@ function buildCardHtml(item, type, isHidden = false) {
             </div>
         </div>
     </div>`;
-}
-
-function buildCarouselsHtml() {
-    if (!STATE.carrosseis || STATE.carrosseis.length === 0) return '';
-    let html = '';
-    
-    STATE.carrosseis.forEach((carro, cIdx) => {
-        let keywords = carro.palavras_chave.split(',').map(k => norm(k.trim())).filter(k => k);
-        let matchedProds = STATE.prods.filter(p => {
-            if (p.stock <= 0) return false;
-            let pName = norm(p.name);
-            let pCat = norm(p.categoria);
-            return keywords.some(kw => pName.includes(kw) || pCat.includes(kw));
-        }); 
-
-        if (matchedProds.length > 0) {
-            let trackId = 'grid-carro-' + cIdx;
-            let trackHtml = matchedProds.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10)).join('');
-            let sentinelHtml = matchedProds.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
-
-            html += `
-            <div style="margin-top: 15px;">
-                <div class="section-title"><span class="section-marker"></span>${carro.titulo}</div>
-                <div class="grid-produtos" id="${trackId}">
-                    ${trackHtml}
-                    ${sentinelHtml}
-                </div>
-            </div>`;
-        }
-    });
-    
-    return html;
 }
 
 function buildTabsAndSections() {
@@ -835,58 +780,26 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
-    if (STATE.sohoje && STATE.sohoje.length > 0) {
-        let shProds = STATE.sohoje.map(sh => {
-            let p = STATE.prods.find(x => x.id === String(sh.id));
-            if (!p) return null;
-            return { ...p, oldPrice: p.oldPrice ? p.oldPrice : p.price, price: sh.preco_so_hoje ? parseFloat(sh.preco_so_hoje) : p.price };
-        }).filter(Boolean);
-
-        let shHtml = shProds.map((p, idx) => buildCardHtml(p, 'PROD', false)).join('');
-        
-        if(shHtml) {
-            html += `
-            <div style="margin-top: 15px; border-top: 8px solid var(--c-img-bg); padding-top: 10px;">
-                <div class="section-title" style="color: var(--c-err);"><span class="section-marker" style="background:var(--c-err)"></span>Ofertas Relâmpago</div>
-                <div class="grid-produtos" id="grid-destaques-${activeTabId}">
-                    ${shHtml}
-                </div>
-            </div>`;
-        }
-    }
-
-    html += buildCarouselsHtml();
-
-    document.querySelectorAll('.cat-dropdown-item').forEach(navItem => {
-        let name = navItem.innerText.trim();
-        let onClickText = navItem.getAttribute('onclick');
-        let idMatch = onClickText.match(/'([^']+)'/);
-        if(!idMatch) return;
-        let id = idMatch[1];
-        
-       if(id !== activeTabId && id !== 'combos' && id !== 'cestas') {
-            let listKey = 'term_' + id;
-            if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                let trackId = 'grid-cat-' + id;
-                let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10)).join('');
-                let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
-                html += `
-                <div style="margin-top: 15px;">
-                    <div class="section-title"><span class="section-marker"></span>${name}</div>
-                    <div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div>
-                </div>`;
+    if (STATE.termos && STATE.termos.length > 0) {
+        STATE.termos.forEach(item => {
+            let label = item.etiqueta || item;
+            let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+            
+            if(safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
+                let listKey = 'term_' + safe;
+                if(STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
+                    let trackId = 'grid-cat-' + safe;
+                    let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10)).join('');
+                    let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
+                    html += `
+                    <div style="margin-top: 15px;">
+                        <div class="section-title"><span class="section-marker"></span>${label}</div>
+                        <div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div>
+                    </div>`;
+                }
             }
-       } else if(id === 'cestas' && activeTabId !== 'cestas' && STATE.lists['cestas'] && STATE.lists['cestas'].data.length > 0) {
-            let trackId = 'grid-cestas-bottom';
-            let trackHtml = STATE.lists['cestas'].data.map((c, idx) => buildCardHtml(c, 'BASKET', idx >= 10)).join('');
-            let sentinelHtml = STATE.lists['cestas'].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
-            html += `
-            <div style="margin-top: 15px;">
-                <div class="section-title"><span class="section-marker"></span>${name}</div>
-                <div class="grid-produtos" id="${trackId}">${trackHtml}${sentinelHtml}</div>
-            </div>`;
-        }
-    });
+        });
+    }
     
     let activeSec = $('sec-' + activeTabId);
     if(activeSec) {
