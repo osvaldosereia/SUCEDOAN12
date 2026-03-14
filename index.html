@@ -7,6 +7,10 @@
 <meta name="theme-color" content="#ffffff">
 <link rel="manifest" href="manifest.json">
 <title>Super Cestas Básicas Dona Antônia</title>
+
+<link rel="preload" as="image" href="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif">
+<link rel="preload" as="image" href="site/img/produtos/banner.webp">
+
 <style>
 :root {
     --c-p: #0f172a; 
@@ -551,6 +555,29 @@ button {
     display: none !important; 
 }
 
+/* NOVO BOTÃO: VER TODOS OS PRODUTOS (ESTILO CHECKOUT) */
+.btn-ver-todos {
+    grid-column: 1 / -1; 
+    margin: 10px 0 15px 0;
+    border: 2px dashed var(--c-a);
+    color: var(--c-a);
+    background: #fff7ed;
+    padding: 16px;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+    width: 100%;
+    text-transform: uppercase;
+}
+.btn-ver-todos:hover {
+    background: #ffedd5;
+}
+
 /* SKELETON LOADING */
 @keyframes shimmer { 
     0% { background-position: -468px 0; } 
@@ -1055,7 +1082,8 @@ dialog::backdrop {
         <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">1. O Seu Pedido</h3>
         <div id="chk-list"></div>
         
-<button class="btn-modal secondary" style="margin-bottom: 25px; border: 2px dashed var(--c-a); color: var(--c-a); background: #fff7ed; padding: 16px;" onclick="document.getElementById('modal-checkout').close(); switchTab('combos');">VEJA MAIS PRODUTOS</button>        
+        <button class="btn-modal secondary" style="margin-bottom: 25px; border: 2px dashed var(--c-a); color: var(--c-a); background: #fff7ed; padding: 16px;" onclick="document.getElementById('modal-checkout').close(); switchTab('combos');">+ Adicionar Produtos</button>        
+        
         <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">2. Receber quando?</h3>
         <p style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px; font-weight: 500;">Planeje a entrega e ganhe desconto.</p>
         <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
@@ -1083,8 +1111,9 @@ dialog::backdrop {
         
         <button id="btn-send-order" onclick="sendOrder()" class="btn-modal primary" style="font-size: 1.1rem; padding: 16px; transition: 0.2s;"></button>
         
-        <div style="display: flex; justify-content: center; margin-top: 15px;">
-            <button class="btn-modal" style="background: transparent; color: var(--c-err); font-size: 0.95rem; border: none; text-decoration: underline;" onclick="clearCart()">Limpar Cesta</button>
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+            <button class="btn-modal secondary" style="margin: 0; flex: 1; border: none; background: var(--c-bd); font-size: 0.9rem;" onclick="document.getElementById('modal-checkout').close(); switchTab('combos');">Mais produtos</button>
+            <button class="btn-modal secondary" style="margin: 0; flex: 1; border: none; background: #fef2f2; color: var(--c-err); font-size: 0.9rem;" onclick="clearCart()">Limpar Cesta</button>
         </div>
     </div>
 </dialog>
@@ -1153,48 +1182,15 @@ let currentComboQty = 1;
 let currentComboId = null; 
 let currentBasketQty = 1;
 
-window.loadMoreGridItems = function(trackId, sentinel) {
+// NOVO BOTÃO: Revelar todos os produtos ocultos da secção correspondente
+window.revealAllGridItems = function(trackId, btn) {
     let track = document.getElementById(trackId);
     if (!track) return;
-    
     let hiddenItems = track.querySelectorAll('.general-hidden');
-    let revealed = 0;
-    
-    hiddenItems.forEach((item) => {
-        if (revealed < 10) {
-            item.classList.remove('general-hidden');
-            revealed++;
-        }
+    hiddenItems.forEach(item => {
+        item.classList.remove('general-hidden');
     });
-    
-    let remainingHidden = track.querySelectorAll('.general-hidden').length;
-    if (remainingHidden === 0 && sentinel) {
-        if (window.gridObserver) {
-            window.gridObserver.unobserve(sentinel);
-        }
-        sentinel.remove();
-    }
-};
-
-window.setupInfiniteScroll = function() {
-    if (!window.gridObserver) {
-        window.gridObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    let trackId = entry.target.getAttribute('data-target-track');
-                    if (trackId) {
-                        window.loadMoreGridItems(trackId, entry.target);
-                    }
-                }
-            });
-        }, { root: document.getElementById('scroll-stage'), rootMargin: '0px 0px 400px 0px' });
-    } else {
-        window.gridObserver.disconnect();
-    }
-    
-    document.querySelectorAll('.scroll-sentinel').forEach(el => {
-        window.gridObserver.observe(el);
-    });
+    btn.style.display = 'none'; // Esconde o botão depois de clicar
 };
 
 function norm(str) { 
@@ -1348,7 +1344,8 @@ window.handleAddClick = function(e, id) {
     animateToCart(rect.left + rect.width / 2, rect.top + rect.height / 2);
 };
 
-function buildCardHtml(item, type, isHidden = false) {
+// Otimização adicionada: recebemos index para definir o loading=lazy dinamicamente
+function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let hiddenClass = isHidden ? 'general-hidden' : '';
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
@@ -1361,6 +1358,7 @@ function buildCardHtml(item, type, isHidden = false) {
     let isKit = type === 'COMBO'; 
     let isBasket = type === 'BASKET';
     
+    let imgLoadAttr = idx < 4 ? 'fetchpriority="high"' : 'loading="lazy"';
     let areaClass = (isKit || isBasket) ? 'u-img-area square' : 'u-img-area';
     
     let addBtnHtml = ''; 
@@ -1406,7 +1404,7 @@ function buildCardHtml(item, type, isHidden = false) {
     return `
     <div class="u-card ${hiddenClass}" data-id="${id}" onclick="${onClick}">
         <div class="${areaClass}">
-            <img src="${img}" class="${(isKit || isBasket) ? 'u-img-cesta' : 'u-img'}" alt="${formatName(name)}" loading="lazy">
+            <img src="${img}" class="${(isKit || isBasket) ? 'u-img-cesta' : 'u-img'}" alt="${formatName(name)}" ${imgLoadAttr}>
             ${addBtnHtml}
         </div>
         <div class="u-info">
@@ -1530,8 +1528,8 @@ function renderBottomChips(activeTabId) {
     
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
         let trackId = 'grid-kits-bottom';
-        let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10)).join('');
-        let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
+        let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10, idx)).join('');
+        let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
         html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
@@ -1552,8 +1550,8 @@ function renderBottomChips(activeTabId) {
                 
                 if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
                     let trackId = 'grid-cat-' + safe;
-                    let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10)).join('');
-                    let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
+                    let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10, idx)).join('');
+                    let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
                     html += `
                         <div style="margin-top: 15px;">
                             <div class="section-title"><span class="section-marker"></span>${label}</div>
@@ -1574,8 +1572,6 @@ function renderBottomChips(activeTabId) {
             navContainer.innerHTML = html; 
         }
     }
-    
-    setTimeout(window.setupInfiniteScroll, 100);
 }
 
 window.switchTab = function(tabId) {
@@ -1657,8 +1653,8 @@ function renderPaginated(containerId, listKey, list, type) {
         groupKeys.forEach((gName, gIdx) => {
             let title = gName === "Outras Cestas" ? "Outras Cestas" : `Cestas com ${gName}`;
             let trackId = 'grid-g-cesta-' + gIdx;
-            let trackHtml = groups[gName].map((item, idx) => buildCardHtml(item, 'BASKET', idx >= 10)).join('');
-            let sentinelHtml = groups[gName].length > 10 ? `<div class="scroll-sentinel" data-target-track="${trackId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
+            let trackHtml = groups[gName].map((item, idx) => buildCardHtml(item, 'BASKET', idx >= 10, idx)).join('');
+            let sentinelHtml = groups[gName].length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
             
             html += `
                 <div class="section-title"><span class="section-marker"></span>${title}</div>
@@ -1669,7 +1665,6 @@ function renderPaginated(containerId, listKey, list, type) {
         });
         
         c.innerHTML = html || '<p style="padding: 15px;">Nenhuma cesta encontrada.</p>';
-        setTimeout(window.setupInfiniteScroll, 100);
         return;
     }
 
@@ -1679,14 +1674,12 @@ function renderPaginated(containerId, listKey, list, type) {
     let displayList = list;
     let html = displayList.map((item, index) => {
         let itemType = type === 'MIXED' ? (item._isCombo ? 'COMBO' : 'PROD') : type;
-        return buildCardHtml(item, itemType, index >= 10);
+        return buildCardHtml(item, itemType, index >= 10, index);
     }).join('');
     
-    let sentinelHtml = displayList.length > 10 ? `<div class="scroll-sentinel" data-target-track="${containerId}" style="grid-column: 1/-1; height:1px;"></div>` : '';
+    let sentinelHtml = displayList.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${containerId}', this)">VER TODOS OS PRODUTOS</button>` : '';
     
     c.innerHTML = (html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>') + sentinelHtml;
-    
-    setTimeout(window.setupInfiniteScroll, 100);
 }
 
 function getCardControls(id) {
@@ -1963,7 +1956,7 @@ function confirmBasket(isCustom, qty) {
     $('modal-basket-preview').close(); 
     
     updateTotals(); 
-    openCheckout(); // Agora o Custom e o Normal abrem o checkout direto
+    openCheckout();
 }
 
 function previewCombo(id) { 
