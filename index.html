@@ -1187,6 +1187,47 @@ let currentComboQty = 1;
 let currentComboId = null; 
 let currentBasketQty = 1;
 
+// Criamos o Observador que vai vigiar a tela
+const infiniteScrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        // Se a "âncora" entrou na tela
+        if (entry.isIntersecting) {
+            let sentinel = entry.target;
+            let container = sentinel.parentElement; // O grid onde estão os produtos
+            
+            // Procuramos os produtos que ainda estão escondidos neste grid
+            let hiddenItems = container.querySelectorAll('.general-hidden');
+            
+            if (hiddenItems.length > 0) {
+                // Revelamos os próximos 10 itens (ou menos, se for o final)
+                let limite = Math.min(10, hiddenItems.length);
+                for (let i = 0; i < limite; i++) {
+                    hiddenItems[i].classList.remove('general-hidden');
+                }
+                
+                // Se acabaram os produtos escondidos, removemos a âncora para parar de vigiar
+                if (hiddenItems.length <= 10) {
+                    sentinel.remove();
+                    infiniteScrollObserver.unobserve(sentinel);
+                }
+            } else {
+                sentinel.remove();
+                infiniteScrollObserver.unobserve(sentinel);
+            }
+        }
+    });
+}, { 
+    // Começa a carregar 200 pixels ANTES do cliente chegar ao fim, para ser instantâneo!
+    rootMargin: "0px 0px 200px 0px" 
+});
+
+// Função para ativar o observador nas âncoras novas que criarmos
+function ativarRolagemInfinita() {
+    document.querySelectorAll('.scroll-sentinel').forEach(el => {
+        infiniteScrollObserver.observe(el);
+    });
+}
+
 // NOVO BOTÃO: Revelar todos os produtos ocultos da secção correspondente
 window.revealAllGridItems = function(trackId, btn) {
     let track = document.getElementById(trackId);
@@ -1556,7 +1597,7 @@ function renderBottomChips(activeTabId) {
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
         let trackId = 'grid-kits-bottom-' + activeTabId; 
         let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10, idx)).join('');
-        let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
+        let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
         html += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
@@ -1606,7 +1647,7 @@ function renderBottomChips(activeTabId) {
                 if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
                     let trackId = 'grid-cat-' + safe + '-' + activeTabId; 
                     let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10, idx)).join('');
-                    let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
+                    let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
                     html += `
                         <div style="margin-top: 15px;">
                             <div class="section-title"><span class="section-marker"></span>${label}</div>
@@ -1627,6 +1668,8 @@ function renderBottomChips(activeTabId) {
             navContainer.innerHTML = html; 
         }
     }
+
+    ativarRolagemInfinita();
 }
 
 window.switchTab = function(tabId) {
@@ -1709,7 +1752,7 @@ function renderPaginated(containerId, listKey, list, type) {
             let title = gName === "Outras Cestas" ? "Outras Cestas" : `Cestas com ${gName}`;
             let trackId = 'grid-g-cesta-' + gIdx;
             let trackHtml = groups[gName].map((item, idx) => buildCardHtml(item, 'BASKET', idx >= 10, idx)).join('');
-            let sentinelHtml = groups[gName].length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
+            let sentinelHtml = groups[gName].length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
             
             html += `
                 <div class="section-title"><span class="section-marker"></span>${title}</div>
@@ -1720,6 +1763,7 @@ function renderPaginated(containerId, listKey, list, type) {
         });
         
         c.innerHTML = html || '<p style="padding: 15px;">Nenhuma cesta encontrada.</p>';
+        ativarRolagemInfinita();
         return;
     }
 
@@ -1732,9 +1776,10 @@ function renderPaginated(containerId, listKey, list, type) {
         return buildCardHtml(item, itemType, index >= 10, index);
     }).join('');
     
-    let sentinelHtml = displayList.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${containerId}', this)">VER TODOS OS PRODUTOS</button>` : '';
+    let sentinelHtml = displayList.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
     
     c.innerHTML = (html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>') + sentinelHtml;
+    ativarRolagemInfinita();
 }
 
 function getCardControls(id) {
