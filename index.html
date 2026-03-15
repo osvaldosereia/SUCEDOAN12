@@ -901,7 +901,36 @@ dialog::backdrop {
     border-color: var(--c-err) !important; 
     background-color: #fef2f2 !important; 
 }
-
+/* --- LAYOUT 1 COLUNA NO MOBILE PARA CESTAS E KITS --- */
+@media (max-width: 799px) {
+    /* Seleciona a aba das Cestas, a aba dos Kits e os Kits de fundo */
+    #wrapper-cestas .grid-produtos,
+    #grid-combos,
+    [id^="grid-kits-bottom-"] {
+        grid-template-columns: 1fr; /* Força a ter apenas 1 coluna */
+        padding: 0 15px 25px; /* Dá uma margem lateral elegante para não colar nos limites do ecrã */
+        gap: 15px; /* Aumenta o espaço entre os cartões para respirar melhor */
+    }
+    
+    /* Como a foto vai ficar gigante, aumentamos ligeiramente a fonte do nome para equilibrar o visual */
+    #wrapper-cestas .u-name,
+    #grid-combos .u-name,
+    [id^="grid-kits-bottom-"] .u-name {
+        font-size: 1.15rem; 
+        margin-top: 8px;
+    }
+    
+    /* Aumentamos também um pouco o tamanho do botão + para ficar proporcional à foto grande */
+    #wrapper-cestas .card-add-btn,
+    #grid-combos .card-add-btn,
+    [id^="grid-kits-bottom-"] .card-add-btn {
+        width: 48px;
+        height: 48px;
+        font-size: 1.8rem;
+        bottom: 12px;
+        right: 12px;
+    }
+}
 </style>
 </head>
 <body>
