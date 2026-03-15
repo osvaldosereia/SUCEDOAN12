@@ -1547,18 +1547,31 @@ function buildTabsAndSections() {
                         .map(t => norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim())
                         .filter(t => t);
                     
+                    // Colocamos espaços no início e no fim para não cortar palavras a meio
                     let pNamePadded = ' ' + norm(p.name).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
                     let matches = [];
                     
                     allTerms.forEach(t => {
                         let words = t.split(' ');
+                        // Verifica se todas as palavras do termo da categoria estão no nome do produto
                         if (words.every(w => pNamePadded.includes(' ' + w + ' '))) {
-                            matches.push({ term: t, wordCount: words.length });
+                            // Descobre em que posição do nome a primeira palavra desta categoria aparece
+                            let positionIndex = pNamePadded.indexOf(' ' + words[0] + ' ');
+                            matches.push({ term: t, wordCount: words.length, position: positionIndex });
                         }
                     });
                     
                     if (matches.length > 0) { 
-                        matches.sort((a, b) => b.wordCount - a.wordCount); 
+                        // NOVA REGRA DE OURO DA ORDENAÇÃO:
+                        matches.sort((a, b) => {
+                            // 1º Critério: Ganha a categoria com mais palavras juntas (ex: "feijão preto" ganha a "feijão")
+                            if (b.wordCount !== a.wordCount) {
+                                return b.wordCount - a.wordCount;
+                            }
+                            // 2º Critério (Desempate): Se têm o mesmo número de palavras, ganha a palavra que aparece PRIMEIRO no nome do produto
+                            return a.position - b.position;
+                        }); 
+                        
                         return subs.includes(matches[0].term); 
                     }
                 } 
