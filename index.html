@@ -1446,12 +1446,10 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
         if (isKit) {
             onClick = `previewCombo('${id}')`;
             if (precoDe > pPrice) {
+                // Mostra o preço antigo riscado, mas SEM a etiqueta de percentual
                 oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`;
-                let perc = Math.round((1 - pPrice / precoDe) * 100);
-                if (perc > 0) {
-                    tagHtml = `<div class="inline-discount">-${perc}%</div>`;
-                }
             } else { 
+                // Mantém a etiqueta de KIT se não tiver desconto
                 tagHtml = `<div class="kit-tag">KIT</div>`; 
             }
         } else { 
@@ -1461,8 +1459,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     } else {
         onClick = `openQuickView('${id}')`;
         if (item.oldPrice && item.oldPrice > pPrice) {
-            let perc = Math.round((1 - pPrice / item.oldPrice) * 100);
-            tagHtml = `<div class="inline-discount">-${perc}%</div>`;
+            // Mostra apenas o preço antigo riscado, removida a etiqueta de percentual
             oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
         }
         addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnText}</button>`;
