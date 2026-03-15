@@ -437,14 +437,14 @@ button {
     border-radius: 6px; 
 }
 
-/* BOTÃO DE ADICIONAR (+) */
+/* BOTÃO DE ADICIONAR (+) - Atualizado para Laranja */
 .card-add-btn { 
     position: absolute; 
     bottom: 8px; 
     right: 8px; 
     width: 40px; 
     height: 40px; 
-    background: var(--c-err); 
+    background: var(--c-a); /* Cor Laranja da marca */
     color: #fff; 
     border-radius: 50%; 
     display: flex; 
@@ -453,7 +453,7 @@ button {
     line-height: 1; 
     font-size: 1.5rem; 
     font-weight: 700; 
-    box-shadow: 0 4px 10px rgba(220, 38, 38, 0.4); 
+    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.4); /* Sombra laranja */
     z-index: 10; 
     transition: 0.15s; 
     border: none; 
@@ -463,7 +463,7 @@ button {
 
 .card-add-btn:active { 
     transform: scale(0.85); 
-    background: #b91c1c; 
+    background: #c2410c; /* Laranja mais escuro ao clicar */
 }
 
 .u-info { 
@@ -1471,17 +1471,14 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     return `
     <div class="u-card ${hiddenClass}" data-id="${id}" onclick="${onClick}">
         <div class="${areaClass}">
-            <img src="${img}" class="${(isKit || isBasket) ? 'u-img-cesta' : 'u-img'}" alt="${formatName(name)}" ${imgLoadAttr}>
+            ${tagHtml} <img src="${img}" class="${(isKit || isBasket) ? 'u-img-cesta' : 'u-img'}" alt="${formatName(name)}" ${imgLoadAttr}>
             ${addBtnHtml}
         </div>
         <div class="u-info">
             <div class="u-name">${formatName(name)}</div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto;">
-                <div>
-                    ${oldPriceHtml}
-                    <div class="u-price">${priceHtml}</div>
-                </div>
-                ${tagHtml}
+            <div style="display: flex; flex-direction: column; justify-content: flex-end; margin-top: auto;">
+                ${oldPriceHtml}
+                <div class="u-price">${priceHtml}</div>
             </div>
         </div>
     </div>`;
