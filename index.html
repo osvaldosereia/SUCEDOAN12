@@ -1086,7 +1086,7 @@ dialog::backdrop {
             <button class="sq-btn" style="background:var(--c-bd); width:48px; height:48px; font-size:1.8rem; color:var(--c-a); border-radius:12px; border:none; cursor: pointer;" onclick="changeComboQty(1)">+</button>
         </div>
 
-        <button class="btn-modal primary" id="btn-customize-preview" style="display:none; font-size: 1.05rem; padding: 16px; margin-bottom: 10px;">Personalizar Minha Cesta</button>
+        <button class="btn-modal primary" id="btn-customize-preview" style="display:none; font-size: 1.05rem; padding: 16px; margin-bottom: 10px;">Trocar e Adicionar Produtos</button>
         <button class="btn-modal secondary" id="btn-confirm-preview" style="font-size: 1.05rem; padding: 16px; margin-bottom: 0;"></button>
         <button class="btn-modal" style="background: transparent; border: none; color: var(--c-s); margin-top: 8px; padding: 12px; font-weight: 600; font-size: 1rem;" onclick="this.closest('dialog').close()">Fechar</button>
     </div>
@@ -2040,7 +2040,7 @@ function previewBasket(id) {
     }).join('');
     
     $('combo-qty-controls').style.display = 'none'; 
-    $('btn-confirm-preview').innerText = "Encomendar Cesta"; 
+    $('btn-confirm-preview').innerText = "Encomendar Cesta Normal"; 
     $('btn-confirm-preview').onclick = () => { 
         $('modal-basket-preview').close(); 
         setBasketQty(1); 
