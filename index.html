@@ -1218,6 +1218,21 @@ function formatName(s) {
     return s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' '); 
 }
 
+    // Função auxiliar para converter a data "DD/MM/AAAA" num valor comparável
+function converterDataValidade(dataStr) {
+    // Se o produto não tiver data de validade, damos-lhe uma data muito no futuro 
+    // para que vá para o fim da lista e não apareça nos destaques.
+    if (!dataStr) return new Date(8640000000000000).getTime(); 
+    
+    let partes = dataStr.split('/');
+    if (partes.length === 3) {
+        // O JavaScript usa o formato (Ano, Mês - 1, Dia)
+        return new Date(partes[2], partes[1] - 1, partes[0]).getTime();
+    }
+    // Caso a data esteja noutro formato, tentamos ler diretamente
+    return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
+}
+
 async function init() {
     try {
         const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
@@ -1537,8 +1552,8 @@ function buildTabsAndSections() {
 function renderBottomChips(activeTabId) {
     let html = '';
     
+    // --- 1. SESSÃO DOS KITS PROMOCIONAIS (Código existente) ---
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        // CORREÇÃO: Adicionado o activeTabId ao ID para evitar duplicação no DOM
         let trackId = 'grid-kits-bottom-' + activeTabId; 
         let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10, idx)).join('');
         let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
@@ -1552,6 +1567,34 @@ function renderBottomChips(activeTabId) {
             </div>`;
     }
 
+    // --- 2. NOVA SESSÃO: DESTAQUES (Produtos a vencer) ---
+    // Filtramos apenas os produtos que têm validade e que têm stock
+    let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
+
+    // Ordenamos a lista da validade mais próxima (menor data) para a mais distante
+    produtosComValidade.sort((a, b) => {
+        return converterDataValidade(a.validade) - converterDataValidade(b.validade);
+    });
+
+    // Cortamos a lista para ter apenas os primeiros 10 produtos
+    let destaques = produtosComValidade.slice(0, 10);
+
+    // Se houver produtos para mostrar, desenhamos a secção
+    if (destaques.length > 0) {
+        let trackIdDestaques = 'grid-destaques-' + activeTabId;
+        // Construímos o HTML de cada cartão de produto (aqui não precisamos de ocultar nenhum, pois já são só 10)
+        let trackHtmlDestaques = destaques.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
+
+        html += `
+            <div style="margin-top: 15px;">
+                <div class="section-title" style="border-left-color: #f59e0b;"><span class="section-marker"></span>Destaques</div>
+                <div class="grid-produtos" id="${trackIdDestaques}">
+                    ${trackHtmlDestaques}
+                </div>
+            </div>`;
+    }
+
+    // --- 3. SESSÃO DAS OUTRAS CATEGORIAS (Código existente) ---
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
@@ -1561,7 +1604,6 @@ function renderBottomChips(activeTabId) {
                 let listKey = 'term_' + safe;
                 
                 if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                    // CORREÇÃO: Adicionado o activeTabId ao ID para evitar duplicação no DOM
                     let trackId = 'grid-cat-' + safe + '-' + activeTabId; 
                     let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10, idx)).join('');
                     let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<button class="btn-ver-todos" onclick="revealAllGridItems('${trackId}', this)">VER TODOS OS PRODUTOS</button>` : '';
