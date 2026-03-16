@@ -1326,16 +1326,65 @@ dialog::backdrop {
 
 <script>
 let splashRemoved = false;
+
+// Função que esconde e deleta a tela de abertura
 function removeSplash() {
     if (splashRemoved) return;
     splashRemoved = true;
     const splash = document.getElementById('splash-screen');
     if (splash) {
         splash.classList.add('hidden');
+        // Espera a transição de CSS terminar para remover o HTML do navegador
         setTimeout(() => splash.remove(), 600);
     }
 }
-setTimeout(removeSplash, 2200);
+
+// NOVA LÓGICA: Controle dos slides de texto
+function initSplashScreen() {
+    const phrases = document.querySelectorAll('.splash-phrase');
+    const textContainer = document.getElementById('splash-text-container');
+    const logo = document.getElementById('splash-logo-img');
+    
+    let currentIndex = 0;
+    const timePerPhrase = 1200; // Tempo de cada frase (1.2 segundos)
+
+    function showNextPhrase() {
+        // Se já mostramos todas as frases, é hora de mostrar a logo
+        if (currentIndex >= phrases.length) {
+            textContainer.style.display = 'none'; // Some com os textos
+            logo.classList.remove('hide-initial'); // Tira a restrição de "escondido"
+            
+            // Força o navegador a recalcular a tela para a animação funcionar
+            void logo.offsetWidth; 
+            logo.classList.add('show-logo'); // Anima a logo crescendo
+
+            // Após a logo aparecer, esperamos 1,5 segundos e finalizamos o splash
+            setTimeout(removeSplash, 1500);
+            return;
+        }
+
+        // Esconde a frase anterior, se houver
+        if (currentIndex > 0) {
+            phrases[currentIndex - 1].classList.remove('show-phrase');
+            phrases[currentIndex - 1].classList.add('hide-phrase');
+        }
+
+        // Mostra a frase atual
+        phrases[currentIndex].classList.add('show-phrase');
+        currentIndex++;
+
+        // Agenda a próxima frase
+        setTimeout(showNextPhrase, timePerPhrase);
+    }
+
+    // Começa a animação logo após o site abrir
+    setTimeout(showNextPhrase, 300);
+}
+
+// Inicia a nova tela de abertura
+initSplashScreen();
+
+// --- O RESTANTE DO SEU CÓDIGO CONTINUA INTACTO ABAIXO ---
 
 const CONFIG_ENTREGA = { 
     horaCorteHoje: 10, 
