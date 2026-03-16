@@ -1066,6 +1066,16 @@ dialog::backdrop {
 
     <div id="wrapper-sections">
         
+        <div id="banner-mercadinho" style="display: none; background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white; padding: 18px 20px; border-radius: 12px; margin: 0 15px 20px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); position: relative; transition: opacity 0.3s; z-index: 10;">
+            <div style="font-weight: 800; font-size: 1.15rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.4rem;">🛒</span> Direto no Mercadinho!
+            </div>
+            <div style="font-size: 0.95rem; font-weight: 500; line-height: 1.4; opacity: 0.95;">
+                Sua cesta inicial foi guardada! Temos mais de 500 produtos nas prateleiras para você escolher e complementar o seu pedido. Fique à vontade!
+            </div>
+            <button onclick="this.parentElement.style.display='none'" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); width: 30px; height: 30px; border-radius: 50%; color: white; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+        </div>
+
         <div class="quick-menu-grid">
             <button class="qm-btn btn-cestas" onclick="switchTab('cestas')">
                 <div class="qm-icon">
@@ -2109,19 +2119,67 @@ function showToast(m, t) {
     setTimeout(() => d.remove(), 2500); 
 }
 
+// Variável para guardar as edições da cesta antes de irem para o carrinho final
+let tempEditItems = {};
+
 function previewBasket(id) { 
     let c = STATE.baskets.find(x => String(x.id) === String(id)); 
     if (!c) return; 
     
     STATE.tempBasket = c; 
     $('prev-title').innerText = formatName(c.nome); 
-    $('prev-desc').innerText = `${c.produtos.length} itens inclusos`; 
-    $('prev-price').innerText = fmt(c.preco); 
     
-    $('prev-list').innerHTML = c.produtos.map(s => { 
-        let [q, r] = s.split('x'); 
-        let p = STATE.prods.find(x => x.id === r.trim()); 
-        return `
+    // Prepara o carrinho temporário para edição
+    tempEditItems = {};
+    c.produtos.forEach(s => {
+        let [q, r] = s.split('x');
+        tempEditItems[r.trim()] = parseInt(q);
+    });
+
+    // Desenha a lista na versão normal (estática)
+    renderPreviewList(c, false);
+    
+    $('combo-qty-controls').style.display = 'none'; 
+    
+    // Configura o botão principal (Comprar tudo como está)
+    let btnConfirm = $('btn-confirm-preview');
+    btnConfirm.style.display = 'flex';
+    btnConfirm.innerText = "Encomendar Cesta Completa"; 
+    btnConfirm.onclick = () => { 
+        $('modal-basket-preview').close(); 
+        setBasketQty(1); 
+        $('modal-cesta-qty').showModal(); 
+    };
+    
+    // Configura o botão azul de Personalizar
+    let btnCustomize = $('btn-customize-preview');
+    btnCustomize.style.display = 'block'; 
+    btnCustomize.innerText = "Personalizar Minha Cesta";
+    btnCustomize.onclick = () => { 
+        // Aqui acontece a mágica: Muda a visualização para o MODO EDIÇÃO
+        renderPreviewList(c, true);
+        
+        btnCustomize.style.display = 'none'; // Esconde a si mesmo
+        btnConfirm.innerText = "Guardar Cesta e ir para o Mercadinho";
+        btnConfirm.onclick = () => {
+            saveCustomBasketAndGoToMarket();
+        };
+    };
+    
+    $('modal-basket-preview').showModal(); 
+}
+
+// Nova função para desenhar a lista de duas formas: Leitura ou Edição
+function renderPreviewList(c, isEditMode) {
+    let totalTempPrice = 0;
+
+    $('prev-list').innerHTML = Object.entries(tempEditItems).map(([r, q]) => {
+        let p = STATE.prods.find(x => x.id === r);
+        if(p) totalTempPrice += p.price * q;
+
+        if (!isEditMode) {
+            // VISUALIZAÇÃO NORMAL (Apenas leitura)
+            return `
             <div style="text-align:center;">
                 <div style="width:100%; aspect-ratio:4/5; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center;">
                     <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply;" loading="lazy">
@@ -2129,23 +2187,85 @@ function previewBasket(id) {
                 <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p?formatName(p.name):r}</div>
                 <div style="font-size:0.9rem; font-weight:700; color:var(--c-a); margin-top:2px;">${q} unidade(s)</div>
             </div>`;
+        } else {
+            // MODO EDIÇÃO (Com botões + e -)
+            return `
+            <div style="text-align:center; position:relative;">
+                <div style="width:100%; aspect-ratio:4/5; background:var(--c-img-bg); border-radius:12px; border:1px solid var(--c-bd); padding:8px; margin-bottom:6px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                    <img src="${p?p.img:''}" alt="${p?formatName(p.name):r}" style="max-width:100%; max-height:100%; object-fit:contain; mix-blend-mode:multiply; opacity: ${q===0 ? '0.2' : '1'}; transition: 0.2s;" loading="lazy">
+                    ${q === 0 ? `<div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--c-err); font-size:1.1rem; text-shadow: 0 2px 4px #fff, 0 -2px 4px #fff, 2px 0 4px #fff, -2px 0 4px #fff;">REMOVIDO</div>` : ''}
+                </div>
+                <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; height:2.4em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:6px;">${p?formatName(p.name):r}</div>
+                <div class="card-qty-ctrl" style="height:36px; padding:0; margin-top:0; border-color: ${q>0 ? 'var(--c-a)' : 'var(--c-bd)'}; background: ${q===0 ? '#f1f5f9' : '#f8fafc'};">
+                    <button onclick="changeTempQty('${r}', -1)" style="font-size:1.5rem; color:var(--c-a); padding: 0 10px; width: 35px;">-</button>
+                    <span style="font-weight:700; font-size:1rem; flex:1; color: ${q===0 ? 'var(--c-s)' : 'var(--c-p)'};">${q}</span>
+                    <button onclick="changeTempQty('${r}', 1)" style="font-size:1.5rem; color:var(--c-a); padding: 0 10px; width: 35px;">+</button>
+                </div>
+            </div>`;
+        }
     }).join('');
-    
-    $('combo-qty-controls').style.display = 'none'; 
-    $('btn-confirm-preview').innerText = "Encomendar Cesta Normal"; 
-    $('btn-confirm-preview').onclick = () => { 
-        $('modal-basket-preview').close(); 
-        setBasketQty(1); 
-        $('modal-cesta-qty').showModal(); 
-    };
-    
-    $('btn-customize-preview').style.display = 'block'; 
-    $('btn-customize-preview').onclick = () => { 
-        confirmBasket(true, 1); 
-    };
-    
-    $('modal-basket-preview').showModal(); 
+
+    if (isEditMode) {
+        let displayPrice = Math.max(c.preco, totalTempPrice);
+        $('prev-price').innerHTML = `<div style="font-size:0.85rem; color:var(--c-s); font-weight:600; line-height:1; margin-bottom:4px;">Subtotal da Cesta:</div>${fmt(displayPrice)}`;
+        $('prev-desc').innerText = "Remova ou adicione quantidades abaixo:";
+    } else {
+        $('prev-price').innerText = fmt(c.preco);
+        $('prev-desc').innerText = `${c.produtos.length} itens inclusos`;
+    }
 }
+
+// Controla o + e - dentro do modo edição da Cesta
+window.changeTempQty = function(id, delta) {
+    let p = STATE.prods.find(x => x.id === id);
+    if (!p) return;
+    let current = tempEditItems[id] || 0;
+    let next = Math.max(0, current + delta);
+    if (next > p.stock) return showToast("Estoque insuficiente", "r");
+    
+    tempEditItems[id] = next;
+    renderPreviewList(STATE.tempBasket, true); // Atualiza a tela
+};
+
+// Guarda tudo no carrinho, fecha o modal e abre o mercado!
+window.saveCustomBasketAndGoToMarket = function() {
+    let c = STATE.tempBasket;
+    let sum = 0;
+
+    // Joga os itens do editor temporário para o carrinho real
+    Object.entries(tempEditItems).forEach(([r, q]) => {
+        let p = STATE.prods.find(x => x.id === r);
+        if (p && q > 0) {
+            if (!STATE.cart[p.id]) {
+                STATE.cartOrder.push(p.id);
+            }
+            STATE.cart[p.id] = (STATE.cart[p.id] || 0) + q;
+            sum += p.price * q;
+        }
+    });
+
+    // Calcula a taxa extra se a soma dos produtos não atingir o preço mínimo da Cesta Fixa
+    STATE.basketExtraFee = Math.max(0, c.preco - sum);
+    STATE.baseBasket = c;
+
+    $('modal-basket-preview').close();
+    updateTotals();
+
+    // Redireciona para o Mercadinho (Aba de Kits Promocionais)
+    switchTab('combos');
+
+    // Mostra o Banner Informativo
+    let banner = $('banner-mercadinho');
+    if (banner) {
+        banner.style.display = 'block';
+        banner.style.opacity = '1';
+        // O banner desaparece suavemente após 8 segundos
+        setTimeout(() => { 
+            banner.style.opacity = '0'; 
+            setTimeout(() => banner.style.display='none', 300); 
+        }, 8000); 
+    }
+};
 
 function setBasketQty(q) { 
     currentBasketQty = q; 
