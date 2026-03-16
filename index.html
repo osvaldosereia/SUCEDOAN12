@@ -1058,6 +1058,139 @@ dialog::backdrop {
         text-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Dá destaque ao texto sobre a cor */
     }
 }
+    /* --- SESSÃO COMPRE JUNTO E ECONOMIZE --- */
+.cj-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto 25px;
+    padding: 0 15px;
+}
+
+.cj-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 1 coluna no celular */
+    gap: 15px;
+}
+
+/* 2 colunas no Desktop */
+@media(min-width: 800px) {
+    .cj-grid {
+        grid-template-columns: 1fr 1fr; 
+        gap: 20px;
+    }
+}
+
+.cj-card {
+    background: #fff;
+    border: 2px dashed var(--c-a); /* Borda tracejada laranja chamativa */
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cj-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(234, 88, 12, 0.15);
+}
+
+.cj-header {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--c-p);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.cj-images-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.cj-img-box {
+    width: 30%;
+    aspect-ratio: 1/1;
+    background: var(--c-img-bg);
+    border-radius: 8px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cj-img-box img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+}
+
+.cj-plus {
+    font-weight: 800;
+    color: var(--c-t);
+    font-size: 1.2rem;
+}
+
+.cj-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+@media(min-width: 800px) {
+    .cj-footer {
+        flex-direction: row; /* Lado a lado no computador */
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.cj-price-area {
+    text-align: center;
+}
+
+@media(min-width: 800px) {
+    .cj-price-area { text-align: left; }
+}
+
+.cj-old-price {
+    text-decoration: line-through;
+    color: var(--c-s);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.cj-new-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--c-p);
+    line-height: 1;
+}
+
+.cj-btn {
+    background: var(--c-a);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.2s;
+    width: 100%;
+}
+
+@media(min-width: 800px) {
+    .cj-btn { width: auto; flex: 1; margin-left: 15px; }
+}
+
+.cj-btn:active {
+    transform: scale(0.96);
+    background: #c2410c;
+}
 </style>
 </head>
 <body>
