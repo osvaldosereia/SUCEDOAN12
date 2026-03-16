@@ -2143,8 +2143,9 @@ function previewBasket(id) {
     
     // Configura o botão principal (Comprar tudo como está)
     let btnConfirm = $('btn-confirm-preview');
+    btnConfirm.className = 'btn-modal secondary'; // Inicialmente branco/cinza
     btnConfirm.style.display = 'flex';
-    btnConfirm.innerText = "Encomendar Cesta Completa"; 
+    btnConfirm.innerText = "Encomendar Cesta Normal"; 
     btnConfirm.onclick = () => { 
         $('modal-basket-preview').close(); 
         setBasketQty(1); 
@@ -2154,12 +2155,21 @@ function previewBasket(id) {
     // Configura o botão azul de Personalizar
     let btnCustomize = $('btn-customize-preview');
     btnCustomize.style.display = 'block'; 
-    btnCustomize.innerText = "Personalizar Minha Cesta";
+    btnCustomize.innerText = "Trocar e Adicionar Produtos";
     btnCustomize.onclick = () => { 
         // Aqui acontece a mágica: Muda a visualização para o MODO EDIÇÃO
         renderPreviewList(c, true);
         
+        // NOVO: Faz o scroll do modal subir para o cliente ver o título
+        let modalBody = document.querySelector('#modal-basket-preview .modal-body');
+        if (modalBody) {
+            modalBody.scrollTop = 0;
+        }
+        
         btnCustomize.style.display = 'none'; // Esconde a si mesmo
+        
+        // NOVO: Dá destaque ao botão de guardar usando a classe primary (laranja)
+        btnConfirm.className = 'btn-modal primary';
         btnConfirm.innerText = "Guardar Cesta e ir para o Mercadinho";
         btnConfirm.onclick = () => {
             saveCustomBasketAndGoToMarket();
@@ -2254,6 +2264,12 @@ window.saveCustomBasketAndGoToMarket = function() {
     // Redireciona para o Mercadinho (Aba de Kits Promocionais)
     switchTab('combos');
 
+    // NOVO: Esconde o menu rápido de botões "Cestas/Mercadinho"
+    let quickMenu = document.querySelector('.quick-menu-grid');
+    if (quickMenu) {
+        quickMenu.style.display = 'none';
+    }
+
     // Mostra o Banner Informativo
     let banner = $('banner-mercadinho');
     if (banner) {
@@ -2342,6 +2358,7 @@ function previewCombo(id) {
     }
     
     $('combo-qty-controls').style.display = 'flex'; 
+    $('btn-confirm-preview').className = 'btn-modal secondary'; 
     $('btn-confirm-preview').innerText = "Adicionar Kit"; 
     
     $('btn-confirm-preview').onclick = () => {
