@@ -63,20 +63,21 @@ button {
     position: relative; 
 } 
 
-/* SPLASH SCREEN */
+/* SPLASH SCREEN DINÂMICA */
 #splash-screen { 
     position: fixed; 
     top: 0; 
     left: 0; 
     width: 100%; 
     height: 100%; 
-    background: #ffffff; 
+    /* Fundo branco com um leve gradiente radial para destacar o centro */
+    background: radial-gradient(circle, #ffffff 0%, #f8fafc 100%); 
     z-index: 999999; 
     display: flex; 
     flex-direction: column; 
     align-items: center; 
     justify-content: center; 
-    transition: opacity 0.5s ease, visibility 0.5s; 
+    transition: opacity 0.6s ease, visibility 0.6s; 
 }
 
 #splash-screen.hidden { 
@@ -85,19 +86,70 @@ button {
     pointer-events: none; 
 }
 
+/* Container para centralizar e segurar o espaço das frases */
+#splash-text-container {
+    position: relative;
+    width: 90%;
+    max-width: 600px;
+    height: 80px; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Estilo inicial de cada frase (escondida e um pouco para baixo) */
+.splash-phrase {
+    position: absolute;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--c-p); /* Azul escuro da sua paleta */
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    margin: 0;
+    width: 100%;
+}
+
+/* Classe adicionada via JS quando a frase deve aparecer */
+.splash-phrase.show-phrase {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Classe adicionada via JS quando a frase deve sumir (sobe um pouco) */
+.splash-phrase.hide-phrase {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+/* Estilos da Logo no Splash */
 .splash-logo { 
     width: 170px; 
     height: 170px; 
     border-radius: 50%; 
-    border: 1px solid var(--c-bd); 
+    border: 3px solid var(--c-a); /* Borda laranja para dar destaque */
     object-fit: cover; 
-    animation: splashPulse 1s ease-in-out infinite alternate; 
-    box-shadow: var(--sh-float); 
+    box-shadow: 0 15px 35px rgba(234, 88, 12, 0.2); 
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.splash-logo.hide-initial {
+    display: none;
+    opacity: 0;
+    transform: scale(0.5); /* Começa pequena e invisível */
+}
+
+.splash-logo.show-logo {
+    display: block;
+    opacity: 1;
+    transform: scale(1); /* Cresce com efeito "mola" graças ao cubic-bezier */
+    animation: splashPulse 1.5s ease-in-out infinite alternate 0.6s; /* Começa a pulsar depois de aparecer */
 }
 
 @keyframes splashPulse { 
-    0% { transform: scale(0.95); } 
-    100% { transform: scale(1.05); } 
+    0% { transform: scale(1); } 
+    100% { transform: scale(1.08); } 
 }
 
 /* HEADER PRINCIPAL REFORMULADO */
@@ -1022,9 +1074,17 @@ dialog::backdrop {
 </div>
 
 <div id="splash-screen">
-    <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="splash-logo" onerror="this.style.display='none'">
+    <div id="splash-text-container">
+        <h2 class="splash-phrase">🚚 Entrega Grátis em Cuiabá e VG</h2>
+        <h2 class="splash-phrase">🛒 Mais de 500 produtos na prateleira</h2>
+        <h2 class="splash-phrase">📉 Bem mais barato que Supermercado</h2>
+        <h2 class="splash-phrase">📲 Encomende fácil pelo site</h2>
+        <h2 class="splash-phrase">🏡 Pague na entrega na sua casa</h2>
+    </div>
+    
+    <img id="splash-logo-img" src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="splash-logo hide-initial" onerror="this.style.display='none'">
 </div>
-
+    
 <div id="header-wrapper">
     <div class="layout-limit desk-header-flex">
         <div class="mob-layer-1">
