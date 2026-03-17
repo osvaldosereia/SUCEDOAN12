@@ -1058,139 +1058,6 @@ dialog::backdrop {
         text-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Dá destaque ao texto sobre a cor */
     }
 }
-    /* --- SESSÃO COMPRE JUNTO E ECONOMIZE --- */
-.cj-container {
-    width: 100%;
-    max-width: 1000px;
-    margin: 0 auto 25px;
-    padding: 0 15px;
-}
-
-.cj-grid {
-    display: grid;
-    grid-template-columns: 1fr; /* 1 coluna no celular */
-    gap: 15px;
-}
-
-/* 2 colunas no Desktop */
-@media(min-width: 800px) {
-    .cj-grid {
-        grid-template-columns: 1fr 1fr; 
-        gap: 20px;
-    }
-}
-
-.cj-card {
-    background: #fff;
-    border: 2px dashed var(--c-a); /* Borda tracejada laranja chamativa */
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.cj-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(234, 88, 12, 0.15);
-}
-
-.cj-header {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: var(--c-p);
-    margin-bottom: 12px;
-    text-align: center;
-}
-
-.cj-images-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 15px;
-}
-
-.cj-img-box {
-    width: 30%;
-    aspect-ratio: 3/4; /* Vertical e maior */
-    background: var(--c-img-bg);
-    border-radius: 8px;
-    padding: 2px; /* Reduzimos o padding para a imagem ocupar mais espaço */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.cj-img-box img {
-    width: 100%; /* Ocupa toda a largura do box */
-    height: 100%; /* Ocupa toda a altura do box */
-    object-fit: contain; /* Mantém a proporção sem cortar */
-    mix-blend-mode: multiply;
-}
-
-.cj-plus {
-    font-weight: 800;
-    color: var(--c-t);
-    font-size: 1.2rem;
-}
-
-.cj-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-@media(min-width: 800px) {
-    .cj-footer {
-        flex-direction: row; /* Lado a lado no computador */
-        align-items: center;
-        justify-content: space-between;
-    }
-}
-
-.cj-price-area {
-    text-align: center;
-}
-
-@media(min-width: 800px) {
-    .cj-price-area { text-align: left; }
-}
-
-.cj-old-price {
-    text-decoration: line-through;
-    color: var(--c-s);
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.cj-new-price {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--c-p);
-    line-height: 1;
-}
-
-.cj-btn {
-    background: var(--c-a);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-weight: 700;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: 0.2s;
-    width: 100%;
-}
-
-@media(min-width: 800px) {
-    .cj-btn { width: auto; flex: 1; margin-left: 15px; }
-}
-
-.cj-btn:active {
-    transform: scale(0.96);
-    background: #c2410c;
-}
 </style>
 </head>
 <body>
@@ -1552,11 +1419,9 @@ const STATE = {
     lists: {}, 
     pageLimits: {}, 
     deliveryOptions: [], 
-    selectedDeliveryIndex: 0, 
-    deliveryDiscount: 0, 
-    deliveryDateStr: '',
-    descontosQtd: [],      // Guarda a lista do JSON
-    atacadoDiscount: 0     // Guarda o valor economizado
+    selectedDeliveryIndex: 0, 
+    deliveryDiscount: 0, 
+    deliveryDateStr: ''
 };
 
 let currentComboQty = 1; 
@@ -1649,159 +1514,19 @@ function converterDataValidade(dataStr) {
     // Caso a data esteja noutro formato, tentamos ler diretamente
     return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
 }
-// --- INÍCIO: SISTEMA COMPRE JUNTO ---
-STATE.cjData = [];
-STATE.cjDiscounts = [];
-STATE.cjTotalDiscount = 0;
 
-// 1. Carrega o JSON
-async function loadCompreJunto() {
-    try {
-        const tempoCacheMinutos = 15;
-        const versaoCache = Math.floor(Date.now() / (1000 * 60 * tempoCacheMinutos));
-        
-        let res = await fetch('/site/compre-junto.json?v=' + versaoCache);
-        STATE.cjData = await res.json();
-    } catch(e) {
-        console.log("Arquivo compre-junto.json não encontrado ou vazio.");
-    }
-}
-
-// 2. Monta o Visual dinamicamente (Sorteio)
-function renderCompreJunto() {
-    if (!STATE.cjData || STATE.cjData.length === 0) {
-        console.log("Compre Junto: JSON não carregado ou vazio.");
-        return '';
-    }
-    
-    let kitsCardsHtml = ''; // Guarda apenas os cards que passarem no teste
-    
-    STATE.cjData.forEach(kit => {
-        let selected = [];
-        let sum = 0;
-        let valid = true;
-        
-        console.log(`🕵️ Analisando o kit: ${kit.titulo}...`);
-        
-        // Sorteia um produto para cada termo
-        kit.termos.forEach(termo => {
-            // Procura o produto ignorando acentos e checando se tem stock
-            let matches = STATE.prods.filter(p => norm(p.name).includes(norm(termo)) && p.stock > 0);
-            
-            if (matches.length > 0) {
-                let rand = matches[Math.floor(Math.random() * matches.length)];
-                selected.push(rand);
-                sum += rand.price;
-                console.log(`   ✅ Encontrou para '${termo}': ${rand.name}`);
-            } else {
-                valid = false; // Falhou!
-                console.log(`   ❌ FALHOU: Nenhum produto em stock tem a palavra '${termo}'. Kit cancelado.`);
-            }
-        });
-        
-      // Se achou todos os itens, constrói o card html
-        if (valid && selected.length === kit.termos.length) {
-            let discountVal = sum * (kit.desconto_percentual / 100);
-            let finalPrice = sum - discountVal;
-            
-            kitsCardsHtml += `
-            <div class="cj-card">
-                <div class="cj-header">${kit.titulo}</div>
-                <div class="cj-images-row">
-                    <div class="cj-img-box">
-                        <img src="${selected[0].img}" alt="${selected[0].name}">
-                        <div style="font-size: 0.7rem; color: var(--c-p); margin-top: 4px; text-align: center; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${formatName(selected[0].name)}</div>
-                    </div>
-                    <div class="cj-plus">+</div>
-                    <div class="cj-img-box">
-                        <img src="${selected[1].img}" alt="${selected[1].name}">
-                        <div style="font-size: 0.7rem; color: var(--c-p); margin-top: 4px; text-align: center; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${formatName(selected[1].name)}</div>
-                        </div>
-                    <div class="cj-plus">+</div>
-                    <div class="cj-img-box">
-                        <img src="${selected[2].img}" alt="${selected[2].name}">
-                        <div style="font-size: 0.7rem; color: var(--c-p); margin-top: 4px; text-align: center; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${formatName(selected[2].name)}</div>
-                    </div>
-                </div>
-                <div class="cj-footer">
-                    <div class="cj-price-area">
-                        <div class="cj-old-price">${fmt(sum)}</div>
-                        <div class="cj-new-price">${fmt(finalPrice)}</div>
-                    </div>
-                    <button class="cj-btn" onclick="addCompreJunto('${kit.id}', '${selected[0].id}', '${selected[1].id}', '${selected[2].id}', ${discountVal})">
-                      🛒 Adicionar os ${kit.termos.length}
-                    </button>
-                </div>
-            </div>`;
-        }
-    });
-    
-    // Se nenhum kit passou no teste, não devolve nada (nem a caixa vazia)
-    if (kitsCardsHtml === '') {
-        console.log("⚠️ Fim: Nenhum kit estava com stock completo para aparecer na tela.");
-        return '';
-    }
-    
-    // Se deu certo, empacota e envia para a tela!
-    return `<div class="cj-container" id="cj-wrap"><div class="cj-grid">${kitsCardsHtml}</div></div>`;
-}
-
-// 3. Adiciona ao Carrinho protegendo o desconto
-window.addCompreJunto = function(kitId, id1, id2, id3, discountVal) {
-    let items = [id1, id2, id3];
-    
-    // Valida estoque antes de adicionar
-    for(let id of items) {
-        let p = STATE.prods.find(x => x.id === id);
-        if(p.stock <= (STATE.cart[id] || 0)) {
-            return showToast("Ops! Um dos itens esgotou agora mesmo.", "r");
-        }
-    }
-    
-    // Adiciona no carrinho
-    items.forEach(id => {
-        if (!STATE.cart[id]) STATE.cartOrder.push(id);
-        STATE.cart[id] = (STATE.cart[id] || 0) + 1;
-        
-        // Atualiza o botão de "+" na grade normal caso o item esteja aparecendo lá
-        document.querySelectorAll(`.add-btn-${id}`).forEach(el => { el.innerText = STATE.cart[id]; });
-    });
-    
-    // Registra o "Elo" do desconto
-    STATE.cjDiscounts.push({ kitId, items, discount: discountVal });
-    
-    updateTotals();
-    showToast("Kit adicionado! Desconto aplicado.", "s");
-    
-    // Dá aquele pulinho no ícone do carrinho
-    const cartBtn = document.querySelector('.cart-fab-wrapper');
-    if (cartBtn) {
-        cartBtn.style.transform = 'scale(1.3)';
-        setTimeout(() => cartBtn.style.transform = '', 200);
-    }
-};
-// --- FIM: SISTEMA COMPRE JUNTO ---
-    
 async function init() {
     try {
-        // --- INÍCIO: CACHE INTELIGENTE ---
-        // Aqui definimos que o cache dura 15 minutos (1000ms * 60s * 15m)
-        // Se quiser 30 minutos, mude o 15 para 30. Se quiser 1 hora, mude para 60.
-        const tempoCacheMinutos = 15;
-        const versaoCache = Math.floor(Date.now() / (1000 * 60 * tempoCacheMinutos));
-        // --- FIM: CACHE INTELIGENTE ---
-
         const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
-            fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/desconto-por-valor.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('desconto.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+            fetch('/site/produtos-cesta-basica.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('/site/produtos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('/site/cupons.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
+            fetch('carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
@@ -1812,9 +1537,6 @@ async function init() {
         STATE.sohoje = r8 || [];
         STATE.bloqueados = (r9 || []).map(String);
         STATE.carrosseis = r10 || [];
-        STATE.descontosQtd = r11 || []; // <-- ADICIONE ESTA LINHA   
-        
-        await loadCompreJunto();
         
         if (r2 && r2.length > 0) {
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => ({
@@ -2134,13 +1856,6 @@ function renderBottomChips(activeTabId) {
             </div>`;
     }
 
-    // --- INJEÇÃO DO COMPRE JUNTO AQUI (Aparece em todas as abas logo após os Kits) ---
-    let cjHtml = renderCompreJunto();
-    if (cjHtml) {
-        html += cjHtml;
-    }
-    // ---------------------------------------------------------------------------------
-
     // --- 2. NOVA SESSÃO: DESTAQUES (Produtos a vencer) ---
     // Filtramos apenas os produtos que têm validade e que têm stock
     let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
@@ -2156,7 +1871,7 @@ function renderBottomChips(activeTabId) {
     // Se houver produtos para mostrar, desenhamos a secção
     if (destaques.length > 0) {
         let trackIdDestaques = 'grid-destaques-' + activeTabId;
-        // Construímos o HTML de cada cartão de produto
+        // Construímos o HTML de cada cartão de produto (aqui não precisamos de ocultar nenhum, pois já são só 10)
         let trackHtmlDestaques = destaques.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
 
         html += `
@@ -2204,64 +1919,65 @@ function renderBottomChips(activeTabId) {
 
     ativarRolagemInfinita();
 }
+
 window.switchTab = function(tabId) {
-    $('wrapper-sections').style.display = 'block'; 
-    $('section-busca').style.display = 'none'; 
-    $('search-inp').value = '';
-    
-    document.querySelectorAll('.tab-section').forEach(el => { 
-        el.style.display = 'none'; 
-        let grid = el.querySelector('.grid-produtos'); 
-        
-        if (el.id === 'sec-cestas') {
-            let wrap = el.querySelector('#wrapper-cestas');
-            if(wrap) wrap.innerHTML = '';
-        }
-        
-        if (grid && el.id !== 'sec-' + tabId && el.id !== 'skeleton-loader') {
-            grid.innerHTML = ''; 
-        }
-    });
-    
-    let target = $('sec-' + tabId); 
-    if (target) {
-        target.style.display = 'block';
-    }
-    
-    let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
-    
-    if (STATE.lists[listKey]) {
-        renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
-    }
-    
-    document.querySelectorAll('.cat-dropdown-item').forEach(el => { 
-        if (el.getAttribute('onclick').includes(tabId)) {
-            $('btn-cat-dropdown-text').innerText = el.innerText.trim(); 
-        }
-    });
-    
-    $('cat-dropdown-list').classList.remove('open'); 
-    renderBottomChips(tabId); 
-    
-    $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
-    
-    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    
-    if (tabId === 'cestas' && $('btn-nav-cestas-nav')) {
-        $('btn-nav-cestas-nav').classList.add('active');
-    } else if (tabId === 'combos' && $('btn-nav-kits')) {
-        $('btn-nav-kits').classList.add('active');
-    }
+    $('wrapper-sections').style.display = 'block'; 
+    $('section-busca').style.display = 'none'; 
+    $('search-inp').value = '';
+    
+    document.querySelectorAll('.tab-section').forEach(el => { 
+        el.style.display = 'none'; 
+        let grid = el.querySelector('.grid-produtos'); 
+        
+        if (el.id === 'sec-cestas') {
+            let wrap = el.querySelector('#wrapper-cestas');
+            if(wrap) wrap.innerHTML = '';
+        }
+        
+        if (grid && el.id !== 'sec-' + tabId && el.id !== 'skeleton-loader') {
+            grid.innerHTML = ''; 
+        }
+    });
+    
+    let target = $('sec-' + tabId); 
+    if (target) {
+        target.style.display = 'block';
+    }
+    
+    let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
+    
+    if (STATE.lists[listKey]) {
+        renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
+    }
+    
+    document.querySelectorAll('.cat-dropdown-item').forEach(el => { 
+        if (el.getAttribute('onclick').includes(tabId)) {
+            $('btn-cat-dropdown-text').innerText = el.innerText.trim(); 
+        }
+    });
+    
+    $('cat-dropdown-list').classList.remove('open'); 
+    renderBottomChips(tabId); 
+    
+    $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
+    
+    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
+    
+    if (tabId === 'cestas' && $('btn-nav-cestas-nav')) {
+        $('btn-nav-cestas-nav').classList.add('active');
+    } else if (tabId === 'combos' && $('btn-nav-kits')) {
+        $('btn-nav-kits').classList.add('active');
+    }
 };
 
-window.goToHome = function() { 
-    switchTab('cestas'); 
-    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    if ($('btn-nav-home')) {
-        $('btn-nav-home').classList.add('active');
-    }
+window.goToHome = function() { 
+    switchTab('cestas'); 
+    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
+    if ($('btn-nav-home')) {
+        $('btn-nav-home').classList.add('active');
+    }
 };
-    
+
 function renderPaginated(containerId, listKey, list, type) {
     if (listKey === 'cestas') {
         let c = $('wrapper-cestas');
@@ -2461,23 +2177,6 @@ function updateTotals() {
         }
     });
     
-    // --- VERIFICAÇÃO DO COMPRE JUNTO ---
-    STATE.cjTotalDiscount = 0;
-    if (STATE.cjDiscounts && STATE.cjDiscounts.length > 0) {
-        // Filtra os kits: só mantemos o desconto se TODOS os itens do kit continuarem no carrinho
-        STATE.cjDiscounts = STATE.cjDiscounts.filter(cj => {
-            let isValid = cj.items.every(id => (STATE.cart[id] || 0) > 0);
-            if (isValid) {
-                STATE.cjTotalDiscount += cj.discount;
-                return true;
-            } else {
-                showToast("Item removido. Desconto do Compre Junto cancelado.", "r");
-                return false;
-            }
-        });
-    }
-    // -----------------------------------
-
     let subtotal = sum + STATE.basketExtraFee; 
     let valueDiscount = 0;
     
@@ -2490,11 +2189,7 @@ function updateTotals() {
     }
     
     STATE.valueDiscount = valueDiscount;
-    
-    // Juntamos os descontos do Compre Junto com os de Combos normais para facilitar as contas
-    let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
-    
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits;
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0);
     
     if ($('chk-total')) {
         $('chk-total').innerText = fmt(final);
@@ -2899,15 +2594,14 @@ function openCheckout() {
     }
     
     STATE.valueDiscount = valueDiscount;
-    let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
     
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
-        (totalDescontosKits > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto dos Kits:</span><span>-${fmt(totalDescontosKits)}</span></div>` : '') + 
+        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto do Kit:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
         (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Progressivo:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') + 
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
         
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits; 
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0); 
     $('chk-total').innerText = fmt(final);
     
     let btn = $('btn-send-order');
@@ -3070,14 +2764,14 @@ async function sendOrder() {
         }
     });
 
-    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.cjTotalDiscount; 
+    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount; 
     final -= STATE.deliveryDiscount; 
     final -= STATE.valueDiscount; 
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
     final -= cupomDesconto;
 
     let outras_despesas = STATE.basketExtraFee || 0; 
-    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto + STATE.cjTotalDiscount;
+    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
 
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
     let tipoCestaTexto = "Cestas Personalizada"; 
@@ -3119,7 +2813,6 @@ async function sendOrder() {
 
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KIT: -${fmt(STATE.comboDiscount)}`;
-    if (STATE.cjTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMPRE JUNTO: -${fmt(STATE.cjTotalDiscount)}`;
     if (STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
     if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
