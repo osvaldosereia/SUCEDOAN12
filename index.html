@@ -1552,9 +1552,11 @@ const STATE = {
     lists: {}, 
     pageLimits: {}, 
     deliveryOptions: [], 
-    selectedDeliveryIndex: 0, 
-    deliveryDiscount: 0, 
-    deliveryDateStr: ''
+    selectedDeliveryIndex: 0, 
+    deliveryDiscount: 0, 
+    deliveryDateStr: '',
+    descontosQtd: [],      // Guarda a lista do JSON
+    atacadoDiscount: 0     // Guarda o valor economizado
 };
 
 let currentComboQty = 1; 
@@ -1798,7 +1800,8 @@ async function init() {
             fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('desconto.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
@@ -1809,6 +1812,7 @@ async function init() {
         STATE.sohoje = r8 || [];
         STATE.bloqueados = (r9 || []).map(String);
         STATE.carrosseis = r10 || [];
+        STATE.descontosQtd = r11 || []; // <-- ADICIONE ESTA LINHA   
         
         await loadCompreJunto();
         
