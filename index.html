@@ -1058,6 +1058,139 @@ dialog::backdrop {
         text-shadow: 0 1px 2px rgba(0,0,0,0.1); /* Dá destaque ao texto sobre a cor */
     }
 }
+    /* --- SESSÃO COMPRE JUNTO E ECONOMIZE --- */
+.cj-container {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto 25px;
+    padding: 0 15px;
+}
+
+.cj-grid {
+    display: grid;
+    grid-template-columns: 1fr; /* 1 coluna no celular */
+    gap: 15px;
+}
+
+/* 2 colunas no Desktop */
+@media(min-width: 800px) {
+    .cj-grid {
+        grid-template-columns: 1fr 1fr; 
+        gap: 20px;
+    }
+}
+
+.cj-card {
+    background: #fff;
+    border: 2px dashed var(--c-a); /* Borda tracejada laranja chamativa */
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cj-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(234, 88, 12, 0.15);
+}
+
+.cj-header {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--c-p);
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.cj-images-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.cj-img-box {
+    width: 30%;
+    aspect-ratio: 1/1;
+    background: var(--c-img-bg);
+    border-radius: 8px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cj-img-box img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+}
+
+.cj-plus {
+    font-weight: 800;
+    color: var(--c-t);
+    font-size: 1.2rem;
+}
+
+.cj-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+@media(min-width: 800px) {
+    .cj-footer {
+        flex-direction: row; /* Lado a lado no computador */
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.cj-price-area {
+    text-align: center;
+}
+
+@media(min-width: 800px) {
+    .cj-price-area { text-align: left; }
+}
+
+.cj-old-price {
+    text-decoration: line-through;
+    color: var(--c-s);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.cj-new-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--c-p);
+    line-height: 1;
+}
+
+.cj-btn {
+    background: var(--c-a);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.2s;
+    width: 100%;
+}
+
+@media(min-width: 800px) {
+    .cj-btn { width: auto; flex: 1; margin-left: 15px; }
+}
+
+.cj-btn:active {
+    transform: scale(0.96);
+    background: #c2410c;
+}
 </style>
 </head>
 <body>
@@ -1514,7 +1647,112 @@ function converterDataValidade(dataStr) {
     // Caso a data esteja noutro formato, tentamos ler diretamente
     return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
 }
+// --- INÍCIO: SISTEMA COMPRE JUNTO ---
+STATE.cjData = [];
+STATE.cjDiscounts = [];
+STATE.cjTotalDiscount = 0;
 
+// 1. Carrega o JSON
+async function loadCompreJunto() {
+    try {
+        let res = await fetch('/site/compre-junto.json?v=' + Date.now());
+        STATE.cjData = await res.json();
+    } catch(e) {
+        console.log("Arquivo compre-junto.json não encontrado ou vazio.");
+    }
+}
+
+// 2. Monta o Visual dinamicamente (Sorteio)
+function renderCompreJunto() {
+    if (!STATE.cjData || STATE.cjData.length === 0) return '';
+    
+    let html = '<div class="cj-container" id="cj-wrap"><div class="cj-grid">';
+    
+    STATE.cjData.forEach(kit => {
+        let selected = [];
+        let sum = 0;
+        let valid = true;
+        
+        // Sorteia um produto para cada termo
+        kit.termos.forEach(termo => {
+            let matches = STATE.prods.filter(p => norm(p.name).includes(norm(termo)) && p.stock > 0);
+            if (matches.length > 0) {
+                let rand = matches[Math.floor(Math.random() * matches.length)];
+                selected.push(rand);
+                sum += rand.price;
+            } else {
+                valid = false; // Se faltar algum item no estoque, o kit não aparece
+            }
+        });
+        
+        // Se achou os 3 itens, constrói o card
+        if (valid && selected.length === kit.termos.length) {
+            let discountVal = sum * (kit.desconto_percentual / 100);
+            let finalPrice = sum - discountVal;
+            
+            html += `
+            <div class="cj-card">
+                <div class="cj-header">${kit.titulo}</div>
+                <div class="cj-images-row">
+                    <div class="cj-img-box"><img src="${selected[0].img}" alt="${selected[0].name}"></div>
+                    <div class="cj-plus">+</div>
+                    <div class="cj-img-box"><img src="${selected[1].img}" alt="${selected[1].name}"></div>
+                    <div class="cj-plus">+</div>
+                    <div class="cj-img-box"><img src="${selected[2].img}" alt="${selected[2].name}"></div>
+                </div>
+                <div class="cj-footer">
+                    <div class="cj-price-area">
+                        <div class="cj-old-price">${fmt(sum)}</div>
+                        <div class="cj-new-price">${fmt(finalPrice)}</div>
+                    </div>
+                    <button class="cj-btn" onclick="addCompreJunto('${kit.id}', '${selected[0].id}', '${selected[1].id}', '${selected[2].id}', ${discountVal})">
+                        🛒 Adicionar os ${kit.termos.length}
+                    </button>
+                </div>
+            </div>`;
+        }
+    });
+    
+    html += '</div></div>';
+    return html;
+}
+
+// 3. Adiciona ao Carrinho protegendo o desconto
+window.addCompreJunto = function(kitId, id1, id2, id3, discountVal) {
+    let items = [id1, id2, id3];
+    
+    // Valida estoque antes de adicionar
+    for(let id of items) {
+        let p = STATE.prods.find(x => x.id === id);
+        if(p.stock <= (STATE.cart[id] || 0)) {
+            return showToast("Ops! Um dos itens esgotou agora mesmo.", "r");
+        }
+    }
+    
+    // Adiciona no carrinho
+    items.forEach(id => {
+        if (!STATE.cart[id]) STATE.cartOrder.push(id);
+        STATE.cart[id] = (STATE.cart[id] || 0) + 1;
+        
+        // Atualiza o botão de "+" na grade normal caso o item esteja aparecendo lá
+        document.querySelectorAll(`.add-btn-${id}`).forEach(el => { el.innerText = STATE.cart[id]; });
+    });
+    
+    // Registra o "Elo" do desconto
+    STATE.cjDiscounts.push({ kitId, items, discount: discountVal });
+    
+    updateTotals();
+    showToast("Kit adicionado! Desconto aplicado.", "s");
+    
+    // Dá aquele pulinho no ícone do carrinho
+    const cartBtn = document.querySelector('.cart-fab-wrapper');
+    if (cartBtn) {
+        cartBtn.style.transform = 'scale(1.3)';
+        setTimeout(() => cartBtn.style.transform = '', 200);
+    }
+};
+// --- FIM: SISTEMA COMPRE JUNTO ---
+    
 async function init() {
     try {
         const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
@@ -1537,6 +1775,8 @@ async function init() {
         STATE.sohoje = r8 || [];
         STATE.bloqueados = (r9 || []).map(String);
         STATE.carrosseis = r10 || [];
+        
+        await loadCompreJunto();
         
         if (r2 && r2.length > 0) {
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => ({
@@ -1942,6 +2182,19 @@ window.switchTab = function(tabId) {
     let target = $('sec-' + tabId); 
     if (target) {
         target.style.display = 'block';
+        
+        // --- INJEÇÃO DO COMPRE JUNTO NA ABA MERCADO ---
+        if (tabId === 'combos') {
+            let existingCj = document.getElementById('cj-wrap');
+            if(existingCj) existingCj.remove(); // Limpa o sorteio anterior
+            
+            let titleElement = target.querySelector('.section-title');
+            if(titleElement) {
+                // Insere a nossa vitrine logo acima do título "Kits Promocionais"
+                titleElement.insertAdjacentHTML('beforebegin', renderCompreJunto());
+            }
+        }
+        // ---------------------------------------------
     }
     
     let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
@@ -2177,6 +2430,23 @@ function updateTotals() {
         }
     });
     
+    // --- VERIFICAÇÃO DO COMPRE JUNTO ---
+    STATE.cjTotalDiscount = 0;
+    if (STATE.cjDiscounts && STATE.cjDiscounts.length > 0) {
+        // Filtra os kits: só mantemos o desconto se TODOS os itens do kit continuarem no carrinho
+        STATE.cjDiscounts = STATE.cjDiscounts.filter(cj => {
+            let isValid = cj.items.every(id => (STATE.cart[id] || 0) > 0);
+            if (isValid) {
+                STATE.cjTotalDiscount += cj.discount;
+                return true;
+            } else {
+                showToast("Item removido. Desconto do Compre Junto cancelado.", "r");
+                return false;
+            }
+        });
+    }
+    // -----------------------------------
+
     let subtotal = sum + STATE.basketExtraFee; 
     let valueDiscount = 0;
     
@@ -2189,7 +2459,11 @@ function updateTotals() {
     }
     
     STATE.valueDiscount = valueDiscount;
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0);
+    
+    // Juntamos os descontos do Compre Junto com os de Combos normais para facilitar as contas
+    let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
+    
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits;
     
     if ($('chk-total')) {
         $('chk-total').innerText = fmt(final);
@@ -2594,14 +2868,15 @@ function openCheckout() {
     }
     
     STATE.valueDiscount = valueDiscount;
+    let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
     
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
-        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto do Kit:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
+        (totalDescontosKits > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto dos Kits:</span><span>-${fmt(totalDescontosKits)}</span></div>` : '') + 
         (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Progressivo:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') + 
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
         
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - (STATE.comboDiscount || 0); 
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits; 
     $('chk-total').innerText = fmt(final);
     
     let btn = $('btn-send-order');
@@ -2764,14 +3039,14 @@ async function sendOrder() {
         }
     });
 
-    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount; 
+    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.cjTotalDiscount; 
     final -= STATE.deliveryDiscount; 
     final -= STATE.valueDiscount; 
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
     final -= cupomDesconto;
 
     let outras_despesas = STATE.basketExtraFee || 0; 
-    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto;
+    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto + STATE.cjTotalDiscount;
 
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
     let tipoCestaTexto = "Cestas Personalizada"; 
@@ -2813,6 +3088,7 @@ async function sendOrder() {
 
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KIT: -${fmt(STATE.comboDiscount)}`;
+    if (STATE.cjTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMPRE JUNTO: -${fmt(STATE.cjTotalDiscount)}`;
     if (STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
     if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
