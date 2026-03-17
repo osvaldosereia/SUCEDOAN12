@@ -1664,33 +1664,42 @@ async function loadCompreJunto() {
 
 // 2. Monta o Visual dinamicamente (Sorteio)
 function renderCompreJunto() {
-    if (!STATE.cjData || STATE.cjData.length === 0) return '';
+    if (!STATE.cjData || STATE.cjData.length === 0) {
+        console.log("Compre Junto: JSON não carregado ou vazio.");
+        return '';
+    }
     
-    let html = '<div class="cj-container" id="cj-wrap"><div class="cj-grid">';
+    let kitsCardsHtml = ''; // Guarda apenas os cards que passarem no teste
     
     STATE.cjData.forEach(kit => {
         let selected = [];
         let sum = 0;
         let valid = true;
         
+        console.log(`🕵️ Analisando o kit: ${kit.titulo}...`);
+        
         // Sorteia um produto para cada termo
         kit.termos.forEach(termo => {
+            // Procura o produto ignorando acentos e checando se tem stock
             let matches = STATE.prods.filter(p => norm(p.name).includes(norm(termo)) && p.stock > 0);
+            
             if (matches.length > 0) {
                 let rand = matches[Math.floor(Math.random() * matches.length)];
                 selected.push(rand);
                 sum += rand.price;
+                console.log(`   ✅ Encontrou para '${termo}': ${rand.name}`);
             } else {
-                valid = false; // Se faltar algum item no estoque, o kit não aparece
+                valid = false; // Falhou!
+                console.log(`   ❌ FALHOU: Nenhum produto em stock tem a palavra '${termo}'. Kit cancelado.`);
             }
         });
         
-        // Se achou os 3 itens, constrói o card
+        // Se achou todos os itens, constrói o card html
         if (valid && selected.length === kit.termos.length) {
             let discountVal = sum * (kit.desconto_percentual / 100);
             let finalPrice = sum - discountVal;
             
-            html += `
+            kitsCardsHtml += `
             <div class="cj-card">
                 <div class="cj-header">${kit.titulo}</div>
                 <div class="cj-images-row">
@@ -1713,8 +1722,14 @@ function renderCompreJunto() {
         }
     });
     
-    html += '</div></div>';
-    return html;
+    // Se nenhum kit passou no teste, não devolve nada (nem a caixa vazia)
+    if (kitsCardsHtml === '') {
+        console.log("⚠️ Fim: Nenhum kit estava com stock completo para aparecer na tela.");
+        return '';
+    }
+    
+    // Se deu certo, empacota e envia para a tela!
+    return `<div class="cj-container" id="cj-wrap"><div class="cj-grid">${kitsCardsHtml}</div></div>`;
 }
 
 // 3. Adiciona ao Carrinho protegendo o desconto
