@@ -2181,93 +2181,64 @@ function renderBottomChips(activeTabId) {
 
     ativarRolagemInfinita();
 }
-
 window.switchTab = function(tabId) {
-    $('wrapper-sections').style.display = 'block'; 
-    $('section-busca').style.display = 'none'; 
-    $('search-inp').value = '';
-    
-    document.querySelectorAll('.tab-section').forEach(el => { 
-        el.style.display = 'none'; 
-        let grid = el.querySelector('.grid-produtos'); 
-        
-        if (el.id === 'sec-cestas') {
-            let wrap = el.querySelector('#wrapper-cestas');
-            if(wrap) wrap.innerHTML = '';
-        }
-        
-        if (grid && el.id !== 'sec-' + tabId && el.id !== 'skeleton-loader') {
-            grid.innerHTML = ''; 
-        }
-    });
-    
-    let target = $('sec-' + tabId); 
-    if (target) {
-        target.style.display = 'block';
-    }
-    
-    let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
-    
-    if (STATE.lists[listKey]) {
-        renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
-    }
-    
-    document.querySelectorAll('.cat-dropdown-item').forEach(el => { 
-        if (el.getAttribute('onclick').includes(tabId)) {
-            $('btn-cat-dropdown-text').innerText = el.innerText.trim(); 
-        }
-    });
-    
-    $('cat-dropdown-list').classList.remove('open'); 
-    renderBottomChips(tabId); 
-    
-    $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
-    
-    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    
-    if (tabId === 'cestas' && $('btn-nav-cestas-nav')) {
-        $('btn-nav-cestas-nav').classList.add('active');
-    } else if (tabId === 'combos' && $('btn-nav-kits')) {
-        $('btn-nav-kits').classList.add('active');
-    }
-};
-        // ---------------------------------------------
-    }
-    
-    let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
-    
-    if (STATE.lists[listKey]) {
-        renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
-    }
-    
-    document.querySelectorAll('.cat-dropdown-item').forEach(el => { 
-        if (el.getAttribute('onclick').includes(tabId)) {
-            $('btn-cat-dropdown-text').innerText = el.innerText.trim(); 
-        }
-    });
-    
-    $('cat-dropdown-list').classList.remove('open'); 
-    renderBottomChips(tabId); 
-    
-    $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
-    
-    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    
-    if (tabId === 'cestas' && $('btn-nav-cestas-nav')) {
-        $('btn-nav-cestas-nav').classList.add('active');
-    } else if (tabId === 'combos' && $('btn-nav-kits')) {
-        $('btn-nav-kits').classList.add('active');
-    }
+    $('wrapper-sections').style.display = 'block'; 
+    $('section-busca').style.display = 'none'; 
+    $('search-inp').value = '';
+    
+    document.querySelectorAll('.tab-section').forEach(el => { 
+        el.style.display = 'none'; 
+        let grid = el.querySelector('.grid-produtos'); 
+        
+        if (el.id === 'sec-cestas') {
+            let wrap = el.querySelector('#wrapper-cestas');
+            if(wrap) wrap.innerHTML = '';
+        }
+        
+        if (grid && el.id !== 'sec-' + tabId && el.id !== 'skeleton-loader') {
+            grid.innerHTML = ''; 
+        }
+    });
+    
+    let target = $('sec-' + tabId); 
+    if (target) {
+        target.style.display = 'block';
+    }
+    
+    let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
+    
+    if (STATE.lists[listKey]) {
+        renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
+    }
+    
+    document.querySelectorAll('.cat-dropdown-item').forEach(el => { 
+        if (el.getAttribute('onclick').includes(tabId)) {
+            $('btn-cat-dropdown-text').innerText = el.innerText.trim(); 
+        }
+    });
+    
+    $('cat-dropdown-list').classList.remove('open'); 
+    renderBottomChips(tabId); 
+    
+    $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
+    
+    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
+    
+    if (tabId === 'cestas' && $('btn-nav-cestas-nav')) {
+        $('btn-nav-cestas-nav').classList.add('active');
+    } else if (tabId === 'combos' && $('btn-nav-kits')) {
+        $('btn-nav-kits').classList.add('active');
+    }
 };
 
-window.goToHome = function() { 
-    switchTab('cestas'); 
-    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    if ($('btn-nav-home')) {
-        $('btn-nav-home').classList.add('active');
-    }
+window.goToHome = function() { 
+    switchTab('cestas'); 
+    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
+    if ($('btn-nav-home')) {
+        $('btn-nav-home').classList.add('active');
+    }
 };
-
+    
 function renderPaginated(containerId, listKey, list, type) {
     if (listKey === 'cestas') {
         let c = $('wrapper-cestas');
