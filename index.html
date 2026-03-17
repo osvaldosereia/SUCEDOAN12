@@ -3101,8 +3101,18 @@ async function sendOrder() {
             if (p) orig[p.id] = parseInt(q); 
         });
         
-        let rem = [];
-        Object.keys(STATE.cart).forEach(id => { 
+       let rem = []; 
+        let add = [];
+        
+        Object.keys(orig).forEach(id => { 
+            let inCart = STATE.cart[id] || 0; 
+            if (inCart < orig[id]) { 
+                let p = STATE.prods.find(prod => prod.id === id); 
+                rem.push(`${orig[id] - inCart}x ${p ? p.name : id}`); 
+            } 
+        });
+        
+        Object.keys(STATE.cart).forEach(id => { 
             let inOrig = orig[id] || 0; 
             if (STATE.cart[id] > inOrig) { 
                 let p = STATE.prods.find(prod => prod.id === id); 
@@ -3117,7 +3127,7 @@ async function sendOrder() {
     }
 
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO POR QUANTIDADE: -${fmt(STATE.atacadoDiscount)}`; // A nossa nova linha aqui!
+    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO POR QUANTIDADE: -${fmt(STATE.atacadoDiscount)}`;
     if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KIT: -${fmt(STATE.comboDiscount)}`;
     if (STATE.cjTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMPRE JUNTO: -${fmt(STATE.cjTotalDiscount)}`;
     if (STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
@@ -3198,4 +3208,3 @@ document.getElementById('btn-close-install').addEventListener('click', () => {
 </script>
 </body>
 </html>
-        
