@@ -1655,7 +1655,10 @@ STATE.cjTotalDiscount = 0;
 // 1. Carrega o JSON
 async function loadCompreJunto() {
     try {
-        let res = await fetch('/site/compre-junto.json?v=' + Date.now());
+        const tempoCacheMinutos = 15;
+        const versaoCache = Math.floor(Date.now() / (1000 * 60 * tempoCacheMinutos));
+        
+        let res = await fetch('/site/compre-junto.json?v=' + versaoCache);
         STATE.cjData = await res.json();
     } catch(e) {
         console.log("Arquivo compre-junto.json não encontrado ou vazio.");
@@ -1770,16 +1773,23 @@ window.addCompreJunto = function(kitId, id1, id2, id3, discountVal) {
     
 async function init() {
     try {
+        // --- INÍCIO: CACHE INTELIGENTE ---
+        // Aqui definimos que o cache dura 15 minutos (1000ms * 60s * 15m)
+        // Se quiser 30 minutos, mude o 15 para 30. Se quiser 1 hora, mude para 60.
+        const tempoCacheMinutos = 15;
+        const versaoCache = Math.floor(Date.now() / (1000 * 60 * tempoCacheMinutos));
+        // --- FIM: CACHE INTELIGENTE ---
+
         const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
-            fetch('/site/produtos-cesta-basica.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/produtos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/cupons.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/desconto-por-valor.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
