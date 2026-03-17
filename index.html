@@ -2096,6 +2096,13 @@ function renderBottomChips(activeTabId) {
             </div>`;
     }
 
+    // --- INJEÇÃO DO COMPRE JUNTO AQUI (Aparece em todas as abas logo após os Kits) ---
+    let cjHtml = renderCompreJunto();
+    if (cjHtml) {
+        html += cjHtml;
+    }
+    // ---------------------------------------------------------------------------------
+
     // --- 2. NOVA SESSÃO: DESTAQUES (Produtos a vencer) ---
     // Filtramos apenas os produtos que têm validade e que têm stock
     let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
@@ -2111,7 +2118,7 @@ function renderBottomChips(activeTabId) {
     // Se houver produtos para mostrar, desenhamos a secção
     if (destaques.length > 0) {
         let trackIdDestaques = 'grid-destaques-' + activeTabId;
-        // Construímos o HTML de cada cartão de produto (aqui não precisamos de ocultar nenhum, pois já são só 10)
+        // Construímos o HTML de cada cartão de produto
         let trackHtmlDestaques = destaques.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
 
         html += `
@@ -2182,19 +2189,6 @@ window.switchTab = function(tabId) {
     let target = $('sec-' + tabId); 
     if (target) {
         target.style.display = 'block';
-        
-        // --- INJEÇÃO DO COMPRE JUNTO NA ABA MERCADO ---
-        if (tabId === 'combos') {
-            let existingCj = document.getElementById('cj-wrap');
-            if(existingCj) existingCj.remove(); // Limpa o sorteio anterior
-            
-            let titleElement = target.querySelector('.section-title');
-            if(titleElement) {
-                // Insere a nossa vitrine logo acima do título "Kits Promocionais"
-                titleElement.insertAdjacentHTML('beforebegin', renderCompreJunto());
-            }
-        }
-        // ---------------------------------------------
     }
     
     let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
