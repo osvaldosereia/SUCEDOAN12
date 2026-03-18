@@ -1092,19 +1092,79 @@ dialog::backdrop {
     }
 }
     /* --- SESSÃO COMPRE JUNTO E ECONOMIZE --- */
-.cj-container {
-    width: 100%;
-    max-width: 1000px;
-    margin: 0 auto 25px;
-    padding: 0 15px;
-}
+/* --- CARROSSEL COMPRE JUNTO (Apenas Mobile) --- */
+    .cj-container {
+        width: 100%;
+        margin: 0 auto 25px;
+        padding: 0; /* Removemos o padding lateral do container para o carrossel ir até à borda */
+    }
 
-.cj-grid {
-    display: grid;
-    grid-template-columns: 1fr; /* 1 coluna no celular */
-    gap: 15px;
-}
+    /* Transformamos a Grelha numa fita Flex horizontal */
+    .cj-container .cj-grid {
+        display: flex; /* Coloca os kits em linha */
+        overflow-x: auto; /* Permite deslizar para o lado */
+        scroll-snap-type: x mandatory; /* Efeito magnético suave */
+        gap: 15px; /* Espaço entre cada kit */
+        padding: 0 15px 20px; /* Dá respiro nas pontas e em baixo para a sombra */
+        
+        /* Esconde a barra de rolagem nativa */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
 
+    .cj-container .cj-grid::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Opera */
+    }
+
+    /* Configuração do Cartão do Kit para maximizar espaço interno */
+    .cj-container .cj-grid > .cj-card {
+        /* Definimos 90% da largura da tela. 
+           Isso deixa as fotos grandes e mostra 10% do próximo kit como pista visual. */
+        width: 90vw; 
+        flex-shrink: 0; /* Impede que o flex esmague o cartão */
+        scroll-snap-align: center; /* Centraliza o kit ao parar o deslize */
+        
+        /* Ajuste fino de padding interno para sobrar mais espaço para as fotos */
+        padding: 12px; 
+        border-radius: 12px;
+    }
+
+    /* --- AJUSTES INTERNOS PARA FOTOS MAIORES --- */
+    /* Diminuímos o espaço entre os 3 itens para as fotos crescerem */
+    .cj-images-row {
+        gap: 2px; 
+        margin-bottom: 12px;
+    }
+
+    /* O item (foto + nome) ganha um pouquinho mais de largura */
+    .cj-item {
+        width: 31%; /* Ganhamos 1% aqui */
+        gap: 4px;
+    }
+
+    /* A caixa da foto (.cj-img-box) */
+    .cj-img-box {
+        /* Mantemos aspect-ratio 4/5 vertical (ficam maiores que quadrados) */
+        padding: 2px; /* Diminuímos o padding interno cinza para a foto ocupar mais espaço */
+    }
+
+    /* Ajuste no sinal de "+" para não roubar espaço horizontal */
+    .cj-plus {
+        font-size: 1rem;
+        margin: 0;
+        /* Alinhamento vertical ligeiramente para cima para não brigar com o texto */
+        transform: translateY(-10px); 
+    }
+    
+    /* Título do kit e preços ligeiramente menores para focar nas fotos */
+    .cj-header {
+        font-size: 1rem;
+        margin-bottom: 8px;
+    }
+    .cj-new-price {
+        font-size: 1.3rem;
+    }
+    
 /* 2 colunas no Desktop */
 @media(min-width: 800px) {
     .cj-grid {
