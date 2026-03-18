@@ -1093,70 +1093,76 @@ dialog::backdrop {
 }
     /* --- SESSÃO COMPRE JUNTO E ECONOMIZE --- */
 /* --- CARROSSEL COMPRE JUNTO (Apenas Mobile) --- */
+   /* --- CARROSSEL COMPRE JUNTO (Apenas Mobile) --- */
     .cj-container {
         width: 100%;
         margin: 0 auto 25px;
-        padding: 0; /* Removemos o padding lateral do container para o carrossel ir até à borda */
+        padding: 0; /* Container encosta na borda da tela */
     }
 
-    /* Transformamos a Grelha numa fita Flex horizontal */
+    /* O grid Flex horizontal */
     .cj-container .cj-grid {
-        display: flex; /* Coloca os kits em linha */
-        overflow-x: auto; /* Permite deslizar para o lado */
-        scroll-snap-type: x mandatory; /* Efeito magnético suave */
-        gap: 15px; /* Espaço entre cada kit */
-        padding: 0 15px 20px; /* Dá respiro nas pontas e em baixo para a sombra */
+        display: flex; /* Linha horizontal */
+        overflow-x: auto; /* Rolagem lateral */
+        scroll-snap-type: x mandatory; /* Efeito magnético */
+        gap: 15px; /* Espaço entre os cartões */
+        padding: 0 15px 25px; /* Espaço nas pontas e embaixo para a sombra */
         
         /* Esconde a barra de rolagem nativa */
-        scrollbar-width: none; /* Firefox */
-        -ms-overflow-style: none; /* IE/Edge */
+        scrollbar-width: none; 
+        -ms-overflow-style: none; 
     }
 
     .cj-container .cj-grid::-webkit-scrollbar {
-        display: none; /* Chrome/Safari/Opera */
+        display: none; 
     }
 
-    /* Configuração do Cartão do Kit para maximizar espaço interno */
+    /* REDUÇÃO DA LARGURA DO CARTÃO PARA MAIOR PISTA VISUAL */
     .cj-container .cj-grid > .cj-card {
-        /* Definimos 90% da largura da tela. 
-           Isso deixa as fotos grandes e mostra 10% do próximo kit como pista visual. */
-        width: 90vw; 
+        /* Largura reduzida de 90vw para 78vw. 
+           Isso deixa uma pista visual de 22% do próximo kit, deixando óbvio que é um carrossel. */
+        width: 78vw; 
         flex-shrink: 0; /* Impede que o flex esmague o cartão */
-        scroll-snap-align: center; /* Centraliza o kit ao parar o deslize */
+        scroll-snap-align: center; /* Centraliza ao parar */
         
-        /* Ajuste fino de padding interno para sobrar mais espaço para as fotos */
         padding: 12px; 
         border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(234, 88, 12, 0.08); /* Sombra laranja suave */
     }
 
-    /* --- AJUSTES INTERNOS PARA FOTOS MAIORES --- */
-    /* Diminuímos o espaço entre os 3 itens para as fotos crescerem */
+    /* --- AJUSTES INTERNOS PARA FOTOS MAIORES COM LARGURA MENOR --- */
+    
+    /* Apertamos o espaço entre as 3 fotos e o sinal de "+" ao máximo */
     .cj-images-row {
-        gap: 2px; 
+        gap: 0px; 
         margin-bottom: 12px;
+        justify-content: space-around; /* Distribui o espaço extra de forma equilibrada */
     }
 
-    /* O item (foto + nome) ganha um pouquinho mais de largura */
+    /* O item (foto + nome) ganha o máximo de largura possível */
     .cj-item {
-        width: 31%; /* Ganhamos 1% aqui */
-        gap: 4px;
+        width: 32%; /* Ganhamos mais espaço aqui */
+        gap: 3px;
     }
 
-    /* A caixa da foto (.cj-img-box) */
     .cj-img-box {
-        /* Mantemos aspect-ratio 4/5 vertical (ficam maiores que quadrados) */
-        padding: 2px; /* Diminuímos o padding interno cinza para a foto ocupar mais espaço */
+        /* Proporção vertical 4/5 para as fotos crescerem para cima */
+        aspect-ratio: 4/5; 
+        padding: 1px; /* Padding interno cinza mínimo */
     }
 
-    /* Ajuste no sinal de "+" para não roubar espaço horizontal */
+    /* Ajuste no sinal de "+" para não atrapalhar horizontalmente */
     .cj-plus {
-        font-size: 1rem;
+        font-size: 0.9rem;
         margin: 0;
-        /* Alinhamento vertical ligeiramente para cima para não brigar com o texto */
-        transform: translateY(-10px); 
+        /* Alinhamento vertical para cima e para o centro para não roubar espaço lateral */
+        transform: translateY(-15px) translateX(-2px); 
     }
     
-    /* Título do kit e preços ligeiramente menores para focar nas fotos */
+    /* Textos ligeiramente ajustados */
+    .cj-item-name {
+        font-size: 0.65rem; /* Fonte um pouco menor para caber em 32% */
+    }
     .cj-header {
         font-size: 1rem;
         margin-bottom: 8px;
@@ -1783,7 +1789,12 @@ async function loadCompreJunto() {
 function renderCompreJunto() {
     if (!STATE.cjData || STATE.cjData.length === 0) return '';
     
-    let html = '<div class="cj-container" id="cj-wrap"><div class="cj-grid">';
+    // NOVO: Adicionamos o título padronizado antes do container do carrossel
+    let html = `
+        <div class="section-title"><span class="section-marker"></span>Compre Junto e Economize</div>
+        <div class="cj-container" id="cj-wrap">
+            <div class="cj-grid">
+    `;
     
     STATE.cjData.forEach(kit => {
         let selected = [];
