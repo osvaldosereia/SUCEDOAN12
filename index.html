@@ -1143,9 +1143,18 @@ dialog::backdrop {
     margin-bottom: 15px;
 }
 
+/* Container que vai segurar a foto e o texto juntos */
+.cj-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 30%; /* Definimos os 30% de largura aqui agora */
+    gap: 6px; /* Espaço entre a foto e o nome */
+}
+
 .cj-img-box {
-    width: 30%;
-    aspect-ratio: 1/1;
+    width: 100%; /* A caixa da foto ocupa todo o espaço do .cj-item */
+    aspect-ratio: 4/5; /* Deixa a foto vertical, com a mesma proporção dos outros cartões */
     background: var(--c-img-bg);
     border-radius: 8px;
     padding: 5px;
@@ -1161,12 +1170,27 @@ dialog::backdrop {
     mix-blend-mode: multiply;
 }
 
+/* Novo estilo para o nome do produto debaixo da foto */
+.cj-item-name {
+    font-size: 0.7rem; /* Fonte pequenina para caber tudo */
+    font-weight: 600;
+    color: var(--c-p);
+    text-align: center;
+    line-height: 1.2;
+    /* Este truque corta o texto se ele passar de 3 linhas, adicionando "..." no fim */
+    display: -webkit-box;
+    -webkit-line-clamp: 3; 
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    width: 100%;
+}
+
 .cj-plus {
     font-weight: 800;
     color: var(--c-t);
     font-size: 1.2rem;
+    margin-bottom: 25px; /* Empurra o "+" um pouco para cima para ficar alinhado com as fotos e não com os textos */
 }
-
 .cj-footer {
     display: flex;
     flex-direction: column;
@@ -1726,12 +1750,21 @@ function renderCompreJunto() {
             html += `
             <div class="cj-card">
                 <div class="cj-header">${kit.titulo}</div>
-                <div class="cj-images-row">
-                    <div class="cj-img-box"><img src="${selected[0].img}" alt="${selected[0].name}"></div>
+               <div class="cj-images-row">
+                    <div class="cj-item">
+                        <div class="cj-img-box"><img src="${selected[0].img}" alt="${selected[0].name}"></div>
+                        <div class="cj-item-name">${formatName(selected[0].name)}</div>
+                    </div>
                     <div class="cj-plus">+</div>
-                    <div class="cj-img-box"><img src="${selected[1].img}" alt="${selected[1].name}"></div>
+                    <div class="cj-item">
+                        <div class="cj-img-box"><img src="${selected[1].img}" alt="${selected[1].name}"></div>
+                        <div class="cj-item-name">${formatName(selected[1].name)}</div>
+                    </div>
                     <div class="cj-plus">+</div>
-                    <div class="cj-img-box"><img src="${selected[2].img}" alt="${selected[2].name}"></div>
+                    <div class="cj-item">
+                        <div class="cj-img-box"><img src="${selected[2].img}" alt="${selected[2].name}"></div>
+                        <div class="cj-item-name">${formatName(selected[2].name)}</div>
+                    </div>
                 </div>
                 <div class="cj-footer">
                     <div class="cj-price-area">
