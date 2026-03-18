@@ -1789,7 +1789,9 @@ async function loadCompreJunto() {
 function renderCompreJunto() {
     if (!STATE.cjData || STATE.cjData.length === 0) return '';
     
-    // NOVO: Adicionamos o título padronizado antes do container do carrossel
+    // Inicializamos uma lista para guardar os kits gerados
+    STATE.cjCombos = []; 
+    
     let html = `
         <div class="section-title"><span class="section-marker"></span>Compre Junto e Economize</div>
         <div class="cj-container" id="cj-wrap">
@@ -1801,7 +1803,6 @@ function renderCompreJunto() {
         let sum = 0;
         let valid = true;
         
-        // Sorteia um produto para cada termo
         kit.termos.forEach(termo => {
             let matches = STATE.prods.filter(p => norm(p.name).includes(norm(termo)) && p.stock > 0);
             if (matches.length > 0) {
@@ -1809,19 +1810,27 @@ function renderCompreJunto() {
                 selected.push(rand);
                 sum += rand.price;
             } else {
-                valid = false; // Se faltar algum item no estoque, o kit não aparece
+                valid = false; 
             }
         });
         
-        // Se achou os 3 itens, constrói o card
         if (valid && selected.length === kit.termos.length) {
             let discountVal = sum * (kit.desconto_percentual / 100);
             let finalPrice = sum - discountVal;
             
+            // MAGIA: Guardamos o Compre Junto num formato igual ao dos Kits Promocionais!
+            STATE.cjCombos.push({
+                id: 'cj_' + kit.id,
+                nome: kit.titulo,
+                preco: finalPrice,
+                produtos: [`1x ${selected[0].id}`, `1x ${selected[1].id}`, `1x ${selected[2].id}`]
+            });
+            
+            // Alterámos o onclick para chamar o previewCombo() e mudámos o texto do botão
             html += `
-            <div class="cj-card">
+            <div class="cj-card" onclick="previewCombo('cj_${kit.id}')">
                 <div class="cj-header">${kit.titulo}</div>
-               <div class="cj-images-row">
+                <div class="cj-images-row">
                     <div class="cj-item">
                         <div class="cj-img-box"><img src="${selected[0].img}" alt="${selected[0].name}"></div>
                         <div class="cj-item-name">${formatName(selected[0].name)}</div>
@@ -1842,9 +1851,7 @@ function renderCompreJunto() {
                         <div class="cj-old-price">${fmt(sum)}</div>
                         <div class="cj-new-price">${fmt(finalPrice)}</div>
                     </div>
-                    <button class="cj-btn" onclick="addCompreJunto('${kit.id}', '${selected[0].id}', '${selected[1].id}', '${selected[2].id}', ${discountVal})">
-                        🛒 Adicionar os ${kit.termos.length}
-                    </button>
+                    <button class="cj-btn">Ver Detalhes do Kit</button>
                 </div>
             </div>`;
         }
@@ -2843,8 +2850,10 @@ function confirmBasket(isCustom, qty) {
 }
 
 function previewCombo(id) { 
-    let c = STATE.combos.find(x => String(x.id) === String(id)); 
-    if (!c) return; 
+    // Junta os combos normais com os do Compre Junto numa só lista para procurar
+    let allCombos = [...STATE.combos, ...(STATE.cjCombos || [])];
+    let c = allCombos.find(x => String(x.id) === String(id)); 
+    if (!c) return;
     
     currentComboId = id; 
     currentComboQty = 1; 
@@ -2911,7 +2920,9 @@ function changeComboQty(d) {
     currentComboQty = Math.max(1, currentComboQty + d); 
     $('combo-modal-qty').innerText = currentComboQty; 
     
-    let c = STATE.combos.find(x => x.id === currentComboId); 
+    // Procuramos o kit ativo nas duas listas
+    let allCombos = [...STATE.combos, ...(STATE.cjCombos || [])];
+    let c = allCombos.find(x => String(x.id) === String(currentComboId)); 
     if (c) {
         let precoDe = 0; 
         c.produtos.forEach(s => { 
