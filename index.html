@@ -2263,7 +2263,36 @@ window.switchTab = function(tabId) {
     $('cat-dropdown-list').classList.remove('open'); 
     renderBottomChips(tabId); 
     
-    $('scroll-stage').scrollTo({ top: 0, behavior: 'instant' });
+    // --- INÍCIO DA NOVA LÓGICA DE ROLAGEM ---
+    // Usamos um pequeno atraso (10ms) para dar tempo de as vitrines do topo serem renderizadas
+    setTimeout(() => {
+        let scrollContainer = $('scroll-stage');
+        let titleElement = null;
+
+        if (tabId === 'cestas') {
+            titleElement = document.getElementById('wrapper-cestas');
+        } else if (tabId === 'combos') {
+            // Pega o título principal da aba de kits
+            titleElement = target.querySelector('.section-title'); 
+        } else {
+            // Para as categorias dinâmicas (Bebidas, Higiene, etc.)
+            // Achamos a grade de produtos e pegamos o título que está imediatamente acima dela
+            let mainGrid = document.getElementById('grid-' + tabId);
+            if (mainGrid && mainGrid.previousElementSibling && mainGrid.previousElementSibling.classList.contains('section-title')) {
+                titleElement = mainGrid.previousElementSibling;
+            }
+        }
+
+        if (titleElement) {
+            // Descobre a altura exata do elemento e sobe 20 pixels para não colar no menu superior
+            let positionToScroll = titleElement.offsetTop - 20;
+            scrollContainer.scrollTo({ top: positionToScroll, behavior: 'instant' });
+        } else {
+            // Garantia (fallback): se não encontrar, vai para o topo
+            scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
+        }
+    }, 10);
+    // --- FIM DA NOVA LÓGICA DE ROLAGEM ---
     
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
     
