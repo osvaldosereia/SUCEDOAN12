@@ -2284,8 +2284,8 @@ window.switchTab = function(tabId) {
         }
 
         if (titleElement) {
-            // Descobre a altura exata do elemento e sobe 20 pixels para não colar no menu superior
-            let positionToScroll = titleElement.offsetTop - 20;
+            // Descobre a altura exata do elemento e sobe 80 pixels para não colar no menu superior
+            let positionToScroll = titleElement.offsetTop - 80;
             scrollContainer.scrollTo({ top: positionToScroll, behavior: 'instant' });
         } else {
             // Garantia (fallback): se não encontrar, vai para o topo
