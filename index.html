@@ -2137,7 +2137,7 @@ function buildTabsAndSections() {
         
         sectionsHtml += `
             <div id="sec-cestas" class="tab-section" style="display:none;">
-                <div id="wrapper-cestas"></div>
+                <div class="top-category-nav"></div> <div id="wrapper-cestas"></div>
                 <div class="bottom-category-nav"></div>
             </div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
@@ -2148,7 +2148,7 @@ function buildTabsAndSections() {
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
         sectionsHtml += `
             <div id="sec-combos" class="tab-section" style="display:none;">
-                <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
+                <div class="top-category-nav"></div> <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
                 <div class="grid-produtos" id="grid-combos"></div>
                 <div class="bottom-category-nav"></div>
             </div>`;
@@ -2212,7 +2212,7 @@ function buildTabsAndSections() {
                 dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('${safe}')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> ${label}</div>`;
                 sectionsHtml += `
                     <div id="sec-${safe}" class="tab-section" style="display:none;">
-                        <div class="section-title"><span class="section-marker"></span>${label}</div>
+                        <div class="top-category-nav"></div> <div class="section-title"><span class="section-marker"></span>${label}</div>
                         <div class="grid-produtos" id="grid-${safe}"></div>
                         <div class="bottom-category-nav"></div>
                     </div>`;
@@ -2227,14 +2227,15 @@ function buildTabsAndSections() {
 }
 
 function renderBottomChips(activeTabId) {
-    let html = '';
+    let htmlTop = '';    // Vai guardar Kits, Compre Junto e Destaques
+    let htmlBottom = ''; // Vai guardar as "Outras Categorias"
     
-    // --- 1. SESSÃO DOS KITS PROMOCIONAIS (Código existente) ---
+    // --- 1. SESSÃO DOS KITS PROMOCIONAIS ---
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
         let trackId = 'grid-kits-bottom-' + activeTabId; 
         let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10, idx)).join('');
         let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
-        html += `
+        htmlTop += `
             <div style="margin-top: 15px;">
                 <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
                 <div class="grid-produtos" id="${trackId}">
@@ -2244,32 +2245,22 @@ function renderBottomChips(activeTabId) {
             </div>`;
     }
 
-    // --- INJEÇÃO DO COMPRE JUNTO AQUI (Aparece em todas as abas logo após os Kits) ---
+    // --- INJEÇÃO DO COMPRE JUNTO ---
     let cjHtml = renderCompreJunto();
     if (cjHtml) {
-        html += cjHtml;
+        htmlTop += cjHtml; // Adiciona ao topo!
     }
-    // ---------------------------------------------------------------------------------
 
-    // --- 2. NOVA SESSÃO: DESTAQUES (Produtos a vencer) ---
-    // Filtramos apenas os produtos que têm validade e que têm stock
+    // --- 2. SESSÃO DESTAQUES (Produtos a vencer) ---
     let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
-
-    // Ordenamos a lista da validade mais próxima (menor data) para a mais distante
-    produtosComValidade.sort((a, b) => {
-        return converterDataValidade(a.validade) - converterDataValidade(b.validade);
-    });
-
-    // Cortamos a lista para ter apenas os primeiros 10 produtos
+    produtosComValidade.sort((a, b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
     let destaques = produtosComValidade.slice(0, 10);
 
-    // Se houver produtos para mostrar, desenhamos a secção
     if (destaques.length > 0) {
         let trackIdDestaques = 'grid-destaques-' + activeTabId;
-        // Construímos o HTML de cada cartão de produto
         let trackHtmlDestaques = destaques.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
 
-        html += `
+        htmlTop += `
             <div style="margin-top: 15px;">
                 <div class="section-title" style="border-left-color: #f59e0b;"><span class="section-marker"></span>Destaques</div>
                 <div class="grid-produtos" id="${trackIdDestaques}">
@@ -2278,7 +2269,7 @@ function renderBottomChips(activeTabId) {
             </div>`;
     }
 
-    // --- 3. SESSÃO DAS OUTRAS CATEGORIAS (Código existente) ---
+    // --- 3. SESSÃO DAS OUTRAS CATEGORIAS ---
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
@@ -2291,7 +2282,7 @@ function renderBottomChips(activeTabId) {
                     let trackId = 'grid-cat-' + safe + '-' + activeTabId; 
                     let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10, idx)).join('');
                     let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
-                    html += `
+                    htmlBottom += `
                         <div style="margin-top: 15px;">
                             <div class="section-title"><span class="section-marker"></span>${label}</div>
                             <div class="grid-produtos" id="${trackId}">
@@ -2306,9 +2297,16 @@ function renderBottomChips(activeTabId) {
     
     let activeSec = $('sec-' + activeTabId);
     if (activeSec) { 
+        // Injeta a vitrine promocional no TOPO
+        let topNavContainer = activeSec.querySelector('.top-category-nav');
+        if (topNavContainer) {
+            topNavContainer.innerHTML = htmlTop;
+        }
+        
+        // Injeta as outras categorias no FUNDO
         let navContainer = activeSec.querySelector('.bottom-category-nav'); 
         if (navContainer) {
-            navContainer.innerHTML = html; 
+            navContainer.innerHTML = htmlBottom; 
         }
     }
 
