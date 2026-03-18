@@ -1712,7 +1712,7 @@ STATE.cjTotalDiscount = 0;
 // 1. Carrega o JSON
 async function loadCompreJunto() {
     try {
-        let res = await fetch('/site/compre-junto.json?v=' + Date.now());
+        let res = await fetch('/site/compre-junto.json?v=' + versaoCache);
         STATE.cjData = await res.json();
     } catch(e) {
         console.log("Arquivo compre-junto.json não encontrado ou vazio.");
@@ -1819,18 +1819,22 @@ window.addCompreJunto = function(kitId, id1, id2, id3, discountVal) {
 };
 // --- FIM: SISTEMA COMPRE JUNTO ---
     
+// Criamos a versão do cache que muda apenas a cada 24 horas (86400000 ms)
+const versaoCache = Math.floor(Date.now() / 86400000); 
+
 async function init() {
     try {
+        // Agora todos os ficheiros vão partilhar a mesma versão durante 24 horas
         const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
-            fetch('/site/produtos-cesta-basica.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/produtos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/cupons.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/combos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('/site/desconto-por-valor.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('sohoje.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('bloqueados.json?v=' + Date.now()).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + Date.now()).then(r => r.json()).catch(() => [])
+            fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/desconto-por-valor.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
