@@ -953,15 +953,46 @@ dialog::backdrop {
     border-color: var(--c-err) !important; 
     background-color: #fef2f2 !important; 
 }
-/* --- LAYOUT 1 COLUNA NO MOBILE PARA CESTAS E KITS --- */
+
+/* --- LAYOUT 1 COLUNA NO MOBILE PARA KITS E CARROSSEL PARA CESTAS --- */
 @media (max-width: 799px) {
-    /* Seleciona a aba das Cestas, a aba dos Kits e os Kits de fundo */
-    #wrapper-cestas .grid-produtos,
+    /* Deixamos apenas os Combos e Kits de fundo na regra de 1 coluna vertical */
     #grid-combos,
     [id^="grid-kits-bottom-"] {
-        grid-template-columns: 1fr; /* Força a ter apenas 1 coluna */
-        padding: 0 15px 25px; /* Dá uma margem lateral elegante para não colar nos limites do ecrã */
-        gap: 15px; /* Aumenta o espaço entre os cartões para respirar melhor */
+        grid-template-columns: 1fr; 
+        padding: 0 15px 25px; 
+        gap: 15px; 
+    }
+
+    /* --- CARROSSEL DAS CESTAS BÁSICAS (Apenas Mobile) --- */
+    #wrapper-cestas .grid-produtos {
+        display: flex; /* Coloca os itens numa linha horizontal */
+        overflow-x: auto; /* Permite deslizar para o lado */
+        scroll-snap-type: x mandatory; /* Dá aquele efeito magnético suave ao parar de rolar */
+        gap: 15px; /* Espaço entre os cartões */
+        padding: 0 15px 25px;
+        
+        /* Esconde a barra de rolagem nativa para um visual mais limpo (opcional mas recomendado) */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE/Edge */
+    }
+
+    #wrapper-cestas .grid-produtos::-webkit-scrollbar {
+        display: none; /* Chrome/Safari/Opera */
+    }
+
+    /* Regras para os cartões dentro do carrossel */
+    #wrapper-cestas .grid-produtos > .u-card {
+        width: 70vw; /* 70% da tela = Mostra 1 inteiro + metade do próximo (1.5) */
+        flex-shrink: 0; /* Impede que o cartão seja esmagado pelo flexbox */
+        scroll-snap-align: center; /* Quando o deslize parar, o cartão fica centralizado no ecrã */
+        height: auto; /* Mantém a altura equilibrada */
+    }
+
+    /* Garante que o texto de "Carregando mais..." (scroll-sentinel) não desformata o carrossel */
+    #wrapper-cestas .grid-produtos > .scroll-sentinel {
+        min-width: 100%;
+        flex-shrink: 0;
     }
     
     /* Como a foto vai ficar gigante, aumentamos ligeiramente a fonte do nome para equilibrar o visual */
@@ -983,7 +1014,8 @@ dialog::backdrop {
         right: 12px;
     }
 }
-    /* --- MENU RÁPIDO MOBILE (GRADE 2 COLUNAS) --- */
+
+/* --- MENU RÁPIDO MOBILE (GRADE 2 COLUNAS) --- */
 .quick-menu-grid {
     display: none; /* Escondido por padrão no computador */
 }
