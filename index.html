@@ -362,11 +362,46 @@ button {
     .main-stage { padding-top: 90px; } 
 }
 
+/* NOVO: BANNERS INFORMATIVOS */
+.info-banners {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 15px 5px;
+}
+
+.info-banner-item {
+    font-size: 0.70rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px 10px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 100%;
+}
+
+@media (min-width: 800px) {
+    .info-banners {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: 15px 15px 5px;
+        gap: 10px;
+    }
+    .info-banner-item {
+        flex: 1;
+        font-size: 0.70rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
 /* TÍTULOS DE SESSÃO MEGA DESTACADOS */
 .section-title { 
     width: calc(100% - 20px); 
     max-width: 1000px; 
-    margin: 25px auto 15px; 
+    margin: 20px auto 15px; 
     font-size: 1.1rem; 
     font-weight: 800; 
     color: var(--c-p); 
@@ -1368,6 +1403,8 @@ dialog::backdrop {
 
 <main class="main-stage" id="scroll-stage">
     
+    <div id="info-banners-container" class="layout-limit info-banners"></div>
+
     <div id="section-busca" class="page-section" style="display:none;">
         <div class="section-title">Resultados da Busca</div>
         <div class="grid-produtos" id="grid-busca"></div>
@@ -1588,6 +1625,7 @@ const STATE = {
     combos: [], 
     termos: [], 
     sohoje: [],
+    banners: [], // NOVO
     carrosseis: [], 
     cart: {}, 
     cartOrder: [], 
@@ -2019,9 +2057,20 @@ window.commitExpander = function() {
 
 const versaoCache = Math.floor(Date.now() / 86400000); 
 
+function renderBanners() {
+    const container = document.getElementById('info-banners-container');
+    if (!container || !STATE.banners || STATE.banners.length === 0) return;
+    
+    let html = '';
+    STATE.banners.forEach(b => {
+        html += `<div class="info-banner-item" style="background-color: ${b.corFundo}; color: ${b.corTexto};">${b.texto}</div>`;
+    });
+    container.innerHTML = html;
+}
+
 async function init() {
     try {
-        const [r1, r2, r3, r4, r7, r8, r9, r10] = await Promise.all([
+        const [r1, r2, r3, r4, r7, r8, r9, r10, r11] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
@@ -2029,7 +2078,8 @@ async function init() {
             fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
@@ -2039,6 +2089,7 @@ async function init() {
         STATE.sohoje = r8 || [];
         STATE.bloqueados = (r9 || []).map(String);
         STATE.carrosseis = r10 || [];
+        STATE.banners = r11 || [];
         
         await loadCompreJunto();
         
@@ -2082,6 +2133,7 @@ async function init() {
         
         buildTabsAndSections(); 
         updateTotals();
+        renderBanners();
         
     } catch (e) { 
         console.error("Erro na inicialização:", e); 
@@ -2818,16 +2870,15 @@ function openCheckout() {
     });
     
     let subtotal = sum + STATE.basketExtraFee; 
-    let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
     
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
         (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Kit Promocional:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
         (STATE.cjTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Compre Junto:</span><span>-${fmt(STATE.cjTotalDiscount)}</span></div>` : '') + 
-        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (A partir de 3un):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
+        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (Leve 3+):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
         
-    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount; 
+    let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - STATE.cjTotalDiscount - STATE.bulkTotalDiscount; 
     $('chk-total').innerText = fmt(final);
     
     let btn = $('btn-send-order');
