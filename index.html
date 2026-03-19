@@ -445,7 +445,7 @@ button {
     }
     
     .u-name {
-        font-size: 1.05rem; 
+        font-size: 1.15rem; 
         margin-top: 8px;
     }
     
@@ -565,8 +565,8 @@ button {
 }
 
 .u-name { 
-    font-size: 0.95rem; 
-    font-weight: 600; 
+    font-size: 1.10rem; 
+    font-weight: 500; 
     color: var(--c-p); 
     line-height: 1.25; 
     display: -webkit-box; 
@@ -2029,8 +2029,8 @@ async function init() {
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 // NOVA REGRA DESCONTO PROGRESSIVO
-                // Sorteia de 4% a 12% para TODOS os produtos, desde que elegíveis no uso
-                let descontoLeve3 = 0.04 + (rand() * 0.08); 
+                // Sorteia de 6% a 17% para TODOS os produtos, desde que elegíveis no uso
+                let descontoLeve3 = 0.06 + (rand() * 0.11); 
 
                 return {
                     id: String(p.codigo || p.id), 
@@ -2156,7 +2156,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
         // ETIQUETA NOVA "LEVE 3+" (Agora apresentada abaixo do preço!)
         if (item.bulkDiscount) {
             let bulkPrice = pPrice * (1 - item.bulkDiscount);
-            bulkDiscountHtml = `<div style="font-size:0.75rem; color:var(--c-ok); font-weight:800; margin-top:2px;">Leve 3+ por ${fmt(bulkPrice)}/un</div>`;
+            bulkDiscountHtml = `<div style="font-size:0.95rem; color:var(--c-ok); font-weight:500; margin-top:2px;">Leve 3+ por ${fmt(bulkPrice)}/un</div>`;
         }
 
         addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnText}</button>`;
