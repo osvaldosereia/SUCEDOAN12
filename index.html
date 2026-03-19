@@ -1630,8 +1630,12 @@ function initSplashScreen() {
     const textContainer = document.getElementById('splash-text-container');
     const logo = document.getElementById('splash-logo-img');
     
-    let currentIndex = 0;
+    // Começamos no índice 1, porque a frase 0 já está na tela!
+    let currentIndex = 1; 
     const timePerPhrase = 2200;
+
+    // Devolvemos a transição suave para a primeira frase poder sumir bonito depois
+    setTimeout(() => { if(phrases[0]) phrases[0].style.transition = ''; }, 50);
 
     function showNextPhrase() {
         if (currentIndex >= phrases.length) {
@@ -1652,7 +1656,9 @@ function initSplashScreen() {
         currentIndex++;
         setTimeout(showNextPhrase, timePerPhrase);
     }
-    setTimeout(showNextPhrase, 300);
+    
+    // Como a primeira frase já está visível, apenas esperamos o tempo dela acabar para chamar a próxima
+    setTimeout(showNextPhrase, timePerPhrase);
 }
 
 initSplashScreen();
