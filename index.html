@@ -442,60 +442,40 @@ button {
 }
 
 /* --- LAYOUT MOBILE PARA TODAS AS SESSÕES (CARROSSEL) --- */
+/* --- AJUSTE DE FONTES NOS CARDS MOBILE --- */
 @media (max-width: 799px) {
-    .grid-produtos {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        gap: 12px; /* Reduzido levemente de 15px para acomodar melhor os 2,5 cards */
-        padding: 0 15px 15px; 
-        scrollbar-width: thin; 
-        scrollbar-color: #cbd5e1 transparent;
-    }
+    /* ... (mantenha as configurações de .grid-produtos e .u-card anteriores) ... */
 
-    .grid-produtos::-webkit-scrollbar {
-        height: 6px;
-        display: block; 
-    }
-    .grid-produtos::-webkit-scrollbar-track {
-        background: transparent;
-        margin: 0 15px;
-    }
-    .grid-produtos::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
-    }
-
-    .grid-produtos > .u-card {
-        width: 36vw; /* Ajustado de 55vw para exibir ~2.5 cards na tela */
-        flex-shrink: 0; 
-        scroll-snap-align: center; 
-        height: auto; 
-        min-height: 260px; /* Adicionado para garantir respiro vertical e caber os textos */
-    }
-
-    .grid-produtos > .scroll-sentinel {
-        min-width: 100%;
-        flex-shrink: 0;
-    }
-    
     .u-name {
-        font-size: 0.85rem; /* Reduzido de 1.15rem para ficar perfeito no card mais estreito */
-        margin-top: 8px;
-        line-height: 1.3;
+        font-size: 0.75rem; /* Reduzido para caber melhor o nome completo */
+        margin-top: 5px;
+        line-height: 1.2;
+        min-height: 2.4em; /* Garante espaço para até 2 linhas de texto */
     }
     
-    /* Novo: Ajustando o tamanho do preço no mobile para manter a proporção */
     .u-price {
-        font-size: 1.1rem; 
+        font-size: 1.05rem; /* Valor principal mais delicado */
+        font-weight: 800;
     }
-    
+
+    /* Ajuste específico para o texto "A partir de 3un" */
+    .u-info div[style*="font-size:0.95rem"] {
+        font-size: 0.70rem !important; /* Diminuído para não poluir o card pequeno */
+        letter-spacing: -0.2px;
+    }
+
+    /* Ajuste para o preço riscado (Preço Antigo) */
+    .combo-strike {
+        font-size: 0.70rem;
+        margin-bottom: -4px;
+    }
+
     .card-add-btn {
-        width: 36px; /* Reduzido de 44px para não sobrepor o texto no card menor */
-        height: 36px;
-        font-size: 1.4rem; /* Reduzido de 1.6rem */
-        bottom: 8px;
-        right: 8px;
+        width: 32px; /* Reduzido levemente para ganhar mais área de respiro */
+        height: 32px;
+        font-size: 1.2rem;
+        bottom: 5px;
+        right: 5px;
     }
 }
 
@@ -1528,18 +1508,18 @@ dialog::backdrop {
         <p style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px; font-weight: 500;">Planeje a entrega e ganhe desconto.</p>
         <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
         
+        <div style="text-align: right; margin-bottom: 20px; border-top: 1px solid var(--c-bd); padding-top: 20px;">
+            <div style="font-size:0.85rem; font-weight:700; color:var(--c-s); text-transform:uppercase;">Total do Pedido</div>
+            <div style="font-weight: 800; font-size: 2.2rem; color: var(--c-p); line-height: 1.1;" id="chk-total"></div>
+        </div>
+
         <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">3. Tem cupom de desconto?</h3>
         <div style="display: flex; gap: 8px; margin: 10px 0 20px;">
             <input type="text" id="chk-cupom" placeholder="Digite seu cupom" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); font-family: inherit; font-size: 0.95rem; font-weight: 500; text-transform: uppercase;">
             <button onclick="applyCoupon()" style="padding: 0 20px; font-size: 0.95rem; border: none; border-radius: 8px; background: var(--c-p); color: #fff; font-weight: 700; cursor: pointer;">Aplicar</button>
         </div>
         <div id="cupom-msg" style="font-size: 0.85rem; margin-top: -15px; margin-bottom: 15px; display: none; font-weight: 600;"></div>
-        <div id="chk-summary-lines" style="border-top: 1px dashed var(--c-bd); padding-top: 15px; margin-bottom: 15px; font-size: 0.95rem; font-weight: 500; color: var(--c-s);"></div>
-        
-        <div style="text-align: right; margin-bottom: 25px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 20px;">
-            <div style="font-size:0.85rem; font-weight:700; color:var(--c-s); text-transform:uppercase;">Total a pagar</div>
-            <div style="font-weight: 800; font-size: 2.2rem; color: var(--c-p); line-height: 1.1;" id="chk-total"></div>
-        </div>
+        <div id="chk-summary-lines" style="border-top: 1px dashed var(--c-bd); padding-top: 15px; margin-bottom: 25px; font-size: 0.95rem; font-weight: 500; color: var(--c-s);"></div>
 
         <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">4. Meus Dados</h3>
         <input type="text" id="chk-nome" placeholder="Nome Completo" style="width: 100%; padding: 14px 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 500;">
