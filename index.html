@@ -1013,8 +1013,8 @@ dialog::backdrop {
 
 #chk-list { 
     display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 10px; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 8px; 
     margin-bottom: 10px; 
     margin-top: 10px; 
 }
@@ -1538,6 +1538,8 @@ dialog::backdrop {
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
         <h2 style="font-weight: 800; font-size: 1.4rem; color: var(--c-p); margin-top: 5px; margin-bottom: 20px;">Finalizar Pedido</h2>
         
+        <div id="chk-carousel-ofertas"></div>
+        
         <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">1. O Seu Pedido</h3>
         <div id="chk-list"></div>
         
@@ -1673,7 +1675,9 @@ const STATE = {
     deliveryOptions: [], 
     selectedDeliveryIndex: 0, 
     deliveryDiscount: 0, 
-    deliveryDateStr: ''
+    deliveryDateStr: '',
+    destaques: [],
+    ofertasDoDia: []
 };
 
 const infiniteScrollObserver = new IntersectionObserver((entries) => {
@@ -2189,6 +2193,19 @@ async function init() {
                     bulkDiscount: descontoLeve3
                 };
             });
+            
+            // --- LÓGICA DE DESTAQUES E DESCONTO GERAL ---
+            let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
+            produtosComValidade.sort((a, b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
+            
+            STATE.destaques = produtosComValidade.slice(0, 5); // Apenas os 5 primeiros
+            STATE.destaques.forEach(p => {
+                if (!p.oldPrice || p.oldPrice <= p.price) {
+                    p.oldPrice = p.price; 
+                }
+                p.price = p.oldPrice * 0.90; // Aplica 10% de desconto globalmente nesses itens
+                p.isDestaque = true; 
+            });
         }
         
         buildTabsAndSections(); 
@@ -2439,7 +2456,8 @@ function buildTabsAndSections() {
                 for (let p of listEmbaralhada) {
                     if (contOfertas >= 4) break; 
                     
-                    if (!p.ofertaAplicada) {
+                    // Só aplica a oferta do dia se o produto NÃO for um destaque geral
+                    if (!p.ofertaAplicada && !p.isDestaque) {
                         p.ofertaAplicada = true;
                         let descOferta = 0.04 + (rng() * 0.04); 
                         
@@ -2473,6 +2491,9 @@ function buildTabsAndSections() {
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
         });
+        
+        // --- COLETANDO AS OFERTAS DO DIA PARA A SEÇÃO NO TOPO ---
+        STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada).slice(0, 4);
     }
     
     $('cat-dropdown-list').innerHTML = dropHtml; 
@@ -2484,6 +2505,20 @@ function renderBottomChips(activeTabId) {
     let htmlTop = '';    
     let htmlBottom = ''; 
     
+    // --- 1. OFERTAS DO DIA (Primeira sessão a aparecer) ---
+    if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
+        let trackIdOfertas = 'grid-ofertas-dia-' + activeTabId;
+        let trackHtmlOfertas = STATE.ofertasDoDia.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
+        htmlTop += `
+            <div style="margin-top: 15px;">
+                <div class="section-title" style="border-left-color: #ef4444;"><span class="section-marker"></span>Ofertas Imperdíveis</div>
+                <div class="grid-produtos" id="${trackIdOfertas}">
+                    ${trackHtmlOfertas}
+                </div>
+            </div>`;
+    }
+
+    // --- 2. KITS PROMOCIONAIS ---
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
         let trackId = 'grid-kits-bottom-' + activeTabId; 
         let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10, idx)).join('');
@@ -2498,18 +2533,16 @@ function renderBottomChips(activeTabId) {
             </div>`;
     }
 
+    // --- 3. COMPRE JUNTO ---
     let cjHtml = renderCompreJunto();
     if (cjHtml) {
         htmlTop += cjHtml; 
     }
 
-    let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
-    produtosComValidade.sort((a, b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
-    let destaques = produtosComValidade.slice(0, 10);
-
-    if (destaques.length > 0) {
+    // --- 4. DESTAQUES ---
+    if (STATE.destaques && STATE.destaques.length > 0) {
         let trackIdDestaques = 'grid-destaques-' + activeTabId;
-        let trackHtmlDestaques = destaques.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
+        let trackHtmlDestaques = STATE.destaques.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
 
         htmlTop += `
             <div style="margin-top: 15px;">
@@ -2919,6 +2952,20 @@ function openCheckout() {
         if(m.open) m.close();
         return; 
     }
+
+    // --- CARROSSEL DE OFERTAS NO CHECKOUT ---
+    if (STATE.destaques && STATE.destaques.length > 0) {
+        let trackHtmlDestaques = STATE.destaques.map(p => buildCardHtml(p, 'PROD', false)).join('');
+        $('chk-carousel-ofertas').innerHTML = `
+        <div style="margin-bottom: 25px; background: #fff7ed; padding: 15px 10px; border-radius: 12px; border: 1px dashed var(--c-a);">
+            <h3 style="font-weight: 800; font-size: 1.1rem; color: var(--c-a); margin-bottom: 12px; text-align: center;">Você viu essas ofertas?</h3>
+            <div class="grid-produtos" style="padding: 0 0 5px 0; gap: 10px; margin: 0;">
+                ${trackHtmlDestaques}
+            </div>
+        </div>`;
+    } else {
+        $('chk-carousel-ofertas').innerHTML = '';
+    }
     
     let options = []; 
     let date = new Date(); 
@@ -2958,13 +3005,13 @@ function openCheckout() {
         let msgLeve3 = (qty >= 3 && p.bulkDiscount) ? `<div style="color:var(--c-ok); font-size:0.75rem; font-weight:800; text-align:center; width:100%; margin-top:4px;">Desconto: -${fmt((p.price * p.bulkDiscount) * qty)}</div>` : '';
 
         return `
-        <div style="display:flex; flex-direction:column; align-items:center; border:1px solid var(--c-bd); border-radius:8px; padding:10px 8px; background:#fff; text-align:center; position:relative;">
-            <img src="${p.img}" style="width:100%; aspect-ratio:4/5; object-fit:contain; margin-bottom:8px; background: var(--c-img-bg); border-radius: 6px;">
-            <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; height:2.4em; overflow:hidden; margin-bottom:10px; width:100%; font-weight: 600;">${formatName(p.name)}</div>
-            <div class="card-qty-ctrl" style="margin-top:auto; height:36px; width:100%; padding:0; display:flex; justify-content:space-between; align-items:center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
-                <button onclick="upd('${id}',-1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">-</button>
-                <span style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">${qty}</span>
-                <button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">+</button>
+        <div style="display:flex; flex-direction:column; align-items:center; border:1px solid var(--c-bd); border-radius:8px; padding:8px 4px; background:#fff; text-align:center; position:relative;">
+            <img src="${p.img}" style="width:100%; aspect-ratio:4/5; object-fit:contain; margin-bottom:6px; background: var(--c-img-bg); border-radius: 6px;">
+            <div style="font-size:0.7rem; color:var(--c-p); line-height:1.2; height:2.4em; overflow:hidden; margin-bottom:8px; width:100%; font-weight: 600;">${formatName(p.name)}</div>
+            <div class="card-qty-ctrl" style="margin-top:auto; height:32px; width:100%; padding:0; display:flex; justify-content:space-between; align-items:center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <button onclick="upd('${id}',-1); event.stopPropagation();" style="padding:0 8px; font-size:1.3rem; color: var(--c-a); background: none; border: none; cursor: pointer;">-</button>
+                <span style="font-weight: 700; font-size: 1rem; color: var(--c-p);">${qty}</span>
+                <button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 8px; font-size:1.3rem; color: var(--c-a); background: none; border: none; cursor: pointer;">+</button>
             </div>
             ${msgLeve3}
         </div>`; 
