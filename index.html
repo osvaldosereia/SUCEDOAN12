@@ -2475,7 +2475,7 @@ function buildTabsAndSections() {
                     // Só aplica a oferta do dia se o produto NÃO for um destaque geral
                     if (!p.ofertaAplicada && !p.isDestaque) {
                         p.ofertaAplicada = true;
-                        let descOferta = 0.04 + (rng() * 0.04); 
+                        let descOferta = 0.06 + (rng() * 0.04); 
                         
                         if (!p.oldPrice || p.oldPrice <= p.price) {
                             p.oldPrice = p.price; 
