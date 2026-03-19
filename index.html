@@ -406,6 +406,58 @@ button {
     }
 }
 
+/* --- LAYOUT MOBILE PARA TODAS AS SESSÕES (CARROSSEL) --- */
+@media (max-width: 799px) {
+    .grid-produtos {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        gap: 15px; 
+        padding: 0 15px 15px; /* Menos padding em baixo para aproximar a barra */
+        scrollbar-width: thin; 
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    /* Barra de rolagem estilizada para dar a pista de carrossel */
+    .grid-produtos::-webkit-scrollbar {
+        height: 6px;
+        display: block; 
+    }
+    .grid-produtos::-webkit-scrollbar-track {
+        background: transparent;
+        margin: 0 15px;
+    }
+    .grid-produtos::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
+    .grid-produtos > .u-card {
+        width: 65vw; /* Cartões mais finos para mostrar o próximo item */
+        flex-shrink: 0; 
+        scroll-snap-align: center; 
+        height: auto; 
+    }
+
+    .grid-produtos > .scroll-sentinel {
+        min-width: 100%;
+        flex-shrink: 0;
+    }
+    
+    .u-name {
+        font-size: 1.05rem; 
+        margin-top: 8px;
+    }
+    
+    .card-add-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.6rem;
+        bottom: 12px;
+        right: 12px;
+    }
+}
+
 /* CARD UNIVERSAL IDENTICO PARA TUDO */
 .u-card { 
     background: #fff; 
@@ -439,7 +491,6 @@ button {
     justify-content: center; 
 }
 
-/* Imagem quadrada para Cestas e Kits */
 .u-img-area.square { 
     aspect-ratio: 1/1; 
 } 
@@ -482,14 +533,14 @@ button {
     border-radius: 6px; 
 }
 
-/* BOTÃO DE ADICIONAR (+) - Atualizado para Laranja */
+/* BOTÃO DE ADICIONAR (+) - Laranja */
 .card-add-btn { 
     position: absolute; 
     bottom: 8px; 
     right: 8px; 
     width: 40px; 
     height: 40px; 
-    background: var(--c-a); /* Cor Laranja da marca */
+    background: var(--c-a); 
     color: #fff; 
     border-radius: 50%; 
     display: flex; 
@@ -941,60 +992,6 @@ dialog::backdrop {
     background-color: #fef2f2 !important; 
 }
 
-/* --- LAYOUT MOBILE PARA KITS/CESTAS --- */
-@media (max-width: 799px) {
-    #wrapper-cestas .grid-produtos,
-    #grid-combos,
-    [id^="grid-kits-bottom-"] {
-        display: flex;
-        overflow-x: auto;
-        scroll-snap-type: x mandatory;
-        gap: 15px; 
-        padding: 0 15px 25px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    #wrapper-cestas .grid-produtos::-webkit-scrollbar,
-    #grid-combos::-webkit-scrollbar,
-    [id^="grid-kits-bottom-"]::-webkit-scrollbar {
-        display: none; 
-    }
-
-    #wrapper-cestas .grid-produtos > .u-card,
-    #grid-combos > .u-card,
-    [id^="grid-kits-bottom-"] > .u-card {
-        width: 70vw; 
-        flex-shrink: 0; 
-        scroll-snap-align: center; 
-        height: auto; 
-    }
-
-    #wrapper-cestas .grid-produtos > .scroll-sentinel,
-    #grid-combos > .scroll-sentinel,
-    [id^="grid-kits-bottom-"] > .scroll-sentinel {
-        min-width: 100%;
-        flex-shrink: 0;
-    }
-    
-    #wrapper-cestas .u-name,
-    #grid-combos .u-name,
-    [id^="grid-kits-bottom-"] .u-name {
-        font-size: 1.15rem; 
-        margin-top: 8px;
-    }
-    
-    #wrapper-cestas .card-add-btn,
-    #grid-combos .card-add-btn,
-    [id^="grid-kits-bottom-"] .card-add-btn {
-        width: 48px;
-        height: 48px;
-        font-size: 1.8rem;
-        bottom: 12px;
-        right: 12px;
-    }
-}
-
 /* --- SESSÃO COMPRE JUNTO E ECONOMIZE --- */
 .cj-container {
     width: 100%;
@@ -1007,13 +1004,22 @@ dialog::backdrop {
     overflow-x: auto; 
     scroll-snap-type: x mandatory; 
     gap: 15px; 
-    padding: 0 15px 25px; 
-    scrollbar-width: none; 
-    -ms-overflow-style: none; 
+    padding: 0 15px 15px; 
+    scrollbar-width: thin; 
+    scrollbar-color: #cbd5e1 transparent;
 }
 
 .cj-container .cj-grid::-webkit-scrollbar {
-    display: none; 
+    height: 6px;
+    display: block; 
+}
+.cj-container .cj-grid::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 0 15px;
+}
+.cj-container .cj-grid::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
 }
 
 .cj-container .cj-grid > .cj-card {
@@ -1037,7 +1043,7 @@ dialog::backdrop {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 45%; /* Alterado para 45% (Apenas 2 itens agora) */
+    width: 45%; 
     gap: 6px; 
 }
 
@@ -1094,9 +1100,13 @@ dialog::backdrop {
 }
 
 @media(min-width: 800px) {
-    .cj-grid {
-        grid-template-columns: repeat(3, 1fr) !important; /* Computador agora com 3 colunas */
+    .cj-container .cj-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr) !important;
         gap: 20px;
+    }
+    .cj-container .cj-grid > .cj-card {
+        width: 100%;
     }
     .cj-footer {
         flex-direction: row; 
@@ -1157,9 +1167,9 @@ dialog::backdrop {
     background: #c2410c;
 }
 
-/* NOVO: ESTILOS DO EXPANSOR (INLINE CAROUSEL) */
+/* NOVO: ESTILOS DO EXPANSOR (INLINE CAROUSEL) - TAMANHOS MAIORES */
 .inline-expander {
-    grid-column: 1 / -1; /* Ocupa a linha toda no Desktop */
+    grid-column: 1 / -1; 
     background: #fff;
     border: 2px solid var(--c-a);
     border-radius: 12px;
@@ -1211,35 +1221,38 @@ dialog::backdrop {
     scroll-snap-type: x mandatory;
     gap: 12px;
     padding-bottom: 15px;
-    scrollbar-width: none;
+    scrollbar-width: thin; 
+    scrollbar-color: #cbd5e1 transparent;
 }
 
-.expander-carousel::-webkit-scrollbar { display: none; }
+.expander-carousel::-webkit-scrollbar { height: 6px; display: block; }
+.expander-carousel::-webkit-scrollbar-track { background: transparent; }
+.expander-carousel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
 .expander-item {
-    flex: 0 0 130px;
+    flex: 0 0 180px; /* BEM MAIOR PARA CESTAS */
     scroll-snap-align: center;
     background: var(--c-img-bg);
     border: 1px solid var(--c-bd);
     border-radius: 10px;
-    padding: 10px;
+    padding: 15px; 
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    transition: 0.2s;
+    transition: opacity 0.2s;
 }
 
 .expander-item img {
-    width: 80px;
-    height: 80px;
+    width: 120px; /* IMAGEM MAIOR */
+    height: 120px; 
     object-fit: contain;
     mix-blend-mode: multiply;
     margin-bottom: 8px;
 }
 
 .expander-item-name {
-    font-size: 0.75rem;
+    font-size: 0.9rem; 
     font-weight: 600;
     color: var(--c-p);
     line-height: 1.2;
@@ -1259,23 +1272,23 @@ dialog::backdrop {
     background: #fff;
     border: 1px solid var(--c-a);
     border-radius: 6px;
-    height: 32px;
+    height: 38px;
 }
 
 .expander-qty-ctrl button {
     background: transparent;
     border: none;
     color: var(--c-a);
-    font-size: 1.2rem;
+    font-size: 1.4rem;
     font-weight: bold;
-    width: 35px;
+    width: 40px;
     cursor: pointer;
 }
 
 .expander-qty-ctrl span {
     font-weight: 700;
     color: var(--c-p);
-    font-size: 0.95rem;
+    font-size: 1.1rem;
 }
 
 .expander-footer {
@@ -1608,7 +1621,8 @@ const STATE = {
     appliedCombos: [],
     baseBasket: null, 
     basketExtraFee: 0, 
-    comboDiscount: 0, 
+    comboDiscount: 0,
+    bulkTotalDiscount: 0,
     coupon: null, 
     valueDiscount: 0,
     lists: {}, 
@@ -1711,7 +1725,6 @@ function renderCompreJunto() {
         let sum = 0;
         let valid = true;
         
-        // REDUZIDO PARA APENAS 2 ITENS!
         let termosParaUsar = kit.termos.slice(0, 2);
         
         termosParaUsar.forEach(termo => {
@@ -1736,9 +1749,9 @@ function renderCompreJunto() {
                 produtos: [`1x ${selected[0].id}`, `1x ${selected[1].id}`]
             });
             
-            // Usando o novo Expansor Inline
+            // Botão Direto Adicionar (Sem inline expander)
             html += `
-            <div class="cj-card" onclick="toggleInlinePreview('cj_${kit.id}', 'CJ', event.currentTarget)">
+            <div class="cj-card">
                 <div class="cj-header">${kit.titulo}</div>
                 <div class="cj-images-row">
                     <div class="cj-item">
@@ -1756,7 +1769,7 @@ function renderCompreJunto() {
                         <div class="cj-old-price">${fmt(sum)}</div>
                         <div class="cj-new-price">${fmt(finalPrice)}</div>
                     </div>
-                    <button class="cj-btn">Ver Detalhes</button>
+                    <button class="cj-btn" onclick="addCompreJunto('cj_${kit.id}', '${selected[0].id}', '${selected[1].id}', ${discountVal}); event.stopPropagation();">Adicionar ao Carrinho</button>
                 </div>
             </div>`;
         }
@@ -1766,12 +1779,40 @@ function renderCompreJunto() {
     return html;
 }
 
+// Lógica de Adição Direta ao Carrinho para o Compre Junto
+window.addCompreJunto = function(kitId, id1, id2, discountVal) {
+    let items = [id1, id2];
+    for(let id of items) {
+        let p = STATE.prods.find(x => x.id === id);
+        if(!p || p.stock <= (STATE.cart[id] || 0)) {
+            return showToast("Ops! Um dos itens deste kit esgotou.", "r");
+        }
+    }
+    
+    items.forEach(id => {
+        if (!STATE.cart[id]) STATE.cartOrder.push(id);
+        STATE.cart[id] = (STATE.cart[id] || 0) + 1;
+        document.querySelectorAll(`.add-btn-${id}`).forEach(el => { el.innerText = STATE.cart[id]; });
+    });
+    
+    STATE.cjDiscounts.push({ kitId, items, discount: discountVal });
+    updateTotals();
+    showToast("Kit Compre Junto adicionado!", "s");
+    
+    const cartBtn = document.querySelector('.cart-fab-wrapper');
+    if (cartBtn) {
+        cartBtn.style.transform = 'scale(1.3)';
+        setTimeout(() => cartBtn.style.transform = '', 200);
+    }
+};
+
 // INÍCIO: SISTEMA DE EXPANSÃO INLINE (CARROSSEL EMBUTIDO)
 let expanderState = {
     id: null,
     type: null,
     basePrice: 0,
     originalSum: 0,
+    priceOffset: 0, // A "outras despesas" congelada da cesta
     items: {},
     sourceObj: null,
     currentDisplayPrice: 0
@@ -1813,6 +1854,13 @@ window.toggleInlinePreview = function(id, type, targetElement) {
         }
     });
 
+    // Calcula e congela a diferença exata da cesta para o "outras despesas"
+    if (type === 'BASKET') {
+        expanderState.priceOffset = Math.max(0, sourceObj.preco - expanderState.originalSum);
+    } else {
+        expanderState.priceOffset = 0;
+    }
+
     let expanderDiv = document.createElement('div');
     expanderDiv.className = 'inline-expander';
     expanderDiv.id = 'active-expander';
@@ -1821,10 +1869,8 @@ window.toggleInlinePreview = function(id, type, targetElement) {
     expanderDiv.innerHTML = buildExpanderInnerHtml(sourceObj.nome);
 
     if (window.innerWidth >= 800) {
-        // Desktop: inserimos DENTRO da grid após o item, forçando a quebra de linha com grid-column 1/-1
         parentGrid.insertBefore(expanderDiv, targetElement.nextSibling);
     } else {
-        // Mobile: inserimos FORA da flex (carrossel), ficando "abaixo" dele na tela
         parentGrid.parentNode.insertBefore(expanderDiv, parentGrid.nextSibling);
     }
 
@@ -1840,19 +1886,27 @@ function buildExpanderInnerHtml(title) {
         currentSum += p.price * qty;
 
         return `
-        <div class="expander-item" style="opacity: ${qty===0 ? '0.5' : '1'};">
+        <div class="expander-item" id="exp-item-${pId}" style="opacity: ${qty===0 ? '0.5' : '1'};">
             <img src="${p.img}" alt="${formatName(p.name)}">
             <div class="expander-item-name">${formatName(p.name)}</div>
             <div class="expander-qty-ctrl">
                 <button onclick="changeExpanderQty('${pId}', -1)">-</button>
-                <span>${qty}</span>
+                <span id="exp-qty-${pId}">${qty}</span>
                 <button onclick="changeExpanderQty('${pId}', 1)">+</button>
             </div>
         </div>`;
     }).join('');
 
-    let variation = currentSum - expanderState.originalSum;
-    let displayPrice = expanderState.basePrice + variation;
+    let displayPrice = 0;
+    if (expanderState.type === 'BASKET') {
+        // Cesta: Valor dos Produtos + Offset Fixo
+        displayPrice = currentSum + expanderState.priceOffset;
+    } else {
+        // Kit: Variação face ao original
+        let variation = currentSum - expanderState.originalSum;
+        displayPrice = expanderState.basePrice + variation;
+    }
+    
     expanderState.currentDisplayPrice = Math.max(0, displayPrice);
 
     return `
@@ -1864,23 +1918,47 @@ function buildExpanderInnerHtml(title) {
         ${itemsHtml}
     </div>
     <div class="expander-footer">
-        <div class="expander-total">Total: ${fmt(expanderState.currentDisplayPrice)}</div>
+        <div class="expander-total" id="exp-total">Total: ${fmt(expanderState.currentDisplayPrice)}</div>
         <button class="expander-btn" onclick="commitExpander()">Adicionar produtos ao carrinho</button>
     </div>`;
 }
 
+// IN PLACE UPDATE: Não recria o HTML, atualiza só o que mudou (não perde o scroll)
 window.changeExpanderQty = function(pId, delta) {
     let p = STATE.prods.find(x => x.id === pId);
     if(!p) return;
-    let next = Math.max(0, (expanderState.items[pId] || 0) + delta);
+    let current = expanderState.items[pId] || 0;
+    let next = Math.max(0, current + delta);
     if (next > p.stock) return showToast("Estoque insuficiente", "r");
 
     expanderState.items[pId] = next;
 
-    let exp = document.getElementById('active-expander');
-    if(exp) {
-        exp.innerHTML = buildExpanderInnerHtml(expanderState.sourceObj.nome);
+    // Atualiza a quantidade visualmente
+    let qtyEl = document.getElementById('exp-qty-' + pId);
+    if(qtyEl) qtyEl.innerText = next;
+    
+    // Atualiza a opacidade do item visualmente
+    let itemEl = document.getElementById('exp-item-' + pId);
+    if(itemEl) itemEl.style.opacity = next === 0 ? '0.5' : '1';
+
+    // Recalcula o total
+    let currentSum = 0;
+    Object.keys(expanderState.items).forEach(id => {
+        let prod = STATE.prods.find(x => x.id === id);
+        if (prod) currentSum += prod.price * expanderState.items[id];
+    });
+
+    let displayPrice = 0;
+    if (expanderState.type === 'BASKET') {
+        displayPrice = currentSum + expanderState.priceOffset;
+    } else {
+        displayPrice = expanderState.basePrice + (currentSum - expanderState.originalSum);
     }
+    expanderState.currentDisplayPrice = Math.max(0, displayPrice);
+
+    // Atualiza o texto do valor total
+    let totalEl = document.getElementById('exp-total');
+    if(totalEl) totalEl.innerText = 'Total: ' + fmt(expanderState.currentDisplayPrice);
 };
 
 window.commitExpander = function() {
@@ -1906,8 +1984,8 @@ window.commitExpander = function() {
 
     if (expanderState.type === 'BASKET') {
         STATE.baseBasket = expanderState.sourceObj;
-        let extraFeeForThisBasket = Math.max(0, expanderState.currentDisplayPrice - normalPriceSum);
-        STATE.basketExtraFee += extraFeeForThisBasket;
+        // O valor do offset foi congelado e viaja certinho pro Carrinho!
+        STATE.basketExtraFee += expanderState.priceOffset;
     } else {
         let discountForThisKit = Math.max(0, normalPriceSum - expanderState.currentDisplayPrice);
         STATE.comboDiscount += discountForThisKit;
@@ -1959,18 +2037,6 @@ async function init() {
         await loadCompreJunto();
         
         if (r2 && r2.length > 0) {
-            STATE.prods = r2.filter(x => x.situacao === "A").map(p => ({
-                id: String(p.codigo || p.id), 
-                blingId: String(p.id), 
-                name: p.nome, 
-                price: parseFloat(p.preco), 
-                oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, 
-                stock: parseInt(p.estoque) || 0, 
-                validade: p.validade || null,
-                img: `/site/img/produtos/${p.codigo || p.id}.webp`,
-                categoria: p.categoria || "" 
-            }));
-
             let userSeed = localStorage.getItem('donaAntoniaUserSeed');
             if (!userSeed) { 
                 userSeed = Math.floor(Math.random() * 1000000); 
@@ -1990,28 +2056,23 @@ async function init() {
             }
             const rand = geradorAleatorio(sementeDoDia);
 
-            let produtosEmKits = new Set();
-            STATE.combos.forEach(c => {
-                if (c.produtos) { 
-                    c.produtos.forEach(s => { 
-                        let parts = s.split('x'); 
-                        if(parts.length === 2) {
-                            produtosEmKits.add(parts[1].trim()); 
-                        }
-                    }); 
-                }
-            });
+            STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
+                // NOVA REGRA DESCONTO PROGRESSIVO
+                // Sorteia de 4% a 12% para TODOS os produtos, desde que elegíveis no uso
+                let descontoLeve3 = 0.04 + (rand() * 0.08); 
 
-            STATE.prods.forEach(p => {
-                let cat = norm(p.categoria);
-                if (cat.includes("mercearia basica")) return;
-                if (produtosEmKits.has(p.id)) return;
-                if (STATE.bloqueados.includes(p.id) || STATE.bloqueados.includes(p.blingId)) return;
-                if (p.stock <= 0) return;
-                
-                let percentual = 0.03 + (rand() * 0.09); 
-                p.oldPrice = p.price; 
-                p.price = parseFloat((p.oldPrice * (1 - percentual)).toFixed(2)); 
+                return {
+                    id: String(p.codigo || p.id), 
+                    blingId: String(p.id), 
+                    name: p.nome, 
+                    price: parseFloat(p.preco), 
+                    oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, 
+                    stock: parseInt(p.estoque) || 0, 
+                    validade: p.validade || null,
+                    img: `/site/img/produtos/${p.codigo || p.id}.webp`,
+                    categoria: p.categoria || "",
+                    bulkDiscount: descontoLeve3
+                };
             });
         }
         
@@ -2119,6 +2180,13 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
         if (item.oldPrice && item.oldPrice > pPrice) {
             oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
         }
+        
+        // ETIQUETA NOVA "LEVE 3+"
+        if (item.bulkDiscount) {
+            let bulkPrice = pPrice * (1 - item.bulkDiscount);
+            tagHtml = `<div class="kit-tag" style="background:var(--c-ok); font-size:0.7rem; padding: 4px 6px;">Leve 3+ por ${fmt(bulkPrice)}/un</div>`;
+        }
+
         addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnText}</button>`;
     }
 
@@ -2330,7 +2398,6 @@ function renderBottomChips(activeTabId) {
 }
 
 window.switchTab = function(tabId, scrollToTop = false) {
-    // Remove qualquer expansor aberto ao mudar de aba
     let activeExpander = document.getElementById('active-expander');
     if (activeExpander) activeExpander.remove();
 
@@ -2609,11 +2676,17 @@ window.clearCart = function() {
 
 function updateTotals() {
     let sum = 0; 
+    STATE.bulkTotalDiscount = 0; // Zera o cálculo de desconto Leve 3+
+    
     Object.entries(STATE.cart).forEach(([id, q]) => { 
         let p = STATE.prods.find(x => x.id === id); 
         if (p) { 
-            let unitPrice = p.price; 
-            sum += unitPrice * q; 
+            sum += p.price * q; 
+            
+            // CÁLCULO DESCONTO LEVE 3+
+            if (q >= 3 && p.bulkDiscount) {
+                STATE.bulkTotalDiscount += (p.price * p.bulkDiscount) * q;
+            }
         }
     });
     
@@ -2644,7 +2717,7 @@ function updateTotals() {
     
     STATE.valueDiscount = valueDiscount;
     let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits;
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits - STATE.bulkTotalDiscount;
     
     if ($('chk-total')) {
         $('chk-total').innerText = fmt(final);
@@ -2726,6 +2799,10 @@ function openCheckout() {
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { 
         let p = STATE.prods.find(x => x.id === id); 
         let qty = STATE.cart[id];
+        
+        // Se qualifica pro Leve 3+, exibe o desconto que ele tá ganhando!
+        let msgLeve3 = (qty >= 3 && p.bulkDiscount) ? `<div style="color:var(--c-ok); font-size:0.75rem; font-weight:800; text-align:center; width:100%; margin-top:4px;">Desconto: -${fmt((p.price * p.bulkDiscount) * qty)}</div>` : '';
+
         return `
         <div style="display:flex; flex-direction:column; align-items:center; border:1px solid var(--c-bd); border-radius:8px; padding:10px 8px; background:#fff; text-align:center; position:relative;">
             <img src="${p.img}" style="width:100%; aspect-ratio:4/5; object-fit:contain; margin-bottom:8px; background: var(--c-img-bg); border-radius: 6px;">
@@ -2735,6 +2812,7 @@ function openCheckout() {
                 <span style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">${qty}</span>
                 <button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">+</button>
             </div>
+            ${msgLeve3}
         </div>`; 
     }).join('');
     
@@ -2764,10 +2842,11 @@ function openCheckout() {
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
         (totalDescontosKits > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto dos Kits:</span><span>-${fmt(totalDescontosKits)}</span></div>` : '') + 
+        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (Leve 3+):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
         (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Progressivo:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') + 
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
         
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits; 
+    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits - STATE.bulkTotalDiscount; 
     $('chk-total').innerText = fmt(final);
     
     let btn = $('btn-send-order');
@@ -2930,14 +3009,14 @@ async function sendOrder() {
         }
     });
 
-    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.cjTotalDiscount; 
+    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.cjTotalDiscount - STATE.bulkTotalDiscount; 
     final -= STATE.deliveryDiscount; 
     final -= STATE.valueDiscount; 
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
     final -= cupomDesconto;
 
     let outras_despesas = STATE.basketExtraFee || 0; 
-    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto + STATE.cjTotalDiscount;
+    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto + STATE.cjTotalDiscount + STATE.bulkTotalDiscount;
 
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
     let tipoCestaTexto = "Cestas Personalizada"; 
@@ -2979,6 +3058,7 @@ async function sendOrder() {
 
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KIT: -${fmt(STATE.comboDiscount)}`;
+    if (STATE.bulkTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO LEVE 3+: -${fmt(STATE.bulkTotalDiscount)}`;
     if (STATE.cjTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMPRE JUNTO: -${fmt(STATE.cjTotalDiscount)}`;
     if (STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
     if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
