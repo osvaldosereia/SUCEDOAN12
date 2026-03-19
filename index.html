@@ -432,10 +432,18 @@ button {
 
 @media(min-width: 800px) { 
     .grid-produtos { 
-        grid-template-columns: repeat(6, 1fr); 
-        gap: 12px; 
-        padding: 0 15px 25px; 
+        /* Mudamos de 6 para 5 colunas para o card respirar melhor */
+        grid-template-columns: repeat(5, 1fr); 
+        gap: 20px; 
+        padding: 0 15px 40px; 
     } 
+
+    .u-card:hover {
+        transform: translateY(-5px); /* Efeito de flutuar ao passar o mouse */
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        border-color: var(--c-bd);
+    }
+}
     .section-title { 
         width: calc(100% - 30px); 
     }
@@ -482,16 +490,14 @@ button {
 /* CARD UNIVERSAL IDENTICO PARA TUDO */
 .u-card { 
     background: #fff; 
-    border: 1px solid transparent; 
+    border: 1px solid var(--c-bd); /* Borda leve sempre visível para definir o card */
     border-radius: 12px; 
-    padding: 8px; 
+    padding: 12px; /* Aumentado o respiro interno */
     display: flex; 
     flex-direction: column; 
     position: relative; 
-    transition: 0.2s; 
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
     cursor: pointer; 
-    overflow: hidden; 
-    box-shadow: 0 2px 6px rgba(0,0,0,0.03); 
     height: 100%; 
 }
 
