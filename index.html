@@ -2079,7 +2079,7 @@ async function init() {
             fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+            fetch('banners.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
