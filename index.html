@@ -1368,6 +1368,21 @@ dialog::backdrop {
 }
 
 .expander-btn:active { transform: scale(0.95); background: #c2410c; }
+
+    /* Ajuste do carrossel dentro do modal no Desktop */
+@media(min-width: 800px) {
+    .carousel-modal {
+        display: flex !important;
+        overflow-x: auto !important;
+        grid-template-columns: none !important;
+        padding-bottom: 12px !important;
+    }
+    .carousel-modal > .u-card {
+        width: 150px !important; /* Força uma largura fixa para o card não ficar espremido */
+        flex: 0 0 auto !important;
+    }
+}
+    
 </style>
 </head>
 <body>
@@ -2492,9 +2507,11 @@ function buildTabsAndSections() {
             }
         });
         
-        // --- COLETANDO AS OFERTAS DO DIA PARA A SEÇÃO NO TOPO ---
-        STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada).slice(0, 4);
-    }
+// --- COLETANDO AS OFERTAS DO DIA (4 DE CADA SESSÃO) ---
+// Como a rotina de categorias já limita a 4 ofertas por sessão, 
+// basta pegarmos todos os produtos que foram marcados com oferta!
+STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada);
+    
     
     $('cat-dropdown-list').innerHTML = dropHtml; 
     $('dynamic-sections').innerHTML = sectionsHtml; 
@@ -2959,8 +2976,8 @@ function openCheckout() {
         $('chk-carousel-ofertas').innerHTML = `
         <div style="margin-bottom: 25px; background: #fff7ed; padding: 15px 10px; border-radius: 12px; border: 1px dashed var(--c-a);">
             <h3 style="font-weight: 800; font-size: 1.1rem; color: var(--c-a); margin-bottom: 12px; text-align: center;">Você viu essas ofertas?</h3>
-            <div class="grid-produtos" style="padding: 0 0 5px 0; gap: 10px; margin: 0;">
-                ${trackHtmlDestaques}
+<div class="grid-produtos carousel-modal" style="padding: 0 0 5px 0; gap: 10px; margin: 0;">
+${trackHtmlDestaques}
             </div>
         </div>`;
     } else {
