@@ -1785,8 +1785,9 @@ let expanderState = {
     type: null,
     basePrice: 0,
     originalSum: 0,
-    priceOffset: 0, // A "outras despesas" congelada da cesta
+    priceOffset: 0, 
     items: {},
+    orderedIds: [], // <-- ADICIONA ESTA LINHA AQUI
     sourceObj: null,
     currentDisplayPrice: 0
 };
@@ -1809,11 +1810,12 @@ window.toggleInlinePreview = function(id, type, targetElement) {
 
     if (!sourceObj) return;
 
-    expanderState.id = id;
+   expanderState.id = id;
     expanderState.type = type;
     expanderState.basePrice = sourceObj.preco;
     expanderState.originalSum = 0;
     expanderState.items = {};
+    expanderState.orderedIds = []; // <-- ADICIONA ESTA LINHA PARA ZERAR A LISTA
     expanderState.sourceObj = sourceObj; 
 
     sourceObj.produtos.forEach(s => {
@@ -1823,6 +1825,7 @@ window.toggleInlinePreview = function(id, type, targetElement) {
         let p = STATE.prods.find(x => x.id === pId);
         if (p) {
             expanderState.items[pId] = qty;
+            expanderState.orderedIds.push(pId); // <-- ADICIONA ESTA LINHA PARA GUARDAR A ORDEM
             expanderState.originalSum += p.price * qty;
         }
     });
@@ -1852,7 +1855,7 @@ window.toggleInlinePreview = function(id, type, targetElement) {
 
 function buildExpanderInnerHtml(title) {
     let currentSum = 0;
-    let itemsHtml = Object.keys(expanderState.items).map(pId => {
+    let itemsHtml = expanderState.orderedIds.map(pId => { // <-- MUDA APENAS ESTA LINHA
         let qty = expanderState.items[pId];
         let p = STATE.prods.find(x => x.id === pId);
         if(!p) return '';
