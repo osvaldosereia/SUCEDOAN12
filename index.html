@@ -1707,15 +1707,33 @@ const infiniteScrollObserver = new IntersectionObserver((entries) => {
         if (entry.isIntersecting) {
             let sentinel = entry.target;
             let container = sentinel.parentElement;
-            let hiddenItems = container.querySelectorAll('.general-hidden');
+            
+            // Pega os placeholders em vez de apenas revelar os ocultos
+            let hiddenItems = container.querySelectorAll('.lazy-placeholder');
             
             if (hiddenItems.length > 0) {
                 let limite = Math.min(10, hiddenItems.length);
                 for (let i = 0; i < limite; i++) {
-                    hiddenItems[i].classList.remove('general-hidden');
+                    let el = hiddenItems[i];
+                    let id = el.dataset.id;
+                    let type = el.dataset.type;
+                    let itemObj = null;
+                    
+                    // Descobre quem é o produto
+                    if (type === 'BASKET') itemObj = STATE.baskets.find(x => String(x.id) === String(id));
+                    else if (type === 'COMBO') itemObj = STATE.combos.find(x => String(x.id) === String(id));
+                    else itemObj = STATE.prods.find(x => String(x.id) === String(id));
+                    
+                    if (itemObj) {
+                        // Cria o cartão real e substitui o placeholder
+                        let temp = document.createElement('div');
+                        temp.innerHTML = buildCardHtml(itemObj, type, false, 999);
+                        el.parentNode.replaceChild(temp.firstElementChild, el);
+                    }
                 }
                 
-                if (hiddenItems.length <= 10) {
+                // Se não houver mais nada para carregar, remove o sentinela
+                if (container.querySelectorAll('.lazy-placeholder').length === 0) {
                     sentinel.remove();
                     infiniteScrollObserver.unobserve(sentinel);
                 }
@@ -1726,7 +1744,7 @@ const infiniteScrollObserver = new IntersectionObserver((entries) => {
         }
     });
 }, { 
-    rootMargin: "0px 0px 200px 0px" 
+    rootMargin: "0px 0px 300px 0px" 
 });
 
 function ativarRolagemInfinita() {
@@ -1738,9 +1756,23 @@ function ativarRolagemInfinita() {
 window.revealAllGridItems = function(trackId, btn) {
     let track = document.getElementById(trackId);
     if (!track) return;
-    let hiddenItems = track.querySelectorAll('.general-hidden');
+    
+    let hiddenItems = track.querySelectorAll('.lazy-placeholder');
     for (let i = 0; i < hiddenItems.length; i++) {
-        hiddenItems[i].classList.remove('general-hidden');
+        let el = hiddenItems[i];
+        let id = el.dataset.id;
+        let type = el.dataset.type;
+        let itemObj = null;
+        
+        if (type === 'BASKET') itemObj = STATE.baskets.find(x => String(x.id) === String(id));
+        else if (type === 'COMBO') itemObj = STATE.combos.find(x => String(x.id) === String(id));
+        else itemObj = STATE.prods.find(x => String(x.id) === String(id));
+        
+        if (itemObj) {
+            let temp = document.createElement('div');
+            temp.innerHTML = buildCardHtml(itemObj, type, false, 999);
+            el.parentNode.replaceChild(temp.firstElementChild, el);
+        }
     }
     if (btn) btn.style.display = 'none';
 };
@@ -2289,8 +2321,14 @@ window.handleAddClick = function(e, id) {
 };
 
 function buildCardHtml(item, type, isHidden = false, idx = 999) {
-    let hiddenClass = isHidden ? 'general-hidden' : '';
     let id = item.id; 
+
+    // O SEGREDO DA VELOCIDADE: Se estiver oculto, cria só uma "caixinha" invisível e super leve!
+    if (isHidden) {
+        return `<div class="general-hidden lazy-placeholder" data-id="${id}" data-type="${type}" style="display:none;"></div>`;
+    }
+    
+    let hiddenClass = '';
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
     let name = item.name || item.nome; 
     let pPrice = item.price || item.preco;
