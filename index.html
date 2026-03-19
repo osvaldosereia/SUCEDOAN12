@@ -2551,6 +2551,7 @@ function buildTabsAndSections() {
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
         });
+    }
         
 // --- COLETANDO AS OFERTAS DO DIA (4 DE CADA SESSÃO) ---
 STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada);
