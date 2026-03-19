@@ -1809,7 +1809,7 @@ async function init() {
         // O SEGREDO DA VELOCIDADE: Apenas 2 pedidos em vez de 10!
         const [produtosData, dadosLoja] = await Promise.all([
             fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/dados-loja.json?v=' + versaoCache).then(r => r.json()).catch(() => ({}))
+            fetch('dados-loja.json?v=' + versaoCache).then(r => r.json()).catch(() => ({}))
         ]);
         
         // Distribuindo os dados do super ficheiro para a loja
