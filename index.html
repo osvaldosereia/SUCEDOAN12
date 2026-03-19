@@ -2553,10 +2553,19 @@ function buildTabsAndSections() {
         });
         
         // --- COLETANDO AS OFERTAS DO DIA (4 DE CADA SESSÃO) ---
-        // Como a rotina de categorias já limita a 4 ofertas por sessão, 
-        // basta pegarmos todos os produtos que foram marcados com oferta!
-        STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada);
-    }
+STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada);
+
+// --- PASSO 3: PRÉ-CARREGAR A IMAGEM PRINCIPAL (LCP) ---
+// Se houver ofertas, avisa o navegador para descarregar a primeira imagem com urgência máxima!
+if (STATE.ofertasDoDia.length > 0) {
+    let primeiraImagem = STATE.ofertasDoDia[0].img;
+    let linkPreload = document.createElement("link");
+    linkPreload.rel = "preload";
+    linkPreload.as = "image";
+    linkPreload.href = primeiraImagem;
+    linkPreload.fetchPriority = "high";
+    document.head.appendChild(linkPreload);
+}
     
     $('cat-dropdown-list').innerHTML = dropHtml; 
     $('dynamic-sections').innerHTML = sectionsHtml; 
