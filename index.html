@@ -2511,6 +2511,7 @@ function buildTabsAndSections() {
 // Como a rotina de categorias já limita a 4 ofertas por sessão, 
 // basta pegarmos todos os produtos que foram marcados com oferta!
 STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada);
+    }
     
     
     $('cat-dropdown-list').innerHTML = dropHtml; 
