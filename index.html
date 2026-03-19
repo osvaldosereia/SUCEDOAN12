@@ -2417,13 +2417,11 @@ function buildTabsAndSections() {
             if (list.length > 0) {
                 
                 // --- INÍCIO DA INTELIGÊNCIA DE OFERTAS DIÁRIAS ---
-                // Cria uma semente única baseada no dia atual e na categoria para manter a consistência diária
                 let userSeed = parseInt(localStorage.getItem('donaAntoniaUserSeed') || '0');
                 let dataAtual = new Date();
                 let sementeDoDia = dataAtual.getFullYear() * 10000 + (dataAtual.getMonth() + 1) * 100 + dataAtual.getDate() + userSeed;
                 let sementeCategoria = sementeDoDia + [...safe].reduce((acc, char) => acc + char.charCodeAt(0), 0);
                 
-                // Gerador de números pseudoaleatórios baseado na semente
                 function geradorLocal(semente) {
                     return function() {
                         var t = semente += 0x6D2B79F5;
@@ -2439,18 +2437,17 @@ function buildTabsAndSections() {
                 let contOfertas = 0;
 
                 for (let p of listEmbaralhada) {
-                    if (contOfertas >= 4) break; // Limita a 4 produtos por sessão
+                    if (contOfertas >= 4) break; 
                     
                     if (!p.ofertaAplicada) {
                         p.ofertaAplicada = true;
-                        // Gera um desconto dinâmico entre 4% (0.04) e 8% (0.08)
                         let descOferta = 0.04 + (rng() * 0.04); 
                         
                         if (!p.oldPrice || p.oldPrice <= p.price) {
-                            p.oldPrice = p.price; // Guarda o preço original para o visual riscado
+                            p.oldPrice = p.price; 
                         }
-                        p.price = p.oldPrice * (1 - descOferta); // Aplica o novo valor
-                        p.isDailyOfferCat = safe; // Marca de qual categoria ele é a oferta principal
+                        p.price = p.oldPrice * (1 - descOferta); 
+                        p.isDailyOfferCat = safe; 
                         contOfertas++;
                     } else if (p.isDailyOfferCat === safe) {
                         contOfertas++;
@@ -2474,6 +2471,76 @@ function buildTabsAndSections() {
                         <div class="bottom-category-nav"></div>
                     </div>`;
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
+            }
+        });
+    }
+    
+    $('cat-dropdown-list').innerHTML = dropHtml; 
+    $('dynamic-sections').innerHTML = sectionsHtml; 
+    goToHome();
+}
+
+function renderBottomChips(activeTabId) {
+    let htmlTop = '';    
+    let htmlBottom = ''; 
+    
+    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+        let trackId = 'grid-kits-bottom-' + activeTabId; 
+        let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10, idx)).join('');
+        let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
+        htmlTop += `
+            <div style="margin-top: 15px;">
+                <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
+                <div class="grid-produtos" id="${trackId}">
+                    ${trackHtml}
+                    ${sentinelHtml}
+                </div>
+            </div>`;
+    }
+
+    let cjHtml = renderCompreJunto();
+    if (cjHtml) {
+        htmlTop += cjHtml; 
+    }
+
+    let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
+    produtosComValidade.sort((a, b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
+    let destaques = produtosComValidade.slice(0, 10);
+
+    if (destaques.length > 0) {
+        let trackIdDestaques = 'grid-destaques-' + activeTabId;
+        let trackHtmlDestaques = destaques.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
+
+        htmlTop += `
+            <div style="margin-top: 15px;">
+                <div class="section-title" style="border-left-color: #f59e0b;"><span class="section-marker"></span>Destaques</div>
+                <div class="grid-produtos" id="${trackIdDestaques}">
+                    ${trackHtmlDestaques}
+                </div>
+            </div>`;
+    }
+
+    if (STATE.termos && STATE.termos.length > 0) {
+        STATE.termos.forEach(item => {
+            let label = item.etiqueta || item;
+            let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+            
+            if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
+                let listKey = 'term_' + safe;
+                
+                if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
+                    let trackId = 'grid-cat-' + safe + '-' + activeTabId; 
+                    let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10, idx)).join('');
+                    let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
+                    htmlBottom += `
+                        <div style="margin-top: 15px;">
+                            <div class="section-title"><span class="section-marker"></span>${label}</div>
+                            <div class="grid-produtos" id="${trackId}">
+                                ${trackHtml}
+                                ${sentinelHtml}
+                            </div>
+                        </div>`;
+                }
             }
         });
     }
