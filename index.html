@@ -488,31 +488,31 @@ button {
 /* --- AJUSTES EXCLUSIVOS DE FONTES NOS CARDS MOBILE --- */
 @media (max-width: 799px) {
     .u-name {
-        font-size: 0.65rem; /* Reduzido para caber melhor o nome completo */
+        font-size: 0.85rem !important; /* O !important força a mudança no mobile */
         margin-top: 5px;
         line-height: 1.2;
-        min-height: 2.4em; /* Garante espaço para até 2 linhas de texto */
+        min-height: 2.4em; 
     }
     
     .u-price {
-        font-size: 0.95rem; /* Valor principal mais delicado */
+        font-size: 0.95rem !important; /* Força o preço menor também */
         font-weight: 800;
     }
 
     /* Ajuste específico para o texto "A partir de 3un" */
     .u-info div[style*="font-size:0.95rem"] {
-        font-size: 0.75rem !important; /* Diminuído para não poluir o card pequeno */
-        letter-spacing: -0.2px;
+        font-size: 0.75rem !important; 
+        letter-spacing: -0.1px;
     }
 
     /* Ajuste para o preço riscado (Preço Antigo) */
     .combo-strike {
-        font-size: 0.70rem;
+        font-size: 0.70rem !important;
         margin-bottom: -4px;
     }
 
     .card-add-btn {
-        width: 32px; /* Reduzido levemente para ganhar mais área de respiro */
+        width: 32px; 
         height: 32px;
         font-size: 1.2rem;
         bottom: 5px;
