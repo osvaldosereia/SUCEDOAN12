@@ -424,18 +424,15 @@ button {
     overflow-x: auto; 
     scroll-snap-type: x mandatory; 
     gap: 10px; 
-    padding: 0 10px 20px; /* Espaço extra para a barra de rolagem respirar */
+    padding: 0 10px 20px; 
     width: 100%; 
     max-width: 1000px; 
     margin: 0 auto; 
     align-items: stretch; 
-    
-    /* Indicador visual (Barra de rolagem fina para Firefox) */
     scrollbar-width: thin; 
     scrollbar-color: #cbd5e1 transparent;
 }
 
-/* Indicador visual (Barra de rolagem fina para Chrome/Safari/Edge) */
 .grid-produtos::-webkit-scrollbar {
     height: 6px; 
     display: block; 
@@ -449,18 +446,17 @@ button {
     border-radius: 4px;
 }
 
-/* Largura exata para mostrar ~2.3 cards na tela do celular */
 .grid-produtos > .u-card,
-.grid-produtos > .skeleton-card {
+.grid-produtos > .skeleton-card,
+.grid-produtos > .lazy-placeholder {
     width: 40vw; 
-    flex: 0 0 auto; /* Impede o card de encolher ou crescer */
-    scroll-snap-align: start; /* Faz o card "encaixar" ao rolar */
+    flex: 0 0 auto; 
+    scroll-snap-align: start; 
 }
 
 /* --- ESTILOS DESKTOP --- */
 @media(min-width: 800px) { 
     .grid-produtos { 
-        /* Volta a ser Grid (Grade) no Desktop */
         display: grid; 
         overflow-x: visible;
         grid-template-columns: repeat(5, 1fr); 
@@ -468,14 +464,14 @@ button {
         padding: 0 15px 40px; 
     } 
 
-    /* Reseta a largura forçada do mobile para o grid funcionar no Desktop */
     .grid-produtos > .u-card,
-    .grid-produtos > .skeleton-card {
+    .grid-produtos > .skeleton-card,
+    .grid-produtos > .lazy-placeholder {
         width: auto;
     }
 
     .u-card:hover {
-        transform: translateY(-5px); /* Efeito de flutuar ao passar o mouse */
+        transform: translateY(-5px); 
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         border-color: var(--c-bd);
     }
@@ -488,24 +484,22 @@ button {
 /* --- AJUSTES EXCLUSIVOS DE FONTES NOS CARDS MOBILE --- */
 @media (max-width: 799px) {
     .u-name {
-        font-size: 0.85rem !important; /* O !important força a mudança no mobile */
+        font-size: 0.85rem !important; 
         margin-top: 5px;
         line-height: 1.2;
         min-height: 2.4em; 
     }
     
     .u-price {
-        font-size: 0.95rem !important; /* Força o preço menor também */
+        font-size: 0.95rem !important; 
         font-weight: 800;
     }
 
-    /* Ajuste específico para o texto "A partir de 3un" */
     .u-info div[style*="font-size:0.95rem"] {
         font-size: 0.75rem !important; 
         letter-spacing: -0.1px;
     }
 
-    /* Ajuste para o preço riscado (Preço Antigo) */
     .combo-strike {
         font-size: 0.70rem !important;
         margin-bottom: -4px;
@@ -520,12 +514,11 @@ button {
     }
 }
 
-/* CARD UNIVERSAL IDENTICO PARA TUDO */
 .u-card { 
     background: #fff; 
-    border: 1px solid var(--c-bd); /* Borda leve sempre visível para definir o card */
+    border: 1px solid var(--c-bd); 
     border-radius: 12px; 
-    padding: 12px; /* Aumentado o respiro interno */
+    padding: 12px; 
     display: flex; 
     flex-direction: column; 
     position: relative; 
@@ -587,7 +580,6 @@ button {
     left: 8px;
 }
 
-/* BOTÃO DE ADICIONAR (+) - Laranja */
 .card-add-btn { 
     position: absolute; 
     bottom: 8px; 
@@ -1630,11 +1622,9 @@ function initSplashScreen() {
     const textContainer = document.getElementById('splash-text-container');
     const logo = document.getElementById('splash-logo-img');
     
-    // Começamos no índice 1, porque a frase 0 já está na tela!
     let currentIndex = 1; 
     const timePerPhrase = 2200;
 
-    // Devolvemos a transição suave para a primeira frase poder sumir bonito depois
     setTimeout(() => { if(phrases[0]) phrases[0].style.transition = ''; }, 50);
 
     function showNextPhrase() {
@@ -1657,7 +1647,6 @@ function initSplashScreen() {
         setTimeout(showNextPhrase, timePerPhrase);
     }
     
-    // Como a primeira frase já está visível, apenas esperamos o tempo dela acabar para chamar a próxima
     setTimeout(showNextPhrase, timePerPhrase);
 }
 
@@ -1708,7 +1697,6 @@ const infiniteScrollObserver = new IntersectionObserver((entries) => {
             let sentinel = entry.target;
             let container = sentinel.parentElement;
             
-            // Pega os placeholders em vez de apenas revelar os ocultos
             let hiddenItems = container.querySelectorAll('.lazy-placeholder');
             
             if (hiddenItems.length > 0) {
@@ -1719,20 +1707,17 @@ const infiniteScrollObserver = new IntersectionObserver((entries) => {
                     let type = el.dataset.type;
                     let itemObj = null;
                     
-                    // Descobre quem é o produto
                     if (type === 'BASKET') itemObj = STATE.baskets.find(x => String(x.id) === String(id));
                     else if (type === 'COMBO') itemObj = STATE.combos.find(x => String(x.id) === String(id));
                     else itemObj = STATE.prods.find(x => String(x.id) === String(id));
                     
                     if (itemObj) {
-                        // Cria o cartão real e substitui o placeholder
                         let temp = document.createElement('div');
                         temp.innerHTML = buildCardHtml(itemObj, type, false, 999);
                         el.parentNode.replaceChild(temp.firstElementChild, el);
                     }
                 }
                 
-                // Se não houver mais nada para carregar, remove o sentinela
                 if (container.querySelectorAll('.lazy-placeholder').length === 0) {
                     sentinel.remove();
                     infiniteScrollObserver.unobserve(sentinel);
@@ -1802,14 +1787,23 @@ STATE.cjData = [];
 STATE.cjDiscounts = [];
 STATE.cjTotalDiscount = 0;
 
-// A função loadCompreJunto foi removida, pois agora os dados vêm todos juntos no dados-loja!
-
 async function init() {
     try {
+        console.log("A iniciar o carregamento rápido...");
+        
         // O SEGREDO DA VELOCIDADE: Apenas 2 pedidos em vez de 10!
         const [produtosData, dadosLoja] = await Promise.all([
-            fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('dados-loja.json?v=' + versaoCache).then(r => r.json()).catch(() => ({}))
+            fetch('produtos.json?v=' + versaoCache)
+                .then(r => { if(!r.ok) throw new Error("Não achou produtos.json"); return r.json(); })
+                .catch(e => { console.error(e); return []; }),
+                
+            fetch('dados-loja.json?v=' + versaoCache) 
+                .then(r => { if(!r.ok) throw new Error("Não achou dados-loja.json"); return r.json(); })
+                .catch(e => { 
+                    console.error("Erro no dados-loja:", e); 
+                    alert("⚠️ ERRO: O ficheiro dados-loja.json não foi encontrado ou tem um erro de formatação!");
+                    return {}; 
+                })
         ]);
         
         // Distribuindo os dados do super ficheiro para a loja
@@ -1854,7 +1848,7 @@ async function init() {
                     oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, 
                     stock: parseInt(p.estoque) || 0, 
                     validade: p.validade || null,
-                    img: `/site/img/produtos/${p.codigo || p.id}.webp`,
+                    img: `site/img/produtos/${p.codigo || p.id}.webp`,
                     categoria: p.categoria || "",
                     bulkDiscount: descontoLeve3
                 };
@@ -1864,12 +1858,12 @@ async function init() {
             let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
             produtosComValidade.sort((a, b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
             
-            STATE.destaques = produtosComValidade.slice(0, 5); // Apenas os 5 primeiros
+            STATE.destaques = produtosComValidade.slice(0, 5); 
             STATE.destaques.forEach(p => {
                 if (!p.oldPrice || p.oldPrice <= p.price) {
                     p.oldPrice = p.price; 
                 }
-                p.price = p.oldPrice * 0.90; // Aplica 10% de desconto globalmente nesses itens
+                p.price = p.oldPrice * 0.90; 
                 p.isDestaque = true; 
             });
         }
@@ -2280,7 +2274,7 @@ function buildTabsAndSections() {
     allTerms = [...new Set(allTerms)];
 
     if (STATE.baskets.length > 0) {
-        let img = STATE.baskets[0].imagem || '/site/img/produtos/cesta.webp';
+        let img = STATE.baskets[0].imagem || 'site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('cestas')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Cestas Básicas</div>`;
         
         sectionsHtml += `
@@ -2292,7 +2286,7 @@ function buildTabsAndSections() {
     }
 
     if (STATE.combos.length > 0) {
-        let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
+        let img = STATE.combos[0].imagem || 'site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
         sectionsHtml += `
             <div id="sec-combos" class="tab-section" style="display:none;">
@@ -2409,13 +2403,12 @@ function buildTabsAndSections() {
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
         });
-    }
-        
+    } // <--- CHAVETA RECOLOCADA AQUI
+
     // --- COLETANDO AS OFERTAS DO DIA (4 DE CADA SESSÃO) ---
     STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada);
 
     // --- PASSO 3: PRÉ-CARREGAR A IMAGEM PRINCIPAL (LCP) ---
-    // Se houver ofertas, avisa o navegador para descarregar a primeira imagem com urgência máxima!
     if (STATE.ofertasDoDia.length > 0) {
         let primeiraImagem = STATE.ofertasDoDia[0].img;
         let linkPreload = document.createElement("link");
@@ -3231,7 +3224,7 @@ init();
 
 if ('serviceWorker' in navigator) { 
     window.addEventListener('load', () => { 
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('sw.js')
             .then((registro) => { console.log('SW registrado'); })
             .catch((erro) => { console.error('Erro SW', erro); }); 
     }); 
