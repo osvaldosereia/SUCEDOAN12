@@ -418,39 +418,51 @@ button {
     gap: 10px; 
 }
 
-/* GRADES UNIFICADAS - CARROSSEL NO MOBILE */
+/* --- CARROSSEL MOBILE E INDICADOR DE ROLAGEM --- */
 .grid-produtos { 
     display: flex; 
     overflow-x: auto; 
     scroll-snap-type: x mandatory; 
-    gap: 12px; /* Espaçamento levemente maior para o carrossel */
-    padding: 0 10px 25px; 
+    gap: 10px; 
+    padding: 0 10px 20px; /* Espaço extra para a barra de rolagem respirar */
     width: 100%; 
     max-width: 1000px; 
     margin: 0 auto; 
     align-items: stretch; 
-    scrollbar-width: none; /* Esconde a barra de rolagem no Firefox */
+    
+    /* Indicador visual (Barra de rolagem fina para Firefox) */
+    scrollbar-width: thin; 
+    scrollbar-color: #cbd5e1 transparent;
 }
 
-/* Esconde a barra de rolagem no Chrome/Safari/Edge mas mantém a função */
+/* Indicador visual (Barra de rolagem fina para Chrome/Safari/Edge) */
 .grid-produtos::-webkit-scrollbar {
-    display: none;
+    height: 6px; 
+    display: block; 
+}
+.grid-produtos::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 0 10px;
+}
+.grid-produtos::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
 }
 
-/* Define a largura exata para mostrar ~1.8 cards na tela do celular */
+/* Largura exata para mostrar ~2.3 cards na tela do celular */
 .grid-produtos > .u-card,
 .grid-produtos > .skeleton-card {
-    width: 52vw; 
+    width: 40vw; 
     flex: 0 0 auto; /* Impede o card de encolher ou crescer */
     scroll-snap-align: start; /* Faz o card "encaixar" ao rolar */
 }
 
+/* --- ESTILOS DESKTOP --- */
 @media(min-width: 800px) { 
     .grid-produtos { 
         /* Volta a ser Grid (Grade) no Desktop */
         display: grid; 
         overflow-x: visible;
-        /* Mantemos 5 colunas para o card respirar melhor no PC */
         grid-template-columns: repeat(5, 1fr); 
         gap: 20px; 
         padding: 0 15px 40px; 
@@ -467,17 +479,14 @@ button {
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         border-color: var(--c-bd);
     }
-}
+    
     .section-title { 
         width: calc(100% - 30px); 
     }
 }
 
-/* --- LAYOUT MOBILE PARA TODAS AS SESSÕES (CARROSSEL) --- */
-/* --- AJUSTE DE FONTES NOS CARDS MOBILE --- */
+/* --- AJUSTES EXCLUSIVOS DE FONTES NOS CARDS MOBILE --- */
 @media (max-width: 799px) {
-    /* ... (mantenha as configurações de .grid-produtos e .u-card anteriores) ... */
-
     .u-name {
         font-size: 0.75rem; /* Reduzido para caber melhor o nome completo */
         margin-top: 5px;
