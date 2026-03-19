@@ -397,7 +397,7 @@ button {
 
 @media(min-width: 800px) { 
     .grid-produtos { 
-        grid-template-columns: repeat(5, 1fr); 
+        grid-template-columns: repeat(6, 1fr); 
         gap: 12px; 
         padding: 0 15px 25px; 
     } 
@@ -418,7 +418,6 @@ button {
         scrollbar-color: #cbd5e1 transparent;
     }
 
-    /* Barra de rolagem estilizada para dar a pista de carrossel */
     .grid-produtos::-webkit-scrollbar {
         height: 6px;
         display: block; 
@@ -1081,7 +1080,7 @@ dialog::backdrop {
         padding: 0 15px 25px;
     }
     .cj-container .cj-grid > .cj-card {
-        width: auto; /* Deixa a grelha gerir a largura para não vazar a tela */
+        width: auto; 
     }
     .cj-footer {
         flex-direction: row; 
@@ -1722,7 +1721,6 @@ function renderCompreJunto() {
                 produtos: [`1x ${selected[0].id}`, `1x ${selected[1].id}`]
             });
             
-            // Botão Direto Adicionar (Sem inline expander)
             html += `
             <div class="cj-card">
                 <div class="cj-header">${kit.titulo}</div>
@@ -1752,7 +1750,6 @@ function renderCompreJunto() {
     return html;
 }
 
-// Lógica de Adição Direta ao Carrinho para o Compre Junto
 window.addCompreJunto = function(kitId, id1, id2, discountVal) {
     let items = [id1, id2];
     for(let id of items) {
@@ -1779,7 +1776,6 @@ window.addCompreJunto = function(kitId, id1, id2, discountVal) {
     }
 };
 
-// INÍCIO: SISTEMA DE EXPANSÃO INLINE (CARROSSEL EMBUTIDO)
 let expanderState = {
     id: null,
     type: null,
@@ -1787,7 +1783,9 @@ let expanderState = {
     originalSum: 0,
     priceOffset: 0, 
     items: {},
-    orderedIds: [], // <-- ADICIONA ESTA LINHA AQUI
+    originalItems: {}, 
+    discountLost: false, 
+    orderedIds: [], 
     sourceObj: null,
     currentDisplayPrice: 0
 };
@@ -1810,12 +1808,14 @@ window.toggleInlinePreview = function(id, type, targetElement) {
 
     if (!sourceObj) return;
 
-   expanderState.id = id;
+    expanderState.id = id;
     expanderState.type = type;
     expanderState.basePrice = sourceObj.preco;
     expanderState.originalSum = 0;
     expanderState.items = {};
-    expanderState.orderedIds = []; // <-- ADICIONA ESTA LINHA PARA ZERAR A LISTA
+    expanderState.originalItems = {}; 
+    expanderState.discountLost = false; 
+    expanderState.orderedIds = []; 
     expanderState.sourceObj = sourceObj; 
 
     sourceObj.produtos.forEach(s => {
@@ -1825,12 +1825,12 @@ window.toggleInlinePreview = function(id, type, targetElement) {
         let p = STATE.prods.find(x => x.id === pId);
         if (p) {
             expanderState.items[pId] = qty;
-            expanderState.orderedIds.push(pId); // <-- ADICIONA ESTA LINHA PARA GUARDAR A ORDEM
+            expanderState.originalItems[pId] = qty; 
+            expanderState.orderedIds.push(pId); 
             expanderState.originalSum += p.price * qty;
         }
     });
 
-    // Calcula e congela a diferença exata da cesta para o "outras despesas"
     if (type === 'BASKET') {
         expanderState.priceOffset = Math.max(0, sourceObj.preco - expanderState.originalSum);
     } else {
@@ -1855,7 +1855,7 @@ window.toggleInlinePreview = function(id, type, targetElement) {
 
 function buildExpanderInnerHtml(title) {
     let currentSum = 0;
-    let itemsHtml = expanderState.orderedIds.map(pId => { // <-- MUDA APENAS ESTA LINHA
+    let itemsHtml = expanderState.orderedIds.map(pId => { 
         let qty = expanderState.items[pId];
         let p = STATE.prods.find(x => x.id === pId);
         if(!p) return '';
@@ -1875,15 +1875,21 @@ function buildExpanderInnerHtml(title) {
 
     let displayPrice = 0;
     if (expanderState.type === 'BASKET') {
-        // Cesta: Valor dos Produtos + Offset Fixo
         displayPrice = currentSum + expanderState.priceOffset;
     } else {
-        // Kit: Variação face ao original
         let variation = currentSum - expanderState.originalSum;
         displayPrice = expanderState.basePrice + variation;
     }
     
     expanderState.currentDisplayPrice = Math.max(0, displayPrice);
+
+    let totalHtml = `Total: ${fmt(expanderState.currentDisplayPrice)}`;
+    if (expanderState.type === 'COMBO' && !expanderState.discountLost) {
+        let savings = expanderState.originalSum - expanderState.basePrice;
+        if (savings > 0) {
+            totalHtml += `<div style="color:var(--c-ok); font-size: 0.9rem; font-weight: 700; margin-top: 4px;">Economia de ${fmt(savings)}</div>`;
+        }
+    }
 
     return `
     <div class="expander-header">
@@ -1894,12 +1900,11 @@ function buildExpanderInnerHtml(title) {
         ${itemsHtml}
     </div>
     <div class="expander-footer">
-        <div class="expander-total" id="exp-total">Total: ${fmt(expanderState.currentDisplayPrice)}</div>
+        <div class="expander-total" id="exp-total-container">${totalHtml}</div>
         <button class="expander-btn" onclick="commitExpander()">Adicionar produtos ao carrinho</button>
     </div>`;
 }
 
-// IN PLACE UPDATE: Não recria o HTML, atualiza só o que mudou (não perde o scroll)
 window.changeExpanderQty = function(pId, delta) {
     let p = STATE.prods.find(x => x.id === pId);
     if(!p) return;
@@ -1907,17 +1912,33 @@ window.changeExpanderQty = function(pId, delta) {
     let next = Math.max(0, current + delta);
     if (next > p.stock) return showToast("Estoque insuficiente", "r");
 
+    if (expanderState.type === 'COMBO') {
+        let origQty = expanderState.originalItems[pId] || 0;
+        if (next < origQty && current >= origQty) {
+            if (!confirm("Atenção: Ao reduzir este item abaixo da quantidade original do kit, você perderá o desconto promocional. Deseja continuar?")) {
+                return;
+            }
+        }
+    }
+
     expanderState.items[pId] = next;
 
-    // Atualiza a quantidade visualmente
+    if (expanderState.type === 'COMBO') {
+        let isLost = false;
+        Object.keys(expanderState.originalItems).forEach(id => {
+            if ((expanderState.items[id] || 0) < expanderState.originalItems[id]) {
+                isLost = true;
+            }
+        });
+        expanderState.discountLost = isLost;
+    }
+
     let qtyEl = document.getElementById('exp-qty-' + pId);
     if(qtyEl) qtyEl.innerText = next;
     
-    // Atualiza a opacidade do item visualmente
     let itemEl = document.getElementById('exp-item-' + pId);
     if(itemEl) itemEl.style.opacity = next === 0 ? '0.5' : '1';
 
-    // Recalcula o total
     let currentSum = 0;
     Object.keys(expanderState.items).forEach(id => {
         let prod = STATE.prods.find(x => x.id === id);
@@ -1928,13 +1949,24 @@ window.changeExpanderQty = function(pId, delta) {
     if (expanderState.type === 'BASKET') {
         displayPrice = currentSum + expanderState.priceOffset;
     } else {
-        displayPrice = expanderState.basePrice + (currentSum - expanderState.originalSum);
+        if (expanderState.discountLost) {
+            displayPrice = currentSum; 
+        } else {
+            displayPrice = expanderState.basePrice + (currentSum - expanderState.originalSum);
+        }
     }
     expanderState.currentDisplayPrice = Math.max(0, displayPrice);
 
-    // Atualiza o texto do valor total
-    let totalEl = document.getElementById('exp-total');
-    if(totalEl) totalEl.innerText = 'Total: ' + fmt(expanderState.currentDisplayPrice);
+    let totalHtml = `Total: ${fmt(expanderState.currentDisplayPrice)}`;
+    if (expanderState.type === 'COMBO' && !expanderState.discountLost) {
+        let savings = expanderState.originalSum - expanderState.basePrice;
+        if (savings > 0) {
+            totalHtml += `<div style="color:var(--c-ok); font-size: 0.9rem; font-weight: 700; margin-top: 4px;">Economia de ${fmt(savings)}</div>`;
+        }
+    }
+    
+    let totalEl = document.getElementById('exp-total-container');
+    if(totalEl) totalEl.innerHTML = totalHtml;
 };
 
 window.commitExpander = function() {
@@ -1960,16 +1992,17 @@ window.commitExpander = function() {
 
     if (expanderState.type === 'BASKET') {
         STATE.baseBasket = expanderState.sourceObj;
-        // O valor do offset foi congelado e viaja certinho pro Carrinho!
         STATE.basketExtraFee += expanderState.priceOffset;
     } else {
         let discountForThisKit = Math.max(0, normalPriceSum - expanderState.currentDisplayPrice);
         STATE.comboDiscount += discountForThisKit;
-        STATE.appliedCombos.push({
-            id: expanderState.id,
-            qty: 1,
-            name: expanderState.sourceObj.nome
-        });
+        if (discountForThisKit > 0) {
+            STATE.appliedCombos.push({
+                id: expanderState.id,
+                qty: 1,
+                name: expanderState.sourceObj.nome
+            });
+        }
     }
 
     document.getElementById('active-expander').remove();
@@ -1983,7 +2016,6 @@ window.commitExpander = function() {
         setTimeout(() => cartBtn.style.transform = '', 200);
     }
 };
-// FIM SISTEMA INLINE
 
 const versaoCache = Math.floor(Date.now() / 86400000); 
 
@@ -2031,8 +2063,6 @@ async function init() {
             const rand = geradorAleatorio(sementeDoDia);
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
-                // NOVA REGRA DESCONTO PROGRESSIVO
-                // Sorteia de 6% a 17% para TODOS os produtos, desde que elegíveis no uso
                 let descontoLeve3 = 0.06 + (rand() * 0.11); 
 
                 return {
@@ -2156,10 +2186,9 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
             oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
         }
         
-        // ETIQUETA NOVA "LEVE 3+" (Agora apresentada abaixo do preço!)
         if (item.bulkDiscount) {
             let bulkPrice = pPrice * (1 - item.bulkDiscount);
-            bulkDiscountHtml = `<div style="font-size:0.95rem; color:var(--c-ok); font-weight:500; margin-top:2px;">Leve 3+ por ${fmt(bulkPrice)}/un</div>`;
+            bulkDiscountHtml = `<div style="font-size:0.95rem; color:var(--c-ok); font-weight:500; margin-top:2px;">A partir de 3un: ${fmt(bulkPrice)}</div>`;
         }
 
         addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnText}</button>`;
@@ -2652,14 +2681,13 @@ window.clearCart = function() {
 
 function updateTotals() {
     let sum = 0; 
-    STATE.bulkTotalDiscount = 0; // Zera o cálculo de desconto Leve 3+
+    STATE.bulkTotalDiscount = 0; 
     
     Object.entries(STATE.cart).forEach(([id, q]) => { 
         let p = STATE.prods.find(x => x.id === id); 
         if (p) { 
             sum += p.price * q; 
             
-            // CÁLCULO DESCONTO LEVE 3+
             if (q >= 3 && p.bulkDiscount) {
                 STATE.bulkTotalDiscount += (p.price * p.bulkDiscount) * q;
             }
@@ -2765,7 +2793,6 @@ function openCheckout() {
         let p = STATE.prods.find(x => x.id === id); 
         let qty = STATE.cart[id];
         
-        // Se qualifica pro Leve 3+, exibe o desconto que ele tá ganhando!
         let msgLeve3 = (qty >= 3 && p.bulkDiscount) ? `<div style="color:var(--c-ok); font-size:0.75rem; font-weight:800; text-align:center; width:100%; margin-top:4px;">Desconto: -${fmt((p.price * p.bulkDiscount) * qty)}</div>` : '';
 
         return `
@@ -2795,8 +2822,9 @@ function openCheckout() {
     
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
-        (totalDescontosKits > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto dos Kits:</span><span>-${fmt(totalDescontosKits)}</span></div>` : '') + 
-        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (Leve 3+):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
+        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Kit Promocional:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
+        (STATE.cjTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Compre Junto:</span><span>-${fmt(STATE.cjTotalDiscount)}</span></div>` : '') + 
+        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (A partir de 3un):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
         
     let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount; 
@@ -3009,9 +3037,9 @@ async function sendOrder() {
     }
 
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-    if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KIT: -${fmt(STATE.comboDiscount)}`;
-    if (STATE.bulkTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO LEVE 3+: -${fmt(STATE.bulkTotalDiscount)}`;
+    if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KIT PROMOCIONAL: -${fmt(STATE.comboDiscount)}`;
     if (STATE.cjTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMPRE JUNTO: -${fmt(STATE.cjTotalDiscount)}`;
+    if (STATE.bulkTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO (A PARTIR DE 3UN): -${fmt(STATE.bulkTotalDiscount)}`;
     if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
