@@ -418,25 +418,49 @@ button {
     gap: 10px; 
 }
 
-/* GRADES UNIFICADAS */
+/* GRADES UNIFICADAS - CARROSSEL NO MOBILE */
 .grid-produtos { 
-    display: grid; 
-    grid-template-columns: repeat(2, 1fr); 
-    gap: 8px; 
+    display: flex; 
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory; 
+    gap: 12px; /* Espaçamento levemente maior para o carrossel */
     padding: 0 10px 25px; 
     width: 100%; 
     max-width: 1000px; 
     margin: 0 auto; 
     align-items: stretch; 
+    scrollbar-width: none; /* Esconde a barra de rolagem no Firefox */
+}
+
+/* Esconde a barra de rolagem no Chrome/Safari/Edge mas mantém a função */
+.grid-produtos::-webkit-scrollbar {
+    display: none;
+}
+
+/* Define a largura exata para mostrar ~1.8 cards na tela do celular */
+.grid-produtos > .u-card,
+.grid-produtos > .skeleton-card {
+    width: 52vw; 
+    flex: 0 0 auto; /* Impede o card de encolher ou crescer */
+    scroll-snap-align: start; /* Faz o card "encaixar" ao rolar */
 }
 
 @media(min-width: 800px) { 
     .grid-produtos { 
-        /* Mudamos de 6 para 5 colunas para o card respirar melhor */
+        /* Volta a ser Grid (Grade) no Desktop */
+        display: grid; 
+        overflow-x: visible;
+        /* Mantemos 5 colunas para o card respirar melhor no PC */
         grid-template-columns: repeat(5, 1fr); 
         gap: 20px; 
         padding: 0 15px 40px; 
     } 
+
+    /* Reseta a largura forçada do mobile para o grid funcionar no Desktop */
+    .grid-produtos > .u-card,
+    .grid-produtos > .skeleton-card {
+        width: auto;
+    }
 
     .u-card:hover {
         transform: translateY(-5px); /* Efeito de flutuar ao passar o mouse */
