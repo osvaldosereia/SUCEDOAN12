@@ -413,7 +413,7 @@ button {
         overflow-x: auto;
         scroll-snap-type: x mandatory;
         gap: 15px; 
-        padding: 0 15px 15px; /* Menos padding em baixo para aproximar a barra */
+        padding: 0 15px 15px; 
         scrollbar-width: thin; 
         scrollbar-color: #cbd5e1 transparent;
     }
@@ -433,7 +433,7 @@ button {
     }
 
     .grid-produtos > .u-card {
-        width: 65vw; /* Cartões mais finos para mostrar o próximo item */
+        width: 65vw; 
         flex-shrink: 0; 
         scroll-snap-align: center; 
         height: auto; 
@@ -515,15 +515,6 @@ button {
     padding: 0 !important; 
 }
 
-.inline-discount { 
-    background: var(--c-err); 
-    color: #fff; 
-    font-size: 0.75rem; 
-    padding: 4px 8px; 
-    font-weight: 800; 
-    border-radius: 6px; 
-}
-
 .kit-tag { 
     background: var(--c-a); 
     color: #fff; 
@@ -531,6 +522,9 @@ button {
     padding: 4px 8px; 
     font-weight: 800; 
     border-radius: 6px; 
+    position: absolute;
+    top: 8px;
+    left: 8px;
 }
 
 /* BOTÃO DE ADICIONAR (+) - Laranja */
@@ -649,28 +643,6 @@ button {
 
 .general-hidden { 
     display: none !important; 
-}
-
-.btn-ver-todos {
-    grid-column: 1 / -1; 
-    margin: 10px 0 15px 0;
-    border: 2px dashed var(--c-a);
-    color: var(--c-a);
-    background: #fff7ed;
-    padding: 16px;
-    border-radius: 12px;
-    font-weight: 700;
-    font-size: 1.05rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: 0.2s;
-    width: 100%;
-    text-transform: uppercase;
-}
-.btn-ver-todos:hover {
-    background: #ffedd5;
 }
 
 /* SKELETON LOADING */
@@ -995,8 +967,10 @@ dialog::backdrop {
 /* --- SESSÃO COMPRE JUNTO E ECONOMIZE --- */
 .cj-container {
     width: 100%;
+    max-width: 1000px;
     margin: 0 auto 25px;
     padding: 0; 
+    box-sizing: border-box;
 }
 
 .cj-container .cj-grid {
@@ -1103,10 +1077,11 @@ dialog::backdrop {
     .cj-container .cj-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr) !important;
-        gap: 20px;
+        gap: 15px;
+        padding: 0 15px 25px;
     }
     .cj-container .cj-grid > .cj-card {
-        width: 100%;
+        width: auto; /* Deixa a grelha gerir a largura para não vazar a tela */
     }
     .cj-footer {
         flex-direction: row; 
@@ -1167,7 +1142,7 @@ dialog::backdrop {
     background: #c2410c;
 }
 
-/* NOVO: ESTILOS DO EXPANSOR (INLINE CAROUSEL) - TAMANHOS MAIORES */
+/* ESTILOS DO EXPANSOR (INLINE CAROUSEL) */
 .inline-expander {
     grid-column: 1 / -1; 
     background: #fff;
@@ -1230,7 +1205,7 @@ dialog::backdrop {
 .expander-carousel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
 .expander-item {
-    flex: 0 0 180px; /* BEM MAIOR PARA CESTAS */
+    flex: 0 0 180px; 
     scroll-snap-align: center;
     background: var(--c-img-bg);
     border: 1px solid var(--c-bd);
@@ -1244,7 +1219,7 @@ dialog::backdrop {
 }
 
 .expander-item img {
-    width: 120px; /* IMAGEM MAIOR */
+    width: 120px; 
     height: 120px; 
     object-fit: contain;
     mix-blend-mode: multiply;
@@ -1613,7 +1588,6 @@ const STATE = {
     coupons: [], 
     combos: [], 
     termos: [], 
-    descontosValor: [], 
     sohoje: [],
     carrosseis: [], 
     cart: {}, 
@@ -1624,7 +1598,6 @@ const STATE = {
     comboDiscount: 0,
     bulkTotalDiscount: 0,
     coupon: null, 
-    valueDiscount: 0,
     lists: {}, 
     pageLimits: {}, 
     deliveryOptions: [], 
@@ -2013,12 +1986,11 @@ const versaoCache = Math.floor(Date.now() / 86400000);
 
 async function init() {
     try {
-        const [r1, r2, r3, r4, r6, r7, r8, r9, r10] = await Promise.all([
+        const [r1, r2, r3, r4, r7, r8, r9, r10] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/desconto-por-valor.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
@@ -2028,7 +2000,6 @@ async function init() {
         STATE.baskets = r1; 
         STATE.coupons = r3; 
         STATE.combos = r4; 
-        STATE.descontosValor = r6; 
         STATE.termos = r7;
         STATE.sohoje = r8 || [];
         STATE.bloqueados = (r9 || []).map(String);
@@ -2152,6 +2123,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let addBtnHtml = ''; 
     let qty = STATE.cart[id] || 0; 
     let btnText = qty > 0 ? qty : '+';
+    let bulkDiscountHtml = '';
 
     if (isKit || isBasket) {
         let precoDe = 0;
@@ -2181,10 +2153,10 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
             oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
         }
         
-        // ETIQUETA NOVA "LEVE 3+"
+        // ETIQUETA NOVA "LEVE 3+" (Agora apresentada abaixo do preço!)
         if (item.bulkDiscount) {
             let bulkPrice = pPrice * (1 - item.bulkDiscount);
-            tagHtml = `<div class="kit-tag" style="background:var(--c-ok); font-size:0.7rem; padding: 4px 6px;">Leve 3+ por ${fmt(bulkPrice)}/un</div>`;
+            bulkDiscountHtml = `<div style="font-size:0.75rem; color:var(--c-ok); font-weight:800; margin-top:2px;">Leve 3+ por ${fmt(bulkPrice)}/un</div>`;
         }
 
         addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnText}</button>`;
@@ -2201,6 +2173,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
             <div style="display: flex; flex-direction: column; justify-content: flex-end; margin-top: auto;">
                 ${oldPriceHtml}
                 <div class="u-price">${priceHtml}</div>
+                ${bulkDiscountHtml}
             </div>
         </div>
     </div>`;
@@ -2705,19 +2678,8 @@ function updateTotals() {
     }
 
     let subtotal = sum + STATE.basketExtraFee; 
-    let valueDiscount = 0;
-    
-    if (STATE.descontosValor && STATE.descontosValor.length > 0) { 
-        STATE.descontosValor.forEach(d => { 
-            if (subtotal >= d.minimo && d.desconto > valueDiscount) {
-                valueDiscount = d.desconto; 
-            }
-        }); 
-    }
-    
-    STATE.valueDiscount = valueDiscount;
     let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits - STATE.bulkTotalDiscount;
+    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount;
     
     if ($('chk-total')) {
         $('chk-total').innerText = fmt(final);
@@ -2826,27 +2788,15 @@ function openCheckout() {
     });
     
     let subtotal = sum + STATE.basketExtraFee; 
-    let valueDiscount = 0;
-    
-    if (STATE.descontosValor && STATE.descontosValor.length > 0) {
-        STATE.descontosValor.forEach(d => { 
-            if (subtotal >= d.minimo && d.desconto > valueDiscount) {
-                valueDiscount = d.desconto; 
-            }
-        }); 
-    }
-    
-    STATE.valueDiscount = valueDiscount;
     let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
     
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
         (totalDescontosKits > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto dos Kits:</span><span>-${fmt(totalDescontosKits)}</span></div>` : '') + 
         (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (Leve 3+):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
-        (STATE.valueDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Progressivo:</span><span>-${fmt(STATE.valueDiscount)}</span></div>` : '') + 
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
         
-    let final = subtotal - STATE.deliveryDiscount - STATE.valueDiscount - totalDescontosKits - STATE.bulkTotalDiscount; 
+    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount; 
     $('chk-total').innerText = fmt(final);
     
     let btn = $('btn-send-order');
@@ -3011,12 +2961,11 @@ async function sendOrder() {
 
     let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.cjTotalDiscount - STATE.bulkTotalDiscount; 
     final -= STATE.deliveryDiscount; 
-    final -= STATE.valueDiscount; 
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
     final -= cupomDesconto;
 
     let outras_despesas = STATE.basketExtraFee || 0; 
-    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.valueDiscount + cupomDesconto + STATE.cjTotalDiscount + STATE.bulkTotalDiscount;
+    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + cupomDesconto + STATE.cjTotalDiscount + STATE.bulkTotalDiscount;
 
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
     let tipoCestaTexto = "Cestas Personalizada"; 
@@ -3060,7 +3009,6 @@ async function sendOrder() {
     if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KIT: -${fmt(STATE.comboDiscount)}`;
     if (STATE.bulkTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO LEVE 3+: -${fmt(STATE.bulkTotalDiscount)}`;
     if (STATE.cjTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO COMPRE JUNTO: -${fmt(STATE.cjTotalDiscount)}`;
-    if (STATE.valueDiscount > 0) itemsTxt += `\n🤑 DESCONTO PROGRESSIVO: -${fmt(STATE.valueDiscount)}`;
     if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
