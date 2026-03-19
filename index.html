@@ -1521,6 +1521,12 @@ dialog::backdrop {
         <p style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px; font-weight: 500;">Planeje a entrega e ganhe desconto.</p>
         <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
         
+        <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">3. Tem cupom de desconto?</h3>
+        <div style="display: flex; gap: 8px; margin: 10px 0 20px;">
+            <input type="text" id="chk-cupom" placeholder="Digite seu cupom" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); font-family: inherit; font-size: 0.95rem; font-weight: 500; text-transform: uppercase;">
+            <button onclick="applyCoupon()" style="padding: 0 20px; font-size: 0.95rem; border: none; border-radius: 8px; background: var(--c-p); color: #fff; font-weight: 700; cursor: pointer;">Aplicar</button>
+        </div>
+        <div id="cupom-msg" style="font-size: 0.85rem; margin-top: -15px; margin-bottom: 15px; display: none; font-weight: 600;"></div>
         <div id="chk-summary-lines" style="border-top: 1px dashed var(--c-bd); padding-top: 15px; margin-bottom: 15px; font-size: 0.95rem; font-weight: 500; color: var(--c-s);"></div>
         
         <div style="text-align: right; margin-bottom: 25px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 20px;">
@@ -1528,11 +1534,11 @@ dialog::backdrop {
             <div style="font-weight: 800; font-size: 2.2rem; color: var(--c-p); line-height: 1.1;" id="chk-total"></div>
         </div>
 
-        <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">3. Meus Dados</h3>
+        <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">4. Meus Dados</h3>
         <input type="text" id="chk-nome" placeholder="Nome Completo" style="width: 100%; padding: 14px 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 500;">
         <input type="text" id="chk-cpf" placeholder="CPF" style="width: 100%; padding: 14px 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 20px; font-family: inherit; font-size: 0.95rem; font-weight: 500;">
 
-        <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">4. Forma de Pagamento</h3>
+        <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">5. Forma de Pagamento</h3>
         <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; padding: 4px;">
             <div class="pay-opt" onclick="selectPayment('Dinheiro', this)">💵 Dinheiro</div>
             <div class="pay-opt" onclick="selectPayment('PIX', this)">💠 PIX</div>
@@ -1625,7 +1631,7 @@ const STATE = {
     combos: [], 
     termos: [], 
     sohoje: [],
-    banners: [], // NOVO
+    banners: [], 
     carrosseis: [], 
     cart: {}, 
     cartOrder: [], 
@@ -2068,6 +2074,33 @@ function renderBanners() {
     container.innerHTML = html;
 }
 
+// LOGICA DE CUPONS DE DESCONTO NO MODAL
+window.applyCoupon = function() {
+    let val = $('chk-cupom').value.trim().toUpperCase();
+    let msgEl = $('cupom-msg');
+    
+    if (!val) {
+        STATE.coupon = null;
+        msgEl.style.display = 'none';
+        openCheckout();
+        return;
+    }
+    
+    let found = STATE.coupons.find(c => c.codigo.toUpperCase() === val);
+    if (found) {
+        STATE.coupon = found;
+        msgEl.innerText = "Cupom aplicado com sucesso!";
+        msgEl.style.color = "var(--c-ok)";
+        msgEl.style.display = "block";
+    } else {
+        STATE.coupon = null;
+        msgEl.innerText = "Cupom inválido ou expirado.";
+        msgEl.style.color = "var(--c-err)";
+        msgEl.style.display = "block";
+    }
+    openCheckout(); 
+};
+
 async function init() {
     try {
         const [r1, r2, r3, r4, r7, r8, r9, r10, r11] = await Promise.all([
@@ -2079,11 +2112,11 @@ async function init() {
             fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('banners.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+            fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1; 
-        STATE.coupons = r3; 
+        STATE.coupons = r3 || []; 
         STATE.combos = r4; 
         STATE.termos = r7;
         STATE.sohoje = r8 || [];
@@ -2714,6 +2747,7 @@ window.clearCart = function() {
         STATE.basketExtraFee = 0; 
         STATE.comboDiscount = 0; 
         STATE.appliedCombos = [];
+        STATE.coupon = null; // Limpa o cupom também!
         
         document.querySelectorAll('[data-id]').forEach(el => { 
             let id = el.dataset.id; 
@@ -2762,7 +2796,9 @@ function updateTotals() {
 
     let subtotal = sum + STATE.basketExtraFee; 
     let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
-    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount;
+    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
+    
+    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount - cupomDesconto;
     
     if ($('chk-total')) {
         $('chk-total').innerText = fmt(final);
@@ -2870,15 +2906,18 @@ function openCheckout() {
     });
     
     let subtotal = sum + STATE.basketExtraFee; 
+    let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
+    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
     
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
         (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Kit Promocional:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
         (STATE.cjTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Compre Junto:</span><span>-${fmt(STATE.cjTotalDiscount)}</span></div>` : '') + 
-        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (Leve 3+):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
-        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
+        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (A partir de 3un):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
+        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '') +
+        (cupomDesconto > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Cupom (${STATE.coupon.codigo}):</span><span>-${fmt(cupomDesconto)}</span></div>` : '');
         
-    let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - STATE.cjTotalDiscount - STATE.bulkTotalDiscount; 
+    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount - cupomDesconto; 
     $('chk-total').innerText = fmt(final);
     
     let btn = $('btn-send-order');
@@ -2943,6 +2982,7 @@ function reorder(orderId) {
     STATE.basketExtraFee = 0; 
     STATE.comboDiscount = 0; 
     STATE.appliedCombos = [];
+    STATE.coupon = null;
 
     let missing = false;
     order.items.forEach(item => { 
@@ -3041,9 +3081,10 @@ async function sendOrder() {
         }
     });
 
+    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
+    
     let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.cjTotalDiscount - STATE.bulkTotalDiscount; 
     final -= STATE.deliveryDiscount; 
-    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
     final -= cupomDesconto;
 
     let outras_despesas = STATE.basketExtraFee || 0; 
