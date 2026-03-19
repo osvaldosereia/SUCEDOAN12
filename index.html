@@ -2288,7 +2288,7 @@ window.switchTab = function(tabId, scrollToTop = false) {
 
         // Rola até o título descontando o espaço da barra superior
         if (titleElement) {
-            let positionToScroll = titleElement.offsetTop - 120;
+            let positionToScroll = titleElement.offsetTop - 80;
             scrollContainer.scrollTo({ top: positionToScroll, behavior: 'instant' });
         } else {
             scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
@@ -2314,6 +2314,7 @@ window.goToHome = function() {
         $('btn-nav-home').classList.add('active');
     }
 };
+    
 function renderPaginated(containerId, listKey, list, type) {
     if (listKey === 'cestas') {
         let c = $('wrapper-cestas');
