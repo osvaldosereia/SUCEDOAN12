@@ -2554,7 +2554,14 @@ function buildTabsAndSections() {
     }
         
 // --- COLETANDO AS OFERTAS DO DIA (4 DE CADA SESSÃO) ---
-STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada);
+    STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada).sort((a, b) => {
+        // Calcula a percentagem de desconto de cada produto (a e b)
+        let descontoA = a.oldPrice ? ((a.oldPrice - a.price) / a.oldPrice) : 0;
+        let descontoB = b.oldPrice ? ((b.oldPrice - b.price) / b.oldPrice) : 0;
+        
+        // Ordena do maior desconto para o menor
+        return descontoB - descontoA;
+    });
 
 // --- PASSO 3: PRÉ-CARREGAR A IMAGEM PRINCIPAL (LCP) ---
 // Se houver ofertas, avisa o navegador para descarregar a primeira imagem com urgência máxima!
