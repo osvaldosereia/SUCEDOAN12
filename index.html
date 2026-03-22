@@ -2232,8 +2232,7 @@ async function init() {
             const rand = geradorAleatorio(sementeDoDia);
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
-                let descontoLeve3 = 0.04 + (rand() * 0.5); 
-
+            let descontoLeve3 = 0.04 + (rand() * 0.05);
                 return {
                     id: String(p.codigo || p.id), 
                     blingId: String(p.id), 
