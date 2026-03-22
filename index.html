@@ -2257,7 +2257,7 @@ async function init() {
                 if (!p.oldPrice || p.oldPrice <= p.price) {
                     p.oldPrice = p.price; 
                 }
-                p.price = p.oldPrice * 0.90; // Aplica 10% de desconto globalmente nesses itens
+                p.price = p.oldPrice * 0.95; // Aplica 10% de desconto globalmente nesses itens
                 p.isDestaque = true; 
             });
         }
@@ -2519,7 +2519,7 @@ function buildTabsAndSections() {
                     // Só aplica a oferta do dia se o produto NÃO for um destaque geral
                     if (!p.ofertaAplicada && !p.isDestaque) {
                         p.ofertaAplicada = true;
-                        let descOferta = 0.04 + (rng() * 0.04); 
+                        let descOferta = 0.04 + (rng() * 0.02); 
                         
                         if (!p.oldPrice || p.oldPrice <= p.price) {
                             p.oldPrice = p.price; 
