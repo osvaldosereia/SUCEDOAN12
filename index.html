@@ -1310,7 +1310,7 @@ dialog::backdrop {
         padding-bottom: 12px !important;
     }
     .carousel-modal > .u-card {
-        width: 150px !important; /* Força uma largura fixa para o card não ficar espremido */
+        width: 150px !important; 
         flex: 0 0 auto !important;
     }
 }
@@ -1323,7 +1323,7 @@ dialog::backdrop {
     width: 100%;
     height: 100dvh;
     background: var(--c-bg);
-    z-index: 90; /* Z-INDEX REDUZIDO: Permite que o Menu Inferior (Z-index 100) fique por cima! */
+    z-index: 90; 
     transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: flex;
     flex-direction: column;
@@ -1360,7 +1360,7 @@ dialog::backdrop {
     flex: 1;
     overflow-y: auto;
     padding: 15px;
-    padding-bottom: 80px; /* RESPIRO: Evita que os últimos produtos fiquem atrás do Menu Inferior */
+    padding-bottom: 80px; 
     position: relative;
 }
 .grid-ver-todos {
@@ -1679,10 +1679,9 @@ const STATE = {
     deliveryDateStr: '',
     destaques: [],
     ofertasDoDia: [],
-    shuffledLists: {} // NOVO: Guarda a ordem aleatória das listas
+    shuffledLists: {} 
 };
 
-// NOVO: Remove o alerta pulsante após 3 segundos
 setTimeout(() => {
     let alertEl = document.getElementById('loading-offers-alert');
     if (alertEl) {
@@ -1701,7 +1700,6 @@ const infiniteScrollObserver = new IntersectionObserver((entries) => {
             let sentinel = entry.target;
             let container = sentinel.parentElement;
             
-            // Pega os placeholders em vez de apenas revelar os ocultos
             let hiddenItems = container.querySelectorAll('.lazy-placeholder');
             
             if (hiddenItems.length > 0) {
@@ -1712,20 +1710,17 @@ const infiniteScrollObserver = new IntersectionObserver((entries) => {
                     let type = el.dataset.type;
                     let itemObj = null;
                     
-                    // Descobre quem é o produto
                     if (type === 'BASKET') itemObj = STATE.baskets.find(x => String(x.id) === String(id));
                     else if (type === 'COMBO') itemObj = STATE.combos.find(x => String(x.id) === String(id));
                     else itemObj = STATE.prods.find(x => String(x.id) === String(id));
                     
                     if (itemObj) {
-                        // Cria o cartão real e substitui o placeholder
                         let temp = document.createElement('div');
                         temp.innerHTML = buildCardHtml(itemObj, type, false, 999);
                         el.parentNode.replaceChild(temp.firstElementChild, el);
                     }
                 }
                 
-                // Se não houver mais nada para carregar, remove o sentinela
                 if (container.querySelectorAll('.lazy-placeholder').length === 0) {
                     sentinel.remove();
                     infiniteScrollObserver.unobserve(sentinel);
@@ -2316,7 +2311,6 @@ window.handleAddClick = function(e, id) {
     animateToCart(rect.left + rect.width / 2, rect.top + rect.height / 2);
 };
 
-// NOVO: Constrói o Card VER TODOS
 function buildVerTodosCard(listKey, title, type) {
     return `
     <div class="card-ver-todos" onclick="openSeeAll('${listKey}', '${title}', '${type}')">
@@ -2406,7 +2400,6 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     </div>`;
 }
 
-// CONSTRUTOR COM PAUSAS DE RESPIRO (Para não travar o celular)
 async function buildTabsAndSections() {
     let skel = $('skeleton-loader'); 
     if (skel) {
@@ -2532,10 +2525,11 @@ async function buildTabsAndSections() {
                     }
                 }
 
+                // MANTÉM A LISTA DA CATEGORIA EM ORDEM ALFABÉTICA
                 list.sort((a, b) => {
-                    let aIsOffer = a.isDailyOfferCat === safe ? 1 : 0;
-                    let bIsOffer = b.isDailyOfferCat === safe ? 1 : 0;
-                    return bIsOffer - aIsOffer;
+                    let nA = (a.name || a.nome || '').toLowerCase();
+                    let nB = (b.name || b.nome || '').toLowerCase();
+                    return nA.localeCompare(nB);
                 });
 
                 let img = list[0].img;
@@ -2548,7 +2542,6 @@ async function buildTabsAndSections() {
                     </div>`;
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
-            // PAUSA DE RESPIRO PARA O CELULAR NÃO TRAVAR
             await new Promise(resolve => setTimeout(resolve, 10));
         }
     }
@@ -2574,15 +2567,27 @@ async function buildTabsAndSections() {
     goToHome();
 }
 
-// NOVO: Função que fatia para 8 produtos e salva a ordem do embaralhamento
-function generateCarouselHtml(title, color, trackId, list, type, listKey) {
-    let shuffled = [...list].sort(() => Math.random() - 0.5);
-    STATE.shuffledLists[listKey] = shuffled; // Salva na memória
+// NOVO: Função que fatia para 8 produtos, salva a ordem e permite escolha de ordenação
+function generateCarouselHtml(title, color, trackId, list, type, listKey, sortType = 'random') {
+    let processedList = [...list];
     
-    let showList = shuffled.slice(0, 8); // Pega apenas os 8 primeiros
+    // Define a ordenação com base no parâmetro
+    if (sortType === 'random') {
+        processedList.sort(() => Math.random() - 0.5);
+    } else if (sortType === 'alphabetical') {
+        processedList.sort((a, b) => {
+            let nA = (a.name || a.nome || '').toLowerCase();
+            let nB = (b.name || b.nome || '').toLowerCase();
+            return nA.localeCompare(nB);
+        });
+    }
+    
+    STATE.shuffledLists[listKey] = processedList; 
+    
+    let showList = processedList.slice(0, 8); 
     let trackHtml = showList.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
     
-    if (shuffled.length > 8) {
+    if (processedList.length > 8) {
         trackHtml += buildVerTodosCard(listKey, title, type);
     }
     
@@ -2595,7 +2600,6 @@ function generateCarouselHtml(title, color, trackId, list, type, listKey) {
         </div>`;
 }
 
-// CONSTRUTOR DE TELA DIVIDIDO EM LOTES (Evita o travamento da página inicial)
 function renderBottomChips(activeTabId) {
     let activeSec = $('sec-' + activeTabId);
     if (!activeSec) return; 
@@ -2606,22 +2610,20 @@ function renderBottomChips(activeTabId) {
     if (topNavContainer) topNavContainer.innerHTML = '';
     if (navContainer) navContainer.innerHTML = ''; 
 
-    // LOTE 1: Super Rápido (Ofertas e Destaques que o cliente vê de cara)
     let htmlTop = '';
     if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
-        htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia');
+        htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random');
     }
     if (STATE.destaques && STATE.destaques.length > 0) {
-        htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques');
+        htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random');
     }
     if (topNavContainer) topNavContainer.innerHTML = htmlTop;
     ativarRolagemInfinita();
 
-    // LOTE 2: Intermediário (Kits e Compre Junto desenhados 50ms depois)
     setTimeout(() => {
         let htmlMid = '';
         if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-            htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos');
+            htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'random');
         }
         let cjHtml = renderCompreJunto();
         if (cjHtml) htmlMid += cjHtml; 
@@ -2630,7 +2632,6 @@ function renderBottomChips(activeTabId) {
         ativarRolagemInfinita();
     }, 50);
 
-    // LOTE 3: O "Pesado" (Todas as demais categorias desenhadas 150ms depois, lá embaixo)
     setTimeout(() => {
         let htmlBottom = '';
         if (STATE.termos && STATE.termos.length > 0) {
@@ -2641,7 +2642,8 @@ function renderBottomChips(activeTabId) {
                 if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
                     let listKey = 'term_' + safe;
                     if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                        htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey);
+                        // Chama a função definindo 'alphabetical' para garantir a ordem alfabética das categorias
+                        htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey, 'alphabetical');
                     }
                 }
             });
@@ -2651,7 +2653,6 @@ function renderBottomChips(activeTabId) {
     }, 150);
 }
 
-// NOVO: Função para abrir o menu do Ver Todos
 window.openSeeAll = function(listKey, title, type) {
     let list = STATE.shuffledLists[listKey] || [];
     
@@ -2662,7 +2663,6 @@ window.openSeeAll = function(listKey, title, type) {
     
     document.getElementById('see-all-view').classList.add('open');
     
-    // Rola magicamente para o 9º item logo após abrir a tela!
     setTimeout(() => {
         let contentDiv = document.querySelector('.see-all-content');
         let grid = document.getElementById('see-all-grid');
@@ -2672,7 +2672,7 @@ window.openSeeAll = function(listKey, title, type) {
         } else {
             contentDiv.scrollTo({ top: 0, behavior: 'instant' });
         }
-    }, 300); // 300ms é o tempo exato da transição do CSS
+    }, 300); 
 }
 
 window.closeSeeAll = function() {
