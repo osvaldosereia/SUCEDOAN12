@@ -63,51 +63,6 @@ button {
     position: relative; 
 } 
 
-/* SPLASH SCREEN DINÂMICA */
-#splash-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #ffffff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    opacity: 1;
-    transition: opacity 0.6s ease;
-}
-
-#splash-screen.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-#splash-content {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#splash-logo-img {
-    max-width: 150px;
-    opacity: 0;
-    animation: fadeInOut 3s forwards;
-}
-
-@keyframes fadeInOut {
-    0% { opacity: 0; }
-    20% { opacity: 1; } /* Fade-in rápido */
-    80% { opacity: 1; } /* Fica visível */
-    100% { opacity: 0; } /* Fade-out suave */
-}
-
-@keyframes splashPulse { 
-    0% { transform: scale(1); } 
-    100% { transform: scale(1.08); } 
-}
-
 /* HEADER PRINCIPAL REFORMULADO */
 #header-wrapper { 
     position: fixed; 
@@ -1359,12 +1314,6 @@ dialog::backdrop {
         <button id="btn-close-install" style="background: transparent; color: var(--c-t); border: none; font-size: 1.2rem; padding: 0 5px;">✕</button>
     </div>
 </div>
-
-<div id="splash-screen">
-    <div id="splash-content">
-        <img id="splash-logo-img" src="/site/logo/dona_antonia.png" alt="Dona Antônia Cestas" class="show-logo">
-    </div>
-</div>
     
 <div id="header-wrapper">
     <div class="layout-limit desk-header-flex">
@@ -1568,22 +1517,6 @@ dialog::backdrop {
 <div id="toast-container"></div>
 
 <script>
-// --- 1. CONTROLE DO SPLASH SCREEN (Logo Simples) ---
-let splashRemoved = false;
-
-function removeSplash() {
-    if (splashRemoved) return;
-    splashRemoved = true;
-    const splash = document.getElementById('splash-screen');
-    if (splash) {
-        splash.classList.add('hidden');
-        setTimeout(() => splash.remove(), 600); // Remove após a transição de opacidade
-    }
-}
-
-// Remove o splash screen após 3 segundos
-setTimeout(removeSplash, 3000);
-
 const CONFIG_ENTREGA = { 
     horaCorteHoje: 10, 
     descontoOpcao2: 3.00, 
@@ -2197,8 +2130,6 @@ async function init() {
 
     } catch (e) { 
         console.error("Erro fatal na inicialização:", e); 
-        dataLoaded = true; // Libera tela mesmo com erro
-        checkAndRemoveSplash();
         showToast("Ops, erro ao carregar os produtos. Tente recarregar a página.", "r");
     }
 }
@@ -3308,7 +3239,11 @@ async function sendOrder() {
     }, 400);
 }
 
-init();
+// Executa a inicialização após o navegador desenhar a tela (App Shell)
+document.addEventListener('DOMContentLoaded', () => {
+    // Um pequeno delay garante que a renderização inicial (FCP) ocorra imediatamente
+    setTimeout(init, 50);
+});
 
 if ('serviceWorker' in navigator) { 
     window.addEventListener('load', () => { 
