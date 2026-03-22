@@ -368,7 +368,8 @@ button {
 
 /* Largura exata para mostrar ~2.3 cards na tela do celular */
 .grid-produtos > .u-card,
-.grid-produtos > .skeleton-card {
+.grid-produtos > .skeleton-card,
+.grid-produtos > .card-ver-todos {
     width: 40vw; 
     flex: 0 0 auto; /* Impede o card de encolher ou crescer */
     scroll-snap-align: start; /* Faz o card "encaixar" ao rolar */
@@ -387,7 +388,8 @@ button {
 
     /* Reseta a largura forçada do mobile para o grid funcionar no Desktop */
     .grid-produtos > .u-card,
-    .grid-produtos > .skeleton-card {
+    .grid-produtos > .skeleton-card,
+    .grid-produtos > .card-ver-todos {
         width: auto;
     }
 
@@ -1286,7 +1288,7 @@ dialog::backdrop {
 
 .expander-btn:active { transform: scale(0.95); background: #c2410c; }
 
-    /* Ajuste do carrossel dentro do modal no Desktop */
+/* Ajuste do carrossel dentro do modal no Desktop */
 @media(min-width: 800px) {
     .carousel-modal {
         display: flex !important;
@@ -1299,7 +1301,98 @@ dialog::backdrop {
         flex: 0 0 auto !important;
     }
 }
-    
+
+/* NOVO: OVERLAY VER TODOS */
+#see-all-view {
+    position: fixed;
+    top: 0;
+    left: 100%;
+    width: 100%;
+    height: 100dvh;
+    background: var(--c-bg);
+    z-index: 2000;
+    transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+}
+#see-all-view.open {
+    left: 0;
+}
+.see-all-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: #fff;
+    border-bottom: 1px solid var(--c-bd);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+.see-all-back {
+    color: var(--c-p);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+.see-all-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--c-p);
+    margin: 0;
+    text-transform: uppercase;
+}
+.see-all-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+}
+.grid-ver-todos {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding-bottom: 40px;
+}
+@media(min-width: 800px) {
+    .grid-ver-todos {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 20px;
+    }
+}
+.card-ver-todos {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: #f8fafc;
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+    min-height: 200px;
+    height: 100%;
+}
+.card-ver-todos:active {
+    transform: scale(0.95);
+}
+.card-ver-todos-icon {
+    width: 48px;
+    height: 48px;
+    background: var(--c-a);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.4);
+}
+.card-ver-todos-text {
+    color: var(--c-p);
+    font-weight: 800;
+    font-size: 0.95rem;
+}
 </style>
 </head>
 <body>
@@ -1407,6 +1500,19 @@ dialog::backdrop {
         <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
     </div>
 </nav>
+
+<div id="see-all-view">
+    <div class="see-all-header">
+        <button class="see-all-back" onclick="closeSeeAll()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span style="font-weight: 700; font-size: 1rem;">Voltar</span>
+        </button>
+        <h2 class="see-all-title" id="see-all-title">Título</h2>
+    </div>
+    <div class="see-all-content">
+        <div class="grid-ver-todos" id="see-all-grid"></div>
+    </div>
+</div>
 
 <dialog id="modal-quick-view">
     <div class="modal-body">
@@ -2183,6 +2289,17 @@ window.handleAddClick = function(e, id) {
     animateToCart(rect.left + rect.width / 2, rect.top + rect.height / 2);
 };
 
+// NOVO: Função para construir o Card especial "Ver Todos"
+function buildVerTodosCard(listKey, title, type) {
+    return `
+    <div class="card-ver-todos" onclick="openSeeAll('${listKey}', '${title}', '${type}')">
+        <div class="card-ver-todos-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><line x1="12" y1="5" x2="12" y2="19"></line></svg>
+        </div>
+        <div class="card-ver-todos-text">VER TODOS</div>
+    </div>`;
+}
+
 function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let id = item.id; 
 
@@ -2443,39 +2560,45 @@ if (STATE.ofertasDoDia.length > 0) {
     goToHome();
 }
 
+// NOVO: Função centralizada para montar os carrosséis e adicionar o botão "VER TODOS"
+function generateCarouselHtml(title, color, trackId, list, type, listKey) {
+    // Clona e embaralha a lista para sempre ser aleatório a cada acesso
+    let shuffled = [...list].sort(() => Math.random() - 0.5);
+    
+    // Limita a exibição inicial a 8 itens
+    let showList = shuffled.slice(0, 8);
+    
+    let trackHtml = showList.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
+    
+    // Se a lista original tiver mais de 8 itens, adiciona o card de VER TODOS
+    if (list.length > 8) {
+        trackHtml += buildVerTodosCard(listKey, title, type);
+    }
+    
+    return `
+        <div style="margin-top: 15px;">
+            <div class="section-title" ${color ? `style="border-left-color: ${color};"` : ''}><span class="section-marker"></span>${title}</div>
+            <div class="grid-produtos" id="${trackId}">
+                ${trackHtml}
+            </div>
+        </div>`;
+}
+
 function renderBottomChips(activeTabId) {
     let htmlTop = '';    
     let htmlBottom = ''; 
     
-    // --- 1. OFERTAS DO DIA (Primeira sessão a aparecer) ---
+    // --- 1. OFERTAS DO DIA ---
     if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
-        let trackIdOfertas = 'grid-ofertas-dia-' + activeTabId;
-        let trackHtmlOfertas = STATE.ofertasDoDia.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
-        htmlTop += `
-            <div style="margin-top: 15px;">
-                <div class="section-title" style="border-left-color: #ef4444;"><span class="section-marker"></span>Ofertas Imperdíveis</div>
-                <div class="grid-produtos" id="${trackIdOfertas}">
-                    ${trackHtmlOfertas}
-                </div>
-            </div>`;
+        htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia');
     }
 
     // --- 2. KITS PROMOCIONAIS ---
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        let trackId = 'grid-kits-bottom-' + activeTabId; 
-        let trackHtml = STATE.lists['combos'].data.map((item, idx) => buildCardHtml(item, 'COMBO', idx >= 10, idx)).join('');
-        let sentinelHtml = STATE.lists['combos'].data.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
-        htmlTop += `
-            <div style="margin-top: 15px;">
-                <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
-                <div class="grid-produtos" id="${trackId}">
-                    ${trackHtml}
-                    ${sentinelHtml}
-                </div>
-            </div>`;
+        htmlTop += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos');
     }
 
-    // --- 3. COMPRE JUNTO ---
+    // --- 3. COMPRE JUNTO (Mantém a lógica original própria) ---
     let cjHtml = renderCompreJunto();
     if (cjHtml) {
         htmlTop += cjHtml; 
@@ -2483,18 +2606,10 @@ function renderBottomChips(activeTabId) {
 
     // --- 4. DESTAQUES ---
     if (STATE.destaques && STATE.destaques.length > 0) {
-        let trackIdDestaques = 'grid-destaques-' + activeTabId;
-        let trackHtmlDestaques = STATE.destaques.map((p, idx) => buildCardHtml(p, 'PROD', false, idx)).join('');
-
-        htmlTop += `
-            <div style="margin-top: 15px;">
-                <div class="section-title" style="border-left-color: #f59e0b;"><span class="section-marker"></span>Destaques</div>
-                <div class="grid-produtos" id="${trackIdDestaques}">
-                    ${trackHtmlDestaques}
-                </div>
-            </div>`;
+        htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques');
     }
 
+    // --- CATEGORIAS ---
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
@@ -2504,17 +2619,7 @@ function renderBottomChips(activeTabId) {
                 let listKey = 'term_' + safe;
                 
                 if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                    let trackId = 'grid-cat-' + safe + '-' + activeTabId; 
-                    let trackHtml = STATE.lists[listKey].data.map((p, idx) => buildCardHtml(p, 'PROD', idx >= 10, idx)).join('');
-                    let sentinelHtml = STATE.lists[listKey].data.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
-                    htmlBottom += `
-                        <div style="margin-top: 15px;">
-                            <div class="section-title"><span class="section-marker"></span>${label}</div>
-                            <div class="grid-produtos" id="${trackId}">
-                                ${trackHtml}
-                                ${sentinelHtml}
-                            </div>
-                        </div>`;
+                    htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey);
                 }
             }
         });
@@ -2623,6 +2728,28 @@ window.goToHome = function() {
         $('btn-nav-home').classList.add('active');
     }
 };
+
+// NOVO: Função para abrir o menu do Ver Todos
+window.openSeeAll = function(listKey, title, type) {
+    let list = [];
+    if (listKey === 'ofertasDoDia') list = STATE.ofertasDoDia;
+    else if (listKey === 'destaques') list = STATE.destaques;
+    else if (STATE.lists[listKey]) list = STATE.lists[listKey].data;
+    
+    // Desenha todos os produtos na grade
+    let html = list.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
+    
+    document.getElementById('see-all-grid').innerHTML = html;
+    document.getElementById('see-all-title').innerText = title;
+    
+    // Anima a página deslizando
+    document.getElementById('see-all-view').classList.add('open');
+}
+
+// NOVO: Função para fechar o menu do Ver Todos
+window.closeSeeAll = function() {
+    document.getElementById('see-all-view').classList.remove('open');
+}
     
 function renderPaginated(containerId, listKey, list, type) {
     if (listKey === 'cestas') {
