@@ -64,81 +64,43 @@ button {
 } 
 
 /* SPLASH SCREEN DINÂMICA */
-#splash-screen { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: radial-gradient(circle, #ffffff 0%, #f8fafc 100%); 
-    z-index: 999999; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    transition: opacity 0.6s ease, visibility 0.6s; 
-}
-
-#splash-screen.hidden { 
-    opacity: 0; 
-    visibility: hidden; 
-    pointer-events: none; 
-}
-
-#splash-text-container {
-    position: relative;
-    width: 90%;
-    max-width: 600px;
-    height: 80px; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.splash-phrase {
-    position: absolute;
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--c-p); 
-    text-align: center;
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
-    margin: 0;
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
-}
-
-.splash-phrase.show-phrase {
+    height: 100%;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
     opacity: 1;
-    transform: translateY(0);
+    transition: opacity 0.6s ease;
 }
 
-.splash-phrase.hide-phrase {
+#splash-screen.hidden {
     opacity: 0;
-    transform: translateY(-20px);
+    pointer-events: none;
 }
 
-.splash-logo { 
-    width: 170px; 
-    height: 170px; 
-    border-radius: 50%; 
-    border: 3px solid var(--c-a); 
-    object-fit: cover; 
-    box-shadow: 0 15px 35px rgba(234, 88, 12, 0.2); 
-    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+#splash-content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.splash-logo.hide-initial {
-    display: none;
+#splash-logo-img {
+    max-width: 150px;
     opacity: 0;
-    transform: scale(0.5); 
+    animation: fadeInOut 3s forwards;
 }
 
-.splash-logo.show-logo {
-    display: block;
-    opacity: 1;
-    transform: scale(1); 
-    animation: splashPulse 1.5s ease-in-out infinite alternate 0.6s; 
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    20% { opacity: 1; } /* Fade-in rápido */
+    80% { opacity: 1; } /* Fica visível */
+    100% { opacity: 0; } /* Fade-out suave */
 }
 
 @keyframes splashPulse { 
@@ -1399,16 +1361,9 @@ dialog::backdrop {
 </div>
 
 <div id="splash-screen">
-    <div id="splash-text-container">
-        <h2 class="splash-phrase show-phrase" style="transition: none;">Mais de 500 produtos em Oferta</h2>
-        <h2 class="splash-phrase">Entrega grátis em Cuiabá e VG</h2>
-        <h2 class="splash-phrase">Pague somente na entrega</h2>
-        <h2 class="splash-phrase">Parcele em 3x sem juros no cartão de crédito</h2>
-        <h2 class="splash-phrase">Aceitamos cartões Alimentação e Refeição</h2>
-        <h2 class="splash-phrase">Boas Compras</h2>
+    <div id="splash-content">
+        <img id="splash-logo-img" src="/site/logo/dona_antonia.png" alt="Dona Antônia Cestas" class="show-logo">
     </div>
-    
-    <img id="splash-logo-img" src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="splash-logo hide-initial" onerror="this.style.display='none'">
 </div>
     
 <div id="header-wrapper">
@@ -1613,6 +1568,7 @@ dialog::backdrop {
 <div id="toast-container"></div>
 
 <script>
+// --- 1. CONTROLE DO SPLASH SCREEN (Logo Simples) ---
 let splashRemoved = false;
 
 function removeSplash() {
@@ -1621,47 +1577,12 @@ function removeSplash() {
     const splash = document.getElementById('splash-screen');
     if (splash) {
         splash.classList.add('hidden');
-        setTimeout(() => splash.remove(), 600);
+        setTimeout(() => splash.remove(), 600); // Remove após a transição de opacidade
     }
 }
 
-function initSplashScreen() {
-    const phrases = document.querySelectorAll('.splash-phrase');
-    const textContainer = document.getElementById('splash-text-container');
-    const logo = document.getElementById('splash-logo-img');
-    
-    // Começamos no índice 1, porque a frase 0 já está na tela!
-    let currentIndex = 1; 
-    const timePerPhrase = 2200;
-
-    // Devolvemos a transição suave para a primeira frase poder sumir bonito depois
-    setTimeout(() => { if(phrases[0]) phrases[0].style.transition = ''; }, 50);
-
-    function showNextPhrase() {
-        if (currentIndex >= phrases.length) {
-            textContainer.style.display = 'none';
-            logo.classList.remove('hide-initial');
-            void logo.offsetWidth; 
-            logo.classList.add('show-logo');
-            setTimeout(removeSplash, 1500);
-            return;
-        }
-
-        if (currentIndex > 0) {
-            phrases[currentIndex - 1].classList.remove('show-phrase');
-            phrases[currentIndex - 1].classList.add('hide-phrase');
-        }
-
-        phrases[currentIndex].classList.add('show-phrase');
-        currentIndex++;
-        setTimeout(showNextPhrase, timePerPhrase);
-    }
-    
-    // Como a primeira frase já está visível, apenas esperamos o tempo dela acabar para chamar a próxima
-    setTimeout(showNextPhrase, timePerPhrase);
-}
-
-initSplashScreen();
+// Remove o splash screen após 3 segundos
+setTimeout(removeSplash, 3000);
 
 const CONFIG_ENTREGA = { 
     horaCorteHoje: 10, 
@@ -2245,10 +2166,6 @@ async function init() {
         buildTabsAndSections(); 
         updateTotals();
         renderBanners();
-
-        // 🎉 SUCESSO: Levantamos a Bandeira de Dados Prontos
-        dataLoaded = true;
-        checkAndRemoveSplash();
 
         // 🌊 ONDA 2: Arquivos Secundários (Carrega sem o cliente perceber)
         setTimeout(async () => {
