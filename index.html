@@ -279,7 +279,7 @@ button {
     .main-stage { padding-top: 90px; } 
 }
 
-/* NOVO: BANNERS INFORMATIVOS */
+/* NOVO: BANNERS INFORMATIVOS E ALERTA */
 .info-banners {
     display: flex;
     flex-direction: column;
@@ -314,6 +314,29 @@ button {
     }
 }
 
+@keyframes pulseAlert {
+    0% { opacity: 0.6; transform: scale(0.98); box-shadow: 0 0 0 rgba(234, 88, 12, 0); }
+    100% { opacity: 1; transform: scale(1.02); box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
+}
+.loading-pulse {
+    text-align: center;
+    color: var(--c-a);
+    font-weight: 800;
+    padding: 15px;
+    margin: 10px auto 15px auto;
+    background: #fff7ed;
+    border: 2px dashed var(--c-a);
+    border-radius: 8px;
+    animation: pulseAlert 0.8s infinite alternate;
+    transition: all 0.5s ease;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.5px;
+}
+
 /* TÍTULOS DE SESSÃO MEGA DESTACADOS */
 .section-title { 
     width: calc(100% - 20px); 
@@ -341,18 +364,15 @@ button {
     overflow-x: auto; 
     scroll-snap-type: x mandatory; 
     gap: 10px; 
-    padding: 0 10px 20px; /* Espaço extra para a barra de rolagem respirar */
+    padding: 0 10px 20px; 
     width: 100%; 
     max-width: 1000px; 
     margin: 0 auto; 
     align-items: stretch; 
-    
-    /* Indicador visual (Barra de rolagem fina para Firefox) */
     scrollbar-width: thin; 
     scrollbar-color: #cbd5e1 transparent;
 }
 
-/* Indicador visual (Barra de rolagem fina para Chrome/Safari/Edge) */
 .grid-produtos::-webkit-scrollbar {
     height: 6px; 
     display: block; 
@@ -366,19 +386,16 @@ button {
     border-radius: 4px;
 }
 
-/* Largura exata para mostrar ~2.3 cards na tela do celular */
 .grid-produtos > .u-card,
 .grid-produtos > .skeleton-card,
 .grid-produtos > .card-ver-todos {
     width: 40vw; 
-    flex: 0 0 auto; /* Impede o card de encolher ou crescer */
-    scroll-snap-align: start; /* Faz o card "encaixar" ao rolar */
+    flex: 0 0 auto; 
+    scroll-snap-align: start; 
 }
 
-/* --- ESTILOS DESKTOP --- */
 @media(min-width: 800px) { 
     .grid-produtos { 
-        /* Volta a ser Grid (Grade) no Desktop */
         display: grid; 
         overflow-x: visible;
         grid-template-columns: repeat(5, 1fr); 
@@ -386,7 +403,6 @@ button {
         padding: 0 15px 40px; 
     } 
 
-    /* Reseta a largura forçada do mobile para o grid funcionar no Desktop */
     .grid-produtos > .u-card,
     .grid-produtos > .skeleton-card,
     .grid-produtos > .card-ver-todos {
@@ -394,7 +410,7 @@ button {
     }
 
     .u-card:hover {
-        transform: translateY(-5px); /* Efeito de flutuar ao passar o mouse */
+        transform: translateY(-5px); 
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         border-color: var(--c-bd);
     }
@@ -404,27 +420,24 @@ button {
     }
 }
 
-/* --- AJUSTES EXCLUSIVOS DE FONTES NOS CARDS MOBILE --- */
 @media (max-width: 799px) {
     .u-name {
-        font-size: 0.85rem !important; /* O !important força a mudança no mobile */
+        font-size: 0.85rem !important; 
         margin-top: 5px;
         line-height: 1.2;
         min-height: 2.4em; 
     }
     
     .u-price {
-        font-size: 0.95rem !important; /* Força o preço menor também */
+        font-size: 0.95rem !important; 
         font-weight: 800;
     }
 
-    /* Ajuste específico para o texto "A partir de 3un" */
     .u-info div[style*="font-size:0.95rem"] {
         font-size: 0.75rem !important; 
         letter-spacing: -0.1px;
     }
 
-    /* Ajuste para o preço riscado (Preço Antigo) */
     .combo-strike {
         font-size: 0.70rem !important;
         margin-bottom: -4px;
@@ -442,9 +455,9 @@ button {
 /* CARD UNIVERSAL IDENTICO PARA TUDO */
 .u-card { 
     background: #fff; 
-    border: 1px solid var(--c-bd); /* Borda leve sempre visível para definir o card */
+    border: 1px solid var(--c-bd); 
     border-radius: 12px; 
-    padding: 12px; /* Aumentado o respiro interno */
+    padding: 12px; 
     display: flex; 
     flex-direction: column; 
     position: relative; 
@@ -1302,7 +1315,7 @@ dialog::backdrop {
     }
 }
 
-/* NOVO: OVERLAY VER TODOS */
+/* NOVO: OVERLAY VER TODOS (AJUSTE Z-INDEX) */
 #see-all-view {
     position: fixed;
     top: 0;
@@ -1310,7 +1323,7 @@ dialog::backdrop {
     width: 100%;
     height: 100dvh;
     background: var(--c-bg);
-    z-index: 2000;
+    z-index: 90; /* Z-INDEX REDUZIDO: Permite que o Menu Inferior (Z-index 100) fique por cima! */
     transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     display: flex;
     flex-direction: column;
@@ -1347,6 +1360,8 @@ dialog::backdrop {
     flex: 1;
     overflow-y: auto;
     padding: 15px;
+    padding-bottom: 80px; /* RESPIRO: Evita que os últimos produtos fiquem atrás do Menu Inferior */
+    position: relative;
 }
 .grid-ver-todos {
     display: grid;
@@ -1443,6 +1458,10 @@ dialog::backdrop {
 <main class="main-stage" id="scroll-stage">
     
     <div id="info-banners-container" class="layout-limit info-banners"></div>
+    
+    <div id="loading-offers-alert" class="loading-pulse layout-limit" style="width: calc(100% - 30px);">
+        <span style="font-size: 1.2rem;">⏳</span> CARREGANDO OFERTAS...
+    </div>
 
     <div id="section-busca" class="page-section" style="display:none;">
         <div class="section-title">Resultados da Busca</div>
@@ -1659,8 +1678,22 @@ const STATE = {
     deliveryDiscount: 0, 
     deliveryDateStr: '',
     destaques: [],
-    ofertasDoDia: []
+    ofertasDoDia: [],
+    shuffledLists: {} // NOVO: Guarda a ordem aleatória das listas
 };
+
+// NOVO: Remove o alerta pulsante após 3 segundos
+setTimeout(() => {
+    let alertEl = document.getElementById('loading-offers-alert');
+    if (alertEl) {
+        alertEl.style.opacity = '0';
+        alertEl.style.height = '0';
+        alertEl.style.margin = '0';
+        alertEl.style.padding = '0';
+        alertEl.style.borderWidth = '0';
+        setTimeout(() => alertEl.remove(), 500);
+    }
+}, 3000);
 
 const infiniteScrollObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -2119,7 +2152,6 @@ function renderBanners() {
     container.innerHTML = html;
 }
 
-// LOGICA DE CUPONS DE DESCONTO NO MODAL
 window.applyCoupon = function() {
     let val = $('chk-cupom').value.trim().toUpperCase();
     let msgEl = $('cupom-msg');
@@ -2146,14 +2178,12 @@ window.applyCoupon = function() {
     openCheckout(); 
 };
 
-// --- 2. INICIALIZAÇÃO DO SISTEMA (Carregamento em Ondas) ---
+// --- INICIALIZAÇÃO ASSÍNCRONA OTIMIZADA ---
 async function init() {
-    // Inicia arrays vazios para evitar erros na primeira desenhada de tela
     STATE.coupons = []; STATE.combos = []; STATE.termos = []; 
     STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = [];
 
     try {
-        // 🌊 ONDA 1: O Essencial (Apenas produtos, cestas e banners)
         const [r1, r2, r11] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
@@ -2201,12 +2231,10 @@ async function init() {
             });
         }
         
-        // Desenha as Cestas, Ofertas Iniciais e libera a tela!
-        buildTabsAndSections(); 
+        await buildTabsAndSections(); 
         updateTotals();
         renderBanners();
 
-        // 🌊 ONDA 2: Arquivos Secundários (Carrega sem o cliente perceber)
         setTimeout(async () => {
             try {
                 const [r3, r4, r7, r8, r9, r10] = await Promise.all([
@@ -2227,16 +2255,15 @@ async function init() {
                 
                 await loadCompreJunto(); 
                 
-                // Atualiza a tela discretamente com as novas abas/combos
-                buildTabsAndSections(); 
+                await buildTabsAndSections(); 
             } catch (err2) {
                 console.log("Erro silencioso Onda 2:", err2);
             }
-        }, 1000); // Aguarda 1 segundinho para não travar a rolagem inicial da página
+        }, 100); 
 
     } catch (e) { 
         console.error("Erro fatal na inicialização:", e); 
-        showToast("Ops, erro ao carregar os produtos. Tente recarregar a página.", "r");
+        showToast("Ops, erro ao carregar os produtos.", "r");
     }
 }
 
@@ -2289,7 +2316,7 @@ window.handleAddClick = function(e, id) {
     animateToCart(rect.left + rect.width / 2, rect.top + rect.height / 2);
 };
 
-// NOVO: Função para construir o Card especial "Ver Todos"
+// NOVO: Constrói o Card VER TODOS
 function buildVerTodosCard(listKey, title, type) {
     return `
     <div class="card-ver-todos" onclick="openSeeAll('${listKey}', '${title}', '${type}')">
@@ -2303,7 +2330,6 @@ function buildVerTodosCard(listKey, title, type) {
 function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let id = item.id; 
 
-    // O SEGREDO DA VELOCIDADE: Se estiver oculto, cria só uma "caixinha" invisível e super leve!
     if (isHidden) {
         return `<div class="general-hidden lazy-placeholder" data-id="${id}" data-type="${type}" style="display:none;"></div>`;
     }
@@ -2380,7 +2406,8 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     </div>`;
 }
 
-function buildTabsAndSections() {
+// CONSTRUTOR COM PAUSAS DE RESPIRO (Para não travar o celular)
+async function buildTabsAndSections() {
     let skel = $('skeleton-loader'); 
     if (skel) {
         skel.style.display = 'none';
@@ -2426,7 +2453,7 @@ function buildTabsAndSections() {
     }
 
     if (STATE.termos && STATE.termos.length > 0) {
-        STATE.termos.forEach(item => {
+        for (let item of STATE.termos) {
             let label = item.etiqueta || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
             
@@ -2464,7 +2491,6 @@ function buildTabsAndSections() {
                             }
                             return a.position - b.position;
                         }); 
-                        
                         return subs.includes(matches[0].term); 
                     }
                 } 
@@ -2472,8 +2498,6 @@ function buildTabsAndSections() {
             });
 
             if (list.length > 0) {
-                
-                // --- INÍCIO DA INTELIGÊNCIA DE OFERTAS DIÁRIAS ---
                 let userSeed = parseInt(localStorage.getItem('donaAntoniaUserSeed') || '0');
                 let dataAtual = new Date();
                 let sementeDoDia = dataAtual.getFullYear() * 10000 + (dataAtual.getMonth() + 1) * 100 + dataAtual.getDate() + userSeed;
@@ -2489,18 +2513,14 @@ function buildTabsAndSections() {
                 }
                 let rng = geradorLocal(sementeCategoria);
 
-                // Embaralha os produtos da sessão de forma controlada
                 let listEmbaralhada = [...list].map(p => ({ p, peso: rng() })).sort((a, b) => a.peso - b.peso).map(obj => obj.p);
                 let contOfertas = 0;
 
                 for (let p of listEmbaralhada) {
                     if (contOfertas >= 4) break; 
-                    
-                    // Só aplica a oferta do dia se o produto NÃO for um destaque geral
                     if (!p.ofertaAplicada && !p.isDestaque) {
                         p.ofertaAplicada = true;
                         let descOferta = 0.04 + (rng() * 0.02); 
-                        
                         if (!p.oldPrice || p.oldPrice <= p.price) {
                             p.oldPrice = p.price; 
                         }
@@ -2512,13 +2532,11 @@ function buildTabsAndSections() {
                     }
                 }
 
-                // Força os 4 produtos sorteados a irem para o início da lista dessa categoria
                 list.sort((a, b) => {
                     let aIsOffer = a.isDailyOfferCat === safe ? 1 : 0;
                     let bIsOffer = b.isDailyOfferCat === safe ? 1 : 0;
                     return bIsOffer - aIsOffer;
                 });
-                // --- FIM DA INTELIGÊNCIA ---
 
                 let img = list[0].img;
                 dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('${safe}')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> ${label}</div>`;
@@ -2530,48 +2548,41 @@ function buildTabsAndSections() {
                     </div>`;
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
-        });
+            // PAUSA DE RESPIRO PARA O CELULAR NÃO TRAVAR
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
     }
         
-// --- COLETANDO AS OFERTAS DO DIA (4 DE CADA SESSÃO) ---
     STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada).sort((a, b) => {
-        // Calcula a percentagem de desconto de cada produto (a e b)
         let descontoA = a.oldPrice ? ((a.oldPrice - a.price) / a.oldPrice) : 0;
         let descontoB = b.oldPrice ? ((b.oldPrice - b.price) / b.oldPrice) : 0;
-        
-        // Ordena do maior desconto para o menor
         return descontoB - descontoA;
     });
 
-// --- PASSO 3: PRÉ-CARREGAR A IMAGEM PRINCIPAL (LCP) ---
-// Se houver ofertas, avisa o navegador para descarregar a primeira imagem com urgência máxima!
-if (STATE.ofertasDoDia.length > 0) {
-    let primeiraImagem = STATE.ofertasDoDia[0].img;
-    let linkPreload = document.createElement("link");
-    linkPreload.rel = "preload";
-    linkPreload.as = "image";
-    linkPreload.href = primeiraImagem;
-    linkPreload.fetchPriority = "high";
-    document.head.appendChild(linkPreload);
-}
+    if (STATE.ofertasDoDia.length > 0) {
+        let primeiraImagem = STATE.ofertasDoDia[0].img;
+        let linkPreload = document.createElement("link");
+        linkPreload.rel = "preload";
+        linkPreload.as = "image";
+        linkPreload.href = primeiraImagem;
+        linkPreload.fetchPriority = "high";
+        document.head.appendChild(linkPreload);
+    }
     
     $('cat-dropdown-list').innerHTML = dropHtml; 
     $('dynamic-sections').innerHTML = sectionsHtml; 
     goToHome();
 }
 
-// NOVO: Função centralizada para montar os carrosséis e adicionar o botão "VER TODOS"
+// NOVO: Função que fatia para 8 produtos e salva a ordem do embaralhamento
 function generateCarouselHtml(title, color, trackId, list, type, listKey) {
-    // Clona e embaralha a lista para sempre ser aleatório a cada acesso
     let shuffled = [...list].sort(() => Math.random() - 0.5);
+    STATE.shuffledLists[listKey] = shuffled; // Salva na memória
     
-    // Limita a exibição inicial a 8 itens
-    let showList = shuffled.slice(0, 8);
-    
+    let showList = shuffled.slice(0, 8); // Pega apenas os 8 primeiros
     let trackHtml = showList.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
     
-    // Se a lista original tiver mais de 8 itens, adiciona o card de VER TODOS
-    if (list.length > 8) {
+    if (shuffled.length > 8) {
         trackHtml += buildVerTodosCard(listKey, title, type);
     }
     
@@ -2584,61 +2595,88 @@ function generateCarouselHtml(title, color, trackId, list, type, listKey) {
         </div>`;
 }
 
+// CONSTRUTOR DE TELA DIVIDIDO EM LOTES (Evita o travamento da página inicial)
 function renderBottomChips(activeTabId) {
-    let htmlTop = '';    
-    let htmlBottom = ''; 
+    let activeSec = $('sec-' + activeTabId);
+    if (!activeSec) return; 
     
-    // --- 1. OFERTAS DO DIA ---
+    let topNavContainer = activeSec.querySelector('.top-category-nav');
+    let navContainer = activeSec.querySelector('.bottom-category-nav'); 
+    
+    if (topNavContainer) topNavContainer.innerHTML = '';
+    if (navContainer) navContainer.innerHTML = ''; 
+
+    // LOTE 1: Super Rápido (Ofertas e Destaques que o cliente vê de cara)
+    let htmlTop = '';
     if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
         htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia');
     }
-
-    // --- 2. KITS PROMOCIONAIS ---
-    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        htmlTop += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos');
-    }
-
-    // --- 3. COMPRE JUNTO (Mantém a lógica original própria) ---
-    let cjHtml = renderCompreJunto();
-    if (cjHtml) {
-        htmlTop += cjHtml; 
-    }
-
-    // --- 4. DESTAQUES ---
     if (STATE.destaques && STATE.destaques.length > 0) {
         htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques');
     }
-
-    // --- CATEGORIAS ---
-    if (STATE.termos && STATE.termos.length > 0) {
-        STATE.termos.forEach(item => {
-            let label = item.etiqueta || item;
-            let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
-            
-            if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
-                let listKey = 'term_' + safe;
-                
-                if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                    htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey);
-                }
-            }
-        });
-    }
-    
-    let activeSec = $('sec-' + activeTabId);
-    if (activeSec) { 
-        let topNavContainer = activeSec.querySelector('.top-category-nav');
-        if (topNavContainer) {
-            topNavContainer.innerHTML = htmlTop;
-        }
-        
-        let navContainer = activeSec.querySelector('.bottom-category-nav'); 
-        if (navContainer) {
-            navContainer.innerHTML = htmlBottom; 
-        }
-    }
-
+    if (topNavContainer) topNavContainer.innerHTML = htmlTop;
     ativarRolagemInfinita();
+
+    // LOTE 2: Intermediário (Kits e Compre Junto desenhados 50ms depois)
+    setTimeout(() => {
+        let htmlMid = '';
+        if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+            htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos');
+        }
+        let cjHtml = renderCompreJunto();
+        if (cjHtml) htmlMid += cjHtml; 
+        
+        if (topNavContainer) topNavContainer.innerHTML += htmlMid;
+        ativarRolagemInfinita();
+    }, 50);
+
+    // LOTE 3: O "Pesado" (Todas as demais categorias desenhadas 150ms depois, lá embaixo)
+    setTimeout(() => {
+        let htmlBottom = '';
+        if (STATE.termos && STATE.termos.length > 0) {
+            STATE.termos.forEach(item => {
+                let label = item.etiqueta || item;
+                let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+                
+                if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
+                    let listKey = 'term_' + safe;
+                    if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
+                        htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey);
+                    }
+                }
+            });
+        }
+        if (navContainer) navContainer.innerHTML = htmlBottom; 
+        ativarRolagemInfinita();
+    }, 150);
+}
+
+// NOVO: Função para abrir o menu do Ver Todos
+window.openSeeAll = function(listKey, title, type) {
+    let list = STATE.shuffledLists[listKey] || [];
+    
+    let html = list.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
+    
+    document.getElementById('see-all-grid').innerHTML = html;
+    document.getElementById('see-all-title').innerText = title;
+    
+    document.getElementById('see-all-view').classList.add('open');
+    
+    // Rola magicamente para o 9º item logo após abrir a tela!
+    setTimeout(() => {
+        let contentDiv = document.querySelector('.see-all-content');
+        let grid = document.getElementById('see-all-grid');
+        if (grid.children.length > 8) {
+            let ninthItem = grid.children[8];
+            contentDiv.scrollTo({ top: ninthItem.offsetTop - 15, behavior: 'instant' });
+        } else {
+            contentDiv.scrollTo({ top: 0, behavior: 'instant' });
+        }
+    }, 300); // 300ms é o tempo exato da transição do CSS
+}
+
+window.closeSeeAll = function() {
+    document.getElementById('see-all-view').classList.remove('open');
 }
 
 window.switchTab = function(tabId, scrollToTop = false) {
@@ -2728,28 +2766,6 @@ window.goToHome = function() {
         $('btn-nav-home').classList.add('active');
     }
 };
-
-// NOVO: Função para abrir o menu do Ver Todos
-window.openSeeAll = function(listKey, title, type) {
-    let list = [];
-    if (listKey === 'ofertasDoDia') list = STATE.ofertasDoDia;
-    else if (listKey === 'destaques') list = STATE.destaques;
-    else if (STATE.lists[listKey]) list = STATE.lists[listKey].data;
-    
-    // Desenha todos os produtos na grade
-    let html = list.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
-    
-    document.getElementById('see-all-grid').innerHTML = html;
-    document.getElementById('see-all-title').innerText = title;
-    
-    // Anima a página deslizando
-    document.getElementById('see-all-view').classList.add('open');
-}
-
-// NOVO: Função para fechar o menu do Ver Todos
-window.closeSeeAll = function() {
-    document.getElementById('see-all-view').classList.remove('open');
-}
     
 function renderPaginated(containerId, listKey, list, type) {
     if (listKey === 'cestas') {
