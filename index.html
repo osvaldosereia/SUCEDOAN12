@@ -1459,9 +1459,6 @@ dialog::backdrop {
     
     <div id="info-banners-container" class="layout-limit info-banners"></div>
     
-    <div id="loading-offers-alert" class="loading-pulse layout-limit" style="width: calc(100% - 30px);">
-        <span style="font-size: 1.2rem;">⏳</span> CARREGANDO OFERTAS...
-    </div>
 
     <div id="section-busca" class="page-section" style="display:none;">
         <div class="section-title">Resultados da Busca</div>
@@ -1682,17 +1679,6 @@ const STATE = {
     shuffledLists: {} 
 };
 
-setTimeout(() => {
-    let alertEl = document.getElementById('loading-offers-alert');
-    if (alertEl) {
-        alertEl.style.opacity = '0';
-        alertEl.style.height = '0';
-        alertEl.style.margin = '0';
-        alertEl.style.padding = '0';
-        alertEl.style.borderWidth = '0';
-        setTimeout(() => alertEl.remove(), 500);
-    }
-}, 3000);
 
 const infiniteScrollObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -2427,7 +2413,11 @@ async function buildTabsAndSections() {
         
         sectionsHtml += `
             <div id="sec-cestas" class="tab-section" style="display:none;">
-                <div class="top-category-nav"></div> <div id="wrapper-cestas"></div>
+                <div id="wrapper-cestas"></div> <div id="loading-offers-alert" class="loading-pulse layout-limit" style="width: calc(100% - 30px);">
+                    <span style="font-size: 1.2rem;">⏳</span> CARREGANDO OFERTAS...
+                </div>
+
+                <div class="top-category-nav"></div> 
                 <div class="bottom-category-nav"></div>
             </div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
@@ -2614,11 +2604,19 @@ function renderBottomChips(activeTabId) {
     if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
         htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random');
     }
+    
+    // NOVO: Esconde o alerta pulsante assim que a Onda 2 (Kits e Ofertas) chegar!
+    if (STATE.combos.length > 0 || STATE.termos.length > 0) {
+        let alertEl = document.getElementById('loading-offers-alert');
+        if (alertEl) alertEl.style.display = 'none';
+    }
+
     if (STATE.destaques && STATE.destaques.length > 0) {
         htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random');
     }
     if (topNavContainer) topNavContainer.innerHTML = htmlTop;
     ativarRolagemInfinita();
+    
 
     setTimeout(() => {
         let htmlMid = '';
