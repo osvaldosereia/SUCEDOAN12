@@ -2186,37 +2186,26 @@ window.applyCoupon = function() {
     openCheckout(); 
 };
 
+// --- 2. INICIALIZAÇÃO DO SISTEMA (Carregamento em Ondas) ---
 async function init() {
+    // Inicia arrays vazios para evitar erros na primeira desenhada de tela
+    STATE.coupons = []; STATE.combos = []; STATE.termos = []; 
+    STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = [];
+
     try {
-        const [r1, r2, r3, r4, r7, r8, r9, r10, r11] = await Promise.all([
+        // 🌊 ONDA 1: O Essencial (Apenas produtos, cestas e banners)
+        const [r1, r2, r11] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
-        STATE.baskets = r1; 
-        STATE.coupons = r3 || []; 
-        STATE.combos = r4; 
-        STATE.termos = r7;
-        STATE.sohoje = r8 || [];
-        STATE.bloqueados = (r9 || []).map(String);
-        STATE.carrosseis = r10 || [];
+        STATE.baskets = r1 || []; 
         STATE.banners = r11 || [];
         
-        await loadCompreJunto();
-        
         if (r2 && r2.length > 0) {
-            let userSeed = localStorage.getItem('donaAntoniaUserSeed');
-            if (!userSeed) { 
-                userSeed = Math.floor(Math.random() * 1000000); 
-                localStorage.setItem('donaAntoniaUserSeed', userSeed); 
-            }
+            let userSeed = localStorage.getItem('donaAntoniaUserSeed') || Math.floor(Math.random() * 1000000);
+            localStorage.setItem('donaAntoniaUserSeed', userSeed); 
 
             const hoje = new Date();
             const sementeDoDia = hoje.getFullYear() * 10000 + (hoje.getMonth() + 1) * 100 + hoje.getDate() + parseInt(userSeed);
@@ -2232,41 +2221,68 @@ async function init() {
             const rand = geradorAleatorio(sementeDoDia);
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
-            let descontoLeve3 = 0.04 + (rand() * 0.05);
                 return {
-                    id: String(p.codigo || p.id), 
-                    blingId: String(p.id), 
-                    name: p.nome, 
-                    price: parseFloat(p.preco), 
-                    oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, 
-                    stock: parseInt(p.estoque) || 0, 
-                    validade: p.validade || null,
-                    img: `/site/img/produtos/${p.codigo || p.id}.webp`,
-                    categoria: p.categoria || "",
-                    bulkDiscount: descontoLeve3
+                    id: String(p.codigo || p.id), blingId: String(p.id), name: p.nome, 
+                    price: parseFloat(p.preco), oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, 
+                    stock: parseInt(p.estoque) || 0, validade: p.validade || null,
+                    img: `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "",
+                    bulkDiscount: 0.04 + (rand() * 0.05)
                 };
             });
             
-            // --- LÓGICA DE DESTAQUES E DESCONTO GERAL ---
             let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
             produtosComValidade.sort((a, b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
             
-            STATE.destaques = produtosComValidade.slice(0, 5); // Apenas os 5 primeiros
+            STATE.destaques = produtosComValidade.slice(0, 5);
             STATE.destaques.forEach(p => {
-                if (!p.oldPrice || p.oldPrice <= p.price) {
-                    p.oldPrice = p.price; 
-                }
-                p.price = p.oldPrice * 0.95; // Aplica 10% de desconto globalmente nesses itens
+                if (!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price; 
+                p.price = p.oldPrice * 0.95; 
                 p.isDestaque = true; 
             });
         }
         
+        // Desenha as Cestas, Ofertas Iniciais e libera a tela!
         buildTabsAndSections(); 
         updateTotals();
         renderBanners();
-        
+
+        // 🎉 SUCESSO: Levantamos a Bandeira de Dados Prontos
+        dataLoaded = true;
+        checkAndRemoveSplash();
+
+        // 🌊 ONDA 2: Arquivos Secundários (Carrega sem o cliente perceber)
+        setTimeout(async () => {
+            try {
+                const [r3, r4, r7, r8, r9, r10] = await Promise.all([
+                    fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+                    fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+                    fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+                    fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+                    fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+                    fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+                ]);
+                
+                STATE.coupons = r3 || []; 
+                STATE.combos = r4 || []; 
+                STATE.termos = r7 || [];
+                STATE.sohoje = r8 || [];
+                STATE.bloqueados = (r9 || []).map(String);
+                STATE.carrosseis = r10 || [];
+                
+                await loadCompreJunto(); 
+                
+                // Atualiza a tela discretamente com as novas abas/combos
+                buildTabsAndSections(); 
+            } catch (err2) {
+                console.log("Erro silencioso Onda 2:", err2);
+            }
+        }, 1000); // Aguarda 1 segundinho para não travar a rolagem inicial da página
+
     } catch (e) { 
-        console.error("Erro na inicialização:", e); 
+        console.error("Erro fatal na inicialização:", e); 
+        dataLoaded = true; // Libera tela mesmo com erro
+        checkAndRemoveSplash();
+        showToast("Ops, erro ao carregar os produtos. Tente recarregar a página.", "r");
     }
 }
 
