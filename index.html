@@ -421,6 +421,31 @@ button {
 }
 
 @media (max-width: 799px) {
+    /* --- DEIXAR CESTAS E KITS MAIORES NO MOBILE (1.5 CARDS) --- */
+    #wrapper-cestas .grid-produtos > .u-card,
+    #wrapper-cestas .grid-produtos > .skeleton-card,
+    #grid-combos > .u-card,
+    #grid-combos > .card-ver-todos,
+    #grid-combos > .skeleton-card,
+    [id^="grid-kits-bottom-"] > .u-card,
+    [id^="grid-kits-bottom-"] > .card-ver-todos {
+        width: 62vw; /* Largura perfeita para mostrar 1,5 card na tela */
+    }
+
+    /* Ajuste de fonte para os cards maiores */
+    #wrapper-cestas .u-name,
+    #grid-combos .u-name,
+    [id^="grid-kits-bottom-"] .u-name {
+        font-size: 0.95rem !important;
+    }
+    
+    #wrapper-cestas .u-price,
+    #grid-combos .u-price,
+    [id^="grid-kits-bottom-"] .u-price {
+        font-size: 1.15rem !important;
+    }
+
+    /* --- AJUSTES GERAIS PARA OS CARDS MENORES NO MOBILE --- */
     .u-name {
         font-size: 0.85rem !important; 
         margin-top: 5px;
