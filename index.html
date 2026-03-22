@@ -2232,7 +2232,7 @@ async function init() {
             const rand = geradorAleatorio(sementeDoDia);
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
-                let descontoLeve3 = 0.06 + (rand() * 0.11); 
+                let descontoLeve3 = 0.04 + (rand() * 0.5); 
 
                 return {
                     id: String(p.codigo || p.id), 
