@@ -1559,11 +1559,9 @@ function adjustHeaderSpace() {
     const header = document.getElementById('header-wrapper');
     const stage = document.getElementById('scroll-stage');
     if (header && stage) {
-        // Pega a altura real do header (+ um respiro de 15px) e aplica no topo
         stage.style.paddingTop = (header.offsetHeight + 15) + 'px';
     }
 }
-// Recalcula o espaço caso a tela seja rotacionada ou o tamanho da janela mude
 window.addEventListener('resize', adjustHeaderSpace);
 
 
@@ -1735,7 +1733,7 @@ function renderCompreJunto() {
 
     STATE.shuffledLists['cj'] = STATE.cjCombos;
 
-    let displayList = STATE.cjCombos; // SEM LIMITE, MOSTRA TODOS
+    let displayList = STATE.cjCombos; 
     displayList.forEach(kit => {
         html += buildCjCardHTML(kit);
     });
@@ -2034,7 +2032,6 @@ async function init() {
     STATE.coupons = []; STATE.combos = []; STATE.termos = []; 
     STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = [];
 
-    // Chama o ajuste de espaço logo no começo
     adjustHeaderSpace();
 
     try {
@@ -2102,7 +2099,7 @@ async function init() {
         buildTabsAndSections(); 
         updateTotals();
         renderBanners();
-        adjustHeaderSpace(); // Reajusta após montagem final
+        adjustHeaderSpace(); 
 
     } catch (e) { 
         console.error("Erro fatal na inicialização:", e); 
@@ -2275,8 +2272,9 @@ function buildTabsAndSections() {
         
         sectionsHtml += `
             <div id="sec-cestas" class="tab-section" style="display:none;">
-                <div id="wrapper-cestas"></div>
                 <div class="top-category-nav"></div> 
+                <div id="wrapper-cestas"></div>
+                <div class="middle-category-nav"></div>
                 <div class="bottom-category-nav"></div>
             </div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
@@ -2287,8 +2285,10 @@ function buildTabsAndSections() {
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
         sectionsHtml += `
             <div id="sec-combos" class="tab-section" style="display:none;">
-                <div class="top-category-nav"></div> <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
+                <div class="top-category-nav"></div> 
+                <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
                 <div class="grid-produtos grid-large-cards" id="grid-combos"></div>
+                <div class="middle-category-nav"></div>
                 <div class="bottom-category-nav"></div>
             </div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
@@ -2386,6 +2386,7 @@ function buildTabsAndSections() {
                     <div id="sec-${safe}" class="tab-section" style="display:none;">
                         <div class="top-category-nav"></div> <div class="section-title"><span class="section-marker"></span>${label}</div>
                         <div class="grid-produtos" id="grid-${safe}"></div>
+                        <div class="middle-category-nav"></div>
                         <div class="bottom-category-nav"></div>
                     </div>`;
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
@@ -2415,7 +2416,6 @@ function buildTabsAndSections() {
     goToHome();
 }
 
-// Adicionamos parâmetros "limit" (se 0 exibe todos) e "customClass"
 function generateCarouselHtml(title, color, trackId, list, type, listKey, sortType = 'random', limit = 4, customClass = '') {
     let processedList = [...list];
     
@@ -2431,11 +2431,9 @@ function generateCarouselHtml(title, color, trackId, list, type, listKey, sortTy
     
     STATE.shuffledLists[listKey] = processedList; 
     
-    // Se o limite for maior que 0, corta a lista, caso contrário mostra todos
     let showList = limit > 0 ? processedList.slice(0, limit) : processedList; 
     let trackHtml = showList.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
     
-    // Botão ver todos só aparece se limit > 0 e a lista for maior que o limite
     if (limit > 0 && processedList.length > limit) {
         trackHtml += buildVerTodosCard(listKey, title, type);
     }
@@ -2454,9 +2452,11 @@ function renderBottomChips(activeTabId) {
     if (!activeSec) return; 
     
     let topNavContainer = activeSec.querySelector('.top-category-nav');
+    let midNavContainer = activeSec.querySelector('.middle-category-nav');
     let navContainer = activeSec.querySelector('.bottom-category-nav'); 
     
     if (topNavContainer) topNavContainer.innerHTML = '';
+    if (midNavContainer) midNavContainer.innerHTML = '';
     if (navContainer) navContainer.innerHTML = ''; 
 
     let htmlTop = '';
@@ -2472,13 +2472,12 @@ function renderBottomChips(activeTabId) {
 
     let htmlMid = '';
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        // Kits não limitamos (limit = 0) e aplicamos a classe pros cards ficarem maiores
         htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'random', 0, 'grid-large-cards');
     }
     let cjHtml = renderCompreJunto();
     if (cjHtml) htmlMid += cjHtml; 
     
-    if (topNavContainer) topNavContainer.innerHTML += htmlMid;
+    if (midNavContainer) midNavContainer.innerHTML = htmlMid;
     ativarRolagemInfinita();
 
     let htmlBottom = '';
@@ -2589,15 +2588,13 @@ window.switchTab = function(tabId, scrollToTop = false) {
     setTimeout(() => {
         let scrollContainer = $('scroll-stage');
         
-        if (scrollToTop) {
+        if (scrollToTop || tabId === 'cestas') {
             scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
             return; 
         }
 
         let titleElement = null;
-        if (tabId === 'cestas') {
-            titleElement = document.getElementById('wrapper-cestas');
-        } else if (tabId === 'combos') {
+        if (tabId === 'combos') {
             titleElement = target.querySelector('.section-title'); 
         } else {
             let mainGrid = document.getElementById('grid-' + tabId);
@@ -2657,7 +2654,6 @@ function renderPaginated(containerId, listKey, list, type) {
             let key = 'cestas_group_' + gIdx;
             STATE.shuffledLists[key] = groups[gName];
             
-            // Cestas não possuem mais botão ver todos, mostramos a lista inteira
             let trackHtml = groups[gName].map((item, idx) => buildCardHtml(item, 'BASKET', false, idx)).join('');
             
             html += `
@@ -3257,7 +3253,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!isStandalone && !localStorage.getItem('donaAntoniaAppDismissed')) {
         bannerInstalacao.style.display = 'flex';
-        adjustHeaderSpace(); // Reajusta pois o banner apareceu
+        adjustHeaderSpace(); 
     }
 
     document.getElementById('btn-install').addEventListener('click', async () => { 
@@ -3271,13 +3267,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         bannerInstalacao.style.display = 'none'; 
         localStorage.setItem('donaAntoniaAppDismissed', 'true');
-        adjustHeaderSpace(); // Reajusta o espaço novamente
+        adjustHeaderSpace(); 
     });
 
     document.getElementById('btn-close-install').addEventListener('click', () => {
         bannerInstalacao.style.display = 'none';
         localStorage.setItem('donaAntoniaAppDismissed', 'true');
-        adjustHeaderSpace(); // Reajusta o espaço novamente
+        adjustHeaderSpace(); 
     });
 });
 
@@ -3296,7 +3292,7 @@ window.addEventListener('beforeinstallprompt', (evento) => {
     eventoInstalacao = evento; 
     if (!localStorage.getItem('donaAntoniaAppDismissed')) {
         document.getElementById('install-banner').style.display = 'flex'; 
-        adjustHeaderSpace(); // Reajusta pois o banner apareceu
+        adjustHeaderSpace(); 
     }
 });
 </script>
