@@ -14,18 +14,18 @@
 <style>
 :root {
     /* Paleta Minimalista e Suave */
-    --c-p: #1e293b; /* Preto/Azul mais suave */
-    --c-s: #64748b; /* Cinza secundário */
-    --c-t: #94a3b8; /* Cinza claro texto */
-    --c-a: #ea580c; /* Laranja da marca */
+    --c-p: #1e293b; 
+    --c-s: #64748b; 
+    --c-t: #94a3b8; 
+    --c-a: #ea580c; 
     --c-ok: #15803d; 
     --c-err: #dc2626; 
-    --c-bg: #f8fafc; /* Fundo geral levíssimo */
+    --c-bg: #f8fafc; 
     --c-surf: #ffffff; 
-    --c-bd: #e2e8f0; /* Bordas suaves */
-    --c-img-bg: #f1f5f9; /* Fundo de imagens */
+    --c-bd: #e2e8f0; 
+    --c-img-bg: #f1f5f9; 
     --font: 'Inter', system-ui, sans-serif;
-    --sh-float: 0 4px 12px rgba(0, 0, 0, 0.05); /* Sombra quase imperceptível */
+    --sh-float: 0 4px 12px rgba(0, 0, 0, 0.05); 
 }
 
 * { 
@@ -72,7 +72,7 @@ button {
     right: 0; 
     z-index: 50; 
     background: #fff; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03); /* Sombra mais limpa */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03); 
     display: flex;
     flex-direction: column;
 }
@@ -104,7 +104,7 @@ button {
     background: #ffffff; 
     border: 1px solid transparent; 
     padding: 10px 15px 10px 42px; 
-    border-radius: 8px; /* Mais quadrado e clean */
+    border-radius: 8px; 
     font-weight: 500; 
     color: var(--c-p); 
     transition: border-color .2s; 
@@ -286,15 +286,11 @@ button {
 .main-stage { 
     position: relative; 
     height: 100dvh; 
-    padding-top: 130px; 
+    padding-top: 130px; /* Será ajustado via JS dinamicamente */
     padding-bottom: 80px; 
     overflow-y: auto; 
     overflow-x: hidden; 
     scroll-behavior: smooth; 
-}
-
-@media(min-width: 800px) { 
-    .main-stage { padding-top: 90px; } 
 }
 
 .info-banners {
@@ -386,13 +382,19 @@ button {
     border-radius: 2px;
 }
 
-/* 42vw para mostrar ~2.2 cards na tela (Mobile) */
+/* PADRÃO GERAL MOBILE (2.2 cards) */
 .grid-produtos > .u-card,
 .grid-produtos > .skeleton-card,
 .grid-produtos > .card-ver-todos {
     width: 42vw; 
     flex: 0 0 auto; 
     scroll-snap-align: start; 
+}
+
+/* PADRÃO MAIOR MOBILE PARA CESTAS E KITS (1.8 cards) */
+.grid-produtos.grid-large-cards > .u-card,
+.grid-produtos.grid-large-cards > .skeleton-card {
+    width: 52vw; 
 }
 
 @media(min-width: 800px) { 
@@ -406,7 +408,9 @@ button {
 
     .grid-produtos > .u-card,
     .grid-produtos > .skeleton-card,
-    .grid-produtos > .card-ver-todos {
+    .grid-produtos > .card-ver-todos,
+    .grid-produtos.grid-large-cards > .u-card,
+    .grid-produtos.grid-large-cards > .skeleton-card {
         width: auto;
     }
 
@@ -493,7 +497,7 @@ button {
     right: 6px; 
     width: 32px; 
     height: 32px; 
-    background: var(--c-p); /* Cor mais neutra */
+    background: var(--c-p); 
     color: #fff; 
     border-radius: 50%; 
     display: flex; 
@@ -612,6 +616,11 @@ button {
     100% { background-position: 468px 0; } 
 }
 
+@keyframes pulse-slow {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.6; }
+}
+
 .skeleton-card { 
     background: #fff; 
     padding: 10px; 
@@ -619,6 +628,7 @@ button {
     border-radius: 8px; 
     display: flex; 
     flex-direction: column; 
+    text-align: left;
 }
 
 .skeleton-el { 
@@ -1335,12 +1345,11 @@ dialog::backdrop {
             <button onclick="this.parentElement.style.display='none'" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); width: 26px; height: 26px; border-radius: 50%; color: white; border: none; font-size: 0.9rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
         </div>
 
-        
-        <div id="skeleton-loader" style="display:block; padding-top: 10px;" class="layout-limit">
-            <div class="section-title skeleton-el" style="width: 220px; height: 26px; margin: 20px 10px 10px; border-radius: 4px; background-color: #f1f5f9;"></div>
-            <div class="grid-produtos">
-                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
-                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
+        <div id="skeleton-loader" style="display:flex; flex-direction:column; align-items:center; padding-top: 40px; width: 100%; text-align: center;" class="layout-limit">
+            <div style="font-size: 2.5rem; animation: pulse-slow 1.5s infinite; margin-bottom: 15px;">⏳</div>
+            <h2 style="color: var(--c-p); font-weight: 700; font-size: 1.2rem; margin-bottom: 5px;">Carregando produtos...</h2>
+            <p style="color: var(--c-s); font-size: 0.9rem; margin-bottom: 30px;">Preparando as melhores ofertas para você!</p>
+            <div class="grid-produtos grid-large-cards" style="width: 100%; opacity: 0.5;">
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
             </div>
@@ -1545,6 +1554,18 @@ const STATE = {
     activeTabId: 'cestas' 
 };
 
+// --- AJUSTE DINÂMICO DE ESPAÇO DO CABEÇALHO ---
+function adjustHeaderSpace() {
+    const header = document.getElementById('header-wrapper');
+    const stage = document.getElementById('scroll-stage');
+    if (header && stage) {
+        // Pega a altura real do header (+ um respiro de 15px) e aplica no topo
+        stage.style.paddingTop = (header.offsetHeight + 15) + 'px';
+    }
+}
+// Recalcula o espaço caso a tela seja rotacionada ou o tamanho da janela mude
+window.addEventListener('resize', adjustHeaderSpace);
+
 
 const infiniteScrollObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -1714,14 +1735,10 @@ function renderCompreJunto() {
 
     STATE.shuffledLists['cj'] = STATE.cjCombos;
 
-    let displayList = STATE.cjCombos.slice(0, 4);
+    let displayList = STATE.cjCombos; // SEM LIMITE, MOSTRA TODOS
     displayList.forEach(kit => {
         html += buildCjCardHTML(kit);
     });
-
-    if (STATE.cjCombos.length > 4) {
-        html += buildVerTodosCard('cj', 'Compre Junto', 'CJ');
-    }
     
     html += '</div></div>';
     return html;
@@ -2012,10 +2029,13 @@ window.applyCoupon = function() {
     openCheckout(); 
 };
 
-// --- INICIALIZAÇÃO ASSÍNCRONA OTIMIZADA NUMA ÚNICA ONDA (SEM PULO) ---
+// --- INICIALIZAÇÃO ASSÍNCRONA OTIMIZADA NUMA ÚNICA ONDA ---
 async function init() {
     STATE.coupons = []; STATE.combos = []; STATE.termos = []; 
     STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = [];
+
+    // Chama o ajuste de espaço logo no começo
+    adjustHeaderSpace();
 
     try {
         const [r1, r2, r3, r4, r7, r8, r9, r10, r11, cjData] = await Promise.all([
@@ -2082,6 +2102,7 @@ async function init() {
         buildTabsAndSections(); 
         updateTotals();
         renderBanners();
+        adjustHeaderSpace(); // Reajusta após montagem final
 
     } catch (e) { 
         console.error("Erro fatal na inicialização:", e); 
@@ -2267,7 +2288,7 @@ function buildTabsAndSections() {
         sectionsHtml += `
             <div id="sec-combos" class="tab-section" style="display:none;">
                 <div class="top-category-nav"></div> <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
-                <div class="grid-produtos" id="grid-combos"></div>
+                <div class="grid-produtos grid-large-cards" id="grid-combos"></div>
                 <div class="bottom-category-nav"></div>
             </div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
@@ -2394,7 +2415,8 @@ function buildTabsAndSections() {
     goToHome();
 }
 
-function generateCarouselHtml(title, color, trackId, list, type, listKey, sortType = 'random') {
+// Adicionamos parâmetros "limit" (se 0 exibe todos) e "customClass"
+function generateCarouselHtml(title, color, trackId, list, type, listKey, sortType = 'random', limit = 4, customClass = '') {
     let processedList = [...list];
     
     if (sortType === 'random') {
@@ -2409,17 +2431,19 @@ function generateCarouselHtml(title, color, trackId, list, type, listKey, sortTy
     
     STATE.shuffledLists[listKey] = processedList; 
     
-    let showList = processedList.slice(0, 4); 
+    // Se o limite for maior que 0, corta a lista, caso contrário mostra todos
+    let showList = limit > 0 ? processedList.slice(0, limit) : processedList; 
     let trackHtml = showList.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
     
-    if (processedList.length > 4) {
+    // Botão ver todos só aparece se limit > 0 e a lista for maior que o limite
+    if (limit > 0 && processedList.length > limit) {
         trackHtml += buildVerTodosCard(listKey, title, type);
     }
     
     return `
         <div style="margin-top: 15px;">
             <div class="section-title" ${color ? `style="border-left-color: ${color};"` : ''}><span class="section-marker"></span>${title}</div>
-            <div class="grid-produtos" id="${trackId}">
+            <div class="grid-produtos ${customClass}" id="${trackId}">
                 ${trackHtml}
             </div>
         </div>`;
@@ -2437,18 +2461,19 @@ function renderBottomChips(activeTabId) {
 
     let htmlTop = '';
     if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
-        htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random');
+        htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random', 4);
     }
 
     if (STATE.destaques && STATE.destaques.length > 0) {
-        htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random');
+        htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random', 4);
     }
     if (topNavContainer) topNavContainer.innerHTML = htmlTop;
     ativarRolagemInfinita();
 
     let htmlMid = '';
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'random');
+        // Kits não limitamos (limit = 0) e aplicamos a classe pros cards ficarem maiores
+        htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'random', 0, 'grid-large-cards');
     }
     let cjHtml = renderCompreJunto();
     if (cjHtml) htmlMid += cjHtml; 
@@ -2465,7 +2490,7 @@ function renderBottomChips(activeTabId) {
             if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
                 let listKey = 'term_' + safe;
                 if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                    htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey, 'alphabetical');
+                    htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey, 'alphabetical', 4);
                 }
             }
         });
@@ -2632,15 +2657,12 @@ function renderPaginated(containerId, listKey, list, type) {
             let key = 'cestas_group_' + gIdx;
             STATE.shuffledLists[key] = groups[gName];
             
-            let trackHtml = groups[gName].slice(0, 4).map((item, idx) => buildCardHtml(item, 'BASKET', false, idx)).join('');
-            
-            if (groups[gName].length > 4) {
-                trackHtml += buildVerTodosCard(key, title, 'BASKET');
-            }
+            // Cestas não possuem mais botão ver todos, mostramos a lista inteira
+            let trackHtml = groups[gName].map((item, idx) => buildCardHtml(item, 'BASKET', false, idx)).join('');
             
             html += `
                 <div class="section-title"><span class="section-marker"></span>${title}</div>
-                <div class="grid-produtos" id="${trackId}">
+                <div class="grid-produtos grid-large-cards" id="${trackId}">
                     ${trackHtml}
                 </div>`;
         });
@@ -3235,6 +3257,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!isStandalone && !localStorage.getItem('donaAntoniaAppDismissed')) {
         bannerInstalacao.style.display = 'flex';
+        adjustHeaderSpace(); // Reajusta pois o banner apareceu
     }
 
     document.getElementById('btn-install').addEventListener('click', async () => { 
@@ -3248,11 +3271,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         bannerInstalacao.style.display = 'none'; 
         localStorage.setItem('donaAntoniaAppDismissed', 'true');
+        adjustHeaderSpace(); // Reajusta o espaço novamente
     });
 
     document.getElementById('btn-close-install').addEventListener('click', () => {
         bannerInstalacao.style.display = 'none';
         localStorage.setItem('donaAntoniaAppDismissed', 'true');
+        adjustHeaderSpace(); // Reajusta o espaço novamente
     });
 });
 
@@ -3271,6 +3296,7 @@ window.addEventListener('beforeinstallprompt', (evento) => {
     eventoInstalacao = evento; 
     if (!localStorage.getItem('donaAntoniaAppDismissed')) {
         document.getElementById('install-banner').style.display = 'flex'; 
+        adjustHeaderSpace(); // Reajusta pois o banner apareceu
     }
 });
 </script>
