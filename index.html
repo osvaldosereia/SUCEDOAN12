@@ -20,7 +20,7 @@
     --c-a: #ea580c; 
     --c-ok: #15803d; 
     --c-err: #dc2626; 
-    --c-bg: #f8fafc; 
+    --c-bg: #ffffff; 
     --c-surf: #ffffff; 
     --c-bd: #e2e8f0; 
     --c-img-bg: #f1f5f9; 
@@ -424,9 +424,9 @@ button {
 /* CARD UNIVERSAL IDENTICO PARA TUDO - MINIMALISTA */
 .u-card { 
     background: #fff; 
-    border: 1px solid var(--c-bd); 
+    border: none;
     border-radius: 8px; 
-    padding: 10px; 
+    padding: 10px 0; 
     display: flex; 
     flex-direction: column; 
     position: relative; 
@@ -469,7 +469,7 @@ button {
 .u-img { 
     object-fit: contain; 
     mix-blend-mode: multiply; 
-    padding: 5%; 
+    padding: 3%; 
 } 
 
 .u-img-cesta { 
@@ -977,9 +977,9 @@ dialog::backdrop {
 
 .cj-card {
     background: #fff;
-    border: 1px solid var(--c-bd); 
+    border: none; 
     border-radius: 8px;
-    padding: 12px;
+    padding: 12px 0;
     box-shadow: none;
     transition: transform 0.2s;
     height: 100%;
