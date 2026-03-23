@@ -1304,7 +1304,7 @@ dialog::backdrop {
 /* Rodapé fixo lateral para Kits/Cestas */
 .see-all-footer {
     position: fixed;
-    bottom: 0;
+    bottom: 60px;
     left: 0;
     width: 100%;
     background: #fff;
@@ -1946,12 +1946,18 @@ window.openKitLateralView = function(id, type) {
     document.getElementById('see-all-grid').innerHTML = `<div class="kit-lat-list">${itemsHtml}</div>`;
     
     let contentDiv = document.getElementById('see-all-content');
-    contentDiv.style.paddingBottom = '120px';
+    contentDiv.style.paddingBottom = '160px'; // Ajuste do passo 1 já incluído aqui
 
     document.getElementById('see-all-footer').style.display = 'flex';
     updateExpanderTotalDisplay(currentSum);
     
+    // Abre a aba lateral
     document.getElementById('see-all-view').classList.add('open');
+
+    // 👇 PASSO 2.2: Adiciona o estado na URL silenciosamente para interceptar o "Voltar"
+    if (!history.state || !history.state.lateralOpen) {
+        history.pushState({ lateralOpen: true }, '');
+    }
 };
 
 function updateExpanderTotalDisplay(currentSum) {
@@ -2628,10 +2634,16 @@ window.openSeeAll = function(listKey, title, type) {
     document.getElementById('see-all-title').innerText = title;
     
     let contentDiv = document.getElementById('see-all-content');
-    contentDiv.style.paddingBottom = '80px'; 
+    contentDiv.style.paddingBottom = '100px'; // Ajuste do passo 1 já incluído aqui
     document.getElementById('see-all-footer').style.display = 'none';
 
+    // Abre a aba lateral
     document.getElementById('see-all-view').classList.add('open');
+    
+    // 👇 PASSO 2.2: Adiciona o estado na URL silenciosamente para interceptar o "Voltar"
+    if (!history.state || !history.state.lateralOpen) {
+        history.pushState({ lateralOpen: true }, '');
+    }
     
     setTimeout(() => {
         if (gridEl.children.length > 8) {
@@ -2643,9 +2655,14 @@ window.openSeeAll = function(listKey, title, type) {
     }, 300); 
 }
 
-window.closeSeeAll = function() {
+window.closeSeeAll = function(isFromBrowser = false) {
     document.getElementById('see-all-view').classList.remove('open');
     document.getElementById('see-all-footer').style.display = 'none';
+
+    // Se clicou no botão voltar DO SITE, nós comandamos o histórico a voltar um passo
+    if (isFromBrowser !== true && history.state && history.state.lateralOpen) {
+        history.back();
+    }
 }
 
 window.switchTab = function(tabId, scrollToTop = false) {
@@ -3353,6 +3370,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 50);
 });
 
+// Ouve quando o usuário clica no botão "Voltar" do celular/navegador
+window.addEventListener('popstate', function(event) {
+    let lateralView = document.getElementById('see-all-view');
+    if (lateralView && lateralView.classList.contains('open')) {
+        // Envia 'true' para avisar a função que não precisamos chamar history.back() novamente
+        closeSeeAll(true); 
+    }
+});
+    
 if ('serviceWorker' in navigator) { 
     window.addEventListener('load', () => { 
         navigator.serviceWorker.register('/sw.js')
