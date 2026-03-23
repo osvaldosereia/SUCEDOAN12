@@ -279,7 +279,6 @@ button {
     .main-stage { padding-top: 90px; } 
 }
 
-/* NOVO: BANNERS INFORMATIVOS E ALERTA */
 .info-banners {
     display: flex;
     flex-direction: column;
@@ -337,7 +336,6 @@ button {
     letter-spacing: 0.5px;
 }
 
-/* TÍTULOS DE SESSÃO MEGA DESTACADOS */
 .section-title { 
     width: calc(100% - 20px); 
     max-width: 1000px; 
@@ -421,7 +419,6 @@ button {
 }
 
 @media (max-width: 799px) {
-    /* --- DEIXAR CESTAS E KITS MAIORES NO MOBILE (1.5 CARDS) --- */
     #wrapper-cestas .grid-produtos > .u-card,
     #wrapper-cestas .grid-produtos > .skeleton-card,
     #grid-combos > .u-card,
@@ -429,10 +426,9 @@ button {
     #grid-combos > .skeleton-card,
     [id^="grid-kits-bottom-"] > .u-card,
     [id^="grid-kits-bottom-"] > .card-ver-todos {
-        width: 62vw; /* Largura perfeita para mostrar 1,5 card na tela */
+        width: 62vw; 
     }
 
-    /* Ajuste de fonte para os cards maiores */
     #wrapper-cestas .u-name,
     #grid-combos .u-name,
     [id^="grid-kits-bottom-"] .u-name {
@@ -445,7 +441,6 @@ button {
         font-size: 1.15rem !important;
     }
 
-    /* --- AJUSTES GERAIS PARA OS CARDS MENORES NO MOBILE --- */
     .u-name {
         font-size: 0.85rem !important; 
         margin-top: 5px;
@@ -981,7 +976,7 @@ dialog::backdrop {
     background-color: #fef2f2 !important; 
 }
 
-/* --- SESSÃO COMPRE JUNTO E ECONOMIZE --- */
+/* --- SESSÃO COMPRE JUNTO --- */
 .cj-container {
     width: 100%;
     max-width: 1000px;
@@ -1013,13 +1008,21 @@ dialog::backdrop {
     border-radius: 4px;
 }
 
-.cj-container .cj-grid > .cj-card {
+.cj-container .cj-grid > .cj-card,
+.cj-container .cj-grid > .card-ver-todos {
     width: 78vw; 
     flex-shrink: 0; 
     scroll-snap-align: center; 
-    padding: 12px; 
+}
+
+.cj-card {
+    background: #fff;
+    border: 2px dashed var(--c-a); 
     border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(234, 88, 12, 0.08); 
+    padding: 15px;
+    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+    height: 100%;
 }
 
 .cj-images-row {
@@ -1097,7 +1100,8 @@ dialog::backdrop {
         gap: 15px;
         padding: 0 15px 25px;
     }
-    .cj-container .cj-grid > .cj-card {
+    .cj-container .cj-grid > .cj-card,
+    .cj-container .cj-grid > .card-ver-todos {
         width: auto; 
     }
     .cj-footer {
@@ -1107,15 +1111,6 @@ dialog::backdrop {
     }
     .cj-price-area { text-align: left; }
     .cj-btn { width: auto; flex: 1; margin-left: 15px; }
-}
-
-.cj-card {
-    background: #fff;
-    border: 2px dashed var(--c-a); 
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
-    transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .cj-card:hover {
@@ -1159,174 +1154,7 @@ dialog::backdrop {
     background: #c2410c;
 }
 
-/* ESTILOS DO EXPANSOR (INLINE CAROUSEL) */
-.inline-expander {
-    grid-column: 1 / -1; 
-    background: #fff;
-    border: 2px solid var(--c-a);
-    border-radius: 12px;
-    padding: 15px;
-    margin: 10px 15px 25px 15px;
-    box-shadow: 0 8px 25px rgba(234, 88, 12, 0.15);
-    animation: expandDown 0.3s ease-out;
-    position: relative;
-}
-
-@media(min-width: 800px) {
-    .inline-expander { margin: 10px 0 25px 0; }
-}
-
-@keyframes expandDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.expander-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    border-bottom: 1px dashed var(--c-bd);
-    padding-bottom: 10px;
-}
-
-.expander-title {
-    font-size: 1.2rem;
-    font-weight: 800;
-    color: var(--c-p);
-}
-
-.expander-close {
-    background: var(--c-img-bg);
-    border: none;
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    font-weight: bold;
-    color: var(--c-t);
-    cursor: pointer;
-}
-
-.expander-carousel {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    gap: 12px;
-    padding-bottom: 15px;
-    scrollbar-width: thin; 
-    scrollbar-color: #cbd5e1 transparent;
-}
-
-.expander-carousel::-webkit-scrollbar { height: 6px; display: block; }
-.expander-carousel::-webkit-scrollbar-track { background: transparent; }
-.expander-carousel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-.expander-item {
-    flex: 0 0 180px; 
-    scroll-snap-align: center;
-    background: var(--c-img-bg);
-    border: 1px solid var(--c-bd);
-    border-radius: 10px;
-    padding: 15px; 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    transition: opacity 0.2s;
-}
-
-.expander-item img {
-    width: 120px; 
-    height: 120px; 
-    object-fit: contain;
-    mix-blend-mode: multiply;
-    margin-bottom: 8px;
-}
-
-.expander-item-name {
-    font-size: 0.9rem; 
-    font-weight: 600;
-    color: var(--c-p);
-    line-height: 1.2;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-bottom: 10px;
-    height: 2.4em;
-}
-
-.expander-qty-ctrl {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    background: #fff;
-    border: 1px solid var(--c-a);
-    border-radius: 6px;
-    height: 38px;
-}
-
-.expander-qty-ctrl button {
-    background: transparent;
-    border: none;
-    color: var(--c-a);
-    font-size: 1.4rem;
-    font-weight: bold;
-    width: 40px;
-    cursor: pointer;
-}
-
-.expander-qty-ctrl span {
-    font-weight: 700;
-    color: var(--c-p);
-    font-size: 1.1rem;
-}
-
-.expander-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 10px;
-    border-top: 1px dashed var(--c-bd);
-    padding-top: 15px;
-}
-
-@media(min-width: 800px) {
-    .expander-footer {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-}
-
-.expander-total {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: var(--c-p);
-    text-align: center;
-}
-
-.expander-btn {
-    background: var(--c-a);
-    color: #fff;
-    border: none;
-    padding: 14px 20px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 1.05rem;
-    cursor: pointer;
-    width: 100%;
-    transition: 0.2s;
-}
-
-@media(min-width: 800px) {
-    .expander-btn { width: auto; }
-}
-
-.expander-btn:active { transform: scale(0.95); background: #c2410c; }
-
-/* Ajuste do carrossel dentro do modal no Desktop */
+/* CAROUSEL MODAL (Desktop) */
 @media(min-width: 800px) {
     .carousel-modal {
         display: flex !important;
@@ -1340,7 +1168,7 @@ dialog::backdrop {
     }
 }
 
-/* NOVO: OVERLAY VER TODOS (AJUSTE Z-INDEX) */
+/* OVERLAY LATERAL (VER TODOS & KITS) */
 #see-all-view {
     position: fixed;
     top: 0;
@@ -1400,6 +1228,124 @@ dialog::backdrop {
         gap: 20px;
     }
 }
+
+/* NOVO: Grid Ver Todos para Compre Junto */
+.grid-ver-todos-cj {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding-bottom: 40px;
+}
+@media(min-width: 800px) {
+    .grid-ver-todos-cj {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+}
+
+/* NOVO: Estilos para Itens do Kit no Menu Lateral */
+.kit-lat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.kit-lat-item {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--c-bd);
+    border-radius: 12px;
+    padding: 10px;
+    transition: opacity 0.2s;
+}
+.kit-lat-item img {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    background: var(--c-img-bg);
+    border-radius: 8px;
+    margin-right: 12px;
+}
+.kit-lat-name {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--c-p);
+    line-height: 1.2;
+}
+.kit-lat-ctrl {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8fafc;
+    border: 1px solid var(--c-a);
+    border-radius: 8px;
+    height: 38px;
+    width: 100px;
+    padding: 0 4px;
+}
+.kit-lat-ctrl button {
+    background: transparent;
+    border: none;
+    color: var(--c-a);
+    font-size: 1.4rem;
+    font-weight: bold;
+    width: 30px;
+    height: 100%;
+    cursor: pointer;
+}
+.kit-lat-ctrl span {
+    font-weight: 700;
+    color: var(--c-p);
+    font-size: 1.1rem;
+}
+
+/* Rodapé fixo lateral para Kits/Cestas */
+.see-all-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    padding: 15px;
+    border-top: 1px solid var(--c-bd);
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+@media(min-width: 800px) {
+    .see-all-footer {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+.expander-total {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--c-p);
+    text-align: center;
+}
+.expander-btn {
+    background: var(--c-a);
+    color: #fff;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    width: 100%;
+    transition: 0.2s;
+}
+@media(min-width: 800px) {
+    .expander-btn { width: auto; }
+}
+.expander-btn:active { transform: scale(0.95); background: #c2410c; }
+
 .card-ver-todos {
     display: flex;
     flex-direction: column;
@@ -1550,8 +1496,12 @@ dialog::backdrop {
         </button>
         <h2 class="see-all-title" id="see-all-title">Título</h2>
     </div>
-    <div class="see-all-content">
+    <div class="see-all-content" id="see-all-content">
         <div class="grid-ver-todos" id="see-all-grid"></div>
+    </div>
+    <div id="see-all-footer" class="see-all-footer" style="display:none;">
+        <div class="expander-total" id="see-all-total-container"></div>
+        <button class="expander-btn" onclick="commitExpander()">Adicionar produtos ao carrinho</button>
     </div>
 </div>
 
@@ -1701,7 +1651,8 @@ const STATE = {
     deliveryDateStr: '',
     destaques: [],
     ofertasDoDia: [],
-    shuffledLists: {} 
+    shuffledLists: {},
+    activeTabId: 'cestas' // Memória da aba atual para evitar saltos
 };
 
 
@@ -1800,6 +1751,7 @@ function converterDataValidade(dataStr) {
 STATE.cjData = [];
 STATE.cjDiscounts = [];
 STATE.cjTotalDiscount = 0;
+STATE.cjCombos = [];
 
 async function loadCompreJunto() {
     try {
@@ -1808,6 +1760,31 @@ async function loadCompreJunto() {
     } catch(e) {
         console.log("Arquivo compre-junto.json não encontrado ou vazio.");
     }
+}
+
+function buildCjCardHTML(kit) {
+    return `
+    <div class="cj-card">
+        <div class="cj-header">${kit.nome}</div>
+        <div class="cj-images-row">
+            <div class="cj-item">
+                <div class="cj-img-box"><img src="${kit.selectedItems[0].img}" alt="${kit.selectedItems[0].name}"></div>
+                <div class="cj-item-name">${formatName(kit.selectedItems[0].name)}</div>
+            </div>
+            <div class="cj-plus">+</div>
+            <div class="cj-item">
+                <div class="cj-img-box"><img src="${kit.selectedItems[1].img}" alt="${kit.selectedItems[1].name}"></div>
+                <div class="cj-item-name">${formatName(kit.selectedItems[1].name)}</div>
+            </div>
+        </div>
+        <div class="cj-footer">
+            <div class="cj-price-area">
+                <div class="cj-old-price">${fmt(kit.origPrice)}</div>
+                <div class="cj-new-price">${fmt(kit.preco)}</div>
+            </div>
+            <button class="cj-btn" onclick="addCompreJunto('${kit.id}', '${kit.selectedItems[0].id}', '${kit.selectedItems[1].id}', ${kit.discountVal}); event.stopPropagation();">Adicionar ao Carrinho</button>
+        </div>
+    </div>`;
 }
 
 function renderCompreJunto() {
@@ -1846,33 +1823,24 @@ function renderCompreJunto() {
                 id: 'cj_' + kit.id,
                 nome: kit.titulo,
                 preco: finalPrice,
-                produtos: [`1x ${selected[0].id}`, `1x ${selected[1].id}`]
+                origPrice: sum,
+                discountVal: discountVal,
+                produtos: [`1x ${selected[0].id}`, `1x ${selected[1].id}`],
+                selectedItems: selected
             });
-            
-            html += `
-            <div class="cj-card">
-                <div class="cj-header">${kit.titulo}</div>
-                <div class="cj-images-row">
-                    <div class="cj-item">
-                        <div class="cj-img-box"><img src="${selected[0].img}" alt="${selected[0].name}"></div>
-                        <div class="cj-item-name">${formatName(selected[0].name)}</div>
-                    </div>
-                    <div class="cj-plus">+</div>
-                    <div class="cj-item">
-                        <div class="cj-img-box"><img src="${selected[1].img}" alt="${selected[1].name}"></div>
-                        <div class="cj-item-name">${formatName(selected[1].name)}</div>
-                    </div>
-                </div>
-                <div class="cj-footer">
-                    <div class="cj-price-area">
-                        <div class="cj-old-price">${fmt(sum)}</div>
-                        <div class="cj-new-price">${fmt(finalPrice)}</div>
-                    </div>
-                    <button class="cj-btn" onclick="addCompreJunto('cj_${kit.id}', '${selected[0].id}', '${selected[1].id}', ${discountVal}); event.stopPropagation();">Adicionar ao Carrinho</button>
-                </div>
-            </div>`;
         }
     });
+
+    STATE.shuffledLists['cj'] = STATE.cjCombos;
+
+    let displayList = STATE.cjCombos.slice(0, 5);
+    displayList.forEach(kit => {
+        html += buildCjCardHTML(kit);
+    });
+
+    if (STATE.cjCombos.length > 5) {
+        html += buildVerTodosCard('cj', 'Compre Junto', 'CJ');
+    }
     
     html += '</div></div>';
     return html;
@@ -1918,21 +1886,10 @@ let expanderState = {
     currentDisplayPrice: 0
 };
 
-window.toggleInlinePreview = function(id, type, targetElement) {
-    let parentGrid = targetElement.closest('.grid-produtos, .cj-grid');
-    if (!parentGrid) return;
-
-    let existing = document.getElementById('active-expander');
-    if (existing) {
-        let isSame = existing.dataset.targetId === id;
-        existing.remove();
-        if (isSame) return; 
-    }
-
+window.openKitLateralView = function(id, type) {
     let sourceObj = null;
     if (type === 'BASKET') sourceObj = STATE.baskets.find(x => String(x.id) === String(id));
     if (type === 'COMBO') sourceObj = STATE.combos.find(x => String(x.id) === String(id));
-    if (type === 'CJ') sourceObj = STATE.cjCombos.find(x => String(x.id) === String(id));
 
     if (!sourceObj) return;
 
@@ -1965,23 +1922,6 @@ window.toggleInlinePreview = function(id, type, targetElement) {
         expanderState.priceOffset = 0;
     }
 
-    let expanderDiv = document.createElement('div');
-    expanderDiv.className = 'inline-expander';
-    expanderDiv.id = 'active-expander';
-    expanderDiv.dataset.targetId = id;
-
-    expanderDiv.innerHTML = buildExpanderInnerHtml(sourceObj.nome);
-
-    if (window.innerWidth >= 800) {
-        parentGrid.insertBefore(expanderDiv, targetElement.nextSibling);
-    } else {
-        parentGrid.parentNode.insertBefore(expanderDiv, parentGrid.nextSibling);
-    }
-
-    setTimeout(() => expanderDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
-};
-
-function buildExpanderInnerHtml(title) {
     let currentSum = 0;
     let itemsHtml = expanderState.orderedIds.map(pId => { 
         let qty = expanderState.items[pId];
@@ -1990,10 +1930,10 @@ function buildExpanderInnerHtml(title) {
         currentSum += p.price * qty;
 
         return `
-        <div class="expander-item" id="exp-item-${pId}" style="opacity: ${qty===0 ? '0.5' : '1'};">
+        <div class="kit-lat-item" id="exp-item-${pId}" style="opacity: ${qty===0 ? '0.5' : '1'};">
             <img src="${p.img}" alt="${formatName(p.name)}">
-            <div class="expander-item-name">${formatName(p.name)}</div>
-            <div class="expander-qty-ctrl">
+            <div class="kit-lat-name">${formatName(p.name)}</div>
+            <div class="kit-lat-ctrl">
                 <button onclick="changeExpanderQty('${pId}', -1)">-</button>
                 <span id="exp-qty-${pId}">${qty}</span>
                 <button onclick="changeExpanderQty('${pId}', 1)">+</button>
@@ -2001,14 +1941,30 @@ function buildExpanderInnerHtml(title) {
         </div>`;
     }).join('');
 
+    document.getElementById('see-all-title').innerText = formatName(sourceObj.nome);
+    document.getElementById('see-all-grid').className = ''; 
+    document.getElementById('see-all-grid').innerHTML = `<div class="kit-lat-list">${itemsHtml}</div>`;
+    
+    let contentDiv = document.getElementById('see-all-content');
+    contentDiv.style.paddingBottom = '120px';
+
+    document.getElementById('see-all-footer').style.display = 'flex';
+    updateExpanderTotalDisplay(currentSum);
+    
+    document.getElementById('see-all-view').classList.add('open');
+};
+
+function updateExpanderTotalDisplay(currentSum) {
     let displayPrice = 0;
     if (expanderState.type === 'BASKET') {
         displayPrice = currentSum + expanderState.priceOffset;
     } else {
-        let variation = currentSum - expanderState.originalSum;
-        displayPrice = expanderState.basePrice + variation;
+        if (expanderState.discountLost) {
+            displayPrice = currentSum; 
+        } else {
+            displayPrice = expanderState.basePrice + (currentSum - expanderState.originalSum);
+        }
     }
-    
     expanderState.currentDisplayPrice = Math.max(0, displayPrice);
 
     let totalHtml = `Total: ${fmt(expanderState.currentDisplayPrice)}`;
@@ -2018,19 +1974,9 @@ function buildExpanderInnerHtml(title) {
             totalHtml += `<div style="color:var(--c-ok); font-size: 0.9rem; font-weight: 700; margin-top: 4px;">Economia de ${fmt(savings)}</div>`;
         }
     }
-
-    return `
-    <div class="expander-header">
-        <div class="expander-title">${formatName(title)}</div>
-        <button class="expander-close" onclick="document.getElementById('active-expander').remove()">✕</button>
-    </div>
-    <div class="expander-carousel">
-        ${itemsHtml}
-    </div>
-    <div class="expander-footer">
-        <div class="expander-total" id="exp-total-container">${totalHtml}</div>
-        <button class="expander-btn" onclick="commitExpander()">Adicionar produtos ao carrinho</button>
-    </div>`;
+    
+    let totalEl = document.getElementById('see-all-total-container');
+    if(totalEl) totalEl.innerHTML = totalHtml;
 }
 
 window.changeExpanderQty = function(pId, delta) {
@@ -2073,28 +2019,7 @@ window.changeExpanderQty = function(pId, delta) {
         if (prod) currentSum += prod.price * expanderState.items[id];
     });
 
-    let displayPrice = 0;
-    if (expanderState.type === 'BASKET') {
-        displayPrice = currentSum + expanderState.priceOffset;
-    } else {
-        if (expanderState.discountLost) {
-            displayPrice = currentSum; 
-        } else {
-            displayPrice = expanderState.basePrice + (currentSum - expanderState.originalSum);
-        }
-    }
-    expanderState.currentDisplayPrice = Math.max(0, displayPrice);
-
-    let totalHtml = `Total: ${fmt(expanderState.currentDisplayPrice)}`;
-    if (expanderState.type === 'COMBO' && !expanderState.discountLost) {
-        let savings = expanderState.originalSum - expanderState.basePrice;
-        if (savings > 0) {
-            totalHtml += `<div style="color:var(--c-ok); font-size: 0.9rem; font-weight: 700; margin-top: 4px;">Economia de ${fmt(savings)}</div>`;
-        }
-    }
-    
-    let totalEl = document.getElementById('exp-total-container');
-    if(totalEl) totalEl.innerHTML = totalHtml;
+    updateExpanderTotalDisplay(currentSum);
 };
 
 window.commitExpander = function() {
@@ -2133,7 +2058,7 @@ window.commitExpander = function() {
         }
     }
 
-    document.getElementById('active-expander').remove();
+    closeSeeAll();
     updateTotals();
 
     showToast(`${formatName(expanderState.sourceObj.nome)} adicionado!`, "s");
@@ -2237,7 +2162,7 @@ async function init() {
             });
         }
         
-        await buildTabsAndSections(); 
+        await buildTabsAndSections(false); 
         updateTotals();
         renderBanners();
 
@@ -2261,7 +2186,7 @@ async function init() {
                 
                 await loadCompreJunto(); 
                 
-                await buildTabsAndSections(); 
+                await buildTabsAndSections(true); 
             } catch (err2) {
                 console.log("Erro silencioso Onda 2:", err2);
             }
@@ -2370,14 +2295,14 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
              });
         }
         if (isKit) {
-            onClick = `toggleInlinePreview('${id}', 'COMBO', event.currentTarget)`;
+            onClick = `openKitLateralView('${id}', 'COMBO')`;
             if (precoDe > pPrice) {
                 oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`;
             } else { 
                 tagHtml = `<div class="kit-tag">KIT</div>`; 
             }
         } else { 
-            onClick = `toggleInlinePreview('${id}', 'BASKET', event.currentTarget)`; 
+            onClick = `openKitLateralView('${id}', 'BASKET')`; 
         }
         addBtnHtml = `<button class="card-add-btn" onclick="event.stopPropagation(); ${onClick}">+</button>`;
     } else {
@@ -2411,7 +2336,13 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     </div>`;
 }
 
-async function buildTabsAndSections() {
+async function buildTabsAndSections(isUpdate = false) {
+    let currentScroll = 0;
+    let scrollStage = document.getElementById('scroll-stage');
+    if (isUpdate && scrollStage) {
+        currentScroll = scrollStage.scrollTop;
+    }
+
     let skel = $('skeleton-loader'); 
     if (skel) {
         skel.style.display = 'none';
@@ -2579,14 +2510,20 @@ async function buildTabsAndSections() {
     
     $('cat-dropdown-list').innerHTML = dropHtml; 
     $('dynamic-sections').innerHTML = sectionsHtml; 
-    goToHome();
+    
+    if (isUpdate) {
+        switchTab(STATE.activeTabId, false);
+        setTimeout(() => {
+            if (scrollStage) scrollStage.scrollTop = currentScroll;
+        }, 50);
+    } else {
+        goToHome();
+    }
 }
 
-// NOVO: Função que fatia para 8 produtos, salva a ordem e permite escolha de ordenação
 function generateCarouselHtml(title, color, trackId, list, type, listKey, sortType = 'random') {
     let processedList = [...list];
     
-    // Define a ordenação com base no parâmetro
     if (sortType === 'random') {
         processedList.sort(() => Math.random() - 0.5);
     } else if (sortType === 'alphabetical') {
@@ -2630,7 +2567,6 @@ function renderBottomChips(activeTabId) {
         htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random');
     }
     
-    // NOVO: Esconde o alerta pulsante assim que a Onda 2 (Kits e Ofertas) chegar!
     if (STATE.combos.length > 0 || STATE.termos.length > 0) {
         let alertEl = document.getElementById('loading-offers-alert');
         if (alertEl) alertEl.style.display = 'none';
@@ -2665,7 +2601,6 @@ function renderBottomChips(activeTabId) {
                 if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
                     let listKey = 'term_' + safe;
                     if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                        // Chama a função definindo 'alphabetical' para garantir a ordem alfabética das categorias
                         htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey, 'alphabetical');
                     }
                 }
@@ -2678,20 +2613,30 @@ function renderBottomChips(activeTabId) {
 
 window.openSeeAll = function(listKey, title, type) {
     let list = STATE.shuffledLists[listKey] || [];
+    let html = '';
+    let gridEl = document.getElementById('see-all-grid');
     
-    let html = list.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
+    if (type === 'CJ') {
+        gridEl.className = 'grid-ver-todos-cj';
+        html = list.map(item => buildCjCardHTML(item)).join('');
+    } else {
+        gridEl.className = 'grid-ver-todos';
+        html = list.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
+    }
     
-    document.getElementById('see-all-grid').innerHTML = html;
+    gridEl.innerHTML = html;
     document.getElementById('see-all-title').innerText = title;
     
+    let contentDiv = document.getElementById('see-all-content');
+    contentDiv.style.paddingBottom = '80px'; 
+    document.getElementById('see-all-footer').style.display = 'none';
+
     document.getElementById('see-all-view').classList.add('open');
     
     setTimeout(() => {
-        let contentDiv = document.querySelector('.see-all-content');
-        let grid = document.getElementById('see-all-grid');
-        if (grid.children.length > 8) {
-            let ninthItem = grid.children[8];
-            contentDiv.scrollTo({ top: ninthItem.offsetTop - 15, behavior: 'instant' });
+        if (gridEl.children.length > 8) {
+            let targetItem = gridEl.children[8];
+            contentDiv.scrollTo({ top: targetItem.offsetTop - 15, behavior: 'instant' });
         } else {
             contentDiv.scrollTo({ top: 0, behavior: 'instant' });
         }
@@ -2700,11 +2645,11 @@ window.openSeeAll = function(listKey, title, type) {
 
 window.closeSeeAll = function() {
     document.getElementById('see-all-view').classList.remove('open');
+    document.getElementById('see-all-footer').style.display = 'none';
 }
 
 window.switchTab = function(tabId, scrollToTop = false) {
-    let activeExpander = document.getElementById('active-expander');
-    if (activeExpander) activeExpander.remove();
+    STATE.activeTabId = tabId;
 
     $('wrapper-sections').style.display = 'block'; 
     $('section-busca').style.display = 'none'; 
@@ -2962,7 +2907,7 @@ window.clearCart = function() {
         STATE.basketExtraFee = 0; 
         STATE.comboDiscount = 0; 
         STATE.appliedCombos = [];
-        STATE.coupon = null; // Limpa o cupom também!
+        STATE.coupon = null; 
         
         document.querySelectorAll('[data-id]').forEach(el => { 
             let id = el.dataset.id; 
@@ -3061,7 +3006,6 @@ function openCheckout() {
         return; 
     }
 
-    // --- CARROSSEL DE OFERTAS NO CHECKOUT ---
     if (STATE.destaques && STATE.destaques.length > 0) {
         let trackHtmlDestaques = STATE.destaques.map(p => buildCardHtml(p, 'PROD', false)).join('');
         $('chk-carousel-ofertas').innerHTML = `
@@ -3405,9 +3349,7 @@ async function sendOrder() {
     }, 400);
 }
 
-// Executa a inicialização após o navegador desenhar a tela (App Shell)
 document.addEventListener('DOMContentLoaded', () => {
-    // Um pequeno delay garante que a renderização inicial (FCP) ocorra imediatamente
     setTimeout(init, 50);
 });
 
