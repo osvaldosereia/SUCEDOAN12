@@ -1187,14 +1187,17 @@ dialog::backdrop {
     }
 }
 
+/* Grelha do Compre Junto na aba lateral */
 .grid-ver-todos-cj {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Força 1 coluna no formato mobile */
     gap: 15px;
 }
+
+/* Regra para ecrãs maiores (Desktop) */
 @media(min-width: 800px) {
     .grid-ver-todos-cj {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, 1fr); /* Muda para 3 colunas no desktop */
         gap: 20px;
     }
 }
@@ -1731,12 +1734,20 @@ function renderCompreJunto() {
         }
     });
 
+    // ... (o código de verificação dos produtos continua igual) ...
+
     STATE.shuffledLists['cj'] = STATE.cjCombos;
 
-    let displayList = STATE.cjCombos; 
+    // ALtERAÇÃO AQUI: Corta a lista para mostrar apenas os 2 primeiros cards
+    let displayList = STATE.cjCombos.slice(0, 2); 
     displayList.forEach(kit => {
         html += buildCjCardHTML(kit);
     });
+
+    // ALTERAÇÃO AQUI: Mostra o botão VER TODOS se houver mais de 2 kits disponíveis
+    if (STATE.cjCombos.length > 2) {
+        html += buildVerTodosCard('cj', 'Compre Junto', 'CJ');
+    }
     
     html += '</div></div>';
     return html;
