@@ -286,7 +286,7 @@ button {
 .main-stage { 
     position: relative; 
     height: 100dvh; 
-    padding-top: 130px; /* Será ajustado via JS dinamicamente */
+    padding-top: 130px; 
     padding-bottom: 80px; 
     overflow-y: auto; 
     overflow-x: hidden; 
@@ -352,6 +352,18 @@ button {
     height: 16px;
     background: var(--c-a);
     border-radius: 2px;
+}
+
+/* --- ESTILO CRONÔMETRO SÓ HOJE --- */
+.so-hoje-timer {
+    background: var(--c-err);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-left: auto;
 }
 
 /* --- CARROSSEL MOBILE E INDICADOR DE ROLAGEM --- */
@@ -424,7 +436,7 @@ button {
 /* CARD UNIVERSAL IDENTICO PARA TUDO - MINIMALISTA */
 .u-card { 
     background: #fff; 
-    border: none;
+    border: none; 
     border-radius: 8px; 
     padding: 10px 6px; 
     display: flex; 
@@ -469,7 +481,7 @@ button {
 .u-img { 
     object-fit: contain; 
     mix-blend-mode: multiply; 
-    padding: 3%; 
+    padding: 1%; 
 } 
 
 .u-img-cesta { 
@@ -1075,7 +1087,6 @@ dialog::backdrop {
 
 .cj-card:hover {
     transform: translateY(-2px);
-    border-color: #cbd5e1;
 }
 
 .cj-price-area {
@@ -1187,17 +1198,14 @@ dialog::backdrop {
     }
 }
 
-/* Grelha do Compre Junto na aba lateral */
 .grid-ver-todos-cj {
     display: grid;
-    grid-template-columns: 1fr; /* Força 1 coluna no formato mobile */
+    grid-template-columns: 1fr;
     gap: 15px;
 }
-
-/* Regra para ecrãs maiores (Desktop) */
 @media(min-width: 800px) {
     .grid-ver-todos-cj {
-        grid-template-columns: repeat(3, 1fr); /* Muda para 3 colunas no desktop */
+        grid-template-columns: repeat(3, 1fr);
         gap: 20px;
     }
 }
@@ -1734,17 +1742,13 @@ function renderCompreJunto() {
         }
     });
 
-    // ... (o código de verificação dos produtos continua igual) ...
-
     STATE.shuffledLists['cj'] = STATE.cjCombos;
 
-    // ALtERAÇÃO AQUI: Corta a lista para mostrar apenas os 2 primeiros cards
     let displayList = STATE.cjCombos.slice(0, 2); 
     displayList.forEach(kit => {
         html += buildCjCardHTML(kit);
     });
 
-    // ALTERAÇÃO AQUI: Mostra o botão VER TODOS se houver mais de 2 kits disponíveis
     if (STATE.cjCombos.length > 2) {
         html += buildVerTodosCard('cj', 'Compre Junto', 'CJ');
     }
@@ -2099,10 +2103,10 @@ async function init() {
             let produtosComValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
             produtosComValidade.sort((a, b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
             
-            STATE.destaques = produtosComValidade.slice(0, 10);
+            STATE.destaques = produtosComValidade.slice(0, 5);
             STATE.destaques.forEach(p => {
                 if (!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price; 
-                p.price = p.oldPrice * 0.92; 
+                p.price = p.oldPrice * 0.95; 
                 p.isDestaque = true; 
             });
         }
@@ -2112,10 +2116,27 @@ async function init() {
         renderBanners();
         adjustHeaderSpace(); 
 
+        startTimer();
+
     } catch (e) { 
         console.error("Erro fatal na inicialização:", e); 
         showToast("Ops, erro ao carregar os produtos.", "r");
     }
+}
+
+// INICIAR CONTAGEM REGRESSIVA GLOBAL
+function startTimer() {
+    setInterval(() => {
+        let now = new Date();
+        let tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        let diff = tomorrow - now;
+        let h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        let m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        let s = Math.floor((diff % (1000 * 60)) / 1000);
+        let str = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        
+        document.querySelectorAll('.so-hoje-timer').forEach(el => el.innerText = str);
+    }, 1000);
 }
 
 function animateToCart(startX, startY) {
@@ -2421,6 +2442,54 @@ function buildTabsAndSections() {
         document.head.appendChild(linkPreload);
     }
     
+    // --- GERAÇÃO INTELIGENTE SÓ HOJE ---
+    STATE.sohoje = [];
+    let seedOffset = 0;
+    const date = new Date();
+    const seedBase = date.getFullYear() * 10000 + (date.getMonth() + 1) * 100 + date.getDate();
+    
+    function pickAndDiscount(list, type) {
+        if (!list || list.length === 0) return;
+        let seed = seedBase + seedOffset++;
+        let x = Math.sin(seed) * 10000;
+        let randomVal = x - Math.floor(x);
+        
+        let idx = Math.floor(randomVal * list.length);
+        let item = list[idx];
+        
+        if(STATE.sohoje.find(i => i.id === item.id)) {
+             item = list[(idx + 1) % list.length];
+        }
+        
+        if (type === 'BASKET' || type === 'COMBO') {
+            if (!item._soHojeApplied) {
+                item.oldPrice = parseFloat(item.preco || item.price);
+                item.preco = item.oldPrice * 0.85; // Desconto Global de 15%
+                item.price = item.preco; 
+                item._soHojeApplied = true;
+            }
+        } else {
+            if (!item._soHojeApplied) {
+                if (!item.oldPrice || item.oldPrice <= item.price) item.oldPrice = item.price;
+                item.price = item.oldPrice * 0.85; // Desconto Global de 15%
+                item._soHojeApplied = true;
+            }
+        }
+        
+        let displayItem = {...item};
+        displayItem._type = type;
+        STATE.sohoje.push(displayItem);
+    }
+
+    pickAndDiscount(STATE.baskets, 'BASKET');
+    pickAndDiscount(STATE.combos, 'COMBO');
+    
+    Object.keys(STATE.lists).forEach(key => {
+        if(key.startsWith('term_')) {
+            pickAndDiscount(STATE.lists[key].data, 'PROD');
+        }
+    });
+
     $('cat-dropdown-list').innerHTML = dropHtml; 
     $('dynamic-sections').innerHTML = sectionsHtml; 
     
@@ -2443,10 +2512,13 @@ function generateCarouselHtml(title, color, trackId, list, type, listKey, sortTy
     STATE.shuffledLists[listKey] = processedList; 
     
     let showList = limit > 0 ? processedList.slice(0, limit) : processedList; 
-    let trackHtml = showList.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
+    let trackHtml = showList.map((item, idx) => {
+        let itemType = type === 'MIXED' ? (item._type || (item._isCombo ? 'COMBO' : 'PROD')) : type;
+        return buildCardHtml(item, itemType, false, idx);
+    }).join('');
     
     if (limit > 0 && processedList.length > limit) {
-        trackHtml += buildVerTodosCard(listKey, title, type);
+        trackHtml += buildVerTodosCard(listKey, 'Só Hoje', type);
     }
     
     return `
@@ -2471,8 +2543,14 @@ function renderBottomChips(activeTabId) {
     if (navContainer) navContainer.innerHTML = ''; 
 
     let htmlTop = '';
+    
+    if (STATE.sohoje && STATE.sohoje.length > 0) {
+        let titleHtml = `Só Hoje <div class="so-hoje-timer">00:00:00</div>`;
+        htmlTop += generateCarouselHtml(titleHtml, '#dc2626', 'grid-sohoje-' + activeTabId, STATE.sohoje, 'MIXED', 'sohoje', 'none', 4);
+    }
+
     if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
-        htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random', 4);
+        htmlTop += generateCarouselHtml('Ofertas Imperdíveis', null, 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random', 4);
     }
 
     if (STATE.destaques && STATE.destaques.length > 0) {
@@ -2519,13 +2597,17 @@ window.openSeeAll = function(listKey, title, type) {
         html = list.map(item => buildCjCardHTML(item)).join('');
     } else {
         gridEl.className = 'grid-ver-todos';
-        html = list.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
+        html = list.map((item, idx) => {
+            let itemType = type === 'MIXED' ? (item._type || (item._isCombo ? 'COMBO' : 'PROD')) : type;
+            return buildCardHtml(item, itemType, false, idx);
+        }).join('');
     }
     
     html += `<div style="grid-column: 1 / -1; margin-top: 20px;"><button class="btn-modal secondary" style="width: 100%; padding: 14px;" onclick="closeSeeAll(false)">Voltar para a loja</button></div>`;
     
     gridEl.innerHTML = html;
-    document.getElementById('see-all-title').innerText = title;
+    // Removemos qualquer HTML injetado no título para ser apenas texto (ex: timer)
+    document.getElementById('see-all-title').innerText = title.replace(/<[^>]*>?/gm, '').trim(); 
     
     let contentDiv = document.getElementById('see-all-content');
     contentDiv.style.paddingBottom = '80px'; 
@@ -2683,7 +2765,7 @@ function renderPaginated(containerId, listKey, list, type) {
 
     let displayList = list;
     let html = displayList.map((item, index) => {
-        let itemType = type === 'MIXED' ? (item._isCombo ? 'COMBO' : 'PROD') : type;
+        let itemType = type === 'MIXED' ? (item._type || (item._isCombo ? 'COMBO' : 'PROD')) : type;
         return buildCardHtml(item, itemType, index >= 10, index);
     }).join('');
     
