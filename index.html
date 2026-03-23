@@ -2096,7 +2096,7 @@ async function init() {
                     price: parseFloat(p.preco), oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, 
                     stock: parseInt(p.estoque) || 0, validade: p.validade || null,
                     img: `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "",
-                    bulkDiscount: 0.04 + (rand() * 0.05)
+                    bulkDiscount: 0.03 + (rand() * 0.02)
                 };
             });
             
