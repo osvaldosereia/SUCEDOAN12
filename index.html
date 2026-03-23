@@ -13,18 +13,19 @@
 
 <style>
 :root {
-    --c-p: #0f172a; 
-    --c-s: #475569; 
-    --c-t: #64748b; 
-    --c-a: #ea580c; 
+    /* Paleta Minimalista e Suave */
+    --c-p: #1e293b; /* Preto/Azul mais suave */
+    --c-s: #64748b; /* Cinza secundário */
+    --c-t: #94a3b8; /* Cinza claro texto */
+    --c-a: #ea580c; /* Laranja da marca */
     --c-ok: #15803d; 
     --c-err: #dc2626; 
-    --c-bg: #f8fafc; 
+    --c-bg: #f8fafc; /* Fundo geral levíssimo */
     --c-surf: #ffffff; 
-    --c-bd: #e2e8f0; 
-    --c-img-bg: #fafaf9; 
+    --c-bd: #e2e8f0; /* Bordas suaves */
+    --c-img-bg: #f1f5f9; /* Fundo de imagens */
     --font: 'Inter', system-ui, sans-serif;
-    --sh-float: 0 12px 24px -4px rgba(0, 0, 0, 0.08);
+    --sh-float: 0 4px 12px rgba(0, 0, 0, 0.05); /* Sombra quase imperceptível */
 }
 
 * { 
@@ -63,7 +64,7 @@ button {
     position: relative; 
 } 
 
-/* HEADER PRINCIPAL REFORMULADO COM BANNER INSTALAR APP DENTRO DELE */
+/* HEADER PRINCIPAL REFORMULADO - MINIMALISTA */
 #header-wrapper { 
     position: fixed; 
     top: 0; 
@@ -71,7 +72,7 @@ button {
     right: 0; 
     z-index: 50; 
     background: #fff; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06); 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03); /* Sombra mais limpa */
     display: flex;
     flex-direction: column;
 }
@@ -79,7 +80,7 @@ button {
 #install-banner {
     background: var(--c-p); 
     color: #fff; 
-    padding: 10px 15px; 
+    padding: 8px 15px; 
     display: none; 
     align-items: center; 
     justify-content: space-between; 
@@ -89,7 +90,7 @@ button {
 
 .mob-layer-1 { 
     background: var(--c-p); 
-    padding: 12px 15px; 
+    padding: 10px 15px; 
     width: 100%; 
 }
 
@@ -101,13 +102,13 @@ button {
 .search-inp { 
     width: 100%; 
     background: #ffffff; 
-    border: 2px solid transparent; 
-    padding: 12px 15px 12px 42px; 
-    border-radius: 25px; 
-    font-weight: 600; 
+    border: 1px solid transparent; 
+    padding: 10px 15px 10px 42px; 
+    border-radius: 8px; /* Mais quadrado e clean */
+    font-weight: 500; 
     color: var(--c-p); 
     transition: border-color .2s; 
-    font-size: 0.95rem; 
+    font-size: 0.9rem; 
 }
 
 .search-inp:focus { 
@@ -131,9 +132,9 @@ button {
     background: #cbd5e1; 
     color: #fff; 
     border-radius: 50%; 
-    width: 22px; 
-    height: 22px; 
-    font-size: 11px; 
+    width: 20px; 
+    height: 20px; 
+    font-size: 10px; 
     display: none; 
     align-items: center; 
     justify-content: center; 
@@ -153,8 +154,8 @@ button {
 }
 
 .logo { 
-    width: 48px; 
-    height: 48px; 
+    width: 44px; 
+    height: 44px; 
     border-radius: 50%; 
     object-fit: cover; 
     border: 1px solid var(--c-bd); 
@@ -170,16 +171,16 @@ button {
 
 .btn-cat-dropdown { 
     width: 100%; 
-    padding: 12px 15px; 
-    font-weight: 700; 
+    padding: 10px 15px; 
+    font-weight: 600; 
     text-align: left; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    background: #f1f5f9; 
+    background: #f8fafc; 
     color: var(--c-p); 
-    border-radius: 10px; 
-    font-size: 0.95rem; 
+    border-radius: 8px; 
+    font-size: 0.9rem; 
     border: 1px solid var(--c-bd); 
 }
 
@@ -190,9 +191,9 @@ button {
     left: 0; 
     width: 100%; 
     background: #fff; 
-    border-radius: 10px; 
+    border-radius: 8px; 
     border: 1px solid var(--c-bd); 
-    box-shadow: 0 15px 30px rgba(0,0,0,0.15); 
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
     max-height: 60vh; 
     overflow-y: auto; 
     z-index: 100; 
@@ -204,11 +205,11 @@ button {
 }
 
 .cat-dropdown-item { 
-    padding: 14px 15px; 
+    padding: 12px 15px; 
     border-bottom: 1px solid var(--c-bd); 
     color: var(--c-p); 
-    font-size: 0.95rem; 
-    font-weight: 600; 
+    font-size: 0.9rem; 
+    font-weight: 500; 
     display: flex; 
     align-items: center; 
     gap: 12px; 
@@ -216,20 +217,24 @@ button {
     transition: 0.2s; 
 }
 
+.cat-dropdown-item:last-child {
+    border-bottom: none;
+}
+
 .cat-dropdown-item:hover, .cat-dropdown-item:active { 
     background: var(--c-img-bg); 
 }
 
 .btn-top-help { 
-    width: 44px; 
-    height: 44px; 
+    width: 40px; 
+    height: 40px; 
     border-radius: 50%; 
     background: var(--c-img-bg); 
     color: var(--c-p); 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    border: 1px solid var(--c-bd); 
+    border: 1px solid transparent; 
     cursor: pointer; 
     flex-shrink: 0; 
     transition: 0.3s; 
@@ -240,8 +245,8 @@ button {
 }
 
 .btn-top-help svg { 
-    width: 24px; 
-    height: 24px; 
+    width: 20px; 
+    height: 20px; 
     stroke: currentColor; 
     fill: none; 
     stroke-width: 2; 
@@ -281,7 +286,7 @@ button {
 .main-stage { 
     position: relative; 
     height: 100dvh; 
-    padding-top: 140px; 
+    padding-top: 130px; 
     padding-bottom: 80px; 
     overflow-y: auto; 
     overflow-x: hidden; 
@@ -301,7 +306,7 @@ button {
 
 .info-banner-item {
     font-size: 0.70rem;
-    font-weight: 700;
+    font-weight: 600;
     text-align: center;
     padding: 8px 10px;
     border-radius: 6px;
@@ -326,24 +331,31 @@ button {
     }
 }
 
+/* SECTION TITLE CLEAN E MINIMALISTA */
 .section-title { 
-    width: calc(100% - 20px); 
+    width: 100%; 
     max-width: 1000px; 
-    margin: 20px auto 15px; 
-    font-size: 1.1rem; 
-    font-weight: 800; 
+    margin: 30px auto 15px; 
+    font-size: 1.05rem; 
+    font-weight: 700; 
     color: var(--c-p); 
-    padding: 12px 15px; 
+    padding: 0 15px; 
     text-transform: uppercase; 
     letter-spacing: 0.5px; 
-    background: #f1f5f9; 
-    border: 1px solid var(--c-bd); 
-    border-left: 6px solid var(--c-a); 
-    border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    background: transparent; 
+    border: none; 
+    box-shadow: none;
     display: flex; 
     align-items: center; 
-    gap: 10px; 
+    gap: 8px; 
+}
+
+.section-marker {
+    display: inline-block;
+    width: 4px;
+    height: 16px;
+    background: var(--c-a);
+    border-radius: 2px;
 }
 
 /* --- CARROSSEL MOBILE E INDICADOR DE ROLAGEM --- */
@@ -351,8 +363,8 @@ button {
     display: flex; 
     overflow-x: auto; 
     scroll-snap-type: x mandatory; 
-    gap: 10px; 
-    padding: 0 10px 20px; 
+    gap: 12px; 
+    padding: 0 15px 25px; 
     width: 100%; 
     max-width: 1000px; 
     margin: 0 auto; 
@@ -362,22 +374,23 @@ button {
 }
 
 .grid-produtos::-webkit-scrollbar {
-    height: 6px; 
+    height: 4px; 
     display: block; 
 }
 .grid-produtos::-webkit-scrollbar-track {
     background: transparent;
-    margin: 0 10px;
+    margin: 0 15px;
 }
 .grid-produtos::-webkit-scrollbar-thumb {
     background: #cbd5e1;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
+/* 42vw para mostrar ~2.2 cards na tela (Mobile) */
 .grid-produtos > .u-card,
 .grid-produtos > .skeleton-card,
 .grid-produtos > .card-ver-todos {
-    width: 62vw; /* PADRÃO GRANDE PARA TODOS NO MOBILE */
+    width: 42vw; 
     flex: 0 0 auto; 
     scroll-snap-align: start; 
 }
@@ -398,42 +411,40 @@ button {
     }
 
     .u-card:hover {
-        transform: translateY(-5px); 
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        border-color: var(--c-bd);
-    }
-    
-    .section-title { 
-        width: calc(100% - 30px); 
+        transform: translateY(-3px); 
+        box-shadow: 0 8px 16px rgba(0,0,0,0.04);
+        border-color: #cbd5e1;
     }
 }
 
-/* CARD UNIVERSAL IDENTICO PARA TUDO */
+/* CARD UNIVERSAL IDENTICO PARA TUDO - MINIMALISTA */
 .u-card { 
     background: #fff; 
     border: 1px solid var(--c-bd); 
-    border-radius: 12px; 
-    padding: 12px; 
+    border-radius: 8px; 
+    padding: 10px; 
     display: flex; 
     flex-direction: column; 
     position: relative; 
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    transition: all 0.2s ease-out; 
     cursor: pointer; 
     height: 100%; 
+    box-shadow: none;
 }
 
 .u-card:active { 
     transform: scale(0.98); 
+    background: #f8fafc;
 }
 
 .u-img-area { 
     width: 100%; 
     aspect-ratio: 4/5; 
     background: var(--c-img-bg); 
-    border-radius: 8px; 
+    border-radius: 6px; 
     position: relative; 
     overflow: hidden; 
-    margin-bottom: 8px; 
+    margin-bottom: 10px; 
     display: flex;
     align-items: center;
     justify-content: center; 
@@ -466,32 +477,32 @@ button {
 .kit-tag { 
     background: var(--c-a); 
     color: #fff; 
-    font-size: 0.75rem; 
-    padding: 4px 8px; 
-    font-weight: 800; 
-    border-radius: 6px; 
+    font-size: 0.70rem; 
+    padding: 4px 6px; 
+    font-weight: 700; 
+    border-radius: 4px; 
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: 6px;
+    left: 6px;
 }
 
-/* BOTÃO DE ADICIONAR (+) - Laranja */
+/* BOTÃO DE ADICIONAR (+) - Minimalista */
 .card-add-btn { 
     position: absolute; 
-    bottom: 8px; 
-    right: 8px; 
-    width: 40px; 
-    height: 40px; 
-    background: var(--c-a); 
+    bottom: 6px; 
+    right: 6px; 
+    width: 32px; 
+    height: 32px; 
+    background: var(--c-p); /* Cor mais neutra */
     color: #fff; 
     border-radius: 50%; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     line-height: 1; 
-    font-size: 1.5rem; 
-    font-weight: 700; 
-    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.4); 
+    font-size: 1.2rem; 
+    font-weight: 600; 
+    box-shadow: none; 
     z-index: 10; 
     transition: 0.15s; 
     border: none; 
@@ -501,7 +512,7 @@ button {
 
 .card-add-btn:active { 
     transform: scale(0.85); 
-    background: #c2410c; 
+    background: var(--c-a); 
 }
 
 .u-info { 
@@ -513,10 +524,10 @@ button {
 }
 
 .u-name { 
-    font-size: 1.10rem; 
+    font-size: 0.85rem; 
     font-weight: 500; 
-    color: var(--c-p); 
-    line-height: 1.25; 
+    color: #334155; 
+    line-height: 1.3; 
     display: -webkit-box; 
     -webkit-line-clamp: 3; 
     -webkit-box-orient: vertical; 
@@ -525,55 +536,57 @@ button {
 }
 
 .u-price { 
-    font-size: 1.3rem; 
-    font-weight: 800; 
+    font-size: 1.05rem; 
+    font-weight: 700; 
     color: var(--c-p); 
 }
 
 .combo-strike { 
     text-decoration: line-through; 
     color: var(--c-t); 
-    font-size: 0.85rem; 
-    font-weight: 600; 
+    font-size: 0.80rem; 
+    font-weight: 500; 
     display: block; 
     margin-bottom: -2px; 
 }
 
 @media(min-width: 800px) { 
-    .u-name { font-size: 1.05rem; } 
+    .u-name { font-size: 0.9rem; } 
+    .u-price { font-size: 1.15rem; }
 }
 
 .btn-big-action { 
     width: 100%; 
-    background: #e2e8f0; 
+    background: var(--c-img-bg); 
     color: var(--c-p); 
     padding: 8px; 
-    border-radius: 8px; 
-    font-weight: 700; 
-    font-size: 0.9rem; 
+    border-radius: 6px; 
+    font-weight: 600; 
+    font-size: 0.85rem; 
     margin-top: 10px; 
     display: flex; 
     justify-content: center; 
     align-items: center; 
-    height: 42px; 
+    height: 38px; 
     transition: 0.2s;
+    border: 1px solid var(--c-bd);
 }
 
 .card-qty-ctrl { 
     display: flex; 
     align-items: center; 
     justify-content: space-between; 
-    background: #f8fafc; 
-    border: 1px solid #cbd5e1; 
-    border-radius: 8px; 
-    height: 42px; 
+    background: #fff; 
+    border: 1px solid var(--c-bd); 
+    border-radius: 6px; 
+    height: 38px; 
     margin-top: 10px; 
     padding: 0 4px; 
     width: 100%; 
 }
 
 .card-qty-ctrl button { 
-    font-size: 1.6rem; 
+    font-size: 1.4rem; 
     color: var(--c-a); 
     font-weight: 500; 
     background: transparent; 
@@ -584,8 +597,8 @@ button {
 }
 
 .card-qty-ctrl span { 
-    font-weight: 700; 
-    font-size: 1.1rem; 
+    font-weight: 600; 
+    font-size: 1rem; 
     color: var(--c-p); 
 }
 
@@ -601,9 +614,9 @@ button {
 
 .skeleton-card { 
     background: #fff; 
-    padding: 8px; 
+    padding: 10px; 
     border: 1px solid var(--c-bd); 
-    border-radius: 12px; 
+    border-radius: 8px; 
     display: flex; 
     flex-direction: column; 
 }
@@ -619,18 +632,18 @@ button {
 .sk-img { 
     width: 100%; 
     aspect-ratio: 4/5; 
-    border-radius: 8px; 
-    margin-bottom: 8px; 
+    border-radius: 6px; 
+    margin-bottom: 10px; 
 }
 
 .sk-t1 { 
-    height: 14px; 
+    height: 12px; 
     border-radius: 4px; 
     width: 90%; 
 }
 
 .sk-t2 { 
-    height: 18px; 
+    height: 16px; 
     margin-top: 8px; 
     border-radius: 4px; 
     width: 40%; 
@@ -674,8 +687,8 @@ button {
 }
 
 .tab-item svg { 
-    width: 24px; 
-    height: 24px; 
+    width: 22px; 
+    height: 22px; 
     stroke: currentColor; 
     fill: none; 
     stroke-width: 2; 
@@ -686,7 +699,7 @@ button {
 
 .tab-label { 
     font-size: 0.6rem; 
-    font-weight: 600; 
+    font-weight: 500; 
 }
 
 .tab-item.active { 
@@ -696,8 +709,8 @@ button {
 .cart-fab-wrapper { 
     position: relative; 
     top: -15px; 
-    width: 60px; 
-    height: 60px; 
+    width: 56px; 
+    height: 56px; 
     background: var(--c-p); 
     color: #fff !important; 
     border-radius: 50%; 
@@ -706,7 +719,7 @@ button {
     align-items: center; 
     justify-content: center; 
     border: 4px solid #fff; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15); 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08); 
     transition: 0.2s; 
     flex-shrink: 0; 
     cursor: pointer; 
@@ -718,8 +731,8 @@ button {
 
 .cart-fab-wrapper svg { 
     stroke: #fff; 
-    width: 22px; 
-    height: 22px; 
+    width: 20px; 
+    height: 20px; 
 }
 
 .cart-badge { 
@@ -729,7 +742,7 @@ button {
     background: var(--c-err); 
     color: #fff; 
     font-size: 0.65rem; 
-    font-weight: 700; 
+    font-weight: 600; 
     min-width: 18px; 
     height: 18px; 
     border-radius: 9px; 
@@ -741,17 +754,17 @@ button {
 
 dialog { 
     border: none; 
-    border-radius: 20px; 
+    border-radius: 16px; 
     width: 92%; 
     max-width: 420px; 
     padding: 0; 
-    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4); 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
     background: #fff; 
 }
 
 dialog::backdrop { 
-    background: rgba(15,23,42,0.85); 
-    backdrop-filter: blur(4px); 
+    background: rgba(15,23,42,0.7); 
+    backdrop-filter: blur(2px); 
 }
 
 .modal-body { 
@@ -767,26 +780,26 @@ dialog::backdrop {
     position: absolute; 
     top: 15px; 
     right: 15px; 
-    width: 34px; 
-    height: 34px; 
+    width: 32px; 
+    height: 32px; 
     background: var(--c-img-bg); 
     border-radius: 50%; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    font-weight: 600; 
+    font-weight: 500; 
     cursor: pointer; 
-    color: var(--c-p); 
+    color: var(--c-s); 
     border: none; 
     z-index: 50; 
 }
 
 .btn-modal { 
     width: 100%; 
-    padding: 14px; 
-    border-radius: 12px; 
+    padding: 12px; 
+    border-radius: 8px; 
     font-weight: 600; 
-    font-size: 1rem; 
+    font-size: 0.95rem; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
@@ -825,12 +838,13 @@ dialog::backdrop {
 }
 
 .toast { 
-    padding: 12px 20px; 
+    padding: 10px 18px; 
     color: #fff; 
-    border-radius: 12px; 
-    font-weight: 600; 
+    border-radius: 8px; 
+    font-weight: 500; 
+    font-size: 0.9rem;
     text-align: center; 
-    box-shadow: var(--sh-float); 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
     animation: toastPop 0.3s ease-out; 
     z-index: 99999; 
 }
@@ -844,9 +858,9 @@ dialog::backdrop {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    padding: 14px 15px; 
+    padding: 12px 15px; 
     border: 1px solid var(--c-bd); 
-    border-radius: 12px; 
+    border-radius: 8px; 
     cursor: pointer; 
     transition: all 0.2s; 
     background: #fff; 
@@ -854,38 +868,38 @@ dialog::backdrop {
 
 .del-option.selected { 
     border-color: var(--c-a); 
-    background: #fff7ed; 
-    border-width: 2px; 
+    background: #fffaf0; 
+    border-width: 1px; 
 }
 
 .del-opt-title { 
-    font-weight: 700; 
-    font-size: 1rem; 
+    font-weight: 600; 
+    font-size: 0.95rem; 
     color: var(--c-p); 
 }
 
 .del-opt-date { 
-    font-size: 0.85rem; 
+    font-size: 0.80rem; 
     color: var(--c-s); 
-    margin-top: 4px; 
+    margin-top: 2px; 
 }
 
 .del-opt-badge { 
-    font-size: 0.75rem; 
-    font-weight: 700; 
+    font-size: 0.70rem; 
+    font-weight: 600; 
     color: #fff; 
     background: var(--c-ok); 
-    padding: 4px 10px; 
-    border-radius: 12px; 
+    padding: 2px 8px; 
+    border-radius: 4px; 
 }
 
 .pay-opt { 
-    padding: 12px 14px; 
+    padding: 10px 12px; 
     border: 1px solid var(--c-bd); 
-    border-radius: 8px; 
+    border-radius: 6px; 
     cursor: pointer; 
-    font-size: 0.9rem; 
-    font-weight: 600; 
+    font-size: 0.85rem; 
+    font-weight: 500; 
     color: var(--c-s); 
     background: #fff; 
     transition: all 0.2s; 
@@ -894,9 +908,9 @@ dialog::backdrop {
 
 .pay-opt.selected { 
     border-color: var(--c-a); 
-    background: #fff7ed; 
+    background: #fffaf0; 
     color: var(--c-a); 
-    border-width: 2px; 
+    border-width: 1px; 
 }
 
 #chk-list { 
@@ -925,14 +939,14 @@ dialog::backdrop {
     display: flex; 
     overflow-x: auto; 
     scroll-snap-type: x mandatory; 
-    gap: 15px; 
+    gap: 12px; 
     padding: 0 15px 15px; 
     scrollbar-width: thin; 
     scrollbar-color: #cbd5e1 transparent;
 }
 
 .cj-container .cj-grid::-webkit-scrollbar {
-    height: 6px;
+    height: 4px;
     display: block; 
 }
 .cj-container .cj-grid::-webkit-scrollbar-track {
@@ -941,7 +955,7 @@ dialog::backdrop {
 }
 .cj-container .cj-grid::-webkit-scrollbar-thumb {
     background: #cbd5e1;
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .cj-container .cj-grid > .cj-card,
@@ -953,11 +967,11 @@ dialog::backdrop {
 
 .cj-card {
     background: #fff;
-    border: 2px dashed var(--c-a); 
-    border-radius: 12px;
-    padding: 15px;
-    box-shadow: 0 4px 12px rgba(234, 88, 12, 0.08);
-    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--c-bd); 
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: none;
+    transition: transform 0.2s;
     height: 100%;
 }
 
@@ -981,7 +995,7 @@ dialog::backdrop {
     width: 100%; 
     aspect-ratio: 4/5; 
     background: var(--c-img-bg);
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 1px;
     display: flex;
     align-items: center;
@@ -997,7 +1011,7 @@ dialog::backdrop {
 
 .cj-item-name {
     font-size: 0.7rem; 
-    font-weight: 600;
+    font-weight: 500;
     color: var(--c-p);
     text-align: center;
     line-height: 1.2;
@@ -1009,15 +1023,15 @@ dialog::backdrop {
 }
 
 .cj-plus {
-    font-weight: 800;
+    font-weight: 600;
     color: var(--c-t);
     font-size: 1.2rem;
     margin-bottom: 25px; 
 }
 
 .cj-header {
-    font-size: 1.1rem;
-    font-weight: 800;
+    font-size: 0.95rem;
+    font-weight: 700;
     color: var(--c-p);
     margin-bottom: 12px;
     text-align: center;
@@ -1026,7 +1040,7 @@ dialog::backdrop {
 .cj-footer {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 @media(min-width: 800px) {
@@ -1051,7 +1065,7 @@ dialog::backdrop {
 
 .cj-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(234, 88, 12, 0.15);
+    border-color: #cbd5e1;
 }
 
 .cj-price-area {
@@ -1061,25 +1075,25 @@ dialog::backdrop {
 .cj-old-price {
     text-decoration: line-through;
     color: var(--c-s);
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 .cj-new-price {
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: 1.25rem;
+    font-weight: 700;
     color: var(--c-p);
     line-height: 1;
 }
 
 .cj-btn {
-    background: var(--c-a);
+    background: var(--c-p);
     color: #fff;
     border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-weight: 700;
-    font-size: 1rem;
+    border-radius: 6px;
+    padding: 10px 15px;
+    font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: 0.2s;
     width: 100%;
@@ -1087,7 +1101,7 @@ dialog::backdrop {
 
 .cj-btn:active {
     transform: scale(0.96);
-    background: #c2410c;
+    background: var(--c-a);
 }
 
 /* CAROUSEL MODAL (Desktop) */
@@ -1127,7 +1141,6 @@ dialog::backdrop {
     padding: 15px;
     background: #fff;
     border-bottom: 1px solid var(--c-bd);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 .see-all-back {
     color: var(--c-p);
@@ -1139,8 +1152,8 @@ dialog::backdrop {
     padding: 0;
 }
 .see-all-title {
-    font-size: 1.1rem;
-    font-weight: 800;
+    font-size: 1rem;
+    font-weight: 700;
     color: var(--c-p);
     margin: 0;
     text-transform: uppercase;
@@ -1185,7 +1198,6 @@ dialog::backdrop {
     background: #fff;
     padding: 15px;
     border-top: 1px solid var(--c-bd);
-    box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
     z-index: 100;
     display: flex;
     flex-direction: column;
@@ -1193,18 +1205,18 @@ dialog::backdrop {
 }
 
 .expander-total {
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-size: 1.25rem;
+    font-weight: 700;
     color: var(--c-p);
     text-align: center;
     margin-bottom: 5px;
 }
 .expander-btn {
     border: none;
-    padding: 14px 20px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 1.05rem;
+    padding: 12px 15px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
     cursor: pointer;
     transition: 0.2s;
     text-align: center;
@@ -1220,14 +1232,15 @@ dialog::backdrop {
 }
 .expander-btn:active { transform: scale(0.95); }
 
+/* Card Ver Todos Minimalista */
 .card-ver-todos {
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: #f8fafc;
-    border: 2px dashed #cbd5e1;
-    border-radius: 12px;
+    background: #fff;
+    border: 1px solid var(--c-bd);
+    border-radius: 8px;
     cursor: pointer;
     transition: 0.2s;
     min-height: 200px;
@@ -1235,23 +1248,23 @@ dialog::backdrop {
 }
 .card-ver-todos:active {
     transform: scale(0.95);
+    background: var(--c-bg);
 }
 .card-ver-todos-icon {
-    width: 48px;
-    height: 48px;
-    background: var(--c-a);
-    color: #fff;
+    width: 40px;
+    height: 40px;
+    background: var(--c-img-bg);
+    color: var(--c-s);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
-    box-shadow: 0 4px 10px rgba(234, 88, 12, 0.4);
+    margin-bottom: 10px;
 }
 .card-ver-todos-text {
-    color: var(--c-p);
-    font-weight: 800;
-    font-size: 0.95rem;
+    color: var(--c-s);
+    font-weight: 600;
+    font-size: 0.85rem;
 }
 </style>
 </head>
@@ -1264,7 +1277,7 @@ dialog::backdrop {
             <span style="font-size: 0.85rem; line-height: 1.2;">Baixe o App<br><small style="color:#cbd5e1; font-weight: 400;">Mais rápido e leve</small></span>
         </div>
         <div style="display: flex; align-items: center; gap: 12px;">
-            <button id="btn-install" style="background: var(--c-a); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Instalar</button>
+            <button id="btn-install" style="background: #fff; color: var(--c-p); border: none; padding: 6px 14px; border-radius: 4px; font-weight: 600; font-size: 0.80rem; cursor: pointer;">Instalar</button>
             <button id="btn-close-install" style="background: transparent; color: #cbd5e1; border: none; font-size: 1.2rem; padding: 0; cursor: pointer;">✕</button>
         </div>
     </div>
@@ -1272,7 +1285,7 @@ dialog::backdrop {
     <div class="layout-limit desk-header-flex">
         <div class="mob-layer-1">
             <div class="search-wrapper">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
@@ -1285,7 +1298,7 @@ dialog::backdrop {
             <div class="mobile-category-dropdown">
                 <button class="btn-cat-dropdown" onclick="document.getElementById('cat-dropdown-list').classList.toggle('open')">
                     <span id="btn-cat-dropdown-text">Todas as Categorias</span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
                 </button>
@@ -1312,19 +1325,19 @@ dialog::backdrop {
 
     <div id="wrapper-sections">
         
-        <div id="banner-mercadinho" style="display: none; background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white; padding: 18px 20px; border-radius: 12px; margin: 0 15px 20px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); position: relative; transition: opacity 0.3s; z-index: 10;">
-            <div style="font-weight: 800; font-size: 1.15rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.4rem;">🛒</span> Direto no Mercadinho!
+        <div id="banner-mercadinho" style="display: none; background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white; padding: 18px 20px; border-radius: 8px; margin: 0 15px 20px; position: relative; transition: opacity 0.3s; z-index: 10;">
+            <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">🛒</span> Direto no Mercadinho!
             </div>
-            <div style="font-size: 0.95rem; font-weight: 500; line-height: 1.4; opacity: 0.95;">
+            <div style="font-size: 0.90rem; font-weight: 500; line-height: 1.4; opacity: 0.95;">
                 Sua cesta inicial foi guardada! Temos mais de 500 produtos nas prateleiras para você escolher e complementar o seu pedido. Fique à vontade!
             </div>
-            <button onclick="this.parentElement.style.display='none'" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); width: 30px; height: 30px; border-radius: 50%; color: white; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+            <button onclick="this.parentElement.style.display='none'" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); width: 26px; height: 26px; border-radius: 50%; color: white; border: none; font-size: 0.9rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
         </div>
 
         
         <div id="skeleton-loader" style="display:block; padding-top: 10px;" class="layout-limit">
-            <div class="section-title skeleton-el" style="width: 220px; height: 26px; margin: 20px 10px 10px; border-radius: 6px;"></div>
+            <div class="section-title skeleton-el" style="width: 220px; height: 26px; margin: 20px 10px 10px; border-radius: 4px; background-color: #f1f5f9;"></div>
             <div class="grid-produtos">
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
                 <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
@@ -1365,8 +1378,8 @@ dialog::backdrop {
 <div id="see-all-view">
     <div class="see-all-header">
         <button class="see-all-back" onclick="closeSeeAll()">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            <span style="font-weight: 700; font-size: 1rem;">Voltar</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <span style="font-weight: 600; font-size: 0.95rem;">Voltar</span>
         </button>
         <h2 class="see-all-title" id="see-all-title">Título</h2>
     </div>
@@ -1385,12 +1398,12 @@ dialog::backdrop {
 <dialog id="modal-quick-view">
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:12px; padding:20px;">
-            <img id="qv-img" src="" alt="Produto em destaque" style="width: 100%; max-height: 35vh; object-fit: contain; mix-blend-mode: multiply;">
+        <div style="display:flex; justify-content:center; margin-bottom: 15px; background:var(--c-img-bg); border-radius:8px; padding:15px;">
+            <img id="qv-img" src="" alt="Produto em destaque" style="width: 100%; max-height: 30vh; object-fit: contain; mix-blend-mode: multiply;">
         </div>
-        <h3 id="qv-name" style="font-size: 1.3rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
-        <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-a); margin-bottom: 8px; font-weight: 600; text-align: left; display: none;"></div>
-        <div id="qv-price" style="font-size: 1.8rem; font-weight: 800; color: var(--c-p); margin-bottom: 25px; text-align: left;"></div>
+        <h3 id="qv-name" style="font-size: 1.1rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
+        <div id="qv-validade" style="font-size: 0.80rem; color: var(--c-a); margin-bottom: 8px; font-weight: 500; text-align: left; display: none;"></div>
+        <div id="qv-price" style="font-size: 1.4rem; font-weight: 700; color: var(--c-p); margin-bottom: 20px; text-align: left;"></div>
         <div id="qv-action-area" data-id=""></div>
     </div>
 </dialog>
@@ -1398,31 +1411,31 @@ dialog::backdrop {
 <dialog id="modal-faq" onclick="if(event.target===this)this.close()">
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 20px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
-            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);">
-            <h3 style="font-weight:800;color:var(--c-p);text-transform:uppercase;margin:0;">Dona Antônia</h3>
-            <div style="font-size: 0.95rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 15px; border-bottom:1px solid var(--c-bd); padding-bottom:15px; margin-top:10px;">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 60px; height: 60px; border-radius: 50%; border:1px solid var(--c-bd);">
+            <h3 style="font-weight:700;color:var(--c-p);text-transform:uppercase;margin:0; font-size: 1.1rem;">Dona Antônia</h3>
+            <div style="font-size: 0.85rem; color: var(--c-s); line-height: 1.4; font-weight:500;">Cuiabá e Várzea Grande - MT<br>Tel: (65) 99815-0975</div>
         </div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;">
-            <div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Qual o valor da entrega?</div>
-            <div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div>
+        <div style="text-align: left; margin-bottom: 10px; border-bottom: 1px solid var(--c-img-bg); padding-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--c-p); font-size: 0.95rem;">Qual o valor da entrega?</div>
+            <div style="font-size: 0.85rem; font-weight:400; color: var(--c-s); margin-top: 4px;">A entrega é totalmente grátis para Cuiabá e Várzea Grande.</div>
         </div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;">
-            <div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Quais as formas de pagamento?</div>
-            <div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div>
+        <div style="text-align: left; margin-bottom: 10px; border-bottom: 1px solid var(--c-img-bg); padding-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--c-p); font-size: 0.95rem;">Quais as formas de pagamento?</div>
+            <div style="font-size: 0.85rem; font-weight:400; color: var(--c-s); margin-top: 4px;">Aceitamos PIX, Dinheiro, Cartão de Crédito e Débito na entrega.</div>
         </div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;">
-            <div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Qual o prazo de entrega?</div>
-            <div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Entregas em até 24 horas úteis após a confirmação do pedido.</div>
+        <div style="text-align: left; margin-bottom: 10px; border-bottom: 1px solid var(--c-img-bg); padding-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--c-p); font-size: 0.95rem;">Qual o prazo de entrega?</div>
+            <div style="font-size: 0.85rem; font-weight:400; color: var(--c-s); margin-top: 4px;">Entregas em até 24 horas úteis após a confirmação do pedido.</div>
         </div>
-        <div style="text-align: left; margin-bottom: 12px; border-bottom: 1px dashed var(--c-bd); padding-bottom: 8px;">
-            <div style="font-weight: 700; color: var(--c-p); font-size: 1rem;">Posso personalizar a cesta?</div>
-            <div style="font-size: 0.95rem; font-weight:500; color: var(--c-s); margin-top: 4px;">Sim! Você pode adicionar ou remover itens conforme sua necessidade.</div>
+        <div style="text-align: left; margin-bottom: 10px; border-bottom: 1px solid var(--c-img-bg); padding-bottom: 8px;">
+            <div style="font-weight: 600; color: var(--c-p); font-size: 0.95rem;">Posso personalizar a cesta?</div>
+            <div style="font-size: 0.85rem; font-weight:400; color: var(--c-s); margin-top: 4px;">Sim! Você pode adicionar ou remover itens conforme sua necessidade.</div>
         </div>
-        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 25px; margin-bottom: 15px;">
-    <a href="https://wa.me/5565998150975" target="_blank" class="btn-modal primary" style="flex: 1; background:#25D366; font-size: 1rem; text-decoration: none; display: flex; align-items: center; justify-content: center;">WhatsApp</a>
+        <div style="display: flex; gap: 8px; justify-content: center; margin-top: 20px; margin-bottom: 10px;">
+    <a href="https://wa.me/5565998150975" target="_blank" class="btn-modal primary" style="flex: 1; background:#16a34a; font-size: 0.95rem; text-decoration: none; display: flex; align-items: center; justify-content: center;">WhatsApp</a>
     
-    <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="btn-modal primary" style="flex: 1; background:#E1306C; font-size: 1rem; text-decoration: none; display: flex; align-items: center; justify-content: center;">Instagram</a>
+    <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="btn-modal primary" style="flex: 1; background:#e11d48; font-size: 0.95rem; text-decoration: none; display: flex; align-items: center; justify-content: center;">Instagram</a>
 </div>
     </div>
 </dialog>
@@ -1430,39 +1443,39 @@ dialog::backdrop {
 <dialog id="modal-checkout">
     <div class="modal-body" style="text-align: left; padding: 20px 15px;">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <h2 style="font-weight: 800; font-size: 1.4rem; color: var(--c-p); margin-top: 5px; margin-bottom: 20px;">Finalizar Pedido</h2>
+        <h2 style="font-weight: 700; font-size: 1.2rem; color: var(--c-p); margin-top: 5px; margin-bottom: 15px;">Finalizar Pedido</h2>
         
         <div id="chk-carousel-ofertas"></div>
         
-        <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">1. O Seu Pedido</h3>
+        <h3 style="font-weight: 600; font-size: 1rem; color: var(--c-p);">1. O Seu Pedido</h3>
         <div id="chk-list"></div>
         
-        <button class="btn-modal secondary" style="margin-bottom: 25px; border: 2px dashed var(--c-a); color: var(--c-a); background: #fff7ed; padding: 16px;" onclick="document.getElementById('modal-checkout').close(); switchTab('combos');">ADICIONAR MAIS PRODUTOS</button>        
+        <button class="btn-modal secondary" style="margin-bottom: 20px; border: 1px solid var(--c-a); color: var(--c-a); background: #fffaf0; padding: 12px; font-size: 0.9rem;" onclick="document.getElementById('modal-checkout').close(); switchTab('combos');">ADICIONAR MAIS PRODUTOS</button>        
         
-        <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">2. Receber quando?</h3>
-        <p style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px; font-weight: 500;">Planeje a entrega e ganhe desconto.</p>
-        <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 25px;"></div>
+        <h3 style="font-weight: 600; margin-top: 10px; font-size: 1rem; color: var(--c-p);">2. Receber quando?</h3>
+        <p style="font-size: 0.80rem; color: var(--c-s); margin-top: 4px; font-weight: 400;">Planeje a entrega e ganhe desconto.</p>
+        <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px; margin: 15px 0 20px;"></div>
         
-        <div id="chk-summary-lines" style="border-top: 1px dashed var(--c-bd); padding-top: 15px; margin-bottom: 15px; font-size: 0.95rem; font-weight: 500; color: var(--c-s);"></div>
+        <div id="chk-summary-lines" style="border-top: 1px solid var(--c-bd); padding-top: 15px; margin-bottom: 15px; font-size: 0.85rem; font-weight: 500; color: var(--c-s);"></div>
 
-        <div style="text-align: right; margin-bottom: 25px; border-top: 1px solid var(--c-bd); padding-top: 15px;">
-            <div style="font-size:0.85rem; font-weight:700; color:var(--c-s); text-transform:uppercase;">Total do Pedido</div>
-            <div style="font-weight: 800; font-size: 2.2rem; color: var(--c-p); line-height: 1.1;" id="chk-total"></div>
+        <div style="text-align: right; margin-bottom: 20px; border-top: 1px solid var(--c-bd); padding-top: 15px;">
+            <div style="font-size:0.80rem; font-weight:600; color:var(--c-s); text-transform:uppercase;">Total do Pedido</div>
+            <div style="font-weight: 700; font-size: 1.8rem; color: var(--c-p); line-height: 1.1;" id="chk-total"></div>
         </div>
 
-        <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">3. Tem cupom de desconto?</h3>
-        <div style="display: flex; gap: 8px; margin: 10px 0 20px;">
-            <input type="text" id="chk-cupom" placeholder="Digite seu cupom" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); font-family: inherit; font-size: 0.95rem; font-weight: 500; text-transform: uppercase;">
-            <button onclick="applyCoupon()" style="padding: 0 20px; font-size: 0.95rem; border: none; border-radius: 8px; background: var(--c-p); color: #fff; font-weight: 700; cursor: pointer;">Aplicar</button>
+        <h3 style="font-weight: 600; margin-top: 10px; font-size: 1rem; color: var(--c-p);">3. Tem cupom de desconto?</h3>
+        <div style="display: flex; gap: 8px; margin: 10px 0 15px;">
+            <input type="text" id="chk-cupom" placeholder="Digite seu cupom" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--c-bd); font-family: inherit; font-size: 0.9rem; font-weight: 500; text-transform: uppercase;">
+            <button onclick="applyCoupon()" style="padding: 0 15px; font-size: 0.9rem; border: none; border-radius: 6px; background: var(--c-p); color: #fff; font-weight: 600; cursor: pointer;">Aplicar</button>
         </div>
-        <div id="cupom-msg" style="font-size: 0.85rem; margin-top: -15px; margin-bottom: 15px; display: none; font-weight: 600;"></div>
+        <div id="cupom-msg" style="font-size: 0.80rem; margin-top: -10px; margin-bottom: 15px; display: none; font-weight: 500;"></div>
 
-        <h3 style="font-weight: 700; margin-top: 10px; font-size: 1.1rem; color: var(--c-p);">4. Meus Dados</h3>
-        <input type="text" id="chk-nome" placeholder="Nome Completo" style="width: 100%; padding: 14px 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 10px; font-family: inherit; font-size: 0.95rem; font-weight: 500;">
-        <input type="text" id="chk-cpf" placeholder="CPF" style="width: 100%; padding: 14px 12px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 20px; font-family: inherit; font-size: 0.95rem; font-weight: 500;">
+        <h3 style="font-weight: 600; margin-top: 10px; font-size: 1rem; color: var(--c-p);">4. Meus Dados</h3>
+        <input type="text" id="chk-nome" placeholder="Nome Completo" style="width: 100%; padding: 12px 10px; border-radius: 6px; border: 1px solid var(--c-bd); margin-bottom: 10px; font-family: inherit; font-size: 0.9rem; font-weight: 500;">
+        <input type="text" id="chk-cpf" placeholder="CPF" style="width: 100%; padding: 12px 10px; border-radius: 6px; border: 1px solid var(--c-bd); margin-bottom: 20px; font-family: inherit; font-size: 0.9rem; font-weight: 500;">
 
-        <h3 style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">5. Forma de Pagamento</h3>
-        <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; padding: 4px;">
+        <h3 style="font-weight: 600; font-size: 1rem; color: var(--c-p);">5. Forma de Pagamento</h3>
+        <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; padding: 4px;">
             <div class="pay-opt" onclick="selectPayment('Dinheiro', this)">💵 Dinheiro</div>
             <div class="pay-opt" onclick="selectPayment('PIX', this)">💠 PIX</div>
             <div class="pay-opt" onclick="selectPayment('Débito', this)">💳 Débito</div>
@@ -1471,11 +1484,11 @@ dialog::backdrop {
         </div>
         <input type="hidden" id="chk-pagamento" value="">
         
-        <button id="btn-send-order" onclick="sendOrder()" class="btn-modal primary" style="font-size: 1.1rem; padding: 16px; transition: 0.2s;"></button>
+        <button id="btn-send-order" onclick="sendOrder()" class="btn-modal primary" style="font-size: 1rem; padding: 14px; transition: 0.2s;"></button>
         
         <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <button class="btn-modal secondary" style="margin: 0; flex: 1; border: none; background: var(--c-bd); font-size: 0.9rem;" onclick="document.getElementById('modal-checkout').close(); switchTab('combos');">Mais produtos</button>
-            <button class="btn-modal secondary" style="margin: 0; flex: 1; border: none; background: #fef2f2; color: var(--c-err); font-size: 0.9rem;" onclick="clearCart()">Limpar Cesta</button>
+            <button class="btn-modal secondary" style="margin: 0; flex: 1; border: 1px solid var(--c-bd); background: #f8fafc; font-size: 0.85rem;" onclick="document.getElementById('modal-checkout').close(); switchTab('combos');">Mais produtos</button>
+            <button class="btn-modal secondary" style="margin: 0; flex: 1; border: 1px solid #fecaca; background: #fff; color: var(--c-err); font-size: 0.85rem;" onclick="clearCart()">Limpar Cesta</button>
         </div>
     </div>
 </dialog>
@@ -1483,8 +1496,8 @@ dialog::backdrop {
 <dialog id="modal-pedidos">
     <div class="modal-body" style="text-align: left; padding: 25px 20px;">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <h2 style="font-weight: 800; font-size: 1.4rem; color: var(--c-p); margin-top: 5px; margin-bottom: 20px;">Meus Pedidos</h2>
-        <div id="pedidos-list" style="display: flex; flex-direction: column; gap: 15px;"></div>
+        <h2 style="font-weight: 700; font-size: 1.2rem; color: var(--c-p); margin-top: 5px; margin-bottom: 15px;">Meus Pedidos</h2>
+        <div id="pedidos-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
     </div>
 </dialog>
 
@@ -1650,7 +1663,7 @@ function buildCjCardHTML(kit) {
                 <div class="cj-old-price">${fmt(kit.origPrice)}</div>
                 <div class="cj-new-price">${fmt(kit.preco)}</div>
             </div>
-            <button class="cj-btn" onclick="addCompreJunto('${kit.id}', '${kit.selectedItems[0].id}', '${kit.selectedItems[1].id}', ${kit.discountVal}); event.stopPropagation();">Adicionar ao Carrinho</button>
+            <button class="cj-btn" onclick="addCompreJunto('${kit.id}', '${kit.selectedItems[0].id}', '${kit.selectedItems[1].id}', ${kit.discountVal}); event.stopPropagation();">Adicionar</button>
         </div>
     </div>`;
 }
@@ -1660,7 +1673,7 @@ function renderCompreJunto() {
     STATE.cjCombos = []; 
     
     let html = `
-        <div class="section-title"><span class="section-marker"></span>Compre Junto e Economize</div>
+        <div class="section-title"><span class="section-marker"></span>Compre Junto</div>
         <div class="cj-container" id="cj-wrap">
             <div class="cj-grid">
     `;
@@ -1701,12 +1714,12 @@ function renderCompreJunto() {
 
     STATE.shuffledLists['cj'] = STATE.cjCombos;
 
-    let displayList = STATE.cjCombos.slice(0, 5);
+    let displayList = STATE.cjCombos.slice(0, 4);
     displayList.forEach(kit => {
         html += buildCjCardHTML(kit);
     });
 
-    if (STATE.cjCombos.length > 5) {
+    if (STATE.cjCombos.length > 4) {
         html += buildVerTodosCard('cj', 'Compre Junto', 'CJ');
     }
     
@@ -1719,7 +1732,7 @@ window.addCompreJunto = function(kitId, id1, id2, discountVal) {
     for(let id of items) {
         let p = STATE.prods.find(x => x.id === id);
         if(!p || p.stock <= (STATE.cart[id] || 0)) {
-            return showToast("Ops! Um dos itens deste kit esgotou.", "r");
+            return showToast("Ops! Um dos itens esgotou.", "r");
         }
     }
     
@@ -1731,11 +1744,11 @@ window.addCompreJunto = function(kitId, id1, id2, discountVal) {
     
     STATE.cjDiscounts.push({ kitId, items, discount: discountVal });
     updateTotals();
-    showToast("Kit Compre Junto adicionado!", "s");
+    showToast("Adicionado com sucesso!", "s");
     
     const cartBtn = document.querySelector('.cart-fab-wrapper');
     if (cartBtn) {
-        cartBtn.style.transform = 'scale(1.3)';
+        cartBtn.style.transform = 'scale(1.2)';
         setTimeout(() => cartBtn.style.transform = '', 200);
     }
 };
@@ -1853,7 +1866,7 @@ function updateExpanderTotalDisplay(currentSum) {
     if (expanderState.type === 'COMBO' && !expanderState.discountLost) {
         let savings = expanderState.originalSum - expanderState.basePrice;
         if (savings > 0) {
-            totalHtml += `<div style="color:var(--c-ok); font-size: 0.9rem; font-weight: 700; margin-top: 4px;">Economia de ${fmt(savings)}</div>`;
+            totalHtml += `<div style="color:var(--c-ok); font-size: 0.85rem; font-weight: 600; margin-top: 2px;">Economia de ${fmt(savings)}</div>`;
         }
     }
     
@@ -1871,7 +1884,7 @@ window.changeExpanderQty = function(pId, delta) {
     if (expanderState.type === 'COMBO') {
         let origQty = expanderState.originalItems[pId] || 0;
         if (next < origQty && current >= origQty) {
-            if (!confirm("Atenção: Ao reduzir este item abaixo da quantidade original do kit, você perderá o desconto promocional. Deseja continuar?")) {
+            if (!confirm("Atenção: Ao reduzir este item, você perderá o desconto promocional. Deseja continuar?")) {
                 return;
             }
         }
@@ -1943,11 +1956,11 @@ window.commitExpander = function() {
     closeSeeAll(false);
     updateTotals();
 
-    showToast(`${formatName(expanderState.sourceObj.nome)} adicionado!`, "s");
+    showToast(`Adicionado!`, "s");
 
     const cartBtn = document.querySelector('.cart-fab-wrapper');
     if (cartBtn) {
-        cartBtn.style.transform = 'scale(1.3)';
+        cartBtn.style.transform = 'scale(1.2)';
         setTimeout(() => cartBtn.style.transform = '', 200);
     }
     
@@ -2088,31 +2101,31 @@ function animateToCart(startX, startY) {
     dot.style.position = 'fixed'; 
     dot.style.left = (startX - 15) + 'px'; 
     dot.style.top = (startY - 15) + 'px';
-    dot.style.width = '30px'; 
-    dot.style.height = '30px'; 
-    dot.style.backgroundColor = 'var(--c-a)'; 
+    dot.style.width = '24px'; 
+    dot.style.height = '24px'; 
+    dot.style.backgroundColor = 'var(--c-p)'; 
     dot.style.borderRadius = '50%';
     dot.style.zIndex = '999999'; 
     dot.style.pointerEvents = 'none'; 
-    dot.style.boxShadow = '0 4px 15px rgba(234, 88, 12, 0.6)';
-    dot.style.transition = 'top 0.5s cubic-bezier(0.5, -0.5, 0.2, 1), left 0.5s linear, transform 0.5s, opacity 0.5s';
+    dot.style.boxShadow = 'none';
+    dot.style.transition = 'top 0.4s cubic-bezier(0.5, -0.5, 0.2, 1), left 0.4s linear, transform 0.4s, opacity 0.4s';
     
     document.body.appendChild(dot);
     
     dot.getBoundingClientRect();
     
-    dot.style.left = (endX - 15) + 'px'; 
-    dot.style.top = (endY - 15) + 'px'; 
+    dot.style.left = (endX - 12) + 'px'; 
+    dot.style.top = (endY - 12) + 'px'; 
     dot.style.transform = 'scale(0.3)'; 
     dot.style.opacity = '0.5';
 
     setTimeout(() => { 
         dot.remove(); 
-        cartBtn.style.transform = 'scale(1.2)'; 
+        cartBtn.style.transform = 'scale(1.15)'; 
         setTimeout(() => {
             cartBtn.style.transform = '';
         }, 150); 
-    }, 500);
+    }, 400);
 }
 
 window.handleAddClick = function(e, id) {
@@ -2129,7 +2142,7 @@ function buildVerTodosCard(listKey, title, type) {
     return `
     <div class="card-ver-todos" onclick="openSeeAll('${listKey}', '${title}', '${type}')">
         <div class="card-ver-todos-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><line x1="12" y1="5" x2="12" y2="19"></line></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><line x1="12" y1="5" x2="12" y2="19"></line></svg>
         </div>
         <div class="card-ver-todos-text">VER TODOS</div>
     </div>`;
@@ -2191,7 +2204,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
         
         if (item.bulkDiscount) {
             let bulkPrice = pPrice * (1 - item.bulkDiscount);
-            bulkDiscountHtml = `<div style="font-size:0.95rem; color:var(--c-ok); font-weight:500; margin-top:2px;">A partir de 3un: ${fmt(bulkPrice)}</div>`;
+            bulkDiscountHtml = `<div style="font-size:0.80rem; color:var(--c-ok); font-weight:600; margin-top:2px;">A partir de 3: ${fmt(bulkPrice)}</div>`;
         }
 
         addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnText}</button>`;
@@ -2396,10 +2409,10 @@ function generateCarouselHtml(title, color, trackId, list, type, listKey, sortTy
     
     STATE.shuffledLists[listKey] = processedList; 
     
-    let showList = processedList.slice(0, 8); 
+    let showList = processedList.slice(0, 4); 
     let trackHtml = showList.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
     
-    if (processedList.length > 8) {
+    if (processedList.length > 4) {
         trackHtml += buildVerTodosCard(listKey, title, type);
     }
     
@@ -2615,19 +2628,24 @@ function renderPaginated(containerId, listKey, list, type) {
         groupKeys.forEach((gName, gIdx) => {
             let title = gName === "Outras Cestas" ? "Outras Cestas" : `Cestas com ${gName}`;
             let trackId = 'grid-g-cesta-' + gIdx;
-            let trackHtml = groups[gName].map((item, idx) => buildCardHtml(item, 'BASKET', idx >= 10, idx)).join('');
-            let sentinelHtml = groups[gName].length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
+            
+            let key = 'cestas_group_' + gIdx;
+            STATE.shuffledLists[key] = groups[gName];
+            
+            let trackHtml = groups[gName].slice(0, 4).map((item, idx) => buildCardHtml(item, 'BASKET', false, idx)).join('');
+            
+            if (groups[gName].length > 4) {
+                trackHtml += buildVerTodosCard(key, title, 'BASKET');
+            }
             
             html += `
                 <div class="section-title"><span class="section-marker"></span>${title}</div>
                 <div class="grid-produtos" id="${trackId}">
                     ${trackHtml}
-                    ${sentinelHtml}
                 </div>`;
         });
         
         c.innerHTML = html || '<p style="padding: 15px;">Nenhuma cesta encontrada.</p>';
-        ativarRolagemInfinita();
         return;
     }
 
@@ -2640,7 +2658,7 @@ function renderPaginated(containerId, listKey, list, type) {
         return buildCardHtml(item, itemType, index >= 10, index);
     }).join('');
     
-    let sentinelHtml = displayList.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 600; font-size: 0.9rem;">Carregando mais...</div>` : '';
+    let sentinelHtml = displayList.length > 10 ? `<div class="scroll-sentinel" style="grid-column: 1 / -1; padding: 20px; text-align: center; color: var(--c-s); font-weight: 500; font-size: 0.85rem;">Carregando mais...</div>` : '';
     
     c.innerHTML = (html || '<p style="grid-column: 1/-1; padding: 15px;">Nenhum item encontrado.</p>') + sentinelHtml;
     ativarRolagemInfinita();
@@ -2682,7 +2700,7 @@ function openQuickView(id) {
         $('qv-validade').style.display = 'none'; 
     }
     
-    $('qv-price').innerHTML = p.oldPrice ? `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:600;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
+    $('qv-price').innerHTML = p.oldPrice ? `<span style="font-size:0.95rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:500;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
     
     $('qv-action-area').dataset.id = id; 
     $('qv-action-area').innerHTML = getCardControls(id); 
@@ -2851,7 +2869,7 @@ function clearSearch() {
 function showToast(m, t) { 
     let d = document.createElement('div'); 
     d.className = 'toast'; 
-    d.style.background = (t === 'r') ? '#dc2626' : '#15803d'; 
+    d.style.background = (t === 'r') ? '#e11d48' : '#16a34a'; 
     d.innerText = m; 
     $('toast-container').appendChild(d); 
     setTimeout(() => d.remove(), 2500); 
@@ -2868,8 +2886,8 @@ function openCheckout() {
     if (STATE.destaques && STATE.destaques.length > 0) {
         let trackHtmlDestaques = STATE.destaques.map(p => buildCardHtml(p, 'PROD', false)).join('');
         $('chk-carousel-ofertas').innerHTML = `
-        <div style="margin-bottom: 25px; background: #fff7ed; padding: 15px 10px; border-radius: 12px; border: 1px dashed var(--c-a);">
-            <h3 style="font-weight: 800; font-size: 1.1rem; color: var(--c-a); margin-bottom: 12px; text-align: center;">Você viu essas ofertas?</h3>
+        <div style="margin-bottom: 20px; background: #fffaf0; padding: 15px 10px; border-radius: 8px; border: 1px solid var(--c-a);">
+            <h3 style="font-weight: 700; font-size: 1rem; color: var(--c-a); margin-bottom: 12px; text-align: center;">Você viu essas ofertas?</h3>
 <div class="grid-produtos carousel-modal" style="padding: 0 0 5px 0; gap: 10px; margin: 0;">
 ${trackHtmlDestaques}
             </div>
@@ -2913,16 +2931,16 @@ ${trackHtmlDestaques}
         let p = STATE.prods.find(x => x.id === id); 
         let qty = STATE.cart[id];
         
-        let msgLeve3 = (qty >= 3 && p.bulkDiscount) ? `<div style="color:var(--c-ok); font-size:0.75rem; font-weight:800; text-align:center; width:100%; margin-top:4px;">Desconto: -${fmt((p.price * p.bulkDiscount) * qty)}</div>` : '';
+        let msgLeve3 = (qty >= 3 && p.bulkDiscount) ? `<div style="color:var(--c-ok); font-size:0.75rem; font-weight:600; text-align:center; width:100%; margin-top:4px;">Desconto: -${fmt((p.price * p.bulkDiscount) * qty)}</div>` : '';
 
         return `
         <div style="display:flex; flex-direction:column; align-items:center; border:1px solid var(--c-bd); border-radius:8px; padding:10px 8px; background:#fff; text-align:center; position:relative;">
             <img src="${p.img}" style="width:100%; aspect-ratio:4/5; object-fit:contain; margin-bottom:8px; background: var(--c-img-bg); border-radius: 6px;">
-            <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; height:2.4em; overflow:hidden; margin-bottom:10px; width:100%; font-weight: 600;">${formatName(p.name)}</div>
-            <div class="card-qty-ctrl" style="margin-top:auto; height:36px; width:100%; padding:0; display:flex; justify-content:space-between; align-items:center; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
-                <button onclick="upd('${id}',-1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">-</button>
-                <span style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">${qty}</span>
-                <button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 12px; font-size:1.5rem; color: var(--c-a); background: none; border: none; cursor: pointer;">+</button>
+            <div style="font-size:0.75rem; color:var(--c-p); line-height:1.2; height:2.4em; overflow:hidden; margin-bottom:10px; width:100%; font-weight: 500;">${formatName(p.name)}</div>
+            <div class="card-qty-ctrl" style="margin-top:auto; height:32px; width:100%; padding:0; display:flex; justify-content:space-between; align-items:center; background: #fff; border: 1px solid var(--c-bd); border-radius: 6px;">
+                <button onclick="upd('${id}',-1); event.stopPropagation();" style="padding:0 12px; font-size:1.2rem; color: var(--c-a); background: none; border: none; cursor: pointer;">-</button>
+                <span style="font-weight: 600; font-size: 0.95rem; color: var(--c-p);">${qty}</span>
+                <button onclick="upd('${id}',1); event.stopPropagation();" style="padding:0 12px; font-size:1.2rem; color: var(--c-a); background: none; border: none; cursor: pointer;">+</button>
             </div>
             ${msgLeve3}
         </div>`; 
@@ -2943,11 +2961,11 @@ ${trackHtmlDestaques}
     
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
-        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Kit Promocional:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
-        (STATE.cjTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto Compre Junto:</span><span>-${fmt(STATE.cjTotalDiscount)}</span></div>` : '') + 
-        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Desconto (A partir de 3un):</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
-        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Bônus Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '') +
-        (cupomDesconto > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Cupom (${STATE.coupon.codigo}):</span><span>-${fmt(cupomDesconto)}</span></div>` : '');
+        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Kit Promo:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
+        (STATE.cjTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Compre Junto:</span><span>-${fmt(STATE.cjTotalDiscount)}</span></div>` : '') + 
+        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Atacarejo:</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
+        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '') +
+        (cupomDesconto > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:4px;"><span>Cupom:</span><span>-${fmt(cupomDesconto)}</span></div>` : '');
         
     let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount - cupomDesconto; 
     $('chk-total').innerText = fmt(final);
@@ -2962,7 +2980,7 @@ ${trackHtmlDestaques}
     } else { 
         btn.disabled = false; 
         btn.innerText = 'ENVIAR PEDIDO'; 
-        btn.style.background = '#15803d'; 
+        btn.style.background = 'var(--c-ok)'; 
         btn.style.color = '#fff'; 
         btn.style.cursor = 'pointer'; 
     }
@@ -2985,15 +3003,15 @@ function openHistoricoPedidos() {
         html = '<p style="color: var(--c-s); text-align: center; margin-top: 20px; font-weight: 500;">Você ainda não tem pedidos salvos.</p>';
     } else {
         html = history.map(o => `
-            <div style="border: 1px solid var(--c-bd); border-radius: 12px; padding: 16px; background: #fff;">
+            <div style="border: 1px solid var(--c-bd); border-radius: 8px; padding: 15px; background: #fff;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 0.85rem; color: var(--c-t); font-weight: 600;">📅 ${o.date}</span>
-                    <span style="font-size: 0.85rem; background: var(--c-img-bg); padding: 4px 8px; border-radius: 6px; color: var(--c-p); font-weight: 700;">#${o.id}</span>
+                    <span style="font-size: 0.80rem; color: var(--c-t); font-weight: 500;">📅 ${o.date}</span>
+                    <span style="font-size: 0.80rem; background: var(--c-bg); padding: 4px 8px; border-radius: 4px; color: var(--c-p); font-weight: 600;">#${o.id}</span>
                 </div>
-                <div style="font-weight: 700; color: var(--c-p); margin-bottom: 4px;">${o.basketName}</div>
-                <div style="font-size: 1.3rem; font-weight: 800; color: var(--c-err); margin-bottom: 15px;">${fmt(o.total)}</div>
-                <button class="btn-modal secondary" style="margin:0; padding: 12px; font-size: 0.95rem; display:flex; align-items:center; justify-content:center; gap: 8px;" onclick="reorder('${o.id}')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                <div style="font-weight: 600; color: var(--c-p); margin-bottom: 4px; font-size: 0.95rem;">${o.basketName}</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 15px;">${fmt(o.total)}</div>
+                <button class="btn-modal secondary" style="margin:0; padding: 10px; font-size: 0.9rem; display:flex; align-items:center; justify-content:center; gap: 8px;" onclick="reorder('${o.id}')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
                     Pedir Novamente
                 </button>
             </div>`).join('');
@@ -3049,9 +3067,9 @@ function reorder(orderId) {
     updateTotals(); 
 
     if (missing) {
-        alert("Atenção: Alguns produtos do seu pedido antigo não estão mais disponíveis e foram removidos. Os preços dos demais foram atualizados para os valores de hoje. Confirme os itens antes de fechar."); 
+        alert("Atenção: Alguns produtos do pedido antigo não estão mais disponíveis e foram removidos. Confirme os itens antes de fechar."); 
     } else {
-        showToast("Cesta carregada com preços atualizados!", "s");
+        showToast("Cesta carregada!", "s");
     }
 
     openCheckout();
@@ -3211,7 +3229,6 @@ async function sendOrder() {
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 50);
 
-    // Lógica inteligente para o banner de app
     let isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     let isWebView = /(FBAN|FBAV|Instagram)/i.test(navigator.userAgent);
     let bannerInstalacao = document.getElementById('install-banner');
