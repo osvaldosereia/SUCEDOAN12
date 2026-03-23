@@ -63,7 +63,7 @@ button {
     position: relative; 
 } 
 
-/* HEADER PRINCIPAL REFORMULADO */
+/* HEADER PRINCIPAL REFORMULADO COM BANNER INSTALAR APP DENTRO DELE */
 #header-wrapper { 
     position: fixed; 
     top: 0; 
@@ -72,6 +72,19 @@ button {
     z-index: 50; 
     background: #fff; 
     box-shadow: 0 4px 15px rgba(0,0,0,0.06); 
+    display: flex;
+    flex-direction: column;
+}
+
+#install-banner {
+    background: var(--c-p); 
+    color: #fff; 
+    padding: 10px 15px; 
+    display: none; 
+    align-items: center; 
+    justify-content: space-between; 
+    font-weight: 500;
+    width: 100%;
 }
 
 .mob-layer-1 { 
@@ -313,29 +326,6 @@ button {
     }
 }
 
-@keyframes pulseAlert {
-    0% { opacity: 0.6; transform: scale(0.98); box-shadow: 0 0 0 rgba(234, 88, 12, 0); }
-    100% { opacity: 1; transform: scale(1.02); box-shadow: 0 4px 15px rgba(234, 88, 12, 0.2); }
-}
-.loading-pulse {
-    text-align: center;
-    color: var(--c-a);
-    font-weight: 800;
-    padding: 15px;
-    margin: 10px auto 15px auto;
-    background: #fff7ed;
-    border: 2px dashed var(--c-a);
-    border-radius: 8px;
-    animation: pulseAlert 0.8s infinite alternate;
-    transition: all 0.5s ease;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    letter-spacing: 0.5px;
-}
-
 .section-title { 
     width: calc(100% - 20px); 
     max-width: 1000px; 
@@ -387,7 +377,7 @@ button {
 .grid-produtos > .u-card,
 .grid-produtos > .skeleton-card,
 .grid-produtos > .card-ver-todos {
-    width: 40vw; 
+    width: 62vw; /* PADRÃO GRANDE PARA TODOS NO MOBILE */
     flex: 0 0 auto; 
     scroll-snap-align: start; 
 }
@@ -415,60 +405,6 @@ button {
     
     .section-title { 
         width: calc(100% - 30px); 
-    }
-}
-
-@media (max-width: 799px) {
-    #wrapper-cestas .grid-produtos > .u-card,
-    #wrapper-cestas .grid-produtos > .skeleton-card,
-    #grid-combos > .u-card,
-    #grid-combos > .card-ver-todos,
-    #grid-combos > .skeleton-card,
-    [id^="grid-kits-bottom-"] > .u-card,
-    [id^="grid-kits-bottom-"] > .card-ver-todos {
-        width: 62vw; 
-    }
-
-    #wrapper-cestas .u-name,
-    #grid-combos .u-name,
-    [id^="grid-kits-bottom-"] .u-name {
-        font-size: 0.95rem !important;
-    }
-    
-    #wrapper-cestas .u-price,
-    #grid-combos .u-price,
-    [id^="grid-kits-bottom-"] .u-price {
-        font-size: 1.15rem !important;
-    }
-
-    .u-name {
-        font-size: 0.85rem !important; 
-        margin-top: 5px;
-        line-height: 1.2;
-        min-height: 2.4em; 
-    }
-    
-    .u-price {
-        font-size: 0.95rem !important; 
-        font-weight: 800;
-    }
-
-    .u-info div[style*="font-size:0.95rem"] {
-        font-size: 0.75rem !important; 
-        letter-spacing: -0.1px;
-    }
-
-    .combo-strike {
-        font-size: 0.70rem !important;
-        margin-bottom: -4px;
-    }
-
-    .card-add-btn {
-        width: 32px; 
-        height: 32px;
-        font-size: 1.2rem;
-        bottom: 5px;
-        right: 5px;
     }
 }
 
@@ -1213,14 +1149,13 @@ dialog::backdrop {
     flex: 1;
     overflow-y: auto;
     padding: 15px;
-    padding-bottom: 80px; 
+    padding-bottom: 180px !important; 
     position: relative;
 }
 .grid-ver-todos {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-    padding-bottom: 40px;
 }
 @media(min-width: 800px) {
     .grid-ver-todos {
@@ -1229,76 +1164,16 @@ dialog::backdrop {
     }
 }
 
-/* NOVO: Grid Ver Todos para Compre Junto */
 .grid-ver-todos-cj {
     display: grid;
     grid-template-columns: 1fr;
     gap: 15px;
-    padding-bottom: 40px;
 }
 @media(min-width: 800px) {
     .grid-ver-todos-cj {
         grid-template-columns: repeat(3, 1fr);
         gap: 20px;
     }
-}
-
-/* NOVO: Estilos para Itens do Kit no Menu Lateral */
-.kit-lat-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-.kit-lat-item {
-    display: flex;
-    align-items: center;
-    background: #fff;
-    border: 1px solid var(--c-bd);
-    border-radius: 12px;
-    padding: 10px;
-    transition: opacity 0.2s;
-}
-.kit-lat-item img {
-    width: 70px;
-    height: 70px;
-    object-fit: contain;
-    mix-blend-mode: multiply;
-    background: var(--c-img-bg);
-    border-radius: 8px;
-    margin-right: 12px;
-}
-.kit-lat-name {
-    flex: 1;
-    font-size: 0.95rem;
-    font-weight: 600;
-    color: var(--c-p);
-    line-height: 1.2;
-}
-.kit-lat-ctrl {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: #f8fafc;
-    border: 1px solid var(--c-a);
-    border-radius: 8px;
-    height: 38px;
-    width: 100px;
-    padding: 0 4px;
-}
-.kit-lat-ctrl button {
-    background: transparent;
-    border: none;
-    color: var(--c-a);
-    font-size: 1.4rem;
-    font-weight: bold;
-    width: 30px;
-    height: 100%;
-    cursor: pointer;
-}
-.kit-lat-ctrl span {
-    font-weight: 700;
-    color: var(--c-p);
-    font-size: 1.1rem;
 }
 
 /* Rodapé fixo lateral para Kits/Cestas */
@@ -1316,35 +1191,34 @@ dialog::backdrop {
     flex-direction: column;
     gap: 10px;
 }
-@media(min-width: 800px) {
-    .see-all-footer {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-}
+
 .expander-total {
     font-size: 1.5rem;
     font-weight: 800;
     color: var(--c-p);
     text-align: center;
+    margin-bottom: 5px;
 }
 .expander-btn {
-    background: var(--c-a);
-    color: #fff;
     border: none;
     padding: 14px 20px;
     border-radius: 8px;
     font-weight: 700;
     font-size: 1.05rem;
     cursor: pointer;
-    width: 100%;
     transition: 0.2s;
+    text-align: center;
 }
-@media(min-width: 800px) {
-    .expander-btn { width: auto; }
+.expander-btn.primary {
+    background: var(--c-a);
+    color: #fff;
 }
-.expander-btn:active { transform: scale(0.95); background: #c2410c; }
+.expander-btn.secondary {
+    background: #fff;
+    color: var(--c-p);
+    border: 1px solid var(--c-bd);
+}
+.expander-btn:active { transform: scale(0.95); }
 
 .card-ver-todos {
     display: flex;
@@ -1382,19 +1256,19 @@ dialog::backdrop {
 </style>
 </head>
 <body>
-
-<div id="install-banner" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); background: var(--c-p); color: #fff; padding: 12px 20px; border-radius: 20px; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.2); align-items: center; gap: 10px; font-weight: 500; width: 90%; max-width: 400px; justify-content: space-between;">
-    <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.5rem;">📲</span>
-        <span style="font-size: 0.9rem;">Instalar App Dona Antônia</span>
-    </div>
-    <div style="display: flex; align-items: center; gap: 8px;">
-        <button id="btn-install" style="background: var(--c-a); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; transition: 0.2s;">Instalar</button>
-        <button id="btn-close-install" style="background: transparent; color: var(--c-t); border: none; font-size: 1.2rem; padding: 0 5px;">✕</button>
-    </div>
-</div>
     
 <div id="header-wrapper">
+    <div id="install-banner">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.5rem;">📲</span>
+            <span style="font-size: 0.85rem; line-height: 1.2;">Baixe o App<br><small style="color:#cbd5e1; font-weight: 400;">Mais rápido e leve</small></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <button id="btn-install" style="background: var(--c-a); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 0.85rem; cursor: pointer;">Instalar</button>
+            <button id="btn-close-install" style="background: transparent; color: #cbd5e1; border: none; font-size: 1.2rem; padding: 0; cursor: pointer;">✕</button>
+        </div>
+    </div>
+    
     <div class="layout-limit desk-header-flex">
         <div class="mob-layer-1">
             <div class="search-wrapper">
@@ -1501,7 +1375,10 @@ dialog::backdrop {
     </div>
     <div id="see-all-footer" class="see-all-footer" style="display:none;">
         <div class="expander-total" id="see-all-total-container"></div>
-        <button class="expander-btn" onclick="commitExpander()">Adicionar produtos ao carrinho</button>
+        <div style="display: flex; gap: 10px; width: 100%;">
+            <button class="expander-btn secondary" style="flex: 1;" onclick="closeSeeAll(false)">Voltar</button>
+            <button class="expander-btn primary" style="flex: 2;" onclick="commitExpander()">Adicionar ao carrinho</button>
+        </div>
     </div>
 </div>
 
@@ -1652,7 +1529,7 @@ const STATE = {
     destaques: [],
     ofertasDoDia: [],
     shuffledLists: {},
-    activeTabId: 'cestas' // Memória da aba atual para evitar saltos
+    activeTabId: 'cestas' 
 };
 
 
@@ -1752,15 +1629,6 @@ STATE.cjData = [];
 STATE.cjDiscounts = [];
 STATE.cjTotalDiscount = 0;
 STATE.cjCombos = [];
-
-async function loadCompreJunto() {
-    try {
-        let res = await fetch('/site/compre-junto.json?v=' + versaoCache);
-        STATE.cjData = await res.json();
-    } catch(e) {
-        console.log("Arquivo compre-junto.json não encontrado ou vazio.");
-    }
-}
 
 function buildCjCardHTML(kit) {
     return `
@@ -1930,10 +1798,17 @@ window.openKitLateralView = function(id, type) {
         currentSum += p.price * qty;
 
         return `
-        <div class="kit-lat-item" id="exp-item-${pId}" style="opacity: ${qty===0 ? '0.5' : '1'};">
-            <img src="${p.img}" alt="${formatName(p.name)}">
-            <div class="kit-lat-name">${formatName(p.name)}</div>
-            <div class="kit-lat-ctrl">
+        <div class="u-card" style="opacity: ${qty===0 ? '0.5' : '1'};">
+            <div class="u-img-area">
+                <img src="${p.img}" class="u-img" alt="${formatName(p.name)}">
+            </div>
+            <div class="u-info">
+                <div class="u-name">${formatName(p.name)}</div>
+                <div style="display: flex; flex-direction: column; justify-content: flex-end; margin-top: auto;">
+                    <div class="u-price">${fmt(p.price)}</div>
+                </div>
+            </div>
+            <div class="card-qty-ctrl" style="margin-top: 10px; height: 36px; padding: 0 4px; z-index: 10; position: relative;">
                 <button onclick="changeExpanderQty('${pId}', -1)">-</button>
                 <span id="exp-qty-${pId}">${qty}</span>
                 <button onclick="changeExpanderQty('${pId}', 1)">+</button>
@@ -1941,20 +1816,21 @@ window.openKitLateralView = function(id, type) {
         </div>`;
     }).join('');
 
+    itemsHtml += `<div style="grid-column: 1 / -1; margin-top: 20px;"><button class="btn-modal secondary" style="width: 100%; padding: 14px;" onclick="closeSeeAll(false)">Voltar para a loja</button></div>`;
+
     document.getElementById('see-all-title').innerText = formatName(sourceObj.nome);
-    document.getElementById('see-all-grid').className = ''; 
-    document.getElementById('see-all-grid').innerHTML = `<div class="kit-lat-list">${itemsHtml}</div>`;
+    document.getElementById('see-all-grid').className = 'grid-ver-todos'; 
+    document.getElementById('see-all-grid').innerHTML = itemsHtml;
     
     let contentDiv = document.getElementById('see-all-content');
-    contentDiv.style.paddingBottom = '160px'; // Ajuste do passo 1 já incluído aqui
+    contentDiv.style.paddingBottom = '180px'; 
+    contentDiv.scrollTo({ top: 0, behavior: 'instant' });
 
     document.getElementById('see-all-footer').style.display = 'flex';
     updateExpanderTotalDisplay(currentSum);
     
-    // Abre a aba lateral
     document.getElementById('see-all-view').classList.add('open');
 
-    // 👇 PASSO 2.2: Adiciona o estado na URL silenciosamente para interceptar o "Voltar"
     if (!history.state || !history.state.lateralOpen) {
         history.pushState({ lateralOpen: true }, '');
     }
@@ -2064,7 +1940,7 @@ window.commitExpander = function() {
         }
     }
 
-    closeSeeAll();
+    closeSeeAll(false);
     updateTotals();
 
     showToast(`${formatName(expanderState.sourceObj.nome)} adicionado!`, "s");
@@ -2074,6 +1950,14 @@ window.commitExpander = function() {
         cartBtn.style.transform = 'scale(1.3)';
         setTimeout(() => cartBtn.style.transform = '', 200);
     }
+    
+    setTimeout(() => {
+        let ofertasSec = document.getElementById('grid-ofertas-dia-cestas');
+        if (ofertasSec && ofertasSec.previousElementSibling) {
+            let positionToScroll = ofertasSec.previousElementSibling.offsetTop - 140; 
+            document.getElementById('scroll-stage').scrollTo({ top: positionToScroll, behavior: 'smooth' });
+        }
+    }, 100);
 };
 
 const versaoCache = Math.floor(Date.now() / 86400000); 
@@ -2115,20 +1999,34 @@ window.applyCoupon = function() {
     openCheckout(); 
 };
 
-// --- INICIALIZAÇÃO ASSÍNCRONA OTIMIZADA ---
+// --- INICIALIZAÇÃO ASSÍNCRONA OTIMIZADA NUMA ÚNICA ONDA (SEM PULO) ---
 async function init() {
     STATE.coupons = []; STATE.combos = []; STATE.termos = []; 
     STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = [];
 
     try {
-        const [r1, r2, r11] = await Promise.all([
+        const [r1, r2, r3, r4, r7, r8, r9, r10, r11, cjData] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+            fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/compre-junto.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1 || []; 
         STATE.banners = r11 || [];
+        STATE.coupons = r3 || []; 
+        STATE.combos = r4 || []; 
+        STATE.termos = r7 || [];
+        STATE.sohoje = r8 || [];
+        STATE.bloqueados = (r9 || []).map(String);
+        STATE.carrosseis = r10 || [];
+        STATE.cjData = cjData || [];
         
         if (r2 && r2.length > 0) {
             let userSeed = localStorage.getItem('donaAntoniaUserSeed') || Math.floor(Math.random() * 1000000);
@@ -2168,35 +2066,9 @@ async function init() {
             });
         }
         
-        await buildTabsAndSections(false); 
+        buildTabsAndSections(); 
         updateTotals();
         renderBanners();
-
-        setTimeout(async () => {
-            try {
-                const [r3, r4, r7, r8, r9, r10] = await Promise.all([
-                    fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-                    fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-                    fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-                    fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-                    fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-                    fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
-                ]);
-                
-                STATE.coupons = r3 || []; 
-                STATE.combos = r4 || []; 
-                STATE.termos = r7 || [];
-                STATE.sohoje = r8 || [];
-                STATE.bloqueados = (r9 || []).map(String);
-                STATE.carrosseis = r10 || [];
-                
-                await loadCompreJunto(); 
-                
-                await buildTabsAndSections(true); 
-            } catch (err2) {
-                console.log("Erro silencioso Onda 2:", err2);
-            }
-        }, 100); 
 
     } catch (e) { 
         console.error("Erro fatal na inicialização:", e); 
@@ -2342,13 +2214,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     </div>`;
 }
 
-async function buildTabsAndSections(isUpdate = false) {
-    let currentScroll = 0;
-    let scrollStage = document.getElementById('scroll-stage');
-    if (isUpdate && scrollStage) {
-        currentScroll = scrollStage.scrollTop;
-    }
-
+function buildTabsAndSections() {
     let skel = $('skeleton-loader'); 
     if (skel) {
         skel.style.display = 'none';
@@ -2375,10 +2241,7 @@ async function buildTabsAndSections(isUpdate = false) {
         
         sectionsHtml += `
             <div id="sec-cestas" class="tab-section" style="display:none;">
-                <div id="wrapper-cestas"></div> <div id="loading-offers-alert" class="loading-pulse layout-limit" style="width: calc(100% - 30px);">
-                    <span style="font-size: 1.2rem;">⏳</span> CARREGANDO OFERTAS...
-                </div>
-
+                <div id="wrapper-cestas"></div>
                 <div class="top-category-nav"></div> 
                 <div class="bottom-category-nav"></div>
             </div>`;
@@ -2477,7 +2340,6 @@ async function buildTabsAndSections(isUpdate = false) {
                     }
                 }
 
-                // MANTÉM A LISTA DA CATEGORIA EM ORDEM ALFABÉTICA
                 list.sort((a, b) => {
                     let nA = (a.name || a.nome || '').toLowerCase();
                     let nB = (b.name || b.nome || '').toLowerCase();
@@ -2494,7 +2356,6 @@ async function buildTabsAndSections(isUpdate = false) {
                     </div>`;
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
             }
-            await new Promise(resolve => setTimeout(resolve, 10));
         }
     }
         
@@ -2517,14 +2378,7 @@ async function buildTabsAndSections(isUpdate = false) {
     $('cat-dropdown-list').innerHTML = dropHtml; 
     $('dynamic-sections').innerHTML = sectionsHtml; 
     
-    if (isUpdate) {
-        switchTab(STATE.activeTabId, false);
-        setTimeout(() => {
-            if (scrollStage) scrollStage.scrollTop = currentScroll;
-        }, 50);
-    } else {
-        goToHome();
-    }
+    goToHome();
 }
 
 function generateCarouselHtml(title, color, trackId, list, type, listKey, sortType = 'random') {
@@ -2572,49 +2426,39 @@ function renderBottomChips(activeTabId) {
     if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
         htmlTop += generateCarouselHtml('Ofertas Imperdíveis', '#ef4444', 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random');
     }
-    
-    if (STATE.combos.length > 0 || STATE.termos.length > 0) {
-        let alertEl = document.getElementById('loading-offers-alert');
-        if (alertEl) alertEl.style.display = 'none';
-    }
 
     if (STATE.destaques && STATE.destaques.length > 0) {
         htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random');
     }
     if (topNavContainer) topNavContainer.innerHTML = htmlTop;
     ativarRolagemInfinita();
+
+    let htmlMid = '';
+    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+        htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'random');
+    }
+    let cjHtml = renderCompreJunto();
+    if (cjHtml) htmlMid += cjHtml; 
     
+    if (topNavContainer) topNavContainer.innerHTML += htmlMid;
+    ativarRolagemInfinita();
 
-    setTimeout(() => {
-        let htmlMid = '';
-        if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-            htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'random');
-        }
-        let cjHtml = renderCompreJunto();
-        if (cjHtml) htmlMid += cjHtml; 
-        
-        if (topNavContainer) topNavContainer.innerHTML += htmlMid;
-        ativarRolagemInfinita();
-    }, 50);
-
-    setTimeout(() => {
-        let htmlBottom = '';
-        if (STATE.termos && STATE.termos.length > 0) {
-            STATE.termos.forEach(item => {
-                let label = item.etiqueta || item;
-                let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
-                
-                if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
-                    let listKey = 'term_' + safe;
-                    if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                        htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey, 'alphabetical');
-                    }
+    let htmlBottom = '';
+    if (STATE.termos && STATE.termos.length > 0) {
+        STATE.termos.forEach(item => {
+            let label = item.etiqueta || item;
+            let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+            
+            if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
+                let listKey = 'term_' + safe;
+                if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
+                    htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey, 'alphabetical');
                 }
-            });
-        }
-        if (navContainer) navContainer.innerHTML = htmlBottom; 
-        ativarRolagemInfinita();
-    }, 150);
+            }
+        });
+    }
+    if (navContainer) navContainer.innerHTML = htmlBottom; 
+    ativarRolagemInfinita();
 }
 
 window.openSeeAll = function(listKey, title, type) {
@@ -2630,40 +2474,38 @@ window.openSeeAll = function(listKey, title, type) {
         html = list.map((item, idx) => buildCardHtml(item, type, false, idx)).join('');
     }
     
+    html += `<div style="grid-column: 1 / -1; margin-top: 20px;"><button class="btn-modal secondary" style="width: 100%; padding: 14px;" onclick="closeSeeAll(false)">Voltar para a loja</button></div>`;
+    
     gridEl.innerHTML = html;
     document.getElementById('see-all-title').innerText = title;
     
     let contentDiv = document.getElementById('see-all-content');
-    contentDiv.style.paddingBottom = '100px'; // Ajuste do passo 1 já incluído aqui
+    contentDiv.style.paddingBottom = '80px'; 
     document.getElementById('see-all-footer').style.display = 'none';
 
-    // Abre a aba lateral
     document.getElementById('see-all-view').classList.add('open');
+    contentDiv.scrollTo({ top: 0, behavior: 'instant' });
     
-    // 👇 PASSO 2.2: Adiciona o estado na URL silenciosamente para interceptar o "Voltar"
     if (!history.state || !history.state.lateralOpen) {
         history.pushState({ lateralOpen: true }, '');
     }
-    
-    setTimeout(() => {
-        if (gridEl.children.length > 8) {
-            let targetItem = gridEl.children[8];
-            contentDiv.scrollTo({ top: targetItem.offsetTop - 15, behavior: 'instant' });
-        } else {
-            contentDiv.scrollTo({ top: 0, behavior: 'instant' });
-        }
-    }, 300); 
 }
 
 window.closeSeeAll = function(isFromBrowser = false) {
     document.getElementById('see-all-view').classList.remove('open');
     document.getElementById('see-all-footer').style.display = 'none';
 
-    // Se clicou no botão voltar DO SITE, nós comandamos o histórico a voltar um passo
     if (isFromBrowser !== true && history.state && history.state.lateralOpen) {
         history.back();
     }
 }
+
+window.addEventListener('popstate', function(event) {
+    let lateralView = document.getElementById('see-all-view');
+    if (lateralView && lateralView.classList.contains('open')) {
+        closeSeeAll(true); 
+    }
+});
 
 window.switchTab = function(tabId, scrollToTop = false) {
     STATE.activeTabId = tabId;
@@ -3368,17 +3210,35 @@ async function sendOrder() {
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 50);
+
+    // Lógica inteligente para o banner de app
+    let isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    let isWebView = /(FBAN|FBAV|Instagram)/i.test(navigator.userAgent);
+    let bannerInstalacao = document.getElementById('install-banner');
+
+    if (!isStandalone && !localStorage.getItem('donaAntoniaAppDismissed')) {
+        bannerInstalacao.style.display = 'flex';
+    }
+
+    document.getElementById('btn-install').addEventListener('click', async () => { 
+        if (typeof eventoInstalacao !== 'undefined' && eventoInstalacao) { 
+            eventoInstalacao.prompt(); 
+            await eventoInstalacao.userChoice; 
+        } else if (isWebView) {
+            alert("Para instalar, clique nos 3 pontinhos ⋯ no canto superior da tela e escolha 'Abrir no navegador'. Depois, instale o app pela notificação!");
+        } else {
+            alert("Para instalar o app, abra o menu do seu navegador (3 pontinhos) e toque em 'Adicionar à tela inicial' ou 'Instalar aplicativo'.");
+        }
+        bannerInstalacao.style.display = 'none'; 
+        localStorage.setItem('donaAntoniaAppDismissed', 'true');
+    });
+
+    document.getElementById('btn-close-install').addEventListener('click', () => {
+        bannerInstalacao.style.display = 'none';
+        localStorage.setItem('donaAntoniaAppDismissed', 'true');
+    });
 });
 
-// Ouve quando o usuário clica no botão "Voltar" do celular/navegador
-window.addEventListener('popstate', function(event) {
-    let lateralView = document.getElementById('see-all-view');
-    if (lateralView && lateralView.classList.contains('open')) {
-        // Envia 'true' para avisar a função que não precisamos chamar history.back() novamente
-        closeSeeAll(true); 
-    }
-});
-    
 if ('serviceWorker' in navigator) { 
     window.addEventListener('load', () => { 
         navigator.serviceWorker.register('/sw.js')
@@ -3388,24 +3248,13 @@ if ('serviceWorker' in navigator) {
 }
 
 let eventoInstalacao;
-const bannerInstalacao = document.getElementById('install-banner');
 
 window.addEventListener('beforeinstallprompt', (evento) => { 
     evento.preventDefault(); 
     eventoInstalacao = evento; 
-    bannerInstalacao.style.display = 'flex'; 
-});
-
-document.getElementById('btn-install').addEventListener('click', async () => { 
-    if (!eventoInstalacao) return; 
-    eventoInstalacao.prompt(); 
-    await eventoInstalacao.userChoice; 
-    bannerInstalacao.style.display = 'none'; 
-    eventoInstalacao = null; 
-});
-
-document.getElementById('btn-close-install').addEventListener('click', () => {
-    bannerInstalacao.style.display = 'none';
+    if (!localStorage.getItem('donaAntoniaAppDismissed')) {
+        document.getElementById('install-banner').style.display = 'flex'; 
+    }
 });
 </script>
 </body>
