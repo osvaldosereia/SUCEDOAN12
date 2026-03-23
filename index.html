@@ -2442,7 +2442,7 @@ function buildTabsAndSections() {
         document.head.appendChild(linkPreload);
     }
     
-    // --- GERAÇÃO INTELIGENTE SÓ HOJE ---
+   // --- GERAÇÃO INTELIGENTE SÓ HOJE ---
     STATE.sohoje = [];
     let seedOffset = 0;
     const date = new Date();
@@ -2461,19 +2461,10 @@ function buildTabsAndSections() {
              item = list[(idx + 1) % list.length];
         }
         
-        if (type === 'BASKET' || type === 'COMBO') {
-            if (!item._soHojeApplied) {
-                item.oldPrice = parseFloat(item.preco || item.price);
-                item.preco = item.oldPrice * 0.85; // Desconto Global de 15%
-                item.price = item.preco; 
-                item._soHojeApplied = true;
-            }
-        } else {
-            if (!item._soHojeApplied) {
-                if (!item.oldPrice || item.oldPrice <= item.price) item.oldPrice = item.price;
-                item.price = item.oldPrice * 0.85; // Desconto Global de 15%
-                item._soHojeApplied = true;
-            }
+        if (!item._soHojeApplied) {
+            if (!item.oldPrice || item.oldPrice <= item.price) item.oldPrice = item.price;
+            item.price = item.oldPrice * 0.85; // Desconto Global de 15%
+            item._soHojeApplied = true;
         }
         
         let displayItem = {...item};
@@ -2481,9 +2472,7 @@ function buildTabsAndSections() {
         STATE.sohoje.push(displayItem);
     }
 
-    pickAndDiscount(STATE.baskets, 'BASKET');
-    pickAndDiscount(STATE.combos, 'COMBO');
-    
+    // Pega APENAS das categorias normais (ignora cestas e combos)
     Object.keys(STATE.lists).forEach(key => {
         if(key.startsWith('term_')) {
             pickAndDiscount(STATE.lists[key].data, 'PROD');
