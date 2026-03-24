@@ -155,7 +155,7 @@
         async function carregarProdutos() {
             try {
                 // Caminho relativo ao GitHub Pages onde estão os arquivos
-                const response = await fetch('site/produtos.json'); 
+                const response = await fetch('../site/produtos.json'); 
                 const data = await response.json();
                 
                 // Filtra apenas produtos ativos
@@ -201,7 +201,7 @@
             
             // Define a imagem usando a lógica do seu site (codigo ou id .webp)
             let imgName = produto.codigo ? produto.codigo : produto.id;
-            imgEl.src = `site/img/produtos/${imgName}.webp`;
+            imgEl.src = `../site/img/produtos/${imgName}.webp`;
             imgEl.style.display = 'block';
 
             // Define texto e preço
