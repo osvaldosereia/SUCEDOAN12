@@ -1294,8 +1294,7 @@ dialog::backdrop {
 }
 </style>
 
-    <!-- Meta Pixel Code -->
-<script>
+    <script>
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -1310,7 +1309,6 @@ fbq('track', 'PageView');
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 /></noscript>
-<!-- End Meta Pixel Code -->
 </head>
 <body>
     
@@ -1884,9 +1882,27 @@ window.openKitLateralView = function(id, type) {
 
     itemsHtml += `<div style="grid-column: 1 / -1; margin-top: 20px;"><button class="btn-modal secondary" style="width: 100%; padding: 14px;" onclick="closeSeeAll(false)">Voltar para a loja</button></div>`;
 
+    let videoHtml = '';
+    if (sourceObj.video) {
+        let videoIdMatch = sourceObj.video.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/i);
+        if (videoIdMatch && videoIdMatch[1]) {
+            let videoId = videoIdMatch[1];
+            videoHtml = `
+            <div style="grid-column: 1 / -1; display: flex; justify-content: center; margin-bottom: 15px;">
+                <div style="width: 100%; max-width: 400px; border-radius: 12px; overflow: hidden; position: relative; aspect-ratio: 4/5; background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <iframe src="https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&controls=1" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+            </div>`;
+        }
+    }
+
     document.getElementById('see-all-title').innerText = formatName(sourceObj.nome);
     document.getElementById('see-all-grid').className = 'grid-ver-todos'; 
-    document.getElementById('see-all-grid').innerHTML = itemsHtml;
+    document.getElementById('see-all-grid').innerHTML = videoHtml + itemsHtml;
     
     let contentDiv = document.getElementById('see-all-content');
     contentDiv.style.paddingBottom = '180px'; 
@@ -2647,6 +2663,11 @@ window.openSeeAll = function(listKey, title, type) {
 window.closeSeeAll = function(isFromBrowser = false) {
     document.getElementById('see-all-view').classList.remove('open');
     document.getElementById('see-all-footer').style.display = 'none';
+
+    // Parar o vídeo ao fechar o modal (limpa a lista para a mídia parar de tocar)
+    setTimeout(() => {
+        document.getElementById('see-all-grid').innerHTML = '';
+    }, 300);
 
     if (isFromBrowser !== true && history.state && history.state.lateralOpen) {
         history.back();
