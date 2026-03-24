@@ -2537,6 +2537,7 @@ function generateCarouselHtml(title, color, trackId, list, type, listKey, sortTy
         </div>`;
 }
 
+// Função renderBottomChips corrigida para não embaralhar os Kits
 function renderBottomChips(activeTabId) {
     let activeSec = $('sec-' + activeTabId);
     if (!activeSec) return; 
@@ -2551,15 +2552,18 @@ function renderBottomChips(activeTabId) {
 
     let htmlTop = '';
     
+    // Carrossel Só Hoje
     if (STATE.sohoje && STATE.sohoje.length > 0) {
         let titleHtml = `Só Hoje <div class="so-hoje-timer">00:00:00</div>`;
         htmlTop += generateCarouselHtml(titleHtml, '#dc2626', 'grid-sohoje-' + activeTabId, STATE.sohoje, 'MIXED', 'sohoje', 'none', 4);
     }
 
+    // Carrossel Ofertas Imperdíveis
     if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
         htmlTop += generateCarouselHtml('Ofertas Imperdíveis', null, 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random', 4);
     }
 
+    // Carrossel Destaques
     if (STATE.destaques && STATE.destaques.length > 0) {
         htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random', 4);
     }
@@ -2567,9 +2571,16 @@ function renderBottomChips(activeTabId) {
     ativarRolagemInfinita();
 
     let htmlMid = '';
+    
+    // ==========================================
+    // CORREÇÃO: Trocamos 'random' por 'none'
+    // ==========================================
     if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'random', 0, 'grid-large-cards');
+        // Agora o parâmetro sortType recebe 'none' para preservar a ordem original do combos.json
+        htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'none', 0, 'grid-large-cards');
     }
+    // ==========================================
+
     let cjHtml = renderCompreJunto();
     if (cjHtml) htmlMid += cjHtml; 
     
