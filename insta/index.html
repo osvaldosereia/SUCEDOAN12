@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Reels - Dona Antônia</title>
+    <style>
+        /* 1. PALETA DE CORES (Inspirada no seu site oficial) */
+        :root {
+            --c-p: #1e293b; 
+            --c-s: #64748b; 
+            --c-a: #ea580c; /* Laranja de destaque */
+            --c-bg: #f1f5f9; 
+            --c-card: #ffffff;
+            --c-bd: #e2e8f0;
+            --font: 'Inter', system-ui, sans-serif;
+        }
+
+        * { box-sizing: border-box; font-family: var(--font); margin: 0; padding: 0; }
+        
+        body { display: flex; height: 100vh; background-color: var(--c-bg); color: var(--c-p); overflow: hidden; }
+
+        /* 2. PAINEL LATERAL (Lista de Produtos) */
+        .sidebar {
+            width: 350px;
+            background: var(--c-card);
+            border-right: 1px solid var(--c-bd);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .sidebar h2 { font-size: 1.2rem; margin-bottom: 15px; color: var(--c-a); }
+        
+        .search-box {
+            width: 100%; padding: 10px; border: 1px solid var(--c-bd); border-radius: 8px; margin-bottom: 15px; outline: none; transition: 0.3s;
+        }
+        .search-box:focus { border-color: var(--c-a); }
+
+        .product-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 5px; }
+        
+        .product-item {
+            padding: 12px; background: var(--c-bg); border-radius: 8px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; font-size: 0.85rem; font-weight: 500;
+        }
+        .product-item:hover { border-color: var(--c-a); background: #fff; }
+
+        /* 3. ÁREA PRINCIPAL (Palco do Reel) */
+        .main-stage {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
+        }
+
+        .controls { position: absolute; top: 20px; right: 20px; }
+        .btn-animar {
+            background: var(--c-a); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3); transition: 0.2s;
+        }
+        .btn-animar:active { transform: scale(0.95); }
+
+        /* 4. O "SLIDE" DO REEL (Proporção 9:16) */
+        .reel-canvas {
+            width: 360px; /* Largura padrão de celular */
+            height: 640px; /* Altura 9:16 */
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 8px solid #1e293b; /* Simula a borda do celular */
+        }
+
+        /* Elementos visuais dentro do Slide */
+        .brand-badge { position: absolute; top: 30px; background: var(--c-a); color: white; padding: 5px 15px; border-radius: 20px; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .reel-img-container { width: 80%; height: 50%; display: flex; align-items: center; justify-content: center; position: relative; z-index: 2; margin-bottom: 20px; }
+        .reel-img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; filter: drop-shadow(0 15px 15px rgba(0,0,0,0.1)); }
+        
+        .reel-info { text-align: center; z-index: 2; padding: 0 20px; width: 100%; }
+        .reel-title { font-size: 1.4rem; font-weight: 800; color: var(--c-p); line-height: 1.2; margin-bottom: 10px; text-transform: uppercase; }
+        .reel-price { font-size: 2.5rem; font-weight: 900; color: var(--c-a); background: white; display: inline-block; padding: 5px 20px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+
+        /* Decoração de fundo */
+        .bg-shape { position: absolute; bottom: -50px; left: -50px; width: 200px; height: 200px; background: rgba(234, 88, 12, 0.1); border-radius: 50%; z-index: 1; }
+        .bg-shape2 { position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(30, 41, 59, 0.05); border-radius: 50%; z-index: 1; }
+
+        /* 5. ANIMAÇÕES (Acionadas via JavaScript) */
+        .animate .reel-img { animation: slideUpBounce 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .animate .reel-title { animation: fadeInRight 0.8s ease forwards 0.3s; opacity: 0; }
+        .animate .reel-price { animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 0.6s; opacity: 0; transform: scale(0.5); }
+
+        @keyframes slideUpBounce {
+            0% { transform: translateY(100px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes fadeInRight {
+            0% { transform: translateX(-30px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Estilização da barra de rolagem */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--c-bd); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>🎬 Estúdio de Reels</h2>
+        <input type="text" id="searchInput" class="search-box" placeholder="Buscar produto..." onkeyup="filtrarProdutos()">
+        <div class="product-list" id="productList">
+            Carregando produtos...
+        </div>
+    </div>
+
+    <div class="main-stage">
+        <div class="controls">
+            <button class="btn-animar" onclick="dispararAnimacao()">▶ Animar para Gravar</button>
+        </div>
+
+        <div class="reel-canvas" id="reelCanvas">
+            <div class="bg-shape"></div>
+            <div class="bg-shape2"></div>
+            
+            <div class="brand-badge">Oferta do Dia</div>
+            
+            <div class="reel-img-container">
+                <img src="" alt="Produto" class="reel-img" id="reelImg" style="display: none;">
+            </div>
+            
+            <div class="reel-info">
+                <h1 class="reel-title" id="reelTitle">Selecione um produto</h1>
+                <div class="reel-price" id="reelPrice">--</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let todosProdutos = [];
+
+        // 1. Função para formatar moeda (mesma lógica do seu site)
+        function formatarPreco(valor) {
+            return parseFloat(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        // 2. Função para buscar os dados do JSON
+        async function carregarProdutos() {
+            try {
+                // Caminho relativo ao GitHub Pages onde estão os arquivos
+                const response = await fetch('site/produtos.json'); 
+                const data = await response.json();
+                
+                // Filtra apenas produtos ativos
+                todosProdutos = data.filter(p => p.situacao === 'A');
+                renderizarLista(todosProdutos);
+            } catch (erro) {
+                document.getElementById('productList').innerHTML = '<p style="color:red">Erro ao carregar produtos.json. Verifique o caminho.</p>';
+                console.error(erro);
+            }
+        }
+
+        // 3. Renderizar lista no painel lateral
+        function renderizarLista(produtos) {
+            const listContainer = document.getElementById('productList');
+            listContainer.innerHTML = '';
+
+            produtos.forEach(p => {
+                const div = document.createElement('div');
+                div.className = 'product-item';
+                div.innerHTML = `${p.nome} <br><small style="color: #ea580c">${formatarPreco(p.preco)}</small>`;
+                
+                // Evento de clique para montar o Reel
+                div.onclick = () => montarReel(p);
+                
+                listContainer.appendChild(div);
+            });
+        }
+
+        // 4. Função de busca/filtro
+        function filtrarProdutos() {
+            const termo = document.getElementById('searchInput').value.toLowerCase();
+            const filtrados = todosProdutos.filter(p => p.nome.toLowerCase().includes(termo));
+            renderizarLista(filtrados);
+        }
+
+        // 5. Montar o Visual do Reel com os dados do produto selecionado
+        function montarReel(produto) {
+            const reelCanvas = document.getElementById('reelCanvas');
+            const imgEl = document.getElementById('reelImg');
+            
+            // Remove a classe de animação para resetar
+            reelCanvas.classList.remove('animate');
+            
+            // Define a imagem usando a lógica do seu site (codigo ou id .webp)
+            let imgName = produto.codigo ? produto.codigo : produto.id;
+            imgEl.src = `site/img/produtos/${imgName}.webp`;
+            imgEl.style.display = 'block';
+
+            // Define texto e preço
+            document.getElementById('reelTitle').innerText = produto.nome;
+            document.getElementById('reelPrice').innerText = formatarPreco(produto.preco);
+
+            // Pequeno delay para reaplicar a animação (efeito de entrada)
+            setTimeout(() => {
+                dispararAnimacao();
+            }, 50);
+        }
+
+        // 6. Disparar animação (útil para quando você for gravar a tela)
+        function dispararAnimacao() {
+            const reelCanvas = document.getElementById('reelCanvas');
+            reelCanvas.classList.remove('animate');
+            
+            // Força o navegador a recalcular o layout (truque de CSS para reiniciar animação)
+            void reelCanvas.offsetWidth; 
+            
+            reelCanvas.classList.add('animate');
+        }
+
+        // Inicia o programa ao carregar a página
+        carregarProdutos();
+    </script>
+</body>
+</html>
