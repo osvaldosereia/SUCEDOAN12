@@ -403,10 +403,10 @@ button {
     scroll-snap-align: start; 
 }
 
-/* PADRÃO MAIOR MOBILE PARA CESTAS E KITS (1.8 cards) */
+/* PADRÃO MAIOR MOBILE PARA CESTAS E KITS */
 .grid-produtos.grid-large-cards > .u-card,
 .grid-produtos.grid-large-cards > .skeleton-card {
-    width: 52vw; 
+    width: 68vw; /* Aumentado de 52vw para 68vw para deixar o card maior no celular */
 }
 
 @media(min-width: 800px) { 
@@ -417,6 +417,11 @@ button {
         gap: 20px; 
         padding: 0 15px 40px; 
     } 
+
+    /* FORÇA 4 COLUNAS APENAS PARA CESTAS E KITS NO DESKTOP */
+    .grid-produtos.grid-large-cards {
+        grid-template-columns: repeat(4, 1fr); 
+    }
 
     .grid-produtos > .u-card,
     .grid-produtos > .skeleton-card,
