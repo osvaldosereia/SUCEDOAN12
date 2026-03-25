@@ -177,7 +177,7 @@
     window.onload = async function() {
         try {
             // Busca o arquivo JSON na pasta especificada
-            const resposta = await fetch('../site/bancodedados.json');
+            const resposta = await fetch('site/bancodedados.json');
             bancoDeDados = await resposta.json();
             console.log("Banco de dados pronto! " + bancoDeDados.length + " produtos carregados.");
         } catch (erro) {
@@ -258,7 +258,7 @@
         document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
         
         // Define a imagem usando o código do produto e a extensão .webp
-        document.getElementById('img-foto').src = `../site/img/produtos/${codigo}.webp`;
+        document.getElementById('img-foto').src = `site/img/produtos/${codigo}.webp`;
 
         // Mostra o formulário
         document.getElementById('product-form').classList.remove('hidden');
