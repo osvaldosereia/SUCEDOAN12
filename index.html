@@ -94,11 +94,15 @@ button {
     background: var(--c-p); 
     padding: 10px 15px; 
     width: 100%; 
+    display: flex; 
+    gap: 8px; 
+    align-items: center; 
 }
 
 .search-wrapper { 
     position: relative; 
     width: 100%; 
+    flex: 1;
 }
 
 .search-inp { 
@@ -1316,7 +1320,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
     
 <div id="header-wrapper">
     <div class="layout-limit desk-header-flex">
-        <div class="mob-layer-1" style="display: flex; gap: 8px; align-items: center;">
+        <div class="mob-layer-1">
             <div id="install-banner">
                 <span style="font-size: 1.2rem; line-height: 1;">📲</span>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -1324,7 +1328,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     <button id="btn-close-install" style="background: transparent; color: #cbd5e1; border: none; font-size: 1.1rem; padding: 0; cursor: pointer; display: flex; align-items: center; line-height: 1;">✕</button>
                 </div>
             </div>
-            <div class="search-wrapper" style="flex: 1;">
+            <div class="search-wrapper">
                 <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -1699,22 +1703,30 @@ STATE.cjTotalDiscount = 0;
 STATE.cjCombos = [];
 
 function buildCjCardHTML(kit) {
+    let p1 = kit.selectedItems[0];
+    let p2 = kit.selectedItems[1];
+    
+    // Calcula o preço individual proporcionalmente só para a tela, sem modificar o banco
+    let factor = 1 - (kit.discountVal / kit.origPrice);
+    let p1CjPrice = p1.price * factor;
+    let p2CjPrice = p2.price * factor;
+
     return `
     <div class="cj-card">
         <div class="cj-header">${kit.nome}</div>
         <div class="cj-images-row">
             <div class="cj-item">
-                <div class="cj-img-box"><img src="${kit.selectedItems[0].img}" alt="${kit.selectedItems[0].name}"></div>
-                <div class="cj-item-name">${formatName(kit.selectedItems[0].name)}</div>
-                <div style="font-size: 0.65rem; color: var(--c-s); text-decoration: line-through; margin-top: 2px;">${fmt(kit.selectedItems[0].cjOldPrice)}</div>
-                <div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 700;">${fmt(kit.selectedItems[0].cjPrice)}</div>
+                <div class="cj-img-box"><img src="${p1.img}" alt="${p1.name}"></div>
+                <div class="cj-item-name">${formatName(p1.name)}</div>
+                <div style="font-size: 0.65rem; color: var(--c-s); text-decoration: line-through; margin-top: 2px;">${fmt(p1.price)}</div>
+                <div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 700;">${fmt(p1CjPrice)}</div>
             </div>
             <div class="cj-plus">+</div>
             <div class="cj-item">
-                <div class="cj-img-box"><img src="${kit.selectedItems[1].img}" alt="${kit.selectedItems[1].name}"></div>
-                <div class="cj-item-name">${formatName(kit.selectedItems[1].name)}</div>
-                <div style="font-size: 0.65rem; color: var(--c-s); text-decoration: line-through; margin-top: 2px;">${fmt(kit.selectedItems[1].cjOldPrice)}</div>
-                <div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 700;">${fmt(kit.selectedItems[1].cjPrice)}</div>
+                <div class="cj-img-box"><img src="${p2.img}" alt="${p2.name}"></div>
+                <div class="cj-item-name">${formatName(p2.name)}</div>
+                <div style="font-size: 0.65rem; color: var(--c-s); text-decoration: line-through; margin-top: 2px;">${fmt(p2.price)}</div>
+                <div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 700;">${fmt(p2CjPrice)}</div>
             </div>
         </div>
         <div class="cj-footer">
@@ -1722,7 +1734,7 @@ function buildCjCardHTML(kit) {
                 <div class="cj-old-price">${fmt(kit.origPrice)}</div>
                 <div class="cj-new-price">${fmt(kit.preco)}</div>
             </div>
-            <button class="cj-btn" onclick="addCompreJunto('${kit.id}', '${kit.selectedItems[0].id}', '${kit.selectedItems[1].id}', ${kit.discountVal}); event.stopPropagation();">Adicionar</button>
+            <button class="cj-btn" onclick="addCompreJunto('${kit.id}', '${p1.id}', '${p2.id}', ${kit.discountVal}); event.stopPropagation();">Adicionar</button>
         </div>
     </div>`;
 }
@@ -1758,11 +1770,6 @@ function renderCompreJunto() {
         if (valid && selected.length === termosParaUsar.length) {
             let discountVal = sum * (kit.desconto_percentual / 100);
             let finalPrice = sum - discountVal;
-            
-            selected.forEach(item => {
-                item.cjOldPrice = item.price;
-                item.cjPrice = item.price * (1 - (kit.desconto_percentual / 100));
-            });
             
             STATE.cjCombos.push({
                 id: 'cj_' + kit.id,
@@ -2559,8 +2566,11 @@ function generateCarouselHtml(title, color, trackId, list, type, listKey, sortTy
         return buildCardHtml(item, itemType, false, idx);
     }).join('');
     
+    // TRATAMENTO: Limpa qualquer HTML que o título possa ter (ex: cronômetro) para não quebrar os atributos onclick depois
+    let safeTitle = title.replace(/<[^>]*>?/gm, '').trim();
+
     if (limit > 0 && processedList.length > limit) {
-        trackHtml += buildVerTodosCard(listKey, title, type, processedList.length);
+        trackHtml += buildVerTodosCard(listKey, safeTitle, type, processedList.length);
     }
     
     return `
