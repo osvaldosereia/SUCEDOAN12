@@ -3567,7 +3567,7 @@ window.addEventListener('beforeinstallprompt', (evento) => {
                 
                 // Calculamos a distância do topo (offsetTop).
                 // O -20 dá um espaço extra de "respiro" para que o título não bata no teto e não fique embaixo do menu superior fixo.
-                let position = refEl.offsetTop - 20; 
+                let position = refEl.offsetTop - 130; 
                 scrollContainer.scrollTo({ top: position, behavior: 'smooth' });
             }
         }
