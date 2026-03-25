@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitor e Busca de Produtos</title>
+    <title>Gestão de Etiquetas</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
+        /* --- ESTILOS DO APLICATIVO (TELA DO CELULAR) --- */
         :root {
             --primary: #4CAF50;
             --secondary: #2196F3;
             --danger: #f44336;
-            --warning: #ff9800;
             --dark: #333;
             --light: #f4f4f4;
         }
@@ -27,106 +27,104 @@
         h1, h2 { text-align: center; }
         
         button {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            font-size: 18px;
-            font-weight: bold;
-            color: white;
-            background-color: var(--primary);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: block; width: 100%; padding: 15px; margin: 10px 0;
+            font-size: 18px; font-weight: bold; color: white;
+            background-color: var(--primary); border: none; border-radius: 8px;
+            cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         button:active { transform: translateY(2px); }
         .btn-secondary { background-color: var(--secondary); }
         .btn-danger { background-color: var(--danger); }
+        .btn-print { background-color: #000000; }
         
         .container {
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-width: 600px; margin: auto; background: white;
+            padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         
-        /* Estilos dos campos de formulário e busca */
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 16px; }
         .form-group input {
-            width: 100%;
-            padding: 15px; /* Tamanho grande para facilitar no celular */
-            font-size: 18px;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
+            width: 100%; padding: 15px; font-size: 18px;
+            border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box;
         }
         
-        /* Lista de Resultados da Busca */
-        #lista-resultados {
-            margin-bottom: 20px;
-        }
+        #lista-resultados { margin-bottom: 20px; }
         .resultado-item {
-            padding: 15px;
-            margin-bottom: 8px;
-            background-color: #e3f2fd;
-            border: 1px solid #90caf9;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #0d47a1;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 15px; margin-bottom: 8px; background-color: #e3f2fd;
+            border: 1px solid #90caf9; border-radius: 8px; font-size: 16px;
+            font-weight: bold; color: #0d47a1; cursor: pointer;
         }
         .resultado-item:active { background-color: #bbdefb; }
         .resultado-dica { font-size: 13px; color: #555; font-weight: normal; margin-top: 4px; }
         
         .produto-foto {
-            width: 100%;
-            max-height: 250px;
-            object-fit: contain;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+            width: 100%; max-height: 250px; object-fit: contain;
+            margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd;
         }
         
         #reader { width: 100%; margin-bottom: 20px; }
         .hidden { display: none !important; }
         
-        /* Status do Banco de Dados */
         #status-db {
-            text-align: center;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            font-weight: bold;
+            text-align: center; padding: 10px; margin-bottom: 15px;
+            border-radius: 6px; font-weight: bold;
         }
         .status-ok { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
         .status-erro { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 
+        /* --- ESTILOS EXCLUSIVOS PARA A IMPRESSORA TÉRMICA (58mm) --- */
         @media print {
+            @page { margin: 0; size: 58mm auto; }
+            body { margin: 0; padding: 0; background: white; }
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
+            
             #print-area {
-                position: absolute;
-                left: 0; top: 0;
-                width: 100%;
+                position: absolute; left: 0; top: 0;
+                width: 48mm; /* Área útil de tinta da bobina */
+                padding: 2mm 5mm; 
+                margin: 0; border: none;
+                text-align: center; font-family: 'Arial', sans-serif; color: #000;
             }
+            
+            /* O Código do Produto fica Gigante no topo */
+            .destaque-codigo {
+                font-size: 26px; /* Fonte bem grande */
+                font-weight: 900; /* Extra negrito */
+                margin: 0 0 5px 0;
+                letter-spacing: 1px;
+            }
+
+            /* A Foto fica com contraste alto e em preto e branco para não borrar na térmica */
+            #print-area img { 
+                width: 45mm; /* Ocupa quase toda a largura */
+                height: auto;
+                max-height: 45mm;
+                object-fit: contain;
+                margin-bottom: 8px;
+                filter: grayscale(100%) contrast(120%); 
+            }
+            
+            /* Nome do Produto com bom destaque */
+            #print-area h3 { 
+                margin: 0 0 8px 0; 
+                font-size: 16px; 
+                text-transform: uppercase;
+                line-height: 1.1;
+            }
+            
+            /* Linhas com as informações (EAN, Validade, Local) bem legíveis */
+            .info-linha { 
+                font-size: 14px; 
+                margin: 5px 0; 
+                font-weight: bold; 
+                border-bottom: 1px dashed #999; /* Linha para separar as infos */
+                padding-bottom: 4px;
+                text-align: left; /* Alinha à esquerda para facilitar a leitura */
+            }
+            .info-linha span { font-weight: normal; float: right; } /* Joga o valor para a direita */
         }
-        
-        #print-area {
-            border: 2px dashed #000;
-            padding: 20px;
-            margin: 20px auto;
-            width: 300px;
-            text-align: center;
-        }
-        #print-area img { max-width: 150px; }
-        #print-area p { margin: 5px 0; font-size: 14px; }
-        #print-area h3 { margin: 0 0 10px 0; font-size: 18px; }
     </style>
 </head>
 <body>
@@ -137,7 +135,7 @@
     <div id="status-db" class="status-erro">⏳ Carregando banco de dados...</div>
     
     <div id="area-upload" class="hidden">
-        <p style="text-align:center; font-weight:bold; color:red;">Carregamento automático falhou. Selecione o bancodedados.json:</p>
+        <p style="text-align:center; font-weight:bold; color:red;">Falha ao carregar automático. Selecione o bancodedados.json:</p>
         <input type="file" id="file-json" accept=".json" style="display:block; margin:auto; margin-bottom: 15px;">
     </div>
     
@@ -164,15 +162,17 @@
         <h2>Editar Etiqueta</h2>
         <img id="img-foto" class="produto-foto" src="" alt="Foto do Produto" onerror="this.style.display='none'">
         
+        <div class="form-group"><label>Código Interno</label><input type="text" id="inp-codigo"></div>
+        
         <div class="form-group"><label>Nome do Produto</label><input type="text" id="inp-nome"></div>
         <div class="form-group"><label>Código EAN</label><input type="text" id="inp-ean"></div>
-        <div class="form-group"><label>Endereço</label><input type="text" id="inp-loc"></div>
+        <div class="form-group"><label>Endereço (Gôndola)</label><input type="text" id="inp-loc"></div>
         <div class="form-group"><label>Estoque</label><input type="text" id="inp-estoque"></div>
         <div class="form-group"><label>Data de Validade</label><input type="text" id="inp-validade"></div>
         <div class="form-group"><label>Preço de Custo (R$)</label><input type="text" id="inp-custo"></div>
         <div class="form-group"><label>Preço de Venda (R$)</label><input type="text" id="inp-venda"></div>
         
-        <button class="btn-secondary" onclick="imprimirEtiqueta()">🖨️ Imprimir Etiqueta</button>
+        <button class="btn-print" onclick="imprimirEtiqueta()">🖨️ Imprimir na Térmica (58mm)</button>
         <button onclick="salvarEtiquetaLocal()">💾 Guardar Dados Modificados</button>
     </div>
 
@@ -182,13 +182,15 @@
 </div>
 
 <div id="print-area" class="hidden">
+    <div id="print-cod" class="destaque-codigo"></div>
+    
     <img id="print-img" src="" alt="Foto">
+    
     <h3 id="print-nome"></h3>
-    <p><strong>EAN:</strong> <span id="print-ean"></span></p>
-    <p><strong>Local:</strong> <span id="print-loc"></span></p>
-    <p><strong>Validade:</strong> <span id="print-validade"></span></p>
-    <p><strong>Estoque:</strong> <span id="print-estoque"></span></p>
-    <p><strong>Preço:</strong> R$ <span id="print-preco"></span></p>
+    
+    <div class="info-linha"><strong>EAN:</strong> <span id="print-ean"></span></div>
+    <div class="info-linha"><strong>VAL:</strong> <span id="print-validade"></span></div>
+    <div class="info-linha"><strong>LOC:</strong> <span id="print-loc"></span></div>
 </div>
 
 <script>
@@ -229,27 +231,21 @@
         let status = document.getElementById('status-db');
         status.innerText = mensagem;
         status.className = 'status-ok';
-        // Revela a área de busca e câmera
         document.getElementById('area-busca').classList.remove('hidden');
     }
 
-    // NOVA ETAPA: Busca Inteligente por Nome/Texto
+    // Busca
     function buscarPorNome() {
         let termo = document.getElementById('inp-busca').value.toLowerCase().trim();
         let lista = document.getElementById('lista-resultados');
-        lista.innerHTML = ''; // Limpa os resultados anteriores
+        lista.innerHTML = ''; 
         
-        if (termo.length < 3) {
-            return; // Só começa a buscar se digitar 3 ou mais letras (para não travar o celular)
-        }
+        if (termo.length < 3) return; 
 
-        // Filtra o banco de dados
         let encontrados = bancoDeDados.filter(p => {
             let nomeDb = String(p.nome || p["Descrição"] || "").toLowerCase();
             let codDb = String(p.codigo || p["Código"] || "").toLowerCase();
             let eanDb = String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "");
-            
-            // Verifica se o termo digitado está no nome, no código interno ou no EAN
             return nomeDb.includes(termo) || codDb.includes(termo) || eanDb.includes(termo);
         });
 
@@ -258,32 +254,25 @@
             return;
         }
 
-        // Mostra apenas os 10 primeiros para não encher a tela
         encontrados.slice(0, 10).forEach(p => {
             let nome = p.nome || p["Descrição"] || "Sem Nome";
             let cod = p.codigo || p["Código"] || "";
             let preco = p.preco || p["Preço"] || "0,00";
 
-            // Cria o "botão" do resultado
             let div = document.createElement('div');
             div.className = 'resultado-item';
-            div.innerHTML = `
-                ${nome}
-                <div class="resultado-dica">Cód: ${cod} | R$ ${preco}</div>
-            `;
+            div.innerHTML = `${nome} <div class="resultado-dica">Cód: ${cod} | R$ ${preco}</div>`;
             
-            // O que acontece ao clicar num resultado
             div.onclick = function() {
                 preencherFormulario(p);
-                lista.innerHTML = ''; // Esconde a lista de busca
-                document.getElementById('inp-busca').value = ''; // Limpa o campo
+                lista.innerHTML = ''; 
+                document.getElementById('inp-busca').value = ''; 
             };
-            
             lista.appendChild(div);
         });
     }
 
-    // Controle da Câmera (mantido)
+    // Câmera
     function iniciarLeitor() {
         document.getElementById('reader').classList.remove('hidden');
         document.getElementById('btn-cancelar').classList.remove('hidden');
@@ -330,10 +319,11 @@
         }
     }
 
-    // Exibição do Card do Produto
+    // Preencher dados no formulário visível
     function preencherFormulario(produto) {
         const codigo = produto.codigo || produto["Código"] || "";
         
+        document.getElementById('inp-codigo').value = codigo; // Preenche o código interno
         document.getElementById('inp-nome').value = produto.nome || produto["Descrição"] || "";
         document.getElementById('inp-ean').value = String(produto.gtin || produto["GTIN/EAN"] || "").replace(/[^0-9]/g, "");
         document.getElementById('inp-loc').value = produto.localizacao || produto["Localização"] || "";
@@ -344,34 +334,42 @@
         
         document.getElementById('img-foto').src = `../site/img/produtos/${codigo}.webp`;
         
-        // Esconde a área de busca e revela o formulário
         document.getElementById('area-busca').classList.add('hidden');
         document.getElementById('product-form').classList.remove('hidden');
     }
 
-    // Função para voltar para a tela de busca
     function fecharCard() {
         document.getElementById('product-form').classList.add('hidden');
         document.getElementById('area-busca').classList.remove('hidden');
     }
 
-    // Funções de Impressão e Exportação
+    // Rotina de Impressão Térmica
     function imprimirEtiqueta() {
+        // Envia os dados editados para o layout invisível de impressão
+        document.getElementById('print-cod').innerText = document.getElementById('inp-codigo').value;
         document.getElementById('print-img').src = document.getElementById('img-foto').src;
         document.getElementById('print-nome').innerText = document.getElementById('inp-nome').value;
         document.getElementById('print-ean').innerText = document.getElementById('inp-ean').value;
         document.getElementById('print-loc').innerText = document.getElementById('inp-loc').value;
         document.getElementById('print-validade').innerText = document.getElementById('inp-validade').value;
-        document.getElementById('print-estoque').innerText = document.getElementById('inp-estoque').value;
-        document.getElementById('print-preco').innerText = document.getElementById('inp-venda').value;
         
+        // Se a imagem estiver quebrada (não existir no site), esconde na hora de imprimir
+        let foto = document.getElementById('print-img');
+        if (foto.naturalWidth === 0 || foto.src === "" || foto.style.display === "none") {
+            foto.style.display = 'none';
+        } else {
+            foto.style.display = 'block';
+        }
+
         document.getElementById('print-area').classList.remove('hidden');
         window.print(); 
         document.getElementById('print-area').classList.add('hidden');
     }
 
+    // Salvar e Exportar (mantidos intactos)
     function salvarEtiquetaLocal() {
         const etiqueta = {
+            codigo: document.getElementById('inp-codigo').value,
             nome: document.getElementById('inp-nome').value,
             ean: document.getElementById('inp-ean').value,
             loc: document.getElementById('inp-loc').value,
@@ -385,7 +383,7 @@
         salvas.push(etiqueta);
         localStorage.setItem('etiquetas_csv', JSON.stringify(salvas));
         alert("Etiqueta guardada na memória para exportação!");
-        fecharCard(); // Volta para a tela inicial
+        fecharCard(); 
     }
 
     function exportarCSV() {
@@ -394,9 +392,9 @@
             alert("Não há dados guardados para exportar.");
             return;
         }
-        let conteudoCSV = "Nome;EAN;Localizacao;Estoque;Validade;Preco Custo;Preco Venda\n";
+        let conteudoCSV = "Codigo;Nome;EAN;Localizacao;Estoque;Validade;Preco Custo;Preco Venda\n";
         salvas.forEach(e => {
-            let linha = [String(e.nome).replace(/;/g, ","), e.ean, e.loc, e.estoque, e.validade, e.custo, e.venda].join(";");
+            let linha = [e.codigo, String(e.nome).replace(/;/g, ","), e.ean, e.loc, e.estoque, e.validade, e.custo, e.venda].join(";");
             conteudoCSV += linha + "\n";
         });
 
