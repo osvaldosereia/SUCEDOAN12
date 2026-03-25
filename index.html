@@ -2995,6 +2995,7 @@ function upd(id, delta) {
 
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a cesta?")) { 
+        // 1. Zera todos os dados da memória
         STATE.cart = {}; 
         STATE.cartOrder = []; 
         STATE.baseBasket = null; 
@@ -3002,7 +3003,9 @@ window.clearCart = function() {
         STATE.comboDiscount = 0; 
         STATE.appliedCombos = [];
         STATE.coupon = null; 
+        STATE.cjDiscounts = []; // Adicionado: Faltava zerar os descontos do compre junto!
         
+        // 2. Reseta visualmente os botões da vitrine para o "+"
         document.querySelectorAll('[data-id]').forEach(el => { 
             let id = el.dataset.id; 
             if (id) { 
@@ -3012,10 +3015,22 @@ window.clearCart = function() {
                 }
             } 
         });
+
+        // 3. Força a bolinha com a quantidade no ícone do carrinho sumir na hora
+        let badge = document.getElementById('badge-count');
+        if (badge) {
+            badge.innerText = '0';
+            badge.style.display = 'none';
+        }
         
-        goToHome(); 
+        // 4. Recalcula os totais zerados, volta para o início e fecha o modal
         updateTotals(); 
-        $('modal-checkout').close(); 
+        goToHome(); 
+        
+        let modalChk = document.getElementById('modal-checkout');
+        if (modalChk && modalChk.open) {
+            modalChk.close(); 
+        }
     }
 };
 
