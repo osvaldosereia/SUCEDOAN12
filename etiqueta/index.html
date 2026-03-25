@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
-        /* Definindo algumas cores padrão */
+        /* Definindo algumas cores padrão para facilitar a troca depois */
         :root {
             --primary: #4CAF50;
             --secondary: #2196F3;
@@ -27,7 +27,7 @@
         }
         h1, h2 { text-align: center; }
         
-        /* Estilo dos Botões: Grandes e fáceis de clicar com o dedo */
+        /* Estilo dos Botões: Grandes e fáceis de clicar com o dedo no celular */
         button {
             display: block;
             width: 100%;
@@ -72,7 +72,7 @@
         .produto-foto {
             width: 100%;
             max-height: 250px;
-            object-fit: contain;
+            object-fit: contain; /* Mantém a proporção da imagem */
             margin-bottom: 15px;
             border-radius: 8px;
             border: 1px solid #ddd;
@@ -83,8 +83,8 @@
 
         /* MODO DE IMPRESSÃO: Oculta botões e inputs, mostra apenas a "etiqueta" */
         @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
+            body * { visibility: hidden; } /* Esconde tudo */
+            #print-area, #print-area * { visibility: visible; } /* Mostra só a área de impressão */
             #print-area {
                 position: absolute;
                 left: 0; top: 0;
@@ -111,6 +111,7 @@
     <h1>🏷️ Leitor de Produtos</h1>
     
     <button onclick="iniciarLeitor()">📷 Ler Código de Barras</button>
+    
     <div id="reader" class="hidden"></div>
     <button id="btn-cancelar" class="hidden btn-danger" onclick="pararLeitor()">Cancelar Leitura</button>
 
@@ -173,19 +174,19 @@
     let html5QrCode = null;
 
     // Etapa 1: Carregar o arquivo JSON assim que a tela abre. 
-    // É esperado que ele esteja na raiz da pasta site
     window.onload = async function() {
         try {
+            // Busca o arquivo JSON na pasta especificada
             const resposta = await fetch('../site/bancodedados.json');
             bancoDeDados = await resposta.json();
             console.log("Banco de dados pronto! " + bancoDeDados.length + " produtos carregados.");
         } catch (erro) {
-            alert("Erro ao carregar bancodedados.json. Garanta que a URL e as pastas estão corretas.");
+            alert("Erro ao carregar bancodedados.json. Verifique se a URL e as pastas estão corretas.");
             console.error(erro);
         }
     };
 
-    // Etapa 2: Iniciar a câmera para buscar EAN
+    // Etapa 2: Iniciar a câmera
     function iniciarLeitor() {
         document.getElementById('reader').classList.remove('hidden');
         document.getElementById('btn-cancelar').classList.remove('hidden');
@@ -193,17 +194,17 @@
 
         html5QrCode = new Html5Qrcode("reader");
         html5QrCode.start(
-            { facingMode: "environment" }, // Prioriza a câmera traseira do seu celular
+            { facingMode: "environment" }, // Câmera traseira
             { fps: 10, qrbox: { width: 250, height: 100 } },
             (codigoLido) => {
                 pararLeitor();
-                buscarProduto(codigoLido);
+                buscarProduto(codigoLido); // Chama a função de busca
             },
             (mensagemErro) => {
-                // Fica em silêncio tentando encontrar o código a cada milisegundo
+                // Ignora erros de leitura (frames onde não há código)
             }
         ).catch(err => {
-            alert("Acesso à câmera negado ou ambiente sem HTTPS.");
+            alert("Erro: Acesso à câmera negado ou ambiente sem HTTPS.");
         });
     }
 
@@ -216,47 +217,56 @@
         }
     }
 
-    // Etapa 3: Fazer a varredura no arquivo carregado (JSON)
+    // Etapa 3: Busca super rigorosa no banco de dados (Código Atualizado)
     function buscarProduto(eanLido) {
-        // Limpar sujeiras e tabulações '\t' comuns no seu JSON
-        const eanLimpo = String(eanLido).replace(/\t/g, "").trim();
+        // Limpeza do que a câmera leu: remove tudo que não for número e tira zeros à esquerda
+        let eanLimpo = String(eanLido).replace(/\D/g, "").replace(/^0+/, "");
+        
+        // Versão exata para caso de ser um código interno com letras (ex: P485)
+        let lidoExato = String(eanLido).trim().toUpperCase();
 
-        // Fazemos uma busca nos campos prováveis que podem conter o EAN ou Código
+        // Fazemos a varredura no banco de dados carregado
         const produtoEncontrado = bancoDeDados.find(p => {
-            const eanDb = String(p.gtin || p["GTIN/EAN"] || "").replace(/\t/g, "").trim();
-            const codigoDb = String(p.codigo || p["Código"] || "").trim();
-            return eanDb === eanLimpo || codigoDb === eanLimpo;
+            // Limpa o EAN do banco da mesma forma rigorosa
+            let eanDb = String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "");
+            
+            // Limpa o Código interno do banco
+            let codigoDb = String(p.codigo || p["Código"] || "").trim().toUpperCase();
+            
+            // Verifica se houve uma combinação
+            return (eanDb === eanLimpo && eanLimpo !== "") || (codigoDb === lidoExato && lidoExato !== "");
         });
 
         if (produtoEncontrado) {
             preencherFormulario(produtoEncontrado);
         } else {
-            alert("Produto com código " + eanLimpo + " não foi encontrado no banco de dados.");
+            alert("Produto não encontrado! O código lido foi: " + eanLido);
         }
     }
 
-    // Etapa 4: Apresentar para você as informações no HTML
+    // Etapa 4: Preencher os dados na tela
     function preencherFormulario(produto) {
         const codigo = produto.codigo || produto["Código"] || "";
         
-        // Populamos nossas caixas de texto com o que achamos
+        // Pega os dados do JSON (usa "||" para tentar diferentes nomes de chave comuns no seu JSON)
         document.getElementById('inp-nome').value = produto.nome || produto["Descrição"] || "";
-        document.getElementById('inp-ean').value = String(produto.gtin || produto["GTIN/EAN"] || "").replace(/\t/g, "");
+        document.getElementById('inp-ean').value = String(produto.gtin || produto["GTIN/EAN"] || "").replace(/[^0-9]/g, "");
         document.getElementById('inp-loc').value = produto.localizacao || produto["Localização"] || "";
         document.getElementById('inp-estoque').value = produto.estoque || produto["Estoque"] || "";
         document.getElementById('inp-validade').value = produto.validade || produto["Data Validade"] || "";
         document.getElementById('inp-custo').value = produto.preco_custo || produto["Preço de custo"] || "";
         document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
         
-        // Relacionamos a imagem do site à chave "codigo" do produto
+        // Define a imagem usando o código do produto e a extensão .webp
         document.getElementById('img-foto').src = `../site/img/produtos/${codigo}.webp`;
 
-        // Faz o formulário aparecer
+        // Mostra o formulário
         document.getElementById('product-form').classList.remove('hidden');
     }
 
-    // Etapa 5: Simular a aba de impressão
+    // Etapa 5: Prepara e chama a impressão
     function imprimirEtiqueta() {
+        // Copia os dados do formulário editável para a área de impressão
         document.getElementById('print-img').src = document.getElementById('img-foto').src;
         document.getElementById('print-nome').innerText = document.getElementById('inp-nome').value;
         document.getElementById('print-ean').innerText = document.getElementById('inp-ean').value;
@@ -265,12 +275,13 @@
         document.getElementById('print-estoque').innerText = document.getElementById('inp-estoque').value;
         document.getElementById('print-preco').innerText = document.getElementById('inp-venda').value;
         
+        // Chama a janela de impressão nativa
         document.getElementById('print-area').classList.remove('hidden');
-        window.print(); // Ativa a aba nativa de impressão do navegador
+        window.print(); 
         document.getElementById('print-area').classList.add('hidden');
     }
 
-    // Etapa 6: Salvar a edição no navegador
+    // Etapa 6: Salvar a edição na memória do celular
     function salvarEtiquetaLocal() {
         const etiqueta = {
             nome: document.getElementById('inp-nome').value,
@@ -282,34 +293,35 @@
             venda: document.getElementById('inp-venda').value
         };
 
-        // Salva na memória do seu navegador (localStorage)
+        // Pega as etiquetas salvas anteriormente ou cria uma lista vazia
         let salvas = JSON.parse(localStorage.getItem('etiquetas_csv') || '[]');
-        salvas.push(etiqueta);
-        localStorage.setItem('etiquetas_csv', JSON.stringify(salvas));
+        salvas.push(etiqueta); // Adiciona a nova etiqueta
+        localStorage.setItem('etiquetas_csv', JSON.stringify(salvas)); // Salva de volta
         
-        alert("Etiqueta alterada guardada com sucesso!");
+        alert("Etiqueta alterada guardada com sucesso para exportação!");
     }
 
-    // Etapa 7: Exportação das edições do navegador para Excel / CSV
+    // Etapa 7: Criar e baixar o arquivo CSV
     function exportarCSV() {
         let salvas = JSON.parse(localStorage.getItem('etiquetas_csv') || '[]');
         if(salvas.length === 0) {
-            alert("Não há dados guardados. Grave algo primeiro!");
+            alert("Não há dados guardados para exportar.");
             return;
         }
 
-        // Definimos o cabeçalho usando ponto-e-vírgula (melhor para Excel brasileiro)
+        // Cabeçalho do arquivo CSV (separado por ponto-e-vírgula)
         let conteudoCSV = "Nome;EAN;Localizacao;Estoque;Validade;Preco Custo;Preco Venda\n";
         
         salvas.forEach(e => {
+            // Limpa pontos-e-vírgula dos nomes para não quebrar as colunas do Excel
             let linha = [
-                String(e.nome).replace(/;/g, ","), // trocamos possiveis ';' por ',' para não bugar colunas
+                String(e.nome).replace(/;/g, ","),
                 e.ean, e.loc, e.estoque, e.validade, e.custo, e.venda
             ].join(";");
             conteudoCSV += linha + "\n";
         });
 
-        // Configura um clique invisível que faz o download do arquivo
+        // Rotina JavaScript para forçar o download do arquivo
         const blob = new Blob(["\uFEFF" + conteudoCSV], { type: 'text/csv;charset=utf-8;' }); 
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
@@ -320,11 +332,11 @@
         document.body.removeChild(link);
     }
 
-    // Ferramenta auxiliar
+    // Função auxiliar para apagar a memória
     function limparSalvos() {
-        if(confirm("Deseja mesmo apagar todas as etiquetas guardadas na memória do celular?")) {
+        if(confirm("Tem certeza que deseja apagar todas as etiquetas guardadas? Isso não pode ser desfeito.")) {
             localStorage.removeItem('etiquetas_csv');
-            alert("Limpo!");
+            alert("Dados limpos com sucesso!");
         }
     }
 </script>
