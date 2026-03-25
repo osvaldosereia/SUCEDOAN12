@@ -2101,10 +2101,26 @@ window.applyCoupon = function() {
     
     let found = STATE.coupons.find(c => c.codigo.toUpperCase() === val);
     if (found) {
-        STATE.coupon = found;
-        msgEl.innerText = "Cupom aplicado com sucesso!";
-        msgEl.style.color = "var(--c-ok)";
-        msgEl.style.display = "block";
+        // NOVO: Calcula o subtotal do carrinho atual
+        let sum = 0;
+        Object.entries(STATE.cart).forEach(([id, q]) => {
+            let p = STATE.prods.find(x => x.id === id);
+            if (p) sum += p.price * q;
+        });
+        let subtotal = sum + STATE.basketExtraFee;
+
+        // NOVO: Verifica se o cupom tem valor mínimo e se o carrinho atingiu
+        if (found.valorMinimo && subtotal < found.valorMinimo) {
+            STATE.coupon = null;
+            msgEl.innerText = `Este cupom exige uma compra mínima de ${fmt(found.valorMinimo)}.`;
+            msgEl.style.color = "var(--c-err)";
+            msgEl.style.display = "block";
+        } else {
+            STATE.coupon = found;
+            msgEl.innerText = "Cupom aplicado com sucesso!";
+            msgEl.style.color = "var(--c-ok)";
+            msgEl.style.display = "block";
+        }
     } else {
         STATE.coupon = null;
         msgEl.innerText = "Cupom inválido ou expirado.";
@@ -3023,8 +3039,21 @@ function updateTotals() {
         });
     }
 
-    let subtotal = sum + STATE.basketExtraFee; 
-    let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;
+let subtotal = sum + STATE.basketExtraFee; 
+    
+    // NOVO: Trava de segurança do Cupom
+    // Se ele remover produtos e o total cair abaixo do mínimo exigido, removemos o cupom
+    if (STATE.coupon && STATE.coupon.valorMinimo && subtotal < STATE.coupon.valorMinimo) {
+        STATE.coupon = null; 
+        if ($('chk-cupom')) $('chk-cupom').value = ''; // Limpa o campo do cupom
+        if ($('cupom-msg')) {
+            $('cupom-msg').innerText = "Cupom removido: o valor mínimo não é mais atingido.";
+            $('cupom-msg').style.color = "var(--c-err)";
+            $('cupom-msg').style.display = "block";
+        }
+    }
+
+    let totalDescontosKits = (STATE.comboDiscount || 0) + STATE.cjTotalDiscount;    
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
     
     let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount - cupomDesconto;
