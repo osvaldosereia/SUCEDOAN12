@@ -1,5 +1,5 @@
 // Mudamos para v2 para forçar o telemóvel dos clientes a atualizar o sistema!
-const CACHE_NAME = 'dona-antonia-app-v3'; 
+const CACHE_NAME = 'dona-antonia-app-v4'; 
 const urlsToCache = [
   './index.html',
   './manifest.json'
