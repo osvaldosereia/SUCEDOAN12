@@ -1727,15 +1727,19 @@ function buildCjCardHTML(kit) {
             <div class="cj-item">
                 <div class="cj-img-box"><img src="${p1.img}" alt="${p1.name}"></div>
                 <div class="cj-item-name">${formatName(p1.name)}</div>
-                <div style="font-size: 0.65rem; color: var(--c-s); text-decoration: line-through; margin-top: 2px;">${fmt(p1.price)}</div>
-                <div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 700;">${fmt(p1CjPrice)}</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 0.65rem; color: var(--c-s); text-decoration: line-through;">${fmt(p1.price)}</span>
+                    <span style="font-size: 0.75rem; color: var(--c-ok); font-weight: 700;">${fmt(p1CjPrice)}</span>
+                </div>
             </div>
             <div class="cj-plus">+</div>
             <div class="cj-item">
                 <div class="cj-img-box"><img src="${p2.img}" alt="${p2.name}"></div>
                 <div class="cj-item-name">${formatName(p2.name)}</div>
-                <div style="font-size: 0.65rem; color: var(--c-s); text-decoration: line-through; margin-top: 2px;">${fmt(p2.price)}</div>
-                <div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 700;">${fmt(p2CjPrice)}</div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 4px; margin-top: 4px;">
+                    <span style="font-size: 0.65rem; color: var(--c-s); text-decoration: line-through;">${fmt(p2.price)}</span>
+                    <span style="font-size: 0.75rem; color: var(--c-ok); font-weight: 700;">${fmt(p2CjPrice)}</span>
+                </div>
             </div>
         </div>
         <div class="cj-footer">
