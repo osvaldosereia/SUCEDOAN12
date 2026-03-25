@@ -1,179 +1,333 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Matriz de Etiquetas 80x80 - Expandida</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leitor de Produtos para Etiquetas</title>
+    
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
     <style>
-        /* --- ESTILOS DO ECRÃ --- */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            padding: 20px;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1 { color: #333; margin-bottom: 20px; }
-
-        #matriz-principal {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            max-width: 1200px; /* Aumentado para acomodar mais botões */
-            width: 100%;
-        }
-
-        .linha-gondola {
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid #eee;
-            padding: 10px 0;
+        /* Definindo algumas cores padrão */
+        :root {
+            --primary: #4CAF50;
+            --secondary: #2196F3;
+            --danger: #f44336;
+            --dark: #333;
+            --light: #f4f4f4;
         }
         
-        .linha-gondola:last-child { border-bottom: none; }
-
-        .cabecalho-linha {
-            width: 120px;
-            font-size: 16px;
+        /* Estilo base do site */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--light);
+            margin: 0;
+            padding: 20px;
+            color: var(--dark);
+        }
+        h1, h2 { text-align: center; }
+        
+        /* Estilo dos Botões: Grandes e fáceis de clicar com o dedo */
+        button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 18px;
             font-weight: bold;
-            color: #444;
-            background-color: #e9ecef;
-            padding: 10px;
-            border-radius: 4px;
-            text-align: center;
-            margin-right: 15px;
-            flex-shrink: 0;
-        }
-
-        .grade-botoes {
-            display: grid;
-            /* Ajustado para 13 colunas (A até M) */
-            grid-template-columns: repeat(13, 1fr); 
-            gap: 8px;
-            flex-grow: 1;
-        }
-
-        .btn-prateleira {
-            background-color: #fff;
-            border: 2px solid #007bff;
-            color: #007bff;
-            padding: 8px 5px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-prateleira:hover {
-            background-color: #007bff;
             color: white;
-            transform: scale(1.1);
+            background-color: var(--primary);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-
-        /* --- ESTILOS DE IMPRESSÃO --- */
-        #area-impressao {
-            display: none; 
+        button:active { transform: translateY(2px); } /* Efeito de clique */
+        .btn-secondary { background-color: var(--secondary); }
+        .btn-danger { background-color: var(--danger); }
+        
+        /* Caixa central da interface */
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
+        
+        /* Estilização do formulário e das caixas de texto editáveis */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box; /* Garante que não vaze a tela */
+        }
+        
+        /* Estilo da foto exibida */
+        .produto-foto {
+            width: 100%;
+            max-height: 250px;
+            object-fit: contain;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        #reader { width: 100%; margin-bottom: 20px; }
+        .hidden { display: none !important; }
 
+        /* MODO DE IMPRESSÃO: Oculta botões e inputs, mostra apenas a "etiqueta" */
         @media print {
-            body > * { display: none !important; }
-
-            #area-impressao {
-                display: flex !important;
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 80mm;
-                height: 80mm;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                text-align: center;
-                background: white;
-            }
-
-            .print-titulo { 
-                font-size: 14pt; 
-                font-family: Arial, sans-serif; 
-                color: #000;
-                text-transform: uppercase;
-                margin-top: 5px;
-            }
-            .print-valor { 
-                font-size: 65pt; 
-                font-weight: 900; 
-                font-family: Arial, sans-serif; 
-                line-height: 1; 
-                margin-bottom: 5px;
-                color: #000;
-            }
-
-            @page {
-                size: 80mm 80mm;
-                margin: 0; 
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                position: absolute;
+                left: 0; top: 0;
+                width: 100%;
             }
         }
+        
+        /* Área que contém os dados organizados só para o momento que vai na impressora */
+        #print-area {
+            border: 2px dashed #000;
+            padding: 20px;
+            margin: 20px auto;
+            width: 300px;
+            text-align: center;
+        }
+        #print-area img { max-width: 150px; }
+        #print-area p { margin: 5px 0; font-size: 14px; }
+        #print-area h3 { margin: 0 0 10px 0; font-size: 18px; }
     </style>
 </head>
 <body>
 
-    <h1>Painel de Etiquetas (Gôndola 20 | Prateleira M)</h1>
+<div class="container" id="app-container">
+    <h1>🏷️ Leitor de Produtos</h1>
     
-    <div id="matriz-principal"></div>
+    <button onclick="iniciarLeitor()">📷 Ler Código de Barras</button>
+    <div id="reader" class="hidden"></div>
+    <button id="btn-cancelar" class="hidden btn-danger" onclick="pararLeitor()">Cancelar Leitura</button>
 
-    <div id="area-impressao"></div>
-
-    <script>
-        const matriz = document.getElementById('matriz-principal');
-        const areaImpressao = document.getElementById('area-impressao');
+    <div id="product-form" class="hidden">
+        <h2>Editar Etiqueta</h2>
+        <img id="img-foto" class="produto-foto" src="" alt="Foto do Produto" onerror="this.src=''">
         
-        // 1. ATUALIZAÇÃO: Lista de letras expandida até "M"
-        const letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+        <div class="form-group">
+            <label>Nome do Produto</label>
+            <input type="text" id="inp-nome">
+        </div>
+        <div class="form-group">
+            <label>Código EAN</label>
+            <input type="text" id="inp-ean">
+        </div>
+        <div class="form-group">
+            <label>Endereço (Gôndola/Prateleira)</label>
+            <input type="text" id="inp-loc">
+        </div>
+        <div class="form-group">
+            <label>Estoque</label>
+            <input type="text" id="inp-estoque">
+        </div>
+        <div class="form-group">
+            <label>Data de Validade</label>
+            <input type="text" id="inp-validade">
+        </div>
+        <div class="form-group">
+            <label>Preço de Custo (R$)</label>
+            <input type="text" id="inp-custo">
+        </div>
+        <div class="form-group">
+            <label>Preço de Venda (R$)</label>
+            <input type="text" id="inp-venda">
+        </div>
+        
+        <button class="btn-secondary" onclick="imprimirEtiqueta()">🖨️ Imprimir Etiqueta</button>
+        <button onclick="salvarEtiquetaLocal()">💾 Guardar Dados Modificados</button>
+    </div>
 
-        // 2. ATUALIZAÇÃO: Loop alterado para ir até 20 gôndolas
-        for (let i = 1; i <= 20; i++) {
-            
-            const linhaDiv = document.createElement('div');
-            linhaDiv.className = 'linha-gondola';
+    <hr>
+    
+    <button class="btn-secondary" onclick="exportarCSV()">📄 Exportar Dados Guardados (CSV)</button>
+    <button class="btn-danger" onclick="limparSalvos()">🗑️ Limpar Lista de Guardados</button>
+</div>
 
-            const cabecalho = document.createElement('div');
-            cabecalho.className = 'cabecalho-linha';
-            cabecalho.innerText = `GÔNDOLA ${i}`;
-            linhaDiv.appendChild(cabecalho);
+<div id="print-area" class="hidden">
+    <img id="print-img" src="" alt="Foto">
+    <h3 id="print-nome"></h3>
+    <p><strong>EAN:</strong> <span id="print-ean"></span></p>
+    <p><strong>Local:</strong> <span id="print-loc"></span></p>
+    <p><strong>Validade:</strong> <span id="print-validade"></span></p>
+    <p><strong>Estoque:</strong> <span id="print-estoque"></span></p>
+    <p><strong>Preço:</strong> R$ <span id="print-preco"></span></p>
+</div>
 
-            const botoesDiv = document.createElement('div');
-            botoesDiv.className = 'grade-botoes';
+<script>
+    // Configurações e Variáveis Globais
+    let bancoDeDados = [];
+    let html5QrCode = null;
 
-            letras.forEach(letra => {
-                const btn = document.createElement('button');
-                btn.className = 'btn-prateleira';
-                btn.innerText = letra; 
-                btn.title = `Imprimir Gôndola ${i} - Prateleira ${letra}`;
-                
-                btn.onclick = function() {
-                    imprimirEtiqueta(i, letra);
-                };
+    // Etapa 1: Carregar o arquivo JSON assim que a tela abre. 
+    // É esperado que ele esteja na raiz da pasta site
+    window.onload = async function() {
+        try {
+            const resposta = await fetch('../site/bancodedados.json');
+            bancoDeDados = await resposta.json();
+            console.log("Banco de dados pronto! " + bancoDeDados.length + " produtos carregados.");
+        } catch (erro) {
+            alert("Erro ao carregar bancodedados.json. Garanta que a URL e as pastas estão corretas.");
+            console.error(erro);
+        }
+    };
 
-                botoesDiv.appendChild(btn);
-            });
+    // Etapa 2: Iniciar a câmera para buscar EAN
+    function iniciarLeitor() {
+        document.getElementById('reader').classList.remove('hidden');
+        document.getElementById('btn-cancelar').classList.remove('hidden');
+        document.getElementById('product-form').classList.add('hidden');
 
-            linhaDiv.appendChild(botoesDiv);
-            matriz.appendChild(linhaDiv);
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+            { facingMode: "environment" }, // Prioriza a câmera traseira do seu celular
+            { fps: 10, qrbox: { width: 250, height: 100 } },
+            (codigoLido) => {
+                pararLeitor();
+                buscarProduto(codigoLido);
+            },
+            (mensagemErro) => {
+                // Fica em silêncio tentando encontrar o código a cada milisegundo
+            }
+        ).catch(err => {
+            alert("Acesso à câmera negado ou ambiente sem HTTPS.");
+        });
+    }
+
+    function pararLeitor() {
+        if (html5QrCode) {
+            html5QrCode.stop().then(() => {
+                document.getElementById('reader').classList.add('hidden');
+                document.getElementById('btn-cancelar').classList.add('hidden');
+            }).catch(err => console.log(err));
+        }
+    }
+
+    // Etapa 3: Fazer a varredura no arquivo carregado (JSON)
+    function buscarProduto(eanLido) {
+        // Limpar sujeiras e tabulações '\t' comuns no seu JSON
+        const eanLimpo = String(eanLido).replace(/\t/g, "").trim();
+
+        // Fazemos uma busca nos campos prováveis que podem conter o EAN ou Código
+        const produtoEncontrado = bancoDeDados.find(p => {
+            const eanDb = String(p.gtin || p["GTIN/EAN"] || "").replace(/\t/g, "").trim();
+            const codigoDb = String(p.codigo || p["Código"] || "").trim();
+            return eanDb === eanLimpo || codigoDb === eanLimpo;
+        });
+
+        if (produtoEncontrado) {
+            preencherFormulario(produtoEncontrado);
+        } else {
+            alert("Produto com código " + eanLimpo + " não foi encontrado no banco de dados.");
+        }
+    }
+
+    // Etapa 4: Apresentar para você as informações no HTML
+    function preencherFormulario(produto) {
+        const codigo = produto.codigo || produto["Código"] || "";
+        
+        // Populamos nossas caixas de texto com o que achamos
+        document.getElementById('inp-nome').value = produto.nome || produto["Descrição"] || "";
+        document.getElementById('inp-ean').value = String(produto.gtin || produto["GTIN/EAN"] || "").replace(/\t/g, "");
+        document.getElementById('inp-loc').value = produto.localizacao || produto["Localização"] || "";
+        document.getElementById('inp-estoque').value = produto.estoque || produto["Estoque"] || "";
+        document.getElementById('inp-validade').value = produto.validade || produto["Data Validade"] || "";
+        document.getElementById('inp-custo').value = produto.preco_custo || produto["Preço de custo"] || "";
+        document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
+        
+        // Relacionamos a imagem do site à chave "codigo" do produto
+        document.getElementById('img-foto').src = `../site/img/produtos/${codigo}.webp`;
+
+        // Faz o formulário aparecer
+        document.getElementById('product-form').classList.remove('hidden');
+    }
+
+    // Etapa 5: Simular a aba de impressão
+    function imprimirEtiqueta() {
+        document.getElementById('print-img').src = document.getElementById('img-foto').src;
+        document.getElementById('print-nome').innerText = document.getElementById('inp-nome').value;
+        document.getElementById('print-ean').innerText = document.getElementById('inp-ean').value;
+        document.getElementById('print-loc').innerText = document.getElementById('inp-loc').value;
+        document.getElementById('print-validade').innerText = document.getElementById('inp-validade').value;
+        document.getElementById('print-estoque').innerText = document.getElementById('inp-estoque').value;
+        document.getElementById('print-preco').innerText = document.getElementById('inp-venda').value;
+        
+        document.getElementById('print-area').classList.remove('hidden');
+        window.print(); // Ativa a aba nativa de impressão do navegador
+        document.getElementById('print-area').classList.add('hidden');
+    }
+
+    // Etapa 6: Salvar a edição no navegador
+    function salvarEtiquetaLocal() {
+        const etiqueta = {
+            nome: document.getElementById('inp-nome').value,
+            ean: document.getElementById('inp-ean').value,
+            loc: document.getElementById('inp-loc').value,
+            estoque: document.getElementById('inp-estoque').value,
+            validade: document.getElementById('inp-validade').value,
+            custo: document.getElementById('inp-custo').value,
+            venda: document.getElementById('inp-venda').value
+        };
+
+        // Salva na memória do seu navegador (localStorage)
+        let salvas = JSON.parse(localStorage.getItem('etiquetas_csv') || '[]');
+        salvas.push(etiqueta);
+        localStorage.setItem('etiquetas_csv', JSON.stringify(salvas));
+        
+        alert("Etiqueta alterada guardada com sucesso!");
+    }
+
+    // Etapa 7: Exportação das edições do navegador para Excel / CSV
+    function exportarCSV() {
+        let salvas = JSON.parse(localStorage.getItem('etiquetas_csv') || '[]');
+        if(salvas.length === 0) {
+            alert("Não há dados guardados. Grave algo primeiro!");
+            return;
         }
 
-        function imprimirEtiqueta(num, letra) {
-            areaImpressao.innerHTML = `
-                <div class="print-titulo">GONDOLA:</div>
-                <div class="print-valor">${num}</div>
-                <div class="print-titulo">PRATELEIRA:</div>
-                <div class="print-valor">${letra}</div>
-            `;
-            window.print();
+        // Definimos o cabeçalho usando ponto-e-vírgula (melhor para Excel brasileiro)
+        let conteudoCSV = "Nome;EAN;Localizacao;Estoque;Validade;Preco Custo;Preco Venda\n";
+        
+        salvas.forEach(e => {
+            let linha = [
+                String(e.nome).replace(/;/g, ","), // trocamos possiveis ';' por ',' para não bugar colunas
+                e.ean, e.loc, e.estoque, e.validade, e.custo, e.venda
+            ].join(";");
+            conteudoCSV += linha + "\n";
+        });
+
+        // Configura um clique invisível que faz o download do arquivo
+        const blob = new Blob(["\uFEFF" + conteudoCSV], { type: 'text/csv;charset=utf-8;' }); 
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "etiquetas_editadas.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Ferramenta auxiliar
+    function limparSalvos() {
+        if(confirm("Deseja mesmo apagar todas as etiquetas guardadas na memória do celular?")) {
+            localStorage.removeItem('etiquetas_csv');
+            alert("Limpo!");
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
