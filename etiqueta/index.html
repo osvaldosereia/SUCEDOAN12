@@ -133,10 +133,10 @@
             background: #222; 
         }
         
-        /* Câmera mais estreita */
+        /* Câmera mais estreita na tela */
         .camera-box { 
             flex: 1; 
-            max-height: 25%; /* Câmera tipo "visor de caixa" */
+            max-height: 25%; 
             border-radius: 8px; 
             overflow: hidden; 
             position: relative; 
@@ -157,7 +157,6 @@
             text-align: center; 
         }
         
-        /* Foto Maior */
         .info-box img { 
             max-height: 200px; 
             width: auto;
@@ -175,13 +174,12 @@
             border: 2px solid var(--secondary); 
         }
         
-        /* Gôndola Gigante */
         .badge-loc { 
             background: var(--dark); 
             color: white; 
             padding: 10px 20px; 
             border-radius: 15px; 
-            font-size: 26px; /* Bem maior */
+            font-size: 26px; 
             font-weight: bold; 
         }
     </style>
@@ -304,7 +302,7 @@
             
             <div style="display:flex; gap:10px; width:100%;">
                 <button class="btn-danger" onclick="cancelarPicking()">Cancelar Separação</button>
-                </div>
+            </div>
         </div>
     </div>
 
@@ -320,20 +318,18 @@
 <script>
     // ==================== VARIÁVEIS GLOBAIS ====================
     let bancoDeDados = []; 
-    let html5QrCode = null; 
+    let scannerAtual = null; 
     let aguardandoProximaLeitura = false; 
     
-    // Variáveis da Separação
     let pedidosFila = [];
     let listaDeSeparacao = []; 
     let indexAtualPicking = 0; 
     let produtoSendoEditadoIndex = -1;
-    let pedidoAtual = null; // Guarda o pedido que está sendo separado agora
+    let pedidoAtual = null; 
 
-    // Audio Context (Para os Bips sonoros)
     let audioCtx = null;
 
-    // ==================== INICIALIZAÇÃO E SISTEMA ====================
+    // ==================== INICIALIZAÇÃO ====================
     window.onload = async function() {
         try { 
             const resposta = await fetch('../site/bancodedados.json'); 
@@ -350,6 +346,7 @@
         document.getElementById('botoes-menu').classList.remove('hidden');
     }
 
+    // ==================== ÁUDIO E VOZ (VOICE PICKING) ====================
     function inicializarAudio() {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -358,7 +355,6 @@
 
     function tocarBipe(tipo) {
         if (!audioCtx) return;
-        
         try {
             const oscilador = audioCtx.createOscillator();
             const ganho = audioCtx.createGain();
@@ -368,69 +364,74 @@
             
             if (tipo === 'sucesso') {
                 oscilador.type = 'sine';
-                oscilador.frequency.setValueAtTime(900, audioCtx.currentTime); // Som agudo
+                oscilador.frequency.setValueAtTime(900, audioCtx.currentTime); 
                 ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
                 oscilador.start();
-                oscilador.stop(audioCtx.currentTime + 0.1); // Super rápido (0.1s)
+                oscilador.stop(audioCtx.currentTime + 0.1); 
             } else {
                 oscilador.type = 'sawtooth';
-                oscilador.frequency.setValueAtTime(300, audioCtx.currentTime); // Som grave de erro
+                oscilador.frequency.setValueAtTime(300, audioCtx.currentTime); 
                 ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
                 oscilador.start();
-                oscilador.stop(audioCtx.currentTime + 0.4); // Mais longo para chamar atenção
+                oscilador.stop(audioCtx.currentTime + 0.4); 
             }
         } catch(e) {
-            console.log("Audio não reproduzido");
+            console.log("Áudio bloqueado pelo navegador.");
         }
     }
 
-    function abrirTela(idTela) {
-        let telas = ['tela-inicial', 'tela-etiquetas', 'tela-camera-busca', 'tela-separacao-input', 'tela-separacao-foco', 'tela-conclusao'];
-        
-        telas.forEach(id => { 
-            document.getElementById(id).classList.add('hidden'); 
-        });
-        
-        if (idTela !== 'tela-separacao-foco' && idTela !== 'tela-camera-busca') {
-            pararLeitor();
+    // FUNÇÃO NOVA: SÍNTESE DE VOZ NATURA
+    function falarTexto(texto) {
+        if ('speechSynthesis' in window) {
+            // Cancela a fala anterior para não enfileirar muitas mensagens caso bipes rápido
+            window.speechSynthesis.cancel(); 
+            let mensagem = new SpeechSynthesisUtterance(texto);
+            mensagem.lang = 'pt-BR';
+            mensagem.rate = 1.3; // Fala 30% mais rápido para dar agilidade à operação
+            window.speechSynthesis.speak(mensagem);
         }
-        
-        document.getElementById(idTela).classList.remove('hidden');
     }
 
     function mostrarAlerta(msg, tipo = 'sucesso', tempo = 3000) {
         let alerta = document.getElementById('alerta-customizado'); 
         alerta.innerText = msg; 
         alerta.className = ''; 
-        
-        if (tipo === 'erro') {
-            alerta.classList.add('alerta-erro'); 
-        } else if (tipo === 'aviso') {
-            alerta.classList.add('alerta-aviso'); 
-        } else {
-            alerta.classList.add('alerta-sucesso');
-        }
+        if (tipo === 'erro') alerta.classList.add('alerta-erro'); 
+        else if (tipo === 'aviso') alerta.classList.add('alerta-aviso'); 
+        else alerta.classList.add('alerta-sucesso');
         
         alerta.style.display = 'block'; 
-        
-        setTimeout(() => { 
-            alerta.style.display = 'none'; 
-        }, tempo);
+        setTimeout(() => { alerta.style.display = 'none'; }, tempo);
     }
 
-    // ==================== GESTÃO DE ETIQUETAS E BUSCA ====================
+    // ==================== CONTROLE DE TELAS ====================
+    function abrirTela(idTela) {
+        let telas = ['tela-inicial', 'tela-etiquetas', 'tela-camera-busca', 'tela-separacao-input', 'tela-separacao-foco', 'tela-conclusao'];
+        telas.forEach(id => { document.getElementById(id).classList.add('hidden'); });
+        
+        if (idTela !== 'tela-separacao-foco' && idTela !== 'tela-camera-busca') {
+            pararLeitor();
+        }
+        document.getElementById(idTela).classList.remove('hidden');
+    }
+
+    function abrirTelaListaPedidos() {
+        inicializarAudio(); // Permite que o áudio/voz funcione liberando o bloqueio do navegador
+        abrirTela('tela-separacao-input');
+        carregarPedidosFila();
+    }
+
+    // ==================== GESTÃO DE ETIQUETAS ====================
     function buscarPorNome() {
         let termo = document.getElementById('inp-busca').value.toLowerCase().trim();
         let lista = document.getElementById('lista-resultados'); 
         lista.innerHTML = ''; 
-        
         if (termo.length < 3) return; 
 
         let encontrados = bancoDeDados.map((p, i) => ({ produto: p, indexOriginal: i })).filter(item => {
             let nomeDb = String(item.produto.nome || item.produto["Descrição"] || "").toLowerCase();
             let codDb = String(item.produto.codigo || item.produto["Código"] || "").toLowerCase();
             let eanDb = String(item.produto.gtin || item.produto["GTIN/EAN"] || "").replace(/\D/g, "");
-            
             return nomeDb.includes(termo) || codDb.includes(termo) || eanDb.includes(termo);
         });
 
@@ -447,11 +448,7 @@
             let div = document.createElement('div'); 
             div.className = 'resultado-item'; 
             div.innerHTML = `${nome} <div class="resultado-dica">SKU: ${sku} | R$ ${preco}</div>`;
-            
-            div.onclick = function() { 
-                abrirCardProduto(item.produto, item.indexOriginal); 
-            }; 
-            
+            div.onclick = function() { abrirCardProduto(item.produto, item.indexOriginal); }; 
             lista.appendChild(div);
         });
     }
@@ -472,10 +469,7 @@
         const img = document.getElementById('img-foto'); 
         img.style.display = 'block'; 
         img.src = `../site/img/produtos/${sku}.webp`; 
-        
-        img.onerror = function() { 
-            this.style.display = 'none'; 
-        };
+        img.onerror = function() { this.style.display = 'none'; };
         
         document.getElementById('area-busca-etiqueta').classList.add('hidden'); 
         document.getElementById('product-form').classList.remove('hidden');
@@ -486,10 +480,9 @@
         document.getElementById('area-busca-etiqueta').classList.remove('hidden'); 
     }
 
-    // ==================== SALVAR E EXPORTAR CSV ====================
+    // ==================== SALVAR E EXPORTAR ====================
     function salvarProdutoLocal() {
         if (produtoSendoEditadoIndex === -1) return; 
-        
         let p = bancoDeDados[produtoSendoEditadoIndex];
         
         p.codigo = document.getElementById('inp-codigo').value; 
@@ -506,12 +499,10 @@
 
     function converterParaCSV(arrayDeProdutos) {
         if (arrayDeProdutos.length === 0) return '';
-        
-        let cabecalho = ['SKU', 'EAN', 'Nome', 'Estoque', 'Validade', 'Gondola', 'Prateleira', 'Preco'].join(';') + '\n';
-        let csv = cabecalho;
+        let csv = ['SKU', 'EAN', 'Nome', 'Estoque', 'Validade', 'Gondola', 'Prateleira', 'Preco'].join(';') + '\n';
         
         arrayDeProdutos.forEach(p => { 
-            let linha = [
+            csv += [
                 p.codigo || p["Código"] || "", 
                 p.gtin || p["GTIN/EAN"] || "", 
                 String(p.nome || p["Descrição"] || "").replace(/;/g, ","), 
@@ -520,11 +511,8 @@
                 p.gondola || p["Gôndola"] || p.localizacao || "", 
                 p.prateleira || p["Prateleira"] || "", 
                 p.preco || p["Preço"] || ""
-            ].join(';');
-            
-            csv += linha + '\n'; 
+            ].join(';') + '\n'; 
         });
-        
         return "\uFEFF" + csv;
     }
 
@@ -539,26 +527,17 @@
 
     function exportarProdutoCSV() { 
         let produtoSelecionado = bancoDeDados[produtoSendoEditadoIndex]; 
-        let conteudo = converterParaCSV([produtoSelecionado]);
-        let nome = `produto_${produtoSelecionado.codigo || produtoSelecionado["Código"]}.csv`;
-        fazerDownloadCSV(conteudo, nome); 
+        fazerDownloadCSV(converterParaCSV([produtoSelecionado]), `produto_${produtoSelecionado.codigo || produtoSelecionado["Código"]}.csv`); 
     }
     
     function exportarBancoCSV() { 
-        let conteudoCompleto = converterParaCSV(bancoDeDados);
-        let nomeArquivo = `banco_atualizado_${new Date().getTime()}.csv`;
-        fazerDownloadCSV(conteudoCompleto, nomeArquivo); 
+        fazerDownloadCSV(converterParaCSV(bancoDeDados), `banco_atualizado_${new Date().getTime()}.csv`); 
     }
 
-    // ==============================================================================
-    // IMPRESSÃO RAWBT (PÁGINA FANTASMA / IFRAME) 
-    // ==============================================================================
-    
+    // ==================== MOTOR DE IMPRESSÃO (RAWBT) ====================
     function imprimirPelaPaginaFantasma(htmlConteudo) {
         let iframeAntigo = document.getElementById('frame-impressao');
-        if (iframeAntigo) { 
-            iframeAntigo.remove(); 
-        }
+        if (iframeAntigo) { iframeAntigo.remove(); }
 
         let iframe = document.createElement('iframe');
         iframe.id = 'frame-impressao';
@@ -576,70 +555,19 @@
             <meta charset="UTF-8">
             <style>
                 @page { margin: 0; size: 58mm auto; }
+                body { margin: 0; padding: 0; width: 48mm; font-family: Arial, sans-serif; color: #000; background: #fff; }
                 
-                body { 
-                    margin: 0; 
-                    padding: 0; 
-                    width: 48mm; 
-                    font-family: Arial, sans-serif; 
-                    color: #000; 
-                    background: #fff;
-                }
-                
-                .etiqueta {
-                    width: 48mm;
-                    padding: 2mm 0;
-                    padding-bottom: 15mm;
-                    box-sizing: border-box;
-                    text-align: center;
-                }
-                
-                .foto-print {
-                    width: 100%;
-                    max-height: 45mm;
-                    object-fit: contain;
-                    margin-bottom: 8px;
-                    display: block;
-                    filter: grayscale(100%) contrast(120%);
-                }
-
+                .etiqueta { width: 48mm; padding: 2mm 0; padding-bottom: 15mm; box-sizing: border-box; text-align: center; }
+                .foto-print { width: 100%; max-height: 45mm; object-fit: contain; margin-bottom: 8px; display: block; filter: grayscale(100%) contrast(120%); }
                 .titulo { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
                 .sku { font-size: 38px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px; }
                 .nome { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; line-height: 1.2; }
-                
-                .linha { 
-                    display: flex; 
-                    justify-content: space-between; 
-                    font-size: 14px; 
-                    font-weight: bold; 
-                    border-bottom: 1px dashed #000; 
-                    padding: 4px 0; 
-                    margin: 0;
-                }
+                .linha { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0; margin: 0;}
                 .linha span.valor { font-weight: normal; }
                 
-                .rel-titulo { 
-                    font-size: 18px; 
-                    font-weight: 900; 
-                    text-transform: uppercase; 
-                    margin-bottom: 5px; 
-                    border-bottom: 2px solid #000; 
-                    padding-bottom: 5px; 
-                    text-align: center; 
-                }
-                .rel-info {
-                    font-size: 14px;
-                    font-weight: bold;
-                    margin-bottom: 10px;
-                    text-align: center;
-                }
-                .rel-item { 
-                    border-bottom: 1px dashed #000; 
-                    padding: 4px 0; 
-                    font-size: 14px; 
-                    font-weight: bold; 
-                    text-align: left;
-                }
+                .rel-titulo { font-size: 18px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center; }
+                .rel-info { font-size: 14px; font-weight: bold; margin-bottom: 10px; text-align: center; }
+                .rel-item { border-bottom: 1px dashed #000; padding: 4px 0; font-size: 14px; font-weight: bold; text-align: left; }
             </style>
         </head>
         <body>
@@ -648,10 +576,10 @@
         </html>
         `;
 
-        let doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
-        doc.document.open();
-        doc.document.write(htmlCompleto);
-        doc.document.close();
+        let doc = iframe.contentWindow.document || iframe.contentDocument;
+        doc.open();
+        doc.write(htmlCompleto);
+        doc.close();
 
         setTimeout(() => {
             iframe.contentWindow.focus();
@@ -669,7 +597,6 @@
         
         let imgElement = document.getElementById('img-foto');
         let fotoTag = '';
-        
         if (imgElement.style.display !== 'none' && imgElement.src) {
             fotoTag = `<img src="${imgElement.src}" class="foto-print" onerror="this.style.display='none'">`;
         }
@@ -684,16 +611,13 @@
                 <div class="linha"><span>VAL:</span> <span class="valor">${val}</span></div>
                 <div class="linha"><span>GÔNDOLA:</span> <span class="valor">${gon}</span></div>
                 <div class="linha"><span>PRAT:</span> <span class="valor">${pra}</span></div>
-                
                 <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
             </div>
         `;
-        
         imprimirPelaPaginaFantasma(conteudoEtiqueta);
     }
 
     function imprimirRelatorioSeparacao() {
-        // Puxa as informações do pedidoAtual guardado na memória
         let numeroPedido = pedidoAtual ? (pedidoAtual.orderNum || 'N/A') : 'N/A';
         let dataEntrega = (pedidoAtual && pedidoAtual.deliveryMatch && pedidoAtual.deliveryMatch[1]) ? pedidoAtual.deliveryMatch[1] : 'N/A';
 
@@ -712,35 +636,90 @@
                 <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
             </div>
         `;
-        
         imprimirPelaPaginaFantasma(cont);
     }
 
-
-    // ==============================================================================
-    // LEITURA E SEPARAÇÃO DE PEDIDOS
-    // ==============================================================================
-
-    function abrirTelaListaPedidos() {
-        inicializarAudio(); // Inicia o motor de áudio no primeiro clique do usuário
-        abrirTela('tela-separacao-input');
-        carregarPedidosFila();
+    // ==================== CÂMERA E LEITURA ====================
+    function iniciarLeitor(modo) {
+        if (scannerAtual) {
+            try { 
+                scannerAtual.stop().then(() => {
+                    scannerAtual.clear();
+                    abrirCameraSeguro(modo);
+                }).catch(() => { abrirCameraSeguro(modo); });
+            } catch(e) { abrirCameraSeguro(modo); }
+        } else {
+            abrirCameraSeguro(modo);
+        }
     }
 
+    function abrirCameraSeguro(modo) {
+        let idElemento = modo === 'busca' ? "reader-busca" : "reader-picking";
+        if (modo === 'busca') abrirTela('tela-camera-busca'); 
+        
+        scannerAtual = new Html5Qrcode(idElemento); 
+        
+        // AJUSTE: Área de foco da câmera agora é bem fininha (height: 60) e larga,
+        // combinando com a tela esmagada para 25% de altura.
+        let configuracaoCamera = { 
+            fps: 10, 
+            qrbox: { width: 280, height: 60 } 
+        };
+        
+        scannerAtual.start(
+            { facingMode: "environment" }, 
+            configuracaoCamera, 
+            (codigoLido) => {
+                if (modo === 'busca') { 
+                    pararLeitor('tela-etiquetas'); 
+                    buscarProdutoPorCamera(codigoLido); 
+                } else { 
+                    if (aguardandoProximaLeitura) return; 
+                    aguardandoProximaLeitura = true; 
+                    validarLeituraProduto(codigoLido); 
+                    setTimeout(() => { aguardandoProximaLeitura = false; }, 800); 
+                }
+            }, 
+            (erroDeFoco) => {}
+        ).catch(err => { mostrarAlerta("Erro ao iniciar a câmera", "erro"); });
+    }
+    
+    function pararLeitor(telaDeRetorno = null) { 
+        if (scannerAtual) { 
+            try { 
+                scannerAtual.stop().then(() => {
+                    scannerAtual.clear();
+                    scannerAtual = null;
+                }).catch(e => { console.log(e); });
+            } catch(e) {} 
+        } 
+        if (telaDeRetorno) abrirTela(telaDeRetorno);
+    }
+
+    function buscarProdutoPorCamera(codigoLido) {
+        let eanLimpo = String(codigoLido).replace(/\D/g, "").replace(/^0+/, ""); 
+        let skuLimpo = String(codigoLido).trim().toUpperCase();
+        
+        const itemAchado = bancoDeDados.map((p, i) => ({ produto: p, indexOriginal: i })).find(item => { 
+            let eanDb = String(item.produto.gtin || item.produto["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, ""); 
+            let skuDb = String(item.produto.codigo || item.produto["Código"] || "").trim().toUpperCase(); 
+            return (eanDb === eanLimpo && eanLimpo !== "") || (skuDb === skuLimpo && skuLimpo !== ""); 
+        });
+        
+        if (itemAchado) abrirCardProduto(itemAchado.produto, itemAchado.indexOriginal); 
+        else mostrarAlerta("Produto não encontrado! (Lido: " + codigoLido + ")", "erro");
+    }
+
+    // ==================== FLUXO DE SEPARAÇÃO (JSON) ====================
     async function carregarPedidosFila() {
         let container = document.getElementById('area-lista-pedidos');
         container.innerHTML = '<p style="text-align:center; padding: 20px;">⏳ Carregando fila de pedidos...</p>';
         
         try {
             const resposta = await fetch('../site/pedidos_fila.json');
-            
-            if (!resposta.ok) {
-                throw new Error("Erro ao carregar");
-            }
-            
+            if (!resposta.ok) throw new Error("Erro ao carregar");
             pedidosFila = await resposta.json();
             renderizarPedidosFila();
-            
         } catch (erro) {
             container.innerHTML = '<p style="text-align:center; color:red; font-weight:bold;">❌ Não foi possível carregar os pedidos.</p>';
         }
@@ -749,7 +728,6 @@
     function renderizarPedidosFila() {
         let container = document.getElementById('area-lista-pedidos');
         container.innerHTML = '';
-
         let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE');
 
         if (pendentes.length === 0) {
@@ -760,27 +738,19 @@
         pendentes.forEach((pedido) => {
             let div = document.createElement('div');
             div.className = 'resultado-item'; 
-            
             let numItens = pedido.items ? pedido.items.length : 0;
             let dataApresentacao = new Date(pedido.dataCriacao).toLocaleDateString('pt-BR');
             let nomePedido = pedido.orderNum || "Pedido sem número";
             
-            div.innerHTML = `
-                ${nomePedido} 
-                <div class="resultado-dica">📅 ${dataApresentacao} | 📦 ${numItens} itens para separar</div>
-            `;
-            
-            div.onclick = function() { 
-                iniciarSeparacaoPedido(pedido); 
-            };
-            
+            div.innerHTML = `${nomePedido} <div class="resultado-dica">📅 ${dataApresentacao} | 📦 ${numItens} itens para separar</div>`;
+            div.onclick = function() { iniciarSeparacaoPedido(pedido); };
             container.appendChild(div);
         });
     }
 
     function iniciarSeparacaoPedido(pedido) {
         listaDeSeparacao = [];
-        pedidoAtual = pedido; // Guarda o pedido inteiro na memória para a impressão depois
+        pedidoAtual = pedido; 
 
         if (!pedido.items || pedido.items.length === 0) {
             mostrarAlerta("Este pedido não tem produtos listados.", "erro");
@@ -806,76 +776,10 @@
         }
 
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
-        
         indexAtualPicking = 0; 
         abrirTela('tela-separacao-foco'); 
         renderizarItemFoco(); 
         iniciarLeitor('separacao');
-    }
-
-    // ==================== CÂMERA DE SEPARAÇÃO SEM CONGELAR ====================
-    function iniciarLeitor(modo) {
-        if (modo === 'busca') { 
-            abrirTela('tela-camera-busca'); 
-            html5QrCode = new Html5Qrcode("reader-busca"); 
-        } else { 
-            html5QrCode = new Html5Qrcode("reader-picking"); 
-        }
-        
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            { fps: 10, qrbox: { width: 250, height: 100 } }, 
-            (codigoLido) => {
-                if (modo === 'busca') { 
-                    pararLeitor('tela-etiquetas'); 
-                    buscarProdutoPorCamera(codigoLido); 
-                } else { 
-                    if (aguardandoProximaLeitura) return; 
-
-                    aguardandoProximaLeitura = true; 
-                    validarLeituraProduto(codigoLido); 
-                    
-                    setTimeout(() => { 
-                        aguardandoProximaLeitura = false;
-                    }, 800); 
-                }
-            }, 
-            (erroDeFoco) => {
-                // Erros de foco são normais enquanto a câmera tenta ler
-            }
-        ).catch(err => { 
-            mostrarAlerta("Erro na permissão da câmera", "erro"); 
-        });
-    }
-    
-    function pararLeitor(telaDeRetorno = null) { 
-        if (html5QrCode) { 
-            try { 
-                html5QrCode.stop(); 
-            } catch(e) {} 
-        } 
-        
-        if (telaDeRetorno) {
-            abrirTela(telaDeRetorno);
-        }
-    }
-
-    function buscarProdutoPorCamera(codigoLido) {
-        let eanLimpo = String(codigoLido).replace(/\D/g, "").replace(/^0+/, ""); 
-        let skuLimpo = String(codigoLido).trim().toUpperCase();
-        
-        const itemAchado = bancoDeDados.map((p, i) => ({ produto: p, indexOriginal: i })).find(item => { 
-            let eanDb = String(item.produto.gtin || item.produto["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, ""); 
-            let skuDb = String(item.produto.codigo || item.produto["Código"] || "").trim().toUpperCase(); 
-            
-            return (eanDb === eanLimpo && eanLimpo !== "") || (skuDb === skuLimpo && skuLimpo !== ""); 
-        });
-        
-        if (itemAchado) {
-            abrirCardProduto(itemAchado.produto, itemAchado.indexOriginal); 
-        } else {
-            mostrarAlerta("Produto não encontrado! (Lido: " + codigoLido + ")", "erro");
-        }
     }
 
     function renderizarItemFoco() {
@@ -896,6 +800,7 @@
         img.style.display = 'block';
     }
 
+    // A VALIDAÇÃO AGORA TEM O SISTEMA DE "VOICE PICKING" ALÉM DO BIPE
     function validarLeituraProduto(codigoLido) {
         let eanLimpo = String(codigoLido).replace(/\D/g, "").replace(/^0+/, ""); 
         let skuLimpo = String(codigoLido).trim().toUpperCase();
@@ -906,21 +811,29 @@
         
         if (eanEsperado === eanLimpo || skuEsperado === skuLimpo) {
             itemAtual.unidadesLidas++; 
-            
             if (itemAtual.unidadesLidas < itemAtual.quantidadeTotal) { 
-                let falta = itemAtual.quantidadeTotal - itemAtual.unidadesLidas;
+                let faltam = itemAtual.quantidadeTotal - itemAtual.unidadesLidas;
+                
                 tocarBipe('sucesso');
-                mostrarAlerta(`✅ Correto! Faltam ${falta}.`, "aviso"); 
+                falarTexto(`Faltam ${faltam} unidades.`); // Voz falando quantas faltam!
+                
+                mostrarAlerta(`✅ Correto! Faltam ${faltam}.`, "aviso", 1500); 
                 renderizarItemFoco(); 
             } else { 
                 itemAtual.status = 'concluido'; 
+                
                 tocarBipe('sucesso');
-                mostrarAlerta(`🎉 Item Completo!`, "sucesso"); 
+                // Pega só as primeiras 2 palavras do nome para a voz não falar uma bíblia
+                let nomeCurto = itemAtual.nomePedido.split(" ").slice(0, 2).join(" ");
+                falarTexto(`${nomeCurto} concluído.`); // Voz confirmando que acabou
+                
+                mostrarAlerta(`🎉 Item Completo!`, "sucesso", 1500); 
                 indexAtualPicking++; 
                 renderizarItemFoco(); 
             }
         } else { 
             tocarBipe('erro');
+            falarTexto("Produto incorreto!"); // Avisa na voz
             mostrarAlerta(`❌ Produto Errado!`, "erro"); 
         }
     }
@@ -934,6 +847,10 @@
     
     function finalizarPicking() { 
         pararLeitor(); 
+        
+        // Fala na voz que a lista inteira acabou
+        falarTexto("Pedido finalizado com sucesso."); 
+        
         abrirTela('tela-conclusao'); 
     }
 </script>
