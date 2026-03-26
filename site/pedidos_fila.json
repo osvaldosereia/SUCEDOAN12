@@ -1,480 +1,941 @@
-[
-  {
-    "id": 1774552290321,
-    "dataCriacao": "2026-03-26T19:11:30.321Z",
-    "status": "PENDENTE",
-    "orderNumMatch": [
-      "*PEDIDO #313375*",
-      "#313375"
-    ],
-    "orderNum": "#313375",
-    "deliveryMatch": [
-      "*ENTREGA AGENDADA PARA:* Terça, 24/02",
-      "Terça, 24/02"
-    ],
-    "discountMatch": [
-      "DESCONTO PROGRESSIVO: -R$ 3,00",
-      "-R$ 3,00"
-    ],
-    "totalMatch": [
-      "*TOTAL: R$ 140,32*",
-      "R$ 140,32"
-    ],
-    "grouped": {
-      "09-A": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "BUCHA DE LAVAR LOUÇA",
-          "foundProduct": {
-            "nome": "BUCHA DE LAVAR LOUÇA",
-            "codigo": "16109433",
-            "gtin": "\t2715161094338",
-            "localizacao": "09-A"
-          }
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Estoque Profissional</title>
+    
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <style>
+        /* ==================== ESTILOS DO APLICATIVO ==================== */
+        :root { 
+            --primary: #4CAF50; 
+            --secondary: #2196F3; 
+            --danger: #f44336; 
+            --warning: #ff9800; 
+            --dark: #333; 
+            --light: #f4f4f4; 
         }
-      ],
-      "04-B": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "MACARRÃO LÁMEN APTI GALINHA 70G MIOJO",
-          "foundProduct": {
-            "nome": "MACARRÃO LÁMEN APTI GALINHA 70G MIOJO",
-            "codigo": "76409162",
-            "gtin": "\t7896327514558",
-            "localizacao": "04-B"
-          }
+        
+        body, html { 
+            font-family: Arial, sans-serif; 
+            background-color: var(--light); 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            color: var(--dark); 
         }
-      ],
-      "01-A": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "ARROZ TIO BONINI 5KG",
-          "foundProduct": {
-            "nome": "ARROZ TIO BONINI 5KG",
-            "codigo": "P0026",
-            "gtin": "\t7897738400089",
-            "localizacao": "01-A"
-          }
-        },
-        {
-          "qtd": 2,
-          "nomeOriginal": "FEIJÃO CARIOCA DA CASA 1KG",
-          "foundProduct": {
-            "nome": "FEIJÃO CARIOCA DA CASA 1KG",
-            "codigo": "P490",
-            "gtin": "7897923022195",
-            "localizacao": "01-A"
-          }
+        
+        h1, h2, h3 { 
+            text-align: center; 
+            margin-top: 0; 
         }
-      ],
-      "05-B": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "CAFÉ  CABOCLO VACUO 250G",
-          "foundProduct": {
-            "nome": "CAFÉ  CABOCLO VACUO 250G",
-            "codigo": "C0067",
-            "gtin": "\t7896089012460",
-            "localizacao": "05-B"
-          }
+        
+        button { 
+            display: block; 
+            width: 100%; 
+            padding: 15px; 
+            margin: 10px 0; 
+            font-size: 16px; 
+            font-weight: bold; 
+            color: white; 
+            background-color: var(--primary); 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
         }
-      ],
-      "04-A": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "MACARRÃO ESPAGUETE QDELICIA OVOS 500G",
-          "foundProduct": {
-            "nome": "MACARRÃO ESPAGUETE QDELICIA OVOS 500G",
-            "codigo": "P497",
-            "gtin": "\t7896763621759",
-            "localizacao": "04-A"
-          }
+        
+        .btn-secondary { background-color: var(--secondary); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-warning { background-color: var(--warning); color: #000; }
+        .btn-print { background-color: #000; }
+        
+        .container { 
+            max-width: 600px; 
+            margin: 20px auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
         }
-      ],
-      "04-C": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "MOLHO DE TOMATE FUGINI 300G",
-          "foundProduct": {
-            "nome": "MOLHO DE TOMATE FUGINI 300G",
-            "codigo": "P0244",
-            "gtin": "\t7897517206086",
-            "localizacao": "04-C"
-          }
-        },
-        {
-          "qtd": 1,
-          "nomeOriginal": "MILHO VERDE FUGINI SH 170GR",
-          "foundProduct": {
-            "nome": "MILHO VERDE FUGINI SH 170GR",
-            "codigo": "P0239",
-            "gtin": "\t7897517209544",
-            "localizacao": "04-C"
-          }
+        
+        .form-group { margin-bottom: 15px; }
+        
+        .form-group label { 
+            display: block; 
+            font-weight: bold; 
+            margin-bottom: 8px; 
+            font-size: 14px; 
+            color: #555;
         }
-      ],
-      "06-D": [
-        {
-          "qtd": 2,
-          "nomeOriginal": "SUCO PO FRISCO UVA 18G",
-          "foundProduct": {
-            "nome": "SUCO PO FRISCO UVA 18G",
-            "codigo": "P0311",
-            "gtin": "\t7896045112104",
-            "localizacao": "06-D"
-          }
-        },
-        {
-          "qtd": 1,
-          "nomeOriginal": "BOLACHA WAFER MY BIT 80G CHOC",
-          "foundProduct": {
-            "nome": "BOLACHA WAFER MY BIT 80G CHOC",
-            "codigo": "P0060",
-            "gtin": "\t7896408445160",
-            "localizacao": "06-D"
-          }
+        
+        .form-group input, .form-group textarea { 
+            width: 100%; 
+            padding: 15px; 
+            font-size: 16px; 
+            border: 2px solid #ccc; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
         }
-      ],
-      "08-A": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "SABÃO EM BARRA YPE 900G",
-          "foundProduct": {
-            "nome": "SABÃO EM BARRA YPE 900G",
-            "codigo": "P491",
-            "gtin": "\t7896098905906",
-            "localizacao": "08-A"
-          }
-        },
-        {
-          "qtd": 1,
-          "nomeOriginal": "LAVA LOUÇA YPE 500ML - NEUTRO",
-          "foundProduct": {
-            "nome": "LAVA LOUÇA YPE 500ML - NEUTRO",
-            "codigo": "P498",
-            "gtin": "\t7896098900208",
-            "localizacao": "08-A"
-          }
+        
+        .resultado-item { 
+            padding: 15px; 
+            margin-bottom: 8px; 
+            background-color: #e3f2fd; 
+            border: 1px solid #90caf9; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            color: #0d47a1; 
+            cursor: pointer; 
         }
-      ],
-      "08-B": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "CREME DENTAL DENTAL SORRISO TRIPLA 70G",
-          "foundProduct": {
-            "nome": "CREME DENTAL DENTAL SORRISO TRIPLA 70G",
-            "codigo": "P0105",
-            "gtin": "\t7891528029498",
-            "localizacao": "08-B"
-          }
-        },
-        {
-          "qtd": 2,
-          "nomeOriginal": "SABONETE FARNESE FRAMBOESA E BAUNILHA 85G",
-          "foundProduct": {
-            "nome": "SABONETE FARNESE FRAMBOESA E BAUNILHA 85G",
-            "codigo": "P0283",
-            "gtin": "\t7897751903185",
-            "localizacao": "08-B"
-          }
+        
+        .resultado-dica { 
+            font-size: 13px; 
+            color: #555; 
+            font-weight: normal; 
+            margin-top: 4px; 
         }
-      ],
-      "SEM LOCAL": [
-        {
-          "qtd": 1,
-          "nomeOriginal": "AMACIANTE YPE 2L ACONCHEGO",
-          "foundProduct": {
-            "nome": "AMACIANTE YPE 2L ACONCHEGO",
-            "codigo": "P0018",
-            "gtin": "\t2789609890240",
-            "localizacao": "SEM LOCAL"
-          }
-        },
-        {
-          "qtd": 1,
-          "nomeOriginal": "DESINFETANTE REMMUS AMAZON VERDE 2LTS",
-          "foundProduct": {
-            "nome": "DESINFETANTE REMMUS AMAZON VERDE 2LTS",
-            "codigo": "P447",
-            "gtin": "\t",
-            "localizacao": "SEM LOCAL"
-          }
-        },
-        {
-          "qtd": 1,
-          "nomeOriginal": "ÁGUA SANITÁRIA Q BOA 1L",
-          "foundProduct": {
-            "nome": "ÁGUA SANITÁRIA Q BOA 1L",
-            "codigo": "P0015",
-            "gtin": "\t7896083800018",
-            "localizacao": "SEM LOCAL"
-          }
-        },
-        {
-          "qtd": 1,
-          "nomeOriginal": "ESPONJA DE AÇO ASSOLAN 45G",
-          "foundProduct": {
-            "nome": "ESPONJA DE AÇO ASSOLAN 45G",
-            "codigo": "P0144",
-            "gtin": "\t7896090100118",
-            "localizacao": "SEM LOCAL"
-          }
-        },
-        {
-          "qtd": 1,
-          "nomeOriginal": "PAPEL HIGIÊNICO SOBERANO 4X30M",
-          "foundProduct": {
-            "nome": "PAPEL HIGIÊNICO SOBERANO 4X30M",
-            "codigo": "A102",
-            "gtin": "\t7898901374107",
-            "localizacao": "SEM LOCAL"
-          }
+        
+        .linha-dupla { display: flex; gap: 10px; }
+        .linha-dupla .form-group { flex: 1; }
+        .hidden { display: none !important; }
+
+        #alerta-customizado { 
+            position: fixed; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 90%; 
+            max-width: 400px; 
+            padding: 15px; 
+            border-radius: 8px; 
+            color: white; 
+            font-weight: bold; 
+            text-align: center; 
+            z-index: 9999; 
+            display: none; 
         }
-      ]
-    },
-    "notFound": [
-      {
-        "qtd": 2,
-        "nomeOriginal": "OLEO SOJA LIZA 900ML",
-        "foundProduct": null
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "AÇÚCAR CRISTAL BARRALCOOL 2KG",
-        "foundProduct": null
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "SAL REF CRISTAL OURO 1KG",
-        "foundProduct": null
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "LAVA ROUPA PO OMO 800G LAV PERFEITA",
-        "foundProduct": null
-      }
-    ],
-    "items": [
-      {
-        "qtd": 1,
-        "nomeOriginal": "BUCHA DE LAVAR LOUÇA",
-        "foundProduct": {
-          "nome": "BUCHA DE LAVAR LOUÇA",
-          "codigo": "16109433",
-          "gtin": "\t2715161094338",
-          "localizacao": "09-A"
+        .alerta-erro { background-color: var(--danger); }
+        .alerta-sucesso { background-color: var(--primary); }
+        .alerta-aviso { background-color: var(--warning); color: #000; }
+
+        /* --- MODO FOCO DE SEPARAÇÃO --- */
+        .tela-foco { 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            background: #222; 
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "MACARRÃO LÁMEN APTI GALINHA 70G MIOJO",
-        "foundProduct": {
-          "nome": "MACARRÃO LÁMEN APTI GALINHA 70G MIOJO",
-          "codigo": "76409162",
-          "gtin": "\t7896327514558",
-          "localizacao": "04-B"
+        
+        /* Câmera mais estreita */
+        .camera-box { 
+            flex: 1; 
+            max-height: 25%; /* Câmera tipo "visor de caixa" */
+            border-radius: 8px; 
+            overflow: hidden; 
+            position: relative; 
+            background: #000; 
+            border: 2px solid #555; 
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "ARROZ TIO BONINI 5KG",
-        "foundProduct": {
-          "nome": "ARROZ TIO BONINI 5KG",
-          "codigo": "P0026",
-          "gtin": "\t7897738400089",
-          "localizacao": "01-A"
+        
+        .info-box { 
+            flex: 1; 
+            background: white; 
+            border-radius: 8px; 
+            padding: 15px; 
+            margin-top: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: space-evenly; 
+            text-align: center; 
         }
-      },
-      {
-        "qtd": 2,
-        "nomeOriginal": "FEIJÃO CARIOCA DA CASA 1KG",
-        "foundProduct": {
-          "nome": "FEIJÃO CARIOCA DA CASA 1KG",
-          "codigo": "P490",
-          "gtin": "7897923022195",
-          "localizacao": "01-A"
+        
+        /* Foto Maior */
+        .info-box img { 
+            max-height: 200px; 
+            width: auto;
+            object-fit: contain; 
+            border-radius: 8px; 
         }
-      },
-      {
-        "qtd": 2,
-        "nomeOriginal": "OLEO SOJA LIZA 900ML",
-        "foundProduct": null
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "AÇÚCAR CRISTAL BARRALCOOL 2KG",
-        "foundProduct": null
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "SAL REF CRISTAL OURO 1KG",
-        "foundProduct": null
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "CAFÉ  CABOCLO VACUO 250G",
-        "foundProduct": {
-          "nome": "CAFÉ  CABOCLO VACUO 250G",
-          "codigo": "C0067",
-          "gtin": "\t7896089012460",
-          "localizacao": "05-B"
+        
+        .contador-unidades { 
+            font-size: 28px; 
+            font-weight: 900; 
+            color: var(--secondary); 
+            background: #e3f2fd; 
+            padding: 10px 20px; 
+            border-radius: 12px; 
+            border: 2px solid var(--secondary); 
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "MACARRÃO ESPAGUETE QDELICIA OVOS 500G",
-        "foundProduct": {
-          "nome": "MACARRÃO ESPAGUETE QDELICIA OVOS 500G",
-          "codigo": "P497",
-          "gtin": "\t7896763621759",
-          "localizacao": "04-A"
+        
+        /* Gôndola Gigante */
+        .badge-loc { 
+            background: var(--dark); 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 15px; 
+            font-size: 26px; /* Bem maior */
+            font-weight: bold; 
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "MOLHO DE TOMATE FUGINI 300G",
-        "foundProduct": {
-          "nome": "MOLHO DE TOMATE FUGINI 300G",
-          "codigo": "P0244",
-          "gtin": "\t7897517206086",
-          "localizacao": "04-C"
+    </style>
+</head>
+<body>
+
+<div id="alerta-customizado">Mensagem</div>
+
+<div id="app-ui">
+    
+    <div class="container" id="tela-inicial">
+        <h1>📦 Sistema de Estoque</h1>
+        <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco de dados...</p>
+        
+        <div id="area-upload" class="hidden">
+            <input type="file" id="file-json" accept=".json" style="display:block; margin:auto; margin-bottom: 15px;">
+        </div>
+        
+        <div id="botoes-menu" class="hidden">
+            <button style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-etiquetas')">🏷️ Gestão de Etiquetas</button>
+            <button class="btn-secondary" style="padding: 25px; font-size: 20px;" onclick="abrirTelaListaPedidos()">🛒 Iniciar Separação</button>
+            <hr>
+            <button class="btn-warning" onclick="exportarBancoCSV()">💾 Exportar Todo o Banco (CSV)</button>
+        </div>
+    </div>
+
+    <div class="container hidden" id="tela-etiquetas">
+        <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
+        
+        <div id="area-busca-etiqueta">
+            <h2>🔍 Buscar Produto</h2>
+            <div class="form-group">
+                <input type="text" id="inp-busca" placeholder="Digite Nome, SKU ou EAN..." oninput="buscarPorNome()">
+            </div>
+            <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin-bottom: 20px;">📷 Ler Código com a Câmera</button>
+            <div id="lista-resultados"></div>
+        </div>
+
+        <div id="product-form" class="hidden">
+            <button class="btn-danger" style="margin-bottom: 15px;" onclick="fecharCardProduto()">❌ Fechar Produto</button>
+            
+            <img id="img-foto" src="" style="width: 100%; max-height: 250px; object-fit: contain; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            
+            <div class="linha-dupla">
+                <div class="form-group">
+                    <label>SKU (Cód Interno)</label>
+                    <input type="text" id="inp-codigo" readonly style="background:#f0f0f0;">
+                </div>
+                <div class="form-group">
+                    <label>EAN (Cód Barras)</label>
+                    <input type="text" id="inp-ean">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Nome do Produto</label>
+                <input type="text" id="inp-nome">
+            </div>
+            
+            <div class="linha-dupla">
+                <div class="form-group">
+                    <label>Estoque</label>
+                    <input type="text" id="inp-estoque">
+                </div>
+                <div class="form-group">
+                    <label>Validade</label>
+                    <input type="text" id="inp-validade">
+                </div>
+            </div>
+            
+            <div class="linha-dupla">
+                <div class="form-group">
+                    <label>Gôndola</label>
+                    <input type="text" id="inp-gondola" placeholder="Ex: Corredor 3">
+                </div>
+                <div class="form-group">
+                    <label>Prateleira</label>
+                    <input type="text" id="inp-prateleira" placeholder="Ex: Baixa">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Preço</label>
+                <input type="text" id="inp-venda">
+            </div>
+            
+            <button class="btn-print" onclick="imprimirEtiquetaGondola()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Etiqueta</button>
+            <button class="btn-primary" onclick="salvarProdutoLocal()">✅ Salvar Alterações Localmente</button>
+            <button class="btn-secondary" onclick="exportarProdutoCSV()">📄 Exportar Apenas Este</button>
+        </div>
+    </div>
+
+    <div class="container hidden" id="tela-camera-busca">
+        <h2>📷 Lendo Código...</h2>
+        <div id="reader-busca" style="width: 100%; margin-bottom: 20px;"></div>
+        <button class="btn-danger" onclick="pararLeitor('tela-etiquetas')">Cancelar</button>
+    </div>
+
+    <div class="container hidden" id="tela-separacao-input">
+        <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
+        <h2>📋 Fila de Pedidos</h2>
+        <button onclick="carregarPedidosFila()" style="background-color: var(--dark); padding: 10px; margin-bottom: 15px;">🔄 Atualizar Lista</button>
+        
+        <div id="area-lista-pedidos">
+            </div>
+    </div>
+
+    <div class="tela-foco hidden" id="tela-separacao-foco">
+        <div class="camera-box">
+            <div id="reader-picking" style="width: 100%; height: 100%;"></div>
+        </div>
+        <div class="info-box">
+            <span class="badge-loc" id="foco-loc">📍 Gôndola: A1</span>
+            
+            <img id="foco-img" src="" alt="Produto" onerror="this.style.display='none'">
+            
+            <h3 id="foco-nome" style="margin: 5px 0;">Nome do Produto</h3>
+            
+            <div class="contador-unidades" id="foco-contador">0 / 4 Separados</div>
+            
+            <div style="display:flex; gap:10px; width:100%;">
+                <button class="btn-danger" onclick="cancelarPicking()">Cancelar Separação</button>
+                </div>
+        </div>
+    </div>
+
+    <div class="container hidden" id="tela-conclusao">
+        <h2>🎉 Separação Concluída!</h2>
+        <p style="text-align: center;">Todos os produtos foram bipados.</p>
+        
+        <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Pedido</button>
+        <button class="btn-secondary" onclick="abrirTela('tela-inicial')">✅ Concluir e Voltar</button>
+    </div>
+</div>
+
+<script>
+    // ==================== VARIÁVEIS GLOBAIS ====================
+    let bancoDeDados = []; 
+    let html5QrCode = null; 
+    let aguardandoProximaLeitura = false; 
+    
+    // Variáveis da Separação
+    let pedidosFila = [];
+    let listaDeSeparacao = []; 
+    let indexAtualPicking = 0; 
+    let produtoSendoEditadoIndex = -1;
+    let pedidoAtual = null; // Guarda o pedido que está sendo separado agora
+
+    // Audio Context (Para os Bips sonoros)
+    let audioCtx = null;
+
+    // ==================== INICIALIZAÇÃO E SISTEMA ====================
+    window.onload = async function() {
+        try { 
+            const resposta = await fetch('../site/bancodedados.json'); 
+            bancoDeDados = await resposta.json(); 
+            liberarSistema(); 
+        } catch (erro) { 
+            document.getElementById('area-upload').classList.remove('hidden'); 
         }
-      },
-      {
-        "qtd": 2,
-        "nomeOriginal": "SUCO PO FRISCO UVA 18G",
-        "foundProduct": {
-          "nome": "SUCO PO FRISCO UVA 18G",
-          "codigo": "P0311",
-          "gtin": "\t7896045112104",
-          "localizacao": "06-D"
+    };
+
+    function liberarSistema() {
+        document.getElementById('status-db').innerText = "✅ Banco Conectado";
+        document.getElementById('status-db').style.color = "green";
+        document.getElementById('botoes-menu').classList.remove('hidden');
+    }
+
+    function inicializarAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "MILHO VERDE FUGINI SH 170GR",
-        "foundProduct": {
-          "nome": "MILHO VERDE FUGINI SH 170GR",
-          "codigo": "P0239",
-          "gtin": "\t7897517209544",
-          "localizacao": "04-C"
+    }
+
+    function tocarBipe(tipo) {
+        if (!audioCtx) return;
+        
+        try {
+            const oscilador = audioCtx.createOscillator();
+            const ganho = audioCtx.createGain();
+            
+            oscilador.connect(ganho);
+            ganho.connect(audioCtx.destination);
+            
+            if (tipo === 'sucesso') {
+                oscilador.type = 'sine';
+                oscilador.frequency.setValueAtTime(900, audioCtx.currentTime); // Som agudo
+                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                oscilador.start();
+                oscilador.stop(audioCtx.currentTime + 0.1); // Super rápido (0.1s)
+            } else {
+                oscilador.type = 'sawtooth';
+                oscilador.frequency.setValueAtTime(300, audioCtx.currentTime); // Som grave de erro
+                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                oscilador.start();
+                oscilador.stop(audioCtx.currentTime + 0.4); // Mais longo para chamar atenção
+            }
+        } catch(e) {
+            console.log("Audio não reproduzido");
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "BOLACHA WAFER MY BIT 80G CHOC",
-        "foundProduct": {
-          "nome": "BOLACHA WAFER MY BIT 80G CHOC",
-          "codigo": "P0060",
-          "gtin": "\t7896408445160",
-          "localizacao": "06-D"
+    }
+
+    function abrirTela(idTela) {
+        let telas = ['tela-inicial', 'tela-etiquetas', 'tela-camera-busca', 'tela-separacao-input', 'tela-separacao-foco', 'tela-conclusao'];
+        
+        telas.forEach(id => { 
+            document.getElementById(id).classList.add('hidden'); 
+        });
+        
+        if (idTela !== 'tela-separacao-foco' && idTela !== 'tela-camera-busca') {
+            pararLeitor();
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "SABÃO EM BARRA YPE 900G",
-        "foundProduct": {
-          "nome": "SABÃO EM BARRA YPE 900G",
-          "codigo": "P491",
-          "gtin": "\t7896098905906",
-          "localizacao": "08-A"
+        
+        document.getElementById(idTela).classList.remove('hidden');
+    }
+
+    function mostrarAlerta(msg, tipo = 'sucesso', tempo = 3000) {
+        let alerta = document.getElementById('alerta-customizado'); 
+        alerta.innerText = msg; 
+        alerta.className = ''; 
+        
+        if (tipo === 'erro') {
+            alerta.classList.add('alerta-erro'); 
+        } else if (tipo === 'aviso') {
+            alerta.classList.add('alerta-aviso'); 
+        } else {
+            alerta.classList.add('alerta-sucesso');
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "CREME DENTAL DENTAL SORRISO TRIPLA 70G",
-        "foundProduct": {
-          "nome": "CREME DENTAL DENTAL SORRISO TRIPLA 70G",
-          "codigo": "P0105",
-          "gtin": "\t7891528029498",
-          "localizacao": "08-B"
+        
+        alerta.style.display = 'block'; 
+        
+        setTimeout(() => { 
+            alerta.style.display = 'none'; 
+        }, tempo);
+    }
+
+    // ==================== GESTÃO DE ETIQUETAS E BUSCA ====================
+    function buscarPorNome() {
+        let termo = document.getElementById('inp-busca').value.toLowerCase().trim();
+        let lista = document.getElementById('lista-resultados'); 
+        lista.innerHTML = ''; 
+        
+        if (termo.length < 3) return; 
+
+        let encontrados = bancoDeDados.map((p, i) => ({ produto: p, indexOriginal: i })).filter(item => {
+            let nomeDb = String(item.produto.nome || item.produto["Descrição"] || "").toLowerCase();
+            let codDb = String(item.produto.codigo || item.produto["Código"] || "").toLowerCase();
+            let eanDb = String(item.produto.gtin || item.produto["GTIN/EAN"] || "").replace(/\D/g, "");
+            
+            return nomeDb.includes(termo) || codDb.includes(termo) || eanDb.includes(termo);
+        });
+
+        if (encontrados.length === 0) { 
+            lista.innerHTML = '<div style="color:red; padding:10px; text-align:center;">Nenhum produto encontrado.</div>'; 
+            return; 
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "AMACIANTE YPE 2L ACONCHEGO",
-        "foundProduct": {
-          "nome": "AMACIANTE YPE 2L ACONCHEGO",
-          "codigo": "P0018",
-          "gtin": "\t2789609890240",
-          "localizacao": "SEM LOCAL"
+
+        encontrados.slice(0, 10).forEach(item => {
+            let nome = item.produto.nome || item.produto["Descrição"] || "Sem Nome"; 
+            let sku = item.produto.codigo || item.produto["Código"] || ""; 
+            let preco = item.produto.preco || item.produto["Preço"] || "0,00";
+            
+            let div = document.createElement('div'); 
+            div.className = 'resultado-item'; 
+            div.innerHTML = `${nome} <div class="resultado-dica">SKU: ${sku} | R$ ${preco}</div>`;
+            
+            div.onclick = function() { 
+                abrirCardProduto(item.produto, item.indexOriginal); 
+            }; 
+            
+            lista.appendChild(div);
+        });
+    }
+
+    function abrirCardProduto(produto, indexDaBusca) {
+        produtoSendoEditadoIndex = indexDaBusca;
+        const sku = produto.codigo || produto["Código"] || "";
+        
+        document.getElementById('inp-codigo').value = sku;
+        document.getElementById('inp-nome').value = produto.nome || produto["Descrição"] || "";
+        document.getElementById('inp-ean').value = String(produto.gtin || produto["GTIN/EAN"] || "").replace(/[^0-9]/g, "");
+        document.getElementById('inp-estoque').value = produto.estoque || produto["Estoque"] || "";
+        document.getElementById('inp-validade').value = produto.validade || produto["Data Validade"] || "";
+        document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
+        document.getElementById('inp-gondola').value = produto.gondola || produto["Gôndola"] || produto.localizacao || produto["Localização"] || "";
+        document.getElementById('inp-prateleira').value = produto.prateleira || produto["Prateleira"] || "";
+        
+        const img = document.getElementById('img-foto'); 
+        img.style.display = 'block'; 
+        img.src = `../site/img/produtos/${sku}.webp`; 
+        
+        img.onerror = function() { 
+            this.style.display = 'none'; 
+        };
+        
+        document.getElementById('area-busca-etiqueta').classList.add('hidden'); 
+        document.getElementById('product-form').classList.remove('hidden');
+    }
+
+    function fecharCardProduto() { 
+        document.getElementById('product-form').classList.add('hidden'); 
+        document.getElementById('area-busca-etiqueta').classList.remove('hidden'); 
+    }
+
+    // ==================== SALVAR E EXPORTAR CSV ====================
+    function salvarProdutoLocal() {
+        if (produtoSendoEditadoIndex === -1) return; 
+        
+        let p = bancoDeDados[produtoSendoEditadoIndex];
+        
+        p.codigo = document.getElementById('inp-codigo').value; 
+        p.nome = document.getElementById('inp-nome').value; 
+        p.gtin = document.getElementById('inp-ean').value;
+        p.estoque = document.getElementById('inp-estoque').value; 
+        p.validade = document.getElementById('inp-validade').value; 
+        p.preco = document.getElementById('inp-venda').value;
+        p.gondola = document.getElementById('inp-gondola').value; 
+        p.prateleira = document.getElementById('inp-prateleira').value;
+        
+        mostrarAlerta("✅ Alterações salvas na memória!", "sucesso");
+    }
+
+    function converterParaCSV(arrayDeProdutos) {
+        if (arrayDeProdutos.length === 0) return '';
+        
+        let cabecalho = ['SKU', 'EAN', 'Nome', 'Estoque', 'Validade', 'Gondola', 'Prateleira', 'Preco'].join(';') + '\n';
+        let csv = cabecalho;
+        
+        arrayDeProdutos.forEach(p => { 
+            let linha = [
+                p.codigo || p["Código"] || "", 
+                p.gtin || p["GTIN/EAN"] || "", 
+                String(p.nome || p["Descrição"] || "").replace(/;/g, ","), 
+                p.estoque || p["Estoque"] || "", 
+                p.validade || p["Data Validade"] || "", 
+                p.gondola || p["Gôndola"] || p.localizacao || "", 
+                p.prateleira || p["Prateleira"] || "", 
+                p.preco || p["Preço"] || ""
+            ].join(';');
+            
+            csv += linha + '\n'; 
+        });
+        
+        return "\uFEFF" + csv;
+    }
+
+    function fazerDownloadCSV(conteudoTexto, nomeArquivo) {
+        const link = document.createElement("a"); 
+        link.setAttribute("href", URL.createObjectURL(new Blob([conteudoTexto], { type: 'text/csv;charset=utf-8;' })));
+        link.setAttribute("download", nomeArquivo); 
+        document.body.appendChild(link); 
+        link.click(); 
+        document.body.removeChild(link);
+    }
+
+    function exportarProdutoCSV() { 
+        let produtoSelecionado = bancoDeDados[produtoSendoEditadoIndex]; 
+        let conteudo = converterParaCSV([produtoSelecionado]);
+        let nome = `produto_${produtoSelecionado.codigo || produtoSelecionado["Código"]}.csv`;
+        fazerDownloadCSV(conteudo, nome); 
+    }
+    
+    function exportarBancoCSV() { 
+        let conteudoCompleto = converterParaCSV(bancoDeDados);
+        let nomeArquivo = `banco_atualizado_${new Date().getTime()}.csv`;
+        fazerDownloadCSV(conteudoCompleto, nomeArquivo); 
+    }
+
+    // ==============================================================================
+    // IMPRESSÃO RAWBT (PÁGINA FANTASMA / IFRAME) 
+    // ==============================================================================
+    
+    function imprimirPelaPaginaFantasma(htmlConteudo) {
+        let iframeAntigo = document.getElementById('frame-impressao');
+        if (iframeAntigo) { 
+            iframeAntigo.remove(); 
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "DESINFETANTE REMMUS AMAZON VERDE 2LTS",
-        "foundProduct": {
-          "nome": "DESINFETANTE REMMUS AMAZON VERDE 2LTS",
-          "codigo": "P447",
-          "gtin": "\t",
-          "localizacao": "SEM LOCAL"
+
+        let iframe = document.createElement('iframe');
+        iframe.id = 'frame-impressao';
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = 'none';
+        iframe.style.left = '-9999px'; 
+        document.body.appendChild(iframe);
+
+        let htmlCompleto = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                @page { margin: 0; size: 58mm auto; }
+                
+                body { 
+                    margin: 0; 
+                    padding: 0; 
+                    width: 48mm; 
+                    font-family: Arial, sans-serif; 
+                    color: #000; 
+                    background: #fff;
+                }
+                
+                .etiqueta {
+                    width: 48mm;
+                    padding: 2mm 0;
+                    padding-bottom: 15mm;
+                    box-sizing: border-box;
+                    text-align: center;
+                }
+                
+                .foto-print {
+                    width: 100%;
+                    max-height: 45mm;
+                    object-fit: contain;
+                    margin-bottom: 8px;
+                    display: block;
+                    filter: grayscale(100%) contrast(120%);
+                }
+
+                .titulo { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+                .sku { font-size: 38px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px; }
+                .nome { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; line-height: 1.2; }
+                
+                .linha { 
+                    display: flex; 
+                    justify-content: space-between; 
+                    font-size: 14px; 
+                    font-weight: bold; 
+                    border-bottom: 1px dashed #000; 
+                    padding: 4px 0; 
+                    margin: 0;
+                }
+                .linha span.valor { font-weight: normal; }
+                
+                .rel-titulo { 
+                    font-size: 18px; 
+                    font-weight: 900; 
+                    text-transform: uppercase; 
+                    margin-bottom: 5px; 
+                    border-bottom: 2px solid #000; 
+                    padding-bottom: 5px; 
+                    text-align: center; 
+                }
+                .rel-info {
+                    font-size: 14px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    text-align: center;
+                }
+                .rel-item { 
+                    border-bottom: 1px dashed #000; 
+                    padding: 4px 0; 
+                    font-size: 14px; 
+                    font-weight: bold; 
+                    text-align: left;
+                }
+            </style>
+        </head>
+        <body>
+            ${htmlConteudo}
+        </body>
+        </html>
+        `;
+
+        let doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
+        doc.document.open();
+        doc.document.write(htmlCompleto);
+        doc.document.close();
+
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }, 1000);
+    }
+
+    function imprimirEtiquetaGondola() {
+        let sku = document.getElementById('inp-codigo').value;
+        let nome = document.getElementById('inp-nome').value;
+        let ean = document.getElementById('inp-ean').value;
+        let val = document.getElementById('inp-validade').value;
+        let gon = document.getElementById('inp-gondola').value;
+        let pra = document.getElementById('inp-prateleira').value;
+        
+        let imgElement = document.getElementById('img-foto');
+        let fotoTag = '';
+        
+        if (imgElement.style.display !== 'none' && imgElement.src) {
+            fotoTag = `<img src="${imgElement.src}" class="foto-print" onerror="this.style.display='none'">`;
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "LAVA ROUPA PO OMO 800G LAV PERFEITA",
-        "foundProduct": null
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "LAVA LOUÇA YPE 500ML - NEUTRO",
-        "foundProduct": {
-          "nome": "LAVA LOUÇA YPE 500ML - NEUTRO",
-          "codigo": "P498",
-          "gtin": "\t7896098900208",
-          "localizacao": "08-A"
+
+        let conteudoEtiqueta = `
+            <div class="etiqueta">
+                ${fotoTag}
+                <div class="titulo">SKU</div>
+                <div class="sku">${sku}</div>
+                <div class="nome">${nome}</div>
+                <div class="linha"><span>EAN:</span> <span class="valor">${ean}</span></div>
+                <div class="linha"><span>VAL:</span> <span class="valor">${val}</span></div>
+                <div class="linha"><span>GÔNDOLA:</span> <span class="valor">${gon}</span></div>
+                <div class="linha"><span>PRAT:</span> <span class="valor">${pra}</span></div>
+                
+                <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
+            </div>
+        `;
+        
+        imprimirPelaPaginaFantasma(conteudoEtiqueta);
+    }
+
+    function imprimirRelatorioSeparacao() {
+        // Puxa as informações do pedidoAtual guardado na memória
+        let numeroPedido = pedidoAtual ? (pedidoAtual.orderNum || 'N/A') : 'N/A';
+        let dataEntrega = (pedidoAtual && pedidoAtual.deliveryMatch && pedidoAtual.deliveryMatch[1]) ? pedidoAtual.deliveryMatch[1] : 'N/A';
+
+        let cont = `
+            <div class="etiqueta">
+                <div class="rel-titulo">Pedido ${numeroPedido}</div>
+                <div class="rel-info">Entrega: ${dataEntrega}</div>
+        `;
+        
+        listaDeSeparacao.forEach(i => { 
+            let status = i.status === 'concluido' ? '[OK]' : '[FALTOU]';
+            cont += `<div class="rel-item">${status} ${i.quantidadeTotal}x ${i.nomePedido.substring(0, 18)}</div>`; 
+        });
+        
+        cont += `
+                <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
+            </div>
+        `;
+        
+        imprimirPelaPaginaFantasma(cont);
+    }
+
+
+    // ==============================================================================
+    // LEITURA E SEPARAÇÃO DE PEDIDOS
+    // ==============================================================================
+
+    function abrirTelaListaPedidos() {
+        inicializarAudio(); // Inicia o motor de áudio no primeiro clique do usuário
+        abrirTela('tela-separacao-input');
+        carregarPedidosFila();
+    }
+
+    async function carregarPedidosFila() {
+        let container = document.getElementById('area-lista-pedidos');
+        container.innerHTML = '<p style="text-align:center; padding: 20px;">⏳ Carregando fila de pedidos...</p>';
+        
+        try {
+            const resposta = await fetch('../site/pedidos_fila.json');
+            
+            if (!resposta.ok) {
+                throw new Error("Erro ao carregar");
+            }
+            
+            pedidosFila = await resposta.json();
+            renderizarPedidosFila();
+            
+        } catch (erro) {
+            container.innerHTML = '<p style="text-align:center; color:red; font-weight:bold;">❌ Não foi possível carregar os pedidos.</p>';
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "ÁGUA SANITÁRIA Q BOA 1L",
-        "foundProduct": {
-          "nome": "ÁGUA SANITÁRIA Q BOA 1L",
-          "codigo": "P0015",
-          "gtin": "\t7896083800018",
-          "localizacao": "SEM LOCAL"
+    }
+
+    function renderizarPedidosFila() {
+        let container = document.getElementById('area-lista-pedidos');
+        container.innerHTML = '';
+
+        let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE');
+
+        if (pendentes.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding: 20px; font-size: 18px; color: green; font-weight: bold;">✅ Nenhum pedido pendente!</div>';
+            return;
         }
-      },
-      {
-        "qtd": 2,
-        "nomeOriginal": "SABONETE FARNESE FRAMBOESA E BAUNILHA 85G",
-        "foundProduct": {
-          "nome": "SABONETE FARNESE FRAMBOESA E BAUNILHA 85G",
-          "codigo": "P0283",
-          "gtin": "\t7897751903185",
-          "localizacao": "08-B"
+
+        pendentes.forEach((pedido) => {
+            let div = document.createElement('div');
+            div.className = 'resultado-item'; 
+            
+            let numItens = pedido.items ? pedido.items.length : 0;
+            let dataApresentacao = new Date(pedido.dataCriacao).toLocaleDateString('pt-BR');
+            let nomePedido = pedido.orderNum || "Pedido sem número";
+            
+            div.innerHTML = `
+                ${nomePedido} 
+                <div class="resultado-dica">📅 ${dataApresentacao} | 📦 ${numItens} itens para separar</div>
+            `;
+            
+            div.onclick = function() { 
+                iniciarSeparacaoPedido(pedido); 
+            };
+            
+            container.appendChild(div);
+        });
+    }
+
+    function iniciarSeparacaoPedido(pedido) {
+        listaDeSeparacao = [];
+        pedidoAtual = pedido; // Guarda o pedido inteiro na memória para a impressão depois
+
+        if (!pedido.items || pedido.items.length === 0) {
+            mostrarAlerta("Este pedido não tem produtos listados.", "erro");
+            return;
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "ESPONJA DE AÇO ASSOLAN 45G",
-        "foundProduct": {
-          "nome": "ESPONJA DE AÇO ASSOLAN 45G",
-          "codigo": "P0144",
-          "gtin": "\t7896090100118",
-          "localizacao": "SEM LOCAL"
+
+        pedido.items.forEach(item => {
+            if (item.foundProduct) {
+                listaDeSeparacao.push({
+                    quantidadeTotal: item.qtd,
+                    unidadesLidas: 0,
+                    nomePedido: item.nomeOriginal,
+                    produtoDb: item.foundProduct, 
+                    localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "ZZZ",
+                    status: 'pendente'
+                });
+            }
+        });
+
+        if (listaDeSeparacao.length === 0) {
+            mostrarAlerta("Nenhum item do pedido foi encontrado no banco de dados.", "erro");
+            return;
         }
-      },
-      {
-        "qtd": 1,
-        "nomeOriginal": "PAPEL HIGIÊNICO SOBERANO 4X30M",
-        "foundProduct": {
-          "nome": "PAPEL HIGIÊNICO SOBERANO 4X30M",
-          "codigo": "A102",
-          "gtin": "\t7898901374107",
-          "localizacao": "SEM LOCAL"
+
+        listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
+        
+        indexAtualPicking = 0; 
+        abrirTela('tela-separacao-foco'); 
+        renderizarItemFoco(); 
+        iniciarLeitor('separacao');
+    }
+
+    // ==================== CÂMERA DE SEPARAÇÃO SEM CONGELAR ====================
+    function iniciarLeitor(modo) {
+        if (modo === 'busca') { 
+            abrirTela('tela-camera-busca'); 
+            html5QrCode = new Html5Qrcode("reader-busca"); 
+        } else { 
+            html5QrCode = new Html5Qrcode("reader-picking"); 
         }
-      }
-    ],
-    "footerText": ""
-  },
-  {
-    "id": 1773498452542,
-    "dataCriacao": "2026-03-14T14:27:32.542Z",
-    "status": "PENDENTE",
-    "orderNumMatch": [
-      "*PEDIDO #824726*",
-      "#824726"
-    ]
-  }
-]
+        
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 10, qrbox: { width: 250, height: 100 } }, 
+            (codigoLido) => {
+                if (modo === 'busca') { 
+                    pararLeitor('tela-etiquetas'); 
+                    buscarProdutoPorCamera(codigoLido); 
+                } else { 
+                    if (aguardandoProximaLeitura) return; 
+
+                    aguardandoProximaLeitura = true; 
+                    validarLeituraProduto(codigoLido); 
+                    
+                    setTimeout(() => { 
+                        aguardandoProximaLeitura = false;
+                    }, 800); 
+                }
+            }, 
+            (erroDeFoco) => {
+                // Erros de foco são normais enquanto a câmera tenta ler
+            }
+        ).catch(err => { 
+            mostrarAlerta("Erro na permissão da câmera", "erro"); 
+        });
+    }
+    
+    function pararLeitor(telaDeRetorno = null) { 
+        if (html5QrCode) { 
+            try { 
+                html5QrCode.stop(); 
+            } catch(e) {} 
+        } 
+        
+        if (telaDeRetorno) {
+            abrirTela(telaDeRetorno);
+        }
+    }
+
+    function buscarProdutoPorCamera(codigoLido) {
+        let eanLimpo = String(codigoLido).replace(/\D/g, "").replace(/^0+/, ""); 
+        let skuLimpo = String(codigoLido).trim().toUpperCase();
+        
+        const itemAchado = bancoDeDados.map((p, i) => ({ produto: p, indexOriginal: i })).find(item => { 
+            let eanDb = String(item.produto.gtin || item.produto["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, ""); 
+            let skuDb = String(item.produto.codigo || item.produto["Código"] || "").trim().toUpperCase(); 
+            
+            return (eanDb === eanLimpo && eanLimpo !== "") || (skuDb === skuLimpo && skuLimpo !== ""); 
+        });
+        
+        if (itemAchado) {
+            abrirCardProduto(itemAchado.produto, itemAchado.indexOriginal); 
+        } else {
+            mostrarAlerta("Produto não encontrado! (Lido: " + codigoLido + ")", "erro");
+        }
+    }
+
+    function renderizarItemFoco() {
+        if (indexAtualPicking >= listaDeSeparacao.length) { 
+            finalizarPicking(); 
+            return; 
+        }
+        
+        let item = listaDeSeparacao[indexAtualPicking]; 
+        let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
+        
+        document.getElementById('foco-nome').innerText = item.nomePedido; 
+        document.getElementById('foco-loc').innerText = `📍 Gôndola: ${item.localizacao}`; 
+        document.getElementById('foco-contador').innerText = `${item.unidadesLidas} / ${item.quantidadeTotal} Separados`;
+        
+        let img = document.getElementById('foco-img'); 
+        img.src = `../site/img/produtos/${skuItem}.webp`; 
+        img.style.display = 'block';
+    }
+
+    function validarLeituraProduto(codigoLido) {
+        let eanLimpo = String(codigoLido).replace(/\D/g, "").replace(/^0+/, ""); 
+        let skuLimpo = String(codigoLido).trim().toUpperCase();
+        
+        let itemAtual = listaDeSeparacao[indexAtualPicking]; 
+        let eanEsperado = String(itemAtual.produtoDb.gtin || itemAtual.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, ""); 
+        let skuEsperado = String(itemAtual.produtoDb.codigo || itemAtual.produtoDb["Código"] || "").trim().toUpperCase();
+        
+        if (eanEsperado === eanLimpo || skuEsperado === skuLimpo) {
+            itemAtual.unidadesLidas++; 
+            
+            if (itemAtual.unidadesLidas < itemAtual.quantidadeTotal) { 
+                let falta = itemAtual.quantidadeTotal - itemAtual.unidadesLidas;
+                tocarBipe('sucesso');
+                mostrarAlerta(`✅ Correto! Faltam ${falta}.`, "aviso"); 
+                renderizarItemFoco(); 
+            } else { 
+                itemAtual.status = 'concluido'; 
+                tocarBipe('sucesso');
+                mostrarAlerta(`🎉 Item Completo!`, "sucesso"); 
+                indexAtualPicking++; 
+                renderizarItemFoco(); 
+            }
+        } else { 
+            tocarBipe('erro');
+            mostrarAlerta(`❌ Produto Errado!`, "erro"); 
+        }
+    }
+
+    function cancelarPicking() { 
+        if (confirm("Tem certeza que deseja cancelar toda a separação?")) { 
+            pararLeitor(); 
+            abrirTela('tela-inicial'); 
+        } 
+    }
+    
+    function finalizarPicking() { 
+        pararLeitor(); 
+        abrirTela('tela-conclusao'); 
+    }
+</script>
+</body>
+</html>
