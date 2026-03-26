@@ -312,6 +312,7 @@
     // ==================== VARIÁVEIS GLOBAIS ====================
     let bancoDeDados = []; 
     let html5QrCode = null; 
+    let aguardandoProximaLeitura = false; // NOVA TRAVA PARA FLUIDEZ DA CÂMERA
     
     // Variáveis da Separação
     let pedidosFila = [];
@@ -507,13 +508,11 @@
     // ==============================================================================
     
     function imprimirPelaPaginaFantasma(htmlConteudo) {
-        // Deleta a página fantasma anterior para liberar a memória e limpar a conexão
         let iframeAntigo = document.getElementById('frame-impressao');
         if (iframeAntigo) { 
             iframeAntigo.remove(); 
         }
 
-        // Cria a página fantasma do zero (evita perda de conexão no RawBT)
         let iframe = document.createElement('iframe');
         iframe.id = 'frame-impressao';
         iframe.style.position = 'absolute';
@@ -543,7 +542,7 @@
                 .etiqueta {
                     width: 48mm;
                     padding: 2mm 0;
-                    padding-bottom: 15mm; /* Avanço da bobina no final */
+                    padding-bottom: 15mm; 
                     box-sizing: border-box;
                     text-align: center;
                 }
@@ -601,7 +600,6 @@
         doc.document.write(htmlCompleto);
         doc.document.close();
 
-        // Espera 1 segundo para a imagem e o layout carregarem perfeitamente no fundo
         setTimeout(() => {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
@@ -660,7 +658,7 @@
 
 
     // ==============================================================================
-    // LEITURA E SEPARAÇÃO DE PEDIDOS (NOVA LÓGICA DE FILA JSON)
+    // LEITURA E SEPARAÇÃO DE PEDIDOS
     // ==============================================================================
 
     function abrirTelaListaPedidos() {
@@ -683,7 +681,7 @@
             renderizarPedidosFila();
             
         } catch (erro) {
-            container.innerHTML = '<p style="text-align:center; color:red; font-weight:bold;">❌ Não foi possível carregar os pedidos. Verifique se o arquivo "../site/pedidos_fila.json" existe no servidor.</p>';
+            container.innerHTML = '<p style="text-align:center; color:red; font-weight:bold;">❌ Não foi possível carregar os pedidos.</p>';
         }
     }
 
@@ -691,7 +689,6 @@
         let container = document.getElementById('area-lista-pedidos');
         container.innerHTML = '';
 
-        // Filtra apenas os pedidos que estão com status pendente
         let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE');
 
         if (pendentes.length === 0) {
@@ -699,8 +696,7 @@
             return;
         }
 
-        // Cria os botões para cada pedido na tela
-        pendentes.forEach((pedido, indexNoArrayOriginal) => {
+        pendentes.forEach((pedido) => {
             let div = document.createElement('div');
             div.className = 'resultado-item'; 
             
@@ -714,7 +710,6 @@
             `;
             
             div.onclick = function() { 
-                // Precisamos passar o pedido original para iniciar
                 iniciarSeparacaoPedido(pedido); 
             };
             
@@ -730,15 +725,13 @@
             return;
         }
 
-        // Lê o array "items" do JSON e joga na lista de separação do app
         pedido.items.forEach(item => {
-            // Só adiciona se o produto foi encontrado no seu gerador (foundProduct não é null)
             if (item.foundProduct) {
                 listaDeSeparacao.push({
                     quantidadeTotal: item.qtd,
                     unidadesLidas: 0,
                     nomePedido: item.nomeOriginal,
-                    produtoDb: item.foundProduct, // Pega os dados direto do arquivo
+                    produtoDb: item.foundProduct, 
                     localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "ZZZ",
                     status: 'pendente'
                 });
@@ -750,7 +743,6 @@
             return;
         }
 
-        // Ordena pela gôndola para fazer a rota do supermercado
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
         
         indexAtualPicking = 0; 
@@ -759,7 +751,7 @@
         iniciarLeitor('separacao');
     }
 
-    // ==================== CÂMERA E SEPARAÇÃO (PICKING) ====================
+    // ==================== CÂMERA DE SEPARAÇÃO SEM CONGELAR ====================
     function iniciarLeitor(modo) {
         if (modo === 'busca') { 
             abrirTela('tela-camera-busca'); 
@@ -776,18 +768,21 @@
                     pararLeitor('tela-etiquetas'); 
                     buscarProdutoPorCamera(codigoLido); 
                 } else { 
-                    html5QrCode.pause(); 
+                    // Se estivermos na trava de tempo (800ms), ignora a leitura
+                    if (aguardandoProximaLeitura) return; 
+
+                    // Ativa a trava para não ler 10x por segundo
+                    aguardandoProximaLeitura = true; 
                     validarLeituraProduto(codigoLido); 
                     
+                    // Libera a trava após 800ms sem parar a câmera!
                     setTimeout(() => { 
-                        if (html5QrCode.getState() === 2) {
-                            html5QrCode.resume(); 
-                        }
-                    }, 1500); 
+                        aguardandoProximaLeitura = false;
+                    }, 800); 
                 }
             }, 
             (erroDeFoco) => {
-                // Erros de foco são normais enquanto a câmera tenta ler
+                // Erros de foco são normais enquanto a câmera busca
             }
         ).catch(err => { 
             mostrarAlerta("Erro na permissão da câmera", "erro"); 
