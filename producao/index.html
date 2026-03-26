@@ -247,10 +247,13 @@
         const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
         const ORDERS_LOCAL_KEY = 'sucedoan_orders_v1'; // Novo fallback local para pedidos
-        const GONDOLAS = Array.from({length: 20}, (_, i) => String(i + 1).padStart(2, '0'));
+        
+        // Removido o "+ 1". Agora vai de '00' até '19'.
+        const GONDOLAS = Array.from({length: 20}, (_, i) => String(i).padStart(2, '0'));
+        
         const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
         const SEM_LOCAL = "SEM LOCAL";
-    </script>
+</script>
 
    <header>
         <div class="brand">SUCEDOAN <span>PRO</span></div>
