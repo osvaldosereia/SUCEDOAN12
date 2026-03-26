@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
-        /* --- ESTILOS DO APP --- */
+        /* ==================== ESTILOS DO APLICATIVO ==================== */
         :root { --primary: #4CAF50; --secondary: #2196F3; --danger: #f44336; --warning: #ff9800; --dark: #333; --light: #f4f4f4; }
         body, html { font-family: Arial, sans-serif; background-color: var(--light); margin: 0; padding: 0; height: 100%; color: var(--dark); }
         h1, h2, h3 { text-align: center; margin-top: 0; }
@@ -35,6 +35,7 @@
         .alerta-sucesso { background-color: var(--primary); }
         .alerta-aviso { background-color: var(--warning); color: #000; }
 
+        /* MODO FOCO (Sem Rolagem) */
         .tela-foco { height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding: 10px; box-sizing: border-box; background: #222; }
         .camera-box { flex: 1; max-height: 45%; border-radius: 8px; overflow: hidden; position: relative; background: #000; border: 2px solid #555; }
         .info-box { flex: 1; background: white; border-radius: 8px; padding: 15px; margin-top: 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; text-align: center; }
@@ -48,6 +49,7 @@
 <div id="alerta-customizado">Mensagem</div>
 
 <div id="app-ui">
+    
     <div class="container" id="tela-inicial">
         <h1>📦 Sistema de Estoque</h1>
         <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco...</p>
@@ -55,7 +57,7 @@
         <div id="botoes-menu" class="hidden">
             <button style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-etiquetas')">🏷️ Gestão de Etiquetas</button>
             <button class="btn-secondary" style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-separacao-input')">🛒 Iniciar Separação</button>
-            <hr><button class="btn-warning" onclick="exportarBancoCSV()">💾 Exportar Todo o Banco</button>
+            <hr><button class="btn-warning" onclick="exportarBancoCSV()">💾 Exportar Todo o Banco (CSV)</button>
         </div>
     </div>
 
@@ -64,7 +66,7 @@
         <div id="area-busca-etiqueta">
             <h2>🔍 Buscar Produto</h2>
             <div class="form-group"><input type="text" id="inp-busca" placeholder="Digite Nome, SKU ou EAN..." oninput="buscarPorNome()"></div>
-            <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin-bottom: 20px;">📷 Ler Código</button>
+            <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin-bottom: 20px;">📷 Ler Código com a Câmera</button>
             <div id="lista-resultados"></div>
         </div>
 
@@ -72,10 +74,10 @@
             <button class="btn-danger" style="margin-bottom: 15px;" onclick="fecharCardProduto()">❌ Fechar Produto</button>
             <img id="img-foto" src="" style="width: 100%; max-height: 250px; object-fit: contain; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px;">
             <div class="linha-dupla">
-                <div class="form-group"><label>SKU</label><input type="text" id="inp-codigo" readonly style="background:#f0f0f0;"></div>
-                <div class="form-group"><label>EAN</label><input type="text" id="inp-ean"></div>
+                <div class="form-group"><label>SKU (Cód Interno)</label><input type="text" id="inp-codigo" readonly style="background:#f0f0f0;"></div>
+                <div class="form-group"><label>EAN (Cód Barras)</label><input type="text" id="inp-ean"></div>
             </div>
-            <div class="form-group"><label>Nome</label><input type="text" id="inp-nome"></div>
+            <div class="form-group"><label>Nome do Produto</label><input type="text" id="inp-nome"></div>
             <div class="linha-dupla">
                 <div class="form-group"><label>Estoque</label><input type="text" id="inp-estoque"></div>
                 <div class="form-group"><label>Validade</label><input type="text" id="inp-validade"></div>
@@ -101,7 +103,7 @@
     <div class="container hidden" id="tela-separacao-input">
         <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar</button>
         <h2>📝 Colar Pedido</h2>
-        <div class="form-group"><textarea id="texto-pedido" rows="10" placeholder="Cole a lista..."></textarea></div>
+        <div class="form-group"><textarea id="texto-pedido" rows="10" placeholder="Cole a lista do WhatsApp..."></textarea></div>
         <button class="btn-secondary" onclick="processarPedidoEPuxarFoco()">🚀 Iniciar Separação</button>
     </div>
 
@@ -129,6 +131,7 @@
 <script>
     let bancoDeDados = []; let html5QrCode = null; let listaDeSeparacao = []; let indexAtualPicking = 0; let produtoSendoEditadoIndex = -1;
 
+    // --- CARREGAMENTO INICIAL ---
     window.onload = async function() {
         try { const resposta = await fetch('../site/bancodedados.json'); bancoDeDados = await resposta.json(); liberarSistema(); } 
         catch (erro) { document.getElementById('area-upload').classList.remove('hidden'); }
@@ -140,6 +143,7 @@
         document.getElementById('botoes-menu').classList.remove('hidden');
     }
 
+    // --- NAVEGAÇÃO E AVISOS ---
     function abrirTela(idTela) {
         ['tela-inicial', 'tela-etiquetas', 'tela-camera-busca', 'tela-separacao-input', 'tela-separacao-foco', 'tela-conclusao'].forEach(id => { document.getElementById(id).classList.add('hidden'); });
         if(idTela !== 'tela-separacao-foco' && idTela !== 'tela-camera-busca') pararLeitor();
@@ -152,6 +156,7 @@
         a.style.display = 'block'; setTimeout(() => { a.style.display = 'none'; }, tempo);
     }
 
+    // --- GESTÃO DE ETIQUETAS E BUSCA ---
     function buscarPorNome() {
         let termo = document.getElementById('inp-busca').value.toLowerCase().trim();
         let lista = document.getElementById('lista-resultados'); lista.innerHTML = ''; 
@@ -191,12 +196,13 @@
 
     function fecharCardProduto() { document.getElementById('product-form').classList.add('hidden'); document.getElementById('area-busca-etiqueta').classList.remove('hidden'); }
 
+    // --- SALVAR E EXPORTAR CSV ---
     function salvarProdutoLocal() {
         if (produtoSendoEditadoIndex === -1) return; let p = bancoDeDados[produtoSendoEditadoIndex];
         p.codigo = document.getElementById('inp-codigo').value; p.nome = document.getElementById('inp-nome').value; p.gtin = document.getElementById('inp-ean').value;
         p.estoque = document.getElementById('inp-estoque').value; p.validade = document.getElementById('inp-validade').value; p.preco = document.getElementById('inp-venda').value;
         p.gondola = document.getElementById('inp-gondola').value; p.prateleira = document.getElementById('inp-prateleira').value;
-        mostrarAlerta("✅ Salvo!", "sucesso");
+        mostrarAlerta("✅ Salvo na memória!", "sucesso");
     }
 
     function converterParaCSV(arr) {
@@ -216,21 +222,23 @@
 
 
     // ============================================================================== //
-    // IMPRESSÃO PROFISSIONAL RAWBT (IFRAME INVISÍVEL - PREVINE PRINT DE TELA)
+    // IMPRESSÃO PROFISSIONAL RAWBT (IFRAME RECICLÁVEL + ESPAÇO DE CORTE)
     // ============================================================================== //
 
     function imprimirPelaPaginaFantasma(htmlConteudo) {
-        let oldIframe = document.getElementById('frame-impressao');
-        if (oldIframe) { oldIframe.remove(); }
-
-        let iframe = document.createElement('iframe');
-        iframe.id = 'frame-impressao';
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0px';
-        iframe.style.height = '0px';
-        iframe.style.border = 'none';
-        iframe.style.left = '-9999px'; 
-        document.body.appendChild(iframe);
+        // Verifica se o iframe já existe. Se não, cria apenas 1 vez e recicla.
+        let iframe = document.getElementById('frame-impressao');
+        
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'frame-impressao';
+            iframe.style.position = 'absolute';
+            iframe.style.width = '0px';
+            iframe.style.height = '0px';
+            iframe.style.border = 'none';
+            iframe.style.left = '-9999px'; // Totalmente invisível ao usuário, mas visível ao sistema
+            document.body.appendChild(iframe);
+        }
 
         let htmlCompleto = `
         <!DOCTYPE html>
@@ -241,7 +249,7 @@
                 @page { margin: 0; size: 58mm auto; }
                 body { 
                     margin: 0; padding: 0; 
-                    width: 48mm; 
+                    width: 48mm; /* Área de tinta exata da impressora 58mm */
                     font-family: Arial, sans-serif; 
                     color: #000; 
                     background: #fff;
@@ -249,11 +257,12 @@
                 .etiqueta {
                     width: 48mm;
                     padding: 2mm 0;
+                    padding-bottom: 15mm; /* ESPAÇO EXTRA: Faz a impressora rolar a bobina no final! */
                     box-sizing: border-box;
                     text-align: center;
                 }
                 
-                /* Estilo da Foto de Impressão */
+                /* Configuração da Foto (Contraste para térmica) */
                 .foto-print {
                     width: 100%;
                     max-height: 45mm;
@@ -269,7 +278,7 @@
                 .linha { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0; margin: 0;}
                 .linha span.valor { font-weight: normal; }
                 
-                /* Relatório */
+                /* Estilos do Relatório */
                 .rel-titulo { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center; }
                 .rel-item { border-bottom: 1px dashed #000; padding: 4px 0; font-size: 14px; font-weight: bold; text-align: left;}
             </style>
@@ -280,15 +289,17 @@
         </html>
         `;
 
+        // Escreve a etiqueta por cima da anterior
         let doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
         doc.document.open();
         doc.document.write(htmlCompleto);
         doc.document.close();
 
+        // 800ms garante que a imagem carregue e a conexão do RawBT não atropele a fila
         setTimeout(() => {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
-        }, 500);
+        }, 800);
     }
 
     function imprimirEtiquetaGondola() {
@@ -299,11 +310,9 @@
         let gon = document.getElementById('inp-gondola').value;
         let pra = document.getElementById('inp-prateleira').value;
         
-        // Pega a URL da foto atual no form
+        // Trata a foto: Se estiver visível no app, manda pro HTML da etiqueta
         let imgElement = document.getElementById('img-foto');
         let fotoTag = '';
-        
-        // Se a imagem não for oculta, coloca no layout
         if (imgElement.style.display !== 'none' && imgElement.src) {
             fotoTag = `<img src="${imgElement.src}" class="foto-print" onerror="this.style.display='none'">`;
         }
@@ -330,7 +339,7 @@
         imprimirPelaPaginaFantasma(cont);
     }
 
-    // ==================== CÂMERA E SEPARAÇÃO (MANTIDOS) ==================== //
+    // ==================== CÂMERA E SEPARAÇÃO (PICKING) ==================== //
     function iniciarLeitor(m) {
         if(m === 'busca') { abrirTela('tela-camera-busca'); html5QrCode = new Html5Qrcode("reader-busca"); } else { html5QrCode = new Html5Qrcode("reader-picking"); }
         html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 100 } }, (cod) => {
@@ -338,6 +347,7 @@
             else { html5QrCode.pause(); validarLeituraProduto(cod); setTimeout(() => { if(html5QrCode.getState() === 2) html5QrCode.resume(); }, 1500); }
         }, (err) => {}).catch(e => { mostrarAlerta("Erro na câmera", "erro"); });
     }
+    
     function pararLeitor(t = null) { if (html5QrCode) { try { html5QrCode.stop(); } catch(e){} } if(t) abrirTela(t); }
 
     function buscarProdutoPorCamera(cod) {
@@ -356,14 +366,14 @@
                 if (mt) listaDeSeparacao.push({ quantidadeTotal: parseInt(m[1]), unidadesLidas: 0, nomePedido: m[2].trim(), produtoDb: mt, localizacao: mt.gondola || mt.localizacao || "ZZZ", status: 'pendente' });
             }
         });
-        if(listaDeSeparacao.length === 0) { mostrarAlerta("Nenhum reconhecido.", "erro"); return; }
+        if(listaDeSeparacao.length === 0) { mostrarAlerta("Nenhum produto reconhecido.", "erro"); return; }
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); indexAtualPicking = 0; abrirTela('tela-separacao-foco'); renderizarItemFoco(); iniciarLeitor('separacao');
     }
 
     function renderizarItemFoco() {
         if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPicking(); return; }
         let i = listaDeSeparacao[indexAtualPicking]; let s = i.produtoDb.codigo || i.produtoDb["Código"] || "";
-        document.getElementById('foco-nome').innerText = i.nomePedido; document.getElementById('foco-loc').innerText = `📍 Gôndola: ${i.localizacao}`; document.getElementById('foco-contador').innerText = `${i.unidadesLidas} / ${i.quantidadeTotal}`;
+        document.getElementById('foco-nome').innerText = i.nomePedido; document.getElementById('foco-loc').innerText = `📍 Gôndola: ${i.localizacao}`; document.getElementById('foco-contador').innerText = `${i.unidadesLidas} / ${i.quantidadeTotal} Separados`;
         let img = document.getElementById('foco-img'); img.src = `../site/img/produtos/${s}.webp`; img.style.display = 'block';
     }
 
@@ -376,8 +386,8 @@
         } else { mostrarAlerta(`Errado!`, "erro"); }
     }
 
-    function pularItemAtual() { if(confirm("Pular?")) { listaDeSeparacao[indexAtualPicking].status = 'pulado'; indexAtualPicking++; renderizarItemFoco(); } }
-    function cancelarPicking() { if(confirm("Cancelar?")) { pararLeitor(); abrirTela('tela-inicial'); } }
+    function pularItemAtual() { if(confirm("Deseja pular?")) { listaDeSeparacao[indexAtualPicking].status = 'pulado'; indexAtualPicking++; renderizarItemFoco(); } }
+    function cancelarPicking() { if(confirm("Cancelar a separação?")) { pararLeitor(); abrirTela('tela-inicial'); } }
     function finalizarPicking() { pararLeitor(); abrirTela('tela-conclusao'); }
 </script>
 </body>
