@@ -126,23 +126,6 @@
     </div>
 </div>
 
-<div id="print-area-etiqueta" class="hidden" style="width: 48mm; margin: 0; padding: 0; font-family: Arial, sans-serif; color: #000; background: #fff;">
-    <div style="font-size: 14px; margin-bottom: 2px; font-weight:bold; text-align: center;">SKU</div>
-    <div id="print-cod" style="font-size: 38px; font-weight: 900; margin: 0 0 10px 0; text-align: center; letter-spacing: 1px;"></div>
-    <div id="print-nome" style="font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; text-align: center; line-height: 1.2;"></div>
-    
-    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0;"><span>EAN:</span> <span id="print-ean" style="font-weight: normal;"></span></div>
-    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0;"><span>VAL:</span> <span id="print-validade" style="font-weight: normal;"></span></div>
-    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0;"><span>GÔNDOLA:</span> <span id="print-gondola" style="font-weight: normal;"></span></div>
-    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0;"><span>PRAT:</span> <span id="print-prateleira" style="font-weight: normal;"></span></div>
-</div>
-
-<div id="print-area-relatorio" class="hidden" style="width: 48mm; margin: 0; padding: 0; font-family: Arial, sans-serif; color: #000; background: #fff;">
-    <div style="font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center;">Relatório Separação</div>
-    <div style="text-align:center; font-size:12px; margin-bottom:10px;" id="data-relatorio"></div>
-    <div id="lista-print-relatorio" style="text-align: left; font-size: 14px; font-weight: bold;"></div>
-</div>
-
 <script>
     let bancoDeDados = []; let html5QrCode = null; let listaDeSeparacao = []; let indexAtualPicking = 0; let produtoSendoEditadoIndex = -1;
 
@@ -228,50 +211,109 @@
         link.setAttribute("download", n); document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
-    function exportarProdutoCSV() { se = bancoDeDados[produtoSendoEditadoIndex]; fazerDownloadCSV(converterParaCSV([se]), `produto_${se.codigo}.csv`); }
+    function exportarProdutoCSV() { let se = bancoDeDados[produtoSendoEditadoIndex]; fazerDownloadCSV(converterParaCSV([se]), `produto_${se.codigo || se["Código"]}.csv`); }
     function exportarBancoCSV() { fazerDownloadCSV(converterParaCSV(bancoDeDados), `banco_${new Date().getTime()}.csv`); }
 
-    // ==================== LÓGICA DE IMPRESSÃO INFALÍVEL (COM TIMEOUT) ==================== //
-    function imprimirNaTermica(idAreaImpressao) {
-        // 1. Esconde todo o aplicativo
-        document.getElementById('app-ui').style.display = 'none';
-        
-        // 2. Mostra apenas a etiqueta com os estilos já definidos inline
-        let areaPrint = document.getElementById(idAreaImpressao);
-        areaPrint.classList.remove('hidden');
-        areaPrint.style.display = 'block';
-        
-        // 3. Aguarda meio segundo. Isso é vital para o RawBT ler a tela limpa antes de gerar o PDF
+
+    // ============================================================================== //
+    // IMPRESSÃO PROFISSIONAL RAWBT (IFRAME INVISÍVEL - PREVINE PRINT DE TELA)
+    // ============================================================================== //
+
+    function imprimirPelaPaginaFantasma(htmlConteudo) {
+        // Remove iframe antigo, se existir, para evitar travamentos
+        let oldIframe = document.getElementById('frame-impressao');
+        if (oldIframe) { oldIframe.remove(); }
+
+        // Cria a página fantasma (Iframe) e coloca fora da tela para ninguém ver
+        let iframe = document.createElement('iframe');
+        iframe.id = 'frame-impressao';
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = 'none';
+        iframe.style.left = '-9999px'; // Joga para fora da tela (evita display:none que bloqueia impressão)
+        document.body.appendChild(iframe);
+
+        // O esqueleto da Etiqueta com CSS configurado só para 48mm
+        let htmlCompleto = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                @page { margin: 0; size: 58mm auto; }
+                body { 
+                    margin: 0; padding: 0; 
+                    width: 48mm; /* Área de tinta da Knup */
+                    font-family: Arial, sans-serif; 
+                    color: #000; 
+                    background: #fff;
+                }
+                .etiqueta {
+                    width: 48mm;
+                    padding: 2mm 0;
+                    box-sizing: border-box;
+                    text-align: center;
+                }
+                .titulo { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+                .sku { font-size: 38px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px; }
+                .nome { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; line-height: 1.2; }
+                .linha { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0; margin: 0;}
+                .linha span.valor { font-weight: normal; }
+                
+                /* Relatório */
+                .rel-titulo { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center; }
+                .rel-item { border-bottom: 1px dashed #000; padding: 4px 0; font-size: 14px; font-weight: bold; text-align: left;}
+            </style>
+        </head>
+        <body>
+            ${htmlConteudo}
+        </body>
+        </html>
+        `;
+
+        // Escreve o conteúdo dentro do iframe
+        let doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
+        doc.document.open();
+        doc.document.write(htmlCompleto);
+        doc.document.close();
+
+        // Dá meio segundo para o Android carregar o iframe invisível e dispara a impressão direto para ele
         setTimeout(() => {
-            window.print();
-            
-            // 4. Aguarda a janela de impressão abrir para restaurar o aplicativo atrás dela
-            setTimeout(() => {
-                areaPrint.style.display = 'none';
-                areaPrint.classList.add('hidden');
-                document.getElementById('app-ui').style.display = 'block';
-            }, 1000);
-            
-        }, 500); 
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }, 500);
     }
 
     function imprimirEtiquetaGondola() {
-        document.getElementById('print-cod').innerText = document.getElementById('inp-codigo').value;
-        document.getElementById('print-nome').innerText = document.getElementById('inp-nome').value;
-        document.getElementById('print-ean').innerText = document.getElementById('inp-ean').value;
-        document.getElementById('print-validade').innerText = document.getElementById('inp-validade').value;
-        document.getElementById('print-gondola').innerText = document.getElementById('inp-gondola').value;
-        document.getElementById('print-prateleira').innerText = document.getElementById('inp-prateleira').value;
+        let sku = document.getElementById('inp-codigo').value;
+        let nome = document.getElementById('inp-nome').value;
+        let ean = document.getElementById('inp-ean').value;
+        let val = document.getElementById('inp-validade').value;
+        let gon = document.getElementById('inp-gondola').value;
+        let pra = document.getElementById('inp-prateleira').value;
 
-        imprimirNaTermica('print-area-etiqueta');
+        let conteudoEtiqueta = `
+            <div class="etiqueta">
+                <div class="titulo">SKU</div>
+                <div class="sku">${sku}</div>
+                <div class="nome">${nome}</div>
+                <div class="linha"><span>EAN:</span> <span class="valor">${ean}</span></div>
+                <div class="linha"><span>VAL:</span> <span class="valor">${val}</span></div>
+                <div class="linha"><span>GÔNDOLA:</span> <span class="valor">${gon}</span></div>
+                <div class="linha"><span>PRAT:</span> <span class="valor">${pra}</span></div>
+            </div>
+        `;
+        imprimirPelaPaginaFantasma(conteudoEtiqueta);
     }
 
     function imprimirRelatorioSeparacao() {
-        let div = document.getElementById('lista-print-relatorio'); div.innerHTML = ''; 
-        document.getElementById('data-relatorio').innerText = new Date().toLocaleString('pt-BR');
-        listaDeSeparacao.forEach(i => { div.innerHTML += `<div style="border-bottom: 1px dashed #000; padding: 4px 0;">${i.status === 'concluido' ? '[OK]' : '[FALTOU]'} ${i.quantidadeTotal}x ${i.nomePedido.substring(0, 18)}</div>`; });
-        imprimirNaTermica('print-area-relatorio');
+        let cont = `<div class="etiqueta"><div class="rel-titulo">Relatório Separação</div><div style="font-size:12px; margin-bottom:10px;">${new Date().toLocaleString('pt-BR')}</div>`;
+        listaDeSeparacao.forEach(i => { cont += `<div class="rel-item">${i.status === 'concluido' ? '[OK]' : '[FALTOU]'} ${i.quantidadeTotal}x ${i.nomePedido.substring(0, 18)}</div>`; });
+        cont += `</div>`;
+        imprimirPelaPaginaFantasma(cont);
     }
+
 
     // ==================== CÂMERA E SEPARAÇÃO (MANTIDOS) ==================== //
     function iniciarLeitor(m) {
