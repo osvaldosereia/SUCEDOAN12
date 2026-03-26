@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
-        /* --- 1. ESTILOS GERAIS E CORES --- */
+        /* --- ESTILOS GERAIS E CORES --- */
         :root {
             --primary: #4CAF50; --secondary: #2196F3;
             --danger: #f44336; --warning: #ff9800;
@@ -18,7 +18,6 @@
         body, html { font-family: Arial, sans-serif; background-color: var(--light); margin: 0; padding: 0; height: 100%; color: var(--dark); }
         h1, h2, h3 { text-align: center; margin-top: 0; }
         
-        /* Botões */
         button { display: block; width: 100%; padding: 15px; margin: 10px 0; font-size: 16px; font-weight: bold; color: white; background-color: var(--primary); border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
         button:active { transform: translateY(2px); }
         .btn-secondary { background-color: var(--secondary); }
@@ -26,19 +25,26 @@
         .btn-warning { background-color: var(--warning); color: #000; }
         .btn-print { background-color: #000; }
         
-        /* Contêineres Padrões (Com Rolagem) */
         .container { max-width: 600px; margin: 20px auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 16px; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #555;}
         .form-group input, .form-group textarea { width: 100%; padding: 15px; font-size: 16px; border: 2px solid #ccc; border-radius: 8px; box-sizing: border-box; }
         
-        /* --- 2. MENSAGENS DIDÁTICAS (TOASTS) --- */
+        .resultado-item { padding: 15px; margin-bottom: 8px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; }
+        .resultado-dica { font-size: 13px; color: #555; font-weight: normal; margin-top: 4px; }
+        
+        .linha-dupla { display: flex; gap: 10px; }
+        .linha-dupla .form-group { flex: 1; }
+
+        .hidden { display: none !important; }
+
+        /* --- MENSAGENS E TOASTS --- */
         #alerta-customizado { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 8px; color: white; font-weight: bold; text-align: center; z-index: 9999; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; font-size: 16px; }
         .alerta-erro { background-color: var(--danger); }
         .alerta-sucesso { background-color: var(--primary); }
         .alerta-aviso { background-color: var(--warning); color: #000; }
 
-        /* --- 3. MODO FOCO (SEPARAÇÃO SEM ROLAGEM) --- */
+        /* --- MODO FOCO (SEPARAÇÃO SEM ROLAGEM) --- */
         .tela-foco { height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding: 10px; box-sizing: border-box; background: #222; }
         .camera-box { flex: 1; max-height: 45%; border-radius: 8px; overflow: hidden; position: relative; background: #000; border: 2px solid #555; }
         .info-box { flex: 1; background: white; border-radius: 8px; padding: 15px; margin-top: 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; text-align: center; }
@@ -46,23 +52,22 @@
         .contador-unidades { font-size: 28px; font-weight: 900; color: var(--secondary); background: #e3f2fd; padding: 10px 20px; border-radius: 12px; border: 2px solid var(--secondary); }
         .badge-loc { background: var(--dark); color: white; padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; }
 
-        .hidden { display: none !important; }
-
-        /* --- 4. ÁREAS DE IMPRESSÃO (58mm) --- */
+        /* --- ÁREAS DE IMPRESSÃO TÉRMICA (58mm) --- */
         @media print {
             @page { margin: 0; size: 58mm auto; }
             body { margin: 0; padding: 0; background: white; }
-            body * { visibility: hidden; display: none; } /* Esconde tudo */
+            body * { visibility: hidden; display: none; }
             
-            /* Mostra apenas as áreas de impressão quando ativadas */
             .print-active, .print-active * { visibility: visible; display: block; }
             .print-active { position: absolute; left: 0; top: 0; width: 48mm; padding: 2mm 5mm; margin: 0; border: none; font-family: 'Arial', sans-serif; color: #000; text-align: center;}
             
-            /* Estilo da Etiqueta */
-            .destaque-codigo { font-size: 26px; font-weight: 900; margin: 0 0 5px 0; }
-            #print-img { width: 45mm; max-height: 45mm; object-fit: contain; margin: 0 auto 8px auto; filter: grayscale(100%) contrast(120%); }
+            /* Etiqueta de Gôndola */
+            .destaque-codigo { font-size: 32px; font-weight: 900; margin: 5px 0 10px 0; letter-spacing: 2px; }
+            .print-nome-etiqueta { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; line-height: 1.2; }
+            .info-linha { font-size: 13px; margin: 4px 0; font-weight: bold; border-bottom: 1px dashed #999; padding-bottom: 3px; text-align: left; }
+            .info-linha span { font-weight: normal; float: right; font-size: 14px;}
             
-            /* Estilo do Relatório de Separação */
+            /* Relatório de Separação */
             .print-report-item { text-align: left; font-size: 12px; border-bottom: 1px dashed #999; padding: 4px 0; font-weight: bold; margin-bottom: 2px;}
             .print-header { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; text-align: center; border-bottom: 2px solid #000;}
         }
@@ -81,52 +86,72 @@
     </div>
 
     <div id="botoes-menu" class="hidden">
-        <button class="btn-secondary" style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-separacao-input')">🛒 Iniciar Separação</button>
         <button style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-etiquetas')">🏷️ Gestão de Etiquetas</button>
+        <button class="btn-secondary" style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-separacao-input')">🛒 Iniciar Separação</button>
     </div>
 </div>
 
 <div class="container hidden" id="tela-etiquetas">
     <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
-    <h2>Busca de Produto</h2>
-    <div class="form-group">
-        <input type="text" id="inp-busca" placeholder="Digite nome ou código..." oninput="buscarPorNome()">
+    
+    <div id="area-busca-etiqueta">
+        <h2>🔍 Buscar Produto</h2>
+        <div class="form-group">
+            <input type="text" id="inp-busca" placeholder="Digite Nome, SKU ou EAN..." oninput="buscarPorNome()">
+        </div>
+        <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin-bottom: 20px;">📷 Ler Código de Barras</button>
+        
+        <div id="lista-resultados"></div>
     </div>
-    <div id="lista-resultados"></div>
+
     <div id="product-form" class="hidden">
-        <img id="img-foto" src="" style="width: 100%; max-height: 200px; object-fit: contain;">
-        <div class="form-group"><label>Nome</label><input type="text" id="inp-nome"></div>
-        <div class="form-group"><label>Código</label><input type="text" id="inp-codigo"></div>
-        <div class="form-group"><label>EAN</label><input type="text" id="inp-ean"></div>
-        <div class="form-group"><label>Localização</label><input type="text" id="inp-loc"></div>
-        <div class="form-group"><label>Validade</label><input type="text" id="inp-validade"></div>
-        <button class="btn-print" onclick="imprimirEtiqueta()">🖨️ Imprimir Etiqueta</button>
-        <button class="btn-danger" onclick="document.getElementById('product-form').classList.add('hidden')">Fechar</button>
+        <button class="btn-danger" style="margin-bottom: 15px;" onclick="fecharCardProduto()">❌ Fechar Produto</button>
+        
+        <img id="img-foto" src="" style="width: 100%; max-height: 250px; object-fit: contain; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px;">
+        
+        <div class="linha-dupla">
+            <div class="form-group"><label>SKU (Cód Interno)</label><input type="text" id="inp-codigo"></div>
+            <div class="form-group"><label>EAN (Cód Barras)</label><input type="text" id="inp-ean"></div>
+        </div>
+        
+        <div class="form-group"><label>Nome do Produto</label><input type="text" id="inp-nome"></div>
+        
+        <div class="linha-dupla">
+            <div class="form-group"><label>Estoque</label><input type="text" id="inp-estoque"></div>
+            <div class="form-group"><label>Validade</label><input type="text" id="inp-validade"></div>
+        </div>
+
+        <div class="linha-dupla">
+            <div class="form-group"><label>Gôndola</label><input type="text" id="inp-gondola" placeholder="Ex: Corredor 3"></div>
+            <div class="form-group"><label>Prateleira</label><input type="text" id="inp-prateleira" placeholder="Ex: Baixa"></div>
+        </div>
+
+        <div class="form-group"><label>Preço de Venda (R$)</label><input type="text" id="inp-venda"></div>
+        
+        <button class="btn-print" onclick="imprimirEtiquetaGondola()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Etiqueta (58mm)</button>
     </div>
+</div>
+
+<div class="container hidden" id="tela-camera-busca">
+    <h2>📷 Lendo Código...</h2>
+    <div id="reader-busca" style="width: 100%; margin-bottom: 20px;"></div>
+    <button class="btn-danger" onclick="pararLeitor('tela-etiquetas')">Cancelar</button>
 </div>
 
 <div class="container hidden" id="tela-separacao-input">
     <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
     <h2>📝 Colar Pedido</h2>
-    <div class="form-group">
-        <textarea id="texto-pedido" rows="10" placeholder="Cole aqui a lista do WhatsApp..."></textarea>
-    </div>
+    <div class="form-group"><textarea id="texto-pedido" rows="10" placeholder="Cole aqui a lista do WhatsApp..."></textarea></div>
     <button class="btn-secondary" onclick="processarPedidoEPuxarFoco()">🚀 Iniciar Modo de Separação</button>
 </div>
 
 <div class="tela-foco hidden" id="tela-separacao-foco">
-    
-    <div class="camera-box">
-        <div id="reader-picking" style="width: 100%; height: 100%;"></div>
-    </div>
-    
+    <div class="camera-box"><div id="reader-picking" style="width: 100%; height: 100%;"></div></div>
     <div class="info-box">
         <span class="badge-loc" id="foco-loc">📍 Gôndola: A1</span>
         <h3 id="foco-nome" style="margin: 5px 0;">Nome do Produto</h3>
         <img id="foco-img" src="" alt="Produto" onerror="this.style.display='none'">
-        
         <div class="contador-unidades" id="foco-contador">0 / 4 Separados</div>
-        
         <div style="display:flex; gap:10px; width:100%;">
             <button class="btn-danger" onclick="cancelarPicking()">Encerrar</button>
             <button class="btn-secondary" onclick="pularItemAtual()">Pular (Falta)</button>
@@ -136,34 +161,34 @@
 
 <div class="container hidden" id="tela-conclusao">
     <h2>🎉 Separação Concluída!</h2>
-    <p style="text-align:center;">Todos os itens disponíveis foram separados.</p>
-    <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px; font-size:18px;">🖨️ Imprimir Relatório (58mm)</button>
-    <button class="btn-secondary" onclick="abrirTela('tela-inicial')">🏠 Concluir e Voltar ao Início</button>
+    <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px;">🖨️ Imprimir Relatório (58mm)</button>
+    <button class="btn-secondary" onclick="abrirTela('tela-inicial')">🏠 Voltar ao Início</button>
 </div>
 
 <div id="print-area-etiqueta" class="hidden">
+    <div style="font-size: 12px; margin-bottom: -5px; color: #555;">SKU:</div>
     <div id="print-cod" class="destaque-codigo"></div>
-    <img id="print-img" src="" alt="Foto">
-    <h3 id="print-nome"></h3>
-    <div><strong>EAN:</strong> <span id="print-ean"></span></div>
-    <div><strong>VAL:</strong> <span id="print-validade"></span></div>
-    <div><strong>LOC:</strong> <span id="print-loc"></span></div>
+    <div id="print-nome" class="print-nome-etiqueta"></div>
+    
+    <div class="info-linha"><strong>EAN:</strong> <span id="print-ean"></span></div>
+    <div class="info-linha"><strong>VAL:</strong> <span id="print-validade"></span></div>
+    <div class="info-linha"><strong>GÔNDOLA:</strong> <span id="print-gondola"></span></div>
+    <div class="info-linha"><strong>PRATELEIRA:</strong> <span id="print-prateleira"></span></div>
 </div>
 
 <div id="print-area-relatorio" class="hidden">
     <div class="print-header">Relatório de Separação</div>
     <div style="text-align:center; font-size:12px; margin-bottom:10px;" id="data-relatorio"></div>
     <div id="lista-print-relatorio"></div>
-    <div style="margin-top:15px; text-align:center; font-weight:bold; font-size:14px;">Conferido por: __________</div>
 </div>
 
 <script>
     let bancoDeDados = [];
     let html5QrCode = null;
     let listaDeSeparacao = [];
-    let indexAtualPicking = 0; // Controla qual item estamos separando agora
+    let indexAtualPicking = 0;
 
-    // --- 1. INICIALIZAÇÃO E NAVEGAÇÃO ---
+    // --- CARREGAMENTO INICIAL ---
     window.onload = async function() {
         try {
             const resposta = await fetch('../site/bancodedados.json');
@@ -181,25 +206,19 @@
     }
 
     function abrirTela(idTela) {
-        // Esconde todas
-        document.getElementById('tela-inicial').classList.add('hidden');
-        document.getElementById('tela-etiquetas').classList.add('hidden');
-        document.getElementById('tela-separacao-input').classList.add('hidden');
-        document.getElementById('tela-separacao-foco').classList.add('hidden');
-        document.getElementById('tela-conclusao').classList.add('hidden');
+        // Esconde todas as telas principais
+        ['tela-inicial', 'tela-etiquetas', 'tela-camera-busca', 'tela-separacao-input', 'tela-separacao-foco', 'tela-conclusao'].forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
         
-        // Desliga a câmera se não for a tela de foco
-        if(idTela !== 'tela-separacao-foco') pararLeitor();
-
-        // Mostra a escolhida
+        if(idTela !== 'tela-separacao-foco' && idTela !== 'tela-camera-busca') pararLeitor();
         document.getElementById(idTela).classList.remove('hidden');
     }
 
-    // --- 2. ALERTAS DIDÁTICOS ---
     function mostrarAlerta(mensagem, tipo = 'sucesso', tempo = 3000) {
         let alerta = document.getElementById('alerta-customizado');
         alerta.innerText = mensagem;
-        alerta.className = ''; // limpa classes
+        alerta.className = ''; 
         if(tipo === 'erro') alerta.classList.add('alerta-erro');
         else if(tipo === 'aviso') alerta.classList.add('alerta-aviso');
         else alerta.classList.add('alerta-sucesso');
@@ -208,18 +227,168 @@
         setTimeout(() => { alerta.style.display = 'none'; }, tempo);
     }
 
-    // --- 3. LÓGICA DE SEPARAÇÃO (PICKING) ---
+    // ==================== LÓGICA: GESTÃO DE ETIQUETAS ==================== //
+
+    function buscarPorNome() {
+        let termo = document.getElementById('inp-busca').value.toLowerCase().trim();
+        let lista = document.getElementById('lista-resultados');
+        lista.innerHTML = ''; 
+        
+        // Exige pelo menos 3 caracteres para iniciar a busca (evita travar o app)
+        if (termo.length < 3) return; 
+
+        let encontrados = bancoDeDados.filter(p => {
+            let nomeDb = String(p.nome || p["Descrição"] || "").toLowerCase();
+            let codDb = String(p.codigo || p["Código"] || "").toLowerCase(); // SKU
+            let eanDb = String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, ""); // EAN
+            
+            return nomeDb.includes(termo) || codDb.includes(termo) || eanDb.includes(termo);
+        });
+
+        if (encontrados.length === 0) {
+            lista.innerHTML = '<div style="text-align:center; color:red; padding:10px;">Nenhum produto encontrado.</div>';
+            return;
+        }
+
+        encontrados.slice(0, 10).forEach(p => {
+            let nome = p.nome || p["Descrição"] || "Sem Nome";
+            let sku = p.codigo || p["Código"] || "";
+            let preco = p.preco || p["Preço"] || "0,00";
+
+            let div = document.createElement('div');
+            div.className = 'resultado-item';
+            div.innerHTML = `${nome} <div class="resultado-dica">SKU: ${sku} | R$ ${preco}</div>`;
+            div.onclick = function() { abrirCardProduto(p); };
+            lista.appendChild(div);
+        });
+    }
+
+    function abrirCardProduto(produto) {
+        const sku = produto.codigo || produto["Código"] || "";
+        
+        // Tenta preencher prateleira e gondola, se já existirem separadas no seu banco, ótimo.
+        // Se só existir "localizacao", joga tudo na Gôndola por padrão.
+        let locGeral = produto.localizacao || produto["Localização"] || "";
+        let gondola = produto.gondola || produto["Gôndola"] || locGeral; 
+        let prateleira = produto.prateleira || produto["Prateleira"] || "";
+
+        document.getElementById('inp-codigo').value = sku;
+        document.getElementById('inp-nome').value = produto.nome || produto["Descrição"] || "";
+        document.getElementById('inp-ean').value = String(produto.gtin || produto["GTIN/EAN"] || "").replace(/[^0-9]/g, "");
+        document.getElementById('inp-estoque').value = produto.estoque || produto["Estoque"] || "";
+        document.getElementById('inp-validade').value = produto.validade || produto["Data Validade"] || "";
+        document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
+        
+        // Novos Campos
+        document.getElementById('inp-gondola').value = gondola;
+        document.getElementById('inp-prateleira').value = prateleira;
+        
+        // Tratamento da Foto
+        const imgElement = document.getElementById('img-foto');
+        imgElement.style.display = 'block'; 
+        imgElement.src = `../site/img/produtos/${sku}.webp`;
+        imgElement.onerror = function() { this.style.display = 'none'; };
+        
+        // Esconde a busca, mostra o Card
+        document.getElementById('area-busca-etiqueta').classList.add('hidden');
+        document.getElementById('product-form').classList.remove('hidden');
+    }
+
+    function fecharCardProduto() {
+        document.getElementById('product-form').classList.add('hidden');
+        document.getElementById('area-busca-etiqueta').classList.remove('hidden');
+        document.getElementById('inp-busca').value = '';
+        document.getElementById('lista-resultados').innerHTML = '';
+    }
+
+    function imprimirEtiquetaGondola() {
+        // Envia os dados dos inputs (onde o usuário pode ter editado) para o layout de impressão
+        document.getElementById('print-cod').innerText = document.getElementById('inp-codigo').value;
+        document.getElementById('print-nome').innerText = document.getElementById('inp-nome').value;
+        document.getElementById('print-ean').innerText = document.getElementById('inp-ean').value;
+        document.getElementById('print-validade').innerText = document.getElementById('inp-validade').value;
+        
+        // Gôndola e Prateleira
+        document.getElementById('print-gondola').innerText = document.getElementById('inp-gondola').value;
+        document.getElementById('print-prateleira').innerText = document.getElementById('inp-prateleira').value;
+
+        // Ativa a área térmica
+        let areaPrint = document.getElementById('print-area-etiqueta');
+        areaPrint.classList.remove('hidden');
+        areaPrint.classList.add('print-active');
+        
+        window.print();
+        
+        // Esconde de volta
+        areaPrint.classList.add('hidden');
+        areaPrint.classList.remove('print-active');
+    }
+
+    // ==================== CÂMERA (COMPARTILHADA) ==================== //
+
+    function iniciarLeitor(modo) {
+        if(modo === 'busca') {
+            abrirTela('tela-camera-busca');
+            html5QrCode = new Html5Qrcode("reader-busca");
+        } else {
+            // Modo picking da outra aba
+            html5QrCode = new Html5Qrcode("reader-picking");
+        }
+
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            { fps: 10, qrbox: { width: 250, height: 100 } },
+            (codigoLido) => {
+                if(modo === 'busca') {
+                    pararLeitor('tela-etiquetas'); // Desliga a câmera e volta pra aba principal
+                    buscarProdutoPorCamera(codigoLido);
+                } else {
+                    html5QrCode.pause(); 
+                    validarLeituraProduto(codigoLido);
+                    setTimeout(() => { if(html5QrCode.getState() === 2) html5QrCode.resume(); }, 1500);
+                }
+            },
+            (err) => {}
+        ).catch(err => { mostrarAlerta("Erro ao abrir a câmera.", "erro"); });
+    }
+
+    function pararLeitor(telaRetorno = null) {
+        if (html5QrCode) {
+            try { html5QrCode.stop(); } catch(e){}
+        }
+        if(telaRetorno) abrirTela(telaRetorno);
+    }
+
+    function buscarProdutoPorCamera(codigoLido) {
+        let eanLimpo = String(codigoLido).replace(/\D/g, "").replace(/^0+/, "");
+        let skuLido = String(codigoLido).trim().toUpperCase();
+
+        const produtoEncontrado = bancoDeDados.find(p => {
+            let eanDb = String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "");
+            let skuDb = String(p.codigo || p["Código"] || "").trim().toUpperCase();
+            return (eanDb === eanLimpo && eanLimpo !== "") || (skuDb === skuLido && skuLido !== "");
+        });
+
+        if (produtoEncontrado) {
+            abrirCardProduto(produtoEncontrado);
+        } else {
+            mostrarAlerta("Produto não encontrado! Código lido: " + codigoLido, "erro", 4000);
+        }
+    }
+
+    // ==================== LÓGICA DE SEPARAÇÃO (PICKING) MANTIDA ==================== //
+    // (Abaixo ficam as funções de processar pedido, validação e impressão do relatório que já fizemos antes)
+    
     function processarPedidoEPuxarFoco() {
         const texto = document.getElementById('texto-pedido').value;
         const linhas = texto.split('\n');
         const regex = /^(\d+)[xX]\s+(.*)/; 
-        
         listaDeSeparacao = [];
 
         linhas.forEach(linha => {
             const match = linha.trim().match(regex);
             if (match) {
-                let quantidade = parseInt(match[1]); // Converte para número matemático
+                let quantidade = parseInt(match[1]);
                 let nomeOriginal = match[2].trim();
                 let nomeLimpoBusca = nomeOriginal.replace(/\(Oferta\)/gi, '').trim().toLowerCase();
                 let palavrasChave = nomeLimpoBusca.split(' ');
@@ -229,102 +398,65 @@
                     return nomeDb.includes(palavrasChave[0]) && (palavrasChave[1] ? nomeDb.includes(palavrasChave[1]) : true);
                 });
 
-                // Só adiciona na lista de separação se encontrou no banco
                 if (melhorMatch) {
                     listaDeSeparacao.push({
-                        quantidadeTotal: quantidade,
-                        unidadesLidas: 0, // Inicia zerado!
-                        nomePedido: nomeOriginal,
-                        produtoDb: melhorMatch,
+                        quantidadeTotal: quantidade, unidadesLidas: 0,
+                        nomePedido: nomeOriginal, produtoDb: melhorMatch,
                         localizacao: melhorMatch.localizacao || melhorMatch["Localização"] || "ZZZ",
-                        status: 'pendente' // pendente, concluido, pulado
+                        status: 'pendente'
                     });
                 }
             }
         });
 
-        if(listaDeSeparacao.length === 0) {
-            mostrarAlerta("Nenhum produto reconhecido no banco de dados.", "erro");
-            return;
-        }
-
-        // Ordena pela localização
+        if(listaDeSeparacao.length === 0) { mostrarAlerta("Nenhum produto reconhecido.", "erro"); return; }
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao));
         
-        // Inicia o Modo Foco
         indexAtualPicking = 0;
         abrirTela('tela-separacao-foco');
         renderizarItemFoco();
-        iniciarLeitorPicking();
+        iniciarLeitor('separacao');
     }
 
     function renderizarItemFoco() {
-        // Se acabaram os itens, finaliza
-        if (indexAtualPicking >= listaDeSeparacao.length) {
-            finalizarPicking();
-            return;
-        }
-
+        if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPicking(); return; }
         let item = listaDeSeparacao[indexAtualPicking];
-        let cod = item.produtoDb.codigo || item.produtoDb["Código"] || "";
+        let sku = item.produtoDb.codigo || item.produtoDb["Código"] || "";
 
         document.getElementById('foco-nome').innerText = item.nomePedido;
         document.getElementById('foco-loc').innerText = `📍 Gôndola: ${item.localizacao}`;
-        document.getElementById('foco-contador').innerText = `${item.unidadesLidas} / ${item.quantidadeTotal} Lidos`;
+        document.getElementById('foco-contador').innerText = `${item.unidadesLidas} / ${item.quantidadeTotal} Separados`;
         
         let img = document.getElementById('foco-img');
-        img.src = `../site/img/produtos/${cod}.webp`;
+        img.src = `../site/img/produtos/${sku}.webp`;
         img.style.display = 'block';
-    }
-
-    function iniciarLeitorPicking() {
-        html5QrCode = new Html5Qrcode("reader-picking");
-        html5QrCode.start(
-            { facingMode: "environment" }, 
-            { fps: 10, qrbox: { width: 250, height: 100 } },
-            (codigoLido) => {
-                // Ao ler, congela a câmera por 1.5s para não ler repetido sem querer
-                html5QrCode.pause(); 
-                validarLeituraProduto(codigoLido);
-                setTimeout(() => { if(html5QrCode.getState() === 2) html5QrCode.resume(); }, 1500);
-            },
-            (err) => {}
-        ).catch(err => { mostrarAlerta("Erro ao acessar a câmera.", "erro"); });
     }
 
     function validarLeituraProduto(codigoLido) {
         let eanLido = String(codigoLido).replace(/\D/g, "").replace(/^0+/, "");
         let codLido = String(codigoLido).trim().toUpperCase();
-
         let itemAtual = listaDeSeparacao[indexAtualPicking];
         let eanEsperado = String(itemAtual.produtoDb.gtin || itemAtual.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "");
         let codEsperado = String(itemAtual.produtoDb.codigo || itemAtual.produtoDb["Código"] || "").trim().toUpperCase();
 
-        // 1. O código lido bate com o produto que está na tela?
         if (eanEsperado === eanLido || codEsperado === codLido) {
-            
-            itemAtual.unidadesLidas++; // Soma 1 na contagem
-            
-            // Verifica se completou
+            itemAtual.unidadesLidas++;
             if (itemAtual.unidadesLidas < itemAtual.quantidadeTotal) {
-                let faltam = itemAtual.quantidadeTotal - itemAtual.unidadesLidas;
-                mostrarAlerta(`✅ Correto! Faltam ${faltam} unidades.`, "aviso", 2000);
-                renderizarItemFoco(); // Atualiza o contador na tela
+                mostrarAlerta(`✅ Correto! Faltam ${itemAtual.quantidadeTotal - itemAtual.unidadesLidas} unidades.`, "aviso", 2000);
+                renderizarItemFoco();
             } else {
                 itemAtual.status = 'concluido';
-                mostrarAlerta(`🎉 ${itemAtual.nomePedido} Completo! Próximo item...`, "sucesso", 2500);
-                indexAtualPicking++; // Vai para o próximo item da lista
-                renderizarItemFoco(); // Muda a tela para o próximo produto
+                mostrarAlerta(`🎉 Completo! Próximo item...`, "sucesso", 2000);
+                indexAtualPicking++;
+                renderizarItemFoco();
             }
-            
         } else {
-            // 2. Errou o produto! Avisa de forma didática.
-            mostrarAlerta(`❌ Errado! Você pegou o produto com final ${eanLido.slice(-4)}, mas precisamos do EAN final ${eanEsperado.slice(-4)}.`, "erro", 4000);
+            mostrarAlerta(`❌ Produto Errado!`, "erro", 3000);
         }
     }
 
     function pularItemAtual() {
-        if(confirm("Deseja pular este item? (Falta no estoque?)")) {
+        if(confirm("Deseja pular este item?")) {
             listaDeSeparacao[indexAtualPicking].status = 'pulado';
             indexAtualPicking++;
             renderizarItemFoco();
@@ -332,57 +464,28 @@
     }
 
     function cancelarPicking() {
-        if(confirm("Tem certeza que deseja cancelar toda a separação?")) {
-            pararLeitor();
-            abrirTela('tela-inicial');
-        }
+        if(confirm("Cancelar toda a separação?")) { pararLeitor(); abrirTela('tela-inicial'); }
     }
 
-    function finalizarPicking() {
-        pararLeitor();
-        abrirTela('tela-conclusao');
-    }
+    function finalizarPicking() { pararLeitor(); abrirTela('tela-conclusao'); }
 
-    function pararLeitor() {
-        if (html5QrCode) {
-            try { html5QrCode.stop(); } catch(e){}
-        }
-    }
-
-    // --- 4. IMPRESSÃO TÉRMICA (RELATÓRIO) ---
     function imprimirRelatorioSeparacao() {
         let divLista = document.getElementById('lista-print-relatorio');
-        divLista.innerHTML = ''; // Limpa anterior
-        
-        let dataAtual = new Date().toLocaleString('pt-BR');
-        document.getElementById('data-relatorio').innerText = `Impresso em: ${dataAtual}`;
+        divLista.innerHTML = ''; 
+        document.getElementById('data-relatorio').innerText = `Impresso em: ${new Date().toLocaleString('pt-BR')}`;
 
         listaDeSeparacao.forEach(item => {
             let div = document.createElement('div');
             div.className = 'print-report-item';
-            
-            let statusTexto = item.status === 'concluido' ? '[OK]' : '[FALTOU]';
-            // Exemplo de linha: [OK] 4x Arroz Koblenz
-            div.innerText = `${statusTexto} ${item.quantidadeTotal}x ${item.nomePedido.substring(0, 20)}...`; 
-            
+            div.innerText = `${item.status === 'concluido' ? '[OK]' : '[FALTOU]'} ${item.quantidadeTotal}x ${item.nomePedido.substring(0, 20)}...`; 
             divLista.appendChild(div);
         });
 
-        // Troca a classe para mostrar apenas a área do relatório
         let areaRelatorio = document.getElementById('print-area-relatorio');
-        areaRelatorio.classList.remove('hidden');
-        areaRelatorio.classList.add('print-active');
-        
+        areaRelatorio.classList.remove('hidden'); areaRelatorio.classList.add('print-active');
         window.print();
-        
-        areaRelatorio.classList.add('hidden');
-        areaRelatorio.classList.remove('print-active');
+        areaRelatorio.classList.add('hidden'); areaRelatorio.classList.remove('print-active');
     }
-
-    // --- FUNÇÕES DE ETIQUETA MANTIDAS (Busca, Preencher, ImprimirEtiqueta) ---
-    // (Cole aqui as funções antigas buscarPorNome(), preencherFormulario(), imprimirEtiqueta().
-    // Na hora de imprimir etiqueta, use: document.getElementById('print-area-etiqueta').classList.add('print-active');)
-
 </script>
 </body>
 </html>
