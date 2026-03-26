@@ -122,7 +122,7 @@
         .alerta-sucesso { background-color: var(--primary); }
         .alerta-aviso { background-color: var(--warning); color: #000; }
 
-        /* --- MODO FOCO DE SEPARAÇÃO (TELA CHEIA SEM ROLAGEM) --- */
+        /* --- MODO FOCO DE SEPARAÇÃO --- */
         .tela-foco { 
             height: 100vh; 
             display: flex; 
@@ -133,9 +133,10 @@
             background: #222; 
         }
         
+        /* Câmera mais estreita */
         .camera-box { 
             flex: 1; 
-            max-height: 45%; 
+            max-height: 25%; /* Câmera tipo "visor de caixa" */
             border-radius: 8px; 
             overflow: hidden; 
             position: relative; 
@@ -156,8 +157,10 @@
             text-align: center; 
         }
         
+        /* Foto Maior */
         .info-box img { 
-            max-height: 120px; 
+            max-height: 200px; 
+            width: auto;
             object-fit: contain; 
             border-radius: 8px; 
         }
@@ -172,12 +175,13 @@
             border: 2px solid var(--secondary); 
         }
         
+        /* Gôndola Gigante */
         .badge-loc { 
             background: var(--dark); 
             color: white; 
-            padding: 5px 10px; 
+            padding: 10px 20px; 
             border-radius: 15px; 
-            font-size: 14px; 
+            font-size: 26px; /* Bem maior */
             font-weight: bold; 
         }
     </style>
@@ -291,20 +295,25 @@
         </div>
         <div class="info-box">
             <span class="badge-loc" id="foco-loc">📍 Gôndola: A1</span>
-            <h3 id="foco-nome">Nome</h3>
+            
             <img id="foco-img" src="" alt="Produto" onerror="this.style.display='none'">
+            
+            <h3 id="foco-nome" style="margin: 5px 0;">Nome do Produto</h3>
+            
             <div class="contador-unidades" id="foco-contador">0 / 4 Separados</div>
+            
             <div style="display:flex; gap:10px; width:100%;">
-                <button class="btn-danger" onclick="cancelarPicking()">Encerrar</button>
-                <button class="btn-secondary" onclick="pularItemAtual()">Pular (Falta)</button>
-            </div>
+                <button class="btn-danger" onclick="cancelarPicking()">Cancelar Separação</button>
+                </div>
         </div>
     </div>
 
     <div class="container hidden" id="tela-conclusao">
         <h2>🎉 Separação Concluída!</h2>
-        <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px;">🖨️ Imprimir Relatório</button>
-        <button class="btn-secondary" onclick="abrirTela('tela-inicial')">🏠 Voltar ao Início</button>
+        <p style="text-align: center;">Todos os produtos foram bipados.</p>
+        
+        <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Pedido</button>
+        <button class="btn-secondary" onclick="abrirTela('tela-inicial')">✅ Concluir e Voltar</button>
     </div>
 </div>
 
@@ -312,13 +321,17 @@
     // ==================== VARIÁVEIS GLOBAIS ====================
     let bancoDeDados = []; 
     let html5QrCode = null; 
-    let aguardandoProximaLeitura = false; // NOVA TRAVA PARA FLUIDEZ DA CÂMERA
+    let aguardandoProximaLeitura = false; 
     
     // Variáveis da Separação
     let pedidosFila = [];
     let listaDeSeparacao = []; 
     let indexAtualPicking = 0; 
     let produtoSendoEditadoIndex = -1;
+    let pedidoAtual = null; // Guarda o pedido que está sendo separado agora
+
+    // Audio Context (Para os Bips sonoros)
+    let audioCtx = null;
 
     // ==================== INICIALIZAÇÃO E SISTEMA ====================
     window.onload = async function() {
@@ -335,6 +348,40 @@
         document.getElementById('status-db').innerText = "✅ Banco Conectado";
         document.getElementById('status-db').style.color = "green";
         document.getElementById('botoes-menu').classList.remove('hidden');
+    }
+
+    function inicializarAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+
+    function tocarBipe(tipo) {
+        if (!audioCtx) return;
+        
+        try {
+            const oscilador = audioCtx.createOscillator();
+            const ganho = audioCtx.createGain();
+            
+            oscilador.connect(ganho);
+            ganho.connect(audioCtx.destination);
+            
+            if (tipo === 'sucesso') {
+                oscilador.type = 'sine';
+                oscilador.frequency.setValueAtTime(900, audioCtx.currentTime); // Som agudo
+                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                oscilador.start();
+                oscilador.stop(audioCtx.currentTime + 0.1); // Super rápido (0.1s)
+            } else {
+                oscilador.type = 'sawtooth';
+                oscilador.frequency.setValueAtTime(300, audioCtx.currentTime); // Som grave de erro
+                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                oscilador.start();
+                oscilador.stop(audioCtx.currentTime + 0.4); // Mais longo para chamar atenção
+            }
+        } catch(e) {
+            console.log("Audio não reproduzido");
+        }
     }
 
     function abrirTela(idTela) {
@@ -542,7 +589,7 @@
                 .etiqueta {
                     width: 48mm;
                     padding: 2mm 0;
-                    padding-bottom: 15mm; 
+                    padding-bottom: 15mm;
                     box-sizing: border-box;
                     text-align: center;
                 }
@@ -572,13 +619,19 @@
                 .linha span.valor { font-weight: normal; }
                 
                 .rel-titulo { 
-                    font-size: 16px; 
-                    font-weight: bold; 
+                    font-size: 18px; 
+                    font-weight: 900; 
                     text-transform: uppercase; 
-                    margin-bottom: 10px; 
+                    margin-bottom: 5px; 
                     border-bottom: 2px solid #000; 
                     padding-bottom: 5px; 
                     text-align: center; 
+                }
+                .rel-info {
+                    font-size: 14px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    text-align: center;
                 }
                 .rel-item { 
                     border-bottom: 1px dashed #000; 
@@ -640,10 +693,14 @@
     }
 
     function imprimirRelatorioSeparacao() {
+        // Puxa as informações do pedidoAtual guardado na memória
+        let numeroPedido = pedidoAtual ? (pedidoAtual.orderNum || 'N/A') : 'N/A';
+        let dataEntrega = (pedidoAtual && pedidoAtual.deliveryMatch && pedidoAtual.deliveryMatch[1]) ? pedidoAtual.deliveryMatch[1] : 'N/A';
+
         let cont = `
             <div class="etiqueta">
-                <div class="rel-titulo">Relatório Separação</div>
-                <div style="font-size:12px; margin-bottom:10px;">${new Date().toLocaleString('pt-BR')}</div>
+                <div class="rel-titulo">Pedido ${numeroPedido}</div>
+                <div class="rel-info">Entrega: ${dataEntrega}</div>
         `;
         
         listaDeSeparacao.forEach(i => { 
@@ -651,7 +708,10 @@
             cont += `<div class="rel-item">${status} ${i.quantidadeTotal}x ${i.nomePedido.substring(0, 18)}</div>`; 
         });
         
-        cont += `</div>`;
+        cont += `
+                <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
+            </div>
+        `;
         
         imprimirPelaPaginaFantasma(cont);
     }
@@ -662,6 +722,7 @@
     // ==============================================================================
 
     function abrirTelaListaPedidos() {
+        inicializarAudio(); // Inicia o motor de áudio no primeiro clique do usuário
         abrirTela('tela-separacao-input');
         carregarPedidosFila();
     }
@@ -719,6 +780,7 @@
 
     function iniciarSeparacaoPedido(pedido) {
         listaDeSeparacao = [];
+        pedidoAtual = pedido; // Guarda o pedido inteiro na memória para a impressão depois
 
         if (!pedido.items || pedido.items.length === 0) {
             mostrarAlerta("Este pedido não tem produtos listados.", "erro");
@@ -768,21 +830,18 @@
                     pararLeitor('tela-etiquetas'); 
                     buscarProdutoPorCamera(codigoLido); 
                 } else { 
-                    // Se estivermos na trava de tempo (800ms), ignora a leitura
                     if (aguardandoProximaLeitura) return; 
 
-                    // Ativa a trava para não ler 10x por segundo
                     aguardandoProximaLeitura = true; 
                     validarLeituraProduto(codigoLido); 
                     
-                    // Libera a trava após 800ms sem parar a câmera!
                     setTimeout(() => { 
                         aguardandoProximaLeitura = false;
                     }, 800); 
                 }
             }, 
             (erroDeFoco) => {
-                // Erros de foco são normais enquanto a câmera busca
+                // Erros de foco são normais enquanto a câmera tenta ler
             }
         ).catch(err => { 
             mostrarAlerta("Erro na permissão da câmera", "erro"); 
@@ -850,27 +909,22 @@
             
             if (itemAtual.unidadesLidas < itemAtual.quantidadeTotal) { 
                 let falta = itemAtual.quantidadeTotal - itemAtual.unidadesLidas;
+                tocarBipe('sucesso');
                 mostrarAlerta(`✅ Correto! Faltam ${falta}.`, "aviso"); 
                 renderizarItemFoco(); 
             } else { 
                 itemAtual.status = 'concluido'; 
+                tocarBipe('sucesso');
                 mostrarAlerta(`🎉 Item Completo!`, "sucesso"); 
                 indexAtualPicking++; 
                 renderizarItemFoco(); 
             }
         } else { 
+            tocarBipe('erro');
             mostrarAlerta(`❌ Produto Errado!`, "erro"); 
         }
     }
 
-    function pularItemAtual() { 
-        if (confirm("Deseja marcar este item como faltante e pular?")) { 
-            listaDeSeparacao[indexAtualPicking].status = 'pulado'; 
-            indexAtualPicking++; 
-            renderizarItemFoco(); 
-        } 
-    }
-    
     function cancelarPicking() { 
         if (confirm("Tem certeza que deseja cancelar toda a separação?")) { 
             pararLeitor(); 
