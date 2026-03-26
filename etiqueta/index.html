@@ -52,24 +52,51 @@
         .contador-unidades { font-size: 28px; font-weight: 900; color: var(--secondary); background: #e3f2fd; padding: 10px 20px; border-radius: 12px; border: 2px solid var(--secondary); }
         .badge-loc { background: var(--dark); color: white; padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; }
 
-        /* --- ÁREAS DE IMPRESSÃO TÉRMICA (58mm) --- */
+        /* --- ÁREAS DE IMPRESSÃO TÉRMICA (RAWBT / 58mm) --- */
         @media print {
-            @page { margin: 0; size: 58mm auto; }
-            body { margin: 0; padding: 0; background: white; }
-            body * { visibility: hidden; display: none; }
+            /* 1. Esconde a interface do aplicativo (telas, botões, alertas) */
+            .container, .tela-foco, #alerta-customizado { 
+                display: none !important; 
+            }
             
-            .print-active, .print-active * { visibility: visible; display: block; }
-            .print-active { position: absolute; left: 0; top: 0; width: 48mm; padding: 2mm 5mm; margin: 0; border: none; font-family: 'Arial', sans-serif; color: #000; text-align: center;}
+            /* 2. Configura a página base limpa, fundo branco e texto preto forte */
+            body { 
+                margin: 0; padding: 0; 
+                background-color: #ffffff !important; 
+                color: #000000 !important; 
+            }
             
-            /* Etiqueta de Gôndola */
-            .destaque-codigo { font-size: 32px; font-weight: 900; margin: 5px 0 10px 0; letter-spacing: 2px; }
-            .print-nome-etiqueta { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; line-height: 1.2; }
-            .info-linha { font-size: 13px; margin: 4px 0; font-weight: bold; border-bottom: 1px dashed #999; padding-bottom: 3px; text-align: left; }
-            .info-linha span { font-weight: normal; float: right; font-size: 14px;}
+            /* 3. A área que vai ser impressa volta ao fluxo normal (sem absolute) */
+            .print-active { 
+                display: block !important; 
+                position: relative !important; 
+                width: 100% !important; /* O RawBT já adapta para a bobina */
+                margin: 0; padding: 0; 
+                font-family: Arial, sans-serif; 
+                color: #000000 !important;
+                text-align: center;
+            }
             
-            /* Relatório de Separação */
-            .print-report-item { text-align: left; font-size: 12px; border-bottom: 1px dashed #999; padding: 4px 0; font-weight: bold; margin-bottom: 2px;}
-            .print-header { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; text-align: center; border-bottom: 2px solid #000;}
+            /* --- Etiqueta de Gôndola --- */
+            .destaque-codigo { font-size: 32px !important; font-weight: 900 !important; margin: 0 0 5px 0; letter-spacing: 1px; color: #000 !important; }
+            .print-nome-etiqueta { font-size: 16px !important; font-weight: bold !important; text-transform: uppercase; margin-bottom: 10px; color: #000 !important; }
+            
+            /* Uso de Flexbox para organizar Esquerda/Direita perfeitamente no RawBT */
+            .info-linha { 
+                display: flex !important; 
+                justify-content: space-between !important; 
+                align-items: center !important;
+                font-size: 14px !important; 
+                font-weight: bold !important; 
+                border-bottom: 1px dashed #000 !important; 
+                padding: 4px 0 !important; 
+                margin: 0 !important;
+            }
+            .info-linha span { font-weight: normal !important; }
+            
+            /* --- Relatório de Separação --- */
+            .print-header { font-size: 16px !important; font-weight: bold !important; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #000 !important; padding-bottom: 5px; }
+            .print-report-item { text-align: left !important; font-size: 14px !important; border-bottom: 1px dashed #000 !important; padding: 6px 0 !important; font-weight: bold !important; }
         }
     </style>
 </head>
