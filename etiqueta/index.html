@@ -198,7 +198,7 @@
         
         <div id="botoes-menu" class="hidden">
             <button style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-etiquetas')">🏷️ Gestão de Etiquetas</button>
-            <button class="btn-secondary" style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-separacao-input')">🛒 Iniciar Separação</button>
+            <button class="btn-secondary" style="padding: 25px; font-size: 20px;" onclick="abrirTelaListaPedidos()">🛒 Iniciar Separação</button>
             <hr>
             <button class="btn-warning" onclick="exportarBancoCSV()">💾 Exportar Todo o Banco (CSV)</button>
         </div>
@@ -278,11 +278,11 @@
 
     <div class="container hidden" id="tela-separacao-input">
         <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
-        <h2>📝 Colar Pedido</h2>
-        <div class="form-group">
-            <textarea id="texto-pedido" rows="10" placeholder="Cole a lista do WhatsApp..."></textarea>
-        </div>
-        <button class="btn-secondary" onclick="processarPedidoEPuxarFoco()">🚀 Iniciar Separação</button>
+        <h2>📋 Fila de Pedidos</h2>
+        <button onclick="carregarPedidosFila()" style="background-color: var(--dark); padding: 10px; margin-bottom: 15px;">🔄 Atualizar Lista</button>
+        
+        <div id="area-lista-pedidos">
+            </div>
     </div>
 
     <div class="tela-foco hidden" id="tela-separacao-foco">
@@ -312,6 +312,9 @@
     // ==================== VARIÁVEIS GLOBAIS ====================
     let bancoDeDados = []; 
     let html5QrCode = null; 
+    
+    // Variáveis da Separação
+    let pedidosFila = [];
     let listaDeSeparacao = []; 
     let indexAtualPicking = 0; 
     let produtoSendoEditadoIndex = -1;
@@ -551,7 +554,6 @@
                     object-fit: contain;
                     margin-bottom: 8px;
                     display: block;
-                    /* Filtro aplicado direto na impressão para preto e branco (térmico) */
                     filter: grayscale(100%) contrast(120%);
                 }
 
@@ -570,7 +572,6 @@
                 }
                 .linha span.valor { font-weight: normal; }
                 
-                /* Estilos do Relatório de Separação */
                 .rel-titulo { 
                     font-size: 16px; 
                     font-weight: bold; 
@@ -618,7 +619,6 @@
         let imgElement = document.getElementById('img-foto');
         let fotoTag = '';
         
-        // Passa a URL da imagem (Sem compressão)
         if (imgElement.style.display !== 'none' && imgElement.src) {
             fotoTag = `<img src="${imgElement.src}" class="foto-print" onerror="this.style.display='none'">`;
         }
@@ -634,7 +634,7 @@
                 <div class="linha"><span>GÔNDOLA:</span> <span class="valor">${gon}</span></div>
                 <div class="linha"><span>PRAT:</span> <span class="valor">${pra}</span></div>
                 
-                <div style="margin-top: 10mm; border-bottom: 2px dashed #000; height: 5px;"></div>
+                <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
             </div>
         `;
         
@@ -656,6 +656,107 @@
         cont += `</div>`;
         
         imprimirPelaPaginaFantasma(cont);
+    }
+
+
+    // ==============================================================================
+    // LEITURA E SEPARAÇÃO DE PEDIDOS (NOVA LÓGICA DE FILA JSON)
+    // ==============================================================================
+
+    function abrirTelaListaPedidos() {
+        abrirTela('tela-separacao-input');
+        carregarPedidosFila();
+    }
+
+    async function carregarPedidosFila() {
+        let container = document.getElementById('area-lista-pedidos');
+        container.innerHTML = '<p style="text-align:center; padding: 20px;">⏳ Carregando fila de pedidos...</p>';
+        
+        try {
+            const resposta = await fetch('../site/pedidos_fila.json');
+            
+            if (!resposta.ok) {
+                throw new Error("Erro ao carregar");
+            }
+            
+            pedidosFila = await resposta.json();
+            renderizarPedidosFila();
+            
+        } catch (erro) {
+            container.innerHTML = '<p style="text-align:center; color:red; font-weight:bold;">❌ Não foi possível carregar os pedidos. Verifique se o arquivo "../site/pedidos_fila.json" existe no servidor.</p>';
+        }
+    }
+
+    function renderizarPedidosFila() {
+        let container = document.getElementById('area-lista-pedidos');
+        container.innerHTML = '';
+
+        // Filtra apenas os pedidos que estão com status pendente
+        let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE');
+
+        if (pendentes.length === 0) {
+            container.innerHTML = '<div style="text-align:center; padding: 20px; font-size: 18px; color: green; font-weight: bold;">✅ Nenhum pedido pendente!</div>';
+            return;
+        }
+
+        // Cria os botões para cada pedido na tela
+        pendentes.forEach((pedido, indexNoArrayOriginal) => {
+            let div = document.createElement('div');
+            div.className = 'resultado-item'; 
+            
+            let numItens = pedido.items ? pedido.items.length : 0;
+            let dataApresentacao = new Date(pedido.dataCriacao).toLocaleDateString('pt-BR');
+            let nomePedido = pedido.orderNum || "Pedido sem número";
+            
+            div.innerHTML = `
+                ${nomePedido} 
+                <div class="resultado-dica">📅 ${dataApresentacao} | 📦 ${numItens} itens para separar</div>
+            `;
+            
+            div.onclick = function() { 
+                // Precisamos passar o pedido original para iniciar
+                iniciarSeparacaoPedido(pedido); 
+            };
+            
+            container.appendChild(div);
+        });
+    }
+
+    function iniciarSeparacaoPedido(pedido) {
+        listaDeSeparacao = [];
+
+        if (!pedido.items || pedido.items.length === 0) {
+            mostrarAlerta("Este pedido não tem produtos listados.", "erro");
+            return;
+        }
+
+        // Lê o array "items" do JSON e joga na lista de separação do app
+        pedido.items.forEach(item => {
+            // Só adiciona se o produto foi encontrado no seu gerador (foundProduct não é null)
+            if (item.foundProduct) {
+                listaDeSeparacao.push({
+                    quantidadeTotal: item.qtd,
+                    unidadesLidas: 0,
+                    nomePedido: item.nomeOriginal,
+                    produtoDb: item.foundProduct, // Pega os dados direto do arquivo
+                    localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "ZZZ",
+                    status: 'pendente'
+                });
+            }
+        });
+
+        if (listaDeSeparacao.length === 0) {
+            mostrarAlerta("Nenhum item do pedido foi encontrado no banco de dados.", "erro");
+            return;
+        }
+
+        // Ordena pela gôndola para fazer a rota do supermercado
+        listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
+        
+        indexAtualPicking = 0; 
+        abrirTela('tela-separacao-foco'); 
+        renderizarItemFoco(); 
+        iniciarLeitor('separacao');
     }
 
     // ==================== CÂMERA E SEPARAÇÃO (PICKING) ====================
@@ -721,45 +822,6 @@
         } else {
             mostrarAlerta("Produto não encontrado! (Lido: " + codigoLido + ")", "erro");
         }
-    }
-
-    function processarPedidoEPuxarFoco() {
-        listaDeSeparacao = [];
-        let textoColado = document.getElementById('texto-pedido').value.split('\n');
-        
-        textoColado.forEach(linha => {
-            const matchPedido = linha.trim().match(/^(\d+)[xX]\s+(.*)/); 
-            
-            if (matchPedido) {
-                let palavrasChave = matchPedido[2].trim().replace(/\(Oferta\)/gi, '').toLowerCase().split(' ');
-                
-                let matchProdutoBanco = bancoDeDados.find(p => {
-                    return String(p.nome || p["Descrição"] || "").toLowerCase().includes(palavrasChave[0]);
-                });
-                
-                if (matchProdutoBanco) {
-                    listaDeSeparacao.push({ 
-                        quantidadeTotal: parseInt(matchPedido[1]), 
-                        unidadesLidas: 0, 
-                        nomePedido: matchPedido[2].trim(), 
-                        produtoDb: matchProdutoBanco, 
-                        localizacao: matchProdutoBanco.gondola || matchProdutoBanco.localizacao || "ZZZ", 
-                        status: 'pendente' 
-                    });
-                }
-            }
-        });
-        
-        if (listaDeSeparacao.length === 0) { 
-            mostrarAlerta("Nenhum produto da lista foi reconhecido.", "erro"); 
-            return; 
-        }
-        
-        listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
-        indexAtualPicking = 0; 
-        abrirTela('tela-separacao-foco'); 
-        renderizarItemFoco(); 
-        iniciarLeitor('separacao');
     }
 
     function renderizarItemFoco() {
