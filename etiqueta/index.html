@@ -8,18 +8,12 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     
     <style>
-        /* --- ESTILOS GERAIS E CORES --- */
-        :root {
-            --primary: #4CAF50; --secondary: #2196F3;
-            --danger: #f44336; --warning: #ff9800;
-            --dark: #333; --light: #f4f4f4;
-        }
-        
+        /* --- ESTILOS DO APP --- */
+        :root { --primary: #4CAF50; --secondary: #2196F3; --danger: #f44336; --warning: #ff9800; --dark: #333; --light: #f4f4f4; }
         body, html { font-family: Arial, sans-serif; background-color: var(--light); margin: 0; padding: 0; height: 100%; color: var(--dark); }
         h1, h2, h3 { text-align: center; margin-top: 0; }
         
-        button { display: block; width: 100%; padding: 15px; margin: 10px 0; font-size: 16px; font-weight: bold; color: white; background-color: var(--primary); border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.2s; }
-        button:active { transform: translateY(2px); }
+        button { display: block; width: 100%; padding: 15px; margin: 10px 0; font-size: 16px; font-weight: bold; color: white; background-color: var(--primary); border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .btn-secondary { background-color: var(--secondary); }
         .btn-danger { background-color: var(--danger); }
         .btn-warning { background-color: var(--warning); color: #000; }
@@ -32,90 +26,56 @@
         
         .resultado-item { padding: 15px; margin-bottom: 8px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; }
         .resultado-dica { font-size: 13px; color: #555; font-weight: normal; margin-top: 4px; }
-        
         .linha-dupla { display: flex; gap: 10px; }
         .linha-dupla .form-group { flex: 1; }
-
         .hidden { display: none !important; }
 
-        /* --- MENSAGENS E TOASTS --- */
-        #alerta-customizado { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 8px; color: white; font-weight: bold; text-align: center; z-index: 9999; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: none; font-size: 16px; }
+        #alerta-customizado { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 8px; color: white; font-weight: bold; text-align: center; z-index: 9999; display: none; }
         .alerta-erro { background-color: var(--danger); }
         .alerta-sucesso { background-color: var(--primary); }
         .alerta-aviso { background-color: var(--warning); color: #000; }
 
-        /* --- MODO FOCO (SEPARAÇÃO SEM ROLAGEM) --- */
         .tela-foco { height: 100vh; display: flex; flex-direction: column; overflow: hidden; padding: 10px; box-sizing: border-box; background: #222; }
         .camera-box { flex: 1; max-height: 45%; border-radius: 8px; overflow: hidden; position: relative; background: #000; border: 2px solid #555; }
         .info-box { flex: 1; background: white; border-radius: 8px; padding: 15px; margin-top: 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; text-align: center; }
         .info-box img { max-height: 120px; object-fit: contain; border-radius: 8px; }
         .contador-unidades { font-size: 28px; font-weight: 900; color: var(--secondary); background: #e3f2fd; padding: 10px 20px; border-radius: 12px; border: 2px solid var(--secondary); }
         .badge-loc { background: var(--dark); color: white; padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; }
-
-        /* --- ÁREAS DE IMPRESSÃO TÉRMICA (48mm área útil) --- */
-        /* Simplificamos para o navegador não bugar! Deixamos apenas os formatos de texto */
-        @media print {
-            body { background: #fff; margin: 0; padding: 0; color: #000; }
-            .print-active { width: 48mm; margin: 0 auto; padding: 0; text-align: center; font-family: Arial, sans-serif; display: block !important; }
-            
-            /* Textos da Etiqueta */
-            .destaque-codigo { font-size: 32px; font-weight: 900; margin: 0 0 5px 0; letter-spacing: 1px; color: #000; }
-            .print-nome-etiqueta { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; color: #000; line-height: 1.1; }
-            
-            /* Linhas com Display Flex garantem alinhamento esquerdo/direito perfeito */
-            .info-linha { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0; margin: 0; color: #000; }
-            .info-linha span { font-weight: normal; }
-            
-            /* Relatório de Separação */
-            .print-header { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; }
-            .print-report-item { text-align: left; font-size: 14px; border-bottom: 1px dashed #000; padding: 4px 0; font-weight: bold; }
-        }
     </style>
 </head>
 <body>
 
-<div id="alerta-customizado">Mensagem aqui</div>
+<div id="alerta-customizado">Mensagem</div>
 
 <div id="app-ui">
-
     <div class="container" id="tela-inicial">
         <h1>📦 Sistema de Estoque</h1>
-        <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco de dados...</p>
-        
-        <div id="area-upload" class="hidden">
-            <input type="file" id="file-json" accept=".json" style="display:block; margin:auto; margin-bottom: 15px;">
-        </div>
-
+        <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco...</p>
+        <div id="area-upload" class="hidden"><input type="file" id="file-json" accept=".json" style="display:block; margin:auto; margin-bottom: 15px;"></div>
         <div id="botoes-menu" class="hidden">
             <button style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-etiquetas')">🏷️ Gestão de Etiquetas</button>
             <button class="btn-secondary" style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-separacao-input')">🛒 Iniciar Separação</button>
-            <hr style="margin: 20px 0;">
-            <button class="btn-warning" onclick="exportarBancoCSV()">💾 Exportar Todo o Banco (CSV)</button>
+            <hr><button class="btn-warning" onclick="exportarBancoCSV()">💾 Exportar Todo o Banco</button>
         </div>
     </div>
 
     <div class="container hidden" id="tela-etiquetas">
-        <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
-        
+        <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar</button>
         <div id="area-busca-etiqueta">
             <h2>🔍 Buscar Produto</h2>
-            <div class="form-group">
-                <input type="text" id="inp-busca" placeholder="Digite Nome, SKU ou EAN..." oninput="buscarPorNome()">
-            </div>
-            <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin-bottom: 20px;">📷 Ler Código de Barras</button>
+            <div class="form-group"><input type="text" id="inp-busca" placeholder="Digite Nome, SKU ou EAN..." oninput="buscarPorNome()"></div>
+            <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin-bottom: 20px;">📷 Ler Código</button>
             <div id="lista-resultados"></div>
         </div>
 
         <div id="product-form" class="hidden">
             <button class="btn-danger" style="margin-bottom: 15px;" onclick="fecharCardProduto()">❌ Fechar Produto</button>
-            
             <img id="img-foto" src="" style="width: 100%; max-height: 250px; object-fit: contain; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px;">
-            
             <div class="linha-dupla">
-                <div class="form-group"><label>SKU (Cód Interno)</label><input type="text" id="inp-codigo" readonly style="background:#f0f0f0;"></div>
-                <div class="form-group"><label>EAN (Cód Barras)</label><input type="text" id="inp-ean"></div>
+                <div class="form-group"><label>SKU</label><input type="text" id="inp-codigo" readonly style="background:#f0f0f0;"></div>
+                <div class="form-group"><label>EAN</label><input type="text" id="inp-ean"></div>
             </div>
-            <div class="form-group"><label>Nome do Produto</label><input type="text" id="inp-nome"></div>
+            <div class="form-group"><label>Nome</label><input type="text" id="inp-nome"></div>
             <div class="linha-dupla">
                 <div class="form-group"><label>Estoque</label><input type="text" id="inp-estoque"></div>
                 <div class="form-group"><label>Validade</label><input type="text" id="inp-validade"></div>
@@ -124,11 +84,11 @@
                 <div class="form-group"><label>Gôndola</label><input type="text" id="inp-gondola" placeholder="Ex: Corredor 3"></div>
                 <div class="form-group"><label>Prateleira</label><input type="text" id="inp-prateleira" placeholder="Ex: Baixa"></div>
             </div>
-            <div class="form-group"><label>Preço de Venda (R$)</label><input type="text" id="inp-venda"></div>
+            <div class="form-group"><label>Preço</label><input type="text" id="inp-venda"></div>
             
-            <button class="btn-print" onclick="imprimirEtiquetaGondola()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Etiqueta (58mm)</button>
+            <button class="btn-print" onclick="imprimirEtiquetaGondola()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Etiqueta</button>
             <button class="btn-primary" onclick="salvarProdutoLocal()">✅ Salvar Alterações Localmente</button>
-            <button class="btn-secondary" onclick="exportarProdutoCSV()">📄 Exportar Apenas Este (CSV)</button>
+            <button class="btn-secondary" onclick="exportarProdutoCSV()">📄 Exportar Apenas Este</button>
         </div>
     </div>
 
@@ -139,17 +99,17 @@
     </div>
 
     <div class="container hidden" id="tela-separacao-input">
-        <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
+        <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar</button>
         <h2>📝 Colar Pedido</h2>
-        <div class="form-group"><textarea id="texto-pedido" rows="10" placeholder="Cole aqui a lista do WhatsApp..."></textarea></div>
-        <button class="btn-secondary" onclick="processarPedidoEPuxarFoco()">🚀 Iniciar Modo de Separação</button>
+        <div class="form-group"><textarea id="texto-pedido" rows="10" placeholder="Cole a lista..."></textarea></div>
+        <button class="btn-secondary" onclick="processarPedidoEPuxarFoco()">🚀 Iniciar Separação</button>
     </div>
 
     <div class="tela-foco hidden" id="tela-separacao-foco">
         <div class="camera-box"><div id="reader-picking" style="width: 100%; height: 100%;"></div></div>
         <div class="info-box">
             <span class="badge-loc" id="foco-loc">📍 Gôndola: A1</span>
-            <h3 id="foco-nome" style="margin: 5px 0;">Nome do Produto</h3>
+            <h3 id="foco-nome">Nome</h3>
             <img id="foco-img" src="" alt="Produto" onerror="this.style.display='none'">
             <div class="contador-unidades" id="foco-contador">0 / 4 Separados</div>
             <div style="display:flex; gap:10px; width:100%;">
@@ -161,229 +121,138 @@
 
     <div class="container hidden" id="tela-conclusao">
         <h2>🎉 Separação Concluída!</h2>
-        <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px;">🖨️ Imprimir Relatório (58mm)</button>
+        <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px;">🖨️ Imprimir Relatório</button>
         <button class="btn-secondary" onclick="abrirTela('tela-inicial')">🏠 Voltar ao Início</button>
     </div>
-
-</div> <div id="print-area-etiqueta" class="hidden">
-    <div style="font-size: 12px; margin-bottom: -5px; color: #000; font-weight:bold;">SKU:</div>
-    <div id="print-cod" class="destaque-codigo"></div>
-    <div id="print-nome" class="print-nome-etiqueta"></div>
-    
-    <div class="info-linha"><span>EAN:</span> <span id="print-ean"></span></div>
-    <div class="info-linha"><span>VAL:</span> <span id="print-validade"></span></div>
-    <div class="info-linha"><span>GÔNDOLA:</span> <span id="print-gondola"></span></div>
-    <div class="info-linha"><span>PRAT:</span> <span id="print-prateleira"></span></div>
 </div>
 
-<div id="print-area-relatorio" class="hidden">
-    <div class="print-header">Relatório de Separação</div>
+<div id="print-area-etiqueta" class="hidden" style="width: 48mm; margin: 0; padding: 0; font-family: Arial, sans-serif; color: #000; background: #fff;">
+    <div style="font-size: 14px; margin-bottom: 2px; font-weight:bold; text-align: center;">SKU</div>
+    <div id="print-cod" style="font-size: 38px; font-weight: 900; margin: 0 0 10px 0; text-align: center; letter-spacing: 1px;"></div>
+    <div id="print-nome" style="font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; text-align: center; line-height: 1.2;"></div>
+    
+    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0;"><span>EAN:</span> <span id="print-ean" style="font-weight: normal;"></span></div>
+    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0;"><span>VAL:</span> <span id="print-validade" style="font-weight: normal;"></span></div>
+    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0;"><span>GÔNDOLA:</span> <span id="print-gondola" style="font-weight: normal;"></span></div>
+    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0;"><span>PRAT:</span> <span id="print-prateleira" style="font-weight: normal;"></span></div>
+</div>
+
+<div id="print-area-relatorio" class="hidden" style="width: 48mm; margin: 0; padding: 0; font-family: Arial, sans-serif; color: #000; background: #fff;">
+    <div style="font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center;">Relatório Separação</div>
     <div style="text-align:center; font-size:12px; margin-bottom:10px;" id="data-relatorio"></div>
-    <div id="lista-print-relatorio"></div>
-    <div style="margin-top:15px; text-align:center; font-weight:bold; font-size:14px; border-top: 1px solid #000; padding-top: 5px;">Visto Conferência:</div>
+    <div id="lista-print-relatorio" style="text-align: left; font-size: 14px; font-weight: bold;"></div>
 </div>
 
 <script>
-    let bancoDeDados = [];
-    let html5QrCode = null;
-    let listaDeSeparacao = [];
-    let indexAtualPicking = 0;
-    let produtoSendoEditadoIndex = -1; // Para saber qual produto salvar
+    let bancoDeDados = []; let html5QrCode = null; let listaDeSeparacao = []; let indexAtualPicking = 0; let produtoSendoEditadoIndex = -1;
 
-    // --- CARREGAMENTO INICIAL ---
     window.onload = async function() {
-        try {
-            const resposta = await fetch('../site/bancodedados.json');
-            bancoDeDados = await resposta.json();
-            liberarSistema();
-        } catch (erro) {
-            document.getElementById('area-upload').classList.remove('hidden');
-        }
+        try { const resposta = await fetch('../site/bancodedados.json'); bancoDeDados = await resposta.json(); liberarSistema(); } 
+        catch (erro) { document.getElementById('area-upload').classList.remove('hidden'); }
     };
 
     function liberarSistema() {
-        document.getElementById('status-db').innerText = "✅ Banco Conectado (" + bancoDeDados.length + " itens)";
+        document.getElementById('status-db').innerText = "✅ Banco Conectado";
         document.getElementById('status-db').style.color = "green";
         document.getElementById('botoes-menu').classList.remove('hidden');
     }
 
     function abrirTela(idTela) {
-        ['tela-inicial', 'tela-etiquetas', 'tela-camera-busca', 'tela-separacao-input', 'tela-separacao-foco', 'tela-conclusao'].forEach(id => {
-            document.getElementById(id).classList.add('hidden');
-        });
-        
+        ['tela-inicial', 'tela-etiquetas', 'tela-camera-busca', 'tela-separacao-input', 'tela-separacao-foco', 'tela-conclusao'].forEach(id => { document.getElementById(id).classList.add('hidden'); });
         if(idTela !== 'tela-separacao-foco' && idTela !== 'tela-camera-busca') pararLeitor();
         document.getElementById(idTela).classList.remove('hidden');
     }
 
-    function mostrarAlerta(mensagem, tipo = 'sucesso', tempo = 3000) {
-        let alerta = document.getElementById('alerta-customizado');
-        alerta.innerText = mensagem;
-        alerta.className = ''; 
-        if(tipo === 'erro') alerta.classList.add('alerta-erro');
-        else if(tipo === 'aviso') alerta.classList.add('alerta-aviso');
-        else alerta.classList.add('alerta-sucesso');
-        alerta.style.display = 'block';
-        setTimeout(() => { alerta.style.display = 'none'; }, tempo);
+    function mostrarAlerta(msg, tipo = 'sucesso', tempo = 3000) {
+        let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
+        if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso');
+        a.style.display = 'block'; setTimeout(() => { a.style.display = 'none'; }, tempo);
     }
-
-    // ==================== LÓGICA: GESTÃO DE ETIQUETAS E EDIÇÃO ==================== //
 
     function buscarPorNome() {
         let termo = document.getElementById('inp-busca').value.toLowerCase().trim();
-        let lista = document.getElementById('lista-resultados');
-        lista.innerHTML = ''; 
+        let lista = document.getElementById('lista-resultados'); lista.innerHTML = ''; 
         if (termo.length < 3) return; 
 
-        let encontrados = bancoDeDados.map((p, index) => ({ produto: p, originalIndex: index }))
-            .filter(item => {
-                let p = item.produto;
-                let nomeDb = String(p.nome || p["Descrição"] || "").toLowerCase();
-                let codDb = String(p.codigo || p["Código"] || "").toLowerCase();
-                let eanDb = String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "");
-                return nomeDb.includes(termo) || codDb.includes(termo) || eanDb.includes(termo);
-            });
+        let enc = bancoDeDados.map((p, i) => ({ p, i })).filter(item => {
+            let n = String(item.p.nome || item.p["Descrição"] || "").toLowerCase();
+            let c = String(item.p.codigo || item.p["Código"] || "").toLowerCase();
+            let e = String(item.p.gtin || item.p["GTIN/EAN"] || "").replace(/\D/g, "");
+            return n.includes(termo) || c.includes(termo) || e.includes(termo);
+        });
 
-        if (encontrados.length === 0) { lista.innerHTML = '<div style="text-align:center; color:red; padding:10px;">Nenhum encontrado.</div>'; return; }
+        if (enc.length === 0) { lista.innerHTML = '<div style="color:red; padding:10px;">Nenhum encontrado.</div>'; return; }
 
-        encontrados.slice(0, 10).forEach(item => {
-            let p = item.produto;
-            let nome = p.nome || p["Descrição"] || "Sem Nome";
-            let sku = p.codigo || p["Código"] || "";
-            let preco = p.preco || p["Preço"] || "0,00";
-
-            let div = document.createElement('div');
-            div.className = 'resultado-item';
-            div.innerHTML = `${nome} <div class="resultado-dica">SKU: ${sku} | R$ ${preco}</div>`;
-            div.onclick = function() { abrirCardProduto(p, item.originalIndex); };
-            lista.appendChild(div);
+        enc.slice(0, 10).forEach(item => {
+            let n = item.p.nome || item.p["Descrição"] || "Sem Nome"; let s = item.p.codigo || item.p["Código"] || ""; let pr = item.p.preco || item.p["Preço"] || "0,00";
+            let div = document.createElement('div'); div.className = 'resultado-item'; div.innerHTML = `${n} <div class="resultado-dica">SKU: ${s} | R$ ${pr}</div>`;
+            div.onclick = function() { abrirCardProduto(item.p, item.i); }; lista.appendChild(div);
         });
     }
 
-    function abrirCardProduto(produto, indexNoBanco) {
-        produtoSendoEditadoIndex = indexNoBanco; // Guarda o índice para atualizar depois
-        const sku = produto.codigo || produto["Código"] || "";
-        
-        let locGeral = produto.localizacao || produto["Localização"] || "";
-        let gondola = produto.gondola || produto["Gôndola"] || locGeral; 
-        let prateleira = produto.prateleira || produto["Prateleira"] || "";
-
+    function abrirCardProduto(p, i) {
+        produtoSendoEditadoIndex = i;
+        const sku = p.codigo || p["Código"] || "";
         document.getElementById('inp-codigo').value = sku;
-        document.getElementById('inp-nome').value = produto.nome || produto["Descrição"] || "";
-        document.getElementById('inp-ean').value = String(produto.gtin || produto["GTIN/EAN"] || "").replace(/[^0-9]/g, "");
-        document.getElementById('inp-estoque').value = produto.estoque || produto["Estoque"] || "";
-        document.getElementById('inp-validade').value = produto.validade || produto["Data Validade"] || "";
-        document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
-        document.getElementById('inp-gondola').value = gondola;
-        document.getElementById('inp-prateleira').value = prateleira;
+        document.getElementById('inp-nome').value = p.nome || p["Descrição"] || "";
+        document.getElementById('inp-ean').value = String(p.gtin || p["GTIN/EAN"] || "").replace(/[^0-9]/g, "");
+        document.getElementById('inp-estoque').value = p.estoque || p["Estoque"] || "";
+        document.getElementById('inp-validade').value = p.validade || p["Data Validade"] || "";
+        document.getElementById('inp-venda').value = p.preco || p["Preço"] || "";
+        document.getElementById('inp-gondola').value = p.gondola || p["Gôndola"] || p.localizacao || p["Localização"] || "";
+        document.getElementById('inp-prateleira').value = p.prateleira || p["Prateleira"] || "";
         
-        const imgElement = document.getElementById('img-foto');
-        imgElement.style.display = 'block'; 
-        imgElement.src = `../site/img/produtos/${sku}.webp`;
-        imgElement.onerror = function() { this.style.display = 'none'; };
-        
-        document.getElementById('area-busca-etiqueta').classList.add('hidden');
-        document.getElementById('product-form').classList.remove('hidden');
+        const img = document.getElementById('img-foto'); img.style.display = 'block'; img.src = `../site/img/produtos/${sku}.webp`; img.onerror = function() { this.style.display = 'none'; };
+        document.getElementById('area-busca-etiqueta').classList.add('hidden'); document.getElementById('product-form').classList.remove('hidden');
     }
 
-    function fecharCardProduto() {
-        document.getElementById('product-form').classList.add('hidden');
-        document.getElementById('area-busca-etiqueta').classList.remove('hidden');
-        document.getElementById('inp-busca').value = '';
-        document.getElementById('lista-resultados').innerHTML = '';
-        produtoSendoEditadoIndex = -1;
-    }
-
-    // ==================== NOVAS FUNÇÕES: SALVAR E EXPORTAR ==================== //
+    function fecharCardProduto() { document.getElementById('product-form').classList.add('hidden'); document.getElementById('area-busca-etiqueta').classList.remove('hidden'); }
 
     function salvarProdutoLocal() {
-        if (produtoSendoEditadoIndex === -1) return;
-
-        // Atualiza o objeto no banco de dados na memória
-        let p = bancoDeDados[produtoSendoEditadoIndex];
-        
-        // Mantemos a chave original do JSON, atualizando o valor
-        if("Código" in p) p["Código"] = document.getElementById('inp-codigo').value; else p.codigo = document.getElementById('inp-codigo').value;
-        if("Descrição" in p) p["Descrição"] = document.getElementById('inp-nome').value; else p.nome = document.getElementById('inp-nome').value;
-        if("GTIN/EAN" in p) p["GTIN/EAN"] = document.getElementById('inp-ean').value; else p.gtin = document.getElementById('inp-ean').value;
-        if("Estoque" in p) p["Estoque"] = document.getElementById('inp-estoque').value; else p.estoque = document.getElementById('inp-estoque').value;
-        if("Data Validade" in p) p["Data Validade"] = document.getElementById('inp-validade').value; else p.validade = document.getElementById('inp-validade').value;
-        if("Preço" in p) p["Preço"] = document.getElementById('inp-venda').value; else p.preco = document.getElementById('inp-venda').value;
-        
-        p.gondola = document.getElementById('inp-gondola').value;
-        p.prateleira = document.getElementById('inp-prateleira').value;
-
-        mostrarAlerta("✅ Alterações salvas na memória!", "sucesso");
+        if (produtoSendoEditadoIndex === -1) return; let p = bancoDeDados[produtoSendoEditadoIndex];
+        p.codigo = document.getElementById('inp-codigo').value; p.nome = document.getElementById('inp-nome').value; p.gtin = document.getElementById('inp-ean').value;
+        p.estoque = document.getElementById('inp-estoque').value; p.validade = document.getElementById('inp-validade').value; p.preco = document.getElementById('inp-venda').value;
+        p.gondola = document.getElementById('inp-gondola').value; p.prateleira = document.getElementById('inp-prateleira').value;
+        mostrarAlerta("✅ Salvo!", "sucesso");
     }
 
-    function converterParaCSV(arrayDeObjetos) {
-        if (arrayDeObjetos.length === 0) return '';
-        
-        // Pega as colunas padrões do sistema
-        const colunas = ['SKU', 'EAN', 'Nome', 'Estoque', 'Validade', 'Gondola', 'Prateleira', 'Preco'];
-        let csv = colunas.join(';') + '\n';
-
-        arrayDeObjetos.forEach(p => {
-            let linha = [
-                p.codigo || p["Código"] || "",
-                p.gtin || p["GTIN/EAN"] || "",
-                String(p.nome || p["Descrição"] || "").replace(/;/g, ","), // Remove ; do nome para não quebrar o CSV
-                p.estoque || p["Estoque"] || "",
-                p.validade || p["Data Validade"] || "",
-                p.gondola || p["Gôndola"] || p.localizacao || p["Localização"] || "",
-                p.prateleira || p["Prateleira"] || "",
-                p.preco || p["Preço"] || ""
-            ];
-            csv += linha.join(';') + '\n';
-        });
-        
-        return "\uFEFF" + csv; // \uFEFF força o Excel a ler acentos (UTF-8)
+    function converterParaCSV(arr) {
+        if (arr.length === 0) return '';
+        let csv = ['SKU', 'EAN', 'Nome', 'Estoque', 'Validade', 'Gondola', 'Prateleira', 'Preco'].join(';') + '\n';
+        arr.forEach(p => { csv += [p.codigo || p["Código"]||"", p.gtin || p["GTIN/EAN"]||"", String(p.nome || p["Descrição"]||"").replace(/;/g, ","), p.estoque || p["Estoque"]||"", p.validade || p["Data Validade"]||"", p.gondola || p["Gôndola"]||p.localizacao||"", p.prateleira || p["Prateleira"]||"", p.preco || p["Preço"]||""].join(';') + '\n'; });
+        return "\uFEFF" + csv;
     }
 
-    function fazerDownloadCSV(conteudoCSV, nomeArquivo) {
-        const blob = new Blob([conteudoCSV], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", nomeArquivo);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+    function fazerDownloadCSV(c, n) {
+        const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(new Blob([c], { type: 'text/csv;charset=utf-8;' })));
+        link.setAttribute("download", n); document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
 
-    function exportarProdutoCSV() {
-        if (produtoSendoEditadoIndex === -1) return;
-        salvarProdutoLocal(); // Salva antes de exportar
-        let produto = bancoDeDados[produtoSendoEditadoIndex];
-        let csv = converterParaCSV([produto]);
-        fazerDownloadCSV(csv, `produto_${produto.codigo || produto["Código"]}.csv`);
-    }
+    function exportarProdutoCSV() { se = bancoDeDados[produtoSendoEditadoIndex]; fazerDownloadCSV(converterParaCSV([se]), `produto_${se.codigo}.csv`); }
+    function exportarBancoCSV() { fazerDownloadCSV(converterParaCSV(bancoDeDados), `banco_${new Date().getTime()}.csv`); }
 
-    function exportarBancoCSV() {
-        if(bancoDeDados.length === 0) { mostrarAlerta("Banco de dados vazio.", "erro"); return; }
-        let csv = converterParaCSV(bancoDeDados);
-        fazerDownloadCSV(csv, `banco_atualizado_${new Date().getTime()}.csv`);
-        mostrarAlerta("✅ Banco completo exportado!", "sucesso");
-    }
-
-    // ==================== IMPRESSÃO INFALÍVEL (A Nova Lógica) ==================== //
-
+    // ==================== LÓGICA DE IMPRESSÃO INFALÍVEL (COM TIMEOUT) ==================== //
     function imprimirNaTermica(idAreaImpressao) {
-        // 1. Esconde a interface inteira do aplicativo
+        // 1. Esconde todo o aplicativo
         document.getElementById('app-ui').style.display = 'none';
         
-        // 2. Mostra apenas a área de impressão desejada e ativa o CSS
+        // 2. Mostra apenas a etiqueta com os estilos já definidos inline
         let areaPrint = document.getElementById(idAreaImpressao);
         areaPrint.classList.remove('hidden');
-        areaPrint.classList.add('print-active');
+        areaPrint.style.display = 'block';
         
-        // 3. Imprime
-        window.print();
-        
-        // 4. Volta tudo ao normal
-        areaPrint.classList.remove('print-active');
-        areaPrint.classList.add('hidden');
-        document.getElementById('app-ui').style.display = 'block';
+        // 3. Aguarda meio segundo. Isso é vital para o RawBT ler a tela limpa antes de gerar o PDF
+        setTimeout(() => {
+            window.print();
+            
+            // 4. Aguarda a janela de impressão abrir para restaurar o aplicativo atrás dela
+            setTimeout(() => {
+                areaPrint.style.display = 'none';
+                areaPrint.classList.add('hidden');
+                document.getElementById('app-ui').style.display = 'block';
+            }, 1000);
+            
+        }, 500); 
     }
 
     function imprimirEtiquetaGondola() {
@@ -394,121 +263,63 @@
         document.getElementById('print-gondola').innerText = document.getElementById('inp-gondola').value;
         document.getElementById('print-prateleira').innerText = document.getElementById('inp-prateleira').value;
 
-        // Usa a nova função de impressão segura
         imprimirNaTermica('print-area-etiqueta');
     }
 
     function imprimirRelatorioSeparacao() {
-        let divLista = document.getElementById('lista-print-relatorio');
-        divLista.innerHTML = ''; 
-        document.getElementById('data-relatorio').innerText = `Impresso em: ${new Date().toLocaleString('pt-BR')}`;
-
-        listaDeSeparacao.forEach(item => {
-            let div = document.createElement('div');
-            div.className = 'print-report-item';
-            div.innerText = `${item.status === 'concluido' ? '[OK]' : '[FALTOU]'} ${item.quantidadeTotal}x ${item.nomePedido.substring(0, 18)}`; 
-            divLista.appendChild(div);
-        });
-
+        let div = document.getElementById('lista-print-relatorio'); div.innerHTML = ''; 
+        document.getElementById('data-relatorio').innerText = new Date().toLocaleString('pt-BR');
+        listaDeSeparacao.forEach(i => { div.innerHTML += `<div style="border-bottom: 1px dashed #000; padding: 4px 0;">${i.status === 'concluido' ? '[OK]' : '[FALTOU]'} ${i.quantidadeTotal}x ${i.nomePedido.substring(0, 18)}</div>`; });
         imprimirNaTermica('print-area-relatorio');
     }
 
-    // ==================== CÂMERA E PICKING (Mantidos) ==================== //
-    function iniciarLeitor(modo) {
-        if(modo === 'busca') { abrirTela('tela-camera-busca'); html5QrCode = new Html5Qrcode("reader-busca"); } 
-        else { html5QrCode = new Html5Qrcode("reader-picking"); }
-
-        html5QrCode.start(
-            { facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 100 } },
-            (codigoLido) => {
-                if(modo === 'busca') { pararLeitor('tela-etiquetas'); buscarProdutoPorCamera(codigoLido); } 
-                else { html5QrCode.pause(); validarLeituraProduto(codigoLido); setTimeout(() => { if(html5QrCode.getState() === 2) html5QrCode.resume(); }, 1500); }
-            }, (err) => {}
-        ).catch(err => { mostrarAlerta("Erro ao abrir a câmera.", "erro"); });
+    // ==================== CÂMERA E SEPARAÇÃO (MANTIDOS) ==================== //
+    function iniciarLeitor(m) {
+        if(m === 'busca') { abrirTela('tela-camera-busca'); html5QrCode = new Html5Qrcode("reader-busca"); } else { html5QrCode = new Html5Qrcode("reader-picking"); }
+        html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 100 } }, (cod) => {
+            if(m === 'busca') { pararLeitor('tela-etiquetas'); buscarProdutoPorCamera(cod); } 
+            else { html5QrCode.pause(); validarLeituraProduto(cod); setTimeout(() => { if(html5QrCode.getState() === 2) html5QrCode.resume(); }, 1500); }
+        }, (err) => {}).catch(e => { mostrarAlerta("Erro na câmera", "erro"); });
     }
+    function pararLeitor(t = null) { if (html5QrCode) { try { html5QrCode.stop(); } catch(e){} } if(t) abrirTela(t); }
 
-    function pararLeitor(telaRetorno = null) {
-        if (html5QrCode) { try { html5QrCode.stop(); } catch(e){} }
-        if(telaRetorno) abrirTela(telaRetorno);
-    }
-
-    function buscarProdutoPorCamera(codigoLido) {
-        let eanLimpo = String(codigoLido).replace(/\D/g, "").replace(/^0+/, "");
-        let skuLido = String(codigoLido).trim().toUpperCase();
-
-        const itemEncontrado = bancoDeDados.map((p, index) => ({ produto: p, originalIndex: index }))
-            .find(item => {
-                let p = item.produto;
-                let eanDb = String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "");
-                let skuDb = String(p.codigo || p["Código"] || "").trim().toUpperCase();
-                return (eanDb === eanLimpo && eanLimpo !== "") || (skuDb === skuLido && skuLido !== "");
-            });
-
-        if (itemEncontrado) abrirCardProduto(itemEncontrado.produto, itemEncontrado.originalIndex);
-        else mostrarAlerta("Produto não encontrado! Lido: " + codigoLido, "erro", 4000);
+    function buscarProdutoPorCamera(cod) {
+        let el = String(cod).replace(/\D/g, "").replace(/^0+/, ""); let sl = String(cod).trim().toUpperCase();
+        const ie = bancoDeDados.map((p, i) => ({ p, i })).find(i => { let ed = String(i.p.gtin || i.p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, ""); let sd = String(i.p.codigo || i.p["Código"] || "").trim().toUpperCase(); return (ed === el && el !== "") || (sd === sl && sl !== ""); });
+        if (ie) abrirCardProduto(ie.p, ie.i); else mostrarAlerta("Não encontrado!", "erro");
     }
 
     function processarPedidoEPuxarFoco() {
-        const texto = document.getElementById('texto-pedido').value;
-        const linhas = texto.split('\n');
-        const regex = /^(\d+)[xX]\s+(.*)/; 
         listaDeSeparacao = [];
-
-        linhas.forEach(linha => {
-            const match = linha.trim().match(regex);
-            if (match) {
-                let quantidade = parseInt(match[1]);
-                let nomeOriginal = match[2].trim();
-                let nomeLimpoBusca = nomeOriginal.replace(/\(Oferta\)/gi, '').trim().toLowerCase();
-                let palavrasChave = nomeLimpoBusca.split(' ');
-                
-                let melhorMatch = bancoDeDados.find(p => {
-                    let nomeDb = String(p.nome || p["Descrição"] || "").toLowerCase();
-                    return nomeDb.includes(palavrasChave[0]) && (palavrasChave[1] ? nomeDb.includes(palavrasChave[1]) : true);
-                });
-
-                if (melhorMatch) {
-                    listaDeSeparacao.push({
-                        quantidadeTotal: quantidade, unidadesLidas: 0, nomePedido: nomeOriginal, produtoDb: melhorMatch,
-                        localizacao: melhorMatch.gondola || melhorMatch.localizacao || melhorMatch["Localização"] || "ZZZ", status: 'pendente'
-                    });
-                }
+        document.getElementById('texto-pedido').value.split('\n').forEach(l => {
+            const m = l.trim().match(/^(\d+)[xX]\s+(.*)/); 
+            if (m) {
+                let pc = m[2].trim().replace(/\(Oferta\)/gi, '').toLowerCase().split(' ');
+                let mt = bancoDeDados.find(p => String(p.nome || p["Descrição"] || "").toLowerCase().includes(pc[0]));
+                if (mt) listaDeSeparacao.push({ quantidadeTotal: parseInt(m[1]), unidadesLidas: 0, nomePedido: m[2].trim(), produtoDb: mt, localizacao: mt.gondola || mt.localizacao || "ZZZ", status: 'pendente' });
             }
         });
-
-        if(listaDeSeparacao.length === 0) { mostrarAlerta("Nenhum produto reconhecido.", "erro"); return; }
-        listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao));
-        
-        indexAtualPicking = 0; abrirTela('tela-separacao-foco'); renderizarItemFoco(); iniciarLeitor('separacao');
+        if(listaDeSeparacao.length === 0) { mostrarAlerta("Nenhum reconhecido.", "erro"); return; }
+        listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); indexAtualPicking = 0; abrirTela('tela-separacao-foco'); renderizarItemFoco(); iniciarLeitor('separacao');
     }
 
     function renderizarItemFoco() {
         if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPicking(); return; }
-        let item = listaDeSeparacao[indexAtualPicking];
-        let sku = item.produtoDb.codigo || item.produtoDb["Código"] || "";
-
-        document.getElementById('foco-nome').innerText = item.nomePedido;
-        document.getElementById('foco-loc').innerText = `📍 Gôndola: ${item.localizacao}`;
-        document.getElementById('foco-contador').innerText = `${item.unidadesLidas} / ${item.quantidadeTotal} Separados`;
-        let img = document.getElementById('foco-img'); img.src = `../site/img/produtos/${sku}.webp`; img.style.display = 'block';
+        let i = listaDeSeparacao[indexAtualPicking]; let s = i.produtoDb.codigo || i.produtoDb["Código"] || "";
+        document.getElementById('foco-nome').innerText = i.nomePedido; document.getElementById('foco-loc').innerText = `📍 Gôndola: ${i.localizacao}`; document.getElementById('foco-contador').innerText = `${i.unidadesLidas} / ${i.quantidadeTotal}`;
+        let img = document.getElementById('foco-img'); img.src = `../site/img/produtos/${s}.webp`; img.style.display = 'block';
     }
 
-    function validarLeituraProduto(codigoLido) {
-        let eanLido = String(codigoLido).replace(/\D/g, "").replace(/^0+/, "");
-        let codLido = String(codigoLido).trim().toUpperCase();
-        let itemAtual = listaDeSeparacao[indexAtualPicking];
-        let eanEsperado = String(itemAtual.produtoDb.gtin || itemAtual.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "");
-        let codEsperado = String(itemAtual.produtoDb.codigo || itemAtual.produtoDb["Código"] || "").trim().toUpperCase();
-
-        if (eanEsperado === eanLido || codEsperado === codLido) {
-            itemAtual.unidadesLidas++;
-            if (itemAtual.unidadesLidas < itemAtual.quantidadeTotal) {
-                mostrarAlerta(`✅ Correto! Faltam ${itemAtual.quantidadeTotal - itemAtual.unidadesLidas}.`, "aviso", 2000); renderizarItemFoco();
-            } else { itemAtual.status = 'concluido'; mostrarAlerta(`🎉 Completo!`, "sucesso", 2000); indexAtualPicking++; renderizarItemFoco(); }
-        } else { mostrarAlerta(`❌ Produto Errado!`, "erro", 3000); }
+    function validarLeituraProduto(cod) {
+        let el = String(cod).replace(/\D/g, "").replace(/^0+/, ""); let cl = String(cod).trim().toUpperCase();
+        let ia = listaDeSeparacao[indexAtualPicking]; let ee = String(ia.produtoDb.gtin || ia.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, ""); let ce = String(ia.produtoDb.codigo || ia.produtoDb["Código"] || "").trim().toUpperCase();
+        if (ee === el || ce === cl) {
+            ia.unidadesLidas++; if (ia.unidadesLidas < ia.quantidadeTotal) { mostrarAlerta(`Correto! Faltam ${ia.quantidadeTotal - ia.unidadesLidas}.`, "aviso"); renderizarItemFoco(); } 
+            else { ia.status = 'concluido'; mostrarAlerta(`Completo!`, "sucesso"); indexAtualPicking++; renderizarItemFoco(); }
+        } else { mostrarAlerta(`Errado!`, "erro"); }
     }
 
-    function pularItemAtual() { if(confirm("Deseja pular?")) { listaDeSeparacao[indexAtualPicking].status = 'pulado'; indexAtualPicking++; renderizarItemFoco(); } }
+    function pularItemAtual() { if(confirm("Pular?")) { listaDeSeparacao[indexAtualPicking].status = 'pulado'; indexAtualPicking++; renderizarItemFoco(); } }
     function cancelarPicking() { if(confirm("Cancelar?")) { pararLeitor(); abrirTela('tela-inicial'); } }
     function finalizarPicking() { pararLeitor(); abrirTela('tela-conclusao'); }
 </script>
