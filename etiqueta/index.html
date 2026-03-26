@@ -222,23 +222,25 @@
 
 
     // ============================================================================== //
-    // IMPRESSÃO PROFISSIONAL RAWBT (IFRAME RECICLÁVEL + ESPAÇO DE CORTE)
+    // IMPRESSÃO PROFISSIONAL RAWBT (IFRAME LIMPO + PREVENÇÃO DE QUEDA DE MEMÓRIA)
     // ============================================================================== //
 
     function imprimirPelaPaginaFantasma(htmlConteudo) {
-        // Verifica se o iframe já existe. Se não, cria apenas 1 vez e recicla.
-        let iframe = document.getElementById('frame-impressao');
-        
-        if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'frame-impressao';
-            iframe.style.position = 'absolute';
-            iframe.style.width = '0px';
-            iframe.style.height = '0px';
-            iframe.style.border = 'none';
-            iframe.style.left = '-9999px'; // Totalmente invisível ao usuário, mas visível ao sistema
-            document.body.appendChild(iframe);
+        // 1. Removemos COMPLETAMENTE a página fantasma anterior da memória
+        let oldIframe = document.getElementById('frame-impressao');
+        if (oldIframe) { 
+            oldIframe.remove(); 
         }
+
+        // 2. Criamos uma página totalmente fresca e limpa
+        let iframe = document.createElement('iframe');
+        iframe.id = 'frame-impressao';
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0px';
+        iframe.style.height = '0px';
+        iframe.style.border = 'none';
+        iframe.style.left = '-9999px'; 
+        document.body.appendChild(iframe);
 
         let htmlCompleto = `
         <!DOCTYPE html>
@@ -249,7 +251,7 @@
                 @page { margin: 0; size: 58mm auto; }
                 body { 
                     margin: 0; padding: 0; 
-                    width: 48mm; /* Área de tinta exata da impressora 58mm */
+                    width: 48mm; 
                     font-family: Arial, sans-serif; 
                     color: #000; 
                     background: #fff;
@@ -257,19 +259,18 @@
                 .etiqueta {
                     width: 48mm;
                     padding: 2mm 0;
-                    padding-bottom: 15mm; /* ESPAÇO EXTRA: Faz a impressora rolar a bobina no final! */
+                    padding-bottom: 15mm; /* Mantido o avanço da bobina no final! */
                     box-sizing: border-box;
                     text-align: center;
                 }
                 
-                /* Configuração da Foto (Contraste para térmica) */
+                /* CORREÇÃO: Filtro removido para não travar a memória do celular */
                 .foto-print {
                     width: 100%;
                     max-height: 45mm;
                     object-fit: contain;
                     margin-bottom: 8px;
                     display: block;
-                    filter: grayscale(100%) contrast(120%);
                 }
 
                 .titulo { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
@@ -278,7 +279,6 @@
                 .linha { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0; margin: 0;}
                 .linha span.valor { font-weight: normal; }
                 
-                /* Estilos do Relatório */
                 .rel-titulo { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center; }
                 .rel-item { border-bottom: 1px dashed #000; padding: 4px 0; font-size: 14px; font-weight: bold; text-align: left;}
             </style>
@@ -289,17 +289,18 @@
         </html>
         `;
 
-        // Escreve a etiqueta por cima da anterior
+        // Escreve o conteúdo na página nova
         let doc = iframe.contentWindow || iframe.contentDocument.document || iframe.contentDocument;
         doc.document.open();
         doc.document.write(htmlCompleto);
         doc.document.close();
 
-        // 800ms garante que a imagem carregue e a conexão do RawBT não atropele a fila
+        // 3. Aumentamos o tempo de respiro para 1 segundo cheio (1000ms).
+        // Isso dá tempo de sobra para a foto carregar antes do RawBT puxar a impressão.
         setTimeout(() => {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
-        }, 800);
+        }, 1000);
     }
 
     function imprimirEtiquetaGondola() {
