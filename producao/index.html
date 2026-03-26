@@ -243,15 +243,17 @@
     </div>
     <script>
         let availableCategories = []; 
-        let pendingOrders = []; // Fila de Pedidos agora será sincronizada!
+        let pendingOrders = [];
         const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
-        const ORDERS_LOCAL_KEY = 'sucedoan_orders_v1'; // Novo fallback local para pedidos
+        const ORDERS_LOCAL_KEY = 'sucedoan_orders_v1';
         
-        // Removido o "+ 1". Agora vai de '00' até '19'.
         const GONDOLAS = Array.from({length: 20}, (_, i) => String(i).padStart(2, '0'));
         
-        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
+        // As prateleiras agora gerarão automaticamente A1, A2, B1, B2... até M2
+        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M']
+                            .flatMap(letra => [`${letra}1`, `${letra}2`]);
+        
         const SEM_LOCAL = "SEM LOCAL";
 </script>
 
