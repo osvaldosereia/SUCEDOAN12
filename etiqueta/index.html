@@ -71,13 +71,15 @@
             color: #555;
         }
         
-        .form-group input, .form-group textarea { 
+        /* Modificado: Adicionado o elemento 'select' nas regras de estilo */
+        .form-group input, .form-group textarea, .form-group select { 
             width: 100%; 
             padding: 15px; 
             font-size: 16px; 
             border: 2px solid #ccc; 
             border-radius: 8px; 
             box-sizing: border-box; 
+            background-color: #fff; /* Fundo branco para garantir legibilidade nos seletores */
         }
         
         .resultado-item { 
@@ -255,11 +257,11 @@
             <div class="linha-dupla">
                 <div class="form-group">
                     <label>Gôndola</label>
-                    <input type="text" id="inp-gondola" placeholder="Ex: Corredor 3">
+                    <select id="inp-gondola"></select>
                 </div>
                 <div class="form-group">
                     <label>Prateleira</label>
-                    <input type="text" id="inp-prateleira" placeholder="Ex: Baixa">
+                    <select id="inp-prateleira"></select>
                 </div>
             </div>
             
@@ -336,6 +338,10 @@
 
     // ==================== INICIALIZAÇÃO ====================
     window.onload = async function() {
+        
+        // Nova função que preenche as opções de Gôndola e Prateleira automaticamente
+        preencherSeletoresLocalizacao();
+
         try { 
             const resposta = await fetch('../site/bancodedados.json'); 
             bancoDeDados = await resposta.json(); 
@@ -348,6 +354,30 @@
             document.getElementById('area-upload').classList.remove('hidden'); 
         }
     };
+
+    // Função educativa: Automatiza a criação das opções <option> no HTML. 
+    function preencherSeletoresLocalizacao() {
+        let selGondola = document.getElementById('inp-gondola');
+        let selPrateleira = document.getElementById('inp-prateleira');
+        
+        // Colocamos uma opção vazia padrão no topo
+        selGondola.innerHTML = '<option value="">Sem Gôndola</option>';
+        selPrateleira.innerHTML = '<option value="">Sem Prateleira</option>';
+
+        // 1. Cria as Gôndolas de "00" até "20"
+        for(let i = 0; i <= 20; i++) {
+            // padStart garante que o 1 vire "01", o 2 vire "02", etc.
+            let numeroGondola = i.toString().padStart(2, '0'); 
+            selGondola.innerHTML += `<option value="${numeroGondola}">${numeroGondola}</option>`;
+        }
+
+        // 2. Cria as Prateleiras A1, A2, B1, B2 ... G1, G2
+        let letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+        letras.forEach(letra => {
+            selPrateleira.innerHTML += `<option value="${letra}1">${letra}1</option>`;
+            selPrateleira.innerHTML += `<option value="${letra}2">${letra}2</option>`;
+        });
+    }
 
     function aplicarModificacoesLocaisNoBanco() {
         bancoDeDados.forEach(produto => {
@@ -468,6 +498,27 @@
         });
     }
 
+    // Função educativa: Função de apoio para definir o valor do Seletor.
+    // Se o valor do banco de dados não estiver na nossa lista, nós criamos ele temporariamente para ser visualizado.
+    function definirValorSeletorSeguro(elementoSelect, valor) {
+        if (!valor) {
+            elementoSelect.value = "";
+            return;
+        }
+        
+        // Verifica se a opção já existe lendo todas as 'options' dentro do select
+        let opcaoExiste = Array.from(elementoSelect.options).some(opt => opt.value === valor);
+        
+        if (!opcaoExiste) {
+            // Se não existe, cria uma nova <option> com o valor desconhecido
+            let novaOpcao = new Option(valor + " (No Banco)", valor);
+            elementoSelect.add(novaOpcao);
+        }
+        
+        // Depois de garantir que a opção existe, selecionamos ela.
+        elementoSelect.value = valor;
+    }
+
     function abrirCardProduto(produto, indexDaBusca) {
         produtoSendoEditadoIndex = indexDaBusca;
         const sku = produto.codigo || produto["Código"] || "";
@@ -478,9 +529,31 @@
         document.getElementById('inp-estoque').value = produto.estoque || produto["Estoque"] || "";
         document.getElementById('inp-validade').value = produto.validade || produto["Data Validade"] || "";
         document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
-        document.getElementById('inp-gondola').value = produto.gondola || produto["Gôndola"] || produto.localizacao || produto["Localização"] || "";
-        document.getElementById('inp-prateleira').value = produto.prateleira || produto["Prateleira"] || "";
         
+        // --- LÓGICA DE SEPARAÇÃO DA LOCALIZAÇÃO ---
+        let locCompleta = produto.localizacao || produto["Localização"] || ""; // Ex: "04-E1"
+        let valGondola = produto.gondola || produto["Gôndola"] || "";
+        let valPrateleira = produto.prateleira || produto["Prateleira"] || "";
+
+        // Se o banco não mandou gôndola e prateleira separadas, mas mandou a 'localizacao' junta...
+        if (locCompleta && !valGondola && !valPrateleira) {
+            let partes = locCompleta.split('-'); // Separa usando o traço
+            if (partes.length >= 2) {
+                valGondola = partes[0].trim(); // Ex: "04"
+                valPrateleira = partes[1].trim(); // Ex: "E1"
+            } else {
+                // Se não tiver traço, jogamos tudo na gôndola para não perder o dado
+                valGondola = locCompleta.trim(); 
+            }
+        }
+
+        // Aplica os valores nos menus suspensos (Selects)
+        let selGon = document.getElementById('inp-gondola');
+        let selPra = document.getElementById('inp-prateleira');
+        
+        definirValorSeletorSeguro(selGon, valGondola);
+        definirValorSeletorSeguro(selPra, valPrateleira);
+
         const img = document.getElementById('img-foto'); 
         img.style.display = 'block'; 
         img.src = `../site/img/produtos/${sku}.webp`; 
@@ -513,11 +586,24 @@
         if("Data Validade" in produto) atualizacoes["Data Validade"] = document.getElementById('inp-validade').value; else atualizacoes.validade = document.getElementById('inp-validade').value;
         if("Preço" in produto) atualizacoes["Preço"] = document.getElementById('inp-venda').value; else atualizacoes.preco = document.getElementById('inp-venda').value;
         
-        // Gôndola e prateleira
-        atualizacoes["gondola"] = document.getElementById('inp-gondola').value;
-        atualizacoes["Gôndola"] = document.getElementById('inp-gondola').value;
-        atualizacoes["prateleira"] = document.getElementById('inp-prateleira').value;
-        atualizacoes["Prateleira"] = document.getElementById('inp-prateleira').value;
+        // Pegamos os valores dos seletores 
+        let vGon = document.getElementById('inp-gondola').value;
+        let vPra = document.getElementById('inp-prateleira').value;
+
+        // Salvamos separado
+        atualizacoes["gondola"] = vGon;
+        atualizacoes["Gôndola"] = vGon;
+        atualizacoes["prateleira"] = vPra;
+        atualizacoes["Prateleira"] = vPra;
+
+        // Montamos e salvamos a localização junta para manter o banco original alinhado (ex: "04-E1")
+        let localizacaoUnida = "";
+        if (vGon && vPra) localizacaoUnida = `${vGon}-${vPra}`;
+        else if (vGon) localizacaoUnida = vGon;
+        else if (vPra) localizacaoUnida = vPra;
+
+        if("Localização" in produto || !("localizacao" in produto)) atualizacoes["Localização"] = localizacaoUnida;
+        atualizacoes["localizacao"] = localizacaoUnida;
 
         // Injeta as atualizações no banco de dados ativo (RAM)
         Object.assign(produto, atualizacoes);
