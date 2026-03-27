@@ -333,6 +333,68 @@ button {
     }
 }
 
+    /* =========================================
+   NOVO VISUAL DO HEADER MOBILE (SHRINKING HEADER)
+   ========================================= */
+
+/* Área da logo grande e banners (início do site) */
+.mobile-hero-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 15px 5px;
+    background: #fff;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1); /* Transição suave */
+    overflow: hidden;
+    transform-origin: top;
+    max-height: 250px; 
+}
+
+.mobile-hero-area .big-logo {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 2px solid var(--c-bd);
+    object-fit: cover;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+/* Oculta a logo pequena por padrão no mobile para dar espaço */
+.mob-layer-2 .small-logo {
+    display: none;
+}
+
+/* --- ESTADO COMPACTO (Ativado via JS ao Rolar a Página) --- */
+#header-wrapper.compact-mode .mobile-hero-area {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+#header-wrapper.compact-mode .mob-layer-2 .small-logo {
+    display: block; /* A logo pequena surge! */
+    animation: fadeInLogo 0.3s forwards;
+}
+
+@keyframes fadeInLogo {
+    from { opacity: 0; transform: scale(0.5); width: 0; margin-right: 0; }
+    to { opacity: 1; transform: scale(1); width: 44px; margin-right: 12px; }
+}
+
+/* --- CONTROLE DE VISUALIZAÇÃO MOBILE VS DESKTOP --- */
+@media(max-width: 799px) {
+    .desk-only-banners { display: none !important; }
+}
+
+@media(min-width: 800px) {
+    .mobile-hero-area { display: none !important; } /* Esconde o Hero no PC */
+    .mobile-only-banners { display: none !important; }
+    .mob-layer-2 .small-logo { display: block !important; margin-right: 0; }
+}
+
 /* SECTION TITLE CLEAN E MINIMALISTA */
 .section-title { 
     width: 100%; 
@@ -1319,6 +1381,11 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 <body>
     
 <div id="header-wrapper">
+    <div class="mobile-hero-area">
+        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="big-logo" alt="Logo Dona Antônia" onclick="goToHome()">
+        <div class="layout-limit info-banners info-banners-render mobile-only-banners"></div>
+    </div>
+
     <div class="layout-limit desk-header-flex">
         <div class="mob-layer-1">
             <div id="install-banner">
@@ -1338,7 +1405,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             </div>
         </div>
         <div class="mob-layer-2">
-            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo" alt="Logo" onclick="goToHome()">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo small-logo" alt="Logo" onclick="goToHome()">
             <div class="mobile-category-dropdown">
                 <button class="btn-cat-dropdown" onclick="document.getElementById('cat-dropdown-list').classList.toggle('open')">
                     <span id="btn-cat-dropdown-text">Todas as Categorias</span>
@@ -1359,7 +1426,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
 <main class="main-stage" id="scroll-stage">
     
-    <div id="info-banners-container" class="layout-limit info-banners"></div>
+    <div class="layout-limit info-banners info-banners-render desk-only-banners"></div>
     
 
     <div id="section-busca" class="page-section" style="display:none;">
@@ -2086,15 +2153,19 @@ window.commitExpander = function() {
 
 const versaoCache = Math.floor(Date.now() / 86400000); 
 
+// Substitui a renderBanners antiga para preencher todas as áreas que têm a classe 'info-banners-render'
 function renderBanners() {
-    const container = document.getElementById('info-banners-container');
-    if (!container || !STATE.banners || STATE.banners.length === 0) return;
+    // Busca todos os containers de banner (mobile e desktop)
+    const containers = document.querySelectorAll('.info-banners-render');
+    if (!containers.length || !STATE.banners || STATE.banners.length === 0) return;
     
     let html = '';
     STATE.banners.forEach(b => {
         html += `<div class="info-banner-item" style="background-color: ${b.corFundo}; color: ${b.corTexto};">${b.texto}</div>`;
     });
-    container.innerHTML = html;
+    
+    // Injeta os banners em cada container encontrado
+    containers.forEach(c => c.innerHTML = html);
 }
 
 window.applyCoupon = function() {
@@ -3505,7 +3576,34 @@ function checkPromoBanner() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(init, 50
+
+               document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 50);
+
+    // --- NOVO: Lógica do Shrinking Header (Barra compacta ao rolar) ---
+    const scrollStage = document.getElementById('scroll-stage');
+    const headerWrapper = document.getElementById('header-wrapper');
+
+    scrollStage.addEventListener('scroll', function() {
+        // Aplica o efeito apenas no mobile
+        if (window.innerWidth < 800) {
+            // Se o usuário rolou mais de 40 pixels para baixo
+            if (this.scrollTop > 40) {
+                if (!headerWrapper.classList.contains('compact-mode')) {
+                    headerWrapper.classList.add('compact-mode'); // Esconde logo grande
+                }
+            } else {
+                // Se o usuário voltou pro topo
+                if (headerWrapper.classList.contains('compact-mode')) {
+                    headerWrapper.classList.remove('compact-mode'); // Mostra logo grande
+                }
+            }
+        }
+    });
+    // -----------------------------------------------------------------
+
+    // ...resto do seu código do DOMContentLoaded (isStandalone, etc)
 
     let isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     let isWebView = /(FBAN|FBAV|Instagram)/i.test(navigator.userAgent);
