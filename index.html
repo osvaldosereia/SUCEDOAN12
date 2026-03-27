@@ -2516,10 +2516,10 @@ function buildTabsAndSections() {
                 let contOfertas = 0;
 
                 for (let p of listEmbaralhada) {
-                    if (contOfertas >= 4) break; 
+                    if (contOfertas >= 6) break; 
                     if (!p.ofertaAplicada && !p.isDestaque) {
                         p.ofertaAplicada = true;
-                        let descOferta = 0.04 + (rng() * 0.02); 
+                        let descOferta = 0.08 + (rng() * 0.04); 
                         if (!p.oldPrice || p.oldPrice <= p.price) {
                             p.oldPrice = p.price; 
                         }
