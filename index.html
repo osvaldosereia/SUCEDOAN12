@@ -347,7 +347,7 @@ button {
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
     transform-origin: top;
-    max-height: 250px; 
+    max-height: 400px; /* Aumentamos de 250 para 400 para caber os banners confortavelmente */
 }
 
 .mobile-hero-area .big-logo {
@@ -2163,6 +2163,10 @@ function renderBanners() {
     });
     
     containers.forEach(c => c.innerHTML = html);
+
+    // NOVO: Aguarda um instante para o navegador desenhar os banners na tela 
+    // e recalcula o espaço exato que o cabeçalho está ocupando!
+    setTimeout(adjustHeaderSpace, 150);
 }
 
 window.applyCoupon = function() {
