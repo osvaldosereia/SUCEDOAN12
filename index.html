@@ -2232,7 +2232,7 @@ async function init() {
             STATE.destaques = produtosComValidade.slice(0, 10);
             STATE.destaques.forEach(p => {
                 if (!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price; 
-                p.price = p.oldPrice * 0.90; 
+                p.price = p.oldPrice * 0.80; 
                 p.isDestaque = true; 
             });
         }
