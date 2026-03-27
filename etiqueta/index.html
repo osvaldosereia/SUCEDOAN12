@@ -122,7 +122,7 @@
         .alerta-sucesso { background-color: var(--primary); }
         .alerta-aviso { background-color: var(--warning); color: #000; }
 
-        /* --- MODO FOCO DE SEPARAÇÃO (Layout Profissional) --- */
+        /* --- MODO FOCO DE SEPARAÇÃO --- */
         .tela-foco { 
             height: 100vh; 
             display: flex; 
@@ -133,14 +133,13 @@
             background: #222; 
         }
         
-        /* Câmera restaurada para o padrão ideal de leitura (Livre de achatamentos) */
         .camera-box { 
             width: 100%;
             border-radius: 8px; 
             overflow: hidden; 
             background: #000; 
             border: 2px solid #555; 
-            flex: none; /* Não estica nem encolhe desproporcionalmente */
+            flex: none; 
         }
         
         .info-box { 
@@ -154,7 +153,7 @@
             align-items: center; 
             justify-content: space-evenly; 
             text-align: center; 
-            overflow-y: auto; /* Permite leve rolagem caso a tela do celular seja muito pequena */
+            overflow-y: auto; 
         }
         
         .info-box img { 
@@ -204,7 +203,8 @@
             <button style="padding: 25px; font-size: 20px;" onclick="abrirTela('tela-etiquetas')">🏷️ Gestão de Etiquetas</button>
             <button class="btn-secondary" style="padding: 25px; font-size: 20px;" onclick="abrirTelaListaPedidos()">🛒 Iniciar Separação</button>
             <hr>
-            <button class="btn-warning" onclick="exportarBancoCSV()">💾 Exportar Todo o Banco (CSV)</button>
+            <button class="btn-warning" onclick="exportarBancoCSV()">💾 Exportar Todo o Banco (CSV Completo)</button>
+            <button class="btn-danger" style="margin-top: 10px; opacity: 0.8;" onclick="limparMemoriaLocal()">⚠️ Limpar Memória do Celular</button>
         </div>
     </div>
 
@@ -264,13 +264,12 @@
             </div>
             
             <div class="form-group">
-                <label>Preço</label>
+                <label>Preço Venda (R$)</label>
                 <input type="text" id="inp-venda">
             </div>
             
             <button class="btn-print" onclick="imprimirEtiquetaGondola()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Etiqueta</button>
             <button class="btn-primary" onclick="salvarProdutoLocal()">✅ Salvar Alterações Localmente</button>
-            <button class="btn-secondary" onclick="exportarProdutoCSV()">📄 Exportar Apenas Este</button>
         </div>
     </div>
 
@@ -291,18 +290,18 @@
 
     <div class="tela-foco hidden" id="tela-separacao-foco">
         <div class="camera-box">
-            <div id="reader-picking" style="width: 100%;"></div>
+            <div id="reader-picking" style="width: 100%; height: 100%;"></div>
         </div>
         <div class="info-box">
             <span class="badge-loc" id="foco-loc">📍 Gôndola: A1</span>
             
             <img id="foco-img" src="" alt="Produto" onerror="this.style.display='none'">
             
-            <h3 id="foco-nome" style="margin: 5px 0; font-size: 16px;">Nome do Produto</h3>
+            <h3 id="foco-nome" style="margin: 5px 0;">Nome do Produto</h3>
             
             <div class="contador-unidades" id="foco-contador">0 / 4 Separados</div>
             
-            <div style="display:flex; gap:10px; width:100%; margin-top: 5px;">
+            <div style="display:flex; gap:10px; width:100%;">
                 <button class="btn-danger" onclick="cancelarPicking()">Cancelar Separação</button>
             </div>
         </div>
@@ -312,7 +311,7 @@
         <h2>🎉 Separação Concluída!</h2>
         <p style="text-align: center;">Todos os produtos foram bipados.</p>
         
-        <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Pedido (48mm)</button>
+        <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Pedido</button>
         <button class="btn-secondary" onclick="abrirTela('tela-inicial')">✅ Concluir e Voltar</button>
     </div>
 </div>
@@ -323,6 +322,7 @@
     let scannerAtual = null; 
     let aguardandoProximaLeitura = false; 
     
+    // Variáveis da Separação
     let pedidosFila = [];
     let listaDeSeparacao = []; 
     let indexAtualPicking = 0; 
@@ -330,25 +330,42 @@
     let pedidoAtual = null; 
 
     let audioCtx = null;
+    
+    // Dicionário para salvar alterações no celular para não perder as atualizações
+    let modificacoesLocais = JSON.parse(localStorage.getItem('estoque_modificacoes') || '{}');
 
     // ==================== INICIALIZAÇÃO ====================
     window.onload = async function() {
         try { 
             const resposta = await fetch('../site/bancodedados.json'); 
             bancoDeDados = await resposta.json(); 
+            
+            // Assim que carrega o JSON original, aplica as modificações salvas no celular
+            aplicarModificacoesLocaisNoBanco();
+            
             liberarSistema(); 
         } catch (erro) { 
             document.getElementById('area-upload').classList.remove('hidden'); 
         }
     };
 
+    function aplicarModificacoesLocaisNoBanco() {
+        bancoDeDados.forEach(produto => {
+            let sku = String(produto.codigo || produto["Código"] || "");
+            if (sku && modificacoesLocais[sku]) {
+                // Mescla as informações salvadas por cima das originais, sem apagar o resto
+                Object.assign(produto, modificacoesLocais[sku]);
+            }
+        });
+    }
+
     function liberarSistema() {
-        document.getElementById('status-db').innerText = "✅ Banco Conectado";
+        document.getElementById('status-db').innerText = `✅ Banco Conectado (${bancoDeDados.length} itens)`;
         document.getElementById('status-db').style.color = "green";
         document.getElementById('botoes-menu').classList.remove('hidden');
     }
 
-    // ==================== ÁUDIO E VOZ (VOICE PICKING) ====================
+    // ==================== ÁUDIO E VOZ ====================
     function inicializarAudio() {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -377,9 +394,7 @@
                 oscilador.start();
                 oscilador.stop(audioCtx.currentTime + 0.4); 
             }
-        } catch(e) {
-            console.log("Áudio bloqueado.");
-        }
+        } catch(e) { }
     }
 
     function falarTexto(texto) {
@@ -480,60 +495,88 @@
         document.getElementById('area-busca-etiqueta').classList.remove('hidden'); 
     }
 
+    // ==================== ARMAZENAMENTO E EXPORTAÇÃO DINÂMICA (CSV COMPLETO) ====================
     function salvarProdutoLocal() {
         if (produtoSendoEditadoIndex === -1) return; 
-        let p = bancoDeDados[produtoSendoEditadoIndex];
         
-        p.codigo = document.getElementById('inp-codigo').value; 
-        p.nome = document.getElementById('inp-nome').value; 
-        p.gtin = document.getElementById('inp-ean').value;
-        p.estoque = document.getElementById('inp-estoque').value; 
-        p.validade = document.getElementById('inp-validade').value; 
-        p.preco = document.getElementById('inp-venda').value;
-        p.gondola = document.getElementById('inp-gondola').value; 
-        p.prateleira = document.getElementById('inp-prateleira').value;
+        let produto = bancoDeDados[produtoSendoEditadoIndex];
+        let sku = document.getElementById('inp-codigo').value;
         
-        mostrarAlerta("✅ Alterações salvas na memória!", "sucesso");
+        // Cria um objeto apenas com as chaves que mostramos na tela
+        let atualizacoes = {};
+        
+        // Salvamos tanto nas chaves amigáveis quanto nas chaves do ERP caso existam
+        if("Código" in produto) atualizacoes["Código"] = sku; else atualizacoes.codigo = sku;
+        if("Descrição" in produto) atualizacoes["Descrição"] = document.getElementById('inp-nome').value; else atualizacoes.nome = document.getElementById('inp-nome').value;
+        if("GTIN/EAN" in produto) atualizacoes["GTIN/EAN"] = document.getElementById('inp-ean').value; else atualizacoes.gtin = document.getElementById('inp-ean').value;
+        if("Estoque" in produto) atualizacoes["Estoque"] = document.getElementById('inp-estoque').value; else atualizacoes.estoque = document.getElementById('inp-estoque').value;
+        if("Data Validade" in produto) atualizacoes["Data Validade"] = document.getElementById('inp-validade').value; else atualizacoes.validade = document.getElementById('inp-validade').value;
+        if("Preço" in produto) atualizacoes["Preço"] = document.getElementById('inp-venda').value; else atualizacoes.preco = document.getElementById('inp-venda').value;
+        
+        // Gôndola e prateleira
+        atualizacoes["gondola"] = document.getElementById('inp-gondola').value;
+        atualizacoes["Gôndola"] = document.getElementById('inp-gondola').value;
+        atualizacoes["prateleira"] = document.getElementById('inp-prateleira').value;
+        atualizacoes["Prateleira"] = document.getElementById('inp-prateleira').value;
+
+        // Injeta as atualizações no banco de dados ativo (RAM)
+        Object.assign(produto, atualizacoes);
+        
+        // Salva no celular para não perder ao recarregar a página
+        modificacoesLocais[sku] = atualizacoes;
+        localStorage.setItem('estoque_modificacoes', JSON.stringify(modificacoesLocais));
+        
+        mostrarAlerta("✅ Alterações salvas na memória do celular!", "sucesso");
     }
 
-    function converterParaCSV(arrayDeProdutos) {
-        if (arrayDeProdutos.length === 0) return '';
-        let csv = ['SKU', 'EAN', 'Nome', 'Estoque', 'Validade', 'Gondola', 'Prateleira', 'Preco'].join(';') + '\n';
-        
-        arrayDeProdutos.forEach(p => { 
-            csv += [
-                p.codigo || p["Código"] || "", 
-                p.gtin || p["GTIN/EAN"] || "", 
-                String(p.nome || p["Descrição"] || "").replace(/;/g, ","), 
-                p.estoque || p["Estoque"] || "", 
-                p.validade || p["Data Validade"] || "", 
-                p.gondola || p["Gôndola"] || p.localizacao || "", 
-                p.prateleira || p["Prateleira"] || "", 
-                p.preco || p["Preço"] || ""
-            ].join(';') + '\n'; 
+    function exportarBancoCSV() { 
+        if (bancoDeDados.length === 0) {
+            mostrarAlerta("Banco de dados vazio.", "erro");
+            return;
+        }
+
+        // 1. Descobrir dinamicamente todas as colunas que existem no JSON original (para não omitir nenhuma)
+        let colunasSet = new Set();
+        bancoDeDados.forEach(obj => {
+            Object.keys(obj).forEach(key => colunasSet.add(key));
         });
-        return "\uFEFF" + csv;
-    }
-
-    function fazerDownloadCSV(conteudoTexto, nomeArquivo) {
+        
+        let colunas = Array.from(colunasSet); // Lista com dezenas de colunas
+        
+        // 2. Montar o cabeçalho do CSV
+        let csv = colunas.join(';') + '\n';
+        
+        // 3. Preencher as linhas usando todas as colunas
+        bancoDeDados.forEach(obj => { 
+            let linha = colunas.map(coluna => {
+                let valor = obj[coluna];
+                // Se for nulo ou undefined, vira vazio
+                if (valor === null || valor === undefined) return "";
+                // Remove ponto-e-virgula e quebras de linha para não corromper o arquivo Excel
+                return String(valor).replace(/;/g, ",").replace(/\n/g, " ").replace(/\r/g, "");
+            });
+            csv += linha.join(';') + '\n'; 
+        });
+        
+        // 4. Download
+        const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); 
-        link.setAttribute("href", URL.createObjectURL(new Blob([conteudoTexto], { type: 'text/csv;charset=utf-8;' })));
-        link.setAttribute("download", nomeArquivo); 
+        link.setAttribute("href", URL.createObjectURL(blob));
+        link.setAttribute("download", `banco_atualizado_${new Date().getTime()}.csv`); 
         document.body.appendChild(link); 
         link.click(); 
         document.body.removeChild(link);
     }
-
-    function exportarProdutoCSV() { 
-        let produtoSelecionado = bancoDeDados[produtoSendoEditadoIndex]; 
-        fazerDownloadCSV(converterParaCSV([produtoSelecionado]), `produto_${produtoSelecionado.codigo || produtoSelecionado["Código"]}.csv`); 
-    }
     
-    function exportarBancoCSV() { 
-        fazerDownloadCSV(converterParaCSV(bancoDeDados), `banco_atualizado_${new Date().getTime()}.csv`); 
+    function limparMemoriaLocal() {
+        if(confirm("ATENÇÃO: Isso apagará todas as edições de Gôndola/Prateleira que você fez neste celular que ainda não foram exportadas. Continuar?")) {
+            localStorage.removeItem('estoque_modificacoes');
+            modificacoesLocais = {};
+            mostrarAlerta("Memória limpa com sucesso.", "sucesso");
+        }
     }
 
-    // ==================== MOTOR DE IMPRESSÃO (RAWBT) ====================
+    // ==================== MOTOR DE IMPRESSÃO TÉRMICA (RAWBT) ====================
     function imprimirPelaPaginaFantasma(htmlConteudo) {
         let iframeAntigo = document.getElementById('frame-impressao');
         if (iframeAntigo) { iframeAntigo.remove(); }
@@ -557,7 +600,7 @@
                 body { margin: 0; padding: 0; width: 48mm; font-family: Arial, sans-serif; color: #000; background: #fff; }
                 
                 .etiqueta { width: 48mm; padding: 2mm 0; padding-bottom: 15mm; box-sizing: border-box; text-align: center; }
-                .foto-print { width: 100%; max-height: 45mm; object-fit: contain; margin-bottom: 8px; display: block; filter: grayscale(100%) contrast(120%); }
+                .foto-print { width: 100%; max-height: 45mm; object-fit: contain; margin-bottom: 8px; display: block; }
                 .titulo { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
                 .sku { font-size: 38px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px; }
                 .nome { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; line-height: 1.2; }
@@ -639,7 +682,7 @@
         imprimirPelaPaginaFantasma(cont);
     }
 
-    // ==================== CÂMERA DE LEITURA (PADRÃO PROFISSIONAL E ESTÁVEL) ====================
+    // ==================== CÂMERA DE LEITURA (PADRÃO PROFISSIONAL 1:1) ====================
     function iniciarLeitor(modo) {
         if (scannerAtual) {
             try { 
@@ -659,10 +702,8 @@
         
         scannerAtual = new Html5Qrcode(idElemento); 
         
-        // CONFIGURAÇÃO PROFISSIONAL: 
-        // aspectRatio 1.0 (quadrado) evita distorção de foco na lente nativa.
-        // qrbox: Retângulo central de 250x120 ideal para capturar EANs com precisão horizontal.
-        // fps: 15 para leitura instantânea assim que o código passa na frente.
+        // Padrão Profissional: 1.0 (quadrado perfeito) para o auto-focus da lente não se perder.
+        // fps de 15 aumenta a velocidade de captura em 50%.
         let configCamera = { 
             fps: 15, 
             aspectRatio: 1.0, 
@@ -713,7 +754,7 @@
         else mostrarAlerta("Produto não encontrado! (Lido: " + codigoLido + ")", "erro");
     }
 
-    // ==================== FLUXO DE SEPARAÇÃO (JSON) ====================
+    // ==================== FLUXO DE SEPARAÇÃO ====================
     async function carregarPedidosFila() {
         let container = document.getElementById('area-lista-pedidos');
         container.innerHTML = '<p style="text-align:center; padding: 20px;">⏳ Carregando fila de pedidos...</p>';
@@ -822,10 +863,7 @@
             } else { 
                 itemAtual.status = 'concluido'; 
                 tocarBipe('sucesso');
-                
-                // Lê o nome completo do produto ao invés de apenas as primeiras palavras
                 falarTexto(`${itemAtual.nomePedido} concluído.`);
-                
                 mostrarAlerta(`🎉 Item Completo!`, "sucesso", 1500); 
                 indexAtualPicking++; 
                 renderizarItemFoco(); 
