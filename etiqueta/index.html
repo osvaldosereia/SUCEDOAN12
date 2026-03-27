@@ -62,7 +62,7 @@
         
         .linha-dupla { display: flex; gap: 10px; }
         .linha-dupla .form-group { flex: 1; }
-        .linha-dupla button { margin: 0; } /* Ajuste para botões alinhados */
+        .linha-dupla button { margin: 0; } 
         .hidden { display: none !important; }
 
         #alerta-customizado { 
@@ -89,15 +89,25 @@
             align-items: center; text-align: center; overflow-y: auto; 
         }
         
+        #foco-pedido-info {
+            font-size: 13px; color: #888; font-weight: bold; margin-bottom: 5px;
+        }
+
         .badge-loc { 
             background: var(--dark); color: white; padding: 5px 12px; 
-            border-radius: 12px; font-size: 20px; font-weight: bold; margin-bottom: 5px;
+            border-radius: 12px; font-size: 20px; font-weight: bold; margin-bottom: 10px;
+        }
+
+        /* Imagem do produto em destaque */
+        #foco-img {
+            width: 100%; max-height: 200px; object-fit: contain;
+            border-radius: 8px; margin-bottom: 15px;
         }
         
-        .foco-qtd-texto { font-size: 16px; color: #555; margin-bottom: 2px; }
-        .foco-qtd-texto span { font-size: 20px; font-weight: 900; color: var(--secondary); }
+        .foco-qtd-texto { font-size: 18px; color: #555; margin-bottom: 2px; }
+        .foco-qtd-texto span { font-size: 28px; font-weight: 900; color: var(--secondary); }
         
-        #foco-nome { font-size: 17px; margin: 0 0 10px 0; line-height: 1.2; font-weight: bold; }
+        #foco-nome { font-size: 22px; margin: 0 0 10px 0; line-height: 1.2; font-weight: bold; color: #222;}
         
         /* Sistema de Ticks Profissionais */
         .ticks-container { 
@@ -161,7 +171,10 @@
                 </div>
                 <div class="form-group">
                     <label>EAN (Cód Barras)</label>
-                    <input type="text" id="inp-ean">
+                    <div style="display: flex; gap: 5px;">
+                        <input type="text" id="inp-ean" style="flex: 1;">
+                        <button type="button" class="btn-secondary" style="width: auto; padding: 0 15px; margin: 0;" onclick="iniciarLeitor('ean')">📷</button>
+                    </div>
                 </div>
             </div>
             
@@ -177,7 +190,7 @@
                 </div>
                 <div class="form-group">
                     <label>Validade</label>
-                    <input type="text" id="inp-validade">
+                    <input type="text" id="inp-validade" placeholder="Ex: 10/2025">
                 </div>
             </div>
             
@@ -208,7 +221,7 @@
     </div>
 
     <div class="container hidden" id="tela-camera-busca">
-        <h2>📷 Lendo Código...</h2>
+        <h2 id="titulo-camera-busca">📷 Lendo Código...</h2>
         <div id="reader-busca" style="width: 100%; margin-bottom: 20px;"></div>
         <button class="btn-danger" onclick="pararLeitor('tela-etiquetas')">Cancelar</button>
     </div>
@@ -226,7 +239,10 @@
             <div id="reader-picking" style="width: 100%; height: 100%;"></div>
         </div>
         <div class="info-box">
+            <div id="foco-pedido-info">Pedido: 000 | Entrega: 00/00/00</div>
             <span class="badge-loc" id="foco-loc">📍 Gôndola: A1</span>
+            
+            <img id="foco-img" src="" alt="Produto" onerror="this.style.display='none'">
             
             <div class="foco-qtd-texto" id="foco-qtd-texto"></div>
             <h3 id="foco-nome">Nome do Produto</h3>
@@ -310,7 +326,7 @@
         document.getElementById('botoes-menu').classList.remove('hidden');
     }
 
-    // ==================== MODO FULLSCREEN (TELA CHEIA) ====================
+    // ==================== MODO FULLSCREEN ====================
     function entrarTelaCheia() {
         let elem = document.documentElement;
         if (elem.requestFullscreen) { elem.requestFullscreen().catch(()=>{}); }
@@ -335,17 +351,13 @@
         try {
             const osc = audioCtx.createOscillator();
             const ganho = audioCtx.createGain();
-            osc.connect(ganho);
-            ganho.connect(audioCtx.destination);
-            
+            osc.connect(ganho); ganho.connect(audioCtx.destination);
             if (tipo === 'sucesso') {
                 osc.type = 'sine'; osc.frequency.setValueAtTime(900, audioCtx.currentTime); 
-                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.1); 
+                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.1); 
             } else {
                 osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); 
-                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.4); 
+                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.4); 
             }
         } catch(e) { }
     }
@@ -354,8 +366,7 @@
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel(); 
             let msg = new SpeechSynthesisUtterance(texto);
-            msg.lang = 'pt-BR';
-            msg.rate = 1.2; 
+            msg.lang = 'pt-BR'; msg.rate = 1.2; 
             window.speechSynthesis.speak(msg);
         }
     }
@@ -367,8 +378,7 @@
         else if (tipo === 'aviso') alerta.classList.add('alerta-aviso'); 
         else alerta.classList.add('alerta-sucesso');
         
-        alerta.style.display = 'block'; 
-        setTimeout(() => { alerta.style.display = 'none'; }, tempo);
+        alerta.style.display = 'block'; setTimeout(() => { alerta.style.display = 'none'; }, tempo);
     }
 
     // ==================== CONTROLE DE TELAS ====================
@@ -381,16 +391,13 @@
     }
 
     function abrirTelaListaPedidos() {
-        inicializarAudio(); 
-        abrirTela('tela-separacao-input');
-        carregarPedidosFila();
+        inicializarAudio(); abrirTela('tela-separacao-input'); carregarPedidosFila();
     }
 
     // ==================== GESTÃO DE ETIQUETAS ====================
     function buscarPorNome() {
         let termo = document.getElementById('inp-busca').value.toLowerCase().trim();
-        let lista = document.getElementById('lista-resultados'); 
-        lista.innerHTML = ''; 
+        let lista = document.getElementById('lista-resultados'); lista.innerHTML = ''; 
         if (termo.length < 3) return; 
 
         let encontrados = bancoDeDados.map((p, i) => ({ produto: p, indexOriginal: i })).filter(item => {
@@ -430,6 +437,8 @@
         document.getElementById('inp-codigo').value = sku;
         document.getElementById('inp-nome').value = produto.nome || produto["Descrição"] || "";
         document.getElementById('inp-ean').value = String(produto.gtin || produto["GTIN/EAN"] || "").replace(/[^0-9]/g, "");
+        
+        // A Validade vem pré-formatada do JSON, sem formatações forçadas do código.
         document.getElementById('inp-estoque').value = produto.estoque || produto["Estoque"] || "";
         document.getElementById('inp-validade').value = produto.validade || produto["Data Validade"] || "";
         document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
@@ -495,7 +504,6 @@
     }
 
     function exportarBancoCSV() { 
-        // Lógica mantida sem alterações (exportação de CSV dinâmico)
         if (bancoDeDados.length === 0) { mostrarAlerta("Banco de dados vazio.", "erro"); return; }
         let colunasSet = new Set();
         bancoDeDados.forEach(obj => { Object.keys(obj).forEach(key => colunasSet.add(key)); });
@@ -517,117 +525,52 @@
     
     function limparMemoriaLocal() {
         if(confirm("ATENÇÃO: Isso apagará todas as edições feitas neste celular que ainda não foram exportadas. Continuar?")) {
-            localStorage.removeItem('estoque_modificacoes');
-            modificacoesLocais = {};
-            mostrarAlerta("Memória limpa com sucesso.", "sucesso");
+            localStorage.removeItem('estoque_modificacoes'); modificacoesLocais = {}; mostrarAlerta("Memória limpa com sucesso.", "sucesso");
         }
     }
 
     // ==================== MOTOR DE IMPRESSÃO (ESTABILIZADO) ====================
-    // Educativo: Ao invés de remover o iframe que causa quebra no Android, 
-    // verificamos se ele existe. Se existir, apenas reescrevemos o interior dele.
     function imprimirPelaPaginaFantasma(htmlConteudo) {
         let iframe = document.getElementById('frame-impressao');
-        
         if (!iframe) {
-            iframe = document.createElement('iframe');
-            iframe.id = 'frame-impressao';
-            iframe.style.position = 'absolute';
-            iframe.style.width = '0px';
-            iframe.style.height = '0px';
-            iframe.style.border = 'none';
-            iframe.style.left = '-9999px'; 
+            iframe = document.createElement('iframe'); iframe.id = 'frame-impressao'; iframe.style.position = 'absolute';
+            iframe.style.width = '0px'; iframe.style.height = '0px'; iframe.style.border = 'none'; iframe.style.left = '-9999px'; 
             document.body.appendChild(iframe);
         }
-
-        let htmlCompleto = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                @page { margin: 0; size: 58mm auto; }
-                body { margin: 0; padding: 0; width: 48mm; font-family: Arial, sans-serif; color: #000; background: #fff; }
-                .etiqueta { width: 48mm; padding: 2mm 0; padding-bottom: 15mm; box-sizing: border-box; text-align: center; }
-                .foto-print { width: 100%; max-height: 45mm; object-fit: contain; margin-bottom: 8px; display: block; }
-                .titulo { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
-                .sku { font-size: 38px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px; }
-                .nome { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; line-height: 1.2; }
-                .linha { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0; margin: 0;}
-                .linha span.valor { font-weight: normal; }
-                .rel-titulo { font-size: 18px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center; }
-                .rel-info { font-size: 14px; font-weight: bold; margin-bottom: 10px; text-align: center; }
-                .rel-item { border-bottom: 1px dashed #000; padding: 4px 0; font-size: 14px; font-weight: bold; text-align: left; }
-            </style>
-        </head>
-        <body>${htmlConteudo}</body>
-        </html>
-        `;
-
-        let doc = iframe.contentWindow.document || iframe.contentDocument;
-        doc.open(); doc.write(htmlCompleto); doc.close();
-
-        setTimeout(() => {
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-        }, 800);
+        let htmlCompleto = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><style>@page { margin: 0; size: 58mm auto; } body { margin: 0; padding: 0; width: 48mm; font-family: Arial, sans-serif; color: #000; background: #fff; } .etiqueta { width: 48mm; padding: 2mm 0; padding-bottom: 15mm; box-sizing: border-box; text-align: center; } .foto-print { width: 100%; max-height: 45mm; object-fit: contain; margin-bottom: 8px; display: block; } .titulo { font-size: 14px; font-weight: bold; margin-bottom: 2px; } .sku { font-size: 38px; font-weight: 900; margin: 0 0 10px 0; letter-spacing: 1px; } .nome { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; line-height: 1.2; } .linha { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0; margin: 0;} .linha span.valor { font-weight: normal; } .rel-titulo { font-size: 18px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center; } .rel-info { font-size: 14px; font-weight: bold; margin-bottom: 10px; text-align: center; } .rel-item { border-bottom: 1px dashed #000; padding: 4px 0; font-size: 14px; font-weight: bold; text-align: left; }</style></head><body>${htmlConteudo}</body></html>`;
+        let doc = iframe.contentWindow.document || iframe.contentDocument; doc.open(); doc.write(htmlCompleto); doc.close();
+        setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); }, 800);
     }
 
     function imprimirEtiquetaGondola() {
-        let sku = document.getElementById('inp-codigo').value;
-        let nome = document.getElementById('inp-nome').value;
-        let ean = document.getElementById('inp-ean').value;
-        let val = document.getElementById('inp-validade').value;
-        let gon = document.getElementById('inp-gondola').value;
-        let pra = document.getElementById('inp-prateleira').value;
-        
-        let imgElement = document.getElementById('img-foto');
-        let fotoTag = '';
+        let sku = document.getElementById('inp-codigo').value; let nome = document.getElementById('inp-nome').value; let ean = document.getElementById('inp-ean').value; let val = document.getElementById('inp-validade').value; let gon = document.getElementById('inp-gondola').value; let pra = document.getElementById('inp-prateleira').value;
+        let imgElement = document.getElementById('img-foto'); let fotoTag = '';
         if (imgElement.style.display !== 'none' && imgElement.src) { fotoTag = `<img src="${imgElement.src}" class="foto-print" onerror="this.style.display='none'">`; }
-
-        let conteudoEtiqueta = `
-            <div class="etiqueta">
-                ${fotoTag} <div class="titulo">SKU</div> <div class="sku">${sku}</div>
-                <div class="nome">${nome}</div>
-                <div class="linha"><span>EAN:</span> <span class="valor">${ean}</span></div>
-                <div class="linha"><span>VAL:</span> <span class="valor">${val}</span></div>
-                <div class="linha"><span>GÔNDOLA:</span> <span class="valor">${gon}</span></div>
-                <div class="linha"><span>PRAT:</span> <span class="valor">${pra}</span></div>
-                <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
-            </div>
-        `;
+        let conteudoEtiqueta = `<div class="etiqueta">${fotoTag} <div class="titulo">SKU</div> <div class="sku">${sku}</div><div class="nome">${nome}</div><div class="linha"><span>EAN:</span> <span class="valor">${ean}</span></div><div class="linha"><span>VAL:</span> <span class="valor">${val}</span></div><div class="linha"><span>GÔNDOLA:</span> <span class="valor">${gon}</span></div><div class="linha"><span>PRAT:</span> <span class="valor">${pra}</span></div><div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div></div>`;
         imprimirPelaPaginaFantasma(conteudoEtiqueta);
     }
 
     function imprimirRelatorioSeparacao() {
         let numeroPedido = pedidoAtual ? (pedidoAtual.orderNum || 'N/A') : 'N/A';
         let dataEntrega = (pedidoAtual && pedidoAtual.deliveryMatch && pedidoAtual.deliveryMatch[1]) ? pedidoAtual.deliveryMatch[1] : 'N/A';
-
-        let cont = `
-            <div class="etiqueta">
-                <div class="rel-titulo">Pedido ${numeroPedido}</div>
-                <div class="rel-info">Entrega: ${dataEntrega}</div>
-        `;
-        listaDeSeparacao.forEach(i => { 
-            let status = i.status === 'concluido' ? '[OK]' : '[FALTOU]';
-            cont += `<div class="rel-item">${status} ${i.quantidadeTotal}x ${i.nomePedido.substring(0, 18)}</div>`; 
-        });
-        cont += `<div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div></div>`;
-        imprimirPelaPaginaFantasma(cont);
+        let cont = `<div class="etiqueta"><div class="rel-titulo">Pedido ${numeroPedido}</div><div class="rel-info">Entrega: ${dataEntrega}</div>`;
+        listaDeSeparacao.forEach(i => { let status = i.status === 'concluido' ? '[OK]' : '[FALTOU]'; cont += `<div class="rel-item">${status} ${i.quantidadeTotal}x ${i.nomePedido.substring(0, 18)}</div>`; });
+        cont += `<div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div></div>`; imprimirPelaPaginaFantasma(cont);
     }
 
     // ==================== CÂMERA DE LEITURA ====================
     function iniciarLeitor(modo) {
-        if (scannerAtual) {
-            try { 
-                scannerAtual.stop().then(() => { scannerAtual.clear(); abrirCameraSeguro(modo); }).catch(() => { abrirCameraSeguro(modo); });
-            } catch(e) { abrirCameraSeguro(modo); }
-        } else { abrirCameraSeguro(modo); }
+        if (scannerAtual) { try { scannerAtual.stop().then(() => { scannerAtual.clear(); abrirCameraSeguro(modo); }).catch(() => { abrirCameraSeguro(modo); }); } catch(e) { abrirCameraSeguro(modo); } } else { abrirCameraSeguro(modo); }
     }
 
     function abrirCameraSeguro(modo) {
-        let idElemento = modo === 'busca' ? "reader-busca" : "reader-picking";
-        if (modo === 'busca') abrirTela('tela-camera-busca'); 
+        let idElemento = (modo === 'busca' || modo === 'ean') ? "reader-busca" : "reader-picking";
+        
+        // Altera o título dinamicamente dependendo da finalidade
+        if (modo === 'busca' || modo === 'ean') {
+            document.getElementById('titulo-camera-busca').innerText = modo === 'ean' ? "📷 Lendo EAN..." : "📷 Lendo Código...";
+            abrirTela('tela-camera-busca'); 
+        }
         
         scannerAtual = new Html5Qrcode(idElemento); 
         let configCamera = { fps: 15, aspectRatio: 1.0, qrbox: { width: 250, height: 120 } };
@@ -635,10 +578,16 @@
         scannerAtual.start({ facingMode: "environment" }, configCamera, (codigoLido) => {
                 if (modo === 'busca') { 
                     pararLeitor('tela-etiquetas'); buscarProdutoPorCamera(codigoLido); 
+                } else if (modo === 'ean') {
+                    // Preenche o input do EAN, faz um bipe e volta para o formulário
+                    pararLeitor('tela-etiquetas');
+                    document.getElementById('inp-ean').value = codigoLido;
+                    tocarBipe('sucesso');
+                    document.getElementById('product-form').classList.remove('hidden');
+                    document.getElementById('area-busca-etiqueta').classList.add('hidden');
                 } else { 
                     if (aguardandoProximaLeitura) return; 
-                    aguardandoProximaLeitura = true; 
-                    validarLeituraProduto(codigoLido); 
+                    aguardandoProximaLeitura = true; validarLeituraProduto(codigoLido); 
                     setTimeout(() => { aguardandoProximaLeitura = false; }, 800); 
                 }
             }, (erro) => {}
@@ -646,9 +595,7 @@
     }
     
     function pararLeitor(telaDeRetorno = null) { 
-        if (scannerAtual) { 
-            try { scannerAtual.stop().then(() => { scannerAtual.clear(); scannerAtual = null; }).catch(e => {}); } catch(e) {} 
-        } 
+        if (scannerAtual) { try { scannerAtual.stop().then(() => { scannerAtual.clear(); scannerAtual = null; }).catch(e => {}); } catch(e) {} } 
         if (telaDeRetorno) abrirTela(telaDeRetorno);
     }
 
@@ -662,90 +609,77 @@
             return (eanDb === eanLimpo && eanLimpo !== "") || (skuDb === skuLimpo && skuLimpo !== ""); 
         });
         
-        if (itemAchado) abrirCardProduto(itemAchado.produto, itemAchado.indexOriginal); 
-        else mostrarAlerta("Produto não encontrado! (Lido: " + codigoLido + ")", "erro");
+        if (itemAchado) abrirCardProduto(itemAchado.produto, itemAchado.indexOriginal); else mostrarAlerta("Produto não encontrado! (Lido: " + codigoLido + ")", "erro");
     }
 
     // ==================== FLUXO DE SEPARAÇÃO ====================
     async function carregarPedidosFila() {
-        let container = document.getElementById('area-lista-pedidos');
-        container.innerHTML = '<p style="text-align:center; padding: 20px;">⏳ Carregando fila de pedidos...</p>';
+        let container = document.getElementById('area-lista-pedidos'); container.innerHTML = '<p style="text-align:center; padding: 20px;">⏳ Carregando fila de pedidos...</p>';
         try {
-            const resposta = await fetch('../site/pedidos_fila.json');
-            if (!resposta.ok) throw new Error("Erro");
-            pedidosFila = await resposta.json();
-            renderizarPedidosFila();
-        } catch (erro) {
-            container.innerHTML = '<p style="text-align:center; color:red; font-weight:bold;">❌ Não foi possível carregar os pedidos.</p>';
-        }
+            const resposta = await fetch('../site/pedidos_fila.json'); if (!resposta.ok) throw new Error("Erro");
+            pedidosFila = await resposta.json(); renderizarPedidosFila();
+        } catch (erro) { container.innerHTML = '<p style="text-align:center; color:red; font-weight:bold;">❌ Não foi possível carregar os pedidos.</p>'; }
     }
 
     function renderizarPedidosFila() {
         let container = document.getElementById('area-lista-pedidos'); container.innerHTML = '';
         let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE');
-
-        if (pendentes.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding: 20px; font-size: 18px; color: green; font-weight: bold;">✅ Nenhum pedido pendente!</div>'; return;
-        }
+        if (pendentes.length === 0) { container.innerHTML = '<div style="text-align:center; padding: 20px; font-size: 18px; color: green; font-weight: bold;">✅ Nenhum pedido pendente!</div>'; return; }
 
         pendentes.forEach((pedido) => {
             let div = document.createElement('div'); div.className = 'resultado-item'; 
             let numItens = pedido.items ? pedido.items.length : 0;
             let dataApresentacao = new Date(pedido.dataCriacao).toLocaleDateString('pt-BR');
             let nomePedido = pedido.orderNum || "Pedido sem número";
-            
             div.innerHTML = `${nomePedido} <div class="resultado-dica">📅 ${dataApresentacao} | 📦 ${numItens} itens para separar</div>`;
-            div.onclick = function() { iniciarSeparacaoPedido(pedido); };
-            container.appendChild(div);
+            div.onclick = function() { iniciarSeparacaoPedido(pedido); }; container.appendChild(div);
         });
     }
 
     function iniciarSeparacaoPedido(pedido) {
         listaDeSeparacao = []; pedidoAtual = pedido; 
-
         if (!pedido.items || pedido.items.length === 0) { mostrarAlerta("Este pedido não tem produtos listados.", "erro"); return; }
-
         pedido.items.forEach(item => {
             if (item.foundProduct) {
                 listaDeSeparacao.push({
-                    quantidadeTotal: item.qtd, unidadesLidas: 0,
-                    nomePedido: item.nomeOriginal, produtoDb: item.foundProduct, 
+                    quantidadeTotal: item.qtd, unidadesLidas: 0, nomePedido: item.nomeOriginal, produtoDb: item.foundProduct, 
                     localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "ZZZ", status: 'pendente'
                 });
             }
         });
 
         if (listaDeSeparacao.length === 0) { mostrarAlerta("Nenhum item do pedido foi encontrado.", "erro"); return; }
-
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
         indexAtualPicking = 0; 
         
-        entrarTelaCheia(); // Chama o modo Fullscreen ao abrir a separação
-        abrirTela('tela-separacao-foco'); 
-        renderizarItemFoco(); 
-        iniciarLeitor('separacao');
+        entrarTelaCheia(); abrirTela('tela-separacao-foco'); renderizarItemFoco(); iniciarLeitor('separacao');
     }
 
     function renderizarItemFoco() {
         if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPicking(); return; }
         
         let item = listaDeSeparacao[indexAtualPicking]; 
+        let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
         
         // Exibindo textos de separação otimizados
+        let numPed = pedidoAtual ? (pedidoAtual.orderNum || 'N/A') : 'N/A';
+        let dtEnt = (pedidoAtual && pedidoAtual.deliveryMatch && pedidoAtual.deliveryMatch[1]) ? pedidoAtual.deliveryMatch[1] : 'N/A';
+        document.getElementById('foco-pedido-info').innerText = `Pedido: ${numPed} | Entrega: ${dtEnt}`;
+        
         document.getElementById('foco-loc').innerText = `📍 Gôndola: ${item.localizacao}`; 
+        
+        let img = document.getElementById('foco-img'); 
+        img.src = `../site/img/produtos/${skuItem}.webp`; 
+        img.style.display = 'block';
+
         document.getElementById('foco-qtd-texto').innerHTML = `<span>${item.quantidadeTotal}</span> unidades de:`;
         document.getElementById('foco-nome').innerText = item.nomePedido; 
         
         // Gerador dos Ticks Elegantes
-        let containerTicks = document.getElementById('foco-ticks');
-        containerTicks.innerHTML = '';
+        let containerTicks = document.getElementById('foco-ticks'); containerTicks.innerHTML = '';
         for(let i = 0; i < item.quantidadeTotal; i++) {
-            let tick = document.createElement('div');
-            tick.className = 'tick-box';
-            if(i < item.unidadesLidas) {
-                tick.classList.add('active');
-                tick.innerHTML = '✓'; // Tick verde quando lido
-            }
+            let tick = document.createElement('div'); tick.className = 'tick-box';
+            if(i < item.unidadesLidas) { tick.classList.add('active'); tick.innerHTML = '✓'; }
             containerTicks.appendChild(tick);
         }
     }
@@ -753,50 +687,29 @@
     function validarLeituraProduto(codigoLido) {
         let eanLimpo = String(codigoLido).replace(/\D/g, "").replace(/^0+/, ""); 
         let skuLimpo = String(codigoLido).trim().toUpperCase();
-        
         let itemAtual = listaDeSeparacao[indexAtualPicking]; 
         let eanEsperado = String(itemAtual.produtoDb.gtin || itemAtual.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, ""); 
         let skuEsperado = String(itemAtual.produtoDb.codigo || itemAtual.produtoDb["Código"] || "").trim().toUpperCase();
-        
-        // Pega apenas as 3 primeiras palavras para a leitura da voz não ser exaustiva
         let nomeParaVoz = itemAtual.nomePedido.split(' ').slice(0, 3).join(' ');
 
         if (eanEsperado === eanLimpo || skuEsperado === skuLimpo) {
             itemAtual.unidadesLidas++; 
             if (itemAtual.unidadesLidas < itemAtual.quantidadeTotal) { 
                 let faltam = itemAtual.quantidadeTotal - itemAtual.unidadesLidas;
-                tocarBipe('sucesso');
-                falarTexto(`Faltam ${faltam}.`);
-                mostrarAlerta(`✅ Correto! Faltam ${faltam}.`, "aviso", 1500); 
-                renderizarItemFoco(); 
+                tocarBipe('sucesso'); falarTexto(`Faltam ${faltam}.`); mostrarAlerta(`✅ Correto! Faltam ${faltam}.`, "aviso", 1500); renderizarItemFoco(); 
             } else { 
-                itemAtual.status = 'concluido'; 
-                tocarBipe('sucesso');
-                falarTexto(`${nomeParaVoz} concluído.`);
-                mostrarAlerta(`🎉 Item Completo!`, "sucesso", 1500); 
-                indexAtualPicking++; 
-                renderizarItemFoco(); 
+                itemAtual.status = 'concluido'; tocarBipe('sucesso'); falarTexto(`${nomeParaVoz} concluído.`);
+                mostrarAlerta(`🎉 Item Completo!`, "sucesso", 1500); indexAtualPicking++; renderizarItemFoco(); 
             }
-        } else { 
-            tocarBipe('erro');
-            falarTexto("Produto incorreto!");
-            mostrarAlerta(`❌ Produto Errado!`, "erro"); 
-        }
+        } else { tocarBipe('erro'); falarTexto("Produto incorreto!"); mostrarAlerta(`❌ Produto Errado!`, "erro"); }
     }
 
     function cancelarPicking() { 
-        if (confirm("Tem certeza que deseja cancelar a separação?")) { 
-            sairTelaCheia();
-            pararLeitor(); 
-            abrirTela('tela-inicial'); 
-        } 
+        if (confirm("Tem certeza que deseja cancelar a separação?")) { sairTelaCheia(); pararLeitor(); abrirTela('tela-inicial'); } 
     }
     
     function finalizarPicking() { 
-        sairTelaCheia();
-        pararLeitor(); 
-        falarTexto("Pedido finalizado com sucesso.");
-        abrirTela('tela-conclusao'); 
+        sairTelaCheia(); pararLeitor(); falarTexto("Pedido finalizado com sucesso."); abrirTela('tela-conclusao'); 
     }
 </script>
 </body>
