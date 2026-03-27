@@ -66,15 +66,19 @@ button {
 
 /* HEADER PRINCIPAL REFORMULADO - MINIMALISTA */
 #header-wrapper { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    right: 0; 
-    z-index: 50; 
-    background: #fff; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.03); 
+    background: transparent; 
     display: flex;
     flex-direction: column;
+    width: 100%;
+}
+
+.sticky-top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    width: 100%;
 }
 
 #install-banner {
@@ -160,11 +164,8 @@ button {
 }
 
 .logo { 
-    width: 44px; 
-    height: 44px; 
     border-radius: 50%; 
     object-fit: cover; 
-    border: 1px solid var(--c-bd); 
     flex-shrink: 0; 
     cursor: pointer; 
 }
@@ -261,7 +262,7 @@ button {
 }
 
 @media(min-width: 800px) {
-    #header-wrapper { 
+    .sticky-top-bar { 
         background: #fff; 
         border-bottom: 1px solid var(--c-bd); 
     }
@@ -292,7 +293,7 @@ button {
 .main-stage { 
     position: relative; 
     height: 100dvh; 
-    padding-top: 130px; 
+    padding-top: 0; 
     padding-bottom: 80px; 
     overflow-y: auto; 
     overflow-x: hidden; 
@@ -334,20 +335,15 @@ button {
 }
 
 /* =========================================
-   NOVO VISUAL DO HEADER MOBILE (SHRINKING HEADER)
+   VISUAL DO HEADER MOBILE E BANNER
    ========================================= */
 
-/* Área da logo grande e banners (início do site) */
 .mobile-hero-area {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 15px 15px 5px;
     background: #fff;
-    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
-    transform-origin: top;
-    max-height: 400px; /* Aumentamos de 250 para 400 para caber os banners confortavelmente */
 }
 
 .mobile-hero-area .big-logo {
@@ -360,31 +356,27 @@ button {
     box-shadow: 0 4px 10px rgba(0,0,0,0.06);
 }
 
-/* Oculta a logo pequena por padrão no mobile para dar espaço */
+/* A logo pequena começa escondida no mobile */
 .mob-layer-2 .small-logo {
-    display: none;
-}
-
-/* --- ESTADO COMPACTO (Ativado via JS ao Rolar a Página) --- */
-#header-wrapper.compact-mode .mobile-hero-area {
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
+    max-width: 0;
+    margin-right: 0;
     opacity: 0;
-    pointer-events: none;
+    border: none;
+    transition: all 0.3s ease;
+    height: 44px;
 }
 
-#header-wrapper.compact-mode .mob-layer-2 .small-logo {
-    display: block; 
-    animation: fadeInLogo 0.3s forwards;
-}
-
-@keyframes fadeInLogo {
-    from { opacity: 0; transform: scale(0.5); width: 0; margin-right: 0; }
-    to { opacity: 1; transform: scale(1); width: 44px; margin-right: 12px; }
+/* Quando rola a página, a top bar adiciona a classe scrolled e revela a logo */
+.sticky-top-bar.scrolled .mob-layer-2 .small-logo {
+    max-width: 44px;
+    margin-right: 12px;
+    opacity: 1;
+    border: 1px solid var(--c-bd);
 }
 
 /* --- CONTROLE DE VISUALIZAÇÃO MOBILE VS DESKTOP --- */
+.mobile-only-promo { display: block; }
+
 @media(max-width: 799px) {
     .desk-only-banners { display: none !important; }
 }
@@ -392,7 +384,9 @@ button {
 @media(min-width: 800px) {
     .mobile-hero-area { display: none !important; } 
     .mobile-only-banners { display: none !important; }
-    .mob-layer-2 .small-logo { display: block !important; margin-right: 0; }
+    .mobile-only-promo { display: none !important; }
+    /* No desktop a logo pequena fica sempre ativa e bonita */
+    .mob-layer-2 .small-logo { max-width: 44px !important; width: 44px !important; margin-right: 0 !important; opacity: 1 !important; border: 1px solid var(--c-bd) !important; }
 }
 
 /* SECTION TITLE CLEAN E MINIMALISTA */
@@ -1380,51 +1374,53 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 </head>
 <body>
     
-<div id="header-wrapper">
-    <div class="mobile-hero-area">
-        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="big-logo" alt="Logo Dona Antônia" onclick="goToHome()">
-        <div class="layout-limit info-banners info-banners-render mobile-only-banners"></div>
-    </div>
+<main class="main-stage" id="scroll-stage">
 
-    <div class="layout-limit desk-header-flex">
-        <div class="mob-layer-1">
-            <div id="install-banner">
-                <span style="font-size: 1.2rem; line-height: 1;">📲</span>
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <button id="btn-install" style="background: #fff; color: var(--c-p); border: none; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; cursor: pointer;">Instalar</button>
-                    <button id="btn-close-install" style="background: transparent; color: #cbd5e1; border: none; font-size: 1.1rem; padding: 0; cursor: pointer; display: flex; align-items: center; line-height: 1;">✕</button>
+    <div id="header-wrapper">
+        <div class="mobile-hero-area">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="big-logo" alt="Logo Dona Antônia" onclick="goToHome()">
+            <div class="layout-limit info-banners info-banners-render mobile-only-banners"></div>
+        </div>
+
+        <div class="sticky-top-bar">
+            <div class="layout-limit desk-header-flex">
+                <div class="mob-layer-1">
+                    <div id="install-banner">
+                        <span style="font-size: 1.2rem; line-height: 1;">📲</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <button id="btn-install" style="background: #fff; color: var(--c-p); border: none; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 0.75rem; cursor: pointer;">Instalar</button>
+                            <button id="btn-close-install" style="background: transparent; color: #cbd5e1; border: none; font-size: 1.1rem; padding: 0; cursor: pointer; display: flex; align-items: center; line-height: 1;">✕</button>
+                        </div>
+                    </div>
+                    <div class="search-wrapper">
+                        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto ou kit..." oninput="handleSearch(this.value)">
+                        <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
+                    </div>
+                </div>
+                <div class="mob-layer-2">
+                    <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo small-logo" alt="Logo" onclick="goToHome()">
+                    <div class="mobile-category-dropdown">
+                        <button class="btn-cat-dropdown" onclick="document.getElementById('cat-dropdown-list').classList.toggle('open')">
+                            <span id="btn-cat-dropdown-text">Todas as Categorias</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div id="cat-dropdown-list" class="cat-dropdown-list"></div>
+                    </div>
+                    <button class="btn-top-help" onclick="document.getElementById('modal-faq').showModal()" aria-label="Ajuda">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
-            <div class="search-wrapper">
-                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-                <input type="text" id="search-inp" class="search-inp" placeholder="Buscar produto ou kit..." oninput="handleSearch(this.value)">
-                <button class="clear-search" id="btn-clr-search" onclick="clearSearch()">✕</button>
-            </div>
-        </div>
-        <div class="mob-layer-2">
-            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo small-logo" alt="Logo" onclick="goToHome()">
-            <div class="mobile-category-dropdown">
-                <button class="btn-cat-dropdown" onclick="document.getElementById('cat-dropdown-list').classList.toggle('open')">
-                    <span id="btn-cat-dropdown-text">Todas as Categorias</span>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                </button>
-                <div id="cat-dropdown-list" class="cat-dropdown-list"></div>
-            </div>
-            <button class="btn-top-help" onclick="document.getElementById('modal-faq').showModal()" aria-label="Ajuda">
-                <svg viewBox="0 0 24 24">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                </svg>
-            </button>
         </div>
     </div>
-</div>
-
-<main class="main-stage" id="scroll-stage">
     
     <div class="layout-limit info-banners info-banners-render desk-only-banners"></div>
     
@@ -1622,21 +1618,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
 <div id="toast-container"></div>
 
-<div id="promo-whatsapp-btn" style="display: none; position: fixed; bottom: 80px; right: 15px; background: #fff; border: 2px solid #25D366; color: var(--c-p); padding: 12px 15px; border-radius: 12px; font-weight: 600; font-size: 0.95rem; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 99; flex-direction: column; gap: 10px; max-width: 200px;">
-    
-    <button onclick="closePromoWhatsApp(event)" style="position: absolute; top: 5px; right: 5px; background: transparent; border: none; font-size: 1.1rem; color: var(--c-s); cursor: pointer; padding: 2px;">✕</button>
-    
-    <div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
-        <span style="font-size: 1.4rem;">🎁</span>
-        <span style="line-height: 1.2;">Cupom R$ 15 de Desconto</span>
-    </div>
-
-    <button onclick="openPromoWhatsApp()" style="background: #25D366; color: #fff; border: none; padding: 10px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-        Eu quero
-    </button>
-</div>
-
 <script>
 const CONFIG_ENTREGA = { 
     horaCorteHoje: 10, 
@@ -1678,17 +1659,6 @@ const STATE = {
     shuffledLists: {},
     activeTabId: 'cestas' 
 };
-
-// --- AJUSTE DINÂMICO DE ESPAÇO DO CABEÇALHO ---
-function adjustHeaderSpace() {
-    const header = document.getElementById('header-wrapper');
-    const stage = document.getElementById('scroll-stage');
-    if (header && stage) {
-        stage.style.paddingTop = (header.offsetHeight + 15) + 'px';
-    }
-}
-window.addEventListener('resize', adjustHeaderSpace);
-
 
 const infiniteScrollObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -1791,7 +1761,6 @@ function buildCjCardHTML(kit) {
     let p1 = kit.selectedItems[0];
     let p2 = kit.selectedItems[1];
     
-    // Calcula o preço individual proporcionalmente só para a tela, sem modificar o banco
     let factor = 1 - (kit.discountVal / kit.origPrice);
     let p1CjPrice = p1.price * factor;
     let p2CjPrice = p2.price * factor;
@@ -2163,10 +2132,6 @@ function renderBanners() {
     });
     
     containers.forEach(c => c.innerHTML = html);
-
-    // NOVO: Aguarda um instante para o navegador desenhar os banners na tela 
-    // e recalcula o espaço exato que o cabeçalho está ocupando!
-    setTimeout(adjustHeaderSpace, 150);
 }
 
 window.applyCoupon = function() {
@@ -2212,8 +2177,6 @@ window.applyCoupon = function() {
 async function init() {
     STATE.coupons = []; STATE.combos = []; STATE.termos = []; 
     STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = [];
-
-    adjustHeaderSpace();
 
     try {
         const [r1, r2, r3, r4, r7, r8, r9, r10, r11, cjData] = await Promise.all([
@@ -2280,7 +2243,6 @@ async function init() {
         buildTabsAndSections(); 
         updateTotals();
         renderBanners();
-        adjustHeaderSpace(); 
 
         startTimer();
 
@@ -2699,6 +2661,29 @@ function renderBottomChips(activeTabId) {
 
     let htmlTop = '';
     
+    // --- NOVO: BANNER WHATSAPP ESTÁTICO ANTES DO SÓ HOJE ---
+    const lastDismissed = localStorage.getItem('donaAntoniaPromoTimer');
+    const now = Date.now();
+    const hours24 = 24 * 60 * 60 * 1000; 
+
+    if (!lastDismissed || (now - parseInt(lastDismissed)) > hours24) {
+        htmlTop += `
+        <div class="mobile-only-promo" style="margin: 15px auto 5px; max-width: 1000px; padding: 0 15px;">
+            <div style="background: #fff; border: 2px dashed #25D366; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); position: relative;">
+                <button onclick="closePromoWhatsAppStatic(event)" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 1.2rem; color: var(--c-s); cursor: pointer; padding: 5px; line-height: 1;">✕</button>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
+                    <span style="font-size: 1.8rem;">🎁</span>
+                    <span style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">Cupom R$ 15 de Desconto</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--c-s); margin: 0; font-weight: 500;">Resgate agora e economize no seu primeiro pedido!</p>
+                <button onclick="openPromoWhatsApp()" style="background: #25D366; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                    Resgatar Cupom de R$ 15
+                </button>
+            </div>
+        </div>`;
+    }
+
     if (STATE.sohoje && STATE.sohoje.length > 0) {
         let titleHtml = `Só Hoje <div class="so-hoje-timer">00:00:00</div>`;
         htmlTop += generateCarouselHtml(titleHtml, '#dc2626', 'grid-sohoje-' + activeTabId, STATE.sohoje, 'MIXED', 'sohoje', 'none', 4);
@@ -3519,54 +3504,35 @@ async function sendOrder() {
     }, 400);
 }
 
-// Funções do Banner Flutuante de Cupom (WhatsApp)
+// Resgatar via Novo Banner Estático
 window.openPromoWhatsApp = function() {
     alert("Você será redirecionado para o nosso WhatsApp para resgatar o seu cupom de R$ 15!");
-    
     const msg = "Olá! Quero resgatar meu cupom de R$ 15 de desconto!";
     window.open(`https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`, '_blank');
-    
-    closePromoWhatsApp(null);
+    closePromoWhatsAppStatic(null);
 };
 
-window.closePromoWhatsApp = function(e) {
+window.closePromoWhatsAppStatic = function(e) {
     if (e) e.stopPropagation();
-    document.getElementById('promo-whatsapp-btn').style.display = 'none';
-    
     localStorage.setItem('donaAntoniaPromoTimer', Date.now().toString());
+    renderBottomChips(STATE.activeTabId);
 };
-
-function checkPromoBanner() {
-    const lastDismissed = localStorage.getItem('donaAntoniaPromoTimer');
-    const now = Date.now();
-    const hours24 = 24 * 60 * 60 * 1000; 
-
-    if (!lastDismissed || (now - parseInt(lastDismissed)) > hours24) {
-        document.getElementById('promo-whatsapp-btn').style.display = 'flex';
-    }
-}
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 50);
 
-    // --- NOVO: Lógica do Shrinking Header (Barra compacta ao rolar) ---
+    // --- Lógica do Header Sticky ---
     const scrollStage = document.getElementById('scroll-stage');
-    const headerWrapper = document.getElementById('header-wrapper');
+    const topBar = document.querySelector('.sticky-top-bar');
 
-    if (scrollStage && headerWrapper) {
+    if (scrollStage && topBar) {
         scrollStage.addEventListener('scroll', function() {
-            // Aplica o efeito apenas no mobile
+            // Aplica a animação da logo pequena apenas no mobile
             if (window.innerWidth < 800) {
-                // Se o usuário rolou mais de 40 pixels para baixo
-                if (this.scrollTop > 40) {
-                    if (!headerWrapper.classList.contains('compact-mode')) {
-                        headerWrapper.classList.add('compact-mode'); // Esconde logo grande
-                    }
+                if (this.scrollTop > 80) { // O usuário rolou pra baixo da logo grande
+                    topBar.classList.add('scrolled');
                 } else {
-                    // Se o usuário voltou pro topo
-                    if (headerWrapper.classList.contains('compact-mode')) {
-                        headerWrapper.classList.remove('compact-mode'); // Mostra logo grande
-                    }
+                    topBar.classList.remove('scrolled');
                 }
             }
         });
@@ -3579,10 +3545,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!isStandalone && !localStorage.getItem('donaAntoniaAppDismissed')) {
         bannerInstalacao.style.display = 'flex';
-        adjustHeaderSpace(); 
     }
-    
-    checkPromoBanner();
 
     document.getElementById('btn-install').addEventListener('click', async () => { 
         if (typeof eventoInstalacao !== 'undefined' && eventoInstalacao) { 
@@ -3595,13 +3558,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         bannerInstalacao.style.display = 'none'; 
         localStorage.setItem('donaAntoniaAppDismissed', 'true');
-        adjustHeaderSpace(); 
     });
 
     document.getElementById('btn-close-install').addEventListener('click', () => {
         bannerInstalacao.style.display = 'none';
         localStorage.setItem('donaAntoniaAppDismissed', 'true');
-        adjustHeaderSpace(); 
     });
 });
 
@@ -3620,10 +3581,10 @@ window.addEventListener('beforeinstallprompt', (evento) => {
     eventoInstalacao = evento; 
     if (!localStorage.getItem('donaAntoniaAppDismissed')) {
         document.getElementById('install-banner').style.display = 'flex'; 
-        adjustHeaderSpace(); 
     }
 });
-    window.scrollToMenuSection = function(sectionId, element) {
+
+window.scrollToMenuSection = function(sectionId, element) {
     if (STATE.activeTabId !== 'cestas') {
         switchTab('cestas', true);
     }
@@ -3640,7 +3601,7 @@ window.addEventListener('beforeinstallprompt', (evento) => {
                 let titleEl = targetEl.previousElementSibling;
                 let refEl = (titleEl && titleEl.classList.contains('section-title')) ? titleEl : targetEl;
                 
-                let position = refEl.offsetTop - 130; 
+                let position = refEl.offsetTop - 120; 
                 scrollContainer.scrollTo({ top: position, behavior: 'smooth' });
             }
         }
