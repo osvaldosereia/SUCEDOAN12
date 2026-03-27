@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sistema de Estoque Profissional</title>
     
     <script src="https://unpkg.com/html5-qrcode"></script>
@@ -27,24 +27,13 @@
             color: var(--dark); 
         }
         
-        h1, h2, h3 { 
-            text-align: center; 
-            margin-top: 0; 
-        }
+        h1, h2, h3 { text-align: center; margin-top: 0; }
         
         button { 
-            display: block; 
-            width: 100%; 
-            padding: 15px; 
-            margin: 10px 0; 
-            font-size: 16px; 
-            font-weight: bold; 
-            color: white; 
-            background-color: var(--primary); 
-            border: none; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            display: block; width: 100%; padding: 15px; margin: 10px 0; 
+            font-size: 16px; font-weight: bold; color: white; 
+            background-color: var(--primary); border: none; 
+            border-radius: 8px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
         }
         
         .btn-secondary { background-color: var(--secondary); }
@@ -53,137 +42,76 @@
         .btn-print { background-color: #000; }
         
         .container { 
-            max-width: 600px; 
-            margin: 20px auto; 
-            background: white; 
-            padding: 20px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            max-width: 600px; margin: 20px auto; background: white; 
+            padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
         }
         
         .form-group { margin-bottom: 15px; }
-        
-        .form-group label { 
-            display: block; 
-            font-weight: bold; 
-            margin-bottom: 8px; 
-            font-size: 14px; 
-            color: #555;
-        }
-        
-        /* Modificado: Adicionado o elemento 'select' nas regras de estilo */
+        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #555; }
         .form-group input, .form-group textarea, .form-group select { 
-            width: 100%; 
-            padding: 15px; 
-            font-size: 16px; 
-            border: 2px solid #ccc; 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-            background-color: #fff; /* Fundo branco para garantir legibilidade nos seletores */
+            width: 100%; padding: 15px; font-size: 16px; border: 2px solid #ccc; 
+            border-radius: 8px; box-sizing: border-box; background-color: #fff; 
         }
         
         .resultado-item { 
-            padding: 15px; 
-            margin-bottom: 8px; 
-            background-color: #e3f2fd; 
-            border: 1px solid #90caf9; 
-            border-radius: 8px; 
-            font-size: 16px; 
-            font-weight: bold; 
-            color: #0d47a1; 
-            cursor: pointer; 
+            padding: 15px; margin-bottom: 8px; background-color: #e3f2fd; 
+            border: 1px solid #90caf9; border-radius: 8px; font-size: 16px; 
+            font-weight: bold; color: #0d47a1; cursor: pointer; 
         }
-        
-        .resultado-dica { 
-            font-size: 13px; 
-            color: #555; 
-            font-weight: normal; 
-            margin-top: 4px; 
-        }
+        .resultado-dica { font-size: 13px; color: #555; font-weight: normal; margin-top: 4px; }
         
         .linha-dupla { display: flex; gap: 10px; }
         .linha-dupla .form-group { flex: 1; }
+        .linha-dupla button { margin: 0; } /* Ajuste para botões alinhados */
         .hidden { display: none !important; }
 
         #alerta-customizado { 
-            position: fixed; 
-            top: 20px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: 90%; 
-            max-width: 400px; 
-            padding: 15px; 
-            border-radius: 8px; 
-            color: white; 
-            font-weight: bold; 
-            text-align: center; 
-            z-index: 9999; 
-            display: none; 
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
+            width: 90%; max-width: 400px; padding: 15px; border-radius: 8px; 
+            color: white; font-weight: bold; text-align: center; z-index: 9999; display: none; 
         }
         .alerta-erro { background-color: var(--danger); }
         .alerta-sucesso { background-color: var(--primary); }
         .alerta-aviso { background-color: var(--warning); color: #000; }
 
-        /* --- MODO FOCO DE SEPARAÇÃO --- */
+        /* --- MODO FOCO DE SEPARAÇÃO (VISUAL COMPACTO E ELEGANTE) --- */
         .tela-foco { 
-            height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
-            overflow: hidden; 
-            padding: 10px; 
-            box-sizing: border-box; 
-            background: #222; 
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden; 
+            padding: 5px; box-sizing: border-box; background: #111; 
         }
-        
         .camera-box { 
-            width: 100%;
-            border-radius: 8px; 
-            overflow: hidden; 
-            background: #000; 
-            border: 2px solid #555; 
-            flex: none; 
+            width: 100%; border-radius: 8px; overflow: hidden; 
+            background: #000; border: 2px solid #444; flex: none; 
         }
-        
         .info-box { 
-            flex: 1; 
-            background: white; 
-            border-radius: 8px; 
-            padding: 10px; 
-            margin-top: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: space-evenly; 
-            text-align: center; 
-            overflow-y: auto; 
-        }
-        
-        .info-box img { 
-            max-height: 160px; 
-            width: auto;
-            object-fit: contain; 
-            border-radius: 8px; 
-        }
-        
-        .contador-unidades { 
-            font-size: 26px; 
-            font-weight: 900; 
-            color: var(--secondary); 
-            background: #e3f2fd; 
-            padding: 8px 16px; 
-            border-radius: 12px; 
-            border: 2px solid var(--secondary); 
-            margin: 5px 0;
+            flex: 1; background: white; border-radius: 8px; padding: 10px 15px; 
+            margin-top: 5px; display: flex; flex-direction: column; 
+            align-items: center; text-align: center; overflow-y: auto; 
         }
         
         .badge-loc { 
-            background: var(--dark); 
-            color: white; 
-            padding: 8px 16px; 
-            border-radius: 15px; 
-            font-size: 24px; 
-            font-weight: bold; 
-            margin-bottom: 5px;
+            background: var(--dark); color: white; padding: 5px 12px; 
+            border-radius: 12px; font-size: 20px; font-weight: bold; margin-bottom: 5px;
+        }
+        
+        .foco-qtd-texto { font-size: 16px; color: #555; margin-bottom: 2px; }
+        .foco-qtd-texto span { font-size: 20px; font-weight: 900; color: var(--secondary); }
+        
+        #foco-nome { font-size: 17px; margin: 0 0 10px 0; line-height: 1.2; font-weight: bold; }
+        
+        /* Sistema de Ticks Profissionais */
+        .ticks-container { 
+            display: flex; flex-wrap: wrap; justify-content: center; 
+            gap: 6px; margin-bottom: 15px; width: 100%; 
+        }
+        .tick-box { 
+            width: 24px; height: 24px; border-radius: 4px; background-color: #e0e0e0; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 14px; font-weight: bold; color: transparent; 
+            transition: all 0.3s ease; border: 1px solid #ccc;
+        }
+        .tick-box.active { 
+            background-color: var(--primary); color: white; border-color: var(--primary);
         }
     </style>
 </head>
@@ -211,7 +139,6 @@
     </div>
 
     <div class="container hidden" id="tela-etiquetas">
-        <button class="btn-danger" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
         
         <div id="area-busca-etiqueta">
             <h2>🔍 Buscar Produto</h2>
@@ -220,12 +147,12 @@
             </div>
             <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin-bottom: 20px;">📷 Ler Código com a Câmera</button>
             <div id="lista-resultados"></div>
+            <button class="btn-danger" style="margin-top: 30px;" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
         </div>
 
         <div id="product-form" class="hidden">
-            <button class="btn-danger" style="margin-bottom: 15px;" onclick="fecharCardProduto()">❌ Fechar Produto</button>
             
-            <img id="img-foto" src="" style="width: 100%; max-height: 250px; object-fit: contain; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px;">
+            <img id="img-foto" src="" style="width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px;">
             
             <div class="linha-dupla">
                 <div class="form-group">
@@ -272,6 +199,11 @@
             
             <button class="btn-print" onclick="imprimirEtiquetaGondola()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Etiqueta</button>
             <button class="btn-primary" onclick="salvarProdutoLocal()">✅ Salvar Alterações Localmente</button>
+            
+            <div class="linha-dupla" style="margin-top: 20px;">
+                <button class="btn-danger" onclick="fecharCardProduto()">❌ Fechar Produto</button>
+                <button class="btn-secondary" onclick="abrirTela('tela-inicial')">⬅️ Voltar ao Menu</button>
+            </div>
         </div>
     </div>
 
@@ -286,8 +218,7 @@
         <h2>📋 Fila de Pedidos</h2>
         <button onclick="carregarPedidosFila()" style="background-color: var(--dark); padding: 10px; margin-bottom: 15px;">🔄 Atualizar Lista</button>
         
-        <div id="area-lista-pedidos">
-            </div>
+        <div id="area-lista-pedidos"></div>
     </div>
 
     <div class="tela-foco hidden" id="tela-separacao-foco">
@@ -297,13 +228,12 @@
         <div class="info-box">
             <span class="badge-loc" id="foco-loc">📍 Gôndola: A1</span>
             
-            <img id="foco-img" src="" alt="Produto" onerror="this.style.display='none'">
+            <div class="foco-qtd-texto" id="foco-qtd-texto"></div>
+            <h3 id="foco-nome">Nome do Produto</h3>
             
-            <h3 id="foco-nome" style="margin: 5px 0;">Nome do Produto</h3>
+            <div class="ticks-container" id="foco-ticks"></div>
             
-            <div class="contador-unidades" id="foco-contador">0 / 4 Separados</div>
-            
-            <div style="display:flex; gap:10px; width:100%;">
+            <div style="display:flex; gap:10px; width:100%; margin-top: auto;">
                 <button class="btn-danger" onclick="cancelarPicking()">Cancelar Separação</button>
             </div>
         </div>
@@ -332,46 +262,34 @@
     let pedidoAtual = null; 
 
     let audioCtx = null;
-    
-    // Dicionário para salvar alterações no celular para não perder as atualizações
     let modificacoesLocais = JSON.parse(localStorage.getItem('estoque_modificacoes') || '{}');
 
     // ==================== INICIALIZAÇÃO ====================
     window.onload = async function() {
-        
-        // Nova função que preenche as opções de Gôndola e Prateleira automaticamente
         preencherSeletoresLocalizacao();
 
         try { 
             const resposta = await fetch('../site/bancodedados.json'); 
             bancoDeDados = await resposta.json(); 
-            
-            // Assim que carrega o JSON original, aplica as modificações salvas no celular
             aplicarModificacoesLocaisNoBanco();
-            
             liberarSistema(); 
         } catch (erro) { 
             document.getElementById('area-upload').classList.remove('hidden'); 
         }
     };
 
-    // Função educativa: Automatiza a criação das opções <option> no HTML. 
     function preencherSeletoresLocalizacao() {
         let selGondola = document.getElementById('inp-gondola');
         let selPrateleira = document.getElementById('inp-prateleira');
         
-        // Colocamos uma opção vazia padrão no topo
         selGondola.innerHTML = '<option value="">Sem Gôndola</option>';
         selPrateleira.innerHTML = '<option value="">Sem Prateleira</option>';
 
-        // 1. Cria as Gôndolas de "00" até "20"
         for(let i = 0; i <= 20; i++) {
-            // padStart garante que o 1 vire "01", o 2 vire "02", etc.
-            let numeroGondola = i.toString().padStart(2, '0'); 
-            selGondola.innerHTML += `<option value="${numeroGondola}">${numeroGondola}</option>`;
+            let num = i.toString().padStart(2, '0'); 
+            selGondola.innerHTML += `<option value="${num}">${num}</option>`;
         }
 
-        // 2. Cria as Prateleiras A1, A2, B1, B2 ... G1, G2
         let letras = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
         letras.forEach(letra => {
             selPrateleira.innerHTML += `<option value="${letra}1">${letra}1</option>`;
@@ -382,10 +300,7 @@
     function aplicarModificacoesLocaisNoBanco() {
         bancoDeDados.forEach(produto => {
             let sku = String(produto.codigo || produto["Código"] || "");
-            if (sku && modificacoesLocais[sku]) {
-                // Mescla as informações salvadas por cima das originais, sem apagar o resto
-                Object.assign(produto, modificacoesLocais[sku]);
-            }
+            if (sku && modificacoesLocais[sku]) { Object.assign(produto, modificacoesLocais[sku]); }
         });
     }
 
@@ -395,34 +310,42 @@
         document.getElementById('botoes-menu').classList.remove('hidden');
     }
 
+    // ==================== MODO FULLSCREEN (TELA CHEIA) ====================
+    function entrarTelaCheia() {
+        let elem = document.documentElement;
+        if (elem.requestFullscreen) { elem.requestFullscreen().catch(()=>{}); }
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen().catch(()=>{}); }
+        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen().catch(()=>{}); }
+    }
+
+    function sairTelaCheia() {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+            if (document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); }
+            else if (document.webkitExitFullscreen) { document.webkitExitFullscreen().catch(()=>{}); }
+        }
+    }
+
     // ==================== ÁUDIO E VOZ ====================
     function inicializarAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
+        if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
     }
 
     function tocarBipe(tipo) {
         if (!audioCtx) return;
         try {
-            const oscilador = audioCtx.createOscillator();
+            const osc = audioCtx.createOscillator();
             const ganho = audioCtx.createGain();
-            
-            oscilador.connect(ganho);
+            osc.connect(ganho);
             ganho.connect(audioCtx.destination);
             
             if (tipo === 'sucesso') {
-                oscilador.type = 'sine';
-                oscilador.frequency.setValueAtTime(900, audioCtx.currentTime); 
+                osc.type = 'sine'; osc.frequency.setValueAtTime(900, audioCtx.currentTime); 
                 ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                oscilador.start();
-                oscilador.stop(audioCtx.currentTime + 0.1); 
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1); 
             } else {
-                oscilador.type = 'sawtooth';
-                oscilador.frequency.setValueAtTime(300, audioCtx.currentTime); 
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(300, audioCtx.currentTime); 
                 ganho.gain.setValueAtTime(0.5, audioCtx.currentTime);
-                oscilador.start();
-                oscilador.stop(audioCtx.currentTime + 0.4); 
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4); 
             }
         } catch(e) { }
     }
@@ -430,17 +353,16 @@
     function falarTexto(texto) {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel(); 
-            let mensagem = new SpeechSynthesisUtterance(texto);
-            mensagem.lang = 'pt-BR';
-            mensagem.rate = 1.2; 
-            window.speechSynthesis.speak(mensagem);
+            let msg = new SpeechSynthesisUtterance(texto);
+            msg.lang = 'pt-BR';
+            msg.rate = 1.2; 
+            window.speechSynthesis.speak(msg);
         }
     }
 
     function mostrarAlerta(msg, tipo = 'sucesso', tempo = 3000) {
         let alerta = document.getElementById('alerta-customizado'); 
-        alerta.innerText = msg; 
-        alerta.className = ''; 
+        alerta.innerText = msg; alerta.className = ''; 
         if (tipo === 'erro') alerta.classList.add('alerta-erro'); 
         else if (tipo === 'aviso') alerta.classList.add('alerta-aviso'); 
         else alerta.classList.add('alerta-sucesso');
@@ -454,9 +376,7 @@
         let telas = ['tela-inicial', 'tela-etiquetas', 'tela-camera-busca', 'tela-separacao-input', 'tela-separacao-foco', 'tela-conclusao'];
         telas.forEach(id => { document.getElementById(id).classList.add('hidden'); });
         
-        if (idTela !== 'tela-separacao-foco' && idTela !== 'tela-camera-busca') {
-            pararLeitor();
-        }
+        if (idTela !== 'tela-separacao-foco' && idTela !== 'tela-camera-busca') { pararLeitor(); }
         document.getElementById(idTela).classList.remove('hidden');
     }
 
@@ -481,8 +401,7 @@
         });
 
         if (encontrados.length === 0) { 
-            lista.innerHTML = '<div style="color:red; padding:10px; text-align:center;">Nenhum produto encontrado.</div>'; 
-            return; 
+            lista.innerHTML = '<div style="color:red; padding:10px; text-align:center;">Nenhum produto encontrado.</div>'; return; 
         }
 
         encontrados.slice(0, 10).forEach(item => {
@@ -490,32 +409,17 @@
             let sku = item.produto.codigo || item.produto["Código"] || ""; 
             let preco = item.produto.preco || item.produto["Preço"] || "0,00";
             
-            let div = document.createElement('div'); 
-            div.className = 'resultado-item'; 
+            let div = document.createElement('div'); div.className = 'resultado-item'; 
             div.innerHTML = `${nome} <div class="resultado-dica">SKU: ${sku} | R$ ${preco}</div>`;
             div.onclick = function() { abrirCardProduto(item.produto, item.indexOriginal); }; 
             lista.appendChild(div);
         });
     }
 
-    // Função educativa: Função de apoio para definir o valor do Seletor.
-    // Se o valor do banco de dados não estiver na nossa lista, nós criamos ele temporariamente para ser visualizado.
     function definirValorSeletorSeguro(elementoSelect, valor) {
-        if (!valor) {
-            elementoSelect.value = "";
-            return;
-        }
-        
-        // Verifica se a opção já existe lendo todas as 'options' dentro do select
+        if (!valor) { elementoSelect.value = ""; return; }
         let opcaoExiste = Array.from(elementoSelect.options).some(opt => opt.value === valor);
-        
-        if (!opcaoExiste) {
-            // Se não existe, cria uma nova <option> com o valor desconhecido
-            let novaOpcao = new Option(valor + " (No Banco)", valor);
-            elementoSelect.add(novaOpcao);
-        }
-        
-        // Depois de garantir que a opção existe, selecionamos ela.
+        if (!opcaoExiste) { elementoSelect.add(new Option(valor + " (No Banco)", valor)); }
         elementoSelect.value = valor;
     }
 
@@ -530,33 +434,21 @@
         document.getElementById('inp-validade').value = produto.validade || produto["Data Validade"] || "";
         document.getElementById('inp-venda').value = produto.preco || produto["Preço"] || "";
         
-        // --- LÓGICA DE SEPARAÇÃO DA LOCALIZAÇÃO ---
-        let locCompleta = produto.localizacao || produto["Localização"] || ""; // Ex: "04-E1"
+        let locCompleta = produto.localizacao || produto["Localização"] || ""; 
         let valGondola = produto.gondola || produto["Gôndola"] || "";
         let valPrateleira = produto.prateleira || produto["Prateleira"] || "";
 
-        // Se o banco não mandou gôndola e prateleira separadas, mas mandou a 'localizacao' junta...
         if (locCompleta && !valGondola && !valPrateleira) {
-            let partes = locCompleta.split('-'); // Separa usando o traço
-            if (partes.length >= 2) {
-                valGondola = partes[0].trim(); // Ex: "04"
-                valPrateleira = partes[1].trim(); // Ex: "E1"
-            } else {
-                // Se não tiver traço, jogamos tudo na gôndola para não perder o dado
-                valGondola = locCompleta.trim(); 
-            }
+            let partes = locCompleta.split('-'); 
+            if (partes.length >= 2) { valGondola = partes[0].trim(); valPrateleira = partes[1].trim(); } 
+            else { valGondola = locCompleta.trim(); }
         }
 
-        // Aplica os valores nos menus suspensos (Selects)
-        let selGon = document.getElementById('inp-gondola');
-        let selPra = document.getElementById('inp-prateleira');
-        
-        definirValorSeletorSeguro(selGon, valGondola);
-        definirValorSeletorSeguro(selPra, valPrateleira);
+        definirValorSeletorSeguro(document.getElementById('inp-gondola'), valGondola);
+        definirValorSeletorSeguro(document.getElementById('inp-prateleira'), valPrateleira);
 
         const img = document.getElementById('img-foto'); 
-        img.style.display = 'block'; 
-        img.src = `../site/img/produtos/${sku}.webp`; 
+        img.style.display = 'block'; img.src = `../site/img/produtos/${sku}.webp`; 
         img.onerror = function() { this.style.display = 'none'; };
         
         document.getElementById('area-busca-etiqueta').classList.add('hidden'); 
@@ -568,17 +460,13 @@
         document.getElementById('area-busca-etiqueta').classList.remove('hidden'); 
     }
 
-    // ==================== ARMAZENAMENTO E EXPORTAÇÃO DINÂMICA (CSV COMPLETO) ====================
     function salvarProdutoLocal() {
         if (produtoSendoEditadoIndex === -1) return; 
         
         let produto = bancoDeDados[produtoSendoEditadoIndex];
         let sku = document.getElementById('inp-codigo').value;
-        
-        // Cria um objeto apenas com as chaves que mostramos na tela
         let atualizacoes = {};
         
-        // Salvamos tanto nas chaves amigáveis quanto nas chaves do ERP caso existam
         if("Código" in produto) atualizacoes["Código"] = sku; else atualizacoes.codigo = sku;
         if("Descrição" in produto) atualizacoes["Descrição"] = document.getElementById('inp-nome').value; else atualizacoes.nome = document.getElementById('inp-nome').value;
         if("GTIN/EAN" in produto) atualizacoes["GTIN/EAN"] = document.getElementById('inp-ean').value; else atualizacoes.gtin = document.getElementById('inp-ean').value;
@@ -586,17 +474,12 @@
         if("Data Validade" in produto) atualizacoes["Data Validade"] = document.getElementById('inp-validade').value; else atualizacoes.validade = document.getElementById('inp-validade').value;
         if("Preço" in produto) atualizacoes["Preço"] = document.getElementById('inp-venda').value; else atualizacoes.preco = document.getElementById('inp-venda').value;
         
-        // Pegamos os valores dos seletores 
         let vGon = document.getElementById('inp-gondola').value;
         let vPra = document.getElementById('inp-prateleira').value;
 
-        // Salvamos separado
-        atualizacoes["gondola"] = vGon;
-        atualizacoes["Gôndola"] = vGon;
-        atualizacoes["prateleira"] = vPra;
-        atualizacoes["Prateleira"] = vPra;
+        atualizacoes["gondola"] = vGon; atualizacoes["Gôndola"] = vGon;
+        atualizacoes["prateleira"] = vPra; atualizacoes["Prateleira"] = vPra;
 
-        // Montamos e salvamos a localização junta para manter o banco original alinhado (ex: "04-E1")
         let localizacaoUnida = "";
         if (vGon && vPra) localizacaoUnida = `${vGon}-${vPra}`;
         else if (vGon) localizacaoUnida = vGon;
@@ -605,76 +488,57 @@
         if("Localização" in produto || !("localizacao" in produto)) atualizacoes["Localização"] = localizacaoUnida;
         atualizacoes["localizacao"] = localizacaoUnida;
 
-        // Injeta as atualizações no banco de dados ativo (RAM)
         Object.assign(produto, atualizacoes);
-        
-        // Salva no celular para não perder ao recarregar a página
         modificacoesLocais[sku] = atualizacoes;
         localStorage.setItem('estoque_modificacoes', JSON.stringify(modificacoesLocais));
-        
         mostrarAlerta("✅ Alterações salvas na memória do celular!", "sucesso");
     }
 
     function exportarBancoCSV() { 
-        if (bancoDeDados.length === 0) {
-            mostrarAlerta("Banco de dados vazio.", "erro");
-            return;
-        }
-
-        // 1. Descobrir dinamicamente todas as colunas que existem no JSON original (para não omitir nenhuma)
+        // Lógica mantida sem alterações (exportação de CSV dinâmico)
+        if (bancoDeDados.length === 0) { mostrarAlerta("Banco de dados vazio.", "erro"); return; }
         let colunasSet = new Set();
-        bancoDeDados.forEach(obj => {
-            Object.keys(obj).forEach(key => colunasSet.add(key));
-        });
-        
-        let colunas = Array.from(colunasSet); // Lista com dezenas de colunas
-        
-        // 2. Montar o cabeçalho do CSV
+        bancoDeDados.forEach(obj => { Object.keys(obj).forEach(key => colunasSet.add(key)); });
+        let colunas = Array.from(colunasSet); 
         let csv = colunas.join(';') + '\n';
-        
-        // 3. Preencher as linhas usando todas as colunas
         bancoDeDados.forEach(obj => { 
             let linha = colunas.map(coluna => {
                 let valor = obj[coluna];
-                // Se for nulo ou undefined, vira vazio
                 if (valor === null || valor === undefined) return "";
-                // Remove ponto-e-virgula e quebras de linha para não corromper o arquivo Excel
                 return String(valor).replace(/;/g, ",").replace(/\n/g, " ").replace(/\r/g, "");
             });
             csv += linha.join(';') + '\n'; 
         });
-        
-        // 4. Download
         const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a"); 
-        link.setAttribute("href", URL.createObjectURL(blob));
+        const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob));
         link.setAttribute("download", `banco_atualizado_${new Date().getTime()}.csv`); 
-        document.body.appendChild(link); 
-        link.click(); 
-        document.body.removeChild(link);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
     }
     
     function limparMemoriaLocal() {
-        if(confirm("ATENÇÃO: Isso apagará todas as edições de Gôndola/Prateleira que você fez neste celular que ainda não foram exportadas. Continuar?")) {
+        if(confirm("ATENÇÃO: Isso apagará todas as edições feitas neste celular que ainda não foram exportadas. Continuar?")) {
             localStorage.removeItem('estoque_modificacoes');
             modificacoesLocais = {};
             mostrarAlerta("Memória limpa com sucesso.", "sucesso");
         }
     }
 
-    // ==================== MOTOR DE IMPRESSÃO TÉRMICA (RAWBT) ====================
+    // ==================== MOTOR DE IMPRESSÃO (ESTABILIZADO) ====================
+    // Educativo: Ao invés de remover o iframe que causa quebra no Android, 
+    // verificamos se ele existe. Se existir, apenas reescrevemos o interior dele.
     function imprimirPelaPaginaFantasma(htmlConteudo) {
-        let iframeAntigo = document.getElementById('frame-impressao');
-        if (iframeAntigo) { iframeAntigo.remove(); }
-
-        let iframe = document.createElement('iframe');
-        iframe.id = 'frame-impressao';
-        iframe.style.position = 'absolute';
-        iframe.style.width = '0px';
-        iframe.style.height = '0px';
-        iframe.style.border = 'none';
-        iframe.style.left = '-9999px'; 
-        document.body.appendChild(iframe);
+        let iframe = document.getElementById('frame-impressao');
+        
+        if (!iframe) {
+            iframe = document.createElement('iframe');
+            iframe.id = 'frame-impressao';
+            iframe.style.position = 'absolute';
+            iframe.style.width = '0px';
+            iframe.style.height = '0px';
+            iframe.style.border = 'none';
+            iframe.style.left = '-9999px'; 
+            document.body.appendChild(iframe);
+        }
 
         let htmlCompleto = `
         <!DOCTYPE html>
@@ -684,7 +548,6 @@
             <style>
                 @page { margin: 0; size: 58mm auto; }
                 body { margin: 0; padding: 0; width: 48mm; font-family: Arial, sans-serif; color: #000; background: #fff; }
-                
                 .etiqueta { width: 48mm; padding: 2mm 0; padding-bottom: 15mm; box-sizing: border-box; text-align: center; }
                 .foto-print { width: 100%; max-height: 45mm; object-fit: contain; margin-bottom: 8px; display: block; }
                 .titulo { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
@@ -692,27 +555,22 @@
                 .nome { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; line-height: 1.2; }
                 .linha { display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-bottom: 1px dashed #000; padding: 4px 0; margin: 0;}
                 .linha span.valor { font-weight: normal; }
-                
                 .rel-titulo { font-size: 18px; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; border-bottom: 2px solid #000; padding-bottom: 5px; text-align: center; }
                 .rel-info { font-size: 14px; font-weight: bold; margin-bottom: 10px; text-align: center; }
                 .rel-item { border-bottom: 1px dashed #000; padding: 4px 0; font-size: 14px; font-weight: bold; text-align: left; }
             </style>
         </head>
-        <body>
-            ${htmlConteudo}
-        </body>
+        <body>${htmlConteudo}</body>
         </html>
         `;
 
         let doc = iframe.contentWindow.document || iframe.contentDocument;
-        doc.open();
-        doc.write(htmlCompleto);
-        doc.close();
+        doc.open(); doc.write(htmlCompleto); doc.close();
 
         setTimeout(() => {
             iframe.contentWindow.focus();
             iframe.contentWindow.print();
-        }, 1000);
+        }, 800);
     }
 
     function imprimirEtiquetaGondola() {
@@ -725,21 +583,16 @@
         
         let imgElement = document.getElementById('img-foto');
         let fotoTag = '';
-        if (imgElement.style.display !== 'none' && imgElement.src) {
-            fotoTag = `<img src="${imgElement.src}" class="foto-print" onerror="this.style.display='none'">`;
-        }
+        if (imgElement.style.display !== 'none' && imgElement.src) { fotoTag = `<img src="${imgElement.src}" class="foto-print" onerror="this.style.display='none'">`; }
 
         let conteudoEtiqueta = `
             <div class="etiqueta">
-                ${fotoTag}
-                <div class="titulo">SKU</div>
-                <div class="sku">${sku}</div>
+                ${fotoTag} <div class="titulo">SKU</div> <div class="sku">${sku}</div>
                 <div class="nome">${nome}</div>
                 <div class="linha"><span>EAN:</span> <span class="valor">${ean}</span></div>
                 <div class="linha"><span>VAL:</span> <span class="valor">${val}</span></div>
                 <div class="linha"><span>GÔNDOLA:</span> <span class="valor">${gon}</span></div>
                 <div class="linha"><span>PRAT:</span> <span class="valor">${pra}</span></div>
-                
                 <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
             </div>
         `;
@@ -755,31 +608,21 @@
                 <div class="rel-titulo">Pedido ${numeroPedido}</div>
                 <div class="rel-info">Entrega: ${dataEntrega}</div>
         `;
-        
         listaDeSeparacao.forEach(i => { 
             let status = i.status === 'concluido' ? '[OK]' : '[FALTOU]';
             cont += `<div class="rel-item">${status} ${i.quantidadeTotal}x ${i.nomePedido.substring(0, 18)}</div>`; 
         });
-        
-        cont += `
-                <div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div>
-            </div>
-        `;
+        cont += `<div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div></div>`;
         imprimirPelaPaginaFantasma(cont);
     }
 
-    // ==================== CÂMERA DE LEITURA (PADRÃO PROFISSIONAL 1:1) ====================
+    // ==================== CÂMERA DE LEITURA ====================
     function iniciarLeitor(modo) {
         if (scannerAtual) {
             try { 
-                scannerAtual.stop().then(() => {
-                    scannerAtual.clear();
-                    abrirCameraSeguro(modo);
-                }).catch(() => { abrirCameraSeguro(modo); });
+                scannerAtual.stop().then(() => { scannerAtual.clear(); abrirCameraSeguro(modo); }).catch(() => { abrirCameraSeguro(modo); });
             } catch(e) { abrirCameraSeguro(modo); }
-        } else {
-            abrirCameraSeguro(modo);
-        }
+        } else { abrirCameraSeguro(modo); }
     }
 
     function abrirCameraSeguro(modo) {
@@ -787,41 +630,24 @@
         if (modo === 'busca') abrirTela('tela-camera-busca'); 
         
         scannerAtual = new Html5Qrcode(idElemento); 
+        let configCamera = { fps: 15, aspectRatio: 1.0, qrbox: { width: 250, height: 120 } };
         
-        // Padrão Profissional: 1.0 (quadrado perfeito) para o auto-focus da lente não se perder.
-        // fps de 15 aumenta a velocidade de captura em 50%.
-        let configCamera = { 
-            fps: 15, 
-            aspectRatio: 1.0, 
-            qrbox: { width: 250, height: 120 }
-        };
-        
-        scannerAtual.start(
-            { facingMode: "environment" }, 
-            configCamera, 
-            (codigoLido) => {
+        scannerAtual.start({ facingMode: "environment" }, configCamera, (codigoLido) => {
                 if (modo === 'busca') { 
-                    pararLeitor('tela-etiquetas'); 
-                    buscarProdutoPorCamera(codigoLido); 
+                    pararLeitor('tela-etiquetas'); buscarProdutoPorCamera(codigoLido); 
                 } else { 
                     if (aguardandoProximaLeitura) return; 
                     aguardandoProximaLeitura = true; 
                     validarLeituraProduto(codigoLido); 
                     setTimeout(() => { aguardandoProximaLeitura = false; }, 800); 
                 }
-            }, 
-            (erroDeFoco) => {}
+            }, (erro) => {}
         ).catch(err => { mostrarAlerta("Erro ao iniciar a câmera", "erro"); });
     }
     
     function pararLeitor(telaDeRetorno = null) { 
         if (scannerAtual) { 
-            try { 
-                scannerAtual.stop().then(() => {
-                    scannerAtual.clear();
-                    scannerAtual = null;
-                }).catch(e => { console.log(e); });
-            } catch(e) {} 
+            try { scannerAtual.stop().then(() => { scannerAtual.clear(); scannerAtual = null; }).catch(e => {}); } catch(e) {} 
         } 
         if (telaDeRetorno) abrirTela(telaDeRetorno);
     }
@@ -844,10 +670,9 @@
     async function carregarPedidosFila() {
         let container = document.getElementById('area-lista-pedidos');
         container.innerHTML = '<p style="text-align:center; padding: 20px;">⏳ Carregando fila de pedidos...</p>';
-        
         try {
             const resposta = await fetch('../site/pedidos_fila.json');
-            if (!resposta.ok) throw new Error("Erro ao carregar");
+            if (!resposta.ok) throw new Error("Erro");
             pedidosFila = await resposta.json();
             renderizarPedidosFila();
         } catch (erro) {
@@ -856,18 +681,15 @@
     }
 
     function renderizarPedidosFila() {
-        let container = document.getElementById('area-lista-pedidos');
-        container.innerHTML = '';
+        let container = document.getElementById('area-lista-pedidos'); container.innerHTML = '';
         let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE');
 
         if (pendentes.length === 0) {
-            container.innerHTML = '<div style="text-align:center; padding: 20px; font-size: 18px; color: green; font-weight: bold;">✅ Nenhum pedido pendente!</div>';
-            return;
+            container.innerHTML = '<div style="text-align:center; padding: 20px; font-size: 18px; color: green; font-weight: bold;">✅ Nenhum pedido pendente!</div>'; return;
         }
 
         pendentes.forEach((pedido) => {
-            let div = document.createElement('div');
-            div.className = 'resultado-item'; 
+            let div = document.createElement('div'); div.className = 'resultado-item'; 
             let numItens = pedido.items ? pedido.items.length : 0;
             let dataApresentacao = new Date(pedido.dataCriacao).toLocaleDateString('pt-BR');
             let nomePedido = pedido.orderNum || "Pedido sem número";
@@ -879,55 +701,53 @@
     }
 
     function iniciarSeparacaoPedido(pedido) {
-        listaDeSeparacao = [];
-        pedidoAtual = pedido; 
+        listaDeSeparacao = []; pedidoAtual = pedido; 
 
-        if (!pedido.items || pedido.items.length === 0) {
-            mostrarAlerta("Este pedido não tem produtos listados.", "erro");
-            return;
-        }
+        if (!pedido.items || pedido.items.length === 0) { mostrarAlerta("Este pedido não tem produtos listados.", "erro"); return; }
 
         pedido.items.forEach(item => {
             if (item.foundProduct) {
                 listaDeSeparacao.push({
-                    quantidadeTotal: item.qtd,
-                    unidadesLidas: 0,
-                    nomePedido: item.nomeOriginal,
-                    produtoDb: item.foundProduct, 
-                    localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "ZZZ",
-                    status: 'pendente'
+                    quantidadeTotal: item.qtd, unidadesLidas: 0,
+                    nomePedido: item.nomeOriginal, produtoDb: item.foundProduct, 
+                    localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "ZZZ", status: 'pendente'
                 });
             }
         });
 
-        if (listaDeSeparacao.length === 0) {
-            mostrarAlerta("Nenhum item do pedido foi encontrado.", "erro");
-            return;
-        }
+        if (listaDeSeparacao.length === 0) { mostrarAlerta("Nenhum item do pedido foi encontrado.", "erro"); return; }
 
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
         indexAtualPicking = 0; 
+        
+        entrarTelaCheia(); // Chama o modo Fullscreen ao abrir a separação
         abrirTela('tela-separacao-foco'); 
         renderizarItemFoco(); 
         iniciarLeitor('separacao');
     }
 
     function renderizarItemFoco() {
-        if (indexAtualPicking >= listaDeSeparacao.length) { 
-            finalizarPicking(); 
-            return; 
-        }
+        if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPicking(); return; }
         
         let item = listaDeSeparacao[indexAtualPicking]; 
-        let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
         
-        document.getElementById('foco-nome').innerText = item.nomePedido; 
+        // Exibindo textos de separação otimizados
         document.getElementById('foco-loc').innerText = `📍 Gôndola: ${item.localizacao}`; 
-        document.getElementById('foco-contador').innerText = `${item.unidadesLidas} / ${item.quantidadeTotal} Separados`;
+        document.getElementById('foco-qtd-texto').innerHTML = `<span>${item.quantidadeTotal}</span> unidades de:`;
+        document.getElementById('foco-nome').innerText = item.nomePedido; 
         
-        let img = document.getElementById('foco-img'); 
-        img.src = `../site/img/produtos/${skuItem}.webp`; 
-        img.style.display = 'block';
+        // Gerador dos Ticks Elegantes
+        let containerTicks = document.getElementById('foco-ticks');
+        containerTicks.innerHTML = '';
+        for(let i = 0; i < item.quantidadeTotal; i++) {
+            let tick = document.createElement('div');
+            tick.className = 'tick-box';
+            if(i < item.unidadesLidas) {
+                tick.classList.add('active');
+                tick.innerHTML = '✓'; // Tick verde quando lido
+            }
+            containerTicks.appendChild(tick);
+        }
     }
 
     function validarLeituraProduto(codigoLido) {
@@ -938,18 +758,21 @@
         let eanEsperado = String(itemAtual.produtoDb.gtin || itemAtual.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, ""); 
         let skuEsperado = String(itemAtual.produtoDb.codigo || itemAtual.produtoDb["Código"] || "").trim().toUpperCase();
         
+        // Pega apenas as 3 primeiras palavras para a leitura da voz não ser exaustiva
+        let nomeParaVoz = itemAtual.nomePedido.split(' ').slice(0, 3).join(' ');
+
         if (eanEsperado === eanLimpo || skuEsperado === skuLimpo) {
             itemAtual.unidadesLidas++; 
             if (itemAtual.unidadesLidas < itemAtual.quantidadeTotal) { 
                 let faltam = itemAtual.quantidadeTotal - itemAtual.unidadesLidas;
                 tocarBipe('sucesso');
-                falarTexto(`Faltam ${faltam} unidades.`);
+                falarTexto(`Faltam ${faltam}.`);
                 mostrarAlerta(`✅ Correto! Faltam ${faltam}.`, "aviso", 1500); 
                 renderizarItemFoco(); 
             } else { 
                 itemAtual.status = 'concluido'; 
                 tocarBipe('sucesso');
-                falarTexto(`${itemAtual.nomePedido} concluído.`);
+                falarTexto(`${nomeParaVoz} concluído.`);
                 mostrarAlerta(`🎉 Item Completo!`, "sucesso", 1500); 
                 indexAtualPicking++; 
                 renderizarItemFoco(); 
@@ -963,12 +786,14 @@
 
     function cancelarPicking() { 
         if (confirm("Tem certeza que deseja cancelar a separação?")) { 
+            sairTelaCheia();
             pararLeitor(); 
             abrirTela('tela-inicial'); 
         } 
     }
     
     function finalizarPicking() { 
+        sairTelaCheia();
         pararLeitor(); 
         falarTexto("Pedido finalizado com sucesso.");
         abrirTela('tela-conclusao'); 
