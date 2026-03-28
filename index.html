@@ -21,7 +21,7 @@
     --c-err: #dc2626;     /* Vermelho Erro */
     --c-bg: #ffffff;      /* Fundo Principal */
     --c-bd: #e2e8f0;      /* Bordas */
-    --c-img-bg: #e2e8f0;  /* Fundo Escuro Arredondado para Fotos */
+    --c-img-bg: #f1f5f9;  /* Fundo Escuro Arredondado para Fotos (Um pouco mais escuro) */
     --font: 'Inter', system-ui, sans-serif;
 }
 
@@ -117,7 +117,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .fc-right { font-weight: 800; font-size: 1.2rem; }
 
 /* =========================================
-   ABAS LATERAIS (GAVETA GERAL)
+   ABAS LATERAIS (GAVETA GERAL E DETALHES)
    ========================================= */
 .lateral-view {
     position: fixed; top: 0; left: 100%; width: 100%; height: 100dvh; background: var(--c-bg);
@@ -135,22 +135,29 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     display: flex; flex-direction: row; gap: 10px; position: sticky; top: 0; z-index: 10;
 }
 .search-wrapper-aba { position: relative; flex: 1; }
-.depto-search { width: 100%; padding: 12px 10px 12px 38px; border-radius: 10px; border: none; background: #f1f5f9; font-size: 0.95rem; font-weight: 500; color: var(--c-p); transition: 0.2s;}
+.depto-search { width: 100%; padding: 12px 10px 12px 38px; border-radius: 10px; border: none; background: var(--c-img-bg); font-size: 0.95rem; font-weight: 500; color: var(--c-p); transition: 0.2s;}
 .depto-search:focus { background: #fff; box-shadow: 0 0 0 2px var(--c-a); }
 .search-icon-aba { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--c-s); width: 18px; }
-.depto-sort { width: 135px; flex-shrink: 0; padding: 10px; border-radius: 10px; border: none; background: #f1f5f9; font-size: 0.85rem; font-weight: 700; color: var(--c-p); outline: none; cursor: pointer;}
+.depto-sort { width: 135px; flex-shrink: 0; padding: 10px; border-radius: 10px; border: none; background: var(--c-img-bg); font-size: 0.85rem; font-weight: 700; color: var(--c-p); outline: none; cursor: pointer;}
 
-.see-all-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 120px; position: relative; background: var(--c-bg);}
+.see-all-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 180px; position: relative; background: var(--c-bg);}
 
 /* GRADE DE PRODUTOS */
 .grid-ver-todos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 1000px; margin: 0 auto;}
 @media(min-width: 800px) { .grid-ver-todos { grid-template-columns: repeat(5, 1fr); gap: 20px; } }
 
-/* CARTÃO DE PRODUTO CLEAN */
+/* CARTÃO DE PRODUTO CLEAN (Sem borda) */
 .u-card { background: transparent; border: none; padding: 5px 0; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: 0.2s;}
 .u-card:active { transform: scale(0.98); }
-.u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 20px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
-.u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 10%;}
+
+/* Fundo das Imagens e Cestas */
+.u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 16px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
+.u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 8%;}
+
+/* Regra específica para Cestas (Sem fundo cinza, cobrindo o card) */
+.basket-img-area { background: transparent !important; }
+.basket-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 16px; mix-blend-mode: normal !important;}
+
 .kit-tag { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 800; border-radius: 8px; position: absolute; top: 8px; left: 8px; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
 .card-add-btn { position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: var(--c-a); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 1.4rem; font-weight: 600; z-index: 10; border: none; padding: 0; box-shadow: 0 2px 6px rgba(234, 29, 44, 0.3); transition: 0.15s;}
@@ -168,11 +175,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button:active { opacity: 0.8; background: var(--c-bd); }
 .card-qty-ctrl span { font-weight: 800; font-size: 1rem; color: var(--c-p); flex: 1; text-align: center;}
 
-/* RODAPÉ DETALHE DE KIT/CESTA */
-.see-all-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 100; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05);}
+/* RODAPÉ DETALHE DE KIT/CESTA (Subido para não bater no carrinho) */
+.see-all-footer { position: fixed; bottom: 85px; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 80; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); border-radius: 20px 20px 0 0;}
 .expander-total { font-size: 1.2rem; font-weight: 800; color: var(--c-p); text-align: center; }
 
-/* MODAIS GERAIS */
+/* MODAIS GERAIS (INFORMAÇÕES E PEDIDOS) */
 dialog { border: none; border-radius: 20px; width: 92%; max-width: 450px; padding: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.15); background: #fff; }
 dialog::backdrop { background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); }
 .modal-body { padding: 25px 20px; text-align: center; position: relative; max-height: 85vh; overflow-y: auto; overflow-x: hidden; }
@@ -186,12 +193,21 @@ dialog::backdrop { background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); }
 .toast { padding: 14px 20px; color: #fff; border-radius: 12px; font-weight: 700; font-size: 0.95rem; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastPop 0.3s ease-out; z-index: 99999; }
 @keyframes toastPop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+/* NOVA ABA LATERAL DE PRODUTO (QUICK VIEW 30% / 85%) */
+#qv-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:rgba(15,23,42,0.6); z-index:91; backdrop-filter: blur(2px);}
+.lateral-view.quick-view { z-index: 92; width: 85%; left: 100%; border-radius: 24px 0 0 24px; box-shadow: -4px 0 24px rgba(0,0,0,0.15); }
+.lateral-view.quick-view.open { left: 15%; }
+@media(min-width: 800px) {
+    .lateral-view.quick-view { width: 35%; }
+    .lateral-view.quick-view.open { left: 65%; }
+}
+
 /* ABA DE CHECKOUT */
 #checkout-view { z-index: 100; }
 #chk-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px 0; }
 .chk-item-card { border: 1px solid var(--c-bd); border-radius: 16px; padding: 12px; background: #fff; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .chk-item-card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 8px; }
-.chk-item-card .name { font-size: 0.85rem; font-weight: 600; color: var(--c-p); line-height: 1.2; margin-bottom: 10px; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+.chk-item-card .name { font-size: 0.85rem; font-weight: 600; color: var(--c-p); line-height: 1.2; margin-bottom: 10px; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;}
 
 .del-option { display: flex; justify-content: space-between; align-items: center; padding: 16px 15px; border: 1px solid var(--c-bd); border-radius: 12px; cursor: pointer; background: #fff; margin-bottom: 10px; transition: 0.2s;}
 .del-option.selected { border-color: var(--c-a); background: #fff5f5; box-shadow: 0 0 0 2px var(--c-a); }
@@ -235,7 +251,7 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
     <div id="grid-home-sections" class="grid-home-sections"></div>
 </main>
 
-<div id="floating-cart" class="floating-cart" onclick="openCheckout()">
+<div id="floating-cart" class="floating-cart" onclick="openCheckout()" style="display: none;">
     <div class="fc-left">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
         <span class="fc-badge" id="fc-count">0 itens</span>
@@ -274,6 +290,26 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
     </div>
 </div>
 
+<div id="qv-overlay" onclick="closeQuickView()"></div>
+<div id="quick-view-lateral" class="lateral-view quick-view">
+    <div class="see-all-header">
+        <button class="see-all-back" onclick="closeQuickView()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Voltar
+        </button>
+        <h2 class="see-all-title">Detalhes</h2>
+    </div>
+    <div class="see-all-content" style="padding: 20px 15px 120px;">
+        <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:16px; padding:20px; aspect-ratio: 1/1;">
+            <img id="qv-img" src="" alt="Produto" style="width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply;">
+        </div>
+        <h3 id="qv-name" style="font-size: 1.15rem; font-weight: 700; color: var(--c-p); margin-bottom: 8px; line-height: 1.4; text-align: left;"></h3>
+        <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-err); margin-bottom: 12px; font-weight: 700; text-align: left; display: none;"></div>
+        <div id="qv-price" style="font-size: 1.8rem; font-weight: 800; color: var(--c-p); margin-bottom: 20px; text-align: left;"></div>
+        <div id="qv-action-area" data-id=""></div>
+    </div>
+</div>
+
 <div id="checkout-view" class="lateral-view">
     <div class="see-all-header">
         <button class="see-all-back" onclick="closeCheckout()">
@@ -283,7 +319,7 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
         <h2 class="see-all-title">Finalizar Pedido</h2>
     </div>
     
-    <div class="see-all-content" style="text-align: left; padding: 20px 15px;">
+    <div class="see-all-content" style="text-align: left; padding: 20px 15px 120px;">
         <h3 style="font-weight: 800; font-size: 1.1rem; color: var(--c-p);">1. Seus Produtos</h3>
         <div id="chk-list"></div>
         
@@ -326,19 +362,6 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
         <button class="btn-modal secondary" style="margin-top: 20px; border: none; color: var(--c-s); background: transparent;" onclick="clearCart()">🗑️ Esvaziar Sacola</button>
     </div>
 </div>
-
-<dialog id="modal-quick-view">
-    <div class="modal-body">
-        <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
-        <div style="display:flex; justify-content:center; margin-bottom: 15px; background:var(--c-img-bg); border-radius:20px; padding:20px;">
-            <img id="qv-img" src="" alt="Produto" style="width: 100%; max-height: 25vh; object-fit: contain; mix-blend-mode: multiply;">
-        </div>
-        <h3 id="qv-name" style="font-size: 1.15rem; font-weight: 700; color: var(--c-p); margin-bottom: 4px; line-height: 1.35; text-align: left;"></h3>
-        <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-err); margin-bottom: 8px; font-weight: 700; text-align: left; display: none;"></div>
-        <div id="qv-price" style="font-size: 1.8rem; font-weight: 800; color: var(--c-p); margin-bottom: 20px; text-align: left;"></div>
-        <div id="qv-action-area" data-id=""></div>
-    </div>
-</dialog>
 
 <dialog id="modal-faq" onclick="if(event.target===this)this.close()">
     <div class="modal-body">
@@ -392,11 +415,11 @@ const STATE = {
         'limpeza': { id: 'limpeza', title: 'Limpeza', color: '#0ea5e9', type: 'PROD', data: [] },
         'casapet': { id: 'casapet', title: 'Casa e Pet', color: '#8b5cf6', type: 'PROD', data: [] }
     },
-    cart: {}, cartOrder: [], appliedCombos: [], baseBasket: null, basketExtraFee: 0, comboDiscount: 0, bulkTotalDiscount: 0,
+    cart: {}, cartOrder: [], appliedCombos: [], baseBasket: null, basketExtraFee: 0, comboDiscount: 0,
     coupon: null, deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
 };
 
-// CÉREBRO DE CATEGORIZAÇÃO BASEADO NO SEU JSON (Mapeado e Otimizado)
+// CÉREBRO DE CATEGORIZAÇÃO MAPEADO
 const RAW_TERMOS = [
   { "etiqueta": "Massas e Molhos", "termos": "macarrão, espaguete, penne, parafuso, padre nosso, lámen, miojo, molho de tomate, extrato de tomate" },
   { "etiqueta": "Arroz, Feijão e Grãos", "termos": "arroz, feijão, canjica, milho para pipoca" },
@@ -461,7 +484,7 @@ function converterDataValidade(dataStr) {
 }
 
 // ==========================================
-// RENDERIZAÇÃO IMEDIATA DA HOME (CARDS 3D)
+// RENDERIZAÇÃO DA HOME (CARDS 3D)
 // ==========================================
 function renderHomeCards() {
     const cards = [
@@ -475,13 +498,8 @@ function renderHomeCards() {
     
     let html = '';
     cards.forEach(c => {
-        html += `
-        <div class="home-card" onclick="${c.action}" style="background-color: ${c.color};">
-            <div class="home-card-icon">${c.icon}</div>
-            <div class="home-card-title">${c.title}</div>
-        </div>`;
+        html += `<div class="home-card" onclick="${c.action}" style="background-color: ${c.color};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div></div>`;
     });
-    
     $('grid-home-sections').innerHTML = html;
 }
 
@@ -501,13 +519,8 @@ async function init() {
             fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
-        STATE.baskets = r1 || []; 
-        STATE.combos = r4 || []; 
-        STATE.coupons = r3 || []; 
-        STATE.banners = r11 || [];
-        
-        STATE.deptos.cestas.data = STATE.baskets;
-        STATE.deptos.combos.data = STATE.combos;
+        STATE.baskets = r1 || []; STATE.combos = r4 || []; STATE.coupons = r3 || []; STATE.banners = r11 || [];
+        STATE.deptos.cestas.data = STATE.baskets; STATE.deptos.combos.data = STATE.combos;
 
         if (r2 && r2.length > 0) {
             let userSeed = localStorage.getItem('donaAntoniaUserSeed') || Math.floor(Math.random() * 1000000);
@@ -515,44 +528,36 @@ async function init() {
             const hoje = new Date(); const sementeDoDia = hoje.getFullYear() * 10000 + (hoje.getMonth() + 1) * 100 + hoje.getDate() + parseInt(userSeed);
             function geradorAleatorio(semente) { return function() { var t = semente += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
 
-            // PREPARA PRODUTOS BRUTOS
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 return {
                     id: String(p.codigo || p.id), blingId: String(p.id), name: p.nome, 
                     price: parseFloat(p.preco), oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, stock: parseInt(p.estoque) || 0, validade: p.validade || null,
-                    img: `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "", bulkDiscount: 0
+                    img: `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || ""
                 };
             });
             
-            // AGRUPA (CÉREBRO DE CATEGORIAS)
             STATE.prods.forEach(p => { let grupo = agruparCategoria(p); STATE.deptos[grupo].data.push(p); });
 
-            // LOGICA DE PRECIFICAÇÃO DINÂMICA:
-            // 1. Alimentos: Top 5 de vencimento recebem 20%
+            // LOGICA DE PRECIFICAÇÃO DINÂMICA
             let alimentosProds = STATE.deptos.alimentos.data.filter(p => p.validade && p.stock > 0);
             alimentosProds.sort((a,b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
             let top5Validade = alimentosProds.slice(0, 5);
             top5Validade.forEach(p => {
                 if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price;
-                p.price = p.oldPrice * 0.80; // 20% de desconto
-                p.discountApplied = true;
+                p.price = p.oldPrice * 0.80; p.discountApplied = true;
             });
 
-            // 2. Sorteio de 50% dos restantes (Alterna Diariamente)
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
                 
                 let sementeProd = sementeDoDia + parseInt(p.blingId || p.id);
                 let randVal = geradorAleatorio(sementeProd)();
                 
-                // Atacado aleatório em 30% dos itens
-                if (randVal > 0.70) p.bulkDiscount = 0.03 + (geradorAleatorio(sementeProd+5)() * 0.02);
-
-                if(randVal < 0.50) { // 50% dos produtos ganham desconto
+                if(randVal < 0.50) { 
                     let discRoll = geradorAleatorio(sementeProd + 1)(); 
-                    let desc = 0.06; // 60% chance de ser 6%
-                    if(discRoll >= 0.60 && discRoll < 0.90) desc = 0.10; // 30% chance de ser 10%
-                    else if(discRoll >= 0.90) desc = 0.15; // 10% chance de ser 15%
+                    let desc = 0.06; 
+                    if(discRoll >= 0.60 && discRoll < 0.90) desc = 0.10; 
+                    else if(discRoll >= 0.90) desc = 0.15; 
                     
                     if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price;
                     p.price = p.oldPrice * (1 - desc);
@@ -563,17 +568,13 @@ async function init() {
             Object.values(STATE.deptos).forEach(d => { if(d.type === 'PROD') d.data.sort((a,b) => a.name.localeCompare(b.name)); });
         }
         
-        STATE.dataLoaded = true;
-        renderBanners();
+        STATE.dataLoaded = true; renderBanners();
 
-    } catch (e) { 
-        console.error("Erro na sincronização:", e); 
-        showToast("Erro ao conectar. Tente recarregar a página.", "r");
-    }
+    } catch (e) { console.error("Erro na sincronização:", e); showToast("Erro ao conectar. Tente recarregar a página.", "r"); }
 }
 
 // ==========================================
-// LÓGICA DAS ABAS E NAVEGAÇÃO CENTRAL
+// NAVEGAÇÃO DE ABAS
 // ==========================================
 window.goToHome = function() { 
     document.getElementById('see-all-view').classList.remove('open');
@@ -583,23 +584,18 @@ window.goToHome = function() {
 };
 
 window.openDepto = function(deptoId) {
-    if (!STATE.dataLoaded) return showToast("Sincronizando loja, aguarde um instante...", "s");
+    if (!STATE.dataLoaded) return showToast("Sincronizando loja, aguarde...", "s");
 
-    STATE.activeDeptoId = deptoId;
-    STATE.viewStack = 'DEPTO_LIST';
+    STATE.activeDeptoId = deptoId; STATE.viewStack = 'DEPTO_LIST';
     let d = STATE.deptos[deptoId];
     
     document.getElementById('see-all-title').innerText = d.title;
     
-    if(d.type === 'PROD') {
-        document.getElementById('see-all-controls').style.display = 'flex'; 
-    } else {
-        document.getElementById('see-all-controls').style.display = 'none'; 
-    }
+    if(d.type === 'PROD') { document.getElementById('see-all-controls').style.display = 'flex'; } 
+    else { document.getElementById('see-all-controls').style.display = 'none'; }
     
     document.getElementById('see-all-footer').style.display = 'none'; 
-    document.getElementById('depto-search').value = '';
-    document.getElementById('depto-sort').value = 'az';
+    document.getElementById('depto-search').value = ''; document.getElementById('depto-sort').value = 'az';
     
     document.getElementById('see-all-view').classList.add('open');
     applyDeptoFilters(); 
@@ -628,48 +624,41 @@ window.applyDeptoFilters = function() {
     }
     
     let html = '';
-    if(filtered.length === 0) {
-        html = '<p style="grid-column: 1/-1; text-align:center; padding: 40px 15px; color: var(--c-s); font-weight: 700;">Nenhum produto encontrado.</p>';
-    } else {
-        html = filtered.map((item, idx) => buildCardHtml(item, depto.type, false, idx)).join('');
-    }
+    if(filtered.length === 0) { html = '<p style="grid-column: 1/-1; text-align:center; padding: 40px 15px; color: var(--c-s); font-weight: 700;">Nenhum produto encontrado.</p>'; } 
+    else { html = filtered.map((item, idx) => buildCardHtml(item, depto.type, false, idx)).join(''); }
     
     document.getElementById('see-all-grid').innerHTML = html;
     document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
 };
 
-// BOTÃO VOLTAR (GERENCIA A PILHA)
 window.handleLateralBack = function() {
-    if (STATE.viewStack === 'KIT_DETAIL') {
-        openDepto(STATE.activeDeptoId); // Volta pra lista de cestas
-    } else {
-        closeSeeAll(); // Volta pra HOME
-    }
+    if (STATE.viewStack === 'KIT_DETAIL') { openDepto(STATE.activeDeptoId); } 
+    else { closeSeeAll(); }
 };
 
 window.closeSeeAll = function(isFromBrowser = false) {
     document.getElementById('see-all-view').classList.remove('open');
-    STATE.viewStack = 'HOME';
-    setTimeout(() => { document.getElementById('see-all-grid').innerHTML = ''; }, 300);
-    if (isFromBrowser !== true && history.state && history.state.lateralOpen) history.back();
+    STATE.viewStack = 'HOME'; setTimeout(() => { document.getElementById('see-all-grid').innerHTML = ''; }, 300);
+    if (!isFromBrowser && history.state && history.state.lateralOpen) history.back();
 }
 
 window.addEventListener('popstate', function(event) {
     let lateralView = document.getElementById('see-all-view');
     let checkoutView = document.getElementById('checkout-view');
-    if (checkoutView && STATE.checkoutOpen) closeCheckout();
+    let qvView = document.getElementById('quick-view-lateral');
+
+    if (qvView && qvView.classList.contains('open')) closeQuickView(true);
+    else if (checkoutView && STATE.checkoutOpen) closeCheckout();
     else if (lateralView && lateralView.classList.contains('open')) closeSeeAll(true); 
 });
 
-
 // ==========================================
-// LÓGICA DO EXPANDER (DETALHES DA CESTA/KIT)
+// EXPANDER (DETALHES DA CESTA/KIT)
 // ==========================================
 let expanderState = { id: null, type: null, basePrice: 0, originalSum: 0, priceOffset: 0, items: {}, originalItems: {}, discountLost: false, orderedIds: [], sourceObj: null, currentDisplayPrice: 0 };
 
 window.openKitLateralView = function(id, type) {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
-
     STATE.viewStack = 'KIT_DETAIL';
 
     let sourceObj = type === 'BASKET' ? STATE.baskets.find(x => String(x.id) === String(id)) : STATE.combos.find(x => String(x.id) === String(id));
@@ -702,7 +691,7 @@ window.openKitLateralView = function(id, type) {
     document.getElementById('see-all-grid').innerHTML = itemsHtml;
     
     let contentDiv = document.getElementById('see-all-content');
-    contentDiv.style.paddingBottom = '140px'; contentDiv.scrollTo({ top: 0, behavior: 'instant' });
+    contentDiv.style.paddingBottom = '180px'; contentDiv.scrollTo({ top: 0, behavior: 'instant' });
     document.getElementById('see-all-footer').style.display = 'flex';
     
     updateExpanderTotalDisplay(currentSum);
@@ -718,7 +707,7 @@ function updateExpanderTotalDisplay(currentSum) {
     
     if (expanderState.type === 'COMBO' && !expanderState.discountLost) {
         let savings = expanderState.originalSum - expanderState.basePrice;
-        if (savings > 0) totalHtml += `<div style="color:var(--c-ok); font-size: 0.9rem; font-weight: 800; margin-top: 4px;">Você ganha -${fmt(savings)} no Kit!</div>`;
+        if (savings > 0) totalHtml += `<div style="color:var(--c-ok); font-size: 0.9rem; font-weight: 800; margin-top: 4px;">Você economiza: ${fmt(savings)}</div>`;
     }
     document.getElementById('see-all-total-container').innerHTML = totalHtml;
 }
@@ -778,9 +767,8 @@ window.commitExpander = function() {
     if (cartBtn) { cartBtn.style.transform = 'translateX(-50%) scale(1.05)'; setTimeout(() => cartBtn.style.transform = 'translateX(-50%) scale(1)', 200); }
 };
 
-
 // ==========================================
-// FUNÇÕES DE PRODUTO INDIVIDUAL
+// PRODUTOS E QUICK VIEW ABA LATERAL
 // ==========================================
 function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let id = item.id; 
@@ -789,11 +777,13 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let pPrice = item.price || item.preco;
     let tagHtml = ''; let oldPriceHtml = ''; let priceHtml = fmt(pPrice); let onClick = '';
     let isKit = type === 'COMBO'; let isBasket = type === 'BASKET';
+    
+    let imgAreaClass = isBasket ? 'u-img-area basket-img-area' : 'u-img-area';
     let addBtnHtml = ''; let qty = STATE.cart[id] || 0;
     
     if (isKit || isBasket) {
         let precoDe = 0;
-        if (item.produtos) { item.produtos.forEach(s => { let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) { precoDe += (p.oldPrice || p.price) * parseInt(q); }}); }
+        if (item.produtos) { item.produtos.forEach(s => { let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) { precoDe += p.price * parseInt(q); }}); }
         if (isKit) {
             onClick = `openKitLateralView('${id}', 'COMBO')`;
             if (precoDe > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`; else tagHtml = `<div class="kit-tag">KIT</div>`; 
@@ -811,7 +801,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
 
     return `
     <div class="u-card" data-id="${id}" onclick="${onClick}">
-        <div class="u-img-area">${tagHtml} <img src="${img}" alt="${formatName(name)}">${addBtnHtml}</div>
+        <div class="${imgAreaClass}">${tagHtml} <img src="${img}" alt="${formatName(name)}">${addBtnHtml}</div>
         <div class="u-info">
             <div class="u-name">${formatName(name)}</div>
             <div style="display: flex; flex-direction: column; justify-content: flex-end;">${oldPriceHtml}<div class="u-price">${priceHtml}</div></div>
@@ -827,14 +817,22 @@ function getCardControls(id) {
     return `<button class="btn-big-action" onclick="event.stopPropagation(); upd('${id}',1)">Adicionar</button>`;
 }
 
-function openQuickView(id) { 
+window.openQuickView = function(id) { 
     let p = STATE.prods.find(x => x.id === id); if (!p) return; 
     $('qv-img').src = p.img; $('qv-name').innerText = formatName(p.name); 
     if (p.validade) { $('qv-validade').innerText = "Validade: " + p.validade; $('qv-validade').style.display = 'block'; } else { $('qv-validade').style.display = 'none'; }
-    $('qv-price').innerHTML = p.oldPrice ? `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:10px;font-weight:600;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
+    $('qv-price').innerHTML = p.oldPrice ? `<span style="font-size:1.2rem;text-decoration:line-through;color:var(--c-s);margin-right:10px;font-weight:600;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
     $('qv-action-area').dataset.id = id; $('qv-action-area').innerHTML = getCardControls(id); 
-    $('modal-quick-view').showModal(); 
+    $('qv-overlay').style.display = 'block';
+    document.getElementById('quick-view-lateral').classList.add('open');
+    if (!history.state || !history.state.qvOpen) history.pushState({ qvOpen: true }, '');
 }
+
+window.closeQuickView = function(isFromBrowser = false) {
+    document.getElementById('quick-view-lateral').classList.remove('open');
+    setTimeout(() => { $('qv-overlay').style.display = 'none'; }, 300);
+    if (!isFromBrowser && history.state && history.state.qvOpen) history.back();
+};
 
 function upd(id, delta) { 
     let p = STATE.prods.find(x => x.id === id); if (!p) return; 
@@ -847,7 +845,7 @@ function upd(id, delta) {
             if (c) { c.produtos.forEach(s => { let [q, r] = s.split('x'); if (r.trim() === id) { reqTotal += parseInt(q) * ac.qty; }}); }
         });
         if (reqTotal > 0 && n < reqTotal) {
-            if (confirm("Atenção: Ao reduzir ou remover este item, você perderá o desconto especial do Kit. Deseja continuar?")) { STATE.comboDiscount = 0; STATE.appliedCombos = []; showToast("Desconto do kit removido", "r"); } else { return; }
+            if (confirm("Atenção: Ao reduzir, você perderá o desconto especial do Kit. Deseja continuar?")) { STATE.comboDiscount = 0; STATE.appliedCombos = []; showToast("Desconto do kit removido", "r"); } else { return; }
         }
     }
     
@@ -856,7 +854,7 @@ function upd(id, delta) {
     STATE.cart[id] = n; 
     
     if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => x !== id); } 
-    if ($('modal-quick-view').open && $('qv-action-area').dataset.id === String(id)) $('qv-action-area').innerHTML = getCardControls(id);
+    if (document.getElementById('quick-view-lateral').classList.contains('open') && $('qv-action-area').dataset.id === String(id)) $('qv-action-area').innerHTML = getCardControls(id);
     
     document.querySelectorAll(`.add-btn-${id}`).forEach(el => { let qty = STATE.cart[id] || 0; el.innerHTML = qty > 0 ? `<span style="font-size:1rem;">${qty}</span>` : '+'; });
     updateTotals(); 
@@ -899,10 +897,10 @@ window.clearCart = function() {
 };
 
 function updateTotals() {
-    let sum = 0; STATE.bulkTotalDiscount = 0; 
+    let sum = 0;
     Object.entries(STATE.cart).forEach(([id, q]) => { 
         let p = STATE.prods.find(x => x.id === id); 
-        if (p) { sum += p.price * q; if (q >= 2 && p.bulkDiscount && !(p.oldPrice > p.price)) { STATE.bulkTotalDiscount += (p.price * p.bulkDiscount) * q; } }
+        if (p) { sum += p.price * q; }
     });
 
     let subtotal = sum + STATE.basketExtraFee; 
@@ -912,7 +910,7 @@ function updateTotals() {
     }
 
     let totalDescontosKits = STATE.comboDiscount || 0; let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
-    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount - cupomDesconto;
+    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - cupomDesconto;
     
     if ($('chk-total')) $('chk-total').innerText = fmt(final);
     
@@ -921,9 +919,9 @@ function updateTotals() {
     let fc = document.getElementById('floating-cart');
     if(fc) {
         if (STATE.checkoutOpen) {
-            fc.style.display = 'none'; // Esconde se estiver no checkout
+            fc.style.display = 'none'; 
         } else {
-            fc.style.display = 'flex'; // SEMPRE visível quando checkout está fechado
+            fc.style.display = 'flex'; 
             document.getElementById('fc-count').innerText = totalItems + (totalItems === 1 ? ' item' : ' itens');
             document.getElementById('fc-price').innerText = fmt(final);
         }
@@ -949,10 +947,25 @@ window.applyCoupon = function() {
     updateTotals(); 
 };
 
+// Nova função para agendamento que atualiza o visual corretamente
+window.selectDelivery = function(index) {
+    STATE.selectedDeliveryIndex = index; 
+    let sel = STATE.deliveryOptions[index]; 
+    STATE.deliveryDiscount = sel.discount; 
+    STATE.deliveryDateStr = sel.dateStr;
+    
+    document.querySelectorAll('.del-option').forEach((el, i) => {
+        if (i === index) el.classList.add('selected');
+        else el.classList.remove('selected');
+    });
+    
+    updateTotals(); 
+    renderCheckoutItems(); 
+};
+
 function renderCheckoutItems() {
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { 
         let p = STATE.prods.find(x => x.id === id); let qty = STATE.cart[id];
-        let msgLeve3 = (qty >= 2 && p.bulkDiscount && !(p.oldPrice > p.price)) ? `<div style="color:var(--c-ok); font-size:0.75rem; font-weight:800; text-align:center; width:100%; margin-top:6px;">Atacado: -${fmt((p.price * p.bulkDiscount) * qty)}</div>` : '';
         return `
         <div class="chk-item-card">
             <img src="${p.img}" alt="${formatName(p.name)}">
@@ -962,7 +975,6 @@ function renderCheckoutItems() {
                 <span style="font-weight: 800; font-size: 0.95rem;">${qty}</span>
                 <button onclick="upd('${id}',1); event.stopPropagation();" style="background:var(--c-img-bg); color:var(--c-p); width:36px;">+</button>
             </div>
-            ${msgLeve3}
         </div>`; 
     }).join('');
     
@@ -973,11 +985,10 @@ function renderCheckoutItems() {
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span>${fmt(subtotal)}</span></div>` + 
         (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:6px;"><span>Kit Promo:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
-        (STATE.bulkTotalDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:6px;"><span>Desconto Atacado:</span><span>-${fmt(STATE.bulkTotalDiscount)}</span></div>` : '') + 
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:6px;"><span>Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '') +
         (cupomDesconto > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;margin-top:6px;"><span>Cupom:</span><span>-${fmt(cupomDesconto)}</span></div>` : '');
         
-    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.bulkTotalDiscount - cupomDesconto; 
+    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - cupomDesconto; 
     $('chk-total').innerText = fmt(final);
     
     let btn = $('btn-send-order');
@@ -989,7 +1000,7 @@ function openCheckout() {
     if (STATE.cartOrder.length === 0) return showToast("Sua sacola está vazia", "r"); 
     
     STATE.checkoutOpen = true;
-    updateTotals(); // Hide cart
+    updateTotals(); 
 
     let options = []; let date = new Date(); let checkDate = new Date(date);
     if (date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) { options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 }); }
@@ -1001,7 +1012,7 @@ function openCheckout() {
     STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
     
     $('delivery-options-list').innerHTML = options.map((opt, i) => `
-        <div class="del-option ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="STATE.selectedDeliveryIndex=${i}; renderCheckoutItems();"><div><div class="del-opt-title">${opt.title}</div><div class="del-opt-date">${opt.dateStr}</div></div>${opt.discount > 0 ? `<div class="del-opt-badge" style="background:var(--c-ok); color:#fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight:800;">- ${fmt(opt.discount)}</div>` : ''}</div>
+        <div class="del-option ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i});"><div><div class="del-opt-title">${opt.title}</div><div class="del-opt-date">${opt.dateStr}</div></div>${opt.discount > 0 ? `<div class="del-opt-badge" style="background:var(--c-ok); color:#fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight:800;">- ${fmt(opt.discount)}</div>` : ''}</div>
     `).join('');
     
     renderCheckoutItems();
@@ -1011,7 +1022,7 @@ function openCheckout() {
 window.closeCheckout = function() {
     document.getElementById('checkout-view').classList.remove('open');
     STATE.checkoutOpen = false;
-    updateTotals(); // Restores Cart
+    updateTotals(); 
 }
 
 function openHistoricoPedidos() {
@@ -1058,8 +1069,8 @@ async function sendOrder() {
     Object.entries(STATE.cart).forEach(([id, q]) => { const p = STATE.prods.find(x => x.id === id); if (p) { let unitPrice = p.price; totalBruto += unitPrice * q; let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice}); } });
 
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
-    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.bulkTotalDiscount; final -= STATE.deliveryDiscount; final -= cupomDesconto;
-    let outras_despesas = STATE.basketExtraFee || 0; let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + cupomDesconto + STATE.bulkTotalDiscount;
+    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount; final -= STATE.deliveryDiscount; final -= cupomDesconto;
+    let outras_despesas = STATE.basketExtraFee || 0; let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + cupomDesconto;
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; let tipoCestaTexto = "Cestas Personalizada"; 
     
     if (STATE.baseBasket) {
@@ -1074,7 +1085,6 @@ async function sendOrder() {
 
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KITS: -${fmt(STATE.comboDiscount)}`;
-    if (STATE.bulkTotalDiscount > 0) itemsTxt += `\n🎁 DESCONTO ATACADO: -${fmt(STATE.bulkTotalDiscount)}`;
     if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
     if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
@@ -1092,7 +1102,7 @@ async function sendOrder() {
 }
 
 // ==========================================
-// UTILIDADES GERAIS
+// UTILIDADES GERAIS E INICIALIZAÇÃO
 // ==========================================
 function renderBanners() {
     const containers = document.querySelectorAll('.info-banners-render');
@@ -1127,7 +1137,6 @@ function showToast(m, t) {
     $('toast-container').appendChild(d); setTimeout(() => d.remove(), 2500); 
 }
 
-// INICIALIZA PWA E EVENTOS
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 10); 
     
