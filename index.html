@@ -1437,16 +1437,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             <button onclick="this.parentElement.style.display='none'" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); width: 26px; height: 26px; border-radius: 50%; color: white; border: none; font-size: 0.9rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
         </div>
 
-        <div id="skeleton-loader" style="display:flex; flex-direction:column; align-items:center; padding-top: 40px; width: 100%; text-align: center;" class="layout-limit">
-            <div style="font-size: 2.5rem; animation: pulse-slow 1.5s infinite; margin-bottom: 15px;">⏳</div>
-            <h2 style="color: var(--c-p); font-weight: 700; font-size: 1.2rem; margin-bottom: 5px;">Carregando produtos...</h2>
-            <p style="color: var(--c-s); font-size: 0.9rem; margin-bottom: 30px;">Preparando as melhores ofertas para você!</p>
-            <div class="grid-produtos grid-large-cards" style="width: 100%; opacity: 0.5;">
-                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
-                <div class="skeleton-card"><div class="sk-img skeleton-el"></div><div class="sk-t1 skeleton-el"></div><div class="sk-t2 skeleton-el"></div></div>
-            </div>
-        </div>
-        
+              
         <div id="dynamic-sections"></div>
     </div>
 </main>
@@ -2181,31 +2172,18 @@ window.applyCoupon = function() {
 
 async function init() {
     STATE.coupons = []; STATE.combos = []; STATE.termos = []; 
-    STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = [];
+    STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = []; STATE.cjData = [];
 
     try {
-        const [r1, r2, r3, r4, r7, r8, r9, r10, r11, cjData] = await Promise.all([
+        // ETAPA 1: Baixa APENAS o essencial para a tela abrir instantaneamente (Produtos, Cestas e Kits)
+        const [r1, r2, r4] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
-            fetch('/site/compre-junto.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+            fetch('/site/combos.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
         ]);
         
         STATE.baskets = r1 || []; 
-        STATE.banners = r11 || [];
-        STATE.coupons = r3 || []; 
         STATE.combos = r4 || []; 
-        STATE.termos = r7 || [];
-        STATE.sohoje = r8 || [];
-        STATE.bloqueados = (r9 || []).map(String);
-        STATE.carrosseis = r10 || [];
-        STATE.cjData = cjData || [];
         
         if (r2 && r2.length > 0) {
             let userSeed = localStorage.getItem('donaAntoniaUserSeed') || Math.floor(Math.random() * 1000000);
@@ -2245,12 +2223,34 @@ async function init() {
             });
         }
         
+        // Renderiza a primeira tela IMEDIATAMENTE! O site já está visível para o cliente aqui.
         buildTabsAndSections(); 
         updateTotals();
-        renderBanners();
         setTimeout(adjustHeaderSpace, 200);
 
-        startTimer();
+        // ETAPA 2: Baixa o resto em segundo plano (Cupons, Termos, Compre Junto, etc)
+        Promise.all([
+            fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('sohoje.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('bloqueados.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('carrosseis.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/banners.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
+            fetch('/site/compre-junto.json?v=' + versaoCache).then(r => r.json()).catch(() => [])
+        ]).then(([r3, r7, r8, r9, r10, r11, cjData]) => {
+            STATE.coupons = r3 || []; 
+            STATE.termos = r7 || [];
+            STATE.sohoje = r8 || [];
+            STATE.bloqueados = (r9 || []).map(String);
+            STATE.carrosseis = r10 || [];
+            STATE.banners = r11 || [];
+            STATE.cjData = cjData || [];
+
+            // Como os termos (categorias extras) chegaram agora, reconstruímos as abas e atualizamos a tela
+            buildTabsAndSections(); 
+            renderBanners();
+            startTimer();
+        });
 
     } catch (e) { 
         console.error("Erro fatal na inicialização:", e); 
@@ -2560,22 +2560,7 @@ function buildTabsAndSections() {
         }
     }
         
-    STATE.ofertasDoDia = STATE.prods.filter(p => p.ofertaAplicada).sort((a, b) => {
-        let descontoA = a.oldPrice ? ((a.oldPrice - a.price) / a.oldPrice) : 0;
-        let descontoB = b.oldPrice ? ((b.oldPrice - b.price) / b.oldPrice) : 0;
-        return descontoB - descontoA;
-    });
-
-    if (STATE.ofertasDoDia.length > 0) {
-        let primeiraImagem = STATE.ofertasDoDia[0].img;
-        let linkPreload = document.createElement("link");
-        linkPreload.rel = "preload";
-        linkPreload.as = "image";
-        linkPreload.href = primeiraImagem;
-        linkPreload.fetchPriority = "high";
-        document.head.appendChild(linkPreload);
-    }
-    
+       
     STATE.sohoje = [];
     let seedOffset = 0;
     const date = new Date();
@@ -2667,7 +2652,7 @@ function renderBottomChips(activeTabId) {
 
     let htmlTop = '';
     
-    // --- NOVO: BANNER WHATSAPP ESTÁTICO ANTES DO SÓ HOJE ---
+    // Banner WhatsApp Estático (Mantido)
     const lastDismissed = localStorage.getItem('donaAntoniaPromoTimer');
     const now = Date.now();
     const hours24 = 24 * 60 * 60 * 1000; 
@@ -2690,27 +2675,31 @@ function renderBottomChips(activeTabId) {
         </div>`;
     }
 
+    // 1. KITS PROMOCIONAIS NO TOPO (Se não estivermos já na aba de combos)
+    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+        htmlTop += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-top-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'none', 0, 'grid-large-cards');
+    }
+
+    // Nota: As Cestas Básicas já são renderizadas no "#wrapper-cestas" logo abaixo do "top-category-nav" pelo HTML estático.
+
+    // 2. SÓ HOJE
     if (STATE.sohoje && STATE.sohoje.length > 0) {
         let titleHtml = `Só Hoje <div class="so-hoje-timer">00:00:00</div>`;
         htmlTop += generateCarouselHtml(titleHtml, '#dc2626', 'grid-sohoje-' + activeTabId, STATE.sohoje, 'MIXED', 'sohoje', 'none', 4);
     }
 
-    if (STATE.ofertasDoDia && STATE.ofertasDoDia.length > 0) {
-        htmlTop += generateCarouselHtml('Ofertas Imperdíveis', null, 'grid-ofertas-dia-' + activeTabId, STATE.ofertasDoDia, 'PROD', 'ofertasDoDia', 'random', 4);
-    }
-
+    // 3. DESTAQUES
     if (STATE.destaques && STATE.destaques.length > 0) {
         htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random', 4);
     }
+
+    // Injeta tudo isso na parte de cima
     if (topNavContainer) topNavContainer.innerHTML = htmlTop;
     ativarRolagemInfinita();
 
     let htmlMid = '';
     
-    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        htmlMid += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-bottom-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'none', 0, 'grid-large-cards');
-    }
-
+    // 4. COMPRE JUNTO
     let cjHtml = renderCompreJunto();
     if (cjHtml) htmlMid += cjHtml; 
     
@@ -2718,6 +2707,8 @@ function renderBottomChips(activeTabId) {
     ativarRolagemInfinita();
 
     let htmlBottom = '';
+    
+    // 5. SESSÕES NORMAIS (Categorias/Termos)
     if (STATE.termos && STATE.termos.length > 0) {
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
@@ -2731,6 +2722,7 @@ function renderBottomChips(activeTabId) {
             }
         });
     }
+    
     if (navContainer) navContainer.innerHTML = htmlBottom; 
     ativarRolagemInfinita();
 }
