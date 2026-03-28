@@ -297,24 +297,71 @@ button {
     scroll-behavior: smooth; 
 }
 
+/* =========================================
+   VISUAL DO HEADER MOBILE E BANNER (NOVO)
+   ========================================= */
+
+.mobile-hero-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 25px 15px 10px;
+    background: #fff;
+}
+
+/* AUMENTO DA LOGO NO MOBILE EM 100% */
+.mobile-hero-area .big-logo {
+    width: 180px; 
+    height: 180px;
+    border-radius: 50%;
+    border: 2px solid var(--c-bd);
+    object-fit: cover;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+/* CONTAINER DO BANNER ROTATIVO MOBILE */
+.banner-rotativo-container {
+    width: 100%;
+    max-width: 400px;
+    height: 44px;
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--c-img-bg);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.banner-slide {
+    position: absolute;
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
+    padding: 0 15px;
+    text-align: center;
+    z-index: 1;
+}
+
+.banner-slide.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+/* Banners Desktop (Mantidos no estilo anterior) */
 .info-banners {
     display: flex;
     flex-direction: column;
     gap: 6px;
     padding: 10px 15px 5px;
 }
-
-.info-banner-item {
-    font-size: 0.70rem;
-    font-weight: 600;
-    text-align: center;
-    padding: 8px 10px;
-    border-radius: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    width: 100%;
-}
-
 @media (min-width: 800px) {
     .info-banners {
         flex-direction: row;
@@ -328,32 +375,15 @@ button {
         display: flex;
         align-items: center;
         justify-content: center;
+        font-weight: 600;
+        text-align: center;
+        padding: 8px 10px;
+        border-radius: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 }
 
-/* =========================================
-   VISUAL DO HEADER MOBILE E BANNER
-   ========================================= */
-
-.mobile-hero-area {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 15px 15px 5px;
-    background: #fff;
-}
-
-.mobile-hero-area .big-logo {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    border: 2px solid var(--c-bd);
-    object-fit: cover;
-    margin-bottom: 8px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-}
-
-/* A logo pequena começa escondida no mobile */
 .mob-layer-2 .small-logo {
     max-width: 0;
     margin-right: 0;
@@ -363,7 +393,6 @@ button {
     height: 44px;
 }
 
-/* Quando rola a página, o header-wrapper recebe a classe scrolled e revela a logo */
 #header-wrapper.scrolled .mob-layer-2 .small-logo {
     max-width: 44px;
     margin-right: 12px;
@@ -371,22 +400,16 @@ button {
     border: 1px solid var(--c-bd);
 }
 
-/* --- CONTROLE DE VISUALIZAÇÃO MOBILE VS DESKTOP --- */
-.mobile-only-promo { display: block; }
-
 @media(max-width: 799px) {
     .desk-only-banners { display: none !important; }
 }
 
 @media(min-width: 800px) {
     .mobile-hero-area { display: none !important; } 
-    .mobile-only-banners { display: none !important; }
-    .mobile-only-promo { display: none !important; }
-    /* No desktop a logo pequena fica sempre ativa e bonita */
     .mob-layer-2 .small-logo { max-width: 44px !important; width: 44px !important; margin-right: 0 !important; opacity: 1 !important; border: 1px solid var(--c-bd) !important; }
 }
 
-/* SECTION TITLE CLEAN E MINIMALISTA */
+/* SECTION TITLE */
 .section-title { 
     width: 100%; 
     max-width: 1000px; 
@@ -413,7 +436,6 @@ button {
     border-radius: 2px;
 }
 
-/* --- ESTILO CRONÔMETRO SÓ HOJE --- */
 .so-hoje-timer {
     background: var(--c-err);
     color: #fff;
@@ -425,7 +447,65 @@ button {
     margin-left: auto;
 }
 
-/* --- CARROSSEL MOBILE E INDICADOR DE ROLAGEM --- */
+/* NOVO VISUAL - CATEGORIAS GRID */
+.grid-categorias {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 0 15px 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+@media(min-width: 800px) {
+    .grid-categorias { 
+        grid-template-columns: repeat(6, 1fr); 
+        gap: 15px; 
+    }
+}
+
+.cat-card {
+    background: #f8fafc;
+    border: 1px solid var(--c-bd);
+    border-radius: 12px;
+    padding: 20px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 85px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    position: relative;
+    overflow: hidden;
+}
+
+.cat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; 
+    width: 4px; height: 100%;
+    background: var(--c-a);
+    border-radius: 12px 0 0 12px;
+}
+
+.cat-card:hover, .cat-card:active {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+    border-color: #cbd5e1;
+    background: #fff;
+}
+
+.cat-card span {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--c-p);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* CARROSSEL MOBILE */
 .grid-produtos { 
     display: flex; 
     overflow-x: auto; 
@@ -453,7 +533,6 @@ button {
     border-radius: 2px;
 }
 
-/* PADRÃO GERAL MOBILE (2.2 cards) */
 .grid-produtos > .u-card,
 .grid-produtos > .skeleton-card,
 .grid-produtos > .card-ver-todos {
@@ -462,7 +541,6 @@ button {
     scroll-snap-align: start; 
 }
 
-/* PADRÃO MAIOR MOBILE PARA CESTAS E KITS */
 .grid-produtos.grid-large-cards > .u-card,
 .grid-produtos.grid-large-cards > .skeleton-card {
     width: 68vw; 
@@ -477,7 +555,6 @@ button {
         padding: 0 15px 40px; 
     } 
 
-    /* FORÇA 4 COLUNAS APENAS PARA CESTAS E KITS NO DESKTOP */
     .grid-produtos.grid-large-cards {
         grid-template-columns: repeat(4, 1fr); 
     }
@@ -497,7 +574,6 @@ button {
     }
 }
 
-/* CARD UNIVERSAL IDENTICO PARA TUDO - MINIMALISTA */
 .u-card { 
     background: #fff; 
     border: none; 
@@ -566,7 +642,6 @@ button {
     left: 6px;
 }
 
-/* BOTÃO DE ADICIONAR (+) - Minimalista */
 .card-add-btn { 
     position: absolute; 
     bottom: 6px; 
@@ -690,11 +765,6 @@ button {
 @keyframes shimmer { 
     0% { background-position: -468px 0; } 
     100% { background-position: 468px 0; } 
-}
-
-@keyframes pulse-slow {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.1); opacity: 0.6; }
 }
 
 .skeleton-card { 
@@ -1274,7 +1344,6 @@ dialog::backdrop {
     }
 }
 
-/* Rodapé fixo lateral para Kits/Cestas */
 .see-all-footer {
     position: fixed;
     bottom: 60px;
@@ -1414,19 +1483,17 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
     
     <div class="mobile-hero-area">
         <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="big-logo" alt="Logo Dona Antônia" onclick="goToHome()">
-        <div class="layout-limit info-banners info-banners-render mobile-only-banners"></div>
+        <div class="layout-limit mobile-only-banners"></div>
     </div>
 
-    <div class="layout-limit info-banners info-banners-render desk-only-banners"></div>
+    <div class="layout-limit info-banners desk-only-banners"></div>
     
-
     <div id="section-busca" class="page-section" style="display:none;">
         <div class="section-title">Resultados da Busca</div>
         <div class="grid-produtos" id="grid-busca"></div>
     </div>
 
     <div id="wrapper-sections">
-        
         <div id="banner-mercadinho" style="display: none; background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: white; padding: 18px 20px; border-radius: 8px; margin: 0 15px 20px; position: relative; transition: opacity 0.3s; z-index: 10;">
             <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 1.2rem;">🛒</span> Direto no Mercadinho!
@@ -1436,7 +1503,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             </div>
             <button onclick="this.parentElement.style.display='none'" style="position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.2); width: 26px; height: 26px; border-radius: 50%; color: white; border: none; font-size: 0.9rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
         </div>
-
               
         <div id="dynamic-sections"></div>
     </div>
@@ -1444,12 +1510,12 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
 <nav class="bottom-nav-bar">
    <div class="nav-group-left">
-    <div class="tab-item active" onclick="scrollToMenuSection('top', this)">
+    <div class="tab-item active" onclick="scrollToMenuSection('sohoje-container', this)">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         <div class="tab-label">Só Hoje</div>
     </div>
     
-    <div class="tab-item" onclick="scrollToMenuSection('grid-ofertas-dia-cestas', this)">
+    <div class="tab-item" onclick="scrollToMenuSection('destaques-container', this)">
         <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
         <div class="tab-label">Imperdíveis</div>
     </div>
@@ -1459,7 +1525,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         <div class="tab-label">Cestas</div>
     </div>
     
-    <div class="tab-item" onclick="scrollToMenuSection('grid-kits-bottom-cestas', this)">
+    <div class="tab-item" onclick="scrollToMenuSection('kits-container', this)">
         <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
         <div class="tab-label">Kits</div>
     </div>
@@ -1605,7 +1671,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 <div id="toast-container"></div>
 
 <script>
-// --- AJUSTE DINÂMICO DE ESPAÇO DO CABEÇALHO ---
 function adjustHeaderSpace() {
     const header = document.getElementById('header-wrapper');
     const stage = document.getElementById('scroll-stage');
@@ -2108,10 +2173,11 @@ window.commitExpander = function() {
     }
     
     setTimeout(() => {
-        let ofertasSec = document.getElementById('grid-ofertas-dia-cestas');
-        if (ofertasSec && ofertasSec.previousElementSibling) {
-            let positionToScroll = ofertasSec.previousElementSibling.offsetTop - 140; 
-            document.getElementById('scroll-stage').scrollTo({ top: positionToScroll, behavior: 'smooth' });
+        let scrollContainer = document.getElementById('scroll-stage');
+        let destSec = document.getElementById('destaques-container');
+        if (destSec) {
+            let positionToScroll = destSec.offsetTop - 140; 
+            scrollContainer.scrollTo({ top: positionToScroll, behavior: 'smooth' });
         }
     }, 100);
 };
@@ -2119,15 +2185,38 @@ window.commitExpander = function() {
 const versaoCache = Math.floor(Date.now() / 86400000); 
 
 function renderBanners() {
-    const containers = document.querySelectorAll('.info-banners-render');
-    if (!containers.length || !STATE.banners || STATE.banners.length === 0) return;
+    const deskContainer = document.querySelector('.desk-only-banners');
+    const mobContainer = document.querySelector('.mobile-only-banners');
+    if (!STATE.banners || STATE.banners.length === 0) return;
     
-    let html = '';
-    STATE.banners.forEach(b => {
-        html += `<div class="info-banner-item" style="background-color: ${b.corFundo}; color: ${b.corTexto};">${b.texto}</div>`;
-    });
-    
-    containers.forEach(c => c.innerHTML = html);
+    // Desktop: Mantém em linha
+    if(deskContainer) {
+        let htmlDesk = '';
+        STATE.banners.forEach(b => {
+            htmlDesk += `<div class="info-banner-item" style="background-color: ${b.corFundo}; color: ${b.corTexto};">${b.texto}</div>`;
+        });
+        deskContainer.innerHTML = htmlDesk;
+    }
+
+    // Mobile: Rotativo Automático
+    if(mobContainer) {
+        let htmlMob = `<div class="banner-rotativo-container">`;
+        STATE.banners.forEach((b, i) => {
+            htmlMob += `<div class="banner-slide ${i === 0 ? 'active' : ''}" style="background-color: ${b.corFundo}; color: ${b.corTexto};">${b.texto}</div>`;
+        });
+        htmlMob += `</div>`;
+        mobContainer.innerHTML = htmlMob;
+        
+        let slides = mobContainer.querySelectorAll('.banner-slide');
+        if(slides.length > 1) {
+            let cur = 0;
+            setInterval(() => {
+                slides[cur].classList.remove('active');
+                cur = (cur + 1) % slides.length;
+                slides[cur].classList.add('active');
+            }, 3000);
+        }
+    }
 }
 
 window.applyCoupon = function() {
@@ -2175,7 +2264,6 @@ async function init() {
     STATE.sohoje = []; STATE.bloqueados = []; STATE.carrosseis = []; STATE.banners = []; STATE.cjData = [];
 
     try {
-        // ETAPA 1: Baixa APENAS o essencial para a tela abrir instantaneamente (Produtos, Cestas e Kits)
         const [r1, r2, r4] = await Promise.all([
             fetch('/site/produtos-cesta-basica.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('/site/produtos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
@@ -2223,12 +2311,10 @@ async function init() {
             });
         }
         
-        // Renderiza a primeira tela IMEDIATAMENTE! O site já está visível para o cliente aqui.
         buildTabsAndSections(); 
         updateTotals();
         setTimeout(adjustHeaderSpace, 200);
 
-        // ETAPA 2: Baixa o resto em segundo plano (Cupons, Termos, Compre Junto, etc)
         Promise.all([
             fetch('/site/cupons.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
             fetch('termos.json?v=' + versaoCache).then(r => r.json()).catch(() => []),
@@ -2246,7 +2332,6 @@ async function init() {
             STATE.banners = r11 || [];
             STATE.cjData = cjData || [];
 
-            // Como os termos (categorias extras) chegaram agora, reconstruímos as abas e atualizamos a tela
             buildTabsAndSections(); 
             renderBanners();
             startTimer();
@@ -2418,7 +2503,6 @@ function buildTabsAndSections() {
     }
     
     let dropHtml = ''; 
-    let sectionsHtml = ''; 
     STATE.lists = {};
     
     let allTerms = [];
@@ -2435,28 +2519,12 @@ function buildTabsAndSections() {
     if (STATE.baskets.length > 0) {
         let img = STATE.baskets[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('cestas')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Cestas Básicas</div>`;
-        
-        sectionsHtml += `
-            <div id="sec-cestas" class="tab-section" style="display:none;">
-                <div class="top-category-nav"></div> 
-                <div id="wrapper-cestas"></div>
-                <div class="middle-category-nav"></div>
-                <div class="bottom-category-nav"></div>
-            </div>`;
         STATE.lists['cestas'] = { data: STATE.baskets, type: 'BASKET' };
     }
 
     if (STATE.combos.length > 0) {
         let img = STATE.combos[0].imagem || '/site/img/produtos/cesta.webp';
         dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('combos')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> Kits Promocionais</div>`;
-        sectionsHtml += `
-            <div id="sec-combos" class="tab-section" style="display:none;">
-                <div class="top-category-nav"></div> 
-                <div class="section-title"><span class="section-marker"></span>Kits Promocionais</div>
-                <div class="grid-produtos grid-large-cards" id="grid-combos"></div>
-                <div class="middle-category-nav"></div>
-                <div class="bottom-category-nav"></div>
-            </div>`;
         STATE.lists['combos'] = { data: STATE.combos, type: 'COMBO' };
     }
 
@@ -2548,14 +2616,11 @@ function buildTabsAndSections() {
 
                 let img = list[0].img;
                 dropHtml += `<div class="cat-dropdown-item" onclick="switchTab('${safe}')"><img src="${img}" width="30" height="30" style="border-radius:50%; object-fit:cover;"> ${label}</div>`;
-                sectionsHtml += `
-                    <div id="sec-${safe}" class="tab-section" style="display:none;">
-                        <div class="top-category-nav"></div> <div class="section-title"><span class="section-marker"></span>${label}</div>
-                        <div class="grid-produtos" id="grid-${safe}"></div>
-                        <div class="middle-category-nav"></div>
-                        <div class="bottom-category-nav"></div>
-                    </div>`;
+                
+                // Salvamos na lista
                 STATE.lists[`term_${safe}`] = { data: list, type: 'PROD' };
+                // Essencial salvar no shuffledLists para o menu em grade abrir corretamente na aba lateral
+                STATE.shuffledLists[`term_${safe}`] = list;
             }
         }
     }
@@ -2595,6 +2660,18 @@ function buildTabsAndSections() {
             pickAndDiscount(STATE.lists[key].data, 'PROD');
         }
     });
+
+    // CRIAÇÃO ESTRUTURAL DA HOME
+    let sectionsHtml = `
+        <div id="sec-cestas" class="tab-section" style="display:none;">
+            <div id="kits-container"></div>
+            <div id="wrapper-cestas"></div>
+            <div id="sohoje-container"></div>
+            <div id="destaques-container"></div>
+            <div id="compre-junto-container"></div>
+            <div id="categorias-container"></div>
+        </div>
+    `;
 
     $('cat-dropdown-list').innerHTML = dropHtml; 
     $('dynamic-sections').innerHTML = sectionsHtml; 
@@ -2642,88 +2719,51 @@ function renderBottomChips(activeTabId) {
     let activeSec = $('sec-' + activeTabId);
     if (!activeSec) return; 
     
-    let topNavContainer = activeSec.querySelector('.top-category-nav');
-    let midNavContainer = activeSec.querySelector('.middle-category-nav');
-    let navContainer = activeSec.querySelector('.bottom-category-nav'); 
+    let kitsCont = activeSec.querySelector('#kits-container');
+    let soHojeCont = activeSec.querySelector('#sohoje-container');
+    let destCont = activeSec.querySelector('#destaques-container');
+    let cjCont = activeSec.querySelector('#compre-junto-container');
+    let catCont = activeSec.querySelector('#categorias-container');
     
-    if (topNavContainer) topNavContainer.innerHTML = '';
-    if (midNavContainer) midNavContainer.innerHTML = '';
-    if (navContainer) navContainer.innerHTML = ''; 
-
-    let htmlTop = '';
-    
-    // Banner WhatsApp Estático (Mantido)
-    const lastDismissed = localStorage.getItem('donaAntoniaPromoTimer');
-    const now = Date.now();
-    const hours24 = 24 * 60 * 60 * 1000; 
-
-    if (!lastDismissed || (now - parseInt(lastDismissed)) > hours24) {
-        htmlTop += `
-        <div class="mobile-only-promo" style="margin: 15px auto 5px; max-width: 1000px; padding: 0 15px;">
-            <div style="background: #fff; border: 2px dashed #25D366; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); position: relative;">
-                <button onclick="closePromoWhatsAppStatic(event)" style="position: absolute; top: 10px; right: 10px; background: transparent; border: none; font-size: 1.2rem; color: var(--c-s); cursor: pointer; padding: 5px; line-height: 1;">✕</button>
-                <div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;">
-                    <span style="font-size: 1.8rem;">🎁</span>
-                    <span style="font-weight: 700; font-size: 1.1rem; color: var(--c-p);">Cupom R$ 15 de Desconto</span>
-                </div>
-                <p style="font-size: 0.85rem; color: var(--c-s); margin: 0; font-weight: 500;">Resgate agora e economize no seu primeiro pedido!</p>
-                <button onclick="openPromoWhatsApp()" style="background: #25D366; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-                    Resgatar Cupom de R$ 15
-                </button>
-            </div>
-        </div>`;
+    // 1. KITS PROMOCIONAIS NO TOPO
+    if (kitsCont && activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
+        kitsCont.innerHTML = generateCarouselHtml('Kits Promocionais', null, 'grid-kits-top-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'none', 0, 'grid-large-cards');
     }
-
-    // 1. KITS PROMOCIONAIS NO TOPO (Se não estivermos já na aba de combos)
-    if (activeTabId !== 'combos' && STATE.lists['combos'] && STATE.lists['combos'].data.length > 0) {
-        htmlTop += generateCarouselHtml('Kits Promocionais', null, 'grid-kits-top-' + activeTabId, STATE.lists['combos'].data, 'COMBO', 'combos', 'none', 0, 'grid-large-cards');
-    }
-
-    // Nota: As Cestas Básicas já são renderizadas no "#wrapper-cestas" logo abaixo do "top-category-nav" pelo HTML estático.
 
     // 2. SÓ HOJE
-    if (STATE.sohoje && STATE.sohoje.length > 0) {
+    if (soHojeCont && STATE.sohoje && STATE.sohoje.length > 0) {
         let titleHtml = `Só Hoje <div class="so-hoje-timer">00:00:00</div>`;
-        htmlTop += generateCarouselHtml(titleHtml, '#dc2626', 'grid-sohoje-' + activeTabId, STATE.sohoje, 'MIXED', 'sohoje', 'none', 4);
+        soHojeCont.innerHTML = generateCarouselHtml(titleHtml, '#dc2626', 'grid-sohoje-' + activeTabId, STATE.sohoje, 'MIXED', 'sohoje', 'none', 4);
     }
 
     // 3. DESTAQUES
-    if (STATE.destaques && STATE.destaques.length > 0) {
-        htmlTop += generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random', 4);
+    if (destCont && STATE.destaques && STATE.destaques.length > 0) {
+        destCont.innerHTML = generateCarouselHtml('Destaques', '#f59e0b', 'grid-destaques-' + activeTabId, STATE.destaques, 'PROD', 'destaques', 'random', 4);
     }
 
-    // Injeta tudo isso na parte de cima
-    if (topNavContainer) topNavContainer.innerHTML = htmlTop;
-    ativarRolagemInfinita();
-
-    let htmlMid = '';
-    
     // 4. COMPRE JUNTO
-    let cjHtml = renderCompreJunto();
-    if (cjHtml) htmlMid += cjHtml; 
-    
-    if (midNavContainer) midNavContainer.innerHTML = htmlMid;
-    ativarRolagemInfinita();
+    if (cjCont) {
+        cjCont.innerHTML = renderCompreJunto() || '';
+    }
 
-    let htmlBottom = '';
-    
-    // 5. SESSÕES NORMAIS (Categorias/Termos)
-    if (STATE.termos && STATE.termos.length > 0) {
+    // 5. CATEGORIAS GRID
+    if (catCont && STATE.termos && STATE.termos.length > 0) {
+        let catHtml = '<div class="section-title"><span class="section-marker"></span>Sessões do Site</div><div class="grid-categorias">';
         STATE.termos.forEach(item => {
             let label = item.etiqueta || item;
             let safe = String(label).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+            let listKey = 'term_' + safe;
             
             if (safe !== activeTabId && safe !== 'combos' && safe !== 'cestas') {
-                let listKey = 'term_' + safe;
                 if (STATE.lists[listKey] && STATE.lists[listKey].data.length > 0) {
-                    htmlBottom += generateCarouselHtml(label, null, 'grid-cat-' + safe + '-' + activeTabId, STATE.lists[listKey].data, 'PROD', listKey, 'alphabetical', 4);
+                    catHtml += `<div class="cat-card" onclick="openSeeAll('${listKey}', '${label}', 'PROD')"><span>${label}</span></div>`;
                 }
             }
         });
+        catHtml += '</div>';
+        catCont.innerHTML = catHtml;
     }
-    
-    if (navContainer) navContainer.innerHTML = htmlBottom; 
+
     ativarRolagemInfinita();
 }
 
@@ -2801,15 +2841,15 @@ window.switchTab = function(tabId, scrollToTop = false) {
         }
     });
     
-    let target = $('sec-' + tabId); 
+    let target = $('sec-cestas'); // Fixado na HOME
     if (target) {
         target.style.display = 'block';
     }
     
     let listKey = (tabId === 'cestas' || tabId === 'combos') ? tabId : 'term_' + tabId;
     
-    if (STATE.lists[listKey]) {
-        renderPaginated('grid-' + tabId, listKey, STATE.lists[listKey].data, STATE.lists[listKey].type);
+    if (STATE.lists['cestas']) {
+        renderPaginated('grid-cestas', 'cestas', STATE.lists['cestas'].data, STATE.lists['cestas'].type);
     }
     
     document.querySelectorAll('.cat-dropdown-item').forEach(el => { 
@@ -2819,50 +2859,20 @@ window.switchTab = function(tabId, scrollToTop = false) {
     });
     
     $('cat-dropdown-list').classList.remove('open'); 
-    renderBottomChips(tabId); 
+    renderBottomChips('cestas'); 
     
     setTimeout(() => {
         let scrollContainer = $('scroll-stage');
-        
         if (scrollToTop || tabId === 'cestas') {
-            scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
-            return; 
-        }
-
-        let titleElement = null;
-        if (tabId === 'combos') {
-            titleElement = target.querySelector('.section-title'); 
-        } else {
-            let mainGrid = document.getElementById('grid-' + tabId);
-            if (mainGrid && mainGrid.previousElementSibling && mainGrid.previousElementSibling.classList.contains('section-title')) {
-                titleElement = mainGrid.previousElementSibling;
-            }
-        }
-
-        if (titleElement) {
-            let positionToScroll = titleElement.offsetTop - 80;
-            scrollContainer.scrollTo({ top: positionToScroll, behavior: 'instant' });
-        } else {
             scrollContainer.scrollTo({ top: 0, behavior: 'instant' });
         }
     }, 10);
     
     document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    
-    if (tabId === 'cestas' && $('btn-nav-cestas-nav')) {
-        $('btn-nav-cestas-nav').classList.add('active');
-    } else if (tabId === 'combos' && $('btn-nav-kits')) {
-        $('btn-nav-kits').classList.add('active');
-    }
 };
     
 window.goToHome = function() { 
     switchTab('cestas', true); 
-    
-    document.querySelectorAll('.bottom-nav-bar .tab-item').forEach(el => el.classList.remove('active'));
-    if ($('btn-nav-home')) {
-        $('btn-nav-home').classList.add('active');
-    }
 };
     
 function renderPaginated(containerId, listKey, list, type) {
@@ -3502,32 +3512,16 @@ async function sendOrder() {
     }, 400);
 }
 
-// Resgatar via Novo Banner Estático
-window.openPromoWhatsApp = function() {
-    alert("Você será redirecionado para o nosso WhatsApp para resgatar o seu cupom de R$ 15!");
-    const msg = "Olá! Quero resgatar meu cupom de R$ 15 de desconto!";
-    window.open(`https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`, '_blank');
-    closePromoWhatsAppStatic(null);
-};
-
-window.closePromoWhatsAppStatic = function(e) {
-    if (e) e.stopPropagation();
-    localStorage.setItem('donaAntoniaPromoTimer', Date.now().toString());
-    renderBottomChips(STATE.activeTabId);
-};
-
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 50);
 
-    // --- Lógica do Header Sticky ---
     const scrollStage = document.getElementById('scroll-stage');
     const headerWrapper = document.getElementById('header-wrapper');
 
     if (scrollStage && headerWrapper) {
         scrollStage.addEventListener('scroll', function() {
-            // Aplica a animação da logo pequena apenas no mobile
             if (window.innerWidth < 800) {
-                if (this.scrollTop > 80) { // O usuário rolou pra baixo da logo grande
+                if (this.scrollTop > 80) {
                     headerWrapper.classList.add('scrolled');
                 } else {
                     headerWrapper.classList.remove('scrolled');
@@ -3535,7 +3529,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    // -----------------------------------------------------------------
 
     let isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     let isWebView = /(FBAN|FBAV|Instagram)/i.test(navigator.userAgent);
@@ -3598,10 +3591,7 @@ window.scrollToMenuSection = function(sectionId, element) {
             let targetEl = document.getElementById(sectionId);
             
             if (targetEl) {
-                let titleEl = targetEl.previousElementSibling;
-                let refEl = (titleEl && titleEl.classList.contains('section-title')) ? titleEl : targetEl;
-                
-                let position = refEl.offsetTop - 120; 
+                let position = targetEl.offsetTop - 120; 
                 scrollContainer.scrollTo({ top: position, behavior: 'smooth' });
             }
         }
