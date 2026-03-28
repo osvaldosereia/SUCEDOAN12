@@ -51,7 +51,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .logo-area { display: flex; align-items: center; gap: 10px; cursor: pointer; }
 .logo-top { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid var(--c-bd); }
-.brand-name { font-weight: 800; color: var(--c-p); font-size: 1.1rem; letter-spacing: -0.5px;}
+.brand-name { font-weight: 700; color: var(--c-p); font-size: 1.1rem; letter-spacing: -0.5px;}
 
 .header-actions { display: flex; align-items: center; gap: 12px; }
 
@@ -100,9 +100,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.05) 100%); pointer-events: none;
 }
 .home-card:active { transform: scale(0.96); }
-.home-card-icon { font-size: 3.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); z-index: 2; margin-bottom: 5px; line-height: 1;}
-/* Aumento da fonte do título na home para melhor destaque */
-.home-card-title { color: #fff; font-size: 1.25rem; font-weight: 800; line-height: 1.2; z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.4); letter-spacing: 0.5px;}
+.home-card-icon { font-size: 3rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.15)); z-index: 2; margin-bottom: 5px; line-height: 1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;}
+.home-card-title { color: #fff; font-size: 1.15rem; font-weight: 700; line-height: 1.2; z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.4); letter-spacing: 0.5px;}
 
 /* CARRINHO FLUTUANTE */
 .floating-cart {
@@ -125,8 +124,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .see-all-header { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #fff; border-bottom: 1px solid var(--c-bd); box-shadow: 0 2px 4px rgba(0,0,0,0.02); flex-shrink: 0;}
 .see-all-back { color: var(--c-a); background: transparent; border: none; cursor: pointer; display: flex; align-items: center; padding: 0; font-weight: 700; font-size: 1.05rem; transition: 0.2s; flex-shrink: 0; margin-right: 15px;}
 .see-all-back:active { opacity: 0.7; }
-/* Título da aba com fonte maior */
-.see-all-title { font-size: 1.25rem; font-weight: 800; color: var(--c-p); margin: 0; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: right;}
+.see-all-title { font-size: 1.15rem; font-weight: 700; color: var(--c-p); margin: 0; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: right;}
 
 /* SELETORES CUSTOMIZADOS (NÃO NATIVOS) */
 .see-all-controls {
@@ -178,10 +176,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-add-btn-wide:active { transform: scale(0.97); }
 
 .u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; padding: 0 4px;}
-.u-name { font-size: 0.95rem; font-weight: 700; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
-.kit-name-large { font-size: 1.25rem !important; font-weight: 800 !important; } /* Classe extra para aumentar nomes de kits/cestas */
+.u-name { font-size: 0.95rem; font-weight: 600; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
+.kit-name-large { font-size: 1.1rem !important; font-weight: 700 !important; } 
 
-.u-price { font-size: 1.15rem; font-weight: 800; color: var(--c-p); line-height: 1; }
+.u-price { font-size: 1.10rem; font-weight: 700; color: var(--c-p); line-height: 1; }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 2px; }
 
 .card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid var(--c-bd); border-radius: 10px; height: 38px; margin-top: 10px; width: 100%; overflow: hidden;}
@@ -189,8 +187,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button:active { opacity: 0.8; background: var(--c-bd); }
 .card-qty-ctrl span { font-weight: 800; font-size: 1rem; color: var(--c-p); flex: 1; text-align: center;}
 
-.see-all-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 80; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
-.expander-total { font-size: 1.2rem; font-weight: 800; color: var(--c-p); text-align: center; }
+.see-all-footer { position: absolute; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 80; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
+.expander-total { font-size: 1.1rem; font-weight: 700; color: var(--c-p); text-align: center; }
 
 /* MODAIS */
 dialog { border: none; border-radius: 20px; width: 92%; max-width: 450px; padding: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.15); background: #fff; }
@@ -313,7 +311,14 @@ dialog::backdrop { background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); }
     
     <div id="see-all-footer" class="see-all-footer" style="display:none;">
         <div class="expander-total" id="see-all-total-container"></div>
-        <button class="btn-modal primary" onclick="commitExpander()">Adicionar à sacola</button>
+        <div style="display: flex; gap: 10px; width: 100%;">
+            <button class="btn-modal secondary" style="flex: 0.4; font-size: 0.9rem;" onclick="handleLateralBack()">
+                Voltar
+            </button>
+            <button class="btn-modal primary" style="flex: 1;" onclick="commitExpander()">
+                Adicionar à sacola
+            </button>
+        </div>
     </div>
 </div>
 
@@ -395,16 +400,6 @@ dialog::backdrop { background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); }
     </div>
 </div>
 
-<dialog id="modal-pos-add" onclick="if(event.target===this)this.close()">
-    <div class="modal-body">
-        <h2 style="font-weight: 800; color: var(--c-ok); margin-bottom: 10px; font-size: 1.4rem;">✓ Adicionado!</h2>
-        <p style="color: var(--c-s); font-weight: 600; font-size: 0.95rem; margin-bottom: 25px;">O que você deseja fazer agora?</p>
-        
-        <button class="btn-modal secondary" style="margin-bottom: 12px;" onclick="document.getElementById('modal-pos-add').close(); handleLateralBack();">Ver mais produtos no supermercado</button>
-        <button class="btn-modal primary" onclick="document.getElementById('modal-pos-add').close(); handleLateralBack(); openCheckout();">Finalizar pedido agora</button>
-    </div>
-</dialog>
-
 <dialog id="modal-faq" onclick="if(event.target===this)this.close()">
     <div class="modal-body">
         <button class="btn-close-modal" onclick="this.closest('dialog').close()">✕</button>
@@ -448,7 +443,6 @@ const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
     baskets: [], prods: [], coupons: [], combos: [],
     
-    // BANNERS HARDCODED NA APLICAÇÃO COMO SOLICITADO
     banners: [
       { texto: "Entrega grátis em Cuiabá e VG", corFundo: "#dcfce7", corTexto: "#15803d" },
       { texto: "Pedidos a partir de R$ 75", corFundo: "#e0f2fe", corTexto: "#0369a1" },
@@ -468,50 +462,19 @@ const STATE = {
     coupon: null, deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
 };
 
-// CÉREBRO DE CATEGORIZAÇÃO INTERNO
 const TERMOS_CATEGORIAS = {
-    // Palavras chaves obrigatórias para sessão de alimentos (garantia que não misturem)
     alimentos_obrigatorios: ["arroz", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", "atum"],
-    higiene: [
-        "shampoo", "mascara capilar", "tratamento", "laminas", "lixa", "escova de banho", "corporal", "tratamento capilar", "paris", "condicionador", "creme de pentear", 
-        "creme para pentear", "tintura", "cor&tom", "louro", "escova de cabelo", "pente", "prendedor", 
-        "presilha", "elastico de cabelo", "sabonete", "hidratante", "locao", "desodorante", "roll-on", 
-        "aerosol", "talco", "elseve", "esponja de banho", "bucha vegetal", "creme dental", "escova de dente", 
-        "fio dental", "enxaguante bucal", "palito de dente", "absorvente", "algodao", "enxague bucal", 
-        "curativo", "salvelox", "papel higienico", "lixa para pes", "porta objetos", "aparelho de barbear", 
-        "barbeador", "gillette", "lamina", "lixa de unha", "cortador de unha", "removedor esmalte", 
-        "acetona", "pinca", "esponja de maquiagem", "agua oxigenada", "fralda", "lenco umedecido", "infantil"
-    ],
-    limpeza: [
-        "sabao", "tixan", "lava-roupas", "lava-roupas", "escova lavanderia", "lava roupa", "lav perfeita", "amaciante", "perfume para roupa", 
-        "prendedor de roupa", "varal", "corda para varal", "perfume", "escova de lavanderia", "desinfetante", 
-        "purificador", "glade", "cif", "bucha de lavar", "agua sanitaria", "lava louca", "detergente", 
-        "limpa aluminio", "multiuso", "veja", "alcool", "inseticida", "pedra sanitaria", "esponja multiuso", 
-        "esponja de aco", "esponja magica", "pano", "rodo", "vassoura", "pa de lixo", "saco para lixo", 
-        "saco de lixo", "sacola", "escova sanitaria", "balde"
-    ],
-    casapet: [
-        "racao", "copo", "pratinho", "jarra", "caneca de plastico", "sacos", "capa", "filtro", "copos", "pegador", "caneca", "prato", "papel aluminio", "tigela", "filtro cafe", "forma para gelo", 
-        "lacre", "coador de cafe", "balde de pipoca", "petisqueira", "tabua de corte", "faca", "colher", 
-        "espatula", "descascador", "forma de gelo", "abridor", "ralo", "descanso de panela", "saleiro", 
-        "pilao", "peneira", "extensao", "adaptador", "benjamim", "lampada", "pilha", "cabide", "cesto", 
-        "fosforo", "isqueiro", "processador de alimentos", "capa de botijao", "veda porta", "cantoneira", "aparador", 
-        "chaveiro", "porta comprimido", "necessaire", "relogio", "despertador", "agulha", "caneta", 
-        "lapis", "grafite", "linha magna", "lapiseira", "petisqueiras", "livro de colorir", "fita adesiva", "clips", "cola", 
-        "balao", "linha de costura", "supla", "cesta de bambu", "alfinete", "agulheiro", "fita metrica", 
-        "estilete", "abracadeira", "chinelo", "havaiana", "havaianas"
-    ]
+    higiene: ["shampoo", "mascara capilar", "tratamento", "laminas", "lixa", "escova de banho", "corporal", "tratamento capilar", "paris", "condicionador", "creme de pentear", "creme para pentear", "tintura", "cor&tom", "louro", "escova de cabelo", "pente", "prendedor", "presilha", "elastico de cabelo", "sabonete", "hidratante", "locao", "desodorante", "roll-on", "aerosol", "talco", "elseve", "esponja de banho", "bucha vegetal", "creme dental", "escova de dente", "fio dental", "enxaguante bucal", "palito de dente", "absorvente", "algodao", "enxague bucal", "curativo", "salvelox", "papel higienico", "lixa para pes", "porta objetos", "aparelho de barbear", "barbeador", "gillette", "lamina", "lixa de unha", "cortador de unha", "removedor esmalte", "acetona", "pinca", "esponja de maquiagem", "agua oxigenada", "fralda", "lenco umedecido", "infantil"],
+    limpeza: ["sabao", "tixan", "lava-roupas", "lava-roupas", "escova lavanderia", "lava roupa", "lav perfeita", "amaciante", "perfume para roupa", "prendedor de roupa", "varal", "corda para varal", "perfume", "escova de lavanderia", "desinfetante", "purificador", "glade", "cif", "bucha de lavar", "agua sanitaria", "lava louca", "detergente", "limpa aluminio", "multiuso", "veja", "alcool", "inseticida", "pedra sanitaria", "esponja multiuso", "esponja de aco", "esponja magica", "pano", "rodo", "vassoura", "pa de lixo", "saco para lixo", "saco de lixo", "sacola", "escova sanitaria", "balde"],
+    casapet: ["racao", "copo", "pratinho", "jarra", "caneca de plastico", "sacos", "capa", "filtro", "copos", "pegador", "caneca", "prato", "papel aluminio", "tigela", "filtro cafe", "forma para gelo", "lacre", "coador de cafe", "balde de pipoca", "petisqueira", "tabua de corte", "faca", "colher", "espatula", "descascador", "forma de gelo", "abridor", "ralo", "descanso de panela", "saleiro", "pilao", "peneira", "extensao", "adaptador", "benjamim", "lampada", "pilha", "cabide", "cesto", "fosforo", "isqueiro", "processador de alimentos", "capa de botijao", "veda porta", "cantoneira", "aparador", "chaveiro", "porta comprimido", "necessaire", "relogio", "despertador", "agulha", "caneta", "lapis", "grafite", "linha magna", "lapiseira", "petisqueiras", "livro de colorir", "fita adesiva", "clips", "cola", "balao", "linha de costura", "supla", "cesta de bambu", "alfinete", "agulheiro", "fita metrica", "estilete", "abracadeira", "chinelo", "havaiana", "havaianas"]
 };
 
 function agruparCategoria(produto) {
     let nomeProd = " " + norm(produto.name || "").replace(/[^a-z0-9 ]/g, ' ') + " ";
-    
-    // Verificando primeiro palavras chave obrigatórias de alimentos
     for (let t of TERMOS_CATEGORIAS.alimentos_obrigatorios) { if (nomeProd.includes(" " + norm(t) + " ")) return 'alimentos'; }
     for (let t of TERMOS_CATEGORIAS.higiene) { if (nomeProd.includes(" " + norm(t) + " ")) return 'higiene'; }
     for (let t of TERMOS_CATEGORIAS.limpeza) { if (nomeProd.includes(" " + norm(t) + " ")) return 'limpeza'; }
     for (let t of TERMOS_CATEGORIAS.casapet) { if (nomeProd.includes(" " + norm(t) + " ")) return 'casapet'; }
-    
     return 'alimentos'; 
 }
 
@@ -519,7 +482,6 @@ function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/
 function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
 
-// Converter data brasileira para timestamp
 function converterDataValidade(dataStr) {
     if (!dataStr) return new Date(8640000000000000).getTime(); 
     let partes = dataStr.split('/');
@@ -578,28 +540,24 @@ async function init() {
             
             STATE.prods.forEach(p => { let grupo = agruparCategoria(p); STATE.deptos[grupo].data.push(p); });
 
-            // REGRA DOS 5 PRODUTOS EXPIRANDO (Aumento de 10% seguido de 30% Off)
             let hojeTime = new Date().getTime();
             let alimentosProds = STATE.deptos.alimentos.data.filter(p => {
                 if(!p.validade || p.stock <= 0) return false;
                 let dataVal = converterDataValidade(p.validade);
-                return dataVal >= hojeTime; // Só o que não venceu
+                return dataVal >= hojeTime; 
             });
             
-            // Ordena pela validade mais próxima e extrai o top 5
             alimentosProds.sort((a,b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
             let top5Validade = alimentosProds.slice(0, 5);
             
             top5Validade.forEach(p => {
-                // Preço Base sofre aumento de 10%, depois aplica 30% de desconto
                 let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price * 1.10 : p.oldPrice;
                 p.oldPrice = precoBase; 
                 p.price = precoBase * 0.70; 
                 p.discountApplied = true;
-                p.isExpiringSoon = true; // Flag visual
+                p.isExpiringSoon = true; 
             });
 
-            // Restante das promoções
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
                 let sementeProd = sementeSemanal + parseInt(p.blingId || p.id);
@@ -629,10 +587,8 @@ async function init() {
 
 // DROPDOWNS CUSTOMIZADOS
 function toggleDropdown(type) {
-    // Fecha o outro se estiver aberto
     let otherType = type === 'sort' ? 'keyword' : 'sort';
     document.getElementById(`list-${otherType}`).classList.remove('show');
-    
     document.getElementById(`list-${type}`).classList.toggle('show');
 }
 window.onclick = function(event) {
@@ -646,7 +602,6 @@ function selectSortOption(value, label) {
     document.getElementById('label-sort').innerText = label;
     document.getElementById('list-sort').classList.remove('show');
     
-    // Atualiza itens ativos visualmente
     document.querySelectorAll('#list-sort .custom-dropdown-item').forEach(el => el.classList.remove('active'));
     event.target.classList.add('active');
     applyDeptoFilters();
@@ -680,27 +635,24 @@ window.openDepto = function(deptoId) {
     document.getElementById('see-all-footer').style.display = 'none'; 
     document.getElementById('depto-search').value = ''; 
     
-    // Reseta filtros
     STATE.currentSort = (d.type === 'PROD') ? 'maior_desconto' : 'az';
     STATE.currentKeyword = 'all';
     document.getElementById('label-sort').innerText = (d.type === 'PROD') ? 'Maior Desconto' : 'A - Z';
     document.getElementById('label-keyword').innerText = 'Todos Produtos';
     
-    // Constrói lista de keywords se for produto
     if (d.type === 'PROD') {
         let tagHtml = `<div class="custom-dropdown-item active" onclick="selectKeywordOption('all', 'Todos Produtos', this)">Todos Produtos</div>`;
         if(d.tags) { d.tags.forEach(tag => { tagHtml += `<div class="custom-dropdown-item" onclick="selectKeywordOption('${norm(tag)}', '${tag}', this)">${tag}</div>`; }); }
         document.getElementById('list-keyword').innerHTML = tagHtml;
     }
 
-    // Configuração do Grid e Banner Cestas
     const grid = document.getElementById('see-all-grid');
     if (d.type === 'BASKET' || d.type === 'COMBO') { 
         grid.classList.add('grid-cestas-kits'); 
     } else { 
         grid.classList.remove('grid-cestas-kits'); 
     }
-    document.getElementById('cesta-info-banner').innerHTML = ''; // Limpa banner
+    document.getElementById('cesta-info-banner').innerHTML = '';
 
     document.getElementById('see-all-view').classList.add('open');
     applyDeptoFilters(); 
@@ -723,7 +675,6 @@ window.applyDeptoFilters = function() {
     });
     
     if(depto.type === 'PROD') {
-        // Separa itens com desconto de validade especial
         let topExpiring = filtered.filter(p => p.isExpiringSoon);
         let normalProds = filtered.filter(p => !p.isExpiringSoon);
 
@@ -737,11 +688,10 @@ window.applyDeptoFilters = function() {
             });
         }
         
-        // Mantem Top 5 sempre acima se for aba alimentos, depois une com o normal.
         if (STATE.activeDeptoId === 'alimentos') {
              filtered = [...topExpiring, ...normalProds];
         } else {
-             filtered = normalProds; // outras sessões não tem os 5 top validade
+             filtered = normalProds; 
         }
     }
     
@@ -760,6 +710,7 @@ window.handleLateralBack = function() {
 
 window.closeSeeAll = function(isFromBrowser = false) {
     document.getElementById('see-all-view').classList.remove('open');
+    document.getElementById('see-all-footer').style.display = 'none'; 
     STATE.viewStack = 'HOME'; setTimeout(() => { document.getElementById('see-all-grid').innerHTML = ''; }, 300);
     updateTotals();
     if (!isFromBrowser && history.state && history.state.lateralOpen) history.back();
@@ -797,7 +748,15 @@ window.openKitLateralView = function(id, type) {
 
     // BANNER EXCLUSIVO DE CESTAS
     if(type === 'BASKET') {
-        document.getElementById('cesta-info-banner').innerHTML = `<div style="background: #fffbeb; border: 1px solid #fde68a; color: #b45309; padding: 14px; border-radius: 12px; margin-bottom: 20px; font-weight: 800; font-size: 0.95rem; text-align: center; line-height: 1.4;">🧺 Estes são os produtos desta cesta.<br>Você pode aumentar e diminuir as quantidades e até remover produtos!</div>`;
+        document.getElementById('cesta-info-banner').innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; color: var(--c-s); padding: 12px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; text-align: center; line-height: 1.4;">
+                🧺 Estes são os produtos desta cesta.
+            </div>
+            <div style="background: #fffbeb; border: 1px solid #fde68a; color: #b45309; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 0.9rem; text-align: center; line-height: 1.4;">
+                ✏️ Você pode aumentar, diminuir e até remover produtos!
+            </div>
+        </div>`;
     } else {
         document.getElementById('cesta-info-banner').innerHTML = ''; // Kit não permite edição
     }
@@ -809,14 +768,12 @@ window.openKitLateralView = function(id, type) {
         
         let removedTagHtml = (qty === 0) ? `<div class="removido-overlay" id="rem-tag-${pId}">REMOVIDO</div>` : `<div class="removido-overlay" id="rem-tag-${pId}" style="display:none;">REMOVIDO</div>`;
         
-        // Controle: Cestas permitem edição, Kits não (só mostra a info). Também mostra o valor original no kit.
         let controlArea = '';
         let priceHtml = `<div class="u-price" style="font-size:1.1rem;">${fmt(p.price)}</div>`;
         
         if (type === 'BASKET') {
             controlArea = `<div class="card-qty-ctrl"><button onclick="changeExpanderQty('${pId}', -1)">-</button><span id="exp-qty-${pId}">${qty}</span><button onclick="changeExpanderQty('${pId}', 1)">+</button></div>`;
         } else {
-            // Kit Promocional: O preço unitário que aparece ali é o normal do produto
             priceHtml = `<span class="combo-strike">Normal: ${fmt(p.price)}</span>`;
             controlArea = `<div style="font-weight: 800; color: var(--c-s); background: var(--c-img-bg); padding: 8px; border-radius: 8px; text-align: center; margin-top: 10px;">Qtd no Kit: ${qty} un.</div>`;
         }
@@ -866,7 +823,7 @@ function updateExpanderTotalDisplay(currentSum) {
 }
 
 window.changeExpanderQty = function(pId, delta) {
-    if(expanderState.type === 'COMBO') return; // Bloqueado para kits
+    if(expanderState.type === 'COMBO') return; 
 
     let p = STATE.prods.find(x => x.id === pId); if(!p) return;
     let current = expanderState.items[pId] || 0; let next = Math.max(0, current + delta);
@@ -914,10 +871,10 @@ window.commitExpander = function() {
     }
 
     updateTotals(); 
-    document.getElementById('modal-pos-add').showModal();
+    showToast("Adicionado à sacola com sucesso!", "s");
+    closeSeeAll();
 };
 
-// PRODUTOS E CLICKS
 function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
@@ -932,7 +889,6 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let imgAreaClass = isBasket ? 'u-img-area basket-img-area' : 'u-img-area';
     let addBtnHtml = ''; let qty = STATE.cart[id] || 0;
     
-    // Tag Expirando Soon (Para aba alimentos)
     if (item.isExpiringSoon) { tagHtml = `<div class="vencimento-tag">-30%</div>`; }
     
     if (isKit || isBasket) {
@@ -961,7 +917,6 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
 
     let btnSection = (isKit || isBasket) ? addBtnHtml : '';
     let btnOnPhoto = (isKit || isBasket) ? '' : addBtnHtml;
-    // Classe de nome maior para cestas e kits
     let nameClass = (isKit || isBasket) ? 'u-name kit-name-large' : 'u-name';
 
     return `
@@ -997,7 +952,6 @@ window.openQuickView = function(id) {
 window.closeQuickView = function(isFromBrowser = false) {
     document.getElementById('quick-view-lateral').classList.remove('open');
     setTimeout(() => { $('qv-overlay').style.display = 'none'; }, 300);
-    // Alteração: Fecha o visualizador mas mantém na sessão onde ele estava
     if (!isFromBrowser && history.state && history.state.qvOpen) history.back();
 };
 
