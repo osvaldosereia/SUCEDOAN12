@@ -235,6 +235,24 @@ dialog::backdrop { background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); }
 }
 .btn-big-action { width: 100%; background: var(--c-a); color: #fff; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 0.95rem; display: flex; justify-content: center; align-items: center; border: none; transition: 0.2s;}
 .btn-big-action:active { opacity: 0.8; }
+
+/* --- SESSÃO UPSELL (CARROSSÉIS NA CESTA) --- */
+.upsell-section { grid-column: 1 / -1; margin-top: 20px; padding-top: 25px; border-top: 2px dashed var(--c-bd); }
+.upsell-header-title { font-size: 1.35rem; font-weight: 800; color: var(--c-p); margin-bottom: 4px; text-align: left; }
+.upsell-header-sub { font-size: 0.95rem; color: var(--c-s); margin-bottom: 25px; text-align: left; font-weight: 600; }
+
+.carousel-wrapper { margin-bottom: 30px; }
+.carousel-title { font-size: 1.15rem; font-weight: 800; color: var(--c-p); margin-bottom: 15px; text-align: left; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase;}
+.carousel-title span { font-size: 0.85rem; color: var(--c-a); font-weight: 700; cursor: pointer; text-transform: none;}
+
+.carousel-track { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
+.carousel-track::-webkit-scrollbar { display: none; } /* Oculta a barra de rolagem horizontal para ficar elegante */
+
+/* Fixa a largura dos cards para que não estiquem no scroll horizontal */
+.carousel-item-wrapper { width: 145px; flex-shrink: 0; } 
+
+.card-ver-mais { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--c-img-bg); border-radius: 16px; padding: 20px; text-align: center; color: var(--c-a); font-weight: 800; cursor: pointer; transition: 0.2s; border: 2px dashed var(--c-bd); }
+.card-ver-mais:active { transform: scale(0.96); }
 </style>
 </head>
 <body>
@@ -439,6 +457,39 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
+// Olheiro para renderizar os carrosséis apenas na rolagem (Performance)
+const carouselObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const track = entry.target;
+            const deptoId = track.dataset.depto;
+            
+            if (deptoId && track.innerHTML === '') {
+                const depto = STATE.deptos[deptoId];
+                const topItems = depto.data.slice(0, 15);
+                
+                let html = topItems.map((item, idx) => `
+                    <div class="carousel-item-wrapper">
+                        ${buildCardHtml(item, depto.type, false, idx)}
+                    </div>
+                `).join('');
+                
+                html += `
+                    <div class="carousel-item-wrapper">
+                        <div class="card-ver-mais" onclick="openDepto('${deptoId}')">
+                            <span style="font-size: 2rem; margin-bottom: 8px;">➕</span>
+                            Ver todos de<br>${depto.title}
+                        </div>
+                    </div>
+                `;
+                
+                track.innerHTML = html;
+                observer.unobserve(track);
+            }
+        }
+    });
+}, { rootMargin: '250px' });
+
 // Configuração do Estado Principal
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
@@ -470,15 +521,11 @@ const TERMOS_CATEGORIAS = {
     casapet: ["racao", "copo", "pratinho", "jarra", "caneca de plastico", "sacos", "capa", "filtro", "copos", "pegador", "caneca", "prato", "papel aluminio", "tigela", "filtro cafe", "forma para gelo", "lacre", "coador de cafe", "balde de pipoca", "petisqueira", "tabua de corte", "faca", "colher", "espatula", "descascador", "forma de gelo", "abridor", "ralo", "descanso de panela", "saleiro", "pilao", "peneira", "extensao", "adaptador", "benjamim", "lampada", "pilha", "cabide", "cesto", "fosforo", "isqueiro", "processador de alimentos", "capa de botijao", "veda porta", "cantoneira", "aparador", "chaveiro", "porta comprimido", "necessaire", "relogio", "despertador", "agulha", "caneta", "lapis", "grafite", "linha magna", "lapiseira", "petisqueiras", "livro de colorir", "fita adesiva", "clips", "cola", "balao", "linha de costura", "supla", "cesta de bambu", "alfinete", "agulheiro", "fita metrica", "estilete", "abracadeira", "chinelo", "havaiana", "havaianas"]
 };
 
-// Função para agrupar produtos priorizando a primeira palavra-chave encontrada no nome
 function agruparCategoria(produto) {
-    // Normaliza o nome do produto (remove acentos, deixa minúsculo e adiciona espaços nas pontas)
     let nomeProd = " " + norm(produto.name || "").replace(/[^a-z0-9 ]/g, ' ') + " ";
-    
-    let melhorCategoria = 'alimentos'; // Categoria padrão caso não encontre nenhuma palavra
-    let menorIndice = Infinity; // Valor inicial infinito para ser substituído pelo primeiro índice encontrado
+    let melhorCategoria = 'alimentos';
+    let menorIndice = Infinity;
 
-    // Organiza os grupos em uma lista para facilitar a varredura
     const grupos = [
         { id: 'alimentos', termos: TERMOS_CATEGORIAS.alimentos_obrigatorios },
         { id: 'higiene', termos: TERMOS_CATEGORIAS.higiene },
@@ -486,16 +533,14 @@ function agruparCategoria(produto) {
         { id: 'casapet', termos: TERMOS_CATEGORIAS.casapet }
     ];
 
-    // Varre todos os grupos e seus respectivos termos
     for (let grupo of grupos) {
         for (let termo of grupo.termos) {
             let termoNorm = " " + norm(termo) + " ";
-            let posicaoAchada = nomeProd.indexOf(termoNorm); // Descobre onde a palavra começa
+            let posicaoAchada = nomeProd.indexOf(termoNorm);
 
-            // Se achou a palavra (diferente de -1) E ela aparece antes das que já achamos
             if (posicaoAchada !== -1 && posicaoAchada < menorIndice) {
-                menorIndice = posicaoAchada; // Salva a nova posição mais próxima do início
-                melhorCategoria = grupo.id;  // Define a categoria como a vencedora provisória
+                menorIndice = posicaoAchada;
+                melhorCategoria = grupo.id;
             }
         }
     }
@@ -503,7 +548,6 @@ function agruparCategoria(produto) {
     return melhorCategoria; 
 }
 
-// Funções auxiliares (Mantidas sem alteração)
 function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
@@ -820,11 +864,49 @@ window.openKitLateralView = function(id, type) {
         </div>`;
     }).join('');
 
+    // --- INÍCIO DA INJEÇÃO DOS CARROSSÉIS (UPSELL) ---
+    if (type === 'BASKET') {
+        itemsHtml += `
+        <div class="upsell-section">
+            <h3 class="upsell-header-title">Aproveite o frete! 🛒</h3>
+            <p class="upsell-header-sub">Complete sua cesta adicionando itens avulsos que você pode ter esquecido.</p>
+        `;
+
+        const sessoes = [
+            { id: 'alimentos', nome: 'Alimentos e Bebidas' },
+            { id: 'higiene', nome: 'Higiene e Beleza' },
+            { id: 'limpeza', nome: 'Limpeza' },
+            { id: 'casapet', nome: 'Casa e Pet' }
+        ];
+
+        sessoes.forEach(s => {
+            itemsHtml += `
+            <div class="carousel-wrapper">
+                <div class="carousel-title">
+                    ${s.nome}
+                    <span onclick="openDepto('${s.id}')">Ver mais ></span>
+                </div>
+                <div class="carousel-track lazy-carousel" data-depto="${s.id}"></div>
+            </div>
+            `;
+        });
+
+        itemsHtml += `</div>`;
+    }
+    // --- FIM DA INJEÇÃO DOS CARROSSÉIS ---
+
     document.getElementById('see-all-title').innerText = formatName(sourceObj.nome);
     document.getElementById('see-all-controls').style.display = 'none'; 
     document.getElementById('see-all-grid').innerHTML = itemsHtml;
     document.getElementById('see-all-grid').classList.remove('grid-cestas-kits');
     
+    // Liga o Olheiro (Observer) nas divs que acabamos de criar
+    if (type === 'BASKET') {
+        document.querySelectorAll('.lazy-carousel').forEach(track => {
+            carouselObserver.observe(track);
+        });
+    }
+
     let contentDiv = document.getElementById('see-all-content');
     contentDiv.style.paddingBottom = '180px'; contentDiv.scrollTo({ top: 0, behavior: 'instant' });
     document.getElementById('see-all-footer').style.display = 'flex';
