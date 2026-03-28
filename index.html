@@ -12,16 +12,15 @@
 
 <style>
 :root {
-    /* Paleta Minimalista e Moderna (iFood Style) */
-    --c-p: #1e293b;       /* Texto Principal */
-    --c-s: #64748b;       /* Texto Secundário */
-    --c-t: #94a3b8;       /* Texto Terciário */
-    --c-a: #ea1d2c;       /* Cor de Ação (Vermelho iFood) */
-    --c-ok: #15803d;      /* Verde Sucesso */
-    --c-err: #dc2626;     /* Vermelho Erro */
-    --c-bg: #ffffff;      /* Fundo Principal */
-    --c-bd: #e2e8f0;      /* Bordas */
-    --c-img-bg: #f1f5f9;  /* Fundo Escuro Arredondado para Fotos (Um pouco mais escuro) */
+    --c-p: #1e293b;       
+    --c-s: #64748b;       
+    --c-t: #94a3b8;       
+    --c-a: #ea1d2c;       
+    --c-ok: #15803d;      
+    --c-err: #dc2626;     
+    --c-bg: #ffffff;      
+    --c-bd: #e2e8f0;      
+    --c-img-bg: #f1f5f9;  
     --font: 'Inter', system-ui, sans-serif;
 }
 
@@ -37,9 +36,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .layout-limit { width: 100%; max-width: 1000px; margin: 0 auto; position: relative; } 
 
-/* =========================================
-   HEADER PRINCIPAL
-   ========================================= */
+/* HEADER PRINCIPAL */
 #header-wrapper { 
     position: fixed; top: 0; left: 0; right: 0; z-index: 80; 
     background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
@@ -70,9 +67,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .btn-top-help svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.2; }
 
-/* =========================================
-   ÁREA PRINCIPAL (HOME)
-   ========================================= */
+/* ÁREA PRINCIPAL (HOME) */
 .main-stage { 
     position: relative; height: 100dvh; padding-top: 70px; padding-bottom: 90px; 
     overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; 
@@ -80,6 +75,13 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .info-banners { display: flex; flex-direction: column; gap: 8px; padding: 15px; max-width: 1000px; margin: 0 auto; }
 .info-banner-item { font-size: 0.75rem; font-weight: 700; text-align: center; padding: 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; width: 100%; }
+
+@media (min-width: 800px) {
+    .info-banners { flex-direction: row; justify-content: space-between; padding: 15px 15px 5px; gap: 10px; }
+    .info-banner-item { flex: 1; display: flex; align-items: center; justify-content: center; }
+}
+@media(max-width: 799px) { .desk-only-banners { display: none !important; } }
+@media(min-width: 800px) { .mobile-only-banners { display: none !important; } }
 
 /* OS 6 CARDS INICIAIS */
 .grid-home-sections { 
@@ -102,9 +104,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-card-icon { font-size: 3.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2)); z-index: 2; margin-bottom: 5px; line-height: 1;}
 .home-card-title { color: #fff; font-size: 1.1rem; font-weight: 800; line-height: 1.2; z-index: 2; text-shadow: 0 2px 4px rgba(0,0,0,0.4); letter-spacing: 0.5px;}
 
-/* =========================================
-   CARRINHO FLUTUANTE (FAB) IFOOD STYLE
-   ========================================= */
+/* CARRINHO FLUTUANTE (FAB) */
 .floating-cart {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     width: 92%; max-width: 400px; background-color: var(--c-a); color: #fff;
@@ -116,9 +116,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .fc-badge { background: rgba(255,255,255,0.25); padding: 4px 10px; border-radius: 8px; font-size: 0.9rem; font-weight: 700;}
 .fc-right { font-weight: 800; font-size: 1.2rem; }
 
-/* =========================================
-   ABAS LATERAIS (GAVETA GERAL E DETALHES)
-   ========================================= */
+/* ABAS LATERAIS (GAVETA GERAL E DETALHES) */
 .lateral-view {
     position: fixed; top: 0; left: 100%; width: 100%; height: 100dvh; background: var(--c-bg);
     z-index: 90; transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column;
@@ -138,7 +136,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .depto-search { width: 100%; padding: 12px 10px 12px 38px; border-radius: 10px; border: none; background: var(--c-img-bg); font-size: 0.95rem; font-weight: 500; color: var(--c-p); transition: 0.2s;}
 .depto-search:focus { background: #fff; box-shadow: 0 0 0 2px var(--c-a); }
 .search-icon-aba { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--c-s); width: 18px; }
-.depto-sort { width: 135px; flex-shrink: 0; padding: 10px; border-radius: 10px; border: none; background: var(--c-img-bg); font-size: 0.85rem; font-weight: 700; color: var(--c-p); outline: none; cursor: pointer;}
+.depto-sort { width: 145px; flex-shrink: 0; padding: 10px; border-radius: 10px; border: none; background: var(--c-img-bg); font-size: 0.85rem; font-weight: 700; color: var(--c-p); outline: none; cursor: pointer;}
 
 .see-all-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 180px; position: relative; background: var(--c-bg);}
 
@@ -146,7 +144,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .grid-ver-todos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 1000px; margin: 0 auto;}
 @media(min-width: 800px) { .grid-ver-todos { grid-template-columns: repeat(5, 1fr); gap: 20px; } }
 
-/* CARTÃO DE PRODUTO CLEAN (Sem borda) */
+/* CARTÃO DE PRODUTO CLEAN */
 .u-card { background: transparent; border: none; padding: 5px 0; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: 0.2s;}
 .u-card:active { transform: scale(0.98); }
 
@@ -154,7 +152,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 16px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 8%;}
 
-/* Regra específica para Cestas (Sem fundo cinza, cobrindo o card) */
 .basket-img-area { background: transparent !important; }
 .basket-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 16px; mix-blend-mode: normal !important;}
 
@@ -175,7 +172,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button:active { opacity: 0.8; background: var(--c-bd); }
 .card-qty-ctrl span { font-weight: 800; font-size: 1rem; color: var(--c-p); flex: 1; text-align: center;}
 
-/* RODAPÉ DETALHE DE KIT/CESTA (Subido para não bater no carrinho) */
+/* RODAPÉ DETALHE DE KIT/CESTA */
 .see-all-footer { position: fixed; bottom: 85px; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 80; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); border-radius: 20px 20px 0 0;}
 .expander-total { font-size: 1.2rem; font-weight: 800; color: var(--c-p); text-align: center; }
 
@@ -193,7 +190,7 @@ dialog::backdrop { background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); }
 .toast { padding: 14px 20px; color: #fff; border-radius: 12px; font-weight: 700; font-size: 0.95rem; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: toastPop 0.3s ease-out; z-index: 99999; }
 @keyframes toastPop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* NOVA ABA LATERAL DE PRODUTO (QUICK VIEW 30% / 85%) */
+/* NOVA ABA LATERAL DE PRODUTO (QUICK VIEW 35% / 85%) */
 #qv-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:rgba(15,23,42,0.6); z-index:91; backdrop-filter: blur(2px);}
 .lateral-view.quick-view { z-index: 92; width: 85%; left: 100%; border-radius: 24px 0 0 24px; box-shadow: -4px 0 24px rgba(0,0,0,0.15); }
 .lateral-view.quick-view.open { left: 15%; }
@@ -247,7 +244,6 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
 
 <main class="main-stage" id="scroll-stage">
     <div class="layout-limit info-banners info-banners-render"></div>
-    
     <div id="grid-home-sections" class="grid-home-sections"></div>
 </main>
 
@@ -262,7 +258,7 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
 <div id="see-all-view" class="lateral-view">
     <div class="see-all-header">
         <button class="see-all-back" onclick="handleLateralBack()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
         </button>
         <h2 class="see-all-title" id="see-all-title">Título</h2>
@@ -274,9 +270,9 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
             <input type="text" class="depto-search" id="depto-search" placeholder="Buscar aqui..." oninput="applyDeptoFilters()">
         </div>
         <select class="depto-sort" id="depto-sort" onchange="applyDeptoFilters()">
+            <option value="maior_desconto">Maior Desconto</option>
             <option value="az">A-Z</option>
             <option value="menor_preco">Menor Preço</option>
-            <option value="maior_desconto">Maior Desconto</option>
         </select>
     </div>
 
@@ -294,7 +290,7 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
 <div id="quick-view-lateral" class="lateral-view quick-view">
     <div class="see-all-header">
         <button class="see-all-back" onclick="closeQuickView()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
         </button>
         <h2 class="see-all-title">Detalhes</h2>
@@ -313,7 +309,7 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
 <div id="checkout-view" class="lateral-view">
     <div class="see-all-header">
         <button class="see-all-back" onclick="closeCheckout()">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
         </button>
         <h2 class="see-all-title">Finalizar Pedido</h2>
@@ -322,7 +318,6 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
     <div class="see-all-content" style="text-align: left; padding: 20px 15px 120px;">
         <h3 style="font-weight: 800; font-size: 1.1rem; color: var(--c-p);">1. Seus Produtos</h3>
         <div id="chk-list"></div>
-        
         <button class="btn-modal secondary" style="margin-bottom: 25px; border: 2px dashed var(--c-a); color: var(--c-a); background: #fff5f5; font-weight: 800;" onclick="closeCheckout();">✚ ADICIONAR MAIS PRODUTOS</button>        
         
         <h3 style="font-weight: 800; margin-top: 25px; font-size: 1.1rem; color: var(--c-p);">2. Entrega</h3>
@@ -358,7 +353,6 @@ fbq('init', '913298841339644'); fbq('track', 'PageView');
         <input type="hidden" id="chk-pagamento" value="">
         
         <button id="btn-send-order" onclick="sendOrder()" class="btn-modal primary" style="font-size: 1.15rem; padding: 16px; transition: 0.2s; box-shadow: 0 6px 16px rgba(234, 29, 44, 0.4); border-radius: 16px;"></button>
-        
         <button class="btn-modal secondary" style="margin-top: 20px; border: none; color: var(--c-s); background: transparent;" onclick="clearCart()">🗑️ Esvaziar Sacola</button>
     </div>
 </div>
@@ -401,10 +395,9 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-// CONTROLE DE ESTADO DO APP
 const STATE = {
     dataLoaded: false, 
-    viewStack: 'HOME', // HOME, DEPTO_LIST, KIT_DETAIL
+    viewStack: 'HOME', 
     checkoutOpen: false,
     baskets: [], prods: [], coupons: [], combos: [], banners: [], 
     deptos: {
@@ -419,7 +412,7 @@ const STATE = {
     coupon: null, deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
 };
 
-// CÉREBRO DE CATEGORIZAÇÃO MAPEADO
+// CÉREBRO DE CATEGORIZAÇÃO
 const RAW_TERMOS = [
   { "etiqueta": "Massas e Molhos", "termos": "macarrão, espaguete, penne, parafuso, padre nosso, lámen, miojo, molho de tomate, extrato de tomate" },
   { "etiqueta": "Arroz, Feijão e Grãos", "termos": "arroz, feijão, canjica, milho para pipoca" },
@@ -464,9 +457,7 @@ function agruparCategoria(produto) {
         let termos = c.termos.split(',').map(t => norm(t.trim()).replace(/[^a-z0-9 ]/g, ' '));
         for (let t of termos) {
             let words = t.split(' ');
-            if (words.every(w => nomePad.includes(' ' + w + ' '))) {
-                return MACRO_MAP[c.etiqueta] || 'alimentos';
-            }
+            if (words.every(w => nomePad.includes(' ' + w + ' '))) { return MACRO_MAP[c.etiqueta] || 'alimentos'; }
         }
     }
     return 'alimentos'; 
@@ -475,7 +466,6 @@ function agruparCategoria(produto) {
 function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
-
 function converterDataValidade(dataStr) {
     if (!dataStr) return new Date(8640000000000000).getTime(); 
     let partes = dataStr.split('/');
@@ -483,9 +473,6 @@ function converterDataValidade(dataStr) {
     return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
 }
 
-// ==========================================
-// RENDERIZAÇÃO DA HOME (CARDS 3D)
-// ==========================================
 function renderHomeCards() {
     const cards = [
         { id: 'cestas', title: 'Cestas Básicas', action: "openDepto('cestas')", icon: '🧺', color: '#10b981' },
@@ -495,19 +482,26 @@ function renderHomeCards() {
         { id: 'limpeza', title: 'Limpeza', action: "openDepto('limpeza')", icon: '🧹', color: '#0ea5e9' },
         { id: 'casapet', title: 'Casa e Pet', action: "openDepto('casapet')", icon: '🐶', color: '#8b5cf6' }
     ];
-    
     let html = '';
-    cards.forEach(c => {
-        html += `<div class="home-card" onclick="${c.action}" style="background-color: ${c.color};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div></div>`;
-    });
+    cards.forEach(c => { html += `<div class="home-card" onclick="${c.action}" style="background-color: ${c.color};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div></div>`; });
     $('grid-home-sections').innerHTML = html;
 }
 
-// INICIALIZAÇÃO
-async function init() {
-    renderHomeCards(); 
-    updateTotals(); 
+// SEMENTE SEMANAL (Domingo 23:50 BRT)
+function getSementeSemanal() {
+    let now = new Date();
+    let utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    let brt = new Date(utc - (3 * 3600000));
+    let dia = brt.getDay(); let hora = brt.getHours(); let min = brt.getMinutes();
+    let diasParaVoltar = dia;
+    if (dia === 0 && (hora < 23 || (hora === 23 && min < 50))) { diasParaVoltar = 7; }
+    let ultimoDomingo = new Date(brt);
+    ultimoDomingo.setDate(brt.getDate() - diasParaVoltar);
+    return ultimoDomingo.getFullYear() * 10000 + (ultimoDomingo.getMonth() + 1) * 100 + ultimoDomingo.getDate();
+}
 
+async function init() {
+    renderHomeCards(); updateTotals(); 
     const versaoCache = Math.floor(Date.now() / 86400000); 
 
     try {
@@ -523,9 +517,7 @@ async function init() {
         STATE.deptos.cestas.data = STATE.baskets; STATE.deptos.combos.data = STATE.combos;
 
         if (r2 && r2.length > 0) {
-            let userSeed = localStorage.getItem('donaAntoniaUserSeed') || Math.floor(Math.random() * 1000000);
-            localStorage.setItem('donaAntoniaUserSeed', userSeed); 
-            const hoje = new Date(); const sementeDoDia = hoje.getFullYear() * 10000 + (hoje.getMonth() + 1) * 100 + hoje.getDate() + parseInt(userSeed);
+            let sementeSemanal = getSementeSemanal();
             function geradorAleatorio(semente) { return function() { var t = semente += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
@@ -538,28 +530,28 @@ async function init() {
             
             STATE.prods.forEach(p => { let grupo = agruparCategoria(p); STATE.deptos[grupo].data.push(p); });
 
-            // LOGICA DE PRECIFICAÇÃO DINÂMICA
+            // REGRA DE DESCONTOS (MARKUP 10% + CÁLCULO)
             let alimentosProds = STATE.deptos.alimentos.data.filter(p => p.validade && p.stock > 0);
             alimentosProds.sort((a,b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
             let top5Validade = alimentosProds.slice(0, 5);
             top5Validade.forEach(p => {
-                if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price;
-                p.price = p.oldPrice * 0.80; p.discountApplied = true;
+                if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price * 1.10; // Markup
+                p.price = p.oldPrice * 0.70; // 30% Desconto
+                p.discountApplied = true;
             });
 
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
-                
-                let sementeProd = sementeDoDia + parseInt(p.blingId || p.id);
+                let sementeProd = sementeSemanal + parseInt(p.blingId || p.id);
                 let randVal = geradorAleatorio(sementeProd)();
                 
                 if(randVal < 0.50) { 
                     let discRoll = geradorAleatorio(sementeProd + 1)(); 
-                    let desc = 0.06; 
-                    if(discRoll >= 0.60 && discRoll < 0.90) desc = 0.10; 
-                    else if(discRoll >= 0.90) desc = 0.15; 
+                    let desc = 0.15; 
+                    if(discRoll >= 0.60 && discRoll < 0.90) desc = 0.20; 
+                    else if(discRoll >= 0.90) desc = 0.25; 
                     
-                    if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price;
+                    if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price * 1.10;
                     p.price = p.oldPrice * (1 - desc);
                     p.discountApplied = true;
                 }
@@ -570,36 +562,30 @@ async function init() {
         
         STATE.dataLoaded = true; renderBanners();
 
-    } catch (e) { console.error("Erro na sincronização:", e); showToast("Erro ao conectar. Tente recarregar a página.", "r"); }
+    } catch (e) { console.error("Erro sincronização:", e); showToast("Erro ao conectar.", "r"); }
 }
 
-// ==========================================
-// NAVEGAÇÃO DE ABAS
-// ==========================================
+// NAVEGAÇÃO
 window.goToHome = function() { 
     document.getElementById('see-all-view').classList.remove('open');
     if(STATE.checkoutOpen) closeCheckout();
-    STATE.viewStack = 'HOME';
-    document.getElementById('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
+    if(document.getElementById('quick-view-lateral').classList.contains('open')) closeQuickView();
+    STATE.viewStack = 'HOME'; document.getElementById('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.openDepto = function(deptoId) {
-    if (!STATE.dataLoaded) return showToast("Sincronizando loja, aguarde...", "s");
-
+    if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.activeDeptoId = deptoId; STATE.viewStack = 'DEPTO_LIST';
     let d = STATE.deptos[deptoId];
     
     document.getElementById('see-all-title').innerText = d.title;
-    
-    if(d.type === 'PROD') { document.getElementById('see-all-controls').style.display = 'flex'; } 
-    else { document.getElementById('see-all-controls').style.display = 'none'; }
-    
+    document.getElementById('see-all-controls').style.display = (d.type === 'PROD') ? 'flex' : 'none'; 
     document.getElementById('see-all-footer').style.display = 'none'; 
-    document.getElementById('depto-search').value = ''; document.getElementById('depto-sort').value = 'az';
+    document.getElementById('depto-search').value = ''; 
+    document.getElementById('depto-sort').value = (deptoId === 'alimentos') ? 'maior_desconto' : 'az';
     
     document.getElementById('see-all-view').classList.add('open');
     applyDeptoFilters(); 
-    
     if (!history.state || !history.state.lateralOpen) history.pushState({ lateralOpen: true }, '');
 };
 
@@ -652,9 +638,7 @@ window.addEventListener('popstate', function(event) {
     else if (lateralView && lateralView.classList.contains('open')) closeSeeAll(true); 
 });
 
-// ==========================================
-// EXPANDER (DETALHES DA CESTA/KIT)
-// ==========================================
+// EXPANDER (DETALHES KITS)
 let expanderState = { id: null, type: null, basePrice: 0, originalSum: 0, priceOffset: 0, items: {}, originalItems: {}, discountLost: false, orderedIds: [], sourceObj: null, currentDisplayPrice: 0 };
 
 window.openKitLateralView = function(id, type) {
@@ -767,9 +751,7 @@ window.commitExpander = function() {
     if (cartBtn) { cartBtn.style.transform = 'translateX(-50%) scale(1.05)'; setTimeout(() => cartBtn.style.transform = 'translateX(-50%) scale(1)', 200); }
 };
 
-// ==========================================
-// PRODUTOS E QUICK VIEW ABA LATERAL
-// ==========================================
+// PRODUTOS
 function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
@@ -786,13 +768,13 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
         if (item.produtos) { item.produtos.forEach(s => { let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) { precoDe += p.price * parseInt(q); }}); }
         if (isKit) {
             onClick = `openKitLateralView('${id}', 'COMBO')`;
+            // O valor riscado do Kit agora é a soma exata dos produtos que vem dentro dele
             if (precoDe > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`; else tagHtml = `<div class="kit-tag">KIT</div>`; 
         } else { onClick = `openKitLateralView('${id}', 'BASKET')`; }
         addBtnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClick}">Ver Produtos</button>`;
     } else {
         onClick = `openQuickView('${id}')`;
         if (item.oldPrice && item.oldPrice > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
-        
         if (pPrice && item.stock > 0) {
             let btnContent = qty > 0 ? `<span style="font-size:1rem;">${qty}</span>` : '+';
             addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
@@ -884,10 +866,7 @@ window.handleAddClick = function(e, id) {
     upd(id, 1); const rect = e.target.getBoundingClientRect(); animateToCart(rect.left + rect.width / 2, rect.top + rect.height / 2);
 };
 
-
-// ==========================================
 // CARRINHO E CHECKOUT LATERAL
-// ==========================================
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a sacola?")) { 
         STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.appliedCombos = []; STATE.coupon = null; 
@@ -947,7 +926,6 @@ window.applyCoupon = function() {
     updateTotals(); 
 };
 
-// Nova função para agendamento que atualiza o visual corretamente
 window.selectDelivery = function(index) {
     STATE.selectedDeliveryIndex = index; 
     let sel = STATE.deliveryOptions[index]; 
@@ -959,8 +937,7 @@ window.selectDelivery = function(index) {
         else el.classList.remove('selected');
     });
     
-    updateTotals(); 
-    renderCheckoutItems(); 
+    updateTotals(); renderCheckoutItems(); 
 };
 
 function renderCheckoutItems() {
@@ -998,9 +975,7 @@ function renderCheckoutItems() {
 
 function openCheckout() { 
     if (STATE.cartOrder.length === 0) return showToast("Sua sacola está vazia", "r"); 
-    
-    STATE.checkoutOpen = true;
-    updateTotals(); 
+    STATE.checkoutOpen = true; updateTotals(); 
 
     let options = []; let date = new Date(); let checkDate = new Date(date);
     if (date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) { options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 }); }
@@ -1015,14 +990,12 @@ function openCheckout() {
         <div class="del-option ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i});"><div><div class="del-opt-title">${opt.title}</div><div class="del-opt-date">${opt.dateStr}</div></div>${opt.discount > 0 ? `<div class="del-opt-badge" style="background:var(--c-ok); color:#fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight:800;">- ${fmt(opt.discount)}</div>` : ''}</div>
     `).join('');
     
-    renderCheckoutItems();
-    document.getElementById('checkout-view').classList.add('open');
+    renderCheckoutItems(); document.getElementById('checkout-view').classList.add('open');
 }
 
 window.closeCheckout = function() {
     document.getElementById('checkout-view').classList.remove('open');
-    STATE.checkoutOpen = false;
-    updateTotals(); 
+    STATE.checkoutOpen = false; updateTotals(); 
 }
 
 function openHistoricoPedidos() {
@@ -1101,9 +1074,6 @@ async function sendOrder() {
     setTimeout(() => { window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`; setTimeout(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = `ENVIAR PEDIDO`; }, 3000); }, 400);
 }
 
-// ==========================================
-// UTILIDADES GERAIS E INICIALIZAÇÃO
-// ==========================================
 function renderBanners() {
     const containers = document.querySelectorAll('.info-banners-render');
     if (!containers.length || !STATE.banners || STATE.banners.length === 0) return;
@@ -1131,22 +1101,13 @@ function handleSearch(q) {
     }
 }
 function clearSearch() { $('search-inp').value = ''; handleSearch(''); closeSeeAll(); }
-
-function showToast(m, t) { 
-    let d = document.createElement('div'); d.className = 'toast'; d.style.background = (t === 'r') ? '#e11d48' : '#16a34a'; d.innerText = m; 
-    $('toast-container').appendChild(d); setTimeout(() => d.remove(), 2500); 
-}
+function showToast(m, t) { let d = document.createElement('div'); d.className = 'toast'; d.style.background = (t === 'r') ? '#e11d48' : '#16a34a'; d.innerText = m; $('toast-container').appendChild(d); setTimeout(() => d.remove(), 2500); }
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 10); 
-    
     let isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     let btnInstall = document.getElementById('btn-install');
-
-    if (!isStandalone && !localStorage.getItem('donaAntoniaAppDismissed') && btnInstall) {
-        btnInstall.style.display = 'block';
-    }
-
+    if (!isStandalone && !localStorage.getItem('donaAntoniaAppDismissed') && btnInstall) { btnInstall.style.display = 'block'; }
     if(btnInstall) {
         btnInstall.addEventListener('click', async () => { 
             if (typeof eventoInstalacao !== 'undefined' && eventoInstalacao) { eventoInstalacao.prompt(); await eventoInstalacao.userChoice; } 
