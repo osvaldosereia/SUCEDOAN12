@@ -953,7 +953,7 @@ window.openQuickView = function(id) {
 window.closeQuickView = function(isFromBrowser = false) {
     document.getElementById('quick-view-lateral').classList.remove('open');
     setTimeout(() => { $('qv-overlay').style.display = 'none'; }, 300);
-    if (!isFromBrowser && history.state && history.state.qvOpen) history.back();
+    if (!isFromBrowser && history.state && history.state.qvOpen);
 };
 
 function upd(id, delta) { 
