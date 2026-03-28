@@ -153,9 +153,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .grid-ver-todos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 1000px; margin: 0 auto;}
 @media(min-width: 800px) { .grid-ver-todos { grid-template-columns: repeat(5, 1fr); gap: 20px; } }
 
+/* Grade especial para cestas e kits */
+.grid-cestas-kits { grid-template-columns: 1fr !important; }
+@media(min-width: 800px) { .grid-cestas-kits { grid-template-columns: repeat(4, 1fr) !important; } }
+
 /* CARTÃO DE PRODUTO CLEAN */
 .u-card { background: transparent; border: none; padding: 5px 0; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: 0.2s;}
 .u-card:active { transform: scale(0.98); }
+.u-card.disabled { opacity: 0.4; pointer-events: none; cursor: default; }
 
 /* Fundo das Imagens e Cestas */
 .u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 16px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
@@ -168,8 +173,15 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .card-add-btn { position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: var(--c-a); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 1.4rem; font-weight: 600; z-index: 10; border: none; padding: 0; box-shadow: 0 2px 6px rgba(234, 29, 44, 0.3); transition: 0.15s;}
 .card-add-btn:active { transform: scale(0.85); }
-.card-add-btn-wide { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); background: var(--c-a); color: #fff; border-radius: 20px; padding: 8px 16px; font-weight: 800; font-size: 0.85rem; border: none; box-shadow: 0 2px 6px rgba(234, 29, 44, 0.3); transition: 0.15s; white-space: nowrap; z-index: 10;}
-.card-add-btn-wide:active { transform: translateX(-50%) scale(0.95); }
+
+/* Ajuste botão cestas/kits */
+.card-add-btn-wide { 
+    background: var(--c-a); color: #fff; border-radius: 12px; 
+    padding: 10px; font-weight: 800; font-size: 0.85rem; border: none; 
+    box-shadow: 0 2px 6px rgba(234, 29, 44, 0.2); transition: 0.15s; 
+    white-space: nowrap; width: 100%; margin-top: 8px;
+}
+.card-add-btn-wide:active { transform: scale(0.97); }
 
 .u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between; padding: 0 4px;}
 .u-name { font-size: 0.85rem; font-weight: 600; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
@@ -210,6 +222,11 @@ dialog::backdrop { background: rgba(15,23,42,0.6); backdrop-filter: blur(3px); }
 
 /* ABA DE CHECKOUT COM FOOTER FIXO */
 #checkout-view { z-index: 100; }
+@media(min-width: 800px) {
+    #checkout-view { width: 50%; }
+    #checkout-view.open { left: 50%; }
+}
+
 #chk-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px 0; }
 .chk-item-card { border: 1px solid var(--c-bd); border-radius: 16px; padding: 12px; background: #fff; display: flex; flex-direction: column; align-items: center; text-align: center; }
 .chk-item-card img { width: 80px; height: 80px; object-fit: contain; margin-bottom: 8px; }
@@ -475,6 +492,8 @@ function agruparCategoria(produto) {
 function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
+
+// Converter data brasileira para timestamp
 function converterDataValidade(dataStr) {
     if (!dataStr) return new Date(8640000000000000).getTime(); 
     let partes = dataStr.split('/');
@@ -544,13 +563,16 @@ async function init() {
             let alimentosProds = STATE.deptos.alimentos.data.filter(p => {
                 if(!p.validade || p.stock <= 0) return false;
                 let dataVal = converterDataValidade(p.validade);
+                // Filtra apenas o que não venceu ainda
                 return dataVal >= hojeTime;
             });
             
+            // Ordena pela validade mais próxima
             alimentosProds.sort((a,b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
             let top5Validade = alimentosProds.slice(0, 5);
             top5Validade.forEach(p => {
-                if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price * 1.10; 
+                // Aplica 30% de desconto real
+                if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price; 
                 p.price = p.oldPrice * 0.70; 
                 p.discountApplied = true;
             });
@@ -572,7 +594,9 @@ async function init() {
                 }
             });
 
-            Object.values(STATE.deptos).forEach(d => { if(d.type === 'PROD') d.data.sort((a,b) => a.name.localeCompare(b.name)); });
+            Object.values(STATE.deptos).forEach(d => { 
+                if(d.type === 'PROD') d.data.sort((a,b) => a.name.localeCompare(b.name)); 
+            });
         }
         
         STATE.dataLoaded = true; renderBanners();
@@ -598,8 +622,14 @@ window.openDepto = function(deptoId) {
     document.getElementById('see-all-controls').style.display = (d.type === 'PROD') ? 'flex' : 'none'; 
     document.getElementById('see-all-footer').style.display = 'none'; 
     document.getElementById('depto-search').value = ''; 
-    document.getElementById('depto-sort').value = (deptoId === 'alimentos') ? 'maior_desconto' : 'az';
     
+    // Padrão de ordenação: maior_desconto para todos, az para cestas/kits
+    document.getElementById('depto-sort').value = (d.type === 'PROD') ? 'maior_desconto' : 'az';
+    
+    const grid = document.getElementById('see-all-grid');
+    if (d.type === 'BASKET' || d.type === 'COMBO') { grid.classList.add('grid-cestas-kits'); } 
+    else { grid.classList.remove('grid-cestas-kits'); }
+
     document.getElementById('see-all-view').classList.add('open');
     applyDeptoFilters(); 
     updateTotals();
@@ -692,13 +722,14 @@ window.openKitLateralView = function(id, type) {
     document.getElementById('see-all-title').innerText = formatName(sourceObj.nome);
     document.getElementById('see-all-controls').style.display = 'none'; 
     document.getElementById('see-all-grid').innerHTML = itemsHtml;
+    document.getElementById('see-all-grid').classList.remove('grid-cestas-kits');
     
     let contentDiv = document.getElementById('see-all-content');
     contentDiv.style.paddingBottom = '180px'; contentDiv.scrollTo({ top: 0, behavior: 'instant' });
     document.getElementById('see-all-footer').style.display = 'flex';
     
     updateExpanderTotalDisplay(currentSum);
-    updateTotals(); // Esconde carrinho
+    updateTotals(); 
 };
 
 function updateExpanderTotalDisplay(currentSum) {
@@ -777,6 +808,9 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let tagHtml = ''; let oldPriceHtml = ''; let priceHtml = fmt(pPrice); let onClick = '';
     let isKit = type === 'COMBO'; let isBasket = type === 'BASKET';
     
+    let isEsgotado = (item.stock <= 0);
+    let cardClass = isEsgotado ? 'u-card disabled' : 'u-card';
+    
     let imgAreaClass = isBasket ? 'u-img-area basket-img-area' : 'u-img-area';
     let addBtnHtml = ''; let qty = STATE.cart[id] || 0;
     
@@ -787,22 +821,34 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
             onClick = `openKitLateralView('${id}', 'COMBO')`;
             if (precoDe > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`; else tagHtml = `<div class="kit-tag">KIT</div>`; 
         } else { onClick = `openKitLateralView('${id}', 'BASKET')`; }
-        addBtnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClick}">Ver Produtos</button>`;
+        
+        if (isEsgotado) {
+             addBtnHtml = `<button class="card-add-btn-wide" style="background:#cbd5e1; box-shadow:none;">ESGOTADO</button>`;
+        } else {
+             addBtnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClick}">Ver Produtos</button>`;
+        }
     } else {
-        onClick = `openQuickView('${id}')`;
+        onClick = isEsgotado ? '' : `openQuickView('${id}')`;
         if (item.oldPrice && item.oldPrice > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
-        if (pPrice && item.stock > 0) {
+        if (isEsgotado) {
+            addBtnHtml = `<div style="position:absolute; bottom:8px; right:8px; background:var(--c-s); color:#fff; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:800;">ESGOTADO</div>`;
+        } else if (pPrice) {
             let btnContent = qty > 0 ? `<span style="font-size:1rem;">${qty}</span>` : '+';
             addBtnHtml = `<button class="card-add-btn add-btn-${id}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
         }
     }
 
+    // Se é kit/cesta, o botão fica no info, não em cima da foto
+    let btnSection = (isKit || isBasket) ? addBtnHtml : '';
+    let btnOnPhoto = (isKit || isBasket) ? '' : addBtnHtml;
+
     return `
-    <div class="u-card" data-id="${id}" onclick="${onClick}">
-        <div class="${imgAreaClass}">${tagHtml} <img src="${img}" alt="${formatName(name)}">${addBtnHtml}</div>
+    <div class="${cardClass}" data-id="${id}" onclick="${onClick}">
+        <div class="${imgAreaClass}">${tagHtml} <img src="${img}" alt="${formatName(name)}">${btnOnPhoto}</div>
         <div class="u-info">
             <div class="u-name">${formatName(name)}</div>
             <div style="display: flex; flex-direction: column; justify-content: flex-end;">${oldPriceHtml}<div class="u-price">${priceHtml}</div></div>
+            ${btnSection}
         </div>
     </div>`;
 }
@@ -810,13 +856,13 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
 function getCardControls(id) {
     let p = STATE.prods.find(x => x.id === id); if (!p) return '';
     const q = STATE.cart[id] || 0;
-    if (p.stock <= 0) return `<button class="btn-big-action" disabled onclick="event.stopPropagation()">ESGOTADO</button>`;
+    if (p.stock <= 0) return `<button class="btn-big-action" disabled style="background:#cbd5e1;">ESGOTADO</button>`;
     if (q > 0) return `<div class="card-qty-ctrl" onclick="event.stopPropagation()"><button onclick="upd('${id}',-1)">-</button><span>${q}</span><button onclick="upd('${id}',1)">+</button></div>`;
     return `<button class="btn-big-action" onclick="event.stopPropagation(); upd('${id}',1)">Adicionar</button>`;
 }
 
 window.openQuickView = function(id) { 
-    let p = STATE.prods.find(x => x.id === id); if (!p) return; 
+    let p = STATE.prods.find(x => x.id === id); if (!p || p.stock <= 0) return; 
     $('qv-img').src = p.img; $('qv-name').innerText = formatName(p.name); 
     if (p.validade) { $('qv-validade').innerText = "Vencimento: " + p.validade; $('qv-validade').style.display = 'block'; } else { $('qv-validade').style.display = 'none'; }
     $('qv-price').innerHTML = p.oldPrice ? `<span style="font-size:1.2rem;text-decoration:line-through;color:var(--c-s);margin-right:10px;font-weight:600;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
@@ -902,7 +948,6 @@ function updateTotals() {
     
     let fc = document.getElementById('floating-cart');
     if(fc) {
-        // Logica inteligente da barra flutuante:
         if (STATE.checkoutOpen || STATE.viewStack === 'KIT_DETAIL' || totalItems === 0) {
             fc.style.display = 'none'; 
         } else {
@@ -1064,7 +1109,6 @@ async function sendOrder() {
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KITS: -${fmt(STATE.comboDiscount)}`;
     if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
-    if (STATE.basketExtraFee > 0) itemsTxt += `\n`;
     
     const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nomeCliente}\n*CPF:* ${cpfCliente || 'Não informado'}\n*PAGAMENTO:* ${formaPagamento}\n\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*\n\n------\n${tipoCestaTexto}`;
 
@@ -1093,6 +1137,7 @@ function handleSearch(q) {
     document.getElementById('see-all-controls').style.display = 'none'; 
     document.getElementById('see-all-footer').style.display = 'none'; 
     document.getElementById('see-all-view').classList.add('open');
+    document.getElementById('see-all-grid').classList.remove('grid-cestas-kits');
     
     let gridEl = document.getElementById('see-all-grid');
 
