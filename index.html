@@ -933,7 +933,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let addBtnHtml = ''; let qty = STATE.cart[id] || 0;
     
     // Tag Expirando Soon (Para aba alimentos)
-    if (item.isExpiringSoon) { tagHtml = `<div class="vencimento-tag">⚠️ VENCE LOGO -30%</div>`; }
+    if (item.isExpiringSoon) { tagHtml = `<div class="vencimento-tag">-30%</div>`; }
     
     if (isKit || isBasket) {
         let precoDe = 0;
