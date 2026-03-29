@@ -300,45 +300,50 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 }
 
 #reels-studio {
-    width: 100vw; height: 100dvh; overflow: hidden; display: block; 
+    width: 100vw; height: 100dvh; overflow: hidden; display: block; position: relative;
 }
 #reels-track {
-    display: flex; flex-direction: row; width: 100vw; height: 100dvh;
-    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-    will-change: transform;
+    position: relative; width: 100vw; height: 100dvh;
 }
 
-/* O slide inteiro ocupa 100% da tela, mas centraliza o conteúdo */
+/* O segredo da transição: Os slides ficam todos sobrepostos, invisíveis e desfocados */
 .reel-slide {
-    width: 100vw; height: 100dvh; flex-shrink: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; /* Mantém tudo bem no meio */
-    box-sizing: border-box; background: var(--c-bg);
-    position: relative;
-}
-
-/* A tela ativa (canvas) que ocupa exatos 50% da vertical, deixando 25% livre em cima e embaixo */
-.reel-canvas {
-    width: 100vw; height: 50vh; position: relative;
+    position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: transparent; overflow: hidden;
+    box-sizing: border-box; background: #ffffff;
+    opacity: 0; filter: blur(20px); pointer-events: none;
+    transition: opacity 0.5s ease-in-out, filter 0.5s ease-in-out;
 }
 
-/* --- ESTILOS DO MOSAICO (INITIAL E FINAL) --- */
+/* Quando o slide recebe essa classe, ele aparece focado */
+.reel-slide.active {
+    opacity: 1; filter: blur(0); pointer-events: auto; z-index: 10;
+}
+
+/* A tela ativa (canvas) ocupando os 50% centrais */
+.reel-canvas {
+    width: 100vw; height: 50vh; position: relative; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: transparent;
+}
+
+/* --- ESTILOS DO MOSAICO (FUNDO TELA TODA) --- */
 .reel-mosaic {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr);
+    display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(5, 1fr);
     z-index: 1;
 }
 .mosaic-cell {
-    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 .mosaic-cell img {
-    width: 80%; height: 80%; object-fit: contain; mix-blend-mode: multiply; opacity: 0.5; filter: grayscale(20%);
+    width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; opacity: 0.8;
 }
 .mosaic-overlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); z-index: 2; /* Lente de transparência elegante */
+    background: rgba(255, 255, 255, 0.7); mix-blend-mode: multiply; z-index: 2;
 }
+
 .reel-intro-content {
     position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
@@ -354,16 +359,18 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 }
 .reel-outro-btn.green { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
 
-/* --- ESTILOS DO PRODUTO (MINIMALISTA) --- */
+/* --- ESTILOS DO PRODUTO --- */
 .reel-image-container {
-    width: 200px; height: 200px; /* Reduzido em ~50% e feito um quadrado perfeito */
-    background: #fff; border-radius: 20px;
+    width: 250px; height: 250px; /* Maior */
+    background: #f1f5f9; /* Cinza Claro Minimalista */
+    border-radius: 20px;
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 15px; z-index: 2; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    border: 1px solid var(--c-bd);
+    margin-bottom: 15px; z-index: 2; 
+    box-shadow: none; border: none; /* Removido borda e sombra */
 }
 .reel-img { 
-    width: 85%; height: 85%; object-fit: contain; mix-blend-mode: multiply; 
+    width: 95%; height: 95%; /* Foto maior ocupando mais a caixa */
+    object-fit: contain; mix-blend-mode: multiply; 
 }
 
 .reel-info-card {
@@ -381,7 +388,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     font-size: 1.1rem; text-decoration: line-through; color: var(--c-t); font-weight: 600; 
 }
 .reel-new-price { 
-    font-size: 2.6rem; font-weight: 800; color: var(--c-p); line-height: 1; letter-spacing: -1px; 
+    font-size: 2.2rem; /* Preço um pouco menor */
+    font-weight: 800; color: var(--c-p); line-height: 1; letter-spacing: -1px; 
 }
 .reel-name { 
     font-size: 1rem; font-weight: 600; color: var(--c-s); line-height: 1.3; 
@@ -1021,7 +1029,6 @@ window.gerarReels = function() {
     }
 
     // --- CRIANDO O FUNDO MOSAICO PARA INTRO E OUTRO ---
-    // Paleta de 10 cores estilo Pantone
     const pantones = ['#FFD1DC', '#F0E6D2', '#B9D7D9', '#F9E4B7', '#D1C4E9', '#F2D2BD', '#C5E1A5', '#FFCCB6', '#E1BEE7', '#B2DFDB'];
     let prodsComImagem = STATE.prods.filter(p => p.img);
     let mosaicImages = [];
@@ -1032,11 +1039,11 @@ window.gerarReels = function() {
             <img src="${img}">
         </div>`).join('') + `</div><div class="mosaic-overlay"></div>`;
 
-    // --- 1. SLIDE INICIAL (Mosaico + Logo) ---
+    // --- 1. SLIDE INICIAL (Mosaico preenchendo o fundo) ---
     let html = `
     <div class="reel-slide">
-        <div class="reel-canvas" style="background: #fff;">
-            ${mosaicHtml}
+        ${mosaicHtml}
+        <div class="reel-canvas">
             <div class="reel-intro-content">
                 <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-hero">
             </div>
@@ -1044,7 +1051,7 @@ window.gerarReels = function() {
     </div>
     `;
 
-    // --- 2. SLIDES DE PRODUTOS (Minimalista no Centro) ---
+    // --- 2. SLIDES DE PRODUTOS ---
     html += produtos.map(p => {
         let perc = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
         return `
@@ -1067,11 +1074,11 @@ window.gerarReels = function() {
         `;
     }).join('');
     
-    // --- 3. SLIDE FINAL (Mosaico + Botões de Conversão) ---
+    // --- 3. SLIDE FINAL ---
     html += `
     <div class="reel-slide">
-        <div class="reel-canvas" style="background: #fff;">
-            ${mosaicHtml}
+        ${mosaicHtml}
+        <div class="reel-canvas">
             <div class="reel-intro-content">
                 <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-hero" style="width: 100px; height: 100px; border-width: 4px; margin-bottom: 5px;">
                 <div class="reel-outro-btn">🌐 www.donaantonia.com.br</div>
@@ -1103,19 +1110,30 @@ window.gerarReels = function() {
 }
 
 function iniciarAutoScroll(tempoMs, qtdProdutos) {
+    let slides = document.querySelectorAll('.reel-slide');
     let currentSlide = 0;
-    let totalSlides = qtdProdutos + 2; 
-    let track = document.getElementById('reels-track');
+    let totalSlides = slides.length; 
+    
+    if(totalSlides === 0) return;
+    
+    // Mostra o primeiro slide aplicando a classe
+    slides[0].classList.add('active');
     
     function moveNext() {
-        currentSlide++;
-        if(currentSlide < totalSlides) {
-            track.style.transform = `translateX(-${currentSlide * 100}vw)`;
+        if(currentSlide < totalSlides - 1) {
+            // Esconde o atual (causando o desfoque de saída)
+            slides[currentSlide].classList.remove('active');
+            currentSlide++;
+            
+            // Mostra o próximo (causando o desfoque de entrada)
+            slides[currentSlide].classList.add('active');
+            
             if(currentSlide < totalSlides - 1) {
                 setTimeout(moveNext, tempoMs);
             }
         }
     }
+    // Deixa a Intro aparecer por 3 segundos antes de iniciar a transição das ofertas
     setTimeout(moveNext, 3000);
 }
 // -------------------------------------------------------------
