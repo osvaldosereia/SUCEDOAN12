@@ -482,8 +482,7 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-const carouselObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
+
         ifconst carouselObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -558,7 +557,7 @@ const STATE = {
 // TERMOS REORGANIZADOS NAS NOVAS CATEGORIAS
 const TERMOS_CATEGORIAS = {
     alimentos: ["arroz", "sinha", "fugini", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", "atum", "achocolatado", "amendoim", "aveia", "bala", "batata", "bombom", "caldo", "canjica", "catchup", "chantilly", "chiclete", "chocolate", "coco", "creme de leite", "drops", "fermento", "gelatina", "goiabada", "granola", "maionese", "mistura para bolo", "mostarda", "ovo", "pimenta", "pipoca", "queijo", "rosquinha", "salgadinho", "salsicha", "shoyu", "tapioca", "tempero", "wafer"],
-    bebidas: ["suco", "cha", "refrigerante", "agua", "bebida", "energetico", "cerveja"],
+    bebidas: ["leite integral", "suco", "cha", "refrigerante", "agua", "bebida", "energetico", "cerveja"],
     higiene: ["esponja de banho", "sabonete", "escova de banho", "creme dental", "escova de dente", "fio dental", "enxaguante", "papel higienico", "absorvente", "fralda", "lenco", "algodao", "desodorante", "talco", "curativo", "cotonete", "aparelho de barbear", "barbeador", "lamina", "gillette", "roll-on", "aerosol", "infantil"],
     beleza: ["shampoo", "maquiagem", "condicionador", "mascara", "tintura", "creme", "hidratante", "locao", "acetona", "farmax", "paris", "esmalte", "pinca", "lixa", "escova de cabelo", "pente", "presilha", "maquiagem", "agua oxigenada", "tratamento capilar", "louro", "cor&tom", "elseve", "removedor"],
     limpeza: ["desinfetante", "multiuso", "qboa", "limpa aluminio", "agua sanitaria", "detergente", "inseticida", "esponja", "vassoura", "pano", "rodo", "pa de lixo", "saco", "balde", "purificador", "pedra sanitaria", "alcool", "veja", "cif", "glade", "escova sanitaria"],
