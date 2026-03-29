@@ -608,8 +608,8 @@ const $ = id => document.getElementById(id);
 // ==========================================
 const CAMPANHAS_INSTA = [
     { id: "maiores_descontos", nome: "Maiores Descontos", desconto: 0, palavrasChave: [] }, // Fixa, não remova.
-    { id: "limpeza_pesada", nome: "Limpeza (15% OFF)", desconto: 15, palavrasChave: ["sabão", "desinfetante", "água sanitária", "detergente"] },
-    { id: "higiene_pessoal", nome: "Higiene (10% OFF)", desconto: 10, palavrasChave: ["sabonete", "shampoo", "desodorante", "creme dental"] }
+    { id: "limpeza_pesada", nome: "Limpeza (25% OFF)", desconto: 25, palavrasChave: ["sabão", "desinfetante", "água sanitária", "vassoura", "pano", "rodo", "detergente"] },
+    { id: "higiene_pessoal", nome: "Higiene (25% OFF)", desconto: 25, palavrasChave: ["sabonete", "shampoo", "desodorante", "dental", ] }
 ];
 
 const carouselObserver = new IntersectionObserver((entries, observer) => {
@@ -665,7 +665,7 @@ const STATE = {
     ], 
     
     deptos: {
-        'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas Relâmpago', color: '#ea1d2c', type: 'PROD', data: [], tags: [] },
+        'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas do Instagram', color: '#ea1d2c', type: 'PROD', data: [], tags: [] },
         'cestas': { id: 'cestas', title: 'Cestas Básicas', color: '#10b981', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', color: '#f59e0b', type: 'COMBO', data: [] },
         'alimentos': { id: 'alimentos', title: 'Alimentos', color: '#ea580c', type: 'PROD', data: [], tags: [] },
@@ -892,7 +892,9 @@ async function init() {
                 });
 
                 if (maxDescontoEncontrado > 0) {
-                    let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price : p.oldPrice;
+                    // REGRA NOVA: Aumenta o preço base em 10% (* 1.10) antes de aplicar o desconto do Insta
+                    let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price * 1.10 : p.oldPrice;
+                    
                     let precoCalculado = precoBase * (1 - (maxDescontoEncontrado / 100));
 
                     if (!p.price || precoCalculado < p.price) {
