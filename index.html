@@ -101,7 +101,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* Fundo sutil com a cor da categoria */
 .home-card::before {
     content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
-    background: var(--card-color); opacity: 0.1; pointer-events: none; z-index: 0;
+    background: var(--card-color); opacity: 0.3; pointer-events: none; z-index: 0;
 }
 
 .home-card-icon { font-size: 2.8rem; z-index: 2; margin-bottom: 5px; line-height: 1; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
@@ -546,13 +546,13 @@ const STATE = {
 
 // TERMOS REORGANIZADOS NAS NOVAS CATEGORIAS
 const TERMOS_CATEGORIAS = {
-    alimentos: ["arroz", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", "atum", "achocolatado", "amendoim", "aveia", "bala", "batata", "bombom", "caldo", "canjica", "catchup", "chantilly", "chiclete", "chocolate", "coco", "creme de leite", "drops", "fermento", "gelatina", "goiabada", "granola", "maionese", "mistura para bolo", "mostarda", "ovo", "pimenta", "pipoca", "queijo", "rosquinha", "salgadinho", "salsicha", "shoyu", "tapioca", "tempero", "wafer"],
+    alimentos: ["arroz", "sinha", "fugini", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", "atum", "achocolatado", "amendoim", "aveia", "bala", "batata", "bombom", "caldo", "canjica", "catchup", "chantilly", "chiclete", "chocolate", "coco", "creme de leite", "drops", "fermento", "gelatina", "goiabada", "granola", "maionese", "mistura para bolo", "mostarda", "ovo", "pimenta", "pipoca", "queijo", "rosquinha", "salgadinho", "salsicha", "shoyu", "tapioca", "tempero", "wafer"],
     bebidas: ["suco", "cha", "refrigerante", "agua", "bebida", "energetico", "cerveja"],
-    higiene: ["sabonete", "creme dental", "escova de dente", "fio dental", "enxaguante", "papel higienico", "absorvente", "fralda", "lenco", "algodao", "desodorante", "talco", "curativo", "cotonete", "aparelho de barbear", "barbeador", "lamina", "gillette", "roll-on", "aerosol", "infantil"],
-    beleza: ["shampoo", "condicionador", "mascara", "tintura", "creme", "hidratante", "locao", "acetona", "esmalte", "pinca", "lixa", "escova de cabelo", "pente", "presilha", "maquiagem", "agua oxigenada", "tratamento capilar", "louro", "cor&tom", "paris", "elseve", "removedor"],
-    limpeza: ["desinfetante", "multiuso", "limpa aluminio", "agua sanitaria", "detergente", "inseticida", "esponja", "vassoura", "pano", "rodo", "pa de lixo", "saco", "balde", "purificador", "pedra sanitaria", "alcool", "veja", "cif", "glade", "escova sanitaria"],
+    higiene: ["sabonete", "escova de banho", "creme dental", "escova de dente", "fio dental", "enxaguante", "papel higienico", "absorvente", "fralda", "lenco", "algodao", "desodorante", "talco", "curativo", "cotonete", "aparelho de barbear", "barbeador", "lamina", "gillette", "roll-on", "aerosol", "infantil"],
+    beleza: ["shampoo", "maquiagem", "condicionador", "mascara", "tintura", "creme", "hidratante", "locao", "acetona", "farmax", paris, "esmalte", "pinca", "lixa", "escova de cabelo", "pente", "presilha", "maquiagem", "agua oxigenada", "tratamento capilar", "louro", "cor&tom", "paris", "elseve", "removedor"],
+    limpeza: ["desinfetante", "multiuso", "qboa", "limpa aluminio", "agua sanitaria", "detergente", "inseticida", "esponja", "vassoura", "pano", "rodo", "pa de lixo", "saco", "balde", "purificador", "pedra sanitaria", "alcool", "veja", "cif", "glade", "escova sanitaria"],
     lavanderia: ["sabao", "lava-roupas", "amaciante", "prendedor", "varal", "corda", "escova lavanderia", "tixan", "lav perfeita", "perfume para roupa"],
-    casa: ["copo", "prato", "jarra", "caneca", "talher", "lampada", "pilha", "panela", "fosforo", "isqueiro", "relogio", "livro", "caneta", "caderno", "agulha", "linha", "adaptador", "extensao", "abracadeira", "cabide", "cesto", "faca", "colher", "espatula", "descascador", "ralo", "peneira", "necessaire", "clips", "cola", "chinelo", "havaiana"],
+    casa: ["copo", "coador", "prato", "jarra", "caneca", "talher", "lampada", "pilha", "panela", "fosforo", "isqueiro", "relogio", "livro", "caneta", "caderno", "agulha", "linha", "adaptador", "extensao", "abracadeira", "cabide", "cesto", "faca", "colher", "espatula", "descascador", "ralo", "peneira", "necessaire", "clips", "cola", "chinelo", "havaiana"],
     pet: ["racao", "petisco", "tapete higienico", "coleira", "areia"]
 };
 
