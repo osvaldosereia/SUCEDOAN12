@@ -150,6 +150,20 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .custom-dropdown-item { padding: 12px 10px; font-size: 0.85rem; font-weight: 500; color: var(--c-s); cursor: pointer; border-bottom: 1px solid var(--c-img-bg); }
 .custom-dropdown-item:hover, .custom-dropdown-item.active { background: #f8fafc; color: var(--c-a); font-weight: 600; }
 
+/* ABAS DO INSTAGRAM */
+.insta-tabs-container {
+    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;
+}
+.insta-tabs-container::-webkit-scrollbar { display: none; }
+.insta-tab {
+    padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
+    background: var(--c-img-bg); color: var(--c-s); white-space: nowrap; cursor: pointer;
+    transition: 0.2s; border: 1px solid transparent;
+}
+.insta-tab.active {
+    background: #fff0f2; color: var(--c-a); border: 1px solid var(--c-a);
+}
+
 .see-all-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 180px; position: relative; background: var(--c-bg);}
 
 /* GRADES */
@@ -173,6 +187,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* Etiquetas */
 .vencimento-tag { position: absolute; top: 8px; left: 8px; background: var(--c-err); color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 600; border-radius: 6px; z-index: 5; }
 .kit-tag { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 600; border-radius: 6px; position: absolute; top: 8px; left: 8px; z-index: 5;}
+.insta-tag { position: absolute; top: 8px; left: 8px; background: #e11d48; color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 700; border-radius: 6px; z-index: 5; display: flex; align-items: center; gap: 4px;}
 .removido-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 6px 12px; border-radius: 6px; z-index: 10; backdrop-filter: blur(2px);}
 
 .card-add-btn { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; background: #fff; color: var(--c-a); border: 1px solid var(--c-bd); border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 1.2rem; font-weight: 500; z-index: 10; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.15s;}
@@ -299,25 +314,23 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     padding: 15px; padding-top: 10px; box-sizing: border-box;
 }
 
-/* Novo layout elegante da Imagem e Card do Produto */
 .reel-image-container {
     width: 100%; 
-    height: 82vh; /* <-- Aumentado de 75vh para 82vh (ocupa mais espaço da tela) */
+    height: 82vh; 
     background: #e2e8f0; 
     border-radius: 24px; display: flex; align-items: center; justify-content: center;
     position: relative; overflow: hidden; margin-top: 0;
 }
 .reel-img {
-    width: 98%; /* <-- Aumentado para 98% para a imagem chegar bem perto das bordas */
+    width: 98%; 
     height: 98%; 
     object-fit: contain; mix-blend-mode: multiply;
 }
 
-/* Card Flutuante Simplificado (Glassmorphism) */
 .reel-info-card {
     width: 88%; max-width: 340px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
     border-radius: 16px; padding: 15px 20px; 
-    margin-top: -85px; /* <-- Aumentado o valor negativo para ele "subir" mais e colar no produto */
+    margin-top: -85px; 
     box-shadow: 0 10px 30px rgba(0,0,0,0.08); z-index: 5;
     display: flex; flex-direction: column; align-items: center; text-align: center;
     border: 1px solid rgba(255,255,255,0.6);
@@ -337,7 +350,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
 
-/* Títulos do Slide Inicial */
 .reel-intro-title {
     font-size: 1.7rem; font-weight: 800; color: var(--c-p); text-align: center; line-height: 1.2; margin-bottom: 30px; padding: 0 20px;
 }
@@ -391,7 +403,7 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
             <input type="text" class="depto-search" id="depto-search" placeholder="Buscar aqui..." oninput="applyDeptoFilters()">
         </div>
         
-        <div class="filters-row">
+        <div class="filters-row" id="normal-filters">
             <div class="custom-dropdown" id="dropdown-keyword">
                 <div class="custom-dropdown-btn" onclick="toggleDropdown('keyword')">
                     <span id="label-keyword">Todos</span> <span>▼</span>
@@ -410,6 +422,9 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
                 </div>
             </div>
         </div>
+
+        <div class="insta-tabs-container" id="insta-tabs" style="display:none;">
+            </div>
     </div>
 
     <div class="see-all-content" id="see-all-content">
@@ -588,6 +603,15 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
+// ==========================================
+// CONFIGURAÇÃO DAS CAMPANHAS DO INSTAGRAM
+// ==========================================
+const CAMPANHAS_INSTA = [
+    { id: "maiores_descontos", nome: "Maiores Descontos", desconto: 0, palavrasChave: [] }, // Fixa, não remova.
+    { id: "limpeza_pesada", nome: "Limpeza (15% OFF)", desconto: 15, palavrasChave: ["sabão", "desinfetante", "água sanitária", "detergente"] },
+    { id: "higiene_pessoal", nome: "Higiene (10% OFF)", desconto: 10, palavrasChave: ["sabonete", "shampoo", "desodorante", "creme dental"] }
+];
+
 const carouselObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -630,7 +654,7 @@ const carouselObserver = new IntersectionObserver((entries, observer) => {
 
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
-    baskets: [], prods: [], coupons: [], combos: [],
+    currentInstaTab: 'maiores_descontos', baskets: [], prods: [], coupons: [], combos: [],
     returnToUpsell: false, 
     
     banners: [
@@ -737,6 +761,20 @@ function renderHomeCards() {
     $('grid-home-sections').innerHTML = html;
 }
 
+function renderInstaTabs() {
+    let html = CAMPANHAS_INSTA.map(c => {
+        let isActive = STATE.currentInstaTab === c.id ? 'active' : '';
+        return `<div class="insta-tab ${isActive}" onclick="selectInstaTab('${c.id}')">${c.nome}</div>`;
+    }).join('');
+    document.getElementById('insta-tabs').innerHTML = html;
+}
+
+window.selectInstaTab = function(tabId) {
+    STATE.currentInstaTab = tabId;
+    renderInstaTabs();
+    applyDeptoFilters();
+};
+
 function getSementeSemanal() {
     let now = new Date(); let utc = now.getTime() + (now.getTimezoneOffset() * 60000); let brt = new Date(utc - (3 * 3600000));
     let dia = brt.getDay(); let hora = brt.getHours(); let min = brt.getMinutes(); let diasParaVoltar = dia;
@@ -746,7 +784,7 @@ function getSementeSemanal() {
 }
 
 async function init() {
-    renderHomeCards(); updateTotals(); renderBanners();
+    renderHomeCards(); updateTotals(); renderBanners(); renderInstaTabs();
     const versaoCache = Math.floor(Date.now() / 86400000); 
 
     try {
@@ -768,7 +806,8 @@ async function init() {
                 return {
                     id: String(p.codigo || p.id), blingId: String(p.id), name: p.nome, 
                     price: parseFloat(p.preco), oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, stock: parseInt(p.estoque) || 0, validade: p.validade || null,
-                    img: `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || ""
+                    img: `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "",
+                    campanhasInsta: [] 
                 };
             });
             
@@ -790,6 +829,38 @@ async function init() {
                 p.price = precoBase * 0.70; 
                 p.discountApplied = true;
                 p.isExpiringSoon = true; 
+            });
+
+            // LÓGICA DAS CAMPANHAS DO INSTAGRAM (APLICA DESCONTO GERAL NO SITE)
+            STATE.prods.forEach(p => {
+                if(p._isBasket || p._isCombo) return;
+                
+                let nomeParaBusca = " " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ";
+                let maxDescontoEncontrado = 0;
+
+                CAMPANHAS_INSTA.forEach(campanha => {
+                    if (campanha.palavrasChave && campanha.palavrasChave.length > 0) {
+                        let match = campanha.palavrasChave.some(kw => nomeParaBusca.includes(" " + norm(kw) + " "));
+                        if (match) {
+                            p.campanhasInsta.push(campanha.id);
+                            if (campanha.desconto > maxDescontoEncontrado) {
+                                maxDescontoEncontrado = campanha.desconto;
+                            }
+                        }
+                    }
+                });
+
+                if (maxDescontoEncontrado > 0) {
+                    let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price : p.oldPrice;
+                    let precoCalculado = precoBase * (1 - (maxDescontoEncontrado / 100));
+
+                    if (!p.price || precoCalculado < p.price) {
+                        p.oldPrice = precoBase;
+                        p.price = precoCalculado;
+                        p.discountApplied = true;
+                        p.isInstaOffer = true;
+                    }
+                }
             });
 
             STATE.prods.forEach(p => {
@@ -816,13 +887,14 @@ async function init() {
                 }
             });
 
+            // Popula os descontos para o Carrossel do Upsell usar sem quebrar
             let todasOfertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
             todasOfertas.sort((a,b) => {
                 let descA = (a.oldPrice - a.price) / a.oldPrice;
                 let descB = (b.oldPrice - b.price) / b.oldPrice;
                 return descB - descA; 
             });
-            STATE.deptos['ofertas_insta'].data = todasOfertas.slice(0, 25); 
+            STATE.deptos['ofertas_insta'].data = todasOfertas; 
         }
         
         STATE.dataLoaded = true;
@@ -839,12 +911,9 @@ async function init() {
 // LÓGICA DO MODO ESTÚDIO (REELS AUTOMATIZADO)
 // -------------------------------------------------------------
 function iniciarModoEstudio() {
-    // Esconde o site original
     document.getElementById('header-wrapper').style.display = 'none';
     document.getElementById('scroll-stage').style.display = 'none';
     document.getElementById('floating-cart').style.display = 'none';
-    
-    // Mostra o container mestre do Estúdio
     document.getElementById('reels-studio-wrapper').style.display = 'block';
 }
 
@@ -854,10 +923,8 @@ window.gerarReels = function() {
     const tempoMs = parseInt(document.getElementById('rs-tempo').value);
     const qtd = parseInt(document.getElementById('rs-qtd').value);
 
-    // Filtra produtos que tenham desconto ativo e em estoque
     let produtos = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
     
-    // Se for busca por termo
     if (tipo === 'termos' && termosInput.trim() !== '') {
         let termos = termosInput.toLowerCase().split(',').map(t => norm(t.trim()));
         produtos = produtos.filter(p => {
@@ -866,14 +933,12 @@ window.gerarReels = function() {
         });
     }
 
-    // Ordena do maior % de desconto para o menor
     produtos.sort((a,b) => {
         let descA = (a.oldPrice - a.price) / a.oldPrice;
         let descB = (b.oldPrice - b.price) / b.oldPrice;
         return descB - descA;
     });
 
-    // Corta na quantidade pedida
     produtos = produtos.slice(0, qtd);
 
     if (produtos.length === 0) {
@@ -881,7 +946,6 @@ window.gerarReels = function() {
         return;
     }
 
-    // Monta o HTML do PRIMEIRO SLIDE (Intro)
     let html = `
     <div class="reel-slide" style="justify-content: center; background: #fff;">
         <div class="reel-intro-title">Veja as ${produtos.length} ofertas que a vovó preparou pra você! 👵❤️</div>
@@ -889,7 +953,6 @@ window.gerarReels = function() {
     </div>
     `;
 
-    // Monta o HTML dos slides dos produtos
     html += produtos.map(p => {
         let perc = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
         return `
@@ -910,7 +973,6 @@ window.gerarReels = function() {
         `;
     }).join('');
     
-    // Monta o HTML do ÚLTIMO SLIDE (Gatilhos Curtos de Conversão)
     html += `
     <div class="reel-slide" style="justify-content: center; background: #fff;">
         <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
@@ -929,11 +991,8 @@ window.gerarReels = function() {
     `;
 
     document.getElementById('reels-track').innerHTML = html;
-    
-    // Oculta a tela de Setup
     document.getElementById('reels-setup').style.display = 'none';
     
-    // Inicia Contagem Regressiva
     let cd = 3;
     const countdownEl = document.getElementById('reels-countdown');
     countdownEl.style.display = 'flex';
@@ -946,7 +1005,6 @@ window.gerarReels = function() {
         } else {
             clearInterval(cInt);
             countdownEl.style.display = 'none';
-            // Chama a função de Auto Scroll, informando o total de produtos
             iniciarAutoScroll(tempoMs, produtos.length);
         }
     }, 1000);
@@ -954,25 +1012,18 @@ window.gerarReels = function() {
 
 function iniciarAutoScroll(tempoMs, qtdProdutos) {
     let currentSlide = 0;
-    // Total de slides = Intro + Produtos + Final
     let totalSlides = qtdProdutos + 2; 
     let track = document.getElementById('reels-track');
     
     function moveNext() {
         currentSlide++;
         if(currentSlide < totalSlides) {
-            // Move a tela para a esquerda
             track.style.transform = `translateX(-${currentSlide * 100}vw)`;
-            
-            // Se ainda não for o último slide, agenda a próxima transição
             if(currentSlide < totalSlides - 1) {
                 setTimeout(moveNext, tempoMs);
             }
-            // Se for o último slide, ele simplesmente para aqui e não agenda mais nada
         }
     }
-    
-    // O primeiro slide (Intro) fica por 3 segundos na tela, independente da config de tempo dos produtos
     setTimeout(moveNext, 3000);
 }
 // -------------------------------------------------------------
@@ -1025,19 +1076,29 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     let d = STATE.deptos[deptoId];
     
     document.getElementById('see-all-title').innerText = d.title;
-    document.getElementById('see-all-controls').style.display = (d.type === 'PROD') ? 'flex' : 'none'; 
+    document.getElementById('see-all-controls').style.display = 'flex'; 
     document.getElementById('see-all-footer').style.display = 'none'; 
     document.getElementById('depto-search').value = ''; 
     
-    STATE.currentSort = (d.type === 'PROD') ? 'maior_desconto' : 'az';
-    STATE.currentKeyword = 'all';
-    document.getElementById('label-sort').innerText = (d.type === 'PROD') ? 'Ofertas' : 'A - Z';
-    document.getElementById('label-keyword').innerText = 'Todos';
-    
-    if (d.type === 'PROD') {
+    if (deptoId === 'ofertas_insta') {
+        document.getElementById('normal-filters').style.display = 'none';
+        document.getElementById('insta-tabs').style.display = 'flex';
+        STATE.currentInstaTab = 'maiores_descontos';
+        renderInstaTabs();
+    } else if (d.type === 'PROD') {
+        document.getElementById('normal-filters').style.display = 'flex';
+        document.getElementById('insta-tabs').style.display = 'none';
+        
+        STATE.currentSort = 'maior_desconto';
+        STATE.currentKeyword = 'all';
+        document.getElementById('label-sort').innerText = 'Ofertas';
+        document.getElementById('label-keyword').innerText = 'Todos';
+        
         let tagHtml = `<div class="custom-dropdown-item active" onclick="selectKeywordOption('all', 'Todos', this)">Todos</div>`;
         if(d.tags) { d.tags.forEach(tag => { tagHtml += `<div class="custom-dropdown-item" onclick="selectKeywordOption('${norm(tag)}', '${tag}', this)">${tag}</div>`; }); }
         document.getElementById('list-keyword').innerHTML = tagHtml;
+    } else {
+        document.getElementById('see-all-controls').style.display = 'none'; 
     }
 
     const grid = document.getElementById('see-all-grid');
@@ -1057,41 +1118,58 @@ window.openDepto = function(deptoId, fromUpsell = false) {
 
 window.applyDeptoFilters = function() {
     if(!STATE.activeDeptoId) return;
-    let depto = STATE.deptos[STATE.activeDeptoId];
     let query = norm(document.getElementById('depto-search').value);
-    let sortType = STATE.currentSort;
-    let keyword = STATE.currentKeyword;
+    let filtered = [];
     
-    let filtered = depto.data.filter(p => {
-        let matchesQuery = norm(p.name || p.nome).includes(query);
-        let matchesKeyword = keyword === 'all' || norm(p.name || p.nome).includes(keyword);
-        return matchesQuery && matchesKeyword;
-    });
-    
-    if(depto.type === 'PROD') {
-        let topExpiring = filtered.filter(p => p.isExpiringSoon);
-        let normalProds = filtered.filter(p => !p.isExpiringSoon);
-
-        if(sortType === 'az') { normalProds.sort((a,b) => a.name.localeCompare(b.name)); } 
-        else if(sortType === 'menor_preco') { normalProds.sort((a,b) => a.price - b.price); } 
-        else if(sortType === 'maior_desconto') {
-            normalProds.sort((a,b) => {
-                let descA = (a.oldPrice && a.oldPrice > a.price) ? (a.oldPrice - a.price) : 0;
-                let descB = (b.oldPrice && b.oldPrice > b.price) ? (b.oldPrice - b.price) : 0;
-                return descB - descA;
+    if (STATE.activeDeptoId === 'ofertas_insta') {
+        if (STATE.currentInstaTab === 'maiores_descontos') {
+            filtered = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
+            filtered.sort((a,b) => {
+                let descA = (a.oldPrice - a.price) / a.oldPrice;
+                let descB = (b.oldPrice - b.price) / b.oldPrice;
+                return descB - descA; 
             });
-        }
-        
-        if (STATE.activeDeptoId === 'alimentos' || STATE.activeDeptoId === 'ofertas_insta') {
-             filtered = [...topExpiring, ...normalProds];
         } else {
-             filtered = normalProds; 
+            filtered = STATE.prods.filter(p => p.campanhasInsta && p.campanhasInsta.includes(STATE.currentInstaTab));
+        }
+        if(query) filtered = filtered.filter(p => norm(p.name || p.nome).includes(query));
+
+    } else {
+        let depto = STATE.deptos[STATE.activeDeptoId];
+        let sortType = STATE.currentSort;
+        let keyword = STATE.currentKeyword;
+        
+        filtered = depto.data.filter(p => {
+            let matchesQuery = norm(p.name || p.nome).includes(query);
+            let matchesKeyword = keyword === 'all' || norm(p.name || p.nome).includes(keyword);
+            return matchesQuery && matchesKeyword;
+        });
+        
+        if(depto.type === 'PROD') {
+            let topExpiring = filtered.filter(p => p.isExpiringSoon);
+            let normalProds = filtered.filter(p => !p.isExpiringSoon);
+
+            if(sortType === 'az') { normalProds.sort((a,b) => a.name.localeCompare(b.name)); } 
+            else if(sortType === 'menor_preco') { normalProds.sort((a,b) => a.price - b.price); } 
+            else if(sortType === 'maior_desconto') {
+                normalProds.sort((a,b) => {
+                    let descA = (a.oldPrice && a.oldPrice > a.price) ? (a.oldPrice - a.price) : 0;
+                    let descB = (b.oldPrice && b.oldPrice > b.price) ? (b.oldPrice - b.price) : 0;
+                    return descB - descA;
+                });
+            }
+            
+            if (STATE.activeDeptoId === 'alimentos') {
+                 filtered = [...topExpiring, ...normalProds];
+            } else {
+                 filtered = normalProds; 
+            }
         }
     }
     
     let html = '';
     if(filtered.length === 0) { html = '<p style="grid-column: 1/-1; text-align:center; padding: 40px 15px; color: var(--c-s); font-weight: 500;">Nenhum produto encontrado.</p>'; } 
-    else { html = filtered.map((item, idx) => buildCardHtml(item, depto.type, false, idx)).join(''); }
+    else { html = filtered.map((item, idx) => buildCardHtml(item, STATE.deptos[STATE.activeDeptoId].type, false, idx)).join(''); }
     
     document.getElementById('see-all-grid').innerHTML = html;
     document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
@@ -1371,7 +1449,11 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let imgAreaClass = isBasket ? 'u-img-area basket-img-area' : 'u-img-area';
     let addBtnHtml = ''; let qty = STATE.cart[id] || 0;
     
-    if (item.isExpiringSoon) { tagHtml = `<div class="vencimento-tag">-30%</div>`; }
+    if (item.isExpiringSoon) { 
+        tagHtml = `<div class="vencimento-tag">-30%</div>`; 
+    } else if (item.isInstaOffer && STATE.activeDeptoId === 'ofertas_insta') {
+        tagHtml = `<div class="insta-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> OFERTA</div>`;
+    }
     
     if (isKit || isBasket) {
         let precoDe = 0;
