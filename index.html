@@ -296,7 +296,7 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 /* --- MODO ESTÚDIO (REELS) AUTOMÁTICO E REFINADO --- */
 #reels-studio-wrapper {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
-    background: var(--c-bg); z-index: 99999; display: none;
+    background: #ffffff; z-index: 99999; display: none;
 }
 
 #reels-studio {
@@ -308,56 +308,84 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     will-change: transform;
 }
 
+/* O slide inteiro ocupa 100% da tela, mas centraliza o conteúdo */
 .reel-slide {
     width: 100vw; height: 100dvh; flex-shrink: 0;
-    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-    /* Aqui está o segredo: padding-bottom de 22vh garante o espaço vazio embaixo! */
-    padding: 15px 15px 22vh 15px; box-sizing: border-box;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; /* Mantém tudo bem no meio */
+    box-sizing: border-box; background: var(--c-bg);
+    position: relative;
 }
 
-.reel-image-container {
-    width: 100%; 
-    /* Altura reduzida de 82vh para 62vh para a imagem não empurrar o card para a zona morta */
-    height: 62vh; 
-    background: #e2e8f0; 
-    border-radius: 24px; display: flex; align-items: center; justify-content: center;
-    position: relative; overflow: hidden; margin-top: 0;
+/* A tela ativa (canvas) que ocupa exatos 50% da vertical, deixando 25% livre em cima e embaixo */
+.reel-canvas {
+    width: 100vw; height: 50vh; position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: transparent; overflow: hidden;
 }
-.reel-img {
-    width: 98%; 
-    height: 98%; 
-    object-fit: contain; mix-blend-mode: multiply;
+
+/* --- ESTILOS DO MOSAICO (INITIAL E FINAL) --- */
+.reel-mosaic {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 1fr);
+    z-index: 1;
+}
+.mosaic-cell {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+}
+.mosaic-cell img {
+    width: 80%; height: 80%; object-fit: contain; mix-blend-mode: multiply; opacity: 0.5; filter: grayscale(20%);
+}
+.mosaic-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px); z-index: 2; /* Lente de transparência elegante */
+}
+.reel-intro-content {
+    position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.reel-logo-hero {
+    width: 140px; height: 140px; border-radius: 50%; object-fit: cover;
+    border: 4px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+.reel-outro-btn {
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+    padding: 10px 20px; border-radius: 50px; font-weight: 700; color: var(--c-p);
+    font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 10px;
+    display: flex; align-items: center; gap: 8px; border: 1px solid var(--c-bd);
+}
+.reel-outro-btn.green { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+
+/* --- ESTILOS DO PRODUTO (MINIMALISTA) --- */
+.reel-image-container {
+    width: 200px; height: 200px; /* Reduzido em ~50% e feito um quadrado perfeito */
+    background: #fff; border-radius: 20px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 15px; z-index: 2; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    border: 1px solid var(--c-bd);
+}
+.reel-img { 
+    width: 85%; height: 85%; object-fit: contain; mix-blend-mode: multiply; 
 }
 
 .reel-info-card {
-    width: 88%; max-width: 340px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
-    border-radius: 16px; padding: 15px 20px; 
-    /* Ajustado para colar bonito na imagem mais curta */
-    margin-top: -55px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08); z-index: 5;
-    display: flex; flex-direction: column; align-items: center; text-align: center;
-    border: 1px solid rgba(255,255,255,0.6);
+    width: 90%; max-width: 320px; background: transparent;
+    display: flex; flex-direction: column; align-items: center; text-align: center; z-index: 2;
 }
 .reel-badge {
-    display: inline-block; background: var(--c-err); color: #fff; font-size: 0.8rem; font-weight: 700; 
-    padding: 4px 8px; border-radius: 6px; letter-spacing: 0.5px; margin: 0;
+    display: inline-block; background: var(--c-err); color: #fff; font-size: 0.8rem; font-weight: 800; 
+    padding: 6px 12px; border-radius: 50px; letter-spacing: 0.5px; margin-bottom: 12px;
 }
-.reel-old-price {
-    font-size: 1rem; text-decoration: line-through; color: var(--c-s); font-weight: 500;
+.reel-price-row { 
+    display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 4px;
 }
-.reel-new-price {
-    font-size: 2.4rem; font-weight: 800; color: var(--c-a); line-height: 1; letter-spacing: -0.5px; margin: 5px 0 8px;
+.reel-old-price { 
+    font-size: 1.1rem; text-decoration: line-through; color: var(--c-t); font-weight: 600; 
 }
-.reel-name {
-    font-size: 0.95rem; font-weight: 500; color: var(--c-s); line-height: 1.2; 
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+.reel-new-price { 
+    font-size: 2.6rem; font-weight: 800; color: var(--c-p); line-height: 1; letter-spacing: -1px; 
 }
-
-.reel-intro-title {
-    font-size: 1.7rem; font-weight: 800; color: var(--c-p); text-align: center; line-height: 1.2; margin-bottom: 30px; padding: 0 20px;
-}
-.reel-intro-logo {
-    width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+.reel-name { 
+    font-size: 1rem; font-weight: 600; color: var(--c-s); line-height: 1.3; 
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 8px;
 }
 </style>
 </head>
@@ -992,46 +1020,67 @@ window.gerarReels = function() {
         return;
     }
 
+    // --- CRIANDO O FUNDO MOSAICO PARA INTRO E OUTRO ---
+    // Paleta de 10 cores estilo Pantone
+    const pantones = ['#FFD1DC', '#F0E6D2', '#B9D7D9', '#F9E4B7', '#D1C4E9', '#F2D2BD', '#C5E1A5', '#FFCCB6', '#E1BEE7', '#B2DFDB'];
+    let prodsComImagem = STATE.prods.filter(p => p.img);
+    let mosaicImages = [];
+    for(let i=0; i<10; i++) { mosaicImages.push(prodsComImagem[i % prodsComImagem.length].img); }
+    
+    let mosaicHtml = `<div class="reel-mosaic">` + mosaicImages.map((img, i) => `
+        <div class="mosaic-cell" style="background-color: ${pantones[i]};">
+            <img src="${img}">
+        </div>`).join('') + `</div><div class="mosaic-overlay"></div>`;
+
+    // --- 1. SLIDE INICIAL (Mosaico + Logo) ---
     let html = `
-    <div class="reel-slide" style="justify-content: center; background: #fff;">
-        <div class="reel-intro-title">Veja as ${produtos.length} ofertas que a vovó preparou pra você! 👵❤️</div>
-        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-intro-logo">
+    <div class="reel-slide">
+        <div class="reel-canvas" style="background: #fff;">
+            ${mosaicHtml}
+            <div class="reel-intro-content">
+                <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-hero">
+            </div>
+        </div>
     </div>
     `;
 
+    // --- 2. SLIDES DE PRODUTOS (Minimalista no Centro) ---
     html += produtos.map(p => {
         let perc = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
         return `
         <div class="reel-slide">
-            <div class="reel-image-container">
-                <img src="${p.img}" class="reel-img">
-            </div>
-            
-            <div class="reel-info-card">
-                <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom: 2px;">
-                    <span class="reel-badge">-${perc}% OFF</span>
-                    <span class="reel-old-price">${fmt(p.oldPrice)}</span>
+            <div class="reel-canvas">
+                <div class="reel-badge">-${perc}% OFF</div>
+                <div class="reel-image-container">
+                    <img src="${p.img}" class="reel-img">
                 </div>
-                <div class="reel-new-price">${fmt(p.price)}</div>
-                <div class="reel-name">${formatName(p.name)}</div>
+                
+                <div class="reel-info-card">
+                    <div class="reel-price-row">
+                        <span class="reel-old-price">${fmt(p.oldPrice)}</span>
+                        <span class="reel-new-price">${fmt(p.price)}</span>
+                    </div>
+                    <div class="reel-name">${formatName(p.name)}</div>
+                </div>
             </div>
         </div>
         `;
     }).join('');
     
+    // --- 3. SLIDE FINAL (Mosaico + Botões de Conversão) ---
     html += `
-    <div class="reel-slide" style="justify-content: center; background: #fff;">
-        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-        <div style="font-weight: 600; font-size: 1.2rem; color: var(--c-s); margin-bottom: 30px;">www.donaantonia.com.br</div>
-        
-        <div style="font-size: 1.2rem; text-align: left; color: var(--c-p); line-height: 1.8; font-weight: 600; width: 85%; display: flex; flex-direction: column; gap: 15px;">
-            <div style="display:flex; align-items:center; gap: 12px;">📦 <span>Pague <b>só na entrega</b></span></div>
-            <div style="display:flex; align-items:center; gap: 12px;">🚚 <span><b>Entrega grátis</b> em Cuiabá e VG</span></div>
-        </div>
-        
-        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 40px; background: #f0fdf4; padding: 15px 25px; border-radius: 16px; border: 1px solid #bbf7d0;">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-            <span style="font-weight: 800; color: #16a34a; font-size: 1.5rem;">65 99815-0975</span>
+    <div class="reel-slide">
+        <div class="reel-canvas" style="background: #fff;">
+            ${mosaicHtml}
+            <div class="reel-intro-content">
+                <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-hero" style="width: 100px; height: 100px; border-width: 4px; margin-bottom: 5px;">
+                <div class="reel-outro-btn">🌐 www.donaantonia.com.br</div>
+                <div class="reel-outro-btn">📦 Pague só na entrega</div>
+                <div class="reel-outro-btn green">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+                    65 99815-0975
+                </div>
+            </div>
         </div>
     </div>
     `;
@@ -1046,11 +1095,8 @@ window.gerarReels = function() {
     
     let cInt = setInterval(() => {
         cd--;
-        if(cd > 0) {
-            countdownEl.innerText = cd;
-        } else {
-            clearInterval(cInt);
-            countdownEl.style.display = 'none';
+        if(cd > 0) { countdownEl.innerText = cd; } else {
+            clearInterval(cInt); countdownEl.style.display = 'none';
             iniciarAutoScroll(tempoMs, produtos.length);
         }
     }, 1000);
