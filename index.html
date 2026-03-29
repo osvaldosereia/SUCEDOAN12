@@ -692,7 +692,7 @@ async function init() {
                 let sementeProd = sementeSemanal + parseInt(p.blingId || p.id);
                 let randVal = geradorAleatorio(sementeProd)();
                 
-                if(randVal < 0.50) { 
+                if(randVal < 0.70) { 
                     let discRoll = geradorAleatorio(sementeProd + 1)(); 
                     let desc = 0.15; 
                     if(discRoll >= 0.60 && discRoll < 0.90) desc = 0.20; 
