@@ -301,18 +301,23 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 /* Novo layout elegante da Imagem e Card do Produto */
 .reel-image-container {
-    width: 100%; height: 75vh; background: #e2e8f0; 
+    width: 100%; 
+    height: 82vh; /* <-- Aumentado de 75vh para 82vh (ocupa mais espaço da tela) */
+    background: #e2e8f0; 
     border-radius: 24px; display: flex; align-items: center; justify-content: center;
     position: relative; overflow: hidden; margin-top: 0;
 }
 .reel-img {
-    width: 95%; height: 95%; object-fit: contain; mix-blend-mode: multiply;
+    width: 98%; /* <-- Aumentado para 98% para a imagem chegar bem perto das bordas */
+    height: 98%; 
+    object-fit: contain; mix-blend-mode: multiply;
 }
 
 /* Card Flutuante Simplificado (Glassmorphism) */
 .reel-info-card {
     width: 88%; max-width: 340px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
-    border-radius: 16px; padding: 15px 20px; margin-top: -60px; /* Sobrepõe bastante a imagem para ficar colado */
+    border-radius: 16px; padding: 15px 20px; 
+    margin-top: -85px; /* <-- Aumentado o valor negativo para ele "subir" mais e colar no produto */
     box-shadow: 0 10px 30px rgba(0,0,0,0.08); z-index: 5;
     display: flex; flex-direction: column; align-items: center; text-align: center;
     border: 1px solid rgba(255,255,255,0.6);
@@ -334,7 +339,7 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 /* Títulos do Slide Inicial */
 .reel-intro-title {
-    font-size: 2.2rem; font-weight: 800; color: var(--c-p); text-align: center; line-height: 1.2; margin-bottom: 30px; padding: 0 20px;
+    font-size: 1.7rem; font-weight: 800; color: var(--c-p); text-align: center; line-height: 1.2; margin-bottom: 30px; padding: 0 20px;
 }
 .reel-intro-logo {
     width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); box-shadow: 0 8px 24px rgba(0,0,0,0.08);
@@ -557,11 +562,13 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
         </div>
         
         <label style="font-weight: 600; display:block; margin-bottom: 8px;">Tempo por Slide:</label>
-        <select id="rs-tempo" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
-            <option value="1000">1 Segundo</option>
-            <option value="1500" selected>1.5 Segundos</option>
-            <option value="2000">2 Segundos</option>
-        </select>
+       <select id="rs-tempo" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
+    <option value="1000">1 Segundo</option>
+    <option value="1500" selected>1.5 Segundos</option>
+    <option value="2000">2 Segundos</option>
+           <option value="2500">2.5 Segundos</option>
+           <option value="3000">3 Segundos</option>
+    <option value="3500">3.5 Segundos</option> </select>
         
         <label style="font-weight: 600; display:block; margin-bottom: 8px;">Quantidade de Produtos:</label>
         <input type="number" id="rs-qtd" value="10" min="1" max="50" style="width: 100%; padding: 12px; margin-bottom: 25px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
