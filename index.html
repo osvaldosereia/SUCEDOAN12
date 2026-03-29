@@ -330,18 +330,22 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 /* --- ESTILOS DO MOSAICO (FUNDO TELA TODA) --- */
 .reel-mosaic {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(5, 1fr);
+    /* Grade de 4 colunas por 10 linhas */
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(10, 1fr);
     z-index: 1;
 }
 .mosaic-cell {
     width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 .mosaic-cell img {
-    width: 100%; height: 100%; object-fit: cover; mix-blend-mode: multiply; opacity: 0.8;
+    /* Tamanho reduzido em 30% (de 100% para 70%) */
+    width: 70%; height: 70%; 
+    object-fit: contain; mix-blend-mode: multiply; opacity: 0.4; /* Opacidade menor para ficar mais discreto */
 }
 .mosaic-overlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(255, 255, 255, 0.7); mix-blend-mode: multiply; z-index: 2;
+    /* Lente branca mais forte (0.85) com o efeito multiply */
+    background: rgba(255, 255, 255, 0.85); mix-blend-mode: multiply; z-index: 2;
 }
 
 .reel-intro-content {
@@ -1028,14 +1032,21 @@ window.gerarReels = function() {
         return;
     }
 
-    // --- CRIANDO O FUNDO MOSAICO PARA INTRO E OUTRO ---
+   // --- CRIANDO O FUNDO MOSAICO (APENAS COM PRODUTOS DA OFERTA) ---
     const pantones = ['#FFD1DC', '#F0E6D2', '#B9D7D9', '#F9E4B7', '#D1C4E9', '#F2D2BD', '#C5E1A5', '#FFCCB6', '#E1BEE7', '#B2DFDB'];
-    let prodsComImagem = STATE.prods.filter(p => p.img);
+    
+    // Puxa APENAS os produtos que vão aparecer nos slides deste Reels
+    let prodsComImagem = produtos.filter(p => p.img);
+    if(prodsComImagem.length === 0) prodsComImagem = [{ img: '/site/img/produtos/cesta.webp' }]; // Fallback de segurança
+    
     let mosaicImages = [];
-    for(let i=0; i<10; i++) { mosaicImages.push(prodsComImagem[i % prodsComImagem.length].img); }
+    // Preenche 40 espaços (4 colunas x 10 linhas). Se faltar produto, ele repete a lista.
+    for(let i = 0; i < 40; i++) { 
+        mosaicImages.push(prodsComImagem[i % prodsComImagem.length].img); 
+    }
     
     let mosaicHtml = `<div class="reel-mosaic">` + mosaicImages.map((img, i) => `
-        <div class="mosaic-cell" style="background-color: ${pantones[i]};">
+        <div class="mosaic-cell" style="background-color: ${pantones[i % pantones.length]};">
             <img src="${img}">
         </div>`).join('') + `</div><div class="mosaic-overlay"></div>`;
 
