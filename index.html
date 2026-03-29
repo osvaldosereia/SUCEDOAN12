@@ -850,15 +850,19 @@ async function init() {
             
             STATE.prods.forEach(p => { let grupo = agruparCategoria(p); STATE.deptos[grupo].data.push(p); });
 
+            // REGRA DOS 5 PRODUTOS EXPIRANDO (Aumento de 10% seguido de 30% Off) - Agora para Alimentos e Bebidas
             let hojeTime = new Date().getTime();
-            let alimentosProds = STATE.deptos.alimentos.data.filter(p => {
+            
+            // Juntamos os produtos das duas categorias para análise
+            let produtosParaValidade = [...STATE.deptos.alimentos.data, ...STATE.deptos.bebidas.data].filter(p => {
                 if(!p.validade || p.stock <= 0) return false;
                 let dataVal = converterDataValidade(p.validade);
                 return dataVal >= hojeTime; 
             });
             
-            alimentosProds.sort((a,b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
-            let top5Validade = alimentosProds.slice(0, 5);
+            // Ordena pela validade mais próxima e pega os 5 globais
+            produtosParaValidade.sort((a,b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
+            let top5Validade = produtosParaValidade.slice(0, 5);
             
             top5Validade.forEach(p => {
                 let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price * 1.10 : p.oldPrice;
@@ -1196,7 +1200,7 @@ window.applyDeptoFilters = function() {
                 });
             }
             
-            if (STATE.activeDeptoId === 'alimentos') {
+            if (STATE.activeDeptoId === 'alimentos' || STATE.activeDeptoId === 'bebidas') {
                  filtered = [...topExpiring, ...normalProds];
             } else {
                  filtered = normalProds; 
