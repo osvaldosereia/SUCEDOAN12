@@ -298,44 +298,46 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
     padding: 15px; padding-top: 10px; box-sizing: border-box;
 }
+
+/* Novo layout elegante da Imagem e Card do Produto */
 .reel-image-container {
-    width: 100%; height: 68vh; background: #e2e8f0; /* Cinza um pouco mais escuro e sólido */
+    width: 100%; height: 75vh; background: #e2e8f0; 
     border-radius: 24px; display: flex; align-items: center; justify-content: center;
     position: relative; overflow: hidden; margin-top: 0;
 }
 .reel-img {
     width: 95%; height: 95%; object-fit: contain; mix-blend-mode: multiply;
 }
+
+/* Card Flutuante Simplificado (Glassmorphism) */
 .reel-info-card {
-    width: 92%; background: #fff; border-radius: 20px;
-    padding: 25px 20px 20px; margin-top: -50px; /* Sobreposição mais evidente */
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06); z-index: 5;
+    width: 88%; max-width: 340px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px);
+    border-radius: 16px; padding: 15px 20px; margin-top: -60px; /* Sobrepõe bastante a imagem para ficar colado */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08); z-index: 5;
     display: flex; flex-direction: column; align-items: center; text-align: center;
-    position: relative; border: 1px solid var(--c-bd);
-}
-.reel-logo-wrapper {
-    position: absolute; top: -25px; left: 50%; transform: translateX(-50%);
-    background: #fff; border-radius: 50%; padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
-.reel-logo {
-    width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid var(--c-bd); display: block;
+    border: 1px solid rgba(255,255,255,0.6);
 }
 .reel-badge {
-    display: inline-block; background: var(--c-err); color: #fff; font-size: 0.85rem; font-weight: 700; 
-    padding: 4px 10px; border-radius: 6px; margin-bottom: 6px; letter-spacing: 0.5px;
-}
-.reel-name {
-    font-size: 1.05rem; font-weight: 500; color: var(--c-p); line-height: 1.2; 
-    margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.reel-prices {
-    display: flex; flex-direction: column; align-items: center; gap: 0px;
+    display: inline-block; background: var(--c-err); color: #fff; font-size: 0.8rem; font-weight: 700; 
+    padding: 4px 8px; border-radius: 6px; letter-spacing: 0.5px; margin: 0;
 }
 .reel-old-price {
-    font-size: 0.90rem; text-decoration: line-through; color: var(--c-s); font-weight: 500;
+    font-size: 1rem; text-decoration: line-through; color: var(--c-s); font-weight: 500;
 }
 .reel-new-price {
-    font-size: 2.1rem; font-weight: 700; color: var(--c-p); line-height: 1; letter-spacing: -0.5px;
+    font-size: 2.4rem; font-weight: 800; color: var(--c-a); line-height: 1; letter-spacing: -0.5px; margin: 5px 0 8px;
+}
+.reel-name {
+    font-size: 0.95rem; font-weight: 500; color: var(--c-s); line-height: 1.2; 
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* Títulos do Slide Inicial */
+.reel-intro-title {
+    font-size: 2.2rem; font-weight: 800; color: var(--c-p); text-align: center; line-height: 1.2; margin-bottom: 30px; padding: 0 20px;
+}
+.reel-intro-logo {
+    width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); box-shadow: 0 8px 24px rgba(0,0,0,0.08);
 }
 </style>
 </head>
@@ -872,8 +874,16 @@ window.gerarReels = function() {
         return;
     }
 
+    // Monta o HTML do PRIMEIRO SLIDE (Intro)
+    let html = `
+    <div class="reel-slide" style="justify-content: center; background: #fff;">
+        <div class="reel-intro-title">Veja as ${produtos.length} ofertas que a vovó preparou pra você! 👵❤️</div>
+        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-intro-logo">
+    </div>
+    `;
+
     // Monta o HTML dos slides dos produtos
-    let html = produtos.map(p => {
+    html += produtos.map(p => {
         let perc = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
         return `
         <div class="reel-slide">
@@ -882,35 +892,31 @@ window.gerarReels = function() {
             </div>
             
             <div class="reel-info-card">
-                <div class="reel-logo-wrapper">
-                    <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo">
-                </div>
-                <div class="reel-badge">-${perc}% OFF</div>
-                <div class="reel-name">${formatName(p.name)}</div>
-                
-                <div class="reel-prices">
+                <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom: 2px;">
+                    <span class="reel-badge">-${perc}% OFF</span>
                     <span class="reel-old-price">${fmt(p.oldPrice)}</span>
-                    <span class="reel-new-price">${fmt(p.price)}</span>
                 </div>
+                <div class="reel-new-price">${fmt(p.price)}</div>
+                <div class="reel-name">${formatName(p.name)}</div>
             </div>
         </div>
         `;
     }).join('');
     
-    // Monta o HTML do ÚLTIMO SLIDE (Fixo conforme pedido)
+    // Monta o HTML do ÚLTIMO SLIDE (Gatilhos Curtos de Conversão)
     html += `
     <div class="reel-slide" style="justify-content: center; background: #fff;">
-        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-        <div style="font-weight: 600; font-size: 1.1rem; color: var(--c-s); margin-bottom: 40px;">www.donaantonia.com.br</div>
+        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); margin-bottom: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <div style="font-weight: 600; font-size: 1rem; color: var(--c-s); margin-bottom: 30px;">www.donaantonia.com.br</div>
         
-        <div style="font-size: 1.15rem; text-align: center; color: var(--c-p); line-height: 1.6; font-weight: 500; width: 90%;">
-            <p style="margin-bottom: 15px;">📦 Encomende pelo whatsapp e só pague na entrega.</p>
-            <p style="margin-bottom: 15px;">🚚 Entrega grátis em Cuiabá e VG.</p>
-            
-            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 30px; background: #f0fdf4; padding: 15px 20px; border-radius: 16px; border: 1px solid #bbf7d0;">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
-                <span style="font-weight: 800; color: #16a34a; font-size: 1.4rem;">65 99815-0975</span>
-            </div>
+        <div style="font-size: 1.2rem; text-align: left; color: var(--c-p); line-height: 1.8; font-weight: 600; width: 85%; display: flex; flex-direction: column; gap: 15px;">
+            <div style="display:flex; align-items:center; gap: 12px;">📦 <span>Pague <b>só na entrega</b></span></div>
+            <div style="display:flex; align-items:center; gap: 12px;">🚚 <span><b>Frete grátis</b> em Cuiabá e VG</span></div>
+        </div>
+        
+        <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 40px; background: #f0fdf4; padding: 15px 25px; border-radius: 16px; border: 1px solid #bbf7d0;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#16a34a"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            <span style="font-weight: 800; color: #16a34a; font-size: 1.5rem;">65 99815-0975</span>
         </div>
     </div>
     `;
@@ -933,6 +939,7 @@ window.gerarReels = function() {
         } else {
             clearInterval(cInt);
             countdownEl.style.display = 'none';
+            // Chama a função de Auto Scroll, informando o total de produtos
             iniciarAutoScroll(tempoMs, produtos.length);
         }
     }, 1000);
@@ -940,23 +947,26 @@ window.gerarReels = function() {
 
 function iniciarAutoScroll(tempoMs, qtdProdutos) {
     let currentSlide = 0;
-    let totalSlides = qtdProdutos + 1; // Produtos + O Slide Final
+    // Total de slides = Intro + Produtos + Final
+    let totalSlides = qtdProdutos + 2; 
     let track = document.getElementById('reels-track');
     
-    let interval = setInterval(() => {
+    function moveNext() {
         currentSlide++;
         if(currentSlide < totalSlides) {
-            // Desloca a pista para a esquerda para mostrar o próximo slide
+            // Move a tela para a esquerda
             track.style.transform = `translateX(-${currentSlide * 100}vw)`;
             
-            if(currentSlide === totalSlides - 1) {
-                // Ao atingir o último slide (A logo com as regras), ele para de rolar.
-                // Como não há código forçando a saída, a tela ficará travada nesse aviso,
-                // permitindo que você grave os 10s desejados e pause o celular calmamente.
-                clearInterval(interval);
+            // Se ainda não for o último slide, agenda a próxima transição
+            if(currentSlide < totalSlides - 1) {
+                setTimeout(moveNext, tempoMs);
             }
+            // Se for o último slide, ele simplesmente para aqui e não agenda mais nada
         }
-    }, tempoMs);
+    }
+    
+    // O primeiro slide (Intro) fica por 3 segundos na tela, independente da config de tempo dos produtos
+    setTimeout(moveNext, 3000);
 }
 // -------------------------------------------------------------
 
