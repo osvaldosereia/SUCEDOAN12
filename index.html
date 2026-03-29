@@ -482,8 +482,8 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-
-        ifconst carouselObserver = new IntersectionObserver((entries, observer) => {
+// OBSERVER PARA CARREGAMENTO PREGUIÇOSO (LAZY LOAD) DOS CARROSSEIS
+const carouselObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             const track = entry.target;
@@ -493,14 +493,14 @@ const $ = id => document.getElementById(id);
                 const depto = STATE.deptos[deptoId];
                 if (!depto || !depto.data) return;
                 
-                // 1. Criamos uma cópia da lista e ordenamos pelo maior desconto
+                // 1. Ordena pelo maior desconto
                 let sortedData = [...depto.data].sort((a, b) => {
                     let descA = (a.oldPrice && a.oldPrice > a.price) ? (a.oldPrice - a.price) : 0;
                     let descB = (b.oldPrice && b.oldPrice > b.price) ? (b.oldPrice - b.price) : 0;
-                    return descB - descA; // Do maior desconto para o menor
+                    return descB - descA;
                 });
 
-                // 2. Agora sim pegamos os 15 primeiros dessa lista já ordenada
+                // 2. Pega os 15 primeiros
                 const topItems = sortedData.slice(0, 15);
                 
                 let html = topItems.map((item, idx) => `
