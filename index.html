@@ -1557,9 +1557,8 @@ window.openQuickView = function(id) {
 }
 
 window.closeQuickView = function(isFromBrowser = false) {
-    document.getElementById('quick-view-lateral').classList.remove('open');
-    setTimeout(() => { $('qv-overlay').style.display = 'none'; }, 300);
-    if (!isFromBrowser && history.state && history.state.qvOpen);
+    document.getElementById('quick-view-lateral').classList.remove('open');
+    setTimeout(() => { $('qv-overlay').style.display = 'none'; }, 300);
 };
 
 function upd(id, delta) { 
