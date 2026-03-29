@@ -484,6 +484,8 @@ const $ = id => document.getElementById(id);
 
 const carouselObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
+        ifconst carouselObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
         if (entry.isIntersecting) {
             const track = entry.target;
             const deptoId = track.dataset.depto;
@@ -491,7 +493,16 @@ const carouselObserver = new IntersectionObserver((entries, observer) => {
             if (deptoId && track.innerHTML === '') {
                 const depto = STATE.deptos[deptoId];
                 if (!depto || !depto.data) return;
-                const topItems = depto.data.slice(0, 15);
+                
+                // 1. Criamos uma cópia da lista e ordenamos pelo maior desconto
+                let sortedData = [...depto.data].sort((a, b) => {
+                    let descA = (a.oldPrice && a.oldPrice > a.price) ? (a.oldPrice - a.price) : 0;
+                    let descB = (b.oldPrice && b.oldPrice > b.price) ? (b.oldPrice - b.price) : 0;
+                    return descB - descA; // Do maior desconto para o menor
+                });
+
+                // 2. Agora sim pegamos os 15 primeiros dessa lista já ordenada
+                const topItems = sortedData.slice(0, 15);
                 
                 let html = topItems.map((item, idx) => `
                     <div class="carousel-item-wrapper">
