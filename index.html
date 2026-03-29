@@ -87,7 +87,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; 
     padding: 10px 15px 30px; max-width: 1000px; margin: 0 auto; 
 }
-@media(min-width: 800px) { .grid-home-sections { grid-template-columns: repeat(5, 1fr); gap: 16px; justify-content: center; } }
+@media(min-width: 800px) { 
+    .grid-home-sections { grid-template-columns: repeat(5, 1fr); gap: 16px; justify-content: center; } 
+    .mobile-only-card { display: none !important; } /* Oculta o card Insta no Desktop */
+}
 
 .home-card { 
     border-radius: 16px; padding: 20px 10px; display: flex; flex-direction: column; 
@@ -275,6 +278,47 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 .card-ver-mais { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: transparent; border-radius: 12px; padding: 20px; text-align: center; color: var(--c-a); font-weight: 600; cursor: pointer; transition: 0.2s; border: 1px dashed var(--c-a); }
 .card-ver-mais:active { background: #fff5f5; }
+
+/* --- MODO ESTÚDIO (REELS) --- */
+#reels-studio {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+    background: #fff; z-index: 99999; overflow-y: scroll;
+    scroll-snap-type: y mandatory; scroll-behavior: smooth;
+    display: none;
+}
+#reels-studio::-webkit-scrollbar { display: none; }
+.reel-slide {
+    width: 100vw; height: 100dvh; scroll-snap-align: start;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; padding: 20px; box-sizing: border-box; background: #fff;
+}
+.reel-img {
+    width: 80%; max-height: 40vh; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 20px;
+}
+.reel-badge {
+    background: var(--c-err); color: #fff; font-size: 1.5rem; font-weight: 800; padding: 10px 20px; border-radius: 12px; margin-bottom: 20px; text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+}
+.reel-old-price {
+    font-size: 1.8rem; text-decoration: line-through; color: var(--c-s); font-weight: 600; margin-bottom: 5px;
+}
+.reel-new-price {
+    font-size: 4.5rem; font-weight: 800; color: var(--c-a); line-height: 1; margin-bottom: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.reel-name {
+    font-size: 1.5rem; font-weight: 600; color: var(--c-p); text-align: center; max-width: 90%; line-height: 1.2;
+}
+.reel-logo {
+    position: absolute; top: 30px; left: 50%; transform: translateX(-50%); width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--c-bd); background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.reel-cta {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: var(--c-a); color: #fff; padding: 12px 30px; border-radius: 30px; font-weight: 800; font-size: 1.2rem; white-space: nowrap; box-shadow: 0 4px 15px rgba(234, 29, 44, 0.4); animation: pulseCta 2s infinite;
+}
+@keyframes pulseCta {
+    0% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(1.05); }
+    100% { transform: translateX(-50%) scale(1); }
+}
 </style>
 </head>
 <body>
@@ -477,6 +521,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 <div id="toast-container"></div>
 
+<div id="reels-studio"></div>
+
 <script>
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0], feriados: [] };
 const MIN_ORDER = 75.00; 
@@ -493,14 +539,12 @@ const carouselObserver = new IntersectionObserver((entries, observer) => {
                 const depto = STATE.deptos[deptoId];
                 if (!depto || !depto.data) return;
                 
-                // 1. Ordena pelo maior desconto
                 let sortedData = [...depto.data].sort((a, b) => {
                     let descA = (a.oldPrice && a.oldPrice > a.price) ? (a.oldPrice - a.price) : 0;
                     let descB = (b.oldPrice && b.oldPrice > b.price) ? (b.oldPrice - b.price) : 0;
                     return descB - descA;
                 });
 
-                // 2. Pega os 15 primeiros
                 const topItems = sortedData.slice(0, 15);
                 
                 let html = topItems.map((item, idx) => `
@@ -537,8 +581,9 @@ const STATE = {
       { texto: "Aceitamos Alimentação e Refeição", corFundo: "#faf5ff", corTexto: "#6b21a8" }
     ], 
     
-    // NOVAS CATEGORIAS DIVIDIDAS (8 Categorias + 2 de Kits)
+    // PSEUDO-DEPARTAMENTO PARA OFERTAS INSTAGRAM ADICIONADO AQUI NO TOPO
     deptos: {
+        'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas Relâmpago', color: '#ea1d2c', type: 'PROD', data: [], tags: [] },
         'cestas': { id: 'cestas', title: 'Cestas Básicas', color: '#10b981', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', color: '#f59e0b', type: 'COMBO', data: [] },
         'alimentos': { id: 'alimentos', title: 'Alimentos', color: '#ea580c', type: 'PROD', data: [], tags: [] },
@@ -554,7 +599,6 @@ const STATE = {
     coupon: null, deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
 };
 
-// TERMOS REORGANIZADOS NAS NOVAS CATEGORIAS
 const TERMOS_CATEGORIAS = {
     alimentos: ["arroz", "sinha", "fugini", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", "atum", "achocolatado", "amendoim", "aveia", "bala", "batata", "bombom", "caldo", "canjica", "catchup", "chantilly", "chiclete", "chocolate", "coco", "creme de leite", "drops", "fermento", "gelatina", "goiabada", "granola", "maionese", "mistura para bolo", "mostarda", "ovo", "pimenta", "pipoca", "queijo", "rosquinha", "salgadinho", "salsicha", "shoyu", "tapioca", "tempero", "wafer"],
     bebidas: ["leite integral", "suco", "cha", "refrigerante", "agua", "bebida", "energetico", "cerveja"],
@@ -594,7 +638,6 @@ function agruparCategoria(produto) {
         }
     }
 
-    // Criar tag dinâmica
     let tag = produto.name.split(' ')[0];
     if (tag && tag.length > 3 && !STATE.deptos[melhorCategoria].tags.includes(formatName(tag))) {
         STATE.deptos[melhorCategoria].tags.push(formatName(tag));
@@ -616,6 +659,9 @@ function converterDataValidade(dataStr) {
 
 function renderHomeCards() {
     const cards = [
+        // ABA EXCLUSIVA DO INSTAGRAM PARA MOBILE
+        { id: 'ofertas_insta', title: 'Visto no Insta', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', mobileOnly: true },
+        
         { id: 'cestas', title: 'Cestas', action: "openDepto('cestas')", icon: '🧺', color: 'rgba(16,185,129,1)' },
         { id: 'combos', title: 'Kits', action: "openDepto('combos')", icon: '🎁', color: 'rgba(245,158,11,1)' },
         { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: 'rgba(234,88,12,1)' },
@@ -628,7 +674,10 @@ function renderHomeCards() {
         { id: 'pet', title: 'Pet', action: "openDepto('pet')", icon: '🐶', color: 'rgba(249,115,22,1)' }
     ];
     let html = '';
-    cards.forEach(c => { html += `<div class="home-card" onclick="${c.action}" style="--card-color: ${c.color};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div></div>`; });
+    cards.forEach(c => { 
+        let classes = c.mobileOnly ? 'home-card mobile-only-card' : 'home-card';
+        html += `<div class="${classes}" onclick="${c.action}" style="--card-color: ${c.color};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div></div>`; 
+    });
     $('grid-home-sections').innerHTML = html;
 }
 
@@ -707,14 +756,61 @@ async function init() {
             Object.values(STATE.deptos).forEach(d => { 
                 if(d.type === 'PROD') {
                     d.data.sort((a,b) => a.name.localeCompare(b.name));
-                    d.tags = [...new Set(d.tags)].sort(); // Clean up unique tags
+                    d.tags = [...new Set(d.tags)].sort();
                 }
             });
+
+            // GERAÇÃO AUTOMÁTICA DA SESSÃO DO INSTAGRAM (Top Descontos Gerais)
+            let todasOfertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
+            todasOfertas.sort((a,b) => {
+                let descA = (a.oldPrice - a.price) / a.oldPrice;
+                let descB = (b.oldPrice - b.price) / b.oldPrice;
+                return descB - descA; // Maior desconto no topo
+            });
+            STATE.deptos['ofertas_insta'].data = todasOfertas.slice(0, 25); // Top 25 da loja inteira
         }
         
         STATE.dataLoaded = true;
+        
+        // CHAMA O MODO ESTÚDIO SE O LINK TIVER ?modo=reels
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('modo') === 'reels') {
+            iniciarModoEstudio();
+        }
 
     } catch (e) { console.error("Erro sincronização:", e); showToast("Erro ao conectar.", "r"); }
+}
+
+// LÓGICA DO MODO ESTÚDIO PARA O REELS
+function iniciarModoEstudio() {
+    // Esconde a interface normal
+    document.getElementById('header-wrapper').style.display = 'none';
+    document.getElementById('scroll-stage').style.display = 'none';
+    document.getElementById('floating-cart').style.display = 'none';
+    
+    // Mostra o container secreto
+    const studio = document.getElementById('reels-studio');
+    studio.style.display = 'block';
+    
+    // Pega as melhores ofertas
+    const ofertas = STATE.deptos['ofertas_insta'].data.slice(0, 15);
+    
+    let html = ofertas.map(p => {
+        let perc = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
+        return `
+        <div class="reel-slide">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo">
+            <div class="reel-badge">-${perc}% OFF</div>
+            <img src="${p.img}" class="reel-img">
+            <div class="reel-old-price">${fmt(p.oldPrice)}</div>
+            <div class="reel-new-price">${fmt(p.price)}</div>
+            <div class="reel-name">${formatName(p.name)}</div>
+            <div class="reel-cta">Clica no Link da Bio 👇</div>
+        </div>
+        `;
+    }).join('');
+    
+    studio.innerHTML = html;
 }
 
 // DROPDOWNS CUSTOMIZADOS
@@ -824,7 +920,7 @@ window.applyDeptoFilters = function() {
             });
         }
         
-        if (STATE.activeDeptoId === 'alimentos') {
+        if (STATE.activeDeptoId === 'alimentos' || STATE.activeDeptoId === 'ofertas_insta') {
              filtered = [...topExpiring, ...normalProds];
         } else {
              filtered = normalProds; 
@@ -1047,8 +1143,8 @@ window.openUpsellView = function() {
         <p class="upsell-header-sub">Adicione itens avulsos que você pode ter esquecido.</p>
     `;
 
-    // Incluindo as novas categorias no carrossel de Upsell
     const sessoes = [
+        { id: 'ofertas_insta', nome: 'Visto no Insta 🔥' },
         { id: 'alimentos', nome: 'Alimentos' },
         { id: 'bebidas', nome: 'Bebidas' },
         { id: 'higiene', nome: 'Higiene' },
