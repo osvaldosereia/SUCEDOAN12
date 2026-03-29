@@ -1009,30 +1009,63 @@ window.gerarReels = function() {
     const tempoMs = parseInt(document.getElementById('rs-tempo').value);
     const qtd = parseInt(document.getElementById('rs-qtd').value);
 
-    let produtos = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
+    let produtos = [];
+    let elegiveis = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
     
     if (tipo === 'termos' && termosInput.trim() !== '') {
-        let termos = termosInput.toLowerCase().split(',').map(t => norm(t.trim()));
-        produtos = produtos.filter(p => {
+        // Separa as palavras-chave digitadas
+        let termos = termosInput.toLowerCase().split(',').map(t => norm(t.trim())).filter(t => t !== '');
+        
+        // Cria um "monte de cartas" para cada palavra-chave
+        let grupos = termos.map(t => ({ termo: t, itens: [] }));
+        
+        // Distribui os produtos nos montes (garantindo que um produto não caia em 2 montes)
+        elegiveis.forEach(p => {
             let nomeNorm = norm(p.name);
-            return termos.some(t => nomeNorm.includes(t));
+            for (let g of grupos) {
+                if (nomeNorm.includes(g.termo)) {
+                    g.itens.push(p);
+                    break; // O 'break' garante que não haverá repetição no sorteio
+                }
+            }
         });
+
+        // Embaralha perfeitamente as cartas de cada monte (ordem aleatória)
+        grupos.forEach(g => {
+            g.itens = g.itens.map(value => ({ value, sort: Math.random() }))
+                             .sort((a, b) => a.sort - b.sort)
+                             .map(({ value }) => value);
+        });
+
+        // Distribui 1 de cada vez (Round-Robin) até acabar as cartas ou bater a quantidade máxima
+        let hasMore = true;
+        while(hasMore && produtos.length < qtd) {
+            hasMore = false;
+            for (let g of grupos) {
+                if (produtos.length >= qtd) break;
+                if (g.itens.length > 0) {
+                    produtos.push(g.itens.shift()); // Puxa o primeiro (que é aleatório) do monte
+                    hasMore = true;
+                }
+            }
+        }
+    } else {
+        // Se for a opção "Geral", continua priorizando os maiores descontos do site
+        elegiveis.sort((a,b) => {
+            let descA = (a.oldPrice - a.price) / a.oldPrice;
+            let descB = (b.oldPrice - b.price) / b.oldPrice;
+            return descB - descA;
+        });
+        produtos = elegiveis.slice(0, qtd);
     }
-
-    produtos.sort((a,b) => {
-        let descA = (a.oldPrice - a.price) / a.oldPrice;
-        let descB = (b.oldPrice - b.price) / b.oldPrice;
-        return descB - descA;
-    });
-
-    produtos = produtos.slice(0, qtd);
 
     if (produtos.length === 0) {
         alert("Nenhum produto encontrado com esses parâmetros!");
         return;
     }
 
-   // --- CRIANDO O FUNDO MOSAICO (APENAS COM PRODUTOS DA OFERTA) ---
+    // --- DAQUI PARA BAIXO O CÓDIGO CONTINUA IGUAL ---
+    // --- CRIANDO O FUNDO MOSAICO PARA INTRO E OUTRO ---
     const pantones = ['#FFD1DC', '#F0E6D2', '#B9D7D9', '#F9E4B7', '#D1C4E9', '#F2D2BD', '#C5E1A5', '#FFCCB6', '#E1BEE7', '#B2DFDB'];
     
     // Puxa APENAS os produtos que vão aparecer nos slides deste Reels
