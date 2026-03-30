@@ -1028,7 +1028,7 @@ window.gerarReels = function() {
     function getMosaicHtml(imgUrl) {
         if(!imgUrl) imgUrl = '/site/img/produtos/cesta.webp'; 
         let cellsHtml = '';
-        for(let i = 0; i < 40; i++) { 
+        for(let i = 0; i < 24; i++) { 
             cellsHtml += `
             <div class="mosaic-cell" style="background-color: ${pantones[i % pantones.length]};">
                 <img src="${imgUrl}">
