@@ -349,7 +349,7 @@
         }
     }
 
-   // ==================== O MOTOR DO APLICATIVO NATIVO (INTENT CORRIGIDO) ====================
+  // ==================== O MOTOR DO APLICATIVO NATIVO (PIC2SHOP) ====================
     function iniciarLeituraNativa(modo) {
         // 1. Salvar o estado da tela na memória do celular antes de sair
         let estado = {
@@ -359,7 +359,7 @@
             listaDeSeparacao: listaDeSeparacao
         };
 
-        // Se estiver editando EAN, salva o que a pessoa já tinha digitado
+        // Salva os dados do formulário caso esteja editando um EAN
         if (modo === 'ean') {
             estado.formTemp = {
                 codigo: document.getElementById('inp-codigo').value,
@@ -374,15 +374,16 @@
 
         localStorage.setItem('estado_app', JSON.stringify(estado));
 
-        // 2. Montar o Link Mágico
-        // Pega o endereço exato do seu site
+        // 2. Montar o Link Mágico do Pic2Shop
         let urlLimpa = window.location.href.split('?')[0]; 
         
-        // Define para onde o aplicativo deve voltar enviando o código
-        let urlDeRetorno = encodeURIComponent(`${urlLimpa}?modo=${modo}&codigo={CODE}`);
+        // O Pic2Shop exige que a gente coloque a palavra "EAN" no final do link. 
+        // Quando ele ler o código de barras, ele vai trocar a palavra "EAN" pelos números reais!
+        let urlDeRetorno = encodeURIComponent(`${urlLimpa}?modo=${modo}&codigo=EAN`);
         
-        // CORREÇÃO: Comando Oficial do Android (Intent) que obriga o Chrome a abrir o App!
-let linkIntent = `http://zxing.appspot.com/scan?ret=${urlDeRetorno}`;        
+        // Esse é o comando exclusivo que acorda o Pic2Shop
+        let linkIntent = `pic2shop://scan?callback=${urlDeRetorno}`;
+        
         // 3. Executar a abertura do aplicativo
         window.location.href = linkIntent;
     }
