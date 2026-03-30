@@ -360,13 +360,16 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     opacity: 1; transform: scale(1); /* Pula na tela rapidamente */
     z-index: 10;
 }
-.reel-giant-img { /* Mantive o nome da classe, mas diminuí as medidas */
-    max-width: 75vw; /* Respiro bacana nas laterais */
-    max-height: 45vh; /* Limita a altura para não encostar na logo */
+.reel-giant-img { 
+    max-width: 75vw; 
+    max-height: 45vh; 
     object-fit: contain; 
-    mix-blend-mode: multiply; /* Transparência multiplicando o fundo (como pedido) */
+    background-color: transparent; /* Garante que a imagem em si não tenha fundo de preenchimento */
+    mix-blend-mode: multiply; /* A lente de transparência */
+    
+    /* TRUQUE: Aumenta o brilho e contraste para eliminar o "quase branco" (cinza) do fundo das fotos, forçando o multiply a apagar tudo! */
+    filter: contrast(1.15) brightness(1.05); 
 }
-
 /* ANIMAÇÃO FINAL: BRANCO + DESFOQUE PARA SUMIR */
 .reel-fade-out { animation: reelsEndFade 0.7s forwards ease-in-out; }
 @keyframes reelsEndFade {
