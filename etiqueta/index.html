@@ -398,20 +398,17 @@
             return; 
         }
 
-        // --- Modificação para gerar os CARDS ---
         encontrados.slice(0, 10).forEach(item => {
             let nome = item.produto.nome || item.produto["Descrição"] || "Sem Nome"; 
             let sku = item.produto.codigo || item.produto["Código"] || ""; 
             let preco = item.produto.preco || item.produto["Preço"] || "0,00";
             
-            // Caminho da Imagem baseada no código e imagem reserva (SVG) se a original falhar
             let caminhoFoto = `../site/img/produtos/${sku}.webp`;
             let imagemReserva = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E";
 
             let div = document.createElement('div'); 
             div.className = 'produto-card'; 
             
-            // Injetando o HTML completo do Card
             div.innerHTML = `
                 <img src="${caminhoFoto}" onerror="this.onerror=null; this.src='${imagemReserva}';">
                 <div class="produto-card-info">
@@ -421,7 +418,6 @@
                 </div>
             `;
             
-            // Evento de abrir o produto para edição
             div.onclick = function() { abrirCardProduto(item.produto, item.indexOriginal); }; 
             
             lista.appendChild(div);
@@ -561,32 +557,92 @@
         cont += `<div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div></div>`; imprimirPelaPaginaFantasma(cont);
     }
 
-    // ==================== CÂMERA DE LEITURA ====================
+    // ==================== CÂMERA DE LEITURA (OTIMIZADA PARA LG K9 E ANTIGOS) ====================
     function iniciarLeitor(modo) {
-        if (scannerAtual) { try { scannerAtual.stop().then(() => { scannerAtual.clear(); abrirCameraSeguro(modo); }).catch(() => { abrirCameraSeguro(modo); }); } catch(e) { abrirCameraSeguro(modo); } } else { abrirCameraSeguro(modo); }
+        if (scannerAtual) { 
+            try { 
+                scannerAtual.stop().then(() => { 
+                    scannerAtual.clear(); 
+                    abrirCameraSeguro(modo); 
+                }).catch(() => { abrirCameraSeguro(modo); }); 
+            } catch(e) { abrirCameraSeguro(modo); } 
+        } else { 
+            abrirCameraSeguro(modo); 
+        }
     }
 
     function abrirCameraSeguro(modo) {
         let idElemento = (modo === 'busca' || modo === 'ean') ? "reader-busca" : "reader-picking";
+        
         if (modo === 'busca' || modo === 'ean') {
             document.getElementById('titulo-camera-busca').innerText = modo === 'ean' ? "📷 Lendo EAN..." : "📷 Lendo Código...";
             abrirTela('tela-camera-busca'); 
         }
+        
         scannerAtual = new Html5Qrcode(idElemento); 
-        let configCamera = { fps: 15, aspectRatio: 1.0, qrbox: { width: 250, height: 120 } };
-        scannerAtual.start({ facingMode: "environment" }, configCamera, (codigoLido) => {
-                if (modo === 'busca') { 
-                    pararLeitor('tela-etiquetas'); buscarProdutoPorCamera(codigoLido); 
-                } else if (modo === 'ean') {
-                    pararLeitor('tela-etiquetas'); document.getElementById('inp-ean').value = codigoLido; tocarBipe('sucesso');
-                    document.getElementById('product-form').classList.remove('hidden'); document.getElementById('area-busca-etiqueta').classList.add('hidden');
-                } else { 
-                    if (aguardandoProximaLeitura) return; 
-                    aguardandoProximaLeitura = true; validarLeituraProduto(codigoLido); 
-                    setTimeout(() => { aguardandoProximaLeitura = false; }, 800); 
+        
+        // Configurações mais leves para processadores antigos (sem aspectRatio restritivo)
+        let configCamera = { 
+            fps: 10, 
+            qrbox: { width: 220, height: 120 } 
+        };
+
+        // Função isolada do que acontece ao ler com sucesso
+        let aoLerComSucesso = (codigoLido) => {
+            if (modo === 'busca') { 
+                pararLeitor('tela-etiquetas'); buscarProdutoPorCamera(codigoLido); 
+            } else if (modo === 'ean') {
+                pararLeitor('tela-etiquetas'); document.getElementById('inp-ean').value = codigoLido; tocarBipe('sucesso');
+                document.getElementById('product-form').classList.remove('hidden'); document.getElementById('area-busca-etiqueta').classList.add('hidden');
+            } else { 
+                if (aguardandoProximaLeitura) return; 
+                aguardandoProximaLeitura = true; validarLeituraProduto(codigoLido); 
+                setTimeout(() => { aguardandoProximaLeitura = false; }, 800); 
+            }
+        };
+
+        // Tenta buscar a câmera pelo ID específico (muito melhor para celulares antigos)
+        Html5Qrcode.getCameras().then(devices => {
+            if (devices && devices.length > 0) {
+                let cameraId = devices[0].id; 
+                
+                // Procura especificamente por termos que indicam a câmera traseira
+                for (let i = 0; i < devices.length; i++) {
+                    let nomeCamera = devices[i].label.toLowerCase();
+                    if (nomeCamera.includes("back") || nomeCamera.includes("traseira") || nomeCamera.includes("environment")) {
+                        cameraId = devices[i].id;
+                        break;
+                    }
                 }
-            }, (erro) => {}
-        ).catch(err => { mostrarAlerta("Erro ao iniciar a câmera", "erro"); });
+                
+                // Inicia a câmera com o ID encontrado
+                scannerAtual.start(
+                    cameraId, 
+                    configCamera, 
+                    aoLerComSucesso, 
+                    (erroDeLeitura) => { /* Silenciar erros de frame vazio */ }
+                ).catch(err => {
+                    tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso);
+                });
+                
+            } else {
+                tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso);
+            }
+        }).catch(err => {
+            tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso);
+        });
+    }
+
+    // Função de segurança caso falhe a busca pelo ID exato
+    function tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso) {
+        scannerAtual.start(
+            { facingMode: "environment" }, 
+            configCamera, 
+            aoLerComSucesso, 
+            (erroDeLeitura) => {}
+        ).catch(err => { 
+            mostrarAlerta("Erro de permissão ou câmera não suportada. Dê permissão no Chrome.", "erro", 4000); 
+        });
     }
     
     function pararLeitor(telaDeRetorno = null) { 
