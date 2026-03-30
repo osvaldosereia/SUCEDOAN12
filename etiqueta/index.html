@@ -349,7 +349,7 @@
         }
     }
 
-    // ==================== O MOTOR DO APLICATIVO NATIVO (INTENT) ====================
+   // ==================== O MOTOR DO APLICATIVO NATIVO (INTENT CORRIGIDO) ====================
     function iniciarLeituraNativa(modo) {
         // 1. Salvar o estado da tela na memória do celular antes de sair
         let estado = {
@@ -375,14 +375,14 @@
         localStorage.setItem('estado_app', JSON.stringify(estado));
 
         // 2. Montar o Link Mágico
-        // Pega o endereço exato que você está usando (funciona no GitHub, localhost, onde for)
+        // Pega o endereço exato do seu site
         let urlLimpa = window.location.href.split('?')[0]; 
         
         // Define para onde o aplicativo deve voltar enviando o código
         let urlDeRetorno = encodeURIComponent(`${urlLimpa}?modo=${modo}&codigo={CODE}`);
         
-        // Comando do Android que acorda o aplicativo Barcode Scanner
-        let linkIntent = `zxing://scan/?ret=${urlDeRetorno}`;
+        // CORREÇÃO: Comando Oficial do Android (Intent) que obriga o Chrome a abrir o App!
+        let linkIntent = `intent://scan/?ret=${urlDeRetorno}#Intent;scheme=zxing;package=com.google.zxing.client.android;end`;
         
         // 3. Executar a abertura do aplicativo
         window.location.href = linkIntent;
