@@ -397,15 +397,25 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 /* --- ESTILOS DO PRODUTO (FOCO TOTAL NA IMAGEM E PREÇO) --- */
 .reel-image-container {
-    width: 300px; height: 300px; 
+    w.reel-image-container {
+    width: 300px; 
+    height: 300px; 
     background: #f1f5f9; 
     border-radius: 24px;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 25px; z-index: 2; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    /* Ajuste para sobreposição (tirar o espaço embaixo) */
+    margin-bottom: 0; 
+    position: relative; 
+    z-index: 1; 
 }
+
 .reel-img { 
-    width: 95%; height: 95%; 
-    object-fit: contain; mix-blend-mode: multiply; 
+    width: 95%; 
+    height: 95%; 
+    object-fit: contain; 
+    mix-blend-mode: multiply; 
 }
 
 /* --- CSS PARA CARD DE PREÇO ELEGANTE --- */
@@ -419,9 +429,11 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     flex-direction: column;
     align-items: center;
     text-align: center;
-    z-index: 2;
-    /* Adiciona uma pequena margem superior para espaçamento */
-    margin-top: 10px;
+    
+    /* Ajuste mágico para puxar o card para cima e sobrepor a imagem */
+    margin-top: -40px; 
+    position: relative; 
+    z-index: 10; 
 }
 
 /* Esconde elementos que não queremos para manter o minimalismo */
