@@ -310,55 +310,61 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 /* OVERLAY FIXO (Logo, Site, Mensagem) */
 .reel-overlay {
     position: absolute;
-    bottom: 10%; /* Posicionado do meio para baixo */
+    bottom: 18%; /* Subimos a logo e os textos para dar mais respiro em baixo */
     left: 0;
     width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    z-index: 50; /* Sempre por cima de tudo */
+    gap: 8px; /* Espaço entre os cards */
+    z-index: 50; 
     pointer-events: none;
 }
 .reel-logo-small {
-    width: 75px; height: 75px; border-radius: 50%;
+    width: 80px; height: 80px; border-radius: 50%;
     border: 3px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    margin-bottom: 6px; object-fit: cover;
-}
-.reel-site-url {
-    font-size: 1rem; font-weight: 800; color: #1e293b;
-    text-shadow: 0 2px 10px rgba(255,255,255,0.8);
-    margin-bottom: 12px; letter-spacing: -0.5px;
+    margin-bottom: 2px; object-fit: cover;
 }
 .reel-custom-card {
     background: rgba(255, 255, 255, 0.95);
-    color: var(--c-a); 
-    padding: 10px 20px; border-radius: 12px;
-    font-size: 0.95rem; font-weight: 700;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    max-width: 85%; text-align: center;
+    color: var(--c-p); /* Texto escuro */
+    padding: 8px 18px; border-radius: 12px;
+    font-size: 0.90rem; font-weight: 700;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    max-width: 90%; text-align: center;
     border: 1px solid rgba(0,0,0,0.05);
 }
+.reel-site-card {
+    background: var(--c-a); /* Fundo vermelho pro site destacar */
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 800;
+}
+.reel-custom-card.highlight {
+    color: var(--c-a); /* Texto vermelho para a frase 1 chamar atenção */
+}
 
-/* O PRODUTO GIGANTE COM ZOOM IN E FLASH */
+/* O PRODUTO MENOR COM RESPIRO */
 #reels-track { position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 10; }
 
 .reel-slide {
     position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh;
-    display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: flex-start; /* Joga o produto para cima */
+    justify-content: center;
+    padding-top: 12vh; /* Área de respiro no topo */
     opacity: 0; pointer-events: none;
-    transform: scale(0.6); /* Começa menorzinho para dar efeito de Zoom In */
+    transform: scale(0.85); /* Começa levemente menor */
     transition: opacity 0.1s ease-out, transform 0.2s cubic-bezier(0.1, 0.8, 0.3, 1);
 }
 .reel-slide.active {
     opacity: 1; transform: scale(1); /* Pula na tela rapidamente */
     z-index: 10;
 }
-.reel-giant-img {
-    width: 160vw; /* GIGANTE, vazando a tela */
-    height: 160vh;
+.reel-giant-img { /* Mantive o nome da classe, mas diminuí as medidas */
+    max-width: 75vw; /* Respiro bacana nas laterais */
+    max-height: 45vh; /* Limita a altura para não encostar na logo */
     object-fit: contain; 
-    mix-blend-mode: multiply; /* Transparência multiplicando o fundo */
-    opacity: 0.85; 
+    mix-blend-mode: multiply; /* Transparência multiplicando o fundo (como pedido) */
 }
 
 /* ANIMAÇÃO FINAL: BRANCO + DESFOQUE PARA SUMIR */
@@ -591,9 +597,12 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
             <input type="text" id="rs-termos" placeholder="Ex: arroz, omo, feijão" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
         </div>
         
-        <label style="font-weight: 600; display:block; margin-bottom: 8px;">Mensagem Personalizada:</label>
-        <input type="text" id="rs-texto-custom" placeholder="Ex: Ofertas válidas até domingo!" value="Super Ofertas da Semana!" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
+        <label style="font-weight: 600; display:block; margin-bottom: 8px;">Mensagem 1 (Destaque):</label>
+        <input type="text" id="rs-texto-custom" placeholder="Ex: Super Ofertas!" value="Super Ofertas da Semana!" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
 
+        <label style="font-weight: 600; display:block; margin-bottom: 8px;">Mensagem 2 (Secundária):</label>
+        <input type="text" id="rs-texto-custom-2" placeholder="Ex: Válido até domingo" value="Aproveite enquanto durar o estoque!" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
+        
         <label style="font-weight: 600; display:block; margin-bottom: 8px;">Tempo por Slide:</label>
         <select id="rs-tempo" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
             <option value="400">0.4 Segundos (Flash Super Rápido)</option>
@@ -980,11 +989,12 @@ function iniciarModoEstudio() {
 }
 
 window.gerarReels = function() {
-    const tipo = document.getElementById('rs-tipo').value;
+   const tipo = document.getElementById('rs-tipo').value;
     const termosInput = document.getElementById('rs-termos').value;
     const tempoMs = parseInt(document.getElementById('rs-tempo').value);
     const qtd = parseInt(document.getElementById('rs-qtd').value);
-    const customText = document.getElementById('rs-texto-custom').value || 'Super Ofertas Dona Antônia!'; // Pega o texto
+    const customText1 = document.getElementById('rs-texto-custom').value || 'Super Ofertas Dona Antônia!';
+    const customText2 = document.getElementById('rs-texto-custom-2').value || 'Aproveite agora!';
 
     let produtos = [];
     let elegiveis = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
@@ -1019,12 +1029,13 @@ window.gerarReels = function() {
         `;
     }).join('');
 
-    // 2. Cria o Overlay Persistente (Fica parado enquanto o fundo e o produto piscam)
+   // 2. Cria o Overlay Persistente (Com os 3 cards empilhados)
     let overlayHtml = `
     <div id="reels-persistent-overlay" class="reel-overlay" style="display:none;">
         <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-small">
-        <div class="reel-site-url">www.donaantonia.com.br</div>
-        <div class="reel-custom-card">${customText}</div>
+        <div class="reel-custom-card reel-site-card">www.donaantonia.com.br</div>
+        <div class="reel-custom-card highlight">${customText1}</div>
+        <div class="reel-custom-card">${customText2}</div>
     </div>
     `;
 
