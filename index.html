@@ -360,25 +360,29 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     opacity: 1; transform: scale(1); /* Pula na tela rapidamente */
     z-index: 10;
 }
+/* O PRODUTO COM O MESMO RECURSO DOS CARDS DO SITE */
+.reel-product-box {
+    width: 75vw;
+    height: 45vh;
+    background: var(--c-img-bg); /* O mesmo fundo cinza clarinho do site! */
+    border-radius: 16px; /* Bordas arredondadas */
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.12); /* Sombreado elegante para destacar do fundo colorido */
+    border: 1px solid var(--c-bd);
+}
+
 .reel-giant-img { 
-    max-width: 75vw; 
-    max-height: 45vh; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
     object-fit: contain; 
-    background-color: transparent; /* Garante que a imagem em si não tenha fundo de preenchimento */
-    mix-blend-mode: multiply; /* A lente de transparência */
+    mix-blend-mode: multiply; /* A mesma transparência exata do site */
+    padding: 5%; /* O mesmo respiro interno do site */
+}
     
-    /* TRUQUE: Aumenta o brilho e contraste para eliminar o "quase branco" (cinza) do fundo das fotos, forçando o multiply a apagar tudo! */
-    filter: contrast(1.15) brightness(1.05); 
-}
-/* ANIMAÇÃO FINAL: BRANCO + DESFOQUE PARA SUMIR */
-.reel-fade-out { animation: reelsEndFade 0.7s forwards ease-in-out; }
-@keyframes reelsEndFade {
-    to {
-        opacity: 0;
-        filter: blur(25px) brightness(4);
-        transform: scale(1.2);
-    }
-}
 
 </style>
 </head>
@@ -1021,13 +1025,15 @@ window.gerarReels = function() {
 
     const pantones = ['#FFD1DC', '#F0E6D2', '#B9D7D9', '#F9E4B7', '#D1C4E9', '#F2D2BD', '#C5E1A5', '#FFCCB6', '#E1BEE7', '#B2DFDB'];
 
-    // 1. Gera os Slides dos Produtos (Só a imagem gigante)
+    // 1. Gera os Slides dos Produtos (Com a mesma caixa de imagem do site)
     let slidesHtml = produtos.map((p, index) => {
         let pImgSegura = p.img || '/site/img/produtos/cesta.webp';
         let bgColor = pantones[index % pantones.length];
         return `
         <div class="reel-slide" data-color="${bgColor}">
-            <img src="${pImgSegura}" class="reel-giant-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+            <div class="reel-product-box">
+                <img src="${pImgSegura}" class="reel-giant-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+            </div>
         </div>
         `;
     }).join('');
