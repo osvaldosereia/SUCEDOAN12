@@ -382,8 +382,7 @@
         let urlDeRetorno = encodeURIComponent(`${urlLimpa}?modo=${modo}&codigo={CODE}`);
         
         // CORREÇÃO: Comando Oficial do Android (Intent) que obriga o Chrome a abrir o App!
-        let linkIntent = `intent://scan/?ret=${urlDeRetorno}#Intent;scheme=zxing;package=com.google.zxing.client.android;end`;
-        
+let linkIntent = `http://zxing.appspot.com/scan?ret=${urlDeRetorno}`;        
         // 3. Executar a abertura do aplicativo
         window.location.href = linkIntent;
     }
