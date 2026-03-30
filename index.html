@@ -304,24 +304,57 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 }
 
 /* --- ESTILOS DO MOSAICO FIXO (FUNDO) --- */
+/* --- CSS PARA MOSAICO SEM VINHETA E CORES FORTES --- */
+
 #fixed-mosaic-container {
-    position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    z-index: 1;
 }
+
 .reel-mosaic {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(6, 1fr); /* 3x6 = 18 celulas */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    /* Mantém a grade 3x6 que você escolheu */
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(6, 1fr);
 }
+
 .mosaic-cell {
-    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
+
 .mosaic-cell img {
-    width: 65%; height: 65%; object-fit: contain; mix-blend-mode: multiply; opacity: 0.35;
+    width: 65%;
+    height: 65%;
+    object-fit: contain;
+    mix-blend-mode: multiply;
+    opacity: 0.35; /* Mantém a transparência para o produto não brigar */
 }
+
 .mosaic-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    /* Vinheta: Claro no centro, escuro nas bordas */
-    background: radial-gradient(circle, rgba(255,255,255,0.6) 30%, rgba(0,0,0,0.7) 100%); 
-    z-index: 2; pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* REMOVIDO A VINHETA. Agora é uma lente branca uniforme. */
+    background: rgba(255, 255, 255, 0.75); 
+    mix-blend-mode: multiply;
+    z-index: 2;
+    pointer-events: none;
 }
 
 /* --- TRILHA E SLIDES (TRANSPARENTES POR CIMA DO MOSAICO) --- */
@@ -376,26 +409,55 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     object-fit: contain; mix-blend-mode: multiply; 
 }
 
+/* --- CSS PARA CARD DE PREÇO ELEGANTE --- */
+
 .reel-info-card {
-    width: 90%; max-width: 340px; background: transparent;
-    display: flex; flex-direction: column; align-items: center; text-align: center; z-index: 2;
+    /* Centraliza o card na horizontal */
+    width: auto;
+    max-width: 280px;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    z-index: 2;
+    /* Adiciona uma pequena margem superior para espaçamento */
+    margin-top: 10px;
 }
 
+/* Esconde elementos que não queremos para manter o minimalismo */
 .reel-badge, .reel-name { display: none !important; }
 
-/* Preços dentro de um Card elegante */
+/* Preços dentro de uma pílula flutuante menor e elegante */
 .reel-price-row { 
-    display: flex; align-items: baseline; justify-content: center; gap: 12px; margin-bottom: 0;
-    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px);
-    padding: 12px 30px; border-radius: 50px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.5);
+    display: flex;
+    flex-direction: column; /* Coloca o preço antigo acima do novo */
+    align-items: center; /* Centraliza os preços */
+    justify-content: center;
+    gap: 2px; /* Espaçamento mínimo entre os preços */
+    
+    /* Novo Card: fundo branco puro, menor, com sombra suave */
+    background: rgba(255, 255, 255, 1);
+    padding: 10px 20px;
+    border-radius: 12px; /* Cantos menos arredondados para ser mais sóbrio */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra suave para flutuação */
 }
+
+/* Valor antigo (cortado): Menor, discreto e elegante */
 .reel-old-price { 
-    font-size: 1.2rem; text-decoration: line-through; color: var(--c-s); font-weight: 600; 
+    font-size: 0.8rem; /* Bem pequeno */
+    text-decoration: line-through;
+    color: var(--c-s); /* Cor secundária (mais suave) */
+    font-weight: 500;
 }
+
+/* Valor novo (oferta): O principal destaque, mas elegante */
 .reel-new-price { 
-    font-size: 3rem; 
-    font-weight: 900; color: var(--c-p); line-height: 1; letter-spacing: -1.5px; 
+    font-size: 2rem; /* Tamanho equilibrado, não exagerado */
+    font-weight: 800; /* Negrito forte para destaque */
+    color: var(--c-p); /* Cor principal do seu site */
+    line-height: 1;
+    letter-spacing: -1px; /* Espaçamento entre letras para toque moderno */
 }
 
 </style>
@@ -1107,6 +1169,8 @@ window.gerarReels = function() {
     }, 1000);
 }
 
+/* --- JAVASCRIPT CORRIGIDO --- */
+
 function iniciarAutoScroll(tempoMs, produtos) {
     let slides = document.querySelectorAll('.reel-slide');
     let mosaicImgs = document.querySelectorAll('.dyn-mosaic-img');
@@ -1115,8 +1179,13 @@ function iniciarAutoScroll(tempoMs, produtos) {
     
     if(totalSlides === 0) return;
     
-    // Injeta a foto do primeiro produto no mosaico durante a intro
-    mosaicImgs.forEach(img => img.src = produtos[0].img || '/site/img/produtos/cesta.webp');
+    // Fallback: uma imagem genérica caso o produto não tenha imagem
+    const imagemPadrao = '/site/img/produtos/cesta.webp'; 
+
+    // Define a imagem do mosaico para a introdução (primeiro produto)
+    let imagemInicial = produtos[0] && produtos[0].img ? produtos[0].img : imagemPadrao;
+    mosaicImgs.forEach(img => img.src = imagemInicial);
+    
     slides[0].classList.add('active');
     
     function moveNext() {
@@ -1124,11 +1193,14 @@ function iniciarAutoScroll(tempoMs, produtos) {
             slides[currentSlide].classList.remove('active');
             currentSlide++;
             
-            // Troca as imagens do mosaico para o produto atual (proteção para não estourar a lista)
-            let prodIndex = currentSlide - 1;
-            if(prodIndex < 0) prodIndex = 0;
-            if(prodIndex >= produtos.length) prodIndex = produtos.length - 1;
-            mosaicImgs.forEach(img => img.src = produtos[prodIndex].img || '/site/img/produtos/cesta.webp');
+            // Define qual produto corresponde ao slide atual
+            let prodIndex = currentSlide - 1; 
+
+            // Se for um slide de produto (não intro/outro), atualiza o mosaico
+            if (currentSlide > 0 && prodIndex < produtos.length) {
+                let imagemProduto = produtos[prodIndex] && produtos[prodIndex].img ? produtos[prodIndex].img : imagemPadrao;
+                mosaicImgs.forEach(img => img.src = imagemProduto);
+            }
             
             slides[currentSlide].classList.add('active');
             
@@ -1137,6 +1209,7 @@ function iniciarAutoScroll(tempoMs, produtos) {
             }
         }
     }
+    // Começa a animação após 3 segundos da introdução
     setTimeout(moveNext, 3000);
 }
 
