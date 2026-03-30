@@ -147,7 +147,12 @@
             <div class="form-group">
                 <input type="text" id="inp-busca" placeholder="Digite Nome, SKU ou EAN..." oninput="buscarPorNome()">
             </div>
-            <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin-bottom: 20px;">📷 Ler Código com a Câmera</button>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button onclick="iniciarLeitor('busca')" class="btn-secondary" style="margin: 0;">📷 Vídeo Ao Vivo</button>
+                <button onclick="document.getElementById('captura-nativa-busca').click()" class="btn-warning" style="margin: 0;">📸 Tirar Foto</button>
+                <input type="file" id="captura-nativa-busca" accept="image/*" capture="environment" style="display: none;" onchange="processarFotoNativa(event, 'busca')">
+            </div>
             
             <div id="lista-resultados"></div>
             
@@ -167,7 +172,9 @@
                     <label>EAN (Cód Barras)</label>
                     <div style="display: flex; gap: 5px;">
                         <input type="text" id="inp-ean" style="flex: 1;">
-                        <button type="button" class="btn-secondary" style="width: auto; padding: 0 15px; margin: 0;" onclick="iniciarLeitor('ean')">📷</button>
+                        <button type="button" class="btn-secondary" style="width: auto; padding: 0 10px; margin: 0; font-size: 12px;" onclick="iniciarLeitor('ean')">📷 Vídeo</button>
+                        <button type="button" class="btn-warning" style="width: auto; padding: 0 10px; margin: 0; font-size: 12px;" onclick="document.getElementById('captura-nativa-ean').click()">📸 Foto</button>
+                        <input type="file" id="captura-nativa-ean" accept="image/*" capture="environment" style="display: none;" onchange="processarFotoNativa(event, 'ean')">
                     </div>
                 </div>
             </div>
@@ -244,7 +251,9 @@
             <div class="ticks-container" id="foco-ticks"></div>
             
             <div style="display:flex; gap:10px; width:100%; margin-top: auto;">
-                <button class="btn-danger" onclick="cancelarPicking()">Cancelar Separação</button>
+                <button class="btn-danger" onclick="cancelarPicking()">Cancelar</button>
+                <button class="btn-warning" style="color: black;" onclick="document.getElementById('captura-nativa-separacao').click()">📸 Bipar por Foto</button>
+                <input type="file" id="captura-nativa-separacao" accept="image/*" capture="environment" style="display: none;" onchange="processarFotoNativa(event, 'separacao')">
             </div>
         </div>
     </div>
@@ -256,6 +265,8 @@
         <button class="btn-print" onclick="imprimirRelatorioSeparacao()" style="padding: 20px; font-size: 18px;">🖨️ Imprimir Pedido</button>
         <button class="btn-secondary" onclick="abrirTela('tela-inicial')">✅ Concluir e Voltar</button>
     </div>
+    
+    <div id="leitor-foto-oculto" style="display: none;"></div>
 </div>
 
 <script>
@@ -557,7 +568,7 @@
         cont += `<div style="margin-top: 100px; border-bottom: 2px dashed #000; height: 5px;"></div></div>`; imprimirPelaPaginaFantasma(cont);
     }
 
-    // ==================== CÂMERA DE LEITURA (OTIMIZADA PARA LG K9 E ANTIGOS) ====================
+    // ==================== CÂMERA DE LEITURA VÍDEO ====================
     function iniciarLeitor(modo) {
         if (scannerAtual) { 
             try { 
@@ -580,14 +591,8 @@
         }
         
         scannerAtual = new Html5Qrcode(idElemento); 
-        
-        // Configurações mais leves para processadores antigos (sem aspectRatio restritivo)
-        let configCamera = { 
-            fps: 10, 
-            qrbox: { width: 220, height: 120 } 
-        };
+        let configCamera = { fps: 10, qrbox: { width: 220, height: 120 } };
 
-        // Função isolada do que acontece ao ler com sucesso
         let aoLerComSucesso = (codigoLido) => {
             if (modo === 'busca') { 
                 pararLeitor('tela-etiquetas'); buscarProdutoPorCamera(codigoLido); 
@@ -601,12 +606,9 @@
             }
         };
 
-        // Tenta buscar a câmera pelo ID específico (muito melhor para celulares antigos)
         Html5Qrcode.getCameras().then(devices => {
             if (devices && devices.length > 0) {
                 let cameraId = devices[0].id; 
-                
-                // Procura especificamente por termos que indicam a câmera traseira
                 for (let i = 0; i < devices.length; i++) {
                     let nomeCamera = devices[i].label.toLowerCase();
                     if (nomeCamera.includes("back") || nomeCamera.includes("traseira") || nomeCamera.includes("environment")) {
@@ -614,17 +616,9 @@
                         break;
                     }
                 }
-                
-                // Inicia a câmera com o ID encontrado
-                scannerAtual.start(
-                    cameraId, 
-                    configCamera, 
-                    aoLerComSucesso, 
-                    (erroDeLeitura) => { /* Silenciar erros de frame vazio */ }
-                ).catch(err => {
+                scannerAtual.start(cameraId, configCamera, aoLerComSucesso, () => {}).catch(err => {
                     tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso);
                 });
-                
             } else {
                 tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso);
             }
@@ -633,15 +627,8 @@
         });
     }
 
-    // Função de segurança caso falhe a busca pelo ID exato
-   function tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso) {
-        scannerAtual.start(
-            { facingMode: "environment" }, 
-            configCamera, 
-            aoLerComSucesso, 
-            (erroDeLeitura) => {}
-        ).catch(err => { 
-            // Agora o alerta vai imprimir o erro exato que o celular está relatando!
+    function tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso) {
+        scannerAtual.start({ facingMode: "environment" }, configCamera, aoLerComSucesso, () => {}).catch(err => { 
             mostrarAlerta("Erro detalhado: " + err, "erro", 6000); 
         });
     }
@@ -747,6 +734,39 @@
     
     function finalizarPicking() { 
         sairTelaCheia(); pararLeitor(); falarTexto("Pedido finalizado com sucesso."); abrirTela('tela-conclusao'); 
+    }
+
+    // ==================== MODO DE FOTO ESTÁTICA (COMPATIBILIDADE LG K9) ====================
+    function processarFotoNativa(event, modo) {
+        if (event.target.files.length === 0) return; 
+        
+        const arquivo = event.target.files[0];
+        // Instancia o leitor usando a div oculta preparada para não interferir no layout
+        const leitorEstatico = new Html5Qrcode("leitor-foto-oculto"); 
+        
+        mostrarAlerta("Analisando a foto, aguarde...", "aviso");
+        
+        // Lê a imagem estática para extrair o código de barras
+        leitorEstatico.scanFile(arquivo, true)
+            .then(codigoLido => {
+                tocarBipe('sucesso');
+                mostrarAlerta("Código lido com sucesso!", "sucesso");
+                
+                // Direciona o resultado para o lugar certo dependendo de qual botão foi apertado
+                if (modo === 'busca') {
+                    buscarProdutoPorCamera(codigoLido);
+                } else if (modo === 'ean') {
+                    document.getElementById('inp-ean').value = codigoLido;
+                } else if (modo === 'separacao') {
+                    validarLeituraProduto(codigoLido);
+                }
+                
+                event.target.value = ""; // Limpa o input para fotos futuras
+            })
+            .catch(err => {
+                mostrarAlerta("Não encontrei um código claro na foto. Tente focar melhor ou chegar mais perto.", "erro");
+                event.target.value = ""; 
+            });
     }
 </script>
 </body>
