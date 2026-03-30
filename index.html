@@ -395,43 +395,41 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 }
 .reel-outro-btn.green { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
 
-/* --- ESTILOS DO PRODUTO (FOCO TOTAL NA IMAGEM E PREÇO) --- */
+/* --- ESTILOS DO PRODUTO (DESIGN PREMIUM E ELEGANTE) --- */
+
 .reel-image-container {
-    w.reel-image-container {
-    width: 300px; 
-    height: 300px; 
-    background: #f1f5f9; 
-    border-radius: 24px;
+    width: 320px; 
+    height: 320px; 
+    background: #ffffff; /* Fundo branco puro e limpo */
+    border-radius: 36px; /* Cantos arredondados bem suaves e modernos */
     display: flex; 
     align-items: center; 
     justify-content: center;
-    /* Ajuste para sobreposição (tirar o espaço embaixo) */
     margin-bottom: 0; 
     position: relative; 
     z-index: 1; 
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08); /* Sombra elegante para descolar do mosaico */
+    border: 1px solid rgba(0,0,0,0.03); /* Borda ultra sutil para dar acabamento */
 }
 
 .reel-img { 
-    width: 95%; 
-    height: 95%; 
+    width: 65%; /* Foto bem menor, criando uma área de respiro gigante ao redor */
+    height: 65%; 
     object-fit: contain; 
     mix-blend-mode: multiply; 
 }
 
-/* --- CSS PARA CARD DE PREÇO ELEGANTE --- */
+/* --- CARD DE PREÇO (FORMATO DE BOTÃO/PÍLULA) --- */
 
 .reel-info-card {
-    /* Centraliza o card na horizontal */
     width: auto;
-    max-width: 280px;
-    background: transparent;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     
-    /* Ajuste mágico para puxar o card para cima e sobrepor a imagem */
-    margin-top: -40px; 
+    /* Puxa o botão de preço para cima, "mordendo" a base do box da foto */
+    margin-top: -35px; 
     position: relative; 
     z-index: 10; 
 }
@@ -439,36 +437,36 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 /* Esconde elementos que não queremos para manter o minimalismo */
 .reel-badge, .reel-name { display: none !important; }
 
-/* Preços dentro de uma pílula flutuante menor e elegante */
+/* O Botão de Preço Elegante */
 .reel-price-row { 
     display: flex;
-    flex-direction: column; /* Coloca o preço antigo acima do novo */
-    align-items: center; /* Centraliza os preços */
+    flex-direction: column; /* Antigo em cima, novo embaixo */
+    align-items: center; 
     justify-content: center;
-    gap: 2px; /* Espaçamento mínimo entre os preços */
+    gap: 4px; /* Espaço entre os valores */
     
-    /* Novo Card: fundo branco puro, menor, com sombra suave */
-    background: rgba(255, 255, 255, 1);
-    padding: 10px 20px;
-    border-radius: 12px; /* Cantos menos arredondados para ser mais sóbrio */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* Sombra suave para flutuação */
+    background: #ffffff;
+    padding: 16px 45px; /* Deixa largo como um botão sofisticado */
+    border-radius: 50px; /* Formato de pílula perfeita */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15); /* Sombra forte para saltar aos olhos */
+    border: 2px solid #f8fafc;
 }
 
-/* Valor antigo (cortado): Menor, discreto e elegante */
+/* Valor antigo (cortado): Discreto, elegante e em cima */
 .reel-old-price { 
-    font-size: 0.8rem; /* Bem pequeno */
+    font-size: 1.05rem; 
     text-decoration: line-through;
-    color: var(--c-s); /* Cor secundária (mais suave) */
-    font-weight: 500;
+    color: var(--c-s); 
+    font-weight: 600; 
 }
 
-/* Valor novo (oferta): O principal destaque, mas elegante */
+/* Valor novo (oferta): Enorme, com peso máximo para chamar a atenção */
 .reel-new-price { 
-    font-size: 2rem; /* Tamanho equilibrado, não exagerado */
-    font-weight: 800; /* Negrito forte para destaque */
-    color: var(--c-p); /* Cor principal do seu site */
+    font-size: 2.8rem; 
+    font-weight: 900; /* Super negrito */
+    color: var(--c-a); /* Vermelho destaque do seu site */
     line-height: 1;
-    letter-spacing: -1px; /* Espaçamento entre letras para toque moderno */
+    letter-spacing: -1.5px; /* Texto mais juntinho fica mais moderno */
 }
 
 </style>
