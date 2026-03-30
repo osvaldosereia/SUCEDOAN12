@@ -634,14 +634,15 @@
     }
 
     // Função de segurança caso falhe a busca pelo ID exato
-    function tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso) {
+   function tentarCameraModoDeSeguranca(configCamera, aoLerComSucesso) {
         scannerAtual.start(
             { facingMode: "environment" }, 
             configCamera, 
             aoLerComSucesso, 
             (erroDeLeitura) => {}
         ).catch(err => { 
-            mostrarAlerta("Erro de permissão ou câmera não suportada. Dê permissão no Chrome.", "erro", 4000); 
+            // Agora o alerta vai imprimir o erro exato que o celular está relatando!
+            mostrarAlerta("Erro detalhado: " + err, "erro", 6000); 
         });
     }
     
