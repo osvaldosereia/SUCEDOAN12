@@ -955,22 +955,40 @@ async function init() {
                 }
             });
 
-            STATE.prods.forEach(p => {
-                if(p.discountApplied || p._isBasket || p._isCombo) return;
-                let sementeProd = sementeSemanal + parseInt(p.blingId || p.id);
-                let randVal = geradorAleatorio(sementeProd)();
-                
-                if(randVal < 0.70) { 
-                    let discRoll = geradorAleatorio(sementeProd + 1)(); 
-                    let desc = 0.15; 
-                    if(discRoll >= 0.60 && discRoll < 0.90) desc = 0.20; 
-                    else if(discRoll >= 0.90) desc = 0.25; 
-                    
-                    if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price * 1.10;
-                    p.price = p.oldPrice * (1 - desc);
-                    p.discountApplied = true;
-                }
-            });
+           // 3. OFERTAS ALEATÓRIAS (Padrão de 10% a 25%)
+STATE.prods.forEach(p => {
+    // Ignora se já tem desconto de validade, se é cesta ou se é combo
+    if(p.discountApplied || p._isBasket || p._isCombo) return;
+
+    let sementeProd = sementeSemanal + parseInt(p.blingId || p.id);
+    let randVal = geradorAleatorio(sementeProd)();
+    
+    // 70% de chance de o produto entrar em oferta
+    if(randVal < 0.70) { 
+        let discRoll = geradorAleatorio(sementeProd + 1)(); 
+        let desc = 0.10; // Piso de 10%
+        let nomeNorm = norm(p.name);
+
+        // Lista de produtos sensíveis (Margem Curta)
+        const itensEssenciais = ["arroz", "feijao", "oleo", "cafe", "farinha"];
+        const eEssencial = itensEssenciais.some(essencial => nomeNorm.startsWith(essencial));
+
+        if (eEssencial) {
+            // Regra: Apenas 10% ou 15% (Meio a meio)
+            desc = (discRoll < 0.50) ? 0.10 : 0.15;
+        } else {
+            // Regra Geral: 10, 15, 20 ou 25% (Divididos igualmente em 25% de chance cada)
+            if (discRoll >= 0.25 && discRoll < 0.50) desc = 0.15;
+            else if (discRoll >= 0.50 && discRoll < 0.75) desc = 0.20;
+            else if (discRoll >= 0.75) desc = 0.25;
+        }
+        
+        // Aplica o Preço Antigo (Preço com Aumento Global) e o Novo Preço com Desconto
+        if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price * 1.10;
+        p.price = p.oldPrice * (1 - desc);
+        p.discountApplied = true;
+    }
+});
 
             Object.values(STATE.deptos).forEach(d => { 
                 if(d.type === 'PROD') {
