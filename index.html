@@ -178,9 +178,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-card:active { transform: scale(0.98); }
 .u-card.disabled { opacity: 0.5; pointer-events: none; cursor: default; }
 
-.u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
+.u-img-area { width: 100%; aspect-ratio: 3/4; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; transition: 0.3s;}
 
+.basket-img-area, .kit-img-area { background: transparent !important; aspect-ratio: 1/1 !important; }
+.basket-img-area img, .kit-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 8px; mix-blend-mode: normal !important;}
 .basket-img-area { background: transparent !important; }
 .basket-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 8px; mix-blend-mode: normal !important;}
 
@@ -1631,8 +1633,12 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let isEsgotado = (item.stock <= 0);
     let cardClass = isEsgotado ? 'u-card disabled' : 'u-card';
     
-    let imgAreaClass = isBasket ? 'u-img-area basket-img-area' : 'u-img-area';
-    let addBtnHtml = ''; let qty = STATE.cart[id] || 0;
+let imgAreaClass = 'u-img-area';
+    if (isBasket) imgAreaClass += ' basket-img-area';
+    if (isKit) imgAreaClass += ' kit-img-area';
+    
+    let addBtnHtml = ''; 
+    let qty = STATE.cart[id] || 0;
     
     if (item.isExpiringSoon) { 
         tagHtml = `<div class="vencimento-tag">-30%</div>`; 
