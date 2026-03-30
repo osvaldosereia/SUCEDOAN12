@@ -870,36 +870,50 @@ async function init() {
         STATE.baskets = r1 || []; STATE.combos = r3 || []; STATE.coupons = r4 || [];
         STATE.deptos.cestas.data = STATE.baskets; STATE.deptos.combos.data = STATE.combos;
 
-        if (r2 && r2.length > 0) {
+       if (r2 && r2.length > 0) {
             let sementeSemanal = getSementeSemanal();
             function geradorAleatorio(semente) { return function() { var t = semente += 0x6D2B79F5; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; } }
 
+            // 1. APLICAR AUMENTO GLOBAL E CRIAR A LISTA
+            const TAXA_AUMENTO_GLOBAL = 1.10;
+
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
+                let precoComAumento = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
+                let precoAntigoComAumento = p.preco_antigo ? parseFloat(p.preco_antigo) * TAXA_AUMENTO_GLOBAL : null;
+
                 return {
-                    id: String(p.codigo || p.id), blingId: String(p.id), name: p.nome, 
-                    price: parseFloat(p.preco), oldPrice: p.preco_antigo ? parseFloat(p.preco_antigo) : null, stock: parseInt(p.estoque) || 0, validade: p.validade || null,
-                    img: `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "",
+                    id: String(p.codigo || p.id), 
+                    blingId: String(p.id), 
+                    name: p.nome, 
+                    price: precoComAumento, 
+                    oldPrice: precoAntigoComAumento, 
+                    stock: parseInt(p.estoque) || 0, 
+                    validade: p.validade || null,
+                    img: `/site/img/produtos/${p.codigo || p.id}.webp`, 
+                    categoria: p.categoria || "",
                     campanhasInsta: [] 
                 };
             });
             
-            STATE.prods.forEach(p => { let grupo = agruparCategoria(p); STATE.deptos[grupo].data.push(p); });
+            // 2. ORGANIZAR EM CATEGORIAS
+            STATE.prods.forEach(p => { 
+                let grupo = agruparCategoria(p); 
+                STATE.deptos[grupo].data.push(p); 
+            });
 
-            // REGRA DOS 5 PRODUTOS EXPIRANDO (Aumento de 10% seguido de 30% Off) - Agora para Alimentos e Bebidas
+            // 3. REGRA DE VALIDADE (Ajustado para não dar erro)
             let hojeTime = new Date().getTime();
-            
-            // Juntamos os produtos das duas categorias para análise
             let produtosParaValidade = [...STATE.deptos.alimentos.data, ...STATE.deptos.bebidas.data].filter(p => {
                 if(!p.validade || p.stock <= 0) return false;
                 let dataVal = converterDataValidade(p.validade);
                 return dataVal >= hojeTime; 
             });
             
-            // Ordena pela validade mais próxima e pega os 5 globais
             produtosParaValidade.sort((a,b) => converterDataValidade(a.validade) - converterDataValidade(b.validade));
             let top5Validade = produtosParaValidade.slice(0, 5);
             
             top5Validade.forEach(p => {
+                // Aqui o p.price já está com os 10% do aumento global
                 let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price * 1.10 : p.oldPrice;
                 p.oldPrice = precoBase; 
                 p.price = precoBase * 0.70; 
