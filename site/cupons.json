@@ -1,19 +1,32 @@
 [
   {
-    "codigo": "BEMVINDO10",
-    "desconto": 10.00,
-    "descricao": "Desconto de 10 reais para primeira compra",
-    "valorMinimo": 130.00
-  },
-  {
     "codigo": "DONA5",
     "desconto": 5.00,
-    "descricao": "Desconto fixo de 5 reais"
+    "descricao": "Desconto fixo de 5 reais",
+    "valorMinimo": 0.00
+  },
+  {
+    "codigo": "VALE10",
+    "desconto": 10.00,
+    "descricao": "Desconto de 10 reais para compras acima de 100",
+    "valorMinimo": 100.00
   },
   {
     "codigo": "VALE15",
     "desconto": 15.00,
-    "descricao": "Desconto de 15,00 reais para clientes fiéis",
-    "valorMinimo": 180.00
+    "descricao": "Desconto de 15 reais para compras acima de 150",
+    "valorMinimo": 150.00
+  },
+  {
+    "codigo": "VALE20",
+    "desconto": 20.00,
+    "descricao": "Desconto de 20 reais para compras acima de 200",
+    "valorMinimo": 200.00
+  },
+  {
+    "codigo": "VALE25",
+    "desconto": 25.00,
+    "descricao": "Desconto de 25 reais para compras acima de 250",
+    "valorMinimo": 250.00
   }
 ]
