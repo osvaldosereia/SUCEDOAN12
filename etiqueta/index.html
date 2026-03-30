@@ -13,7 +13,7 @@
         .btn-primary { background-color: var(--primary); } .btn-secondary { background-color: var(--secondary); }
         .btn-danger { background-color: var(--danger); } .btn-print { background-color: #000; }
         
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; height: 100vh; overflow-y: auto; box-sizing: border-box; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100vh; overflow-y: auto; box-sizing: border-box; }
         .hidden { display: none !important; }
         h1, h2 { text-align: center; margin-top: 0; }
         
@@ -22,35 +22,44 @@
         /* ================= TELA DE FOCO (CRAVADA, SEM ROLAGEM) ================= */
         .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; background: #fff; }
         
-        /* Header - Gôndola GIGANTE */
-        .foco-header { display: flex; flex-direction: column; align-items: center; background: var(--dark); color: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; text-align: center; }
-        .foco-loc { color: var(--warning); font-size: 38px; font-weight: 900; letter-spacing: 2px; line-height: 1; margin-top: 5px; }
-        .foco-pedido-info { font-size: 14px; color: #ccc; font-weight: bold; }
-
-        /* Produto - Foto Gigante e Centralizada */
-        .foco-produto-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fafafa; border-radius: 12px; border: 2px solid #eee; padding: 15px; margin-bottom: 10px; overflow: hidden; }
-        .foco-produto-area img { max-width: 100%; max-height: 25vh; object-fit: contain; margin-bottom: 10px; mix-blend-mode: multiply; }
-        .foco-nome { font-size: 20px; font-weight: bold; text-align: center; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px; padding: 0 10px; }
+        /* 1. TOPO DIVIDIDO (FOTO E INFO) */
+        .foco-topo-split { display: flex; gap: 10px; height: 26vh; margin-bottom: 10px; flex-shrink: 0; }
         
-        .ticks-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: 100%; }
-        .tick-box { width: 30px; height: 30px; border-radius: 6px; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; color: transparent; border: 1px solid #ccc; }
+        .foco-img-container { flex: 1; border: 2px solid #ddd; border-radius: 12px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; padding: 5px; }
+        .foco-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .icone-lupa { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        
+        .foco-info-container { flex: 1; background: var(--dark); color: white; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .foco-pedido-info { font-size: 14px; color: #ccc; font-weight: bold; }
+        .foco-loc { color: var(--warning); font-size: 42px; font-weight: 900; letter-spacing: 1px; line-height: 1; margin: 8px 0; }
+        .foco-qtd-box { background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 8px; font-size: 13px; }
+        .foco-qtd-box span { font-size: 20px; font-weight: bold; color: var(--secondary); }
+
+        /* 2. NOME DO PRODUTO (CENTRALIZADO) */
+        .foco-nome { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 5px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 5px; flex-shrink: 0; }
+        
+        /* 3. TICKS DE QUANTIDADE */
+        .ticks-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 10px; flex-shrink: 0; }
+        .tick-box { width: 24px; height: 24px; border-radius: 4px; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: transparent; border: 1px solid #ccc; }
         .tick-box.active { background-color: var(--primary); color: white; border-color: var(--primary); }
 
-        /* Área Inferior - Interação (Teclado ou Botoes) */
-        .area-interacao { height: 35vh; display: flex; flex-direction: column; justify-content: flex-end; }
+        /* 4. ÁREA DE INTERAÇÃO FLEXÍVEL (TECLADO SE ADAPTA AQUI) */
+        .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; } /* min-height:0 é o segredo para não cortar! */
         
-        /* Teclado Auto-Submit */
-        .display-teclado { text-align: center; font-size: 34px; font-weight: 900; letter-spacing: 15px; color: var(--secondary); height: 45px; margin-bottom: 10px; }
+        #bloco-teclado-foco { display: flex; flex-direction: column; height: 100%; }
+        .display-teclado { text-align: center; font-size: 32px; font-weight: 900; letter-spacing: 15px; color: var(--secondary); height: 40px; margin-bottom: 5px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
-        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; flex: 1; }
-        .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 28px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 2px 0 #ccc; }
+        
+        /* O Grid que calcula a altura sozinho */
+        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; flex: 1; min-height: 0; padding-bottom: 5px; }
+        .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 28px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 2px 0 #ccc; height: 100%; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
 
         /* Desempate Otimizado */
-        .area-desempate { display: flex; gap: 8px; overflow-x: auto; background: #ffebee; padding: 10px; border-radius: 12px; border: 2px solid #ffcdd2; margin-bottom: 10px; align-items: center; }
-        .card-desempate { background: white; padding: 5px; border-radius: 8px; text-align: center; width: 80px; flex-shrink: 0; border: 1px solid #ccc; }
-        .card-desempate img { width: 100%; height: 60px; object-fit: contain; } 
-        .card-desempate .desc { font-size: 13px; font-weight: 900; color: var(--danger); margin-top: 5px;}
+        .area-desempate { display: flex; gap: 8px; overflow-x: auto; background: #ffebee; padding: 8px; border-radius: 10px; border: 2px solid #ffcdd2; margin-bottom: 5px; align-items: center; flex-shrink:0; }
+        .card-desempate { background: white; padding: 4px; border-radius: 6px; text-align: center; width: 70px; flex-shrink: 0; border: 1px solid #ccc; }
+        .card-desempate img { width: 100%; height: 50px; object-fit: contain; } 
+        .card-desempate .desc { font-size: 11px; font-weight: 900; color: var(--danger); margin-top: 3px;}
 
         /* Alertas Customizados */
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
@@ -65,6 +74,13 @@
 <body>
 
 <div id="alerta-customizado">Mensagem</div>
+
+<div id="modal-foto-full" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:15px; box-sizing:border-box;">
+    <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+        <img id="img-full" src="" style="max-width:100%; max-height:100%; object-fit:contain;">
+    </div>
+    <button class="btn-danger" style="padding:25px; font-size:22px; margin-top:15px; font-weight:900;" onclick="fecharFotoTelaCheia()">❌ FECHAR FOTO</button>
+</div>
 
 <div id="app-ui" style="height: 100%;">
     <div class="container" id="tela-inicial">
@@ -81,48 +97,60 @@
 
     <div class="tela-foco hidden" id="tela-separacao-foco">
         
-        <div class="foco-header">
-            <div class="foco-pedido-info" id="foco-pedido-info">Pedido: 000</div>
-            <div class="foco-loc" id="foco-loc">A1</div>
+        <div class="foco-topo-split">
+            <div class="foco-img-container" onclick="abrirFotoTelaCheia()">
+                <div class="icone-lupa">🔍</div>
+                <img id="foco-img" src="">
+            </div>
+            
+            <div class="foco-info-container">
+                <div class="foco-pedido-info" id="foco-pedido-info">Ped: 000</div>
+                <div class="foco-loc" id="foco-loc">A1</div>
+                <div class="foco-qtd-box">Faltam <span id="span-faltam">0</span>/<span id="span-total">0</span></div>
+            </div>
         </div>
+
+        <div class="foco-nome" id="foco-nome">Nome do Produto Completo Aqui Centralizado</div>
         
-        <div class="foco-produto-area">
-            <img id="foco-img" src="">
-            <div class="foco-nome" id="foco-nome">Nome Produto</div>
-            <div class="ticks-container" id="foco-ticks"></div>
-        </div>
+        <div class="ticks-container" id="foco-ticks"></div>
 
         <div id="bloco-desempate" class="area-desempate hidden"></div>
         
         <div class="area-interacao">
             
-            <div id="bloco-teclado-foco" style="display: flex; flex-direction: column; height: 100%;">
-                <div id="foco-teclado-titulo" style="text-align:center; font-size:14px; font-weight:bold; color:#555;">Digite os 4 últimos do EAN</div>
+            <div id="bloco-teclado-foco">
+                <div id="foco-teclado-titulo" style="text-align:center; font-size:13px; font-weight:bold; color:#555;">Digite os 4 últimos do EAN</div>
                 <div id="display-foco" class="display-teclado"></div>
                 
                 <div class="grid-teclado">
-                    <button class="btn-num" onclick="addFoco(1)">1</button><button class="btn-num" onclick="addFoco(2)">2</button><button class="btn-num" onclick="addFoco(3)">3</button>
-                    <button class="btn-num" onclick="addFoco(4)">4</button><button class="btn-num" onclick="addFoco(5)">5</button><button class="btn-num" onclick="addFoco(6)">6</button>
-                    <button class="btn-num" onclick="addFoco(7)">7</button><button class="btn-num" onclick="addFoco(8)">8</button><button class="btn-num" onclick="addFoco(9)">9</button>
-                    <button class="btn-danger" style="font-size:14px; font-weight:bold; border-radius:10px;" onclick="if(confirm('Cancelar separação?')) abrirTela('tela-inicial');">❌ Sair</button>
-                    <button class="btn-num" onclick="addFoco(0)">0</button>
-                    <button class="btn-num" style="background:#ddd; color:#999;" disabled>_</button> </div>
+                    <div class="btn-num" onclick="addFoco(1)">1</div>
+                    <div class="btn-num" onclick="addFoco(2)">2</div>
+                    <div class="btn-num" onclick="addFoco(3)">3</div>
+                    <div class="btn-num" onclick="addFoco(4)">4</div>
+                    <div class="btn-num" onclick="addFoco(5)">5</div>
+                    <div class="btn-num" onclick="addFoco(6)">6</div>
+                    <div class="btn-num" onclick="addFoco(7)">7</div>
+                    <div class="btn-num" onclick="addFoco(8)">8</div>
+                    <div class="btn-num" onclick="addFoco(9)">9</div>
+                    <button class="btn-danger" style="font-size:15px; font-weight:bold; border-radius:10px; margin:0;" onclick="if(confirm('Cancelar separação?')) abrirTela('tela-inicial');">❌ Sair</button>
+                    <div class="btn-num" onclick="addFoco(0)">0</div>
+                    <div style="visibility:hidden;"></div> </div>
             </div>
 
             <div id="bloco-add-foco" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">
                 <div style="color:green; font-weight:900; margin-bottom:15px; font-size:18px;">✅ PRODUTO CORRETO!</div>
-                <button class="btn-secondary" style="width:100%; height:120px; font-size:28px; border-radius:16px; font-weight:900; box-shadow: 0 6px 0 #1976D2;" onclick="registrarUnidadeFoco()">
+                <button class="btn-secondary" style="width:100%; flex:1; font-size:28px; border-radius:16px; font-weight:900; box-shadow: 0 6px 0 #1976D2; margin-bottom: 10px;" onclick="registrarUnidadeFoco()">
                     ➕ ADICIONAR UNIDADE
                 </button>
-                <button class="btn-danger" style="padding:15px; width:100%; margin-top:20px; font-size:16px;" onclick="if(confirm('Cancelar separação?')) abrirTela('tela-inicial');">❌ Abortar Pedido</button>
+                <button class="btn-danger" style="padding:15px; width:100%; font-size:16px;" onclick="if(confirm('Cancelar separação?')) abrirTela('tela-inicial');">❌ Abortar Pedido</button>
             </div>
 
             <div id="bloco-confirmacao-item" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:#fff3e0; border:3px solid var(--warning); border-radius:12px; padding:15px; box-sizing:border-box;">
                 <h2 style="color:var(--warning); font-size:24px; margin-bottom:10px;">⚠️ ATENÇÃO</h2>
                 <p style="text-align:center; font-size:18px; font-weight:bold; color:#333; margin-bottom: 20px;">
-                    Você separou realmente <br><span style="font-size:38px; color:var(--primary); font-weight:900;" id="conf-qtd">0</span><br> unidades deste produto?
+                    Você separou realmente <br><span style="font-size:42px; color:var(--primary); font-weight:900;" id="conf-qtd">0</span><br> unidades deste produto?
                 </p>
-                <button class="btn-primary" style="width:100%; padding:25px; font-size:20px; box-shadow: 0 5px 0 #388E3C;" onclick="confirmarFimItem()">✅ SIM, CONFERIDO</button>
+                <button class="btn-primary" style="width:100%; flex:1; font-size:20px; box-shadow: 0 5px 0 #388E3C;" onclick="confirmarFimItem()">✅ SIM, CONFERIDO</button>
             </div>
 
         </div>
@@ -159,7 +187,7 @@
     function mostrarAlerta(msg, tipo = 'sucesso') { 
         let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
         if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
-        a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 2500); 
+        a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 2000); 
     }
     
     function inicializarAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -171,6 +199,16 @@
             else { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(250, audioCtx.currentTime); ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.5); } 
         } catch(e){} 
     }
+
+    /* Modal de Foto Grande */
+    function abrirFotoTelaCheia() {
+        let imgSrc = document.getElementById('foco-img').src;
+        if(imgSrc && !imgSrc.includes("Sem%20Foto")) {
+            document.getElementById('img-full').src = imgSrc;
+            document.getElementById('modal-foto-full').classList.remove('hidden');
+        }
+    }
+    function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
 
     async function carregarPedidosFila() {
         inicializarAudio(); abrirTela('tela-lista-pedidos');
@@ -199,8 +237,16 @@
         let item = listaDeSeparacao[indexAtualPicking]; let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
         document.getElementById('foco-pedido-info').innerText = `Pedido: ${pedidoAtual.orderNum}`; 
         document.getElementById('foco-loc').innerText = `${item.localizacao}`; 
-        document.getElementById('foco-img').src = `../site/img/produtos/${skuItem}.webp`; 
+        
+        let imgTag = document.getElementById('foco-img');
+        imgTag.src = `../site/img/produtos/${skuItem}.webp`; 
+        // fallback visual sem usar arquivo externo:
+        imgTag.onerror = function() { this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+
         document.getElementById('foco-nome').innerText = item.nomePedido; 
+        
+        let faltam = item.quantidadeTotal - item.unidadesLidas;
+        document.getElementById('span-faltam').innerText = faltam; document.getElementById('span-total').innerText = item.quantidadeTotal;
         
         let cTicks = document.getElementById('foco-ticks'); cTicks.innerHTML = '';
         for(let i=0; i<item.quantidadeTotal; i++) { 
@@ -211,7 +257,6 @@
         
         focoProdutosEmpatados = []; document.getElementById('bloco-desempate').classList.add('hidden');
         
-        // Controle de Exibição (Teclado vs Botão vs Confirmação Final)
         document.getElementById('bloco-teclado-foco').classList.add('hidden');
         document.getElementById('bloco-add-foco').classList.add('hidden');
         document.getElementById('bloco-confirmacao-item').classList.add('hidden');
@@ -222,7 +267,6 @@
         } else if (item.unidadesLidas < item.quantidadeTotal) { 
             document.getElementById('bloco-add-foco').classList.remove('hidden'); 
         } else {
-            // Leu tudo! Hora da Confirmação Segura
             document.getElementById('conf-qtd').innerText = item.quantidadeTotal;
             document.getElementById('bloco-confirmacao-item').classList.remove('hidden');
             tocarBipe('sucesso');
@@ -241,38 +285,39 @@
         if(focoDisplayStr.length < focoLimite) { 
             focoDisplayStr += num; 
             atualizarDisplayFoco(); 
-            // Se chegou no limite (4 ou 2), avalia automaticamente após um micro-atraso visual
+            // O Segredo do Auto-Submit Instantâneo:
             if(focoDisplayStr.length === focoLimite) {
-                setTimeout(confirmarFoco, 150);
+                setTimeout(avaliarFoco, 100); // 100ms para o usuário ver o ultimo numero
             }
         } 
     }
 
-    function apagarFocoErro() {
+    function apagarFocoErro(msgAlerta) {
+        tocarBipe('erro'); mostrarAlerta(msgAlerta, "erro");
         document.getElementById('display-foco').classList.add('erro');
         setTimeout(() => { focoDisplayStr = ""; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }, 600);
     }
     
     function atualizarDisplayFoco() { document.getElementById('display-foco').innerText = focoDisplayStr + "-".repeat(focoLimite - focoDisplayStr.length); }
 
-    function confirmarFoco() {
+    function avaliarFoco() {
         let skuCorreto = String(listaDeSeparacao[indexAtualPicking].produtoDb.codigo || listaDeSeparacao[indexAtualPicking].produtoDb["Código"] || "").trim().toUpperCase();
         
         if(focoModo === "EAN") {
             let achados = bancoDeDados.filter(p => String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "").endsWith(focoDisplayStr));
-            if (achados.length === 0) { tocarBipe('erro'); mostrarAlerta("❌ EAN não encontrado!", "erro"); apagarFocoErro(); } 
+            if (achados.length === 0) { apagarFocoErro("❌ EAN não encontrado!"); } 
             else if (achados.length === 1) { 
                 if(String(achados[0].codigo || achados[0]["Código"] || "").trim().toUpperCase() === skuCorreto) registrarUnidadeFoco(); 
-                else { tocarBipe('erro'); mostrarAlerta("❌ Produto Errado!", "erro"); apagarFocoErro(); } 
+                else { apagarFocoErro("❌ Produto Errado!"); } 
             } 
             else { tocarBipe('erro'); mostrarAlerta("⚠️ Conflito! Preciso do SKU.", "aviso"); acionarDesempateFoco(achados); }
         } else if (focoModo === "SKU") {
             let match = focoProdutosEmpatados.find(p => String(p.codigo || p["Código"] || "").trim().toUpperCase().endsWith(focoDisplayStr));
             if(match) { 
                 if(String(match.codigo || match["Código"] || "").trim().toUpperCase() === skuCorreto) registrarUnidadeFoco(); 
-                else { tocarBipe('erro'); mostrarAlerta("❌ Produto Errado!", "erro"); apagarFocoErro(); } 
+                else { apagarFocoErro("❌ Produto Errado!"); } 
             } 
-            else { tocarBipe('erro'); mostrarAlerta("❌ SKU não bate com a foto.", "erro"); apagarFocoErro(); }
+            else { apagarFocoErro("❌ SKU não bate com a foto."); }
         }
     }
 
@@ -298,25 +343,18 @@
     // ================== CONCLUSÃO E IMPRESSÃO (BLUETOOTH TÉRMICA 48mm) ==================
     function finalizarPedido() {
         let areaCheck = document.getElementById('area-checklist'); areaCheck.innerHTML = '';
-        listaDeSeparacao.forEach(i => {
-            areaCheck.innerHTML += `<div class="checklist-item"><span>${i.nomePedido.substring(0,25)}...</span> <span>${i.quantidadeTotal}x</span></div>`;
-        });
+        listaDeSeparacao.forEach(i => { areaCheck.innerHTML += `<div class="checklist-item"><span>${i.nomePedido.substring(0,25)}...</span> <span>${i.quantidadeTotal}x</span></div>`; });
         abrirTela('tela-conclusao');
     }
 
     function imprimirEtiquetaBluetooth() {
-        let n = pedidoAtual ? (pedidoAtual.orderNum || 'N/A') : 'N/A';
-        let dataHora = new Date().toLocaleString('pt-BR');
-        
+        let n = pedidoAtual ? (pedidoAtual.orderNum || 'N/A') : 'N/A'; let dataHora = new Date().toLocaleString('pt-BR');
         let iframe = document.getElementById('f-print') || document.createElement('iframe'); 
         iframe.id = 'f-print'; iframe.style.display = 'none'; document.body.appendChild(iframe);
         let doc = iframe.contentWindow.document; doc.open();
         
-        // Configuração exata para Impressora Térmica Contínua de 48mm de impressão (Bobina 58mm)
-        // Formatado como uma etiqueta vertical longa
         let html = `
-        <html>
-        <head>
+        <html><head>
             <style>
                 @page { margin: 0; size: 48mm auto; } 
                 body { width: 48mm; font-family: 'Courier New', monospace; font-size: 11px; margin: 0; padding: 2mm 0; color: #000; text-align: center; } 
@@ -329,19 +367,12 @@
             </style>
         </head>
         <body>
-            <h2>PEDIDO<br>${n}</h2>
-            <div class="data">Expedição:<br>${dataHora}</div>
+            <h2>PEDIDO<br>${n}</h2><div class="data">Expedição:<br>${dataHora}</div>
             <div style="border-top: 1px solid #000; margin-bottom: 5px;"></div>
             <div style="text-align:left; font-weight:900; margin-bottom:2px;">Qtd  - Produto</div>`;
             
-        listaDeSeparacao.forEach(i => {
-            html += `<div class="item"><span class="qtd-item">${i.quantidadeTotal}x</span> <span class="nome-item" style="margin-left:5px;">${i.nomePedido}</span></div>`;
-        });
-        
-        doc.write(html + `<div class="fim">SEPARAÇÃO CONCLUÍDA</div><br><br><br></body></html>`); 
-        doc.close(); 
-        
-        // O delay garante que a janela do print carregue os estilos
+        listaDeSeparacao.forEach(i => { html += `<div class="item"><span class="qtd-item">${i.quantidadeTotal}x</span> <span class="nome-item" style="margin-left:5px;">${i.nomePedido}</span></div>`; });
+        doc.write(html + `<div class="fim">SEPARAÇÃO CONCLUÍDA</div><br><br><br></body></html>`); doc.close(); 
         setTimeout(() => iframe.contentWindow.print(), 800);
     }
 </script>
