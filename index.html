@@ -306,31 +306,29 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     position: relative; width: 100vw; height: 100dvh;
 }
 
-/* O segredo da transição: Os slides ficam todos sobrepostos, invisíveis e desfocados */
+/* Transição de desfoque suave (crossfade com blur) entre slides */
 .reel-slide {
     position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     box-sizing: border-box; background: #ffffff;
-    opacity: 0; filter: blur(20px); pointer-events: none;
-    transition: opacity 0.5s ease-in-out, filter 0.5s ease-in-out;
+    opacity: 0; filter: blur(30px); pointer-events: none; /* Desfoque inicial mais forte para transição elegante */
+    transition: opacity 0.8s ease-in-out, filter 0.8s ease-in-out; /* Transição um pouco mais lenta e suave */
 }
 
-/* Quando o slide recebe essa classe, ele aparece focado */
 .reel-slide.active {
     opacity: 1; filter: blur(0); pointer-events: auto; z-index: 10;
 }
 
-/* A tela ativa (canvas) ocupando os 50% centrais */
+/* A tela ativa (canvas) ocupando os 50% centrais (Zona de Segurança) */
 .reel-canvas {
     width: 100vw; height: 50vh; position: relative; z-index: 5;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: transparent;
 }
 
-/* --- ESTILOS DO MOSAICO (FUNDO TELA TODA) --- */
+/* --- ESTILOS DO MOSAICO (FUNDO TELA TODA, DINÂMICO) --- */
 .reel-mosaic {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    /* Grade de 4 colunas por 10 linhas */
     display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(10, 1fr);
     z-index: 1;
 }
@@ -338,67 +336,63 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden;
 }
 .mosaic-cell img {
-    /* Tamanho reduzido em 30% (de 100% para 70%) */
-    width: 70%; height: 70%; 
-    object-fit: contain; mix-blend-mode: multiply; opacity: 0.4; /* Opacidade menor para ficar mais discreto */
+    width: 70%; height: 70%;  /* Produtos pequenos dentro da grade */
+    object-fit: contain; mix-blend-mode: multiply; opacity: 0.35; /* Mais transparente para elegância */
 }
 .mosaic-overlay {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    /* Lente branca mais forte (0.85) com o efeito multiply */
-    background: rgba(255, 255, 255, 0.85); mix-blend-mode: multiply; z-index: 2;
+    background: rgba(255, 255, 255, 0.88); mix-blend-mode: multiply; z-index: 2; /* Lente branca forte para legibilidade */
 }
 
+/* --- ESTILOS DA INTRO E OUTRO --- */
 .reel-intro-content {
     position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 .reel-logo-hero {
-    width: 140px; height: 140px; border-radius: 50%; object-fit: cover;
-    border: 4px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    width: 150px; height: 150px; border-radius: 50%; object-fit: cover;
+    border: 5px solid #fff; box-shadow: 0 10px 40px rgba(0,0,0,0.12);
 }
 .reel-outro-btn {
-    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
-    padding: 10px 20px; border-radius: 50px; font-weight: 700; color: var(--c-p);
-    font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 10px;
+    background: #fff;
+    padding: 12px 24px; border-radius: 50px; font-weight: 700; color: var(--c-p);
+    font-size: 1rem; box-shadow: 0 5px 20px rgba(0,0,0,0.06); margin-top: 15px;
     display: flex; align-items: center; gap: 8px; border: 1px solid var(--c-bd);
 }
 .reel-outro-btn.green { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
 
-/* --- ESTILOS DO PRODUTO --- */
+/* --- ESTILOS DO PRODUTO (FOCO TOTAL NA IMAGEM E PREÇO) --- */
 .reel-image-container {
-    width: 250px; height: 250px; /* Maior */
-    background: #f1f5f9; /* Cinza Claro Minimalista */
-    border-radius: 20px;
+    width: 300px; height: 300px; /* ~20% Maior */
+    background: #f1f5f9; /* Fundo cinza claro minimalista */
+    border-radius: 24px;
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 15px; z-index: 2; 
-    box-shadow: none; border: none; /* Removido borda e sombra */
+    margin-bottom: 25px; z-index: 2; /* Mais espaço para o preço */
+    box-shadow: none; border: none; /* Sem sombras ou bordas */
 }
 .reel-img { 
-    width: 95%; height: 95%; /* Foto maior ocupando mais a caixa */
+    width: 95%; height: 95%; /* Foto grande ocupando a caixa */
     object-fit: contain; mix-blend-mode: multiply; 
 }
 
 .reel-info-card {
-    width: 90%; max-width: 320px; background: transparent;
+    width: 90%; max-width: 340px; background: transparent;
     display: flex; flex-direction: column; align-items: center; text-align: center; z-index: 2;
 }
-.reel-badge {
-    display: inline-block; background: var(--c-err); color: #fff; font-size: 0.8rem; font-weight: 800; 
-    padding: 6px 12px; border-radius: 50px; letter-spacing: 0.5px; margin-bottom: 12px;
-}
+
+/* Escondendo os elementos que não precisamos mais (Minimalismo) */
+.reel-badge, .reel-name { display: none !important; }
+
 .reel-price-row { 
-    display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 4px;
+    display: flex; align-items: baseline; justify-content: center; gap: 12px; margin-bottom: 0;
 }
 .reel-old-price { 
-    font-size: 1.1rem; text-decoration: line-through; color: var(--c-t); font-weight: 600; 
+    font-size: 1.2rem; text-decoration: line-through; color: var(--c-t); font-weight: 600; 
 }
 .reel-new-price { 
-    font-size: 2.2rem; /* Preço um pouco menor */
-    font-weight: 800; color: var(--c-p); line-height: 1; letter-spacing: -1px; 
+    font-size: 3rem; /* Preço grande e imponente */
+    font-weight: 900; color: var(--c-p); line-height: 1; letter-spacing: -1.5px; 
 }
-.reel-name { 
-    font-size: 1rem; font-weight: 600; color: var(--c-s); line-height: 1.3; 
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 8px;
-}
+
 </style>
 </head>
 <body>
@@ -1012,81 +1006,46 @@ window.gerarReels = function() {
     let produtos = [];
     let elegiveis = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
     
+    // ... (A lógica de ordenação Round-Robin ou Geral continua igual aqui, pularei para economizar espaço) ...
     if (tipo === 'termos' && termosInput.trim() !== '') {
-        // Separa as palavras-chave digitadas
         let termos = termosInput.toLowerCase().split(',').map(t => norm(t.trim())).filter(t => t !== '');
-        
-        // Cria um "monte de cartas" para cada palavra-chave
         let grupos = termos.map(t => ({ termo: t, itens: [] }));
-        
-        // Distribui os produtos nos montes (garantindo que um produto não caia em 2 montes)
         elegiveis.forEach(p => {
             let nomeNorm = norm(p.name);
-            for (let g of grupos) {
-                if (nomeNorm.includes(g.termo)) {
-                    g.itens.push(p);
-                    break; // O 'break' garante que não haverá repetição no sorteio
-                }
-            }
+            for (let g of grupos) { if (nomeNorm.includes(g.termo)) { g.itens.push(p); break; } }
         });
-
-        // Embaralha perfeitamente as cartas de cada monte (ordem aleatória)
-        grupos.forEach(g => {
-            g.itens = g.itens.map(value => ({ value, sort: Math.random() }))
-                             .sort((a, b) => a.sort - b.sort)
-                             .map(({ value }) => value);
-        });
-
-        // Distribui 1 de cada vez (Round-Robin) até acabar as cartas ou bater a quantidade máxima
+        grupos.forEach(g => { g.itens = g.itens.map(value => ({ value, sort: Math.random() })).sort((a, b) => a.sort - b.sort).map(({ value }) => value); });
         let hasMore = true;
-        while(hasMore && produtos.length < qtd) {
-            hasMore = false;
-            for (let g of grupos) {
-                if (produtos.length >= qtd) break;
-                if (g.itens.length > 0) {
-                    produtos.push(g.itens.shift()); // Puxa o primeiro (que é aleatório) do monte
-                    hasMore = true;
-                }
-            }
-        }
+        while(hasMore && produtos.length < qtd) { hasMore = false; for (let g of grupos) { if (produtos.length >= qtd) break; if (g.itens.length > 0) { produtos.push(g.itens.shift()); hasMore = true; } } }
     } else {
-        // Se for a opção "Geral", continua priorizando os maiores descontos do site
-        elegiveis.sort((a,b) => {
-            let descA = (a.oldPrice - a.price) / a.oldPrice;
-            let descB = (b.oldPrice - b.price) / b.oldPrice;
-            return descB - descA;
-        });
+        elegiveis.sort((a,b) => { let descA = (a.oldPrice - a.price) / a.oldPrice; let descB = (b.oldPrice - b.price) / b.oldPrice; return descB - descA; });
         produtos = elegiveis.slice(0, qtd);
     }
 
-    if (produtos.length === 0) {
-        alert("Nenhum produto encontrado com esses parâmetros!");
-        return;
-    }
+    if (produtos.length === 0) { alert("Nenhum produto encontrado!"); return; }
 
-    // --- DAQUI PARA BAIXO O CÓDIGO CONTINUA IGUAL ---
-    // --- CRIANDO O FUNDO MOSAICO PARA INTRO E OUTRO ---
+    // --- FUNÇÃO AUXILIAR PARA GERAR O MOSAICO DINÂMICO (4x10) ---
     const pantones = ['#FFD1DC', '#F0E6D2', '#B9D7D9', '#F9E4B7', '#D1C4E9', '#F2D2BD', '#C5E1A5', '#FFCCB6', '#E1BEE7', '#B2DFDB'];
     
-    // Puxa APENAS os produtos que vão aparecer nos slides deste Reels
-    let prodsComImagem = produtos.filter(p => p.img);
-    if(prodsComImagem.length === 0) prodsComImagem = [{ img: '/site/img/produtos/cesta.webp' }]; // Fallback de segurança
-    
-    let mosaicImages = [];
-    // Preenche 40 espaços (4 colunas x 10 linhas). Se faltar produto, ele repete a lista.
-    for(let i = 0; i < 40; i++) { 
-        mosaicImages.push(prodsComImagem[i % prodsComImagem.length].img); 
+    function getMosaicHtml(imgUrl) {
+        // Fallback de segurança se o produto não tiver imagem
+        if(!imgUrl) imgUrl = '/site/img/produtos/cesta.webp'; 
+        
+        let cellsHtml = '';
+        // Preenche 40 espaços (4 colunas x 10 linhas) com a MESMA imagem repetida
+        for(let i = 0; i < 40; i++) { 
+            cellsHtml += `
+            <div class="mosaic-cell" style="background-color: ${pantones[i % pantones.length]};">
+                <img src="${imgUrl}">
+            </div>`;
+        }
+        return `<div class="reel-mosaic">${cellsHtml}</div><div class="mosaic-overlay"></div>`;
     }
-    
-    let mosaicHtml = `<div class="reel-mosaic">` + mosaicImages.map((img, i) => `
-        <div class="mosaic-cell" style="background-color: ${pantones[i % pantones.length]};">
-            <img src="${img}">
-        </div>`).join('') + `</div><div class="mosaic-overlay"></div>`;
 
-    // --- 1. SLIDE INICIAL (Mosaico preenchendo o fundo) ---
+    // --- 1. SLIDE INICIAL (Intro com Mosaico do 1º Produto) ---
     let html = `
     <div class="reel-slide">
-        ${mosaicHtml}
+        ${getMosaicHtml(produtos[0].img)}
         <div class="reel-canvas">
             <div class="reel-intro-content">
                 <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-hero">
@@ -1095,13 +1054,13 @@ window.gerarReels = function() {
     </div>
     `;
 
-    // --- 2. SLIDES DE PRODUTOS ---
+    // --- 2. SLIDES DE PRODUTOS (Mosaico Dinâmico + Minimalismo) ---
     html += produtos.map(p => {
-        let perc = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
         return `
         <div class="reel-slide">
+            ${getMosaicHtml(p.img)} /* Mosaico de fundo é o próprio produto */
             <div class="reel-canvas">
-                <div class="reel-badge">-${perc}% OFF</div>
+                /* Removido o % OFF badge */
                 <div class="reel-image-container">
                     <img src="${p.img}" class="reel-img">
                 </div>
@@ -1111,17 +1070,17 @@ window.gerarReels = function() {
                         <span class="reel-old-price">${fmt(p.oldPrice)}</span>
                         <span class="reel-new-price">${fmt(p.price)}</span>
                     </div>
-                    <div class="reel-name">${formatName(p.name)}</div>
+                    /* Removido o nome do produto */
                 </div>
             </div>
         </div>
         `;
     }).join('');
     
-    // --- 3. SLIDE FINAL ---
+    // --- 3. SLIDE FINAL (Outro com Mosaico do Último Produto) ---
     html += `
     <div class="reel-slide">
-        ${mosaicHtml}
+        ${getMosaicHtml(produtos[produtos.length - 1].img)}
         <div class="reel-canvas">
             <div class="reel-intro-content">
                 <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-hero" style="width: 100px; height: 100px; border-width: 4px; margin-bottom: 5px;">
