@@ -20,7 +20,6 @@
         button:active { transform: scale(0.96); }
         .btn-primary { background-color: var(--primary); } .btn-secondary { background-color: var(--secondary); }
         .btn-danger { background-color: var(--danger); } .btn-warning { background-color: var(--warning); color: #111; } .btn-print { background-color: #000; }
-        .btn-outline { background-color: transparent; border: 2px solid var(--secondary); color: var(--secondary); }
         
         .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100dvh; overflow-y: auto; box-sizing: border-box; }
         .hidden { display: none !important; }
@@ -29,57 +28,64 @@
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         /* ================= TELA DE FOCO ================= */
-        /* Padding-bottom garantindo o respiro na base */
-        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 35px; }
+        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 35px; /* Respiro na base */ }
         
-        /* 1. CÂMERA E BOTÃO DE GIRO NO TOPO */
-        .bloco-camera-wrapper { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+        /* 1. LAYOUT DIVIDIDO (CÂMERA ESQUERDA / INFO DIREITA) */
+        .foco-topo-split { display: flex; gap: 8px; height: 150px; margin-bottom: 4px; flex-shrink: 0; }
         
-        .camera-quadrada { 
-            width: 210px; height: 210px; 
+        /* Câmera na Esquerda (Altura e Largura fixas) */
+        .camera-esquerda { 
+            width: 140px; height: 100%; 
             border-radius: 12px; overflow: hidden; 
             border: 3px solid var(--primary); background: #000; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); flex-shrink: 0;
         }
         #leitor-camera { width: 100%; height: 100%; }
         #leitor-camera video { object-fit: cover; }
 
-        /* 2. LAYOUT DIVIDIDO SUPER COMPACTO */
-        .foco-topo-split { display: flex; gap: 6px; margin-bottom: 4px; flex-shrink: 0; }
+        /* Informações na Direita */
+        .col-info { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; height: 100%; }
         
-        .col-esq { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        /* Foto e nomes reduzidos verticalmente */
-        .foco-img-container { flex: 1; min-height: 40px; height: 40px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+        /* Foto no Topo da Direita */
+        .foco-img-container { flex: 1; min-height: 0; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
         .foco-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .foco-nome { font-size: 11px; font-weight: bold; text-align: center; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0 2px; height: 32px; }
-
-        .col-dir { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-        /* Box LOC e SKU ultra reduzidos */
-        .box-loc, .box-sku { flex: 1; border-radius: 6px; padding: 1px 2px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .icone-lupa { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        
+        /* Row com Loc e SKU abaixo da foto */
+        .row-loc-sku { display: flex; gap: 4px; height: 50px; flex-shrink: 0; }
+        .box-loc, .box-sku { flex: 1; border-radius: 6px; padding: 2px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .box-loc { background: var(--dark); color: white; border: 2px solid var(--dark); }
         .box-loc .label { font-size: 9px; color: #ccc; font-weight: bold; }
-        .box-loc .valor { color: var(--warning); font-size: 16px; font-weight: 900; line-height: 1; margin-top: 0; }
+        .box-loc .valor { color: var(--warning); font-size: 18px; font-weight: 900; line-height: 1; margin-top: 1px; }
         .box-sku { background: #f4f4f4; border: 2px solid #ccc; color: var(--dark); }
         .box-sku .label { font-size: 9px; color: #666; font-weight: bold; }
-        .box-sku .valor { font-size: 14px; font-weight: 900; line-height: 1; margin-top: 0; }
+        .box-sku .valor { font-size: 14px; font-weight: 900; line-height: 1; margin-top: 1px; }
         
-        /* 3. PROGRESSO DIDÁTICO */
+        /* 2. NOME DO PRODUTO */
+        .foco-nome { font-size: 13px; font-weight: bold; text-align: center; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 2px; margin-bottom: 4px; flex-shrink: 0; }
+
+        /* 3. PROGRESSO (Lidos) */
         .progresso-wrapper { background: #e3f2fd; border: 2px solid #2196F3; border-radius: 6px; padding: 4px; text-align: center; margin-bottom: 6px; flex-shrink: 0; }
-        .progresso-numeros { font-size: 13px; font-weight: 900; color: #0d47a1; margin-bottom: 2px; }
+        .progresso-numeros { font-size: 14px; font-weight: 900; color: #0d47a1; margin-bottom: 2px; }
         .progresso-barra-fundo { background: #bbdefb; height: 8px; border-radius: 4px; overflow: hidden; width: 100%; }
         .progresso-barra-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.3s ease-in-out; }
 
-        /* 4. ÁREA DE INTERAÇÃO */
+        /* 4. ÁREA DO TECLADO E BOTÕES (Ocupa o resto da tela) */
         .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; justify-content: flex-end; }
         
         #bloco-teclado-foco { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
-        .display-teclado { text-align: center; font-size: 20px; font-weight: 900; letter-spacing: 8px; color: var(--secondary); height: 26px; margin-bottom: 4px; flex-shrink: 0; }
+        .teclado-titulo { text-align:center; font-size:11px; font-weight:bold; color:#666; margin-bottom: 2px; }
+        .display-teclado { text-align: center; font-size: 22px; font-weight: 900; letter-spacing: 12px; color: var(--secondary); height: 28px; margin-bottom: 4px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
         
         /* TECLADO ACHATADO */
-        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 32px); gap: 4px; }
+        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 32px); gap: 4px; margin-bottom: 8px; }
         .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 18px; font-weight: 900; border-radius: 6px; margin: 0; box-shadow: 0 2px 0 #ccc; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
+
+        /* BOTOES NAVEGACAO NA BASE */
+        .row-botoes-base { display: flex; gap: 8px; flex-shrink: 0; }
+        .row-botoes-base button { flex: 1; padding: 12px; font-size: 14px; }
 
         /* Alertas Customizados */
         #alerta-customizado { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 12px; border-radius: 8px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
@@ -119,33 +125,30 @@
 
     <div class="tela-foco hidden" id="tela-separacao-foco">
         
-        <div id="bloco-camera" class="bloco-camera-wrapper hidden">
-            <div id="container-camera" class="camera-quadrada">
+        <div class="foco-topo-split">
+            <div id="bloco-camera" class="camera-esquerda hidden">
                 <div id="leitor-camera"></div>
             </div>
-            <button class="btn-secondary" style="padding: 12px; font-size: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onclick="girarCamera()">🔄</button>
-        </div>
-
-        <div class="foco-topo-split">
-            <div class="col-esq">
+            
+            <div class="col-info">
                 <div class="foco-img-container" onclick="abrirFotoTelaCheia()">
                     <div class="icone-lupa">🔍</div>
                     <img id="foco-img" src="">
                 </div>
-                <div class="foco-nome" id="foco-nome">Nome do Produto em ate 3 linhas</div>
-            </div>
-            
-            <div class="col-dir">
-                <div class="box-loc">
-                    <div class="label">Localização</div>
-                    <div class="valor" id="foco-loc">A1</div>
-                </div>
-                <div class="box-sku">
-                    <div class="label">SKU / Cód</div>
-                    <div class="valor" id="foco-sku">---</div>
+                <div class="row-loc-sku">
+                    <div class="box-loc">
+                        <div class="label">Localização</div>
+                        <div class="valor" id="foco-loc">A1</div>
+                    </div>
+                    <div class="box-sku">
+                        <div class="label">SKU / Cód</div>
+                        <div class="valor" id="foco-sku">---</div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <div class="foco-nome" id="foco-nome">Nome do Produto...</div>
 
         <div class="progresso-wrapper">
             <div class="progresso-numeros" id="progresso-texto">0 de 0 Lidos</div>
@@ -154,16 +157,12 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 6px; margin-bottom: 4px; flex-shrink: 0;">
-            <button id="btn-anterior" class="btn-secondary hidden" style="padding:8px 12px; font-size:14px;" onclick="voltarProdutoAnterior()">⬅️</button>
-            <button class="btn-warning" style="flex:1; padding:8px; font-size:12px;" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
-            <button id="btn-alternar-modo" class="btn-outline" style="flex:1; padding:8px; font-size:12px;" onclick="alternarModoLeitura()">⌨️ EAN</button>
-        </div>
-
         <div class="area-interacao">
             
             <div id="bloco-teclado-foco" class="hidden">
+                <div class="teclado-titulo">Ou digite os 5 últimos dígitos:</div>
                 <div id="display-foco" class="display-teclado"></div>
+                
                 <div class="grid-teclado">
                     <div class="btn-num" onclick="addFoco(1)">1</div>
                     <div class="btn-num" onclick="addFoco(2)">2</div>
@@ -174,21 +173,26 @@
                     <div class="btn-num" onclick="addFoco(7)">7</div>
                     <div class="btn-num" onclick="addFoco(8)">8</div>
                     <div class="btn-num" onclick="addFoco(9)">9</div>
-                    <button class="btn-danger" style="font-size:12px; font-weight:bold; border-radius:6px; margin:0;" onclick="if(confirm('Sair da separação?')) abrirTela('tela-inicial');">❌ Sair</button>
+                    <button class="btn-danger" style="font-size:12px; font-weight:bold; border-radius:6px; margin:0;" onclick="apagarUltimoFoco()">⌫ Corrigir</button>
                     <div class="btn-num" onclick="addFoco(0)">0</div>
-                    <div style="visibility:hidden;"></div> 
+                    <button class="btn-danger" style="font-size:12px; font-weight:bold; border-radius:6px; margin:0;" onclick="if(confirm('Sair da separação?')) abrirTela('tela-inicial');">❌ Sair</button>
                 </div>
             </div>
 
-            <div id="bloco-sem-ean" class="hidden" style="display:flex; flex-direction:column; justify-content:center; height:100%;">
+            <div id="bloco-sem-ean" class="hidden" style="display:flex; flex-direction:column; justify-content:center; flex: 1;">
                 <button class="btn-primary" style="width:100%; flex:1; font-size:16px; border-radius:12px; font-weight:900; box-shadow: 0 4px 0 #388E3C; margin-bottom: 8px;" onclick="registrarUnidadeFoco()">
                     ➕ ADICIONAR (SEM EAN)
                 </button>
             </div>
 
-            <div id="bloco-concluido" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:#e8f5e9; border:2px solid var(--primary); border-radius:12px; padding:10px; box-sizing:border-box;">
+            <div id="bloco-concluido" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; background:#e8f5e9; border:2px solid var(--primary); border-radius:12px; padding:10px; margin-bottom: 8px; box-sizing:border-box;">
                 <p style="text-align:center; font-size:16px; font-weight:bold; color:var(--primary); margin:0 0 10px 0;">✅ Item Finalizado</p>
                 <button class="btn-danger" style="width:100%; padding:10px; font-size:13px;" onclick="refazerLeituraItem()">🔄 Refazer Contagem</button>
+            </div>
+
+            <div class="row-botoes-base" id="bloco-botoes-navegacao">
+                <button id="btn-anterior" class="btn-secondary hidden" onclick="voltarProdutoAnterior()">⬅️ Anterior</button>
+                <button class="btn-warning" onclick="mandarParaFimDaFila()">⏭️ Pular / Próximo</button>
             </div>
 
         </div>
@@ -204,11 +208,9 @@
 
 <script>
     let bancoDeDados = []; let pedidosFila = []; let listaDeSeparacao = []; let indexAtualPicking = 0; let pedidoAtual = null; let audioCtx = null;
-    let focoDisplayStr = ""; let focoLimite = 4;
+    let focoDisplayStr = ""; let focoLimite = 5; // AGORA SÃO 5 DÍGITOS
     let html5QrCode = null; 
-    let modoLeituraPadrao = 'CAMERA'; 
     let isProcessingScan = false;
-    let cameraAtual = "environment"; 
 
     window.onload = async function() {
         try { 
@@ -229,7 +231,7 @@
     function mostrarAlerta(msg, tipo = 'sucesso') { 
         let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
         if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
-        a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 2000); 
+        a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 2500); 
     }
     
     function inicializarAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
@@ -274,23 +276,16 @@
         listaDeSeparacao = []; pedidoAtual = pedido; 
         pedido.items.forEach(item => { if (item.foundProduct) listaDeSeparacao.push({ quantidadeTotal: item.qtd, unidadesLidas: 0, nomePedido: item.nomeOriginal, produtoDb: item.foundProduct, localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "SEM LOC", status: 'pendente' }); });
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); indexAtualPicking = 0; 
-        modoLeituraPadrao = 'CAMERA';
         abrirTela('tela-separacao-foco'); renderizarItemFoco();
     }
 
-    function alternarModoLeitura() {
-        modoLeituraPadrao = (modoLeituraPadrao === 'CAMERA') ? 'TECLADO' : 'CAMERA';
-        renderizarItemFoco();
-    }
-
-    function girarCamera() {
-        cameraAtual = (cameraAtual === "environment") ? "user" : "environment";
-        fecharCamera();
-        setTimeout(() => { abrirCamera(); }, 300);
-    }
-
     function renderizarItemFoco() {
-        if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPedido(); return; }
+        // Trava de segurança: Se todos os itens já estiverem 'concluido', o pedido acabou.
+        let todosConcluidos = listaDeSeparacao.every(item => item.status === 'concluido');
+        if (todosConcluidos) { finalizarPedido(); return; }
+        
+        // Garante que o indexAtual não passe do array (volta pro começo caso tenha pulado o último)
+        if (indexAtualPicking >= listaDeSeparacao.length) { indexAtualPicking = 0; }
         
         let item = listaDeSeparacao[indexAtualPicking]; 
         let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
@@ -309,9 +304,6 @@
         let btnAnterior = document.getElementById('btn-anterior');
         if (indexAtualPicking > 0) { btnAnterior.classList.remove('hidden'); } else { btnAnterior.classList.add('hidden'); }
 
-        let btnModo = document.getElementById('btn-alternar-modo');
-        if (modoLeituraPadrao === 'CAMERA') { btnModo.innerHTML = "⌨️ EAN"; } else { btnModo.innerHTML = "📷 Câmera"; }
-
         let textoProgresso = document.getElementById('progresso-texto');
         let barraProgresso = document.getElementById('progresso-fill');
         textoProgresso.innerText = `${item.unidadesLidas} de ${item.quantidadeTotal} Lidos`;
@@ -320,40 +312,44 @@
         document.getElementById('bloco-teclado-foco').classList.add('hidden');
         document.getElementById('bloco-sem-ean').classList.add('hidden');
         document.getElementById('bloco-concluido').classList.add('hidden');
+        document.getElementById('bloco-camera').classList.add('hidden');
 
         if (item.status === 'concluido') {
             fecharCamera();
-            document.getElementById('bloco-camera').classList.add('hidden');
-            btnModo.classList.add('hidden');
             document.getElementById('bloco-concluido').classList.remove('hidden');
         } else if (!hasEan) {
             fecharCamera();
-            document.getElementById('bloco-camera').classList.add('hidden');
-            btnModo.classList.add('hidden'); 
             document.getElementById('bloco-sem-ean').classList.remove('hidden');
         } else {
-            btnModo.classList.remove('hidden');
-            if (modoLeituraPadrao === 'CAMERA') {
-                document.getElementById('bloco-camera').classList.remove('hidden');
-                if (!html5QrCode || !html5QrCode.isScanning) { abrirCamera(); }
-            } else {
-                fecharCamera();
-                document.getElementById('bloco-camera').classList.add('hidden');
-                document.getElementById('bloco-teclado-foco').classList.remove('hidden');
-                resetarTecladoFoco();
-            }
+            // MOSTRA CÂMERA E TECLADO JUNTOS
+            document.getElementById('bloco-camera').classList.remove('hidden');
+            document.getElementById('bloco-teclado-foco').classList.remove('hidden');
+            if (!html5QrCode || !html5QrCode.isScanning) { abrirCamera(); }
+            resetarTecladoFoco();
         }
     }
 
     function mandarParaFimDaFila() {
-        if (listaDeSeparacao.length - 1 === indexAtualPicking) { mostrarAlerta("Este já é o último produto!", "aviso"); return; }
+        // Verifica se é o último item pendente
+        let pendentes = listaDeSeparacao.filter(i => i.status !== 'concluido');
+        if (pendentes.length <= 1) { 
+            mostrarAlerta("Este é o último produto! Não é possível pular.", "aviso"); 
+            return; 
+        }
+        
+        // Remove do índice atual e joga pro final da lista
         let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0]; 
         listaDeSeparacao.push(itemAtual); 
+        
+        // O indexAtualPicking não muda, então ele automaticamente carrega o que "caiu" nessa posição
         renderizarItemFoco(); 
     }
 
     function voltarProdutoAnterior() {
-        if (indexAtualPicking > 0) { indexAtualPicking--; renderizarItemFoco(); }
+        if (indexAtualPicking > 0) { 
+            indexAtualPicking--; 
+            renderizarItemFoco(); 
+        }
     }
 
     function refazerLeituraItem() {
@@ -362,11 +358,10 @@
         renderizarItemFoco();
     }
 
-    // ================== CÂMERA OFICIAL (COM FILTROS OTIMIZADOS) ==================
+    // ================== CÂMERA OFICIAL (TRASEIRA POR PADRÃO) ==================
     function abrirCamera() {
         if (!html5QrCode) { html5QrCode = new Html5Qrcode("leitor-camera"); }
         
-        // DICA DE OURO: Limitamos aos formatos 1D (Barras comuns) para o celular processar muito mais rápido
         const formatosPermitidos = [
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,
@@ -375,41 +370,35 @@
             Html5QrcodeSupportedFormats.UPC_E
         ];
 
-        // Área de foco agora é um retângulo largo, ideal para códigos de barras EAN
+        // Foco ajustado para a nova câmera na lateral esquerda
         const config = { 
             fps: 15, 
-            qrbox: { width: 210, height: 120 },
+            qrbox: { width: 130, height: 130 },
             formatsToSupport: formatosPermitidos 
         };
 
-        if (cameraAtual === "user") {
-            document.getElementById("container-camera").style.transform = "scaleX(-1)";
-        } else {
-            document.getElementById("container-camera").style.transform = "none";
-        }
-
         html5QrCode.start(
-            { facingMode: cameraAtual }, 
+            { facingMode: "environment" }, 
             config,
             (decodedText, decodedResult) => {
                 if (isProcessingScan) return;
                 isProcessingScan = true;
 
                 let eanLidoLimpo = decodedText.replace(/\D/g, "");
-                if (eanLidoLimpo.length >= 4) {
-                    focoDisplayStr = eanLidoLimpo.slice(-4); 
+                if (eanLidoLimpo.length >= 5) {
+                    // Pega os últimos 5 dígitos
+                    focoDisplayStr = eanLidoLimpo.slice(-5); 
                     avaliarFoco(); 
                 } else {
                     tocarBipe('erro');
-                    mostrarAlerta("❌ EAN Inválido.", "erro");
+                    mostrarAlerta("❌ EAN Inválido ou Curto.", "erro");
                 }
 
                 setTimeout(() => { isProcessingScan = false; }, 1500);
             },
             (errorMessage) => {} 
         ).catch((err) => {
-            mostrarAlerta("⚠️ Câmera bloqueada. Use Digitar EAN.", "erro");
-            alternarModoLeitura(); 
+            mostrarAlerta("⚠️ Câmera não suportada neste aparelho. Digite o código.", "aviso");
         });
     }
 
@@ -417,6 +406,7 @@
         if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().then(() => {}).catch(err => {}); }
     }
 
+    // ================== TECLADO DE 5 DÍGITOS ==================
     function resetarTecladoFoco() { focoDisplayStr = ""; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }
 
     function addFoco(num) { 
@@ -426,16 +416,27 @@
         } 
     }
 
+    function apagarUltimoFoco() {
+        if(focoDisplayStr.length > 0) {
+            focoDisplayStr = focoDisplayStr.slice(0, -1);
+            atualizarDisplayFoco();
+        }
+    }
+
     function apagarFocoErro(msgAlerta) {
         tocarBipe('erro'); mostrarAlerta(msgAlerta, "erro");
         document.getElementById('display-foco').classList.add('erro');
         setTimeout(() => { resetarTecladoFoco(); }, 600);
     }
     
-    function atualizarDisplayFoco() { document.getElementById('display-foco').innerText = focoDisplayStr + "-".repeat(focoLimite - focoDisplayStr.length); }
+    function atualizarDisplayFoco() { 
+        document.getElementById('display-foco').innerText = focoDisplayStr + "-".repeat(focoLimite - focoDisplayStr.length); 
+    }
 
     function avaliarFoco() {
         let skuCorreto = String(listaDeSeparacao[indexAtualPicking].produtoDb.codigo || listaDeSeparacao[indexAtualPicking].produtoDb["Código"] || "").trim().toUpperCase();
+        
+        // Verifica se algum código de barras termina com os 5 dígitos
         let achados = bancoDeDados.filter(p => String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "").endsWith(focoDisplayStr));
         
         if (achados.length === 0) { 
@@ -457,11 +458,11 @@
         
         if (item.unidadesLidas >= item.quantidadeTotal) {
             item.status = 'concluido'; 
-            indexAtualPicking++; 
+            indexAtualPicking++; // Avança pro próximo item da fila
             mostrarAlerta("✅ Próximo produto!", "sucesso");
         } else {
             mostrarAlerta(`✅ ${item.unidadesLidas} lidos! Leia o próximo.`, "sucesso");
-            focoDisplayStr = "";
+            resetarTecladoFoco(); // Só limpa a tela se ainda tiver unidades faltando
         }
         
         renderizarItemFoco(); 
