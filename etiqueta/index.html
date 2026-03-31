@@ -3,27 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#111111">
+    
     <title>Separador de Pedidos PRO</title>
     <style>
         :root { --primary: #4CAF50; --secondary: #2196F3; --danger: #f44336; --warning: #ff9800; --dark: #111; --light: #f4f4f4; }
-        body, html { font-family: Arial, sans-serif; background-color: var(--light); margin: 0; padding: 0; height: 100%; color: var(--dark); user-select: none; overflow: hidden; }
+        /* Uso de 100dvh para respeitar a barra de navegação dinâmica dos celulares */
+        body, html { font-family: Arial, sans-serif; background-color: var(--light); margin: 0; padding: 0; height: 100dvh; color: var(--dark); user-select: none; overflow: hidden; }
         
         button { border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; }
         button:active { transform: scale(0.96); }
         .btn-primary { background-color: var(--primary); } .btn-secondary { background-color: var(--secondary); }
         .btn-danger { background-color: var(--danger); } .btn-warning { background-color: var(--warning); color: #111; } .btn-print { background-color: #000; }
         
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100vh; overflow-y: auto; box-sizing: border-box; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100dvh; overflow-y: auto; box-sizing: border-box; }
         .hidden { display: none !important; }
         h1, h2 { text-align: center; margin-top: 0; }
         
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         /* ================= TELA DE FOCO (AJUSTADA PARA CELULAR PEQUENO) ================= */
-        .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; }
+        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; }
         
-        /* 1. TOPO DIVIDIDO (FOTO E INFO) - Altura reduzida para 20vh */
-        .foco-topo-split { display: flex; gap: 8px; height: 20vh; margin-bottom: 8px; flex-shrink: 0; }
+        /* 1. TOPO DIVIDIDO (FOTO E INFO) - Altura reduzida para 20dvh */
+        .foco-topo-split { display: flex; gap: 8px; height: 20dvh; margin-bottom: 8px; flex-shrink: 0; }
         
         .foco-img-container { flex: 1; border: 2px solid #ddd; border-radius: 10px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; padding: 5px; }
         .foco-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
@@ -48,7 +54,6 @@
         .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; }
         
         #bloco-teclado-foco { display: flex; flex-direction: column; height: 100%; }
-        /* Visor do teclado menor */
         .display-teclado { text-align: center; font-size: 24px; font-weight: 900; letter-spacing: 10px; color: var(--secondary); height: 30px; margin-bottom: 5px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
         
@@ -62,7 +67,7 @@
         .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--primary); } .alerta-aviso { background-color: var(--warning); color: #000; }
 
         /* Checklist Conclusão */
-        .checklist-box { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 10px; margin-top: 15px; max-height: 40vh; overflow-y: auto; text-align: left; }
+        .checklist-box { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 10px; margin-top: 15px; max-height: 40dvh; overflow-y: auto; text-align: left; }
         .checklist-item { border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; }
         .checklist-item:last-child { border-bottom: none; }
     </style>
@@ -71,14 +76,14 @@
 
 <div id="alerta-customizado">Mensagem</div>
 
-<div id="modal-foto-full" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:15px; box-sizing:border-box;">
+<div id="modal-foto-full" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100dvh; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:15px; box-sizing:border-box;">
     <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
         <img id="img-full" src="" style="max-width:100%; max-height:100%; object-fit:contain;">
     </div>
     <button class="btn-danger" style="padding:20px; font-size:18px; margin-top:15px; font-weight:900;" onclick="fecharFotoTelaCheia()">❌ FECHAR FOTO</button>
 </div>
 
-<div id="app-ui" style="height: 100%;">
+<div id="app-ui" style="height: 100dvh;">
     <div class="container" id="tela-inicial">
         <h1>🛒 Separador (Picking)</h1>
         <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco...</p>
@@ -182,11 +187,12 @@
         } catch (erro) { document.getElementById('status-db').innerText = "❌ Erro ao ler Banco Local."; }
     };
 
+    // Função que força a tela cheia no clique do botão "VER PEDIDOS"
     function entrarTelaCheia() {
         let elem = document.documentElement;
         if (elem.requestFullscreen) { elem.requestFullscreen(); }
-        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
-        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
+        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); } // Safari
+        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); } // IE/Edge
     }
 
     function abrirTela(id) { ['tela-inicial', 'tela-lista-pedidos', 'tela-separacao-foco', 'tela-conclusao'].forEach(t => document.getElementById(t).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
@@ -216,18 +222,44 @@
     }
     function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
 
+    // ================== CARREGAMENTO DA FILA (COM CACHE BUSTER) ==================
     async function carregarPedidosFila() {
-        inicializarAudio(); abrirTela('tela-lista-pedidos');
-        let container = document.getElementById('area-lista-pedidos'); container.innerHTML = '<p style="text-align:center;">⏳ Buscando...</p>';
+        inicializarAudio(); 
+        abrirTela('tela-lista-pedidos');
+        let container = document.getElementById('area-lista-pedidos'); 
+        container.innerHTML = '<p style="text-align:center;">⏳ Buscando...</p>';
+        
         try {
-            const resposta = await fetch('../site/pedidos_fila.json'); pedidosFila = await resposta.json(); container.innerHTML = '';
-            let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE'); if(pendentes.length===0) return container.innerHTML = '<h3 style="color:green; text-align:center;">✅ Fila Vazia!</h3>';
+            // ?nocache=... garante que o navegador pegue o arquivo atual do servidor, ignorando o cache
+            const urlSemCache = '../site/pedidos_fila.json?nocache=' + new Date().getTime();
+            const resposta = await fetch(urlSemCache); 
+            pedidosFila = await resposta.json(); 
+            container.innerHTML = '';
+            
+            let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE'); 
+            if(pendentes.length === 0) return container.innerHTML = '<h3 style="color:green; text-align:center;">✅ Fila Vazia!</h3>';
+            
             pendentes.forEach(pedido => {
-                let div = document.createElement('div'); div.className = 'resultado-item'; 
-                div.innerHTML = `Pedido: ${pedido.orderNum} <br><span style="font-size:13px; color:#555; font-weight:normal;">📦 ${pedido.items?pedido.items.length:0} Produtos</span>`;
-                div.onclick = () => iniciarSeparacaoPedido(pedido); container.appendChild(div);
+                let numeroPedido = pedido.orderNum || 'Sem Número';
+                let qtdItens = pedido.items ? pedido.items.length : 0;
+                
+                let div = document.createElement('div'); 
+                div.className = 'resultado-item'; 
+                div.innerHTML = `Pedido: ${numeroPedido} <br><span style="font-size:13px; color:#555; font-weight:normal;">📦 ${qtdItens} Produtos</span>`;
+                
+                div.onclick = () => {
+                    if (qtdItens > 0) {
+                        iniciarSeparacaoPedido(pedido);
+                    } else {
+                        mostrarAlerta("❌ Erro: Este pedido veio sem itens!", "erro");
+                    }
+                };
+                
+                container.appendChild(div);
             });
-        } catch (e) { container.innerHTML = '<p style="color:red; text-align:center;">❌ Falha de conexão.</p>'; }
+        } catch (e) { 
+            container.innerHTML = '<p style="color:red; text-align:center;">❌ Falha de conexão. Tente novamente.</p>'; 
+        }
     }
 
     function iniciarSeparacaoPedido(pedido) {
@@ -278,15 +310,14 @@
     }
 
     // ================== FUNÇÃO: PULAR PARA O FIM DA FILA ==================
-    // Move o item que está sendo separado agora lá para o final do array da listaDeSeparacao
     function mandarParaFimDaFila() {
         if (listaDeSeparacao.length - 1 === indexAtualPicking) {
             mostrarAlerta("Este já é o último produto!", "aviso");
             return;
         }
-        let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0]; // Remove o item da posição atual
-        listaDeSeparacao.push(itemAtual); // Joga no final da lista
-        renderizarItemFoco(); // Recarrega a tela com o próximo item (que agora assumiu o indexAtualPicking)
+        let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0]; 
+        listaDeSeparacao.push(itemAtual); 
+        renderizarItemFoco(); 
     }
 
     // ================== TECLADO SIMPLIFICADO ==================
@@ -318,13 +349,11 @@
     function avaliarFoco() {
         let skuCorreto = String(listaDeSeparacao[indexAtualPicking].produtoDb.codigo || listaDeSeparacao[indexAtualPicking].produtoDb["Código"] || "").trim().toUpperCase();
         
-        // Filtra todos os produtos que batem com os 4 dígitos digitados
         let achados = bancoDeDados.filter(p => String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "").endsWith(focoDisplayStr));
         
         if (achados.length === 0) { 
             apagarFocoErro("❌ EAN não encontrado!"); 
         } else {
-            // Verifica se dentre os produtos encontrados com aquele final de EAN, algum deles tem o SKU que estamos procurando
             let produtoCerto = achados.find(p => String(p.codigo || p["Código"] || "").trim().toUpperCase() === skuCorreto);
             
             if (produtoCerto) {
