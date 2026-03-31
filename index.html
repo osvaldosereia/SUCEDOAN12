@@ -110,13 +110,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-card-title { color: var(--c-p); font-size: 1rem; font-weight: 600; line-height: 1.2; z-index: 2; letter-spacing: 0.2px;}
 
 /* COMPRE JUNTO */
-.grid-compre-junto { display: grid; grid-template-columns: 1fr; gap: 12px; }
-@media(min-width: 800px) { .grid-compre-junto { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
-.cj-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s, box-shadow 0.2s; }
+.cj-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s, box-shadow 0.2s; height: 100%; }
 .cj-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-2px); }
 .cj-card:active { transform: scale(0.98); }
 .cj-images { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.cj-img-box { width: 45%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; padding: 5px; position: relative; }
+.cj-img-box { width: 45%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; padding: 5px; position: relative; cursor: pointer; transition: 0.2s;}
+.cj-img-box:hover { box-shadow: 0 0 0 1px var(--c-a); }
 .cj-img-box img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 .cj-plus { font-size: 1.5rem; color: var(--c-t); font-weight: bold; }
 
@@ -417,11 +416,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 <main class="main-stage" id="scroll-stage">
     <div class="layout-limit info-banners info-banners-render"></div>
     <div id="grid-home-sections" class="grid-home-sections"></div>
-    
-    <div id="compre-junto-wrapper" style="display:none; max-width: 1000px; margin: 20px auto 40px; padding: 0 15px;">
-        <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--c-p); margin-bottom: 15px;">Compre Junto e Economize 🤝</h2>
-        <div id="grid-compre-junto" class="grid-compre-junto"></div>
-    </div>
 </main>
 
 <div id="floating-cart" class="floating-cart" onclick="openCheckout()" style="display: none;">
@@ -717,6 +711,7 @@ const STATE = {
     
 deptos: {
         'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas do Instagram', type: 'PROD', data: [] },
+        'compre_junto': { id: 'compre_junto', title: 'Compre Junto', color: '#0d9488', type: 'COMPRE_JUNTO', data: [] },
         'cestas': { id: 'cestas', title: 'Cestas Básicas', color: '#10b981', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', color: '#f59e0b', type: 'COMBO', data: [] },
         'alimentos': { id: 'alimentos', title: 'Alimentos', color: '#ea580c', type: 'PROD', data: [], tags: [] },
@@ -829,6 +824,7 @@ function converterDataValidade(dataStr) {
 
 function renderHomeCards() {
     const cards = [
+        { id: 'compre_junto', title: 'Compre Junto', action: "openDepto('compre_junto')", icon: '🤝', color: 'rgba(13,148,136,1)' },
         { id: 'cestas', title: 'Cestas Básicas', action: "openDepto('cestas')", icon: '🧺', color: 'rgba(16,185,129,1)' },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: 'rgba(245,158,11,1)' },
         { id: 'ofertas_insta', title: 'Ofertas do Instagram', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', mobileOnly: true },
@@ -862,39 +858,6 @@ window.selectInstaTab = function(tabId) {
     renderInstaTabs();
     applyDeptoFilters();
 };
-
-function renderCompreJunto() {
-    let container = document.getElementById('compre-junto-wrapper');
-    let grid = document.getElementById('grid-compre-junto');
-    if(STATE.compreJuntoCombos.length === 0) {
-        container.style.display = 'none';
-        return;
-    }
-    container.style.display = 'block';
-    let html = '';
-    STATE.compreJuntoCombos.forEach(cj => {
-        let economia = cj.precoOriginal - cj.preco;
-        html += `
-        <div class="cj-card">
-            <div class="cj-images">
-                <div class="cj-img-box"><img src="${cj.p1.img}" onerror="this.src='/site/img/produtos/cesta.webp'"></div>
-                <div class="cj-plus">+</div>
-                <div class="cj-img-box"><img src="${cj.p2.img}" onerror="this.src='/site/img/produtos/cesta.webp'"></div>
-            </div>
-            <div style="font-size: 0.9rem; font-weight: 600; text-align: center; color: var(--c-p); line-height: 1.2;">${cj.nome}</div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                <div style="display: flex; flex-direction: column;">
-                    <span style="text-decoration: line-through; color: var(--c-t); font-size: 0.8rem;">De: ${fmt(cj.precoOriginal)}</span>
-                    <span style="font-weight: 700; color: var(--c-p); font-size: 1.1rem;">Por: ${fmt(cj.preco)}</span>
-                </div>
-                <div style="background: var(--c-ok); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Economize ${fmt(economia)}</div>
-            </div>
-            <button class="card-add-btn-wide" onclick="openKitLateralView('${cj.id}', 'COMBO')" style="margin-top: auto;">Ver Kit</button>
-        </div>
-        `;
-    });
-    grid.innerHTML = html;
-}
 
 async function init() {
     renderHomeCards(); updateTotals(); renderBanners(); renderInstaTabs();
@@ -951,7 +914,6 @@ async function init() {
             let top5Validade = produtosParaValidade.slice(0, 5);
             
             top5Validade.forEach(p => {
-                // Aqui o p.price já está com os 10% do aumento global
                 let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price * 1.10 : p.oldPrice;
                 p.oldPrice = precoBase; 
                 p.price = precoBase * 0.70; 
@@ -959,7 +921,7 @@ async function init() {
                 p.isExpiringSoon = true; 
             });
 
-            // LÓGICA DAS CAMPANHAS DO INSTAGRAM (APLICA DESCONTO GERAL NO SITE)
+            // LÓGICA DAS CAMPANHAS DO INSTAGRAM
             STATE.prods.forEach(p => {
                 if(p._isBasket || p._isCombo) return;
                 
@@ -1010,7 +972,7 @@ async function init() {
                 p.discountApplied = true;
             });
 
-            // 4. COMPRE JUNTO E ECONOMIZE (Regra: mesmos 2 primeiros nomes, max R$ 7.00 original)
+            // 4. COMPRE JUNTO E ECONOMIZE
             let elegiveisCJ = STATE.prods.filter(p => !p._isBasket && !p._isCombo && p.stock > 0 && p.oldPrice <= 7.00);
             let gruposCJ = {};
             elegiveisCJ.forEach(p => {
@@ -1035,7 +997,7 @@ async function init() {
                             let cjId = 'cj_' + p1.id + '_' + p2.id;
                             let cjCombo = {
                                 id: cjId,
-                                nome: `Kit Compre Junto: ${p1.name.split(' ').slice(0,2).join(' ')}`,
+                                nome: `${p1.name.split(' ').slice(0,2).join(' ')}`,
                                 preco: precoPor,
                                 precoOriginal: precoDe,
                                 produtos: [`1x ${p1.id}`, `1x ${p2.id}`],
@@ -1046,12 +1008,11 @@ async function init() {
                             };
                             STATE.compreJuntoCombos.push(cjCombo);
                             STATE.combos.push(cjCombo); 
-                            STATE.deptos.combos.data.push(cjCombo); 
+                            STATE.deptos.compre_junto.data.push(cjCombo); 
                         }
                     }
                 }
             });
-            renderCompreJunto(); // Renderiza os cards do compre junto na home
 
             Object.values(STATE.deptos).forEach(d => { 
                 if(d.type === 'PROD') {
@@ -1278,7 +1239,7 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     }
 
     const grid = document.getElementById('see-all-grid');
-    if (d.type === 'BASKET' || d.type === 'COMBO') { 
+    if (d.type === 'BASKET' || d.type === 'COMBO' || d.type === 'COMPRE_JUNTO') { 
         grid.classList.add('grid-cestas-kits'); 
     } else { 
         grid.classList.remove('grid-cestas-kits'); 
@@ -1291,6 +1252,39 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     
     if (!history.state || !history.state.lateralOpen) history.pushState({ lateralOpen: true }, '');
 };
+
+function buildCompreJuntoCardHtml(cj) {
+    let economia = cj.precoOriginal - cj.preco;
+    let q = Math.min(STATE.cart[cj.p1.id] || 0, STATE.cart[cj.p2.id] || 0);
+    
+    let btnHtml = '';
+    if (cj.p1.stock <= 0 || cj.p2.stock <= 0) {
+        btnHtml = `<button class="btn-big-action" disabled style="background:var(--c-bd); color:var(--c-s); width:100%; margin-top: auto;">ESGOTADO</button>`;
+    } else if (q > 0) {
+        btnHtml = `<div class="card-qty-ctrl" onclick="event.stopPropagation()" style="margin-top: auto;"><button onclick="updCompreJunto('${cj.id}',-1)">-</button><span>${q}</span><button onclick="updCompreJunto('${cj.id}',1)">+</button></div>`;
+    } else {
+        btnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); updCompreJunto('${cj.id}', 1)" style="margin-top: auto;">Adicionar</button>`;
+    }
+
+    return `
+    <div class="cj-card">
+        <div class="cj-images">
+            <div class="cj-img-box" onclick="event.stopPropagation(); openQuickView('${cj.p1.id}')"><img src="${cj.p1.img}" onerror="this.src='/site/img/produtos/cesta.webp'"></div>
+            <div class="cj-plus">+</div>
+            <div class="cj-img-box" onclick="event.stopPropagation(); openQuickView('${cj.p2.id}')"><img src="${cj.p2.img}" onerror="this.src='/site/img/produtos/cesta.webp'"></div>
+        </div>
+        <div style="font-size: 0.9rem; font-weight: 600; text-align: center; color: var(--c-p); line-height: 1.2;">${cj.nome}</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+            <div style="display: flex; flex-direction: column;">
+                <span style="text-decoration: line-through; color: var(--c-t); font-size: 0.8rem;">De: ${fmt(cj.precoOriginal)}</span>
+                <span style="font-weight: 700; color: var(--c-p); font-size: 1.1rem;">Por: ${fmt(cj.preco)}</span>
+            </div>
+            <div style="background: var(--c-ok); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Economize ${fmt(economia)}</div>
+        </div>
+        ${btnHtml}
+    </div>
+    `;
+}
 
 window.applyDeptoFilters = function() {
     if(!STATE.activeDeptoId) return;
@@ -1344,8 +1338,15 @@ window.applyDeptoFilters = function() {
     }
     
     let html = '';
-    if(filtered.length === 0) { html = '<p style="grid-column: 1/-1; text-align:center; padding: 40px 15px; color: var(--c-s); font-weight: 500;">Nenhum produto encontrado.</p>'; } 
-    else { html = filtered.map((item, idx) => buildCardHtml(item, STATE.deptos[STATE.activeDeptoId].type, false, idx)).join(''); }
+    if(filtered.length === 0) { 
+        html = '<p style="grid-column: 1/-1; text-align:center; padding: 40px 15px; color: var(--c-s); font-weight: 500;">Nenhum produto encontrado.</p>'; 
+    } else { 
+        if (STATE.deptos[STATE.activeDeptoId].type === 'COMPRE_JUNTO') {
+            html = filtered.map(cj => buildCompreJuntoCardHtml(cj)).join('');
+        } else {
+            html = filtered.map((item, idx) => buildCardHtml(item, STATE.deptos[STATE.activeDeptoId].type, false, idx)).join(''); 
+        }
+    }
     
     document.getElementById('see-all-grid').innerHTML = html;
     document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
@@ -1532,11 +1533,12 @@ window.commitExpander = function() {
 
     if (!addedAny) return showToast("Nenhum produto selecionado", "r");
 
-    if (expanderState.type === 'BASKET') { STATE.baseBasket = expanderState.sourceObj; STATE.basketExtraFee += expanderState.priceOffset; } 
-    else {
-        let discountForThisKit = Math.max(0, normalPriceSum - expanderState.currentDisplayPrice);
-        STATE.comboDiscount += discountForThisKit;
-        if (discountForThisKit > 0) STATE.appliedCombos.push({ id: expanderState.id, qty: 1, name: expanderState.sourceObj.nome });
+    if (expanderState.type === 'BASKET') { 
+        STATE.baseBasket = expanderState.sourceObj; STATE.basketExtraFee += expanderState.priceOffset; 
+    } else {
+        let existing = STATE.appliedCombos.find(ac => ac.id === expanderState.id);
+        if (existing) existing.qty += 1;
+        else STATE.appliedCombos.push({ id: expanderState.id, qty: 1, name: expanderState.sourceObj.nome });
     }
 
     updateTotals(); 
@@ -1709,11 +1711,45 @@ window.closeQuickView = function(isFromBrowser = false) {
     setTimeout(() => { $('qv-overlay').style.display = 'none'; }, 300);
 };
 
-function upd(id, delta) { 
+window.updCompreJunto = function(cjId, delta) {
+    let cj = STATE.compreJuntoCombos.find(x => x.id === cjId);
+    if (!cj) return;
+    
+    if (delta > 0) {
+        let curP1 = STATE.cart[cj.p1.id] || 0;
+        let curP2 = STATE.cart[cj.p2.id] || 0;
+        if (curP1 + delta > cj.p1.stock || curP2 + delta > cj.p2.stock) {
+            return showToast("Estoque insuficiente", "r");
+        }
+    }
+    
+    // Atualiza individualmente pulando a verificação de perda de kit
+    upd(cj.p1.id, delta, true);
+    upd(cj.p2.id, delta, true);
+    
+    // Gerencia o combo aplicado manualmente
+    let existing = STATE.appliedCombos.find(ac => ac.id === cjId);
+    if (delta > 0) {
+        if (existing) existing.qty += delta;
+        else STATE.appliedCombos.push({ id: cjId, qty: delta, name: cj.nome });
+    } else {
+        if (existing) {
+            existing.qty += delta;
+            if (existing.qty <= 0) {
+                STATE.appliedCombos = STATE.appliedCombos.filter(ac => ac.id !== cjId);
+            }
+        }
+    }
+    
+    updateTotals();
+    applyDeptoFilters(); // Para atualizar o layout do contador no botão
+}
+
+function upd(id, delta, skipKitCheck = false) { 
     let p = STATE.prods.find(x => x.id === id); if (!p) return; 
     let cur = STATE.cart[id] || 0; let n = Math.max(0, cur + delta); 
 
-    if (delta < 0 && STATE.appliedCombos && STATE.appliedCombos.length > 0) {
+    if (delta < 0 && !skipKitCheck && STATE.appliedCombos && STATE.appliedCombos.length > 0) {
         let reqTotal = 0; 
         STATE.appliedCombos.forEach(ac => {
             let c = STATE.combos.find(x => String(x.id) === String(ac.id));
@@ -1736,7 +1772,8 @@ function upd(id, delta) {
         el.innerHTML = qty > 0 ? `<span style="font-size:0.95rem;">${qty}</span>` : '+'; 
         if(qty > 0) el.classList.add('has-item'); else el.classList.remove('has-item');
     });
-    updateTotals(); 
+    
+    if (!skipKitCheck) updateTotals(); 
     
     if (STATE.checkoutOpen) { if (STATE.cartOrder.length === 0) { closeCheckout(); goToHome(); } else { renderCheckoutItems(); } }
 }
@@ -1780,8 +1817,24 @@ function updateTotals() {
         if ($('cupom-msg')) { $('cupom-msg').innerText = "Cupom removido: valor mínimo não atingido."; $('cupom-msg').style.color = "var(--c-err)"; $('cupom-msg').style.display = "block"; }
     }
 
-    let totalDescontosKits = STATE.comboDiscount || 0; let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
-    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - cupomDesconto - STATE.atacadoDiscount;
+    // Calcula de forma dinâmica os descontos de todos os Kits e Compre Juntos aplicados
+    let totalDescontosKits = 0;
+    STATE.appliedCombos.forEach(ac => {
+        let c = STATE.combos.find(x => String(x.id) === String(ac.id));
+        if (c) {
+            let priceNormal = 0;
+            c.produtos.forEach(s => { 
+                let [q, r] = s.split('x'); 
+                let p = STATE.prods.find(x => x.id === r.trim()); 
+                if (p) priceNormal += p.price * parseInt(q); 
+            });
+            totalDescontosKits += Math.max(0, priceNormal - c.preco) * ac.qty;
+        }
+    });
+    STATE.comboDiscount = totalDescontosKits;
+
+    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
+    let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - cupomDesconto - STATE.atacadoDiscount;
     
     if ($('chk-total')) $('chk-total').innerText = fmt(final);
     if ($('chk-total-fixed')) $('chk-total-fixed').innerText = fmt(final);
