@@ -26,53 +26,53 @@
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         /* ================= TELA DE FOCO (NOVO LAYOUT 70/30) ================= */
-        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 15px; /* Respiro da base reduzido */ gap: 8px; }
+        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 15px; gap: 8px; }
         
         /* 1. METADE SUPERIOR (Foto 70% + Info 30%) */
-        .foco-topo-layout { flex: 1; display: flex; gap: 8px; min-height: 0; } /* min-height 0 pro flex funcionar sem quebrar a tela */
+        .foco-topo-layout { flex: 1; display: flex; gap: 8px; min-height: 0; } 
         
         /* Coluna da Foto (70%) */
         .col-foto { width: 70%; border: 3px solid #ddd; border-radius: 16px; background: #fafafa; display: flex; align-items: center; justify-content: center; padding: 5px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
         .col-foto img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 
-        /* Coluna de Informações (30%) */
-        .col-info { width: 30%; display: flex; flex-direction: column; gap: 6px; }
+        /* Coluna de Informações e Botões (30%) */
+        .col-info { width: 30%; display: flex; flex-direction: column; gap: 4px; }
         
         /* Box de Endereço */
-        .box-loc { background: var(--dark); color: var(--warning); border-radius: 10px; text-align: center; padding: 6px 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .box-loc { background: var(--dark); color: var(--warning); border-radius: 8px; text-align: center; padding: 4px 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
         .box-loc .label { font-size: 9px; color: #ccc; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
         .box-loc .valor { font-size: 26px; font-weight: 900; line-height: 1; }
 
-        /* Box de Quantidade (Lidos/Total) */
-        .box-qtd { background: #e3f2fd; border: 2px solid var(--secondary); border-radius: 8px; text-align: center; padding: 6px 2px; }
+        /* Box de Quantidade */
+        .box-qtd { background: #e3f2fd; border: 2px solid var(--secondary); border-radius: 8px; text-align: center; padding: 4px 2px; flex-shrink: 0; }
         .box-qtd .label { font-size: 9px; color: var(--secondary); font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
         .box-qtd .valor { font-size: 18px; font-weight: 900; color: var(--secondary); line-height: 1; }
 
-        /* Box SKU */
-        .box-sku { background: #f4f4f4; border: 2px solid #ccc; border-radius: 8px; text-align: center; padding: 4px 2px; }
+        /* Box SKU (Fonte Aumentada) */
+        .box-sku { background: #f4f4f4; border: 2px solid #ccc; border-radius: 8px; text-align: center; padding: 4px 2px; flex-shrink: 0; }
         .box-sku .label { font-size: 9px; color: #666; font-weight: bold; text-transform: uppercase; }
-        .box-sku .valor { font-size: 11px; font-weight: 900; color: var(--dark); margin-top: 2px; word-break: break-all; }
+        .box-sku .valor { font-size: 15px; font-weight: 900; color: var(--dark); margin-top: 2px; word-break: break-all; }
 
-        /* Nome do Produto (Ocupando o resto do espaço de baixo) */
-        .foco-nome { font-size: 10px; font-weight: bold; color: var(--dark); line-height: 1.2; text-align: center; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; margin-top: auto; padding: 4px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
+        /* Nome do Produto */
+        .foco-nome { font-size: 10px; font-weight: bold; color: var(--dark); line-height: 1.2; text-align: center; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; margin-top: auto; margin-bottom: auto; padding: 4px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
 
-        /* 2. ÁREA DO TECLADO E BOTÕES (Metade Inferior) */
-        .area-inferior { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+        /* Botões de Navegação Movidos para a Coluna (Empilhados) */
+        .btn-side { width: 100%; padding: 8px 2px; font-size: 11px; border-radius: 6px; box-shadow: 0 3px 0 rgba(0,0,0,0.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .btn-side:active { transform: translateY(3px); box-shadow: none; }
+
+        /* 2. ÁREA DO TECLADO (Metade Inferior) */
+        .area-inferior { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
         
         .teclado-titulo { font-size: 11px; font-weight: bold; color: #777; text-align: center; text-transform: uppercase; }
         
-        /* Teclado Gigante 2x5 */
-        .grid-teclado-gigante { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 60px); gap: 6px; }
-        .btn-num { background: #fff; border: 2px solid #ccc; color: #111; font-size: 28px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 4px 0 #bbb; display: flex; align-items: center; justify-content: center; }
+        /* Teclado Gigante 2x5 VERTICALIZADO (Altura 85px) */
+        .grid-teclado-gigante { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 85px); gap: 6px; }
+        .btn-num { background: #fff; border: 2px solid #ccc; color: #111; font-size: 34px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 4px 0 #bbb; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #e0e0e0; box-shadow: none; transform: translateY(4px); }
 
         /* Blocos Especiais Ocultos (Sem EAN / Concluído) */
-        #bloco-sem-ean, #bloco-concluido { height: 126px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f4f4f4; border-radius: 12px; border: 2px dashed #ccc; padding: 10px; }
-        #bloco-sem-ean button, #bloco-concluido button { padding: 15px; font-size: 16px; width: 100%; border-radius: 10px; }
-
-        /* 3. BOTÕES DE NAVEGAÇÃO DA BASE */
-        .row-nav { display: flex; gap: 8px; height: 45px; }
-        .row-nav button { flex: 1; font-size: 14px; }
+        #bloco-sem-ean, #bloco-concluido { height: 176px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f4f4f4; border-radius: 12px; border: 2px dashed #ccc; padding: 10px; }
+        #bloco-sem-ean button, #bloco-concluido button { padding: 20px; font-size: 18px; width: 100%; border-radius: 10px; }
 
         /* Alertas Customizados */
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 14px; border-radius: 8px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
@@ -109,6 +109,7 @@
     <div class="tela-foco hidden" id="tela-separacao-foco">
         
         <div class="foco-topo-layout">
+            
             <div class="col-foto">
                 <img id="foco-img" src="">
             </div>
@@ -126,7 +127,12 @@
                     <div class="label">SKU / Cód</div>
                     <div class="valor" id="foco-sku">---</div>
                 </div>
+                
                 <div class="foco-nome" id="foco-nome">Nome do Produto</div>
+                
+                <button id="btn-anterior" class="btn-side btn-secondary hidden" onclick="voltarProdutoAnterior()">⬅️ Ant.</button>
+                <button class="btn-side btn-warning" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
+                <button class="btn-side btn-danger" onclick="if(confirm('Sair? O pedido ficará salvo.')) abrirTela('tela-inicial');">❌ Sair</button>
             </div>
         </div>
 
@@ -158,12 +164,6 @@
                 <button class="btn-danger" onclick="refazerLeituraItem()">🔄 Refazer Contagem</button>
             </div>
 
-            <div class="row-nav">
-                <button class="btn-danger" style="flex: 0.8;" onclick="if(confirm('Sair? O pedido ficará salvo.')) abrirTela('tela-inicial');">❌ Sair</button>
-                <button id="btn-anterior" class="btn-secondary hidden" onclick="voltarProdutoAnterior()">⬅️ Anterior</button>
-                <button class="btn-warning" style="flex: 1.2;" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
-            </div>
-
         </div>
 
     </div>
@@ -188,7 +188,6 @@
             document.getElementById('status-db').innerText = `✅ Banco Preparado`; document.getElementById('status-db').style.color = "green";
             document.getElementById('btn-iniciar').classList.remove('hidden');
             
-            // Verifica se tem pedido salvo na memória ao iniciar
             verificarEstadoSalvo();
         } catch (erro) { document.getElementById('status-db').innerText = "❌ Erro ao ler Banco Local."; }
     };
@@ -196,7 +195,7 @@
     function abrirTela(id) { 
         ['tela-inicial', 'tela-lista-pedidos', 'tela-separacao-foco', 'tela-conclusao'].forEach(t => document.getElementById(t).classList.add('hidden')); 
         document.getElementById(id).classList.remove('hidden'); 
-        if (id === 'tela-inicial') verificarEstadoSalvo(); // Atualiza botões da tela inicial sempre que voltar pra lá
+        if (id === 'tela-inicial') verificarEstadoSalvo(); 
     }
     
     function mostrarAlerta(msg, tipo = 'sucesso') { 
@@ -241,171 +240,4 @@
 
     function continuarSeparacaoSalva() {
         inicializarAudio();
-        const salvo = JSON.parse(localStorage.getItem('estadoPickingSalvo'));
-        if (salvo) {
-            pedidoAtual = salvo.pedidoAtual;
-            listaDeSeparacao = salvo.listaDeSeparacao;
-            indexAtualPicking = salvo.indexAtualPicking;
-            abrirTela('tela-separacao-foco');
-            renderizarItemFoco();
-        }
-    }
-    // =========================================================================
-
-    async function carregarPedidosFila() {
-        inicializarAudio(); abrirTela('tela-lista-pedidos');
-        let container = document.getElementById('area-lista-pedidos'); container.innerHTML = '<p style="text-align:center;">⏳ Buscando...</p>';
-        try {
-            const urlSemCache = '../site/pedidos_fila.json?nocache=' + new Date().getTime();
-            const resposta = await fetch(urlSemCache); pedidosFila = await resposta.json(); container.innerHTML = '';
-            let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE'); 
-            if(pendentes.length === 0) return container.innerHTML = '<h3 style="color:green; text-align:center;">✅ Fila Vazia!</h3>';
-            
-            pendentes.forEach(pedido => {
-                let numeroPedido = pedido.orderNum || 'Sem Número';
-                let qtdItens = pedido.items ? pedido.items.length : 0;
-                let div = document.createElement('div'); div.className = 'resultado-item'; 
-                div.innerHTML = `Pedido: ${numeroPedido} <br><span style="font-size:13px; color:#555; font-weight:normal;">📦 ${qtdItens} Produtos</span>`;
-                div.onclick = () => { if (qtdItens > 0) iniciarSeparacaoPedido(pedido); else mostrarAlerta("❌ Erro: Pedido sem itens!", "erro"); };
-                container.appendChild(div);
-            });
-        } catch (e) { container.innerHTML = '<p style="color:red; text-align:center;">❌ Falha de conexão.</p>'; }
-    }
-
-    function iniciarSeparacaoPedido(pedido) {
-        listaDeSeparacao = []; pedidoAtual = pedido; 
-        pedido.items.forEach(item => { if (item.foundProduct) listaDeSeparacao.push({ quantidadeTotal: item.qtd, unidadesLidas: 0, nomePedido: item.nomeOriginal, produtoDb: item.foundProduct, localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "SEM LOC", status: 'pendente' }); });
-        listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); indexAtualPicking = 0; 
-        
-        salvarProgresso(); // Salva logo ao iniciar
-        abrirTela('tela-separacao-foco'); renderizarItemFoco();
-    }
-
-    function renderizarItemFoco() {
-        let todosConcluidos = listaDeSeparacao.every(item => item.status === 'concluido');
-        if (todosConcluidos) { finalizarPedido(); return; }
-        if (indexAtualPicking >= listaDeSeparacao.length) { indexAtualPicking = 0; }
-        
-        let item = listaDeSeparacao[indexAtualPicking]; 
-        let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
-        
-        let rawEan = String(item.produtoDb.gtin || item.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "");
-        let hasEan = rawEan.length > 0;
-
-        document.getElementById('foco-loc').innerText = `${item.localizacao}`; 
-        document.getElementById('foco-sku').innerText = `${skuItem}`;
-        document.getElementById('foco-nome').innerText = item.nomePedido; 
-        
-        let imgTag = document.getElementById('foco-img');
-        imgTag.src = `../site/img/produtos/${skuItem}.webp`; 
-        imgTag.onerror = function() { this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; };
-        
-        let btnAnterior = document.getElementById('btn-anterior');
-        if (indexAtualPicking > 0) { btnAnterior.classList.remove('hidden'); } else { btnAnterior.classList.add('hidden'); }
-
-        document.getElementById('progresso-texto').innerText = `${item.unidadesLidas} / ${item.quantidadeTotal}`;
-        
-        // Esconde todos os blocos inferiores antes de decidir qual mostrar
-        document.getElementById('bloco-teclado-foco').classList.add('hidden');
-        document.getElementById('bloco-sem-ean').classList.add('hidden');
-        document.getElementById('bloco-concluido').classList.add('hidden');
-
-        if (item.status === 'concluido') {
-            document.getElementById('bloco-concluido').classList.remove('hidden');
-        } else if (!hasEan) {
-            document.getElementById('bloco-sem-ean').classList.remove('hidden');
-        } else {
-            document.getElementById('bloco-teclado-foco').classList.remove('hidden');
-        }
-
-        salvarProgresso(); // Salva a cada renderização (item novo, unidade nova, etc)
-    }
-
-    function mandarParaFimDaFila() {
-        let pendentes = listaDeSeparacao.filter(i => i.status !== 'concluido');
-        if (pendentes.length <= 1) { 
-            mostrarAlerta("Último produto pendente! Não é possível pular.", "aviso"); 
-            return; 
-        }
-        let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0]; 
-        listaDeSeparacao.push(itemAtual); 
-        
-        salvarProgresso(); // Salva a ordem nova
-        renderizarItemFoco(); 
-    }
-
-    function voltarProdutoAnterior() {
-        if (indexAtualPicking > 0) { 
-            indexAtualPicking--; 
-            salvarProgresso();
-            renderizarItemFoco(); 
-        }
-    }
-
-    function refazerLeituraItem() {
-        listaDeSeparacao[indexAtualPicking].unidadesLidas = 0;
-        listaDeSeparacao[indexAtualPicking].status = 'pendente';
-        salvarProgresso();
-        renderizarItemFoco();
-    }
-
-    // ================== TECLADO DIRETO (1 DÍGITO INSTANTÂNEO) ==================
-    function addFoco(num) { 
-        let digito = String(num); 
-        
-        let skuCorreto = String(listaDeSeparacao[indexAtualPicking].produtoDb.codigo || listaDeSeparacao[indexAtualPicking].produtoDb["Código"] || "").trim().toUpperCase();
-        let produtoEsperadoDb = bancoDeDados.find(p => String(p.codigo || p["Código"] || "").trim().toUpperCase() === skuCorreto);
-        
-        if (produtoEsperadoDb) {
-            let eanEsperado = String(produtoEsperadoDb.gtin || produtoEsperadoDb["GTIN/EAN"] || "").replace(/\D/g, "");
-            
-            // Verifica se o ÚLTIMO dígito bate
-            if (eanEsperado.endsWith(digito)) {
-                registrarUnidadeFoco();
-                return;
-            }
-        }
-        
-        tocarBipe('erro'); 
-        mostrarAlerta(`❌ Dígito ${digito} Incorreto!`, "erro");
-    }
-
-    function registrarUnidadeFoco() {
-        let item = listaDeSeparacao[indexAtualPicking]; 
-        item.unidadesLidas++; 
-        tocarBipe('sucesso'); 
-        
-        if (item.unidadesLidas >= item.quantidadeTotal) {
-            item.status = 'concluido'; 
-            indexAtualPicking++; 
-            mostrarAlerta("✅ Produto concluído!", "sucesso");
-        } else {
-            mostrarAlerta(`✅ Lidos: ${item.unidadesLidas} / ${item.quantidadeTotal}`, "sucesso");
-        }
-        
-        salvarProgresso(); // Salva os itens lidos e o status
-        renderizarItemFoco(); 
-    }
-
-    function finalizarPedido() {
-        limparProgresso(); // Limpa a memória quando o pedido acaba
-        let areaCheck = document.getElementById('area-checklist'); areaCheck.innerHTML = '';
-        listaDeSeparacao.forEach(i => { areaCheck.innerHTML += `<div class="checklist-item"><span>${i.nomePedido.substring(0,25)}...</span> <span>${i.quantidadeTotal}x</span></div>`; });
-        abrirTela('tela-conclusao');
-    }
-
-    function imprimirEtiquetaBluetooth() {
-        let n = pedidoAtual ? (pedidoAtual.orderNum || 'N/A') : 'N/A'; let dataHora = new Date().toLocaleString('pt-BR');
-        let iframe = document.getElementById('f-print') || document.createElement('iframe'); 
-        iframe.id = 'f-print'; iframe.style.display = 'none'; document.body.appendChild(iframe);
-        let doc = iframe.contentWindow.document; doc.open();
-        
-        let html = `<html><head><style>@page { margin: 0; size: 48mm auto; } body { width: 48mm; font-family: 'Courier New', monospace; font-size: 11px; margin: 0; padding: 2mm 0; color: #000; text-align: center; } h2 { font-size: 18px; font-weight: 900; margin: 0 0 5px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 5px 0; } .data { font-size: 10px; margin-bottom: 10px; font-weight: bold; } .item { text-align: left; border-bottom: 1px dashed #000; padding: 4px 0; display: flex; justify-content: space-between; font-weight: bold; } .nome-item { width: 80%; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .qtd-item { width: 20%; text-align: right; font-size: 14px; } .fim { margin-top: 15px; text-align: center; font-size: 12px; border-bottom: 2px dashed #000; padding-bottom: 20px;} </style></head><body><h2>PEDIDO<br>${n}</h2><div class="data">Expedição:<br>${dataHora}</div><div style="border-top: 1px solid #000; margin-bottom: 5px;"></div><div style="text-align:left; font-weight:900; margin-bottom:2px;">Qtd  - Produto</div>`;
-            
-        listaDeSeparacao.forEach(i => { html += `<div class="item"><span class="qtd-item">${i.quantidadeTotal}x</span> <span class="nome-item" style="margin-left:5px;">${i.nomePedido}</span></div>`; });
-        doc.write(html + `<div class="fim">SEPARAÇÃO CONCLUÍDA</div><br><br><br></body></html>`); doc.close(); 
-        setTimeout(() => iframe.contentWindow.print(), 800);
-    }
-</script>
-</body>
-</html>
+        const salvo = JSON.parse(localStorage.getItem('estadoPickingSal
