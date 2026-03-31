@@ -739,7 +739,7 @@ const TERMOS_CATEGORIAS = {
         "oregano", "seleta", "toddy", "barra cereais", "barra de cereais", "milharina", "mistura pra bolo", "doce"
     ],
     bebidas: [
-        "leite integral", "suco", "cha", "refrigerante", "agua", "bebida", "energetico", "cerveja", "gatorade"
+        "leite integral", "suco", "cha", "refrigerante", "agua com", "agua sem", "bebida", "energetico", "cerveja", "gatorade"
     ],
     higiene: [
         "esponja de banho", "sabonete", "escova de banho", "creme dental", "escova de dente", "fio dental", 
@@ -762,7 +762,7 @@ const TERMOS_CATEGORIAS = {
         "lav perfeita", "perfume para roupa", "perfume em cristais"
     ],
     casa: [
-        "balde de pipoca", "copo", "coador", "prato", "jarra", "caneca", "talher", "lampada", "pilha", 
+        "balde de pipoca", "saleiro", "plástica", "petisqueiras", "copo", "coador", "prato", "jarra", "caneca", "talher", "lampada", "pilha", 
         "panela", "fosforo", "isqueiro", "relogio", "livro", "caneta", "caderno", "agulha", "linha", 
         "adaptador", "extensao", "abracadeira", "cabide", "cesto", "faca", "colher", "espatula", 
         "descascador", "ralo", "peneira", "necessaire", "clips", "cola", "chinelo", "havaiana", "abridor", 
@@ -824,16 +824,17 @@ function converterDataValidade(dataStr) {
 
 function renderHomeCards() {
     const cards = [
-        { id: 'compre_junto', title: 'Compre Junto', action: "openDepto('compre_junto')", icon: '🤝', color: 'rgba(13,148,136,1)' },
         { id: 'cestas', title: 'Cestas Básicas', action: "openDepto('cestas')", icon: '🧺', color: 'rgba(16,185,129,1)' },
-        { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: 'rgba(245,158,11,1)' },
+{ id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: 'rgba(245,158,11,1)' },
+        { id: 'compre_junto', title: 'Compre Junto', action: "openDepto('compre_junto')", icon: '🛒', color: 'rgba(13,148,136,1)' },
+
         { id: 'ofertas_insta', title: 'Ofertas do Instagram', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', mobileOnly: true },
-        { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: 'rgba(234,88,12,1)' },
-        { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: 'rgba(239,68,68,1)' },
+        { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍽️', color: 'rgba(234,88,12,1)' },
+        { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🥛', color: 'rgba(239,68,68,1)' },
         { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", icon: '🧼', color: 'rgba(236,72,153,1)' },
         { id: 'beleza', title: 'Beleza', action: "openDepto('beleza')", icon: '💅', color: 'rgba(217,70,239,1)' },
         { id: 'limpeza', title: 'Limpeza', action: "openDepto('limpeza')", icon: '🧹', color: 'rgba(14,165,233,1)' },
-        { id: 'lavanderia', title: 'Lavanderia', action: "openDepto('lavanderia')", icon: '🧺', color: 'rgba(59,130,246,1)' },
+        { id: 'lavanderia', title: 'Lavanderia', action: "openDepto('lavanderia')", icon: '👖', color: 'rgba(59,130,246,1)' },
         { id: 'casa', title: 'Casa', action: "openDepto('casa')", icon: '🏠', color: 'rgba(139,92,246,1)' },
         { id: 'pet', title: 'Pet', action: "openDepto('pet')", icon: '🐶', color: 'rgba(249,115,22,1)' }
     ];
