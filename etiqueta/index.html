@@ -28,53 +28,57 @@
         
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        /* ================= TELA DE FOCO (OTIMIZADA LG K9) ================= */
-        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 25px; /* Respiro extra na base */ }
+        /* ================= TELA DE FOCO ================= */
+        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 25px; }
         
-        /* 1. CÂMERA QUADRADA NO TOPO (Tamanho ajustado para caber o resto) */
+        /* 1. CÂMERA E BOTÃO DE GIRO NO TOPO */
+        .bloco-camera-wrapper { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
+        
+        /* Câmera 50% maior: de 140px para 210px */
         .camera-quadrada { 
-            width: 140px; height: 140px; 
-            margin: 0 auto 8px auto; border-radius: 12px; overflow: hidden; 
-            border: 3px solid var(--primary); flex-shrink: 0; background: #000; 
+            width: 210px; height: 210px; 
+            border-radius: 12px; overflow: hidden; 
+            border: 3px solid var(--primary); background: #000; 
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
         #leitor-camera { width: 100%; height: 100%; }
         #leitor-camera video { object-fit: cover; }
 
-        /* 2. LAYOUT DIVIDIDO (FOTO+NOME na Esquerda / LOC+SKU na Direita) */
-        .foco-topo-split { display: flex; gap: 8px; margin-bottom: 8px; flex-shrink: 0; }
+        /* 2. LAYOUT DIVIDIDO (MAIS COMPACTO PARA CABER A CÂMERA GRANDE) */
+        .foco-topo-split { display: flex; gap: 8px; margin-bottom: 6px; flex-shrink: 0; }
         
-        .col-esq { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-        .foco-img-container { flex: 1; min-height: 80px; border: 2px solid #ddd; border-radius: 10px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; padding: 5px; cursor: pointer;}
+        .col-esq { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        /* Foto menor */
+        .foco-img-container { flex: 1; min-height: 50px; height: 50px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
         .foco-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .icone-lupa { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 10px; }
-        .foco-nome { font-size: 13px; font-weight: bold; text-align: center; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; padding: 0 2px; height: 62px; }
+        .foco-nome { font-size: 12px; font-weight: bold; text-align: center; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0 2px; height: 40px; }
 
-        .col-dir { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-        .box-loc, .box-sku { flex: 1; border-radius: 10px; padding: 4px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .col-dir { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+        /* Box LOC e SKU menores */
+        .box-loc, .box-sku { flex: 1; border-radius: 8px; padding: 2px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .box-loc { background: var(--dark); color: white; border: 2px solid var(--dark); }
-        .box-loc .label { font-size: 11px; color: #ccc; font-weight: bold; }
-        .box-loc .valor { color: var(--warning); font-size: 26px; font-weight: 900; line-height: 1; margin-top: 2px; }
+        .box-loc .label { font-size: 10px; color: #ccc; font-weight: bold; }
+        .box-loc .valor { color: var(--warning); font-size: 20px; font-weight: 900; line-height: 1; margin-top: 1px; }
         .box-sku { background: #f4f4f4; border: 2px solid #ccc; color: var(--dark); }
-        .box-sku .label { font-size: 11px; color: #666; font-weight: bold; }
-        .box-sku .valor { font-size: 20px; font-weight: 900; line-height: 1; margin-top: 2px; }
+        .box-sku .label { font-size: 10px; color: #666; font-weight: bold; }
+        .box-sku .valor { font-size: 16px; font-weight: 900; line-height: 1; margin-top: 1px; }
         
         /* 3. PROGRESSO DIDÁTICO */
-        .progresso-wrapper { background: #e3f2fd; border: 2px solid #2196F3; border-radius: 8px; padding: 6px; text-align: center; margin-bottom: 6px; flex-shrink: 0; }
-        .progresso-numeros { font-size: 16px; font-weight: 900; color: #0d47a1; margin-bottom: 4px; }
-        .progresso-barra-fundo { background: #bbdefb; height: 10px; border-radius: 5px; overflow: hidden; width: 100%; }
+        .progresso-wrapper { background: #e3f2fd; border: 2px solid #2196F3; border-radius: 8px; padding: 4px; text-align: center; margin-bottom: 6px; flex-shrink: 0; }
+        .progresso-numeros { font-size: 14px; font-weight: 900; color: #0d47a1; margin-bottom: 2px; }
+        .progresso-barra-fundo { background: #bbdefb; height: 8px; border-radius: 4px; overflow: hidden; width: 100%; }
         .progresso-barra-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.3s ease-in-out; }
 
-        /* 4. ÁREA DE INTERAÇÃO (Fica na base com respiro) */
+        /* 4. ÁREA DE INTERAÇÃO (Teclado Achatado) */
         .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; justify-content: flex-end; }
         
         #bloco-teclado-foco { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
-        .display-teclado { text-align: center; font-size: 24px; font-weight: 900; letter-spacing: 10px; color: var(--secondary); height: 30px; margin-bottom: 5px; flex-shrink: 0; }
+        .display-teclado { text-align: center; font-size: 20px; font-weight: 900; letter-spacing: 8px; color: var(--secondary); height: 26px; margin-bottom: 4px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
         
-        /* Grid de teclado bem achatado */
-        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 38px); gap: 6px; }
-        .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 20px; font-weight: 900; border-radius: 8px; margin: 0; box-shadow: 0 2px 0 #ccc; display: flex; align-items: center; justify-content: center; }
+        /* TECLADO ACHATADO VERTICALMENTE (Alturas de 32px e gap menor) */
+        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 32px); gap: 4px; }
+        .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 18px; font-weight: 900; border-radius: 6px; margin: 0; box-shadow: 0 2px 0 #ccc; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
 
         /* Alertas Customizados */
@@ -115,8 +119,11 @@
 
     <div class="tela-foco hidden" id="tela-separacao-foco">
         
-        <div id="container-camera" class="camera-quadrada hidden">
-            <div id="leitor-camera"></div>
+        <div id="bloco-camera" class="bloco-camera-wrapper hidden">
+            <div id="container-camera" class="camera-quadrada">
+                <div id="leitor-camera"></div>
+            </div>
+            <button class="btn-secondary" style="padding: 12px; font-size: 20px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onclick="girarCamera()">🔄</button>
         </div>
 
         <div class="foco-topo-split">
@@ -147,10 +154,10 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0;">
-            <button id="btn-anterior" class="btn-secondary hidden" style="padding:10px 15px; font-size:16px;" onclick="voltarProdutoAnterior()">⬅️</button>
-            <button class="btn-warning" style="flex:1; padding:10px; font-size:13px;" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
-            <button id="btn-alternar-modo" class="btn-outline" style="flex:1; padding:10px; font-size:13px;" onclick="alternarModoLeitura()">⌨️ EAN</button>
+        <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-shrink: 0;">
+            <button id="btn-anterior" class="btn-secondary hidden" style="padding:8px 15px; font-size:16px;" onclick="voltarProdutoAnterior()">⬅️</button>
+            <button class="btn-warning" style="flex:1; padding:8px; font-size:12px;" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
+            <button id="btn-alternar-modo" class="btn-outline" style="flex:1; padding:8px; font-size:12px;" onclick="alternarModoLeitura()">⌨️ EAN</button>
         </div>
 
         <div class="area-interacao">
@@ -167,21 +174,21 @@
                     <div class="btn-num" onclick="addFoco(7)">7</div>
                     <div class="btn-num" onclick="addFoco(8)">8</div>
                     <div class="btn-num" onclick="addFoco(9)">9</div>
-                    <button class="btn-danger" style="font-size:14px; font-weight:bold; border-radius:8px; margin:0;" onclick="if(confirm('Sair da separação?')) abrirTela('tela-inicial');">❌ Sair</button>
+                    <button class="btn-danger" style="font-size:12px; font-weight:bold; border-radius:6px; margin:0;" onclick="if(confirm('Sair da separação?')) abrirTela('tela-inicial');">❌ Sair</button>
                     <div class="btn-num" onclick="addFoco(0)">0</div>
                     <div style="visibility:hidden;"></div> 
                 </div>
             </div>
 
             <div id="bloco-sem-ean" class="hidden" style="display:flex; flex-direction:column; justify-content:center; height:100%;">
-                <button class="btn-primary" style="width:100%; flex:1; font-size:18px; border-radius:12px; font-weight:900; box-shadow: 0 4px 0 #388E3C; margin-bottom: 8px;" onclick="registrarUnidadeFoco()">
+                <button class="btn-primary" style="width:100%; flex:1; font-size:16px; border-radius:12px; font-weight:900; box-shadow: 0 4px 0 #388E3C; margin-bottom: 8px;" onclick="registrarUnidadeFoco()">
                     ➕ ADICIONAR (SEM EAN)
                 </button>
             </div>
 
             <div id="bloco-concluido" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:#e8f5e9; border:2px solid var(--primary); border-radius:12px; padding:10px; box-sizing:border-box;">
-                <p style="text-align:center; font-size:18px; font-weight:bold; color:var(--primary); margin:0 0 10px 0;">✅ Item Finalizado</p>
-                <button class="btn-danger" style="width:100%; padding:12px; font-size:14px;" onclick="refazerLeituraItem()">🔄 Refazer Contagem</button>
+                <p style="text-align:center; font-size:16px; font-weight:bold; color:var(--primary); margin:0 0 10px 0;">✅ Item Finalizado</p>
+                <button class="btn-danger" style="width:100%; padding:10px; font-size:13px;" onclick="refazerLeituraItem()">🔄 Refazer Contagem</button>
             </div>
 
         </div>
@@ -200,7 +207,8 @@
     let focoDisplayStr = ""; let focoLimite = 4;
     let html5QrCode = null; 
     let modoLeituraPadrao = 'CAMERA'; 
-    let isProcessingScan = false; // Trava para evitar ler o mesmo código 10 vezes no mesmo segundo
+    let isProcessingScan = false;
+    let cameraAtual = "environment"; // Inicia com a câmera traseira (environment)
 
     window.onload = async function() {
         try { 
@@ -270,20 +278,29 @@
         abrirTela('tela-separacao-foco'); renderizarItemFoco();
     }
 
-    // ================= ALTERNAR MODOS =================
     function alternarModoLeitura() {
         modoLeituraPadrao = (modoLeituraPadrao === 'CAMERA') ? 'TECLADO' : 'CAMERA';
         renderizarItemFoco();
     }
 
-    // ================= LÓGICA DE RENDERIZAÇÃO E AUTO-AVANÇO =================
+    // ================= ALTERNAR CÂMERA FRONT/REAR =================
+    function girarCamera() {
+        // Alterna a variável da câmera
+        cameraAtual = (cameraAtual === "environment") ? "user" : "environment";
+        fecharCamera();
+        
+        // Dá um tempinho pro celular desligar o sensor antes de ligar de novo (evita travamento no LG K9)
+        setTimeout(() => {
+            abrirCamera();
+        }, 300);
+    }
+
     function renderizarItemFoco() {
         if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPedido(); return; }
         
         let item = listaDeSeparacao[indexAtualPicking]; 
         let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
         
-        // Verifica se o produto NÃO tem EAN cadastrado
         let rawEan = String(item.produtoDb.gtin || item.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "");
         let hasEan = rawEan.length > 0;
 
@@ -295,47 +312,39 @@
         imgTag.src = `../site/img/produtos/${skuItem}.webp`; 
         imgTag.onerror = function() { this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; };
         
-        // Controle de Botões
         let btnAnterior = document.getElementById('btn-anterior');
         if (indexAtualPicking > 0) { btnAnterior.classList.remove('hidden'); } else { btnAnterior.classList.add('hidden'); }
 
         let btnModo = document.getElementById('btn-alternar-modo');
         if (modoLeituraPadrao === 'CAMERA') { btnModo.innerHTML = "⌨️ EAN"; } else { btnModo.innerHTML = "📷 Câmera"; }
 
-        // Atualiza Progresso
         let textoProgresso = document.getElementById('progresso-texto');
         let barraProgresso = document.getElementById('progresso-fill');
         textoProgresso.innerText = `${item.unidadesLidas} de ${item.quantidadeTotal} Lidos`;
         barraProgresso.style.width = `${(item.unidadesLidas / item.quantidadeTotal) * 100}%`;
         
-        // Esconde painéis de baixo
         document.getElementById('bloco-teclado-foco').classList.add('hidden');
         document.getElementById('bloco-sem-ean').classList.add('hidden');
         document.getElementById('bloco-concluido').classList.add('hidden');
 
-        // LÓGICA INTELIGENTE DE EXIBIÇÃO
         if (item.status === 'concluido') {
-            // Se voltou para um item que já estava pronto
             fecharCamera();
-            document.getElementById('container-camera').classList.add('hidden');
+            document.getElementById('bloco-camera').classList.add('hidden');
             btnModo.classList.add('hidden');
             document.getElementById('bloco-concluido').classList.remove('hidden');
         } else if (!hasEan) {
-            // Se o produto NÃO TEM CÓDIGO DE BARRAS NO BANCO
             fecharCamera();
-            document.getElementById('container-camera').classList.add('hidden');
-            btnModo.classList.add('hidden'); // Esconde opção de teclado/câmera
+            document.getElementById('bloco-camera').classList.add('hidden');
+            btnModo.classList.add('hidden'); 
             document.getElementById('bloco-sem-ean').classList.remove('hidden');
         } else {
-            // PRODUTO NORMAL PENDENTE
             btnModo.classList.remove('hidden');
             if (modoLeituraPadrao === 'CAMERA') {
-                document.getElementById('container-camera').classList.remove('hidden');
-                // Mantém a câmera ligada (não reinicia se já estiver rodando)
+                document.getElementById('bloco-camera').classList.remove('hidden');
                 if (!html5QrCode || !html5QrCode.isScanning) { abrirCamera(); }
             } else {
                 fecharCamera();
-                document.getElementById('container-camera').classList.add('hidden');
+                document.getElementById('bloco-camera').classList.add('hidden');
                 document.getElementById('bloco-teclado-foco').classList.remove('hidden');
                 resetarTecladoFoco();
             }
@@ -359,16 +368,24 @@
         renderizarItemFoco();
     }
 
-    // ================== CÂMERA OFICIAL (COM AUTO-AVANÇO E TRAVA) ==================
+    // ================== CÂMERA OFICIAL ==================
     function abrirCamera() {
         if (!html5QrCode) { html5QrCode = new Html5Qrcode("leitor-camera"); }
-        const config = { fps: 10, qrbox: { width: 140, height: 140 } };
+        
+        // Aumenta o tamanho da área de captura na câmera também, para ler mais rápido
+        const config = { fps: 10, qrbox: { width: 200, height: 200 } };
+
+        // Efeito Espelho: Apenas se a câmera frontal estiver ligada, inverte a imagem do contêiner pra não confundir
+        if (cameraAtual === "user") {
+            document.getElementById("container-camera").style.transform = "scaleX(-1)";
+        } else {
+            document.getElementById("container-camera").style.transform = "none";
+        }
 
         html5QrCode.start(
-            { facingMode: "environment" }, 
+            { facingMode: cameraAtual }, 
             config,
             (decodedText, decodedResult) => {
-                // Trava para não ler 10 vezes em 1 segundo
                 if (isProcessingScan) return;
                 isProcessingScan = true;
 
@@ -381,7 +398,6 @@
                     mostrarAlerta("❌ EAN Inválido.", "erro");
                 }
 
-                // Libera a câmera para ler novamente após 1.5 segundos
                 setTimeout(() => { isProcessingScan = false; }, 1500);
             },
             (errorMessage) => {} 
@@ -395,7 +411,6 @@
         if (html5QrCode && html5QrCode.isScanning) { html5QrCode.stop().then(() => {}).catch(err => {}); }
     }
 
-    // ================== AVALIAÇÃO E REGISTRO DIRETO ==================
     function resetarTecladoFoco() { focoDisplayStr = ""; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }
 
     function addFoco(num) { 
@@ -429,19 +444,16 @@
         }
     }
 
-    // O SEGREDO DO AUTO-AVANÇO ZERO CLIQUES
     function registrarUnidadeFoco() {
         let item = listaDeSeparacao[indexAtualPicking]; 
         item.unidadesLidas++; 
         tocarBipe('sucesso'); 
         
         if (item.unidadesLidas >= item.quantidadeTotal) {
-            // FINALIZOU A META DESTE PRODUTO!
             item.status = 'concluido'; 
-            indexAtualPicking++; // Vai pro próximo
+            indexAtualPicking++; 
             mostrarAlerta("✅ Próximo produto!", "sucesso");
         } else {
-            // AINDA FALTAM UNIDADES, APENAS AVISA E LIMPA O TECLADO
             mostrarAlerta(`✅ ${item.unidadesLidas} lidos! Leia o próximo.`, "sucesso");
             focoDisplayStr = "";
         }
@@ -449,7 +461,6 @@
         renderizarItemFoco(); 
     }
 
-    // ================== FINALIZAÇÃO DE PEDIDO ==================
     function finalizarPedido() {
         fecharCamera();
         let areaCheck = document.getElementById('area-checklist'); areaCheck.innerHTML = '';
