@@ -188,7 +188,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .custom-dropdown-item { padding: 12px 10px; font-size: 0.85rem; font-weight: 500; color: var(--c-s); cursor: pointer; border-bottom: 1px solid var(--c-img-bg); }
 .custom-dropdown-item:hover, .custom-dropdown-item.active { background: #f8fafc; color: var(--c-a); font-weight: 600; }
 
-/* ABAS DO INSTAGRAM */
+/* ABAS DO INSTAGRAM & MARCAS */
 .insta-tabs-container {
     display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;
 }
@@ -676,14 +676,21 @@ const MIN_ORDER = 75.00;
 const $ = id => document.getElementById(id);
 
 // ==========================================
-// ==========================================
-// CONFIGURAÇÃO DAS CAMPANHAS DO INSTAGRAM
+// CONFIGURAÇÃO DAS CAMPANHAS DO INSTAGRAM E MARCAS
 // ==========================================
 const CAMPANHAS_INSTA = [
     { id: "maiores_descontos", nome: "Maiores Descontos", desconto: 0, palavrasChave: [] }, // Fixa, não remova.
     { id: "limpeza_pesada", nome: "Limpeza (7% OFF)", desconto: 7, palavrasChave: ["sabão", "desinfetante", "água sanitária", "vassoura", "pano limpeza", "pano de prato", "microfibra", "multiuso", "rodo", "detergente"] },
     { id: "chocolates", nome: "Chocolates (12% OFF)", desconto: 12, palavrasChave: ["chocolate", "bombom", "bom bom", "nestle", "lacta", "cory", "bis ", "kitkat" ] },
     { id: "higiene_pessoal", nome: "Higiene (6% OFF)", desconto: 6, palavrasChave: ["sabonete", "shampoo", "desodorante", "dental" ] }
+];
+
+const MARCAS_DESTAQUE = [
+    { id: "nestle", nome: "Nestlé & Garoto", palavrasChave: ["nestle", "nescau", "garoto", "maggi", "moça", "passatempo", "chambinho", "ninho"] },
+    { id: "ype", nome: "Ypê", palavrasChave: ["ype", "tixan", "assolan", "perfex", "amaciante ype"] },
+    { id: "coca", nome: "Coca-Cola", palavrasChave: ["coca", "fanta", "sprite", "kuik", "del valle", "monster", "schweppes"] },
+    { id: "ambev", nome: "Ambev / PepsiCo", palavrasChave: ["doritos", "ruffles", "lays", "cheetos", "pepsi", "guarana", "toddynho", "toddy", "quaker", "gatorade"] },
+    { id: "unilever", nome: "Unilever", palavrasChave: ["omo", "brilhante", "comfort", "hellmanns", "rexona", "dove", "seda", "clear", "tresemme", "kelloggs"] }
 ];
 
 const carouselObserver = new IntersectionObserver((entries, observer) => {
@@ -728,7 +735,7 @@ const carouselObserver = new IntersectionObserver((entries, observer) => {
 
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
-    currentInstaTab: 'maiores_descontos', baskets: [], prods: [], coupons: [], combos: [], compreJuntoCombos: [],
+    currentInstaTab: 'maiores_descontos', currentMarcaTab: 'nestle', baskets: [], prods: [], coupons: [], combos: [], compreJuntoCombos: [],
     returnToUpsell: false, 
     
     banners: [
@@ -740,6 +747,7 @@ const STATE = {
     
 deptos: {
         'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas do Instagram', type: 'PROD', data: [] },
+        'marcas': { id: 'marcas', title: 'Encontre pela Marca', color: '#3b82f6', type: 'PROD', data: [] },
         'compre_junto': { id: 'compre_junto', title: 'Compre Junto', color: '#0d9488', type: 'COMPRE_JUNTO', data: [] },
         'cestas': { id: 'cestas', title: 'Cestas Básicas', color: '#10b981', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', color: '#f59e0b', type: 'COMBO', data: [] },
@@ -859,6 +867,7 @@ function renderHomeCards() {
         { id: 'cestas', title: 'Cestas Básicas', action: "openDepto('cestas')", icon: '🧺', color: 'rgba(16,185,129,1)' },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: 'rgba(245,158,11,1)' },
         { id: 'ofertas_insta', title: 'Ofertas do Instagram', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', mobileOnly: true },
+        { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: 'rgba(59,130,246,1)' },
         { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: 'rgba(234,88,12,1)' },
         { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: 'rgba(239,68,68,1)' },
         { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", icon: '🧼', color: 'rgba(236,72,153,1)' },
@@ -887,6 +896,20 @@ function renderInstaTabs() {
 window.selectInstaTab = function(tabId) {
     STATE.currentInstaTab = tabId;
     renderInstaTabs();
+    applyDeptoFilters();
+};
+
+function renderMarcaTabs() {
+    let html = MARCAS_DESTAQUE.map(m => {
+        let isActive = STATE.currentMarcaTab === m.id ? 'active' : '';
+        return `<div class="insta-tab ${isActive}" onclick="selectMarcaTab('${m.id}')">${m.nome}</div>`;
+    }).join('');
+    document.getElementById('insta-tabs').innerHTML = html;
+}
+
+window.selectMarcaTab = function(tabId) {
+    STATE.currentMarcaTab = tabId;
+    renderMarcaTabs();
     applyDeptoFilters();
 };
 
@@ -947,12 +970,12 @@ async function init() {
             let top5Validade = produtosParaValidade.slice(0, 5);
             
             top5Validade.forEach(p => {
-                p.price = p.oldPrice * 0.15; // 15% de desconto
+                p.price = p.oldPrice * 0.85; // 15% de desconto
                 p.discountApplied = true;
                 p.isExpiringSoon = true; 
             });
 
-            // Prioridade 2: LÓGICA DAS CAMPANHAS DO INSTAGRAM (25% OFF)
+            // Prioridade 2: LÓGICA DAS CAMPANHAS DO INSTAGRAM
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
                 
@@ -1003,7 +1026,6 @@ async function init() {
             // --- FIM DA PRATELEIRA. AGORA, COMPRE JUNTO (Somente com Preço Cheio) ---
             
             // Pega APENAS itens que NÃO ganharam nenhum desconto na prateleira
-            // Subimos o limite para R$ 15 para garantir que encontraremos pares suficientes para 30 combos.
             let elegiveisCJ = STATE.prods.filter(p => !p.discountApplied && !p._isBasket && !p._isCombo && p.stock > 0 && p.oldPrice <= 15.00);
             
             let gruposCJ = {};
@@ -1258,6 +1280,11 @@ window.openDepto = function(deptoId, fromUpsell = false) {
         document.getElementById('insta-tabs').style.display = 'flex';
         STATE.currentInstaTab = 'maiores_descontos';
         renderInstaTabs();
+    } else if (deptoId === 'marcas') {
+        document.getElementById('normal-filters').style.display = 'none';
+        document.getElementById('insta-tabs').style.display = 'flex';
+        if(!STATE.currentMarcaTab) STATE.currentMarcaTab = MARCAS_DESTAQUE[0].id;
+        renderMarcaTabs();
     } else if (d.type === 'PROD') {
         document.getElementById('normal-filters').style.display = 'flex';
         document.getElementById('insta-tabs').style.display = 'none';
@@ -1320,7 +1347,8 @@ function buildCompreJuntoCardHtml(cj) {
     `;
 }
 
-window.applyDeptoFilters = function() {
+// Foi adicionado o parametro preventScroll para não ficar pulando a tela ao clicar em Compre Junto
+window.applyDeptoFilters = function(preventScroll = false) {
     if(!STATE.activeDeptoId) return;
     let query = norm(document.getElementById('depto-search').value);
     let filtered = [];
@@ -1337,6 +1365,17 @@ window.applyDeptoFilters = function() {
             filtered = STATE.prods.filter(p => p.campanhasInsta && p.campanhasInsta.includes(STATE.currentInstaTab));
         }
         if(query) filtered = filtered.filter(p => norm(p.name || p.nome).includes(query));
+
+    } else if (STATE.activeDeptoId === 'marcas') {
+        let marcaAtual = MARCAS_DESTAQUE.find(m => m.id === STATE.currentMarcaTab);
+        if (marcaAtual) {
+            filtered = STATE.prods.filter(p => {
+                let nomeParaBusca = " " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ";
+                return marcaAtual.palavrasChave.some(kw => nomeParaBusca.includes(" " + norm(kw) + " "));
+            });
+        }
+        if(query) filtered = filtered.filter(p => norm(p.name || p.nome).includes(query));
+        filtered.sort((a,b) => String(a.name).localeCompare(String(b.name)));
 
     } else {
         let depto = STATE.deptos[STATE.activeDeptoId];
@@ -1383,7 +1422,11 @@ window.applyDeptoFilters = function() {
     }
     
     document.getElementById('see-all-grid').innerHTML = html;
-    document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
+    
+    // Trava para o conteúdo não pular para o topo se tiver só atualizando o carrinho
+    if (!preventScroll) {
+        document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
+    }
 };
 
 window.handleLateralBack = function() {
@@ -1435,9 +1478,12 @@ window.openKitLateralView = function(id, type) {
     expanderState = { id, type, basePrice: sourceObj.preco, originalSum: 0, priceOffset: 0, items: {}, originalItems: {}, discountLost: false, orderedIds: [], sourceObj, currentDisplayPrice: 0 };
 
     sourceObj.produtos.forEach(s => {
-        let [qStr, rId] = s.split('x'); let pId = rId.trim(); let qty = parseInt(qStr);
-        let p = STATE.prods.find(x => x.id === pId);
-        if (p) { expanderState.items[pId] = qty; expanderState.originalItems[pId] = qty; expanderState.orderedIds.push(pId); expanderState.originalSum += p.price * qty; }
+        let partes = String(s).split('x');
+        if (partes.length > 1) {
+            let pId = partes[1].trim(); let qty = parseInt(partes[0]);
+            let p = STATE.prods.find(x => String(x.id) === pId);
+            if (p) { expanderState.items[pId] = qty; expanderState.originalItems[pId] = qty; expanderState.orderedIds.push(pId); expanderState.originalSum += p.price * qty; }
+        }
     });
 
     expanderState.priceOffset = type === 'BASKET' ? Math.max(0, sourceObj.preco - expanderState.originalSum) : 0;
@@ -1694,6 +1740,19 @@ let imgAreaClass = 'u-img-area';
         } else {
              addBtnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClick}">Ver Produtos</button>`;
         }
+    } else {
+        onClick = isEsgotado ? '' : `openQuickView('${id}')`;
+        // Só exibe o traço de preço antigo se ele de fato for maior que o preço atual (garante que itens normais não fiquem com 2 preços)
+        if (item.oldPrice && item.oldPrice > pPrice) {
+            oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
+        }
+        if (isEsgotado) {
+            addBtnHtml = `<div style="position:absolute; bottom:8px; right:8px; background:var(--c-t); color:#fff; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:600;">ESGOTADO</div>`;
+        } else if (pPrice) {
+            let btnContent = qty > 0 ? `<span style="font-size:0.95rem;">${qty}</span>` : '+';
+            let btnClass = qty > 0 ? 'card-add-btn has-item add-btn-' + id : 'card-add-btn add-btn-' + id;
+            addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
+        }
     }
 
     let btnSection = (isKit || isBasket) ? addBtnHtml : '';
@@ -1776,7 +1835,7 @@ window.updCompreJunto = function(cjId, delta) {
     }
     
     updateTotals();
-    applyDeptoFilters(); // Para atualizar o layout do contador no botão
+    applyDeptoFilters(true); // Chamando com preventScroll=true para a tela não pular pro topo
 }
 
 function upd(id, delta, skipKitCheck = false) { 
@@ -1858,9 +1917,11 @@ function updateTotals() {
         if (c) {
             let priceNormal = 0;
             c.produtos.forEach(s => { 
-                let [q, r] = s.split('x'); 
-                let p = STATE.prods.find(x => x.id === r.trim()); 
-                if (p) priceNormal += p.price * parseInt(q); 
+                let partes = String(s).split('x'); 
+                if (partes.length > 1) {
+                    let p = STATE.prods.find(x => String(x.id) === partes[1].trim()); 
+                    if (p) priceNormal += p.price * parseInt(partes[0]); 
+                }
             });
             totalDescontosKits += Math.max(0, priceNormal - c.preco) * ac.qty;
         }
