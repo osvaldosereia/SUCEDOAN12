@@ -907,7 +907,7 @@ async function init() {
 
        if (r2 && r2.length > 0) {
             // 1. APLICAR AUMENTO GLOBAL (PREÇO BASE)
-            const TAXA_AUMENTO_GLOBAL = 1.05;
+            const TAXA_AUMENTO_GLOBAL = 1.08;
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 let precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
