@@ -91,7 +91,7 @@
     <div class="row-split">
         <div class="form-group">
             <label>Estoque Atual</label>
-            <input type="number" id="ed-estoque" min="0">
+            <input type="number" step="any" id="ed-estoque" min="0">
         </div>
         <div class="form-group">
             <label>Data de Validade</label>
@@ -118,26 +118,41 @@
         🔙 NOVA BUSCA
     </button>
 
-    <div style="height: 80px; width: 100%;"></div>
+    <div style="height: 100px; width: 100%;"></div>
 </div>
 
 <script>
     let bancoDeDados = [];
     let produtoSendoEditado = null;
-    let scannerCamera = null; // Variável para controlar a câmera
+    let scannerCamera = null;
+
+    // As 59 colunas exatas exigidas pelo seu sistema (retiradas do seu anexo CSV)
+    const colunasCSVOficiais = [
+        "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo",
+        "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor",
+        "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)",
+        "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto",
+        "Altura do Produto", "Profundidade do produto", "Data Validade",
+        "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa",
+        "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI",
+        "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos",
+        "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST",
+        "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo",
+        "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto",
+        "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida",
+        "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção",
+        "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"
+    ];
 
     // ================== 1. INICIALIZAÇÃO ==================
     window.onload = async function() {
         gerarOpcoesLocalizacao();
-        
         try { 
             const resposta = await fetch('../site/bancodedados.json'); 
             bancoDeDados = await resposta.json(); 
-            
             document.getElementById('status-db').innerText = `✅ Banco Preparado (${bancoDeDados.length} itens)`; 
             document.getElementById('status-db').style.color = "green";
             document.getElementById('area-pesquisa').classList.remove('hidden');
-            
         } catch (erro) { 
             document.getElementById('status-db').innerText = "❌ Erro ao ler bancodedados.json"; 
         }
@@ -174,7 +189,7 @@
         document.getElementById('tela-busca').classList.remove('hidden');
         document.getElementById('input-busca').value = '';
         document.getElementById('lista-resultados').innerHTML = '';
-        window.scrollTo(0, 0); // Rola a página para o topo
+        window.scrollTo(0, 0);
     }
 
     // ================== 2. LEITOR DE CÂMERA ==================
@@ -183,21 +198,18 @@
         document.getElementById('area-camera').classList.remove('hidden');
 
         scannerCamera = new Html5Qrcode("leitor-camera");
-        
-        // Configuração da câmera (lê EAN e outros formatos)
         const config = { fps: 10, qrbox: { width: 250, height: 150 } };
         
         scannerCamera.start(
-            { facingMode: "environment" }, // Usa a câmera traseira do celular
+            { facingMode: "environment" },
             config,
             (codigoLido) => {
-                // Sucesso na leitura
                 tocarBipeSucesso();
                 document.getElementById('input-busca').value = codigoLido;
                 fecharCamera();
-                realizarBusca(); // Dispara a busca sozinho
+                realizarBusca(); 
             },
-            (erro) => { /* Ignora erros contínuos enquanto tenta focar no código */ }
+            (erro) => { }
         ).catch((err) => {
             mostrarAlerta("Erro ao acessar a câmera. Verifique as permissões.", "erro");
             fecharCamera();
@@ -206,9 +218,7 @@
 
     function fecharCamera() {
         if(scannerCamera) {
-            scannerCamera.stop().then(() => {
-                scannerCamera.clear();
-            }).catch(e => console.log(e));
+            scannerCamera.stop().then(() => scannerCamera.clear()).catch(e => console.log(e));
         }
         document.getElementById('area-camera').classList.add('hidden');
         document.getElementById('btn-abrir-camera').classList.remove('hidden');
@@ -262,10 +272,13 @@
 
     // ================== 4. PREENCHER TELA DE EDIÇÃO ==================
     function prepararEdicao(produto) {
-        // Clonamos o produto para não alterar o banco de dados carregado na memória acidentalmente
         produtoSendoEditado = { ...produto }; 
         let skuStr = produtoSendoEditado.codigo || produtoSendoEditado["Código"] || "";
         let locAtual = produtoSendoEditado.localizacao || produtoSendoEditado["Localização"] || "";
+        let estoque = produtoSendoEditado.estoque || produtoSendoEditado["Estoque"] || 0;
+        
+        // Tratar vírgulas de estoque se vierem do JSON
+        if(typeof estoque === 'string') estoque = estoque.replace(",", ".");
 
         let imgTag = document.getElementById('ed-foto');
         imgTag.src = `../site/img/produtos/${skuStr}.webp`;
@@ -276,7 +289,7 @@
         document.getElementById('ed-nome').value = produtoSendoEditado.nome || produtoSendoEditado["Descrição"] || "";
         document.getElementById('ed-sku').value = skuStr;
         document.getElementById('ed-ean').value = produtoSendoEditado.gtin || produtoSendoEditado["GTIN/EAN"] || "";
-        document.getElementById('ed-estoque').value = produtoSendoEditado.estoque || produtoSendoEditado["Estoque"] || 0;
+        document.getElementById('ed-estoque').value = parseFloat(estoque);
         document.getElementById('ed-validade').value = produtoSendoEditado.validade || produtoSendoEditado["Data Validade"] || ""; 
 
         let gondola = ""; let prateleira = "";
@@ -293,47 +306,52 @@
         window.scrollTo(0, 0);
     }
 
-    // ================== 5. EXPORTAÇÃO CSV COMPLETA ==================
+    // ================== 5. EXPORTAÇÃO CSV IDÊNTICA AO MODELO ==================
     function exportarProdutoCSV() {
-        // 1. Pegar os dados atualizados da tela
+        // 1. Coletar e tratar dados da tela
         let nomeEditado = document.getElementById('ed-nome').value;
         let skuEditado = document.getElementById('ed-sku').value;
         let eanEditado = document.getElementById('ed-ean').value;
         let estoqueEditado = document.getElementById('ed-estoque').value;
         let validadeEditada = document.getElementById('ed-validade').value;
         
+        // O estoque na plataforma usa vírgula para as casas decimais ("2,00")
+        if (estoqueEditado) estoqueEditado = parseFloat(estoqueEditado).toFixed(2).replace(".", ",");
+
         let gondolaEditada = document.getElementById('ed-gondola').value;
         let prateleiraEditada = document.getElementById('ed-prateleira').value;
         let locFinal = (gondolaEditada && prateleiraEditada) ? `${gondolaEditada}-${prateleiraEditada}` : "";
 
-        // 2. Mesclar as atualizações com o objeto original (Preservando os campos que você não edita na tela)
+        // 2. Mesclar no objeto principal (alterando as chaves exatas do CSV)
         let prodExport = { ...produtoSendoEditado };
         
-        if ("Descrição" in prodExport) prodExport["Descrição"] = nomeEditado; else prodExport.nome = nomeEditado;
-        if ("Código" in prodExport) prodExport["Código"] = skuEditado; else prodExport.codigo = skuEditado;
-        if ("GTIN/EAN" in prodExport) prodExport["GTIN/EAN"] = eanEditado; else prodExport.gtin = eanEditado;
-        if ("Estoque" in prodExport) prodExport["Estoque"] = estoqueEditado; else prodExport.estoque = estoqueEditado;
-        if ("Localização" in prodExport) prodExport["Localização"] = locFinal; else prodExport.localizacao = locFinal;
-        if ("Data Validade" in prodExport) prodExport["Data Validade"] = validadeEditada; else prodExport.validade = validadeEditada;
+        prodExport["Descrição"] = nomeEditado;
+        prodExport["Código"] = skuEditado;
+        prodExport["GTIN/EAN"] = eanEditado;
+        // Atualiza também o EAN da embalagem para manter o padrão
+        prodExport["GTIN/EAN da Embalagem"] = eanEditado; 
+        prodExport["Estoque"] = estoqueEditado;
+        prodExport["Localização"] = locFinal;
+        prodExport["Data Validade"] = validadeEditada;
 
-        // 3. Extrair as chaves (cabeçalhos do CSV idênticos ao original)
-        let chaves = Object.keys(prodExport);
+        // 3. Montar o cabeçalho idêntico
+        let csvContent = colunasCSVOficiais.map(col => `"${col}"`).join(";") + "\n";
         
-        // Montar o cabeçalho (usando aspas duplas e separador ;)
-        let csvContent = chaves.map(chave => `"${chave}"`).join(";") + "\n";
-        
-        // Montar a linha do produto
-        let linhaValores = chaves.map(chave => {
-            let valor = prodExport[chave];
-            if(valor === null || valor === undefined) valor = "";
-            // Escapar aspas duplas internas substituindo por duas aspas duplas (padrão CSV)
-            return `"${String(valor).replace(/"/g, '""')}"`;
+        // 4. Montar a linha mapeando cada valor pela coluna oficial
+        let linhaValores = colunasCSVOficiais.map(coluna => {
+            let valor = prodExport[coluna];
+            
+            // Se o JSON não tiver essa informação, mandamos vazio como no anexo
+            if(valor === null || valor === undefined) valor = ""; 
+            
+            // Garantir que é texto e escapar as aspas internas (duplicando a aspa)
+            let valorSeguro = String(valor).replace(/"/g, '""');
+            return `"${valorSeguro}"`;
         });
         
         csvContent += linhaValores.join(";") + "\n";
 
-        // 4. Gerar e baixar o arquivo
-        // Utilizando BOM (\ufeff) para o Excel reconhecer os acentos (UTF-8)
+        // 5. Gerar o arquivo (com BOM para aceitar acentos)
         let blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
         let link = document.createElement("a");
         let url = URL.createObjectURL(blob);
