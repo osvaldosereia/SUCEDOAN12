@@ -29,12 +29,12 @@
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         /* ================= TELA DE FOCO ================= */
-        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 25px; }
+        /* Padding-bottom garantindo o respiro na base */
+        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 35px; }
         
         /* 1. CÂMERA E BOTÃO DE GIRO NO TOPO */
         .bloco-camera-wrapper { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 6px; flex-shrink: 0; }
         
-        /* Câmera 50% maior: de 140px para 210px */
         .camera-quadrada { 
             width: 210px; height: 210px; 
             border-radius: 12px; overflow: hidden; 
@@ -44,39 +44,39 @@
         #leitor-camera { width: 100%; height: 100%; }
         #leitor-camera video { object-fit: cover; }
 
-        /* 2. LAYOUT DIVIDIDO (MAIS COMPACTO PARA CABER A CÂMERA GRANDE) */
-        .foco-topo-split { display: flex; gap: 8px; margin-bottom: 6px; flex-shrink: 0; }
+        /* 2. LAYOUT DIVIDIDO SUPER COMPACTO */
+        .foco-topo-split { display: flex; gap: 6px; margin-bottom: 4px; flex-shrink: 0; }
         
         .col-esq { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-        /* Foto menor */
-        .foco-img-container { flex: 1; min-height: 50px; height: 50px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
+        /* Foto e nomes reduzidos verticalmente */
+        .foco-img-container { flex: 1; min-height: 40px; height: 40px; border: 2px solid #ddd; border-radius: 8px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; padding: 2px; }
         .foco-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .foco-nome { font-size: 12px; font-weight: bold; text-align: center; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0 2px; height: 40px; }
+        .foco-nome { font-size: 11px; font-weight: bold; text-align: center; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0 2px; height: 32px; }
 
-        .col-dir { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-        /* Box LOC e SKU menores */
-        .box-loc, .box-sku { flex: 1; border-radius: 8px; padding: 2px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .col-dir { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        /* Box LOC e SKU ultra reduzidos */
+        .box-loc, .box-sku { flex: 1; border-radius: 6px; padding: 1px 2px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .box-loc { background: var(--dark); color: white; border: 2px solid var(--dark); }
-        .box-loc .label { font-size: 10px; color: #ccc; font-weight: bold; }
-        .box-loc .valor { color: var(--warning); font-size: 20px; font-weight: 900; line-height: 1; margin-top: 1px; }
+        .box-loc .label { font-size: 9px; color: #ccc; font-weight: bold; }
+        .box-loc .valor { color: var(--warning); font-size: 16px; font-weight: 900; line-height: 1; margin-top: 0; }
         .box-sku { background: #f4f4f4; border: 2px solid #ccc; color: var(--dark); }
-        .box-sku .label { font-size: 10px; color: #666; font-weight: bold; }
-        .box-sku .valor { font-size: 16px; font-weight: 900; line-height: 1; margin-top: 1px; }
+        .box-sku .label { font-size: 9px; color: #666; font-weight: bold; }
+        .box-sku .valor { font-size: 14px; font-weight: 900; line-height: 1; margin-top: 0; }
         
         /* 3. PROGRESSO DIDÁTICO */
-        .progresso-wrapper { background: #e3f2fd; border: 2px solid #2196F3; border-radius: 8px; padding: 4px; text-align: center; margin-bottom: 6px; flex-shrink: 0; }
-        .progresso-numeros { font-size: 14px; font-weight: 900; color: #0d47a1; margin-bottom: 2px; }
+        .progresso-wrapper { background: #e3f2fd; border: 2px solid #2196F3; border-radius: 6px; padding: 4px; text-align: center; margin-bottom: 6px; flex-shrink: 0; }
+        .progresso-numeros { font-size: 13px; font-weight: 900; color: #0d47a1; margin-bottom: 2px; }
         .progresso-barra-fundo { background: #bbdefb; height: 8px; border-radius: 4px; overflow: hidden; width: 100%; }
         .progresso-barra-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.3s ease-in-out; }
 
-        /* 4. ÁREA DE INTERAÇÃO (Teclado Achatado) */
+        /* 4. ÁREA DE INTERAÇÃO */
         .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; justify-content: flex-end; }
         
         #bloco-teclado-foco { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
         .display-teclado { text-align: center; font-size: 20px; font-weight: 900; letter-spacing: 8px; color: var(--secondary); height: 26px; margin-bottom: 4px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
         
-        /* TECLADO ACHATADO VERTICALMENTE (Alturas de 32px e gap menor) */
+        /* TECLADO ACHATADO */
         .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 32px); gap: 4px; }
         .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 18px; font-weight: 900; border-radius: 6px; margin: 0; box-shadow: 0 2px 0 #ccc; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
@@ -132,7 +132,7 @@
                     <div class="icone-lupa">🔍</div>
                     <img id="foco-img" src="">
                 </div>
-                <div class="foco-nome" id="foco-nome">Nome do Produto em ate 4 linhas</div>
+                <div class="foco-nome" id="foco-nome">Nome do Produto em ate 3 linhas</div>
             </div>
             
             <div class="col-dir">
@@ -154,8 +154,8 @@
             </div>
         </div>
 
-        <div style="display: flex; gap: 6px; margin-bottom: 6px; flex-shrink: 0;">
-            <button id="btn-anterior" class="btn-secondary hidden" style="padding:8px 15px; font-size:16px;" onclick="voltarProdutoAnterior()">⬅️</button>
+        <div style="display: flex; gap: 6px; margin-bottom: 4px; flex-shrink: 0;">
+            <button id="btn-anterior" class="btn-secondary hidden" style="padding:8px 12px; font-size:14px;" onclick="voltarProdutoAnterior()">⬅️</button>
             <button class="btn-warning" style="flex:1; padding:8px; font-size:12px;" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
             <button id="btn-alternar-modo" class="btn-outline" style="flex:1; padding:8px; font-size:12px;" onclick="alternarModoLeitura()">⌨️ EAN</button>
         </div>
@@ -208,7 +208,7 @@
     let html5QrCode = null; 
     let modoLeituraPadrao = 'CAMERA'; 
     let isProcessingScan = false;
-    let cameraAtual = "environment"; // Inicia com a câmera traseira (environment)
+    let cameraAtual = "environment"; 
 
     window.onload = async function() {
         try { 
@@ -283,16 +283,10 @@
         renderizarItemFoco();
     }
 
-    // ================= ALTERNAR CÂMERA FRONT/REAR =================
     function girarCamera() {
-        // Alterna a variável da câmera
         cameraAtual = (cameraAtual === "environment") ? "user" : "environment";
         fecharCamera();
-        
-        // Dá um tempinho pro celular desligar o sensor antes de ligar de novo (evita travamento no LG K9)
-        setTimeout(() => {
-            abrirCamera();
-        }, 300);
+        setTimeout(() => { abrirCamera(); }, 300);
     }
 
     function renderizarItemFoco() {
@@ -368,14 +362,26 @@
         renderizarItemFoco();
     }
 
-    // ================== CÂMERA OFICIAL ==================
+    // ================== CÂMERA OFICIAL (COM FILTROS OTIMIZADOS) ==================
     function abrirCamera() {
         if (!html5QrCode) { html5QrCode = new Html5Qrcode("leitor-camera"); }
         
-        // Aumenta o tamanho da área de captura na câmera também, para ler mais rápido
-        const config = { fps: 10, qrbox: { width: 200, height: 200 } };
+        // DICA DE OURO: Limitamos aos formatos 1D (Barras comuns) para o celular processar muito mais rápido
+        const formatosPermitidos = [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E
+        ];
 
-        // Efeito Espelho: Apenas se a câmera frontal estiver ligada, inverte a imagem do contêiner pra não confundir
+        // Área de foco agora é um retângulo largo, ideal para códigos de barras EAN
+        const config = { 
+            fps: 15, 
+            qrbox: { width: 210, height: 120 },
+            formatsToSupport: formatosPermitidos 
+        };
+
         if (cameraAtual === "user") {
             document.getElementById("container-camera").style.transform = "scaleX(-1)";
         } else {
