@@ -25,46 +25,54 @@
         
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        /* ================= TELA DE FOCO (FOTO E TECLADO GIGANTES) ================= */
-        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; background: #fff; padding-bottom: 35px; /* Respiro Base */ gap: 10px; }
+        /* ================= TELA DE FOCO (NOVO LAYOUT 70/30) ================= */
+        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 15px; /* Respiro da base reduzido */ gap: 8px; }
         
-        /* 1. CABEÇALHO (Loc e Progresso) */
-        .foco-header { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        /* 1. METADE SUPERIOR (Foto 70% + Info 30%) */
+        .foco-topo-layout { flex: 1; display: flex; gap: 8px; min-height: 0; } /* min-height 0 pro flex funcionar sem quebrar a tela */
         
-        .box-loc { background: var(--dark); color: var(--warning); padding: 5px 20px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .box-loc .label { font-size: 10px; color: #ccc; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-        .box-loc .valor { font-size: 34px; font-weight: 900; line-height: 1; }
-        
-        .box-progresso { background: #e3f2fd; border: 2px solid var(--secondary); padding: 8px 15px; border-radius: 10px; text-align: center; }
-        .box-progresso .numeros { font-size: 20px; font-weight: 900; color: var(--secondary); margin-bottom: 4px; }
-        .barra-fundo { background: #bbdefb; height: 8px; border-radius: 4px; width: 100%; overflow: hidden; }
-        .barra-fill { background: var(--secondary); height: 100%; width: 0%; transition: width 0.3s ease-in-out; }
+        /* Coluna da Foto (70%) */
+        .col-foto { width: 70%; border: 3px solid #ddd; border-radius: 16px; background: #fafafa; display: flex; align-items: center; justify-content: center; padding: 5px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
+        .col-foto img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 
-        /* 2. FOTO GIGANTE (Engole o espaço da tela) */
-        .foco-foto-gigante { flex: 1; min-height: 0; border: 3px solid #ddd; border-radius: 16px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; padding: 10px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
-        .foco-foto-gigante img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .icone-lupa { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; }
-
-        /* 3. NOME DO PRODUTO E SKU */
-        .foco-info-texto { text-align: center; flex-shrink: 0; background: #f9f9f9; padding: 8px; border-radius: 10px; border: 1px solid #eee; }
-        .foco-nome { font-size: 15px; font-weight: bold; color: var(--dark); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
-        .foco-sku { font-size: 13px; color: #666; font-weight: bold; text-transform: uppercase; }
-
-        /* 4. TECLADO GIGANTE (2x5) */
-        .area-teclado { flex-shrink: 0; }
-        .teclado-titulo { font-size: 12px; font-weight: bold; color: #777; text-align: center; margin-bottom: 6px; text-transform: uppercase; }
+        /* Coluna de Informações (30%) */
+        .col-info { width: 30%; display: flex; flex-direction: column; gap: 6px; }
         
-        .grid-teclado-gigante { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 65px); gap: 8px; }
-        .btn-num { background: #fff; border: 2px solid #ccc; color: #111; font-size: 32px; font-weight: 900; border-radius: 12px; margin: 0; box-shadow: 0 4px 0 #bbb; display: flex; align-items: center; justify-content: center; }
+        /* Box de Endereço */
+        .box-loc { background: var(--dark); color: var(--warning); border-radius: 10px; text-align: center; padding: 6px 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .box-loc .label { font-size: 9px; color: #ccc; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+        .box-loc .valor { font-size: 26px; font-weight: 900; line-height: 1; }
+
+        /* Box de Quantidade (Lidos/Total) */
+        .box-qtd { background: #e3f2fd; border: 2px solid var(--secondary); border-radius: 8px; text-align: center; padding: 6px 2px; }
+        .box-qtd .label { font-size: 9px; color: var(--secondary); font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+        .box-qtd .valor { font-size: 18px; font-weight: 900; color: var(--secondary); line-height: 1; }
+
+        /* Box SKU */
+        .box-sku { background: #f4f4f4; border: 2px solid #ccc; border-radius: 8px; text-align: center; padding: 4px 2px; }
+        .box-sku .label { font-size: 9px; color: #666; font-weight: bold; text-transform: uppercase; }
+        .box-sku .valor { font-size: 11px; font-weight: 900; color: var(--dark); margin-top: 2px; word-break: break-all; }
+
+        /* Nome do Produto (Ocupando o resto do espaço de baixo) */
+        .foco-nome { font-size: 10px; font-weight: bold; color: var(--dark); line-height: 1.2; text-align: center; display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; margin-top: auto; padding: 4px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
+
+        /* 2. ÁREA DO TECLADO E BOTÕES (Metade Inferior) */
+        .area-inferior { flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; }
+        
+        .teclado-titulo { font-size: 11px; font-weight: bold; color: #777; text-align: center; text-transform: uppercase; }
+        
+        /* Teclado Gigante 2x5 */
+        .grid-teclado-gigante { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 60px); gap: 6px; }
+        .btn-num { background: #fff; border: 2px solid #ccc; color: #111; font-size: 28px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 4px 0 #bbb; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #e0e0e0; box-shadow: none; transform: translateY(4px); }
 
-        /* Blocos Alternativos ao Teclado */
-        #bloco-sem-ean, #bloco-concluido { height: 138px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f4f4f4; border-radius: 12px; border: 2px dashed #ccc; padding: 10px; }
-        #bloco-sem-ean button, #bloco-concluido button { padding: 20px; font-size: 18px; width: 100%; border-radius: 12px; }
+        /* Blocos Especiais Ocultos (Sem EAN / Concluído) */
+        #bloco-sem-ean, #bloco-concluido { height: 126px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f4f4f4; border-radius: 12px; border: 2px dashed #ccc; padding: 10px; }
+        #bloco-sem-ean button, #bloco-concluido button { padding: 15px; font-size: 16px; width: 100%; border-radius: 10px; }
 
-        /* 5. BOTÕES DE NAVEGAÇÃO (Base) */
-        .row-nav { display: flex; gap: 8px; height: 50px; flex-shrink: 0; margin-top: 4px; }
-        .row-nav button { flex: 1; font-size: 15px; }
+        /* 3. BOTÕES DE NAVEGAÇÃO DA BASE */
+        .row-nav { display: flex; gap: 8px; height: 45px; }
+        .row-nav button { flex: 1; font-size: 14px; }
 
         /* Alertas Customizados */
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 14px; border-radius: 8px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
@@ -79,18 +87,14 @@
 
 <div id="alerta-customizado">Mensagem</div>
 
-<div id="modal-foto-full" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100dvh; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:15px; box-sizing:border-box;">
-    <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-        <img id="img-full" src="" style="max-width:100%; max-height:100%; object-fit:contain;">
-    </div>
-    <button class="btn-danger" style="padding:20px; font-size:18px; margin-top:15px; font-weight:900;" onclick="fecharFotoTelaCheia()">❌ FECHAR FOTO</button>
-</div>
-
 <div id="app-ui" style="height: 100dvh;">
     <div class="container" id="tela-inicial">
         <h1>🛒 Separador (Picking)</h1>
         <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco...</p>
-        <button id="btn-iniciar" class="btn-primary hidden" style="padding:25px; font-size:20px; width:100%; margin-top:30px; box-shadow: 0 6px 0 #388E3C;" onclick="carregarPedidosFila();">📋 VER PEDIDOS</button>
+        
+        <button id="btn-continuar" class="btn-warning hidden" style="padding:20px; font-size:18px; width:100%; margin-top:15px; box-shadow: 0 6px 0 #E65100; color: white;" onclick="continuarSeparacaoSalva();">▶️ CONTINUAR PEDIDO ATUAL</button>
+        
+        <button id="btn-iniciar" class="btn-primary hidden" style="padding:20px; font-size:18px; width:100%; margin-top:15px; box-shadow: 0 6px 0 #388E3C;" onclick="carregarPedidosFila();">📋 VER NOVOS PEDIDOS</button>
     </div>
 
     <div class="container hidden" id="tela-lista-pedidos">
@@ -104,30 +108,29 @@
 
     <div class="tela-foco hidden" id="tela-separacao-foco">
         
-        <div class="foco-header">
-            <div class="box-loc">
-                <div class="label">Endereço</div>
-                <div class="valor" id="foco-loc">A1</div>
+        <div class="foco-topo-layout">
+            <div class="col-foto">
+                <img id="foco-img" src="">
             </div>
-            <div class="box-progresso">
-                <div class="numeros" id="progresso-texto">0 / 0</div>
-                <div class="barra-fundo">
-                    <div class="barra-fill" id="progresso-fill"></div>
+
+            <div class="col-info">
+                <div class="box-loc">
+                    <div class="label">Endereço</div>
+                    <div class="valor" id="foco-loc">A1</div>
                 </div>
+                <div class="box-qtd">
+                    <div class="label">Qtd. Lida</div>
+                    <div class="valor" id="progresso-texto">0/0</div>
+                </div>
+                <div class="box-sku">
+                    <div class="label">SKU / Cód</div>
+                    <div class="valor" id="foco-sku">---</div>
+                </div>
+                <div class="foco-nome" id="foco-nome">Nome do Produto</div>
             </div>
         </div>
 
-        <div class="foco-foto-gigante" onclick="abrirFotoTelaCheia()">
-            <div class="icone-lupa">🔍</div>
-            <img id="foco-img" src="">
-        </div>
-
-        <div class="foco-info-texto">
-            <div class="foco-nome" id="foco-nome">Nome do Produto</div>
-            <div class="foco-sku" id="foco-sku">SKU: ---</div>
-        </div>
-
-        <div class="area-teclado">
+        <div class="area-inferior">
             
             <div id="bloco-teclado-foco">
                 <div class="teclado-titulo">Toque no último dígito do código:</div>
@@ -146,21 +149,21 @@
             </div>
 
             <div id="bloco-sem-ean" class="hidden">
-                <div style="font-size: 24px; margin-bottom: 5px;">⚠️ Sem EAN cadastrado</div>
+                <div style="font-size: 20px; margin-bottom: 5px; font-weight: bold;">⚠️ Sem EAN cadastrado</div>
                 <button class="btn-primary" style="box-shadow: 0 4px 0 #388E3C;" onclick="registrarUnidadeFoco()">➕ ADICIONAR UNIDADE</button>
             </div>
 
             <div id="bloco-concluido" class="hidden" style="background: #e8f5e9; border-color: var(--primary);">
-                <div style="font-size: 24px; margin-bottom: 5px;">✅ Produto Finalizado</div>
+                <div style="font-size: 20px; margin-bottom: 5px; font-weight: bold; color: var(--primary);">✅ Produto Finalizado</div>
                 <button class="btn-danger" onclick="refazerLeituraItem()">🔄 Refazer Contagem</button>
             </div>
 
-        </div>
+            <div class="row-nav">
+                <button class="btn-danger" style="flex: 0.8;" onclick="if(confirm('Sair? O pedido ficará salvo.')) abrirTela('tela-inicial');">❌ Sair</button>
+                <button id="btn-anterior" class="btn-secondary hidden" onclick="voltarProdutoAnterior()">⬅️ Anterior</button>
+                <button class="btn-warning" style="flex: 1.2;" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
+            </div>
 
-        <div class="row-nav">
-            <button class="btn-danger" style="flex: 0.8;" onclick="if(confirm('Sair da separação?')) abrirTela('tela-inicial');">❌ Sair</button>
-            <button id="btn-anterior" class="btn-secondary hidden" onclick="voltarProdutoAnterior()">⬅️ Anterior</button>
-            <button class="btn-warning" style="flex: 1.2;" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
         </div>
 
     </div>
@@ -181,14 +184,19 @@
             const resposta = await fetch('../site/bancodedados.json'); bancoDeDados = await resposta.json(); 
             let modificacoesLocais = JSON.parse(localStorage.getItem('estoque_modificacoes') || '{}');
             bancoDeDados.forEach(p => { let sku = p.codigo || p["Código"]; if(sku && modificacoesLocais[sku]) Object.assign(p, modificacoesLocais[sku]); });
+            
             document.getElementById('status-db').innerText = `✅ Banco Preparado`; document.getElementById('status-db').style.color = "green";
             document.getElementById('btn-iniciar').classList.remove('hidden');
+            
+            // Verifica se tem pedido salvo na memória ao iniciar
+            verificarEstadoSalvo();
         } catch (erro) { document.getElementById('status-db').innerText = "❌ Erro ao ler Banco Local."; }
     };
 
     function abrirTela(id) { 
         ['tela-inicial', 'tela-lista-pedidos', 'tela-separacao-foco', 'tela-conclusao'].forEach(t => document.getElementById(t).classList.add('hidden')); 
         document.getElementById(id).classList.remove('hidden'); 
+        if (id === 'tela-inicial') verificarEstadoSalvo(); // Atualiza botões da tela inicial sempre que voltar pra lá
     }
     
     function mostrarAlerta(msg, tipo = 'sucesso') { 
@@ -207,14 +215,42 @@
         } catch(e){} 
     }
 
-    function abrirFotoTelaCheia() {
-        let imgSrc = document.getElementById('foco-img').src;
-        if(imgSrc && !imgSrc.includes("Sem%20Foto")) {
-            document.getElementById('img-full').src = imgSrc;
-            document.getElementById('modal-foto-full').classList.remove('hidden');
+    // ================== SISTEMA DE SALVAMENTO (LOCAL STORAGE) ==================
+    function salvarProgresso() {
+        if (!pedidoAtual) return;
+        const estado = {
+            pedidoAtual: pedidoAtual,
+            listaDeSeparacao: listaDeSeparacao,
+            indexAtualPicking: indexAtualPicking
+        };
+        localStorage.setItem('estadoPickingSalvo', JSON.stringify(estado));
+    }
+
+    function limparProgresso() {
+        localStorage.removeItem('estadoPickingSalvo');
+    }
+
+    function verificarEstadoSalvo() {
+        const salvo = localStorage.getItem('estadoPickingSalvo');
+        if (salvo) {
+            document.getElementById('btn-continuar').classList.remove('hidden');
+        } else {
+            document.getElementById('btn-continuar').classList.add('hidden');
         }
     }
-    function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
+
+    function continuarSeparacaoSalva() {
+        inicializarAudio();
+        const salvo = JSON.parse(localStorage.getItem('estadoPickingSalvo'));
+        if (salvo) {
+            pedidoAtual = salvo.pedidoAtual;
+            listaDeSeparacao = salvo.listaDeSeparacao;
+            indexAtualPicking = salvo.indexAtualPicking;
+            abrirTela('tela-separacao-foco');
+            renderizarItemFoco();
+        }
+    }
+    // =========================================================================
 
     async function carregarPedidosFila() {
         inicializarAudio(); abrirTela('tela-lista-pedidos');
@@ -240,6 +276,8 @@
         listaDeSeparacao = []; pedidoAtual = pedido; 
         pedido.items.forEach(item => { if (item.foundProduct) listaDeSeparacao.push({ quantidadeTotal: item.qtd, unidadesLidas: 0, nomePedido: item.nomeOriginal, produtoDb: item.foundProduct, localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "SEM LOC", status: 'pendente' }); });
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); indexAtualPicking = 0; 
+        
+        salvarProgresso(); // Salva logo ao iniciar
         abrirTela('tela-separacao-foco'); renderizarItemFoco();
     }
 
@@ -255,7 +293,7 @@
         let hasEan = rawEan.length > 0;
 
         document.getElementById('foco-loc').innerText = `${item.localizacao}`; 
-        document.getElementById('foco-sku').innerText = `SKU: ${skuItem}`;
+        document.getElementById('foco-sku').innerText = `${skuItem}`;
         document.getElementById('foco-nome').innerText = item.nomePedido; 
         
         let imgTag = document.getElementById('foco-img');
@@ -265,12 +303,9 @@
         let btnAnterior = document.getElementById('btn-anterior');
         if (indexAtualPicking > 0) { btnAnterior.classList.remove('hidden'); } else { btnAnterior.classList.add('hidden'); }
 
-        let textoProgresso = document.getElementById('progresso-texto');
-        let barraProgresso = document.getElementById('progresso-fill');
-        textoProgresso.innerText = `${item.unidadesLidas} / ${item.quantidadeTotal}`;
-        barraProgresso.style.width = `${(item.unidadesLidas / item.quantidadeTotal) * 100}%`;
+        document.getElementById('progresso-texto').innerText = `${item.unidadesLidas} / ${item.quantidadeTotal}`;
         
-        // Esconde Painéis
+        // Esconde todos os blocos inferiores antes de decidir qual mostrar
         document.getElementById('bloco-teclado-foco').classList.add('hidden');
         document.getElementById('bloco-sem-ean').classList.add('hidden');
         document.getElementById('bloco-concluido').classList.add('hidden');
@@ -282,6 +317,8 @@
         } else {
             document.getElementById('bloco-teclado-foco').classList.remove('hidden');
         }
+
+        salvarProgresso(); // Salva a cada renderização (item novo, unidade nova, etc)
     }
 
     function mandarParaFimDaFila() {
@@ -292,12 +329,15 @@
         }
         let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0]; 
         listaDeSeparacao.push(itemAtual); 
+        
+        salvarProgresso(); // Salva a ordem nova
         renderizarItemFoco(); 
     }
 
     function voltarProdutoAnterior() {
         if (indexAtualPicking > 0) { 
             indexAtualPicking--; 
+            salvarProgresso();
             renderizarItemFoco(); 
         }
     }
@@ -305,6 +345,7 @@
     function refazerLeituraItem() {
         listaDeSeparacao[indexAtualPicking].unidadesLidas = 0;
         listaDeSeparacao[indexAtualPicking].status = 'pendente';
+        salvarProgresso();
         renderizarItemFoco();
     }
 
@@ -318,7 +359,7 @@
         if (produtoEsperadoDb) {
             let eanEsperado = String(produtoEsperadoDb.gtin || produtoEsperadoDb["GTIN/EAN"] || "").replace(/\D/g, "");
             
-            // Verifica se o ÚLTIMO dígito bate com a tecla apertada
+            // Verifica se o ÚLTIMO dígito bate
             if (eanEsperado.endsWith(digito)) {
                 registrarUnidadeFoco();
                 return;
@@ -342,10 +383,12 @@
             mostrarAlerta(`✅ Lidos: ${item.unidadesLidas} / ${item.quantidadeTotal}`, "sucesso");
         }
         
+        salvarProgresso(); // Salva os itens lidos e o status
         renderizarItemFoco(); 
     }
 
     function finalizarPedido() {
+        limparProgresso(); // Limpa a memória quando o pedido acaba
         let areaCheck = document.getElementById('area-checklist'); areaCheck.innerHTML = '';
         listaDeSeparacao.forEach(i => { areaCheck.innerHTML += `<div class="checklist-item"><span>${i.nomePedido.substring(0,25)}...</span> <span>${i.quantidadeTotal}x</span></div>`; });
         abrirTela('tela-conclusao');
