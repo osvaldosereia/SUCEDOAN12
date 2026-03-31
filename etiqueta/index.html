@@ -294,16 +294,63 @@
     }
 
     // =========================================================
-    // FUNÇÕES DE BOTÕES FALTANTES (ESQUELETOS)
+    // FILA DE SEPARAÇÃO E INÍCIO DO PEDIDO
     // =========================================================
-    // Como o seu código original foi cortado, essas funções foram
-    // criadas de forma básica para evitar erros. Preencha com sua lógica.
-
     function carregarPedidosFila() {
-        mostrarAlerta("Carregando pedidos da fila...", "aviso");
         abrirTela('tela-lista-pedidos');
+        
+        const areaLista = document.getElementById('area-lista-pedidos');
+        areaLista.innerHTML = ''; 
+
+        // Usa os pedidos na fila. Se não tiver, usa o banco de dados direto para testar.
+        let listaParaExibir = pedidosFila.length > 0 ? pedidosFila : bancoDeDados;
+
+        if (listaParaExibir.length === 0) {
+            areaLista.innerHTML = '<p style="text-align:center; font-weight:bold;">Nenhum pedido encontrado no momento.</p>';
+            return;
+        }
+
+        // Cria os blocos visuais para cada item da lista
+        listaParaExibir.forEach((item, index) => {
+            let divItem = document.createElement('div');
+            divItem.className = 'resultado-item';
+            
+            // Busca identificadores dinâmicos no seu JSON
+            let identificador = item.pedido || item.numero || item.codigo || item["Código"] || `Item #${index + 1}`;
+            let descricao = item.nome || item.descricao || item.cliente || 'Sem descrição cadastrada';
+
+            divItem.innerHTML = `📦 <strong>${identificador}</strong> <br> <span style="font-size: 12px; color: #555;">${descricao}</span>`;
+            
+            divItem.onclick = function() {
+                iniciarSeparacao(item);
+            };
+
+            areaLista.appendChild(divItem);
+        });
     }
 
+    function iniciarSeparacao(itemSelecionado) {
+        pedidoAtual = itemSelecionado;
+        mostrarAlerta("Iniciando separação...");
+        abrirTela('tela-separacao-foco');
+        
+        // Aqui atualizaremos os elementos HTML com os dados de "pedidoAtual"
+        document.getElementById('foco-nome').innerText = itemSelecionado.nome || itemSelecionado.descricao || 'Produto sem nome';
+        document.getElementById('foco-sku').innerText = itemSelecionado.codigo || itemSelecionado["Código"] || 'Sem Código';
+        document.getElementById('foco-loc').innerText = itemSelecionado.localizacao || itemSelecionado.endereco || '--';
+        
+        // Opcional: puxar a imagem do produto se existir no JSON
+        if(itemSelecionado.imagem || itemSelecionado.foto) {
+            document.getElementById('foco-img').src = itemSelecionado.imagem || itemSelecionado.foto;
+        } else {
+            document.getElementById('foco-img').src = ''; // Limpa a foto se não tiver
+        }
+    }
+
+    // =========================================================
+    // FUNÇÕES DE BOTÕES DA TELA DE FOCO (ESQUELETOS)
+    // =========================================================
+    
     function voltarProdutoAnterior() {
         mostrarAlerta("Ação: Voltar para o produto anterior", "aviso");
     }
