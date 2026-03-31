@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Atualizador de Cadastro PRO</title>
+    <style>
+        :root { --primary: #4CAF50; --secondary: #2196F3; --danger: #f44336; --warning: #ff9800; --dark: #111; --light: #f4f4f4; --gray: #ddd; }
+        body, html { font-family: Arial, sans-serif; background-color: var(--light); margin: 0; padding: 0; height: 100%; color: var(--dark); overflow: hidden; }
+        
+        button { border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        button:active { transform: scale(0.96); }
+        .btn-primary { background-color: var(--primary); } .btn-secondary { background-color: var(--secondary); }
+        .btn-warning { background-color: var(--warning); color: #000; }
+        
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100vh; overflow-y: auto; box-sizing: border-box; }
+        .hidden { display: none !important; }
+        h1, h2 { text-align: center; margin-top: 0; color: var(--dark); }
+        
+        /* Inputs e Formulários */
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 13px; font-weight: bold; color: #555; margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid var(--gray); border-radius: 8px; font-size: 16px; box-sizing: border-box; background: #fff; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--secondary); background: #e3f2fd; }
+        
+        /* Linha Dividida (ex: Gondola e Prateleira) */
+        .row-split { display: flex; gap: 10px; }
+        .row-split .form-group { flex: 1; }
+
+        /* Lista de Resultados da Busca */
+        .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; }
+
+        /* Imagem do Produto na Edição */
+        .foto-container { width: 100%; height: 150px; background: #fafafa; border: 2px dashed #ccc; border-radius: 12px; display: flex; justify-content: center; align-items: center; margin-bottom: 15px; overflow: hidden; }
+        .foto-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        /* Alertas Customizados */
+        #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div id="alerta-customizado">Mensagem</div>
+
+<div class="container" id="tela-busca">
+    <h1>🔍 Buscar Produto</h1>
+    <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco de dados...</p>
+    
+    <div id="area-pesquisa" class="hidden">
+        <div class="form-group">
+            <label>Código de Barras (EAN), SKU ou Nome</label>
+            <input type="text" id="input-busca" placeholder="Bipe aqui ou digite..." onkeypress="verificarEnter(event)">
+        </div>
+        <button class="btn-primary" style="padding:15px; width:100%; font-size:18px; margin-bottom: 15px;" onclick="realizarBusca()">BUSCAR PRODUTO</button>
+        
+        <div id="lista-resultados"></div>
+    </div>
+</div>
+
+<div class="container hidden" id="tela-edicao">
+    <h2>✏️ Editar Cadastro</h2>
+    
+    <div class="foto-container">
+        <img id="ed-foto" src="" alt="Foto do Produto">
+    </div>
+
+    <div class="form-group">
+        <label>Nome / Descrição</label>
+        <input type="text" id="ed-nome">
+    </div>
+
+    <div class="row-split">
+        <div class="form-group">
+            <label>SKU (Código)</label>
+            <input type="text" id="ed-sku">
+        </div>
+        <div class="form-group">
+            <label>EAN (Cód. Barras)</label>
+            <input type="text" id="ed-ean">
+        </div>
+    </div>
+
+    <div class="row-split">
+        <div class="form-group">
+            <label>Estoque Atual</label>
+            <input type="number" id="ed-estoque" min="0">
+        </div>
+        <div class="form-group">
+            <label>Data de Validade</label>
+            <input type="date" id="ed-validade">
+        </div>
+    </div>
+
+    <div class="row-split">
+        <div class="form-group">
+            <label>Gôndola</label>
+            <select id="ed-gondola"></select>
+        </div>
+        <div class="form-group">
+            <label>Prateleira</label>
+            <select id="ed-prateleira"></select>
+        </div>
+    </div>
+
+    <button class="btn-warning" style="padding:18px; width:100%; font-size:18px; margin-top: 15px; box-shadow: 0 4px 0 #e65100;" onclick="exportarProdutoCSV()">
+        💾 SALVAR E EXPORTAR CSV
+    </button>
+    
+    <button class="btn-secondary" style="padding:15px; width:100%; font-size:16px; margin-top: 10px;" onclick="abrirTelaBusca()">
+        🔙 NOVA BUSCA
+    </button>
+</div>
+
+<script>
+    let bancoDeDados = [];
+    let produtoSendoEditado = null;
+
+    // ================== 1. INICIALIZAÇÃO ==================
+    window.onload = async function() {
+        gerarOpcoesLocalizacao(); // Preenche os <select> de Gôndola e Prateleira
+        
+        try { 
+            // Carrega o JSON. Ajuste o caminho se necessário
+            const resposta = await fetch('../site/bancodedados.json'); 
+            bancoDeDados = await resposta.json(); 
+            
+            document.getElementById('status-db').innerText = `✅ Banco Preparado (${bancoDeDados.length} itens)`; 
+            document.getElementById('status-db').style.color = "green";
+            document.getElementById('area-pesquisa').classList.remove('hidden');
+            
+            // Foca no input para já receber bip do leitor
+            document.getElementById('input-busca').focus();
+        } catch (erro) { 
+            document.getElementById('status-db').innerText = "❌ Erro ao ler bancodedados.json"; 
+        }
+    };
+
+    // Preenche os Selects de Gôndola (00 a 20) e Prateleira (A1 a F2)
+    function gerarOpcoesLocalizacao() {
+        let selectGondola = document.getElementById('ed-gondola');
+        let selectPrateleira = document.getElementById('ed-prateleira');
+        
+        // Gondolas 00 a 20
+        selectGondola.innerHTML = '<option value="">Selecione</option>';
+        for(let i = 0; i <= 20; i++) {
+            let num = i.toString().padStart(2, '0'); // Garante 2 dígitos (00, 01, 02...)
+            selectGondola.innerHTML += `<option value="${num}">Gôndola ${num}</option>`;
+        }
+
+        // Prateleiras A1 a F2
+        selectPrateleira.innerHTML = '<option value="">Selecione</option>';
+        const letras = ['A','B','C','D','E','F'];
+        letras.forEach(letra => {
+            selectPrateleira.innerHTML += `<option value="${letra}1">Prat. ${letra}1</option>`;
+            selectPrateleira.innerHTML += `<option value="${letra}2">Prat. ${letra}2</option>`;
+        });
+    }
+
+    // ================== 2. NAVEGAÇÃO E ALERTAS ==================
+    function mostrarAlerta(msg, tipo = 'sucesso') { 
+        let a = document.getElementById('alerta-customizado'); 
+        a.innerText = msg; a.className = ''; 
+        if(tipo === 'erro') a.classList.add('alerta-erro'); 
+        else a.classList.add('alerta-sucesso'); 
+        a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 3000); 
+    }
+
+    function abrirTelaBusca() {
+        document.getElementById('tela-edicao').classList.add('hidden');
+        document.getElementById('tela-busca').classList.remove('hidden');
+        document.getElementById('input-busca').value = '';
+        document.getElementById('lista-resultados').innerHTML = '';
+        document.getElementById('input-busca').focus();
+    }
+
+    // ================== 3. LÓGICA DE BUSCA ==================
+    // Permite que o Enter do leitor de código de barras dispare a busca
+    function verificarEnter(event) {
+        if (event.key === "Enter") { realizarBusca(); }
+    }
+
+    function realizarBusca() {
+        let termo = document.getElementById('input-busca').value.trim().toLowerCase();
+        let areaResultados = document.getElementById('lista-resultados');
+        areaResultados.innerHTML = '';
+
+        if(termo.length < 2) {
+            mostrarAlerta("Digite pelo menos 2 caracteres.", "erro");
+            return;
+        }
+
+        // Filtra buscando em SKU, EAN ou Nome
+        let encontrados = bancoDeDados.filter(p => {
+            let sku = String(p.codigo || p["Código"] || "").toLowerCase();
+            let ean = String(p.gtin || p["GTIN/EAN"] || "").toLowerCase();
+            let nome = String(p.nome || p["Descrição"] || "").toLowerCase();
+            
+            return sku.includes(termo) || ean.includes(termo) || nome.includes(termo);
+        });
+
+        if (encontrados.length === 0) {
+            mostrarAlerta("Nenhum produto encontrado!", "erro");
+        } else if (encontrados.length === 1) {
+            // Se achou só um, já abre a edição direto (perfeito para bip de leitor)
+            prepararEdicao(encontrados[0]);
+        } else {
+            // Se achou mais de um, cria uma lista clicável
+            encontrados.forEach(prod => {
+                let div = document.createElement('div'); 
+                div.className = 'resultado-item'; 
+                let nomeExib = prod.nome || prod["Descrição"] || "Sem nome";
+                div.innerHTML = `${nomeExib} <br><span style="font-size:12px; color:#555;">SKU: ${prod.codigo || prod["Código"]} | EAN: ${prod.gtin || prod["GTIN/EAN"]}</span>`;
+                div.onclick = () => prepararEdicao(prod);
+                areaResultados.appendChild(div);
+            });
+        }
+    }
+
+    // ================== 4. PREENCHER TELA DE EDIÇÃO ==================
+    function prepararEdicao(produto) {
+        produtoSendoEditado = produto;
+        let skuStr = produto.codigo || produto["Código"] || "";
+        let locAtual = produto.localizacao || produto["Localização"] || "";
+
+        // 1. Imagem (tenta carregar, se falhar mostra um placeholder de "Sem Foto")
+        let imgTag = document.getElementById('ed-foto');
+        imgTag.src = `../site/img/produtos/${skuStr}.webp`;
+        imgTag.onerror = function() { 
+            this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; 
+        };
+
+        // 2. Textos Básicos
+        document.getElementById('ed-nome').value = produto.nome || produto["Descrição"] || "";
+        document.getElementById('ed-sku').value = skuStr;
+        document.getElementById('ed-ean').value = produto.gtin || produto["GTIN/EAN"] || "";
+        document.getElementById('ed-estoque').value = produto.estoque || produto["Estoque"] || 0;
+        
+        // Se houver validade anterior no seu JSON, adicione o map aqui. Como não é padrão, deixo em branco
+        document.getElementById('ed-validade').value = produto.validade || ""; 
+
+        // 3. Lógica para separar Gôndola e Prateleira da String de Localização (ex: "05-A1")
+        let gondola = ""; let prateleira = "";
+        if (locAtual.includes("-")) {
+            let partes = locAtual.split("-");
+            gondola = partes[0].trim();
+            prateleira = partes[1].trim();
+        }
+        document.getElementById('ed-gondola').value = gondola;
+        document.getElementById('ed-prateleira').value = prateleira;
+
+        // Troca as telas
+        document.getElementById('tela-busca').classList.add('hidden');
+        document.getElementById('tela-edicao').classList.remove('hidden');
+    }
+
+    // ================== 5. EXPORTAÇÃO CSV ==================
+    function exportarProdutoCSV() {
+        // Coletar dados da tela
+        let nomeEditado = document.getElementById('ed-nome').value;
+        let skuEditado = document.getElementById('ed-sku').value;
+        let eanEditado = document.getElementById('ed-ean').value;
+        let estoqueEditado = document.getElementById('ed-estoque').value;
+        let validadeEditada = document.getElementById('ed-validade').value;
+        
+        let gondolaEditada = document.getElementById('ed-gondola').value;
+        let prateleiraEditada = document.getElementById('ed-prateleira').value;
+        let locFinal = (gondolaEditada && prateleiraEditada) ? `${gondolaEditada}-${prateleiraEditada}` : "";
+
+        // Montar o cabeçalho do CSV. (Ajuste esses nomes para bater exato com a importação do seu sistema)
+        let csvContent = "Código;Descrição;GTIN/EAN;Estoque;Localização;Data Validade\n";
+        
+        // Montar a linha de dados (usando aspas para evitar problemas com ponto e vírgula dentro dos nomes)
+        csvContent += `"${skuEditado}";"${nomeEditado}";"${eanEditado}";"${estoqueEditado}";"${locFinal}";"${validadeEditada}"\n`;
+
+        // Criar o arquivo virtual em memória (Blob) e forçar o Download
+        let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        let link = document.createElement("a");
+        let url = URL.createObjectURL(blob);
+        
+        link.setAttribute("href", url);
+        link.setAttribute("download", `produto_atualizado_${skuEditado}.csv`);
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        mostrarAlerta("✅ Arquivo CSV gerado e baixado no celular!", "sucesso");
+        
+        // Opcional: Voltar para tela de busca após 1 segundo
+        setTimeout(abrirTelaBusca, 1500);
+    }
+
+</script>
+</body>
+</html>
