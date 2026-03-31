@@ -806,8 +806,9 @@ const TERMOS_CATEGORIAS = {
 // BLINDAGEM: forçando String() para evitar que produtos com nome/id somente de números quebrem o código
 function norm(str) { return str ? String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 function formatName(s) { return s ? String(s).toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
-function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-
+function fmt(v) { 
+    return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); 
+}
 function converterDataValidade(dataStr) {
     if (!dataStr) return new Date(8640000000000000).getTime(); 
     let partes = dataStr.split('/');
@@ -1671,7 +1672,17 @@ let imgAreaClass = 'u-img-area';
     
     if (isKit || isBasket) {
         let precoDe = 0;
-        if (item.produtos) { item.produtos.forEach(s => { let [q, r] = s.split('x'); let p = STATE.prods.find(x => x.id === r.trim()); if (p) { precoDe += p.price * parseInt(q); }}); }
+        if (item.produtos) { 
+            item.produtos.forEach(s => { 
+                let partes = String(s).split('x'); 
+                if (partes.length > 1) {
+                    let q = partes[0]; 
+                    let r = partes[1]; 
+                    let p = STATE.prods.find(x => String(x.id) === r.trim()); 
+                    if (p) { precoDe += p.price * parseInt(q); }
+                }
+            }); 
+        }
         if (isKit) {
             onClick = `openKitLateralView('${id}', 'COMBO')`;
             if (precoDe > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`; else if(!tagHtml) tagHtml = `<div class="kit-tag">KIT</div>`; 
@@ -1681,17 +1692,6 @@ let imgAreaClass = 'u-img-area';
              addBtnHtml = `<button class="card-add-btn-wide" style="background:var(--c-bd); color:var(--c-s);">ESGOTADO</button>`;
         } else {
              addBtnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClick}">Ver Produtos</button>`;
-        }
-    } else {
-        onClick = isEsgotado ? '' : `openQuickView('${id}')`;
-        // Só exibe o traço de preço antigo se ele de fato for maior que o preço atual (garante que itens normais não fiquem com 2 preços)
-        if (item.oldPrice && item.oldPrice > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
-        if (isEsgotado) {
-            addBtnHtml = `<div style="position:absolute; bottom:8px; right:8px; background:var(--c-t); color:#fff; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:600;">ESGOTADO</div>`;
-        } else if (pPrice) {
-            let btnContent = qty > 0 ? `<span style="font-size:0.95rem;">${qty}</span>` : '+';
-            let btnClass = qty > 0 ? 'card-add-btn has-item add-btn-' + id : 'card-add-btn add-btn-' + id;
-            addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
         }
     }
 
