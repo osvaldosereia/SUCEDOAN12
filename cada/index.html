@@ -126,7 +126,7 @@
     let produtoSendoEditado = null;
     let scannerCamera = null;
 
-    // As 59 colunas exatas exigidas pelo seu sistema (retiradas do seu anexo CSV)
+    // As 59 colunas exatas exigidas pelo seu sistema
     const colunasCSVOficiais = [
         "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo",
         "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor",
@@ -277,7 +277,6 @@
         let locAtual = produtoSendoEditado.localizacao || produtoSendoEditado["Localização"] || "";
         let estoque = produtoSendoEditado.estoque || produtoSendoEditado["Estoque"] || 0;
         
-        // Tratar vírgulas de estoque se vierem do JSON
         if(typeof estoque === 'string') estoque = estoque.replace(",", ".");
 
         let imgTag = document.getElementById('ed-foto');
@@ -290,7 +289,17 @@
         document.getElementById('ed-sku').value = skuStr;
         document.getElementById('ed-ean').value = produtoSendoEditado.gtin || produtoSendoEditado["GTIN/EAN"] || "";
         document.getElementById('ed-estoque').value = parseFloat(estoque);
-        document.getElementById('ed-validade').value = produtoSendoEditado.validade || produtoSendoEditado["Data Validade"] || ""; 
+
+        // Lógica da Data: Converter DD/MM/YYYY do JSON para YYYY-MM-DD do Input HTML
+        let dataVal = produtoSendoEditado.validade || produtoSendoEditado["Data Validade"] || "";
+        if (dataVal.includes("/")) {
+            let partes = dataVal.split("/");
+            if (partes.length === 3) {
+                // Monta YYYY-MM-DD
+                dataVal = `${partes[2]}-${partes[1]}-${partes[0]}`; 
+            }
+        }
+        document.getElementById('ed-validade').value = dataVal; 
 
         let gondola = ""; let prateleira = "";
         if (locAtual.includes("-")) {
@@ -308,50 +317,66 @@
 
     // ================== 5. EXPORTAÇÃO CSV IDÊNTICA AO MODELO ==================
     function exportarProdutoCSV() {
-        // 1. Coletar e tratar dados da tela
+        // 1. Coletar dados da tela
         let nomeEditado = document.getElementById('ed-nome').value;
         let skuEditado = document.getElementById('ed-sku').value;
         let eanEditado = document.getElementById('ed-ean').value;
         let estoqueEditado = document.getElementById('ed-estoque').value;
-        let validadeEditada = document.getElementById('ed-validade').value;
         
-        // O estoque na plataforma usa vírgula para as casas decimais ("2,00")
-        if (estoqueEditado) estoqueEditado = parseFloat(estoqueEditado).toFixed(2).replace(".", ",");
+        let validadeEditada = document.getElementById('ed-validade').value;
+        // Lógica da Data: Converter YYYY-MM-DD do Input HTML para DD/MM/YYYY do CSV
+        if (validadeEditada.includes("-")) {
+            let partes = validadeEditada.split("-");
+            if (partes.length === 3) {
+                validadeEditada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+        }
+        
+        // Formatar estoque nativo (sempre duas casas decimais com vírgula)
+        if (estoqueEditado !== "") estoqueEditado = parseFloat(estoqueEditado).toFixed(2).replace(".", ",");
 
         let gondolaEditada = document.getElementById('ed-gondola').value;
         let prateleiraEditada = document.getElementById('ed-prateleira').value;
         let locFinal = (gondolaEditada && prateleiraEditada) ? `${gondolaEditada}-${prateleiraEditada}` : "";
 
-        // 2. Mesclar no objeto principal (alterando as chaves exatas do CSV)
+        // 2. Mesclar com o objeto principal
         let prodExport = { ...produtoSendoEditado };
         
         prodExport["Descrição"] = nomeEditado;
         prodExport["Código"] = skuEditado;
         prodExport["GTIN/EAN"] = eanEditado;
-        // Atualiza também o EAN da embalagem para manter o padrão
         prodExport["GTIN/EAN da Embalagem"] = eanEditado; 
         prodExport["Estoque"] = estoqueEditado;
         prodExport["Localização"] = locFinal;
         prodExport["Data Validade"] = validadeEditada;
 
-        // 3. Montar o cabeçalho idêntico
+        // 3. Montar o cabeçalho
         let csvContent = colunasCSVOficiais.map(col => `"${col}"`).join(";") + "\n";
         
-        // 4. Montar a linha mapeando cada valor pela coluna oficial
+        // 4. Montar a linha (E aplicar a conversão de ponto para vírgula nos preços)
         let linhaValores = colunasCSVOficiais.map(coluna => {
             let valor = prodExport[coluna];
             
-            // Se o JSON não tiver essa informação, mandamos vazio como no anexo
             if(valor === null || valor === undefined) valor = ""; 
             
-            // Garantir que é texto e escapar as aspas internas (duplicando a aspa)
+            // Verifica se a coluna é de valor financeiro (como Preço de custo)
+            if (["Preço", "Preço de custo", "Preço de Compra"].includes(coluna) && valor !== "") {
+                // Transforma num número pra ter certeza (trocando vírgula por ponto temporariamente se houver)
+                let num = parseFloat(String(valor).replace(",", "."));
+                if (!isNaN(num)) {
+                    // Formata de volta para vírgula com 2 casas
+                    valor = num.toFixed(2).replace(".", ",");
+                }
+            }
+
+            // Escapar aspas internas pra não quebrar o CSV
             let valorSeguro = String(valor).replace(/"/g, '""');
             return `"${valorSeguro}"`;
         });
         
         csvContent += linhaValores.join(";") + "\n";
 
-        // 5. Gerar o arquivo (com BOM para aceitar acentos)
+        // 5. Gerar e baixar
         let blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
         let link = document.createElement("a");
         let url = URL.createObjectURL(blob);
