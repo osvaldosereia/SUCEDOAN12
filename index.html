@@ -875,24 +875,24 @@ async function init() {
         STATE.deptos.cestas.data = STATE.baskets; STATE.deptos.combos.data = STATE.combos;
 
        if (r2 && r2.length > 0) {
-            // 1. APLICAR AUMENTO GLOBAL E CRIAR A LISTA
+            // 1. APLICAR AUMENTO GLOBAL (PREÇO BASE)
             const TAXA_AUMENTO_GLOBAL = 1.05;
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
-                let precoComAumento = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
-                let precoAntigoComAumento = p.preco_antigo ? parseFloat(p.preco_antigo) * TAXA_AUMENTO_GLOBAL : null;
+                let precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
 
                 return {
                     id: String(p.codigo || p.id), 
                     blingId: String(p.id), 
                     name: p.nome, 
-                    price: precoComAumento, 
-                    oldPrice: precoAntigoComAumento, 
+                    price: precoBase,      // Inicia igual ao preço base (Sem Desconto)
+                    oldPrice: precoBase,   // O preço base de segurança
                     stock: parseInt(p.estoque) || 0, 
                     validade: p.validade || null,
                     img: `/site/img/produtos/${p.codigo || p.id}.webp`, 
                     categoria: p.categoria || "",
-                    campanhasInsta: [] 
+                    campanhasInsta: [],
+                    discountApplied: false // Controle rígido de hierarquia
                 };
             });
             
@@ -902,7 +902,9 @@ async function init() {
                 STATE.deptos[grupo].data.push(p); 
             });
 
-            // 3. REGRA DE VALIDADE
+            // --- HIERARQUIA DE DESCONTOS (O FUNIL DA PRATELEIRA) ---
+
+            // Prioridade 1: REGRA DE VALIDADE (30% OFF)
             let hojeTime = new Date().getTime();
             let produtosParaValidade = [...STATE.deptos.alimentos.data, ...STATE.deptos.bebidas.data].filter(p => {
                 if(!p.validade || p.stock <= 0) return false;
@@ -914,16 +916,14 @@ async function init() {
             let top5Validade = produtosParaValidade.slice(0, 5);
             
             top5Validade.forEach(p => {
-                let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price * 1.10 : p.oldPrice;
-                p.oldPrice = precoBase; 
-                p.price = precoBase * 0.70; 
+                p.price = p.oldPrice * 0.70; // 30% de desconto
                 p.discountApplied = true;
                 p.isExpiringSoon = true; 
             });
 
-            // LÓGICA DAS CAMPANHAS DO INSTAGRAM
+            // Prioridade 2: LÓGICA DAS CAMPANHAS DO INSTAGRAM (25% OFF)
             STATE.prods.forEach(p => {
-                if(p._isBasket || p._isCombo) return;
+                if(p.discountApplied || p._isBasket || p._isCombo) return;
                 
                 let nomeParaBusca = " " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ";
                 let maxDescontoEncontrado = 0;
@@ -941,39 +941,40 @@ async function init() {
                 });
 
                 if (maxDescontoEncontrado > 0) {
-                    let precoBase = (!p.oldPrice || p.oldPrice <= p.price) ? p.price * 1.10 : p.oldPrice;
-                    let precoCalculado = precoBase * (1 - (maxDescontoEncontrado / 100));
-
-                    if (!p.price || precoCalculado < p.price) {
-                        p.oldPrice = precoBase;
-                        p.price = precoCalculado;
-                        p.discountApplied = true;
-                        p.isInstaOffer = true;
-                    }
+                    p.price = p.oldPrice * (1 - (maxDescontoEncontrado / 100));
+                    p.discountApplied = true;
+                    p.isInstaOffer = true;
                 }
             });
 
-            // 3. REGRAS DE DESCONTO POR FAIXA DE PREÇO (Escalonado)
+            // Prioridade 3: OFERTAS DO DIA "ISCAS" (Somente em 20% do estoque restante)
+            // Em vez de dar desconto em 100% dos produtos, escolhemos matematicamente ~20%
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
-
-                if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price * 1.10;
                 
-                let base = p.oldPrice;
-                let desc = 0;
-
-                if (base > 40) desc = 0.10;
-                else if (base > 30 && base <= 40) desc = 0.06;
-                else if (base > 20 && base <= 30) desc = 0.12;
-                else if (base > 10 && base <= 20) desc = 0.18;
-                else if (base <= 10) desc = 0.24;
+                // Uma conta simples usando o tamanho do nome e ID para selecionar 1 a cada 5 produtos (20%)
+                let hashDaIsca = (p.name.length + p.id.charCodeAt(0)) % 5;
                 
-                p.price = base * (1 - desc);
-                p.discountApplied = true;
+                if (hashDaIsca === 0) {
+                    let base = p.oldPrice;
+                    let desc = 0;
+
+                    if (base > 40) desc = 0.15;
+                    else if (base > 20) desc = 0.12;
+                    else if (base > 10) desc = 0.10;
+                    else desc = 0.05; // Protege a margem dos baratinhos
+                    
+                    p.price = base * (1 - desc);
+                    p.discountApplied = true;
+                }
             });
 
-            // 4. COMPRE JUNTO E ECONOMIZE
-            let elegiveisCJ = STATE.prods.filter(p => !p._isBasket && !p._isCombo && p.stock > 0 && p.oldPrice <= 7.00);
+            // --- FIM DA PRATELEIRA. AGORA, COMPRE JUNTO (Somente com Preço Cheio) ---
+            
+            // Pega APENAS itens que NÃO ganharam nenhum desconto na prateleira
+            // Subimos o limite para R$ 15 para garantir que encontraremos pares suficientes para 30 combos.
+            let elegiveisCJ = STATE.prods.filter(p => !p.discountApplied && !p._isBasket && !p._isCombo && p.stock > 0 && p.oldPrice <= 15.00);
+            
             let gruposCJ = {};
             elegiveisCJ.forEach(p => {
                 let words = p.name.split(' ').filter(w => w.trim().length > 0);
@@ -988,11 +989,11 @@ async function init() {
             Object.values(gruposCJ).forEach(grupo => {
                 if(grupo.length >= 2) {
                     for(let i=0; i<grupo.length-1; i+=2) {
-                        if(grupo[i+1]) {
+                        if(grupo[i+1] && STATE.compreJuntoCombos.length < 30) { // Trava em exatos 30 combos
                             let p1 = grupo[i];
                             let p2 = grupo[i+1];
                             let precoDe = p1.oldPrice + p2.oldPrice;
-                            let precoPor = precoDe * 0.80; // 20% desconto no total base
+                            let precoPor = precoDe * 0.80; // 20% de desconto no combo fechado
                             
                             let cjId = 'cj_' + p1.id + '_' + p2.id;
                             let cjCombo = {
@@ -1652,6 +1653,7 @@ let imgAreaClass = 'u-img-area';
         }
     } else {
         onClick = isEsgotado ? '' : `openQuickView('${id}')`;
+        // Só exibe o traço de preço antigo se ele de fato for maior que o preço atual (garante que itens normais não fiquem com 2 preços)
         if (item.oldPrice && item.oldPrice > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
         if (isEsgotado) {
             addBtnHtml = `<div style="position:absolute; bottom:8px; right:8px; background:var(--c-t); color:#fff; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:600;">ESGOTADO</div>`;
@@ -1699,7 +1701,7 @@ window.openQuickView = function(id) {
     let p = STATE.prods.find(x => x.id === id); if (!p || p.stock <= 0) return; 
     $('qv-img').src = p.img; $('qv-name').innerText = formatName(p.name); 
     if (p.validade) { $('qv-validade').innerText = "Vencimento: " + p.validade; $('qv-validade').style.display = 'block'; } else { $('qv-validade').style.display = 'none'; }
-    $('qv-price').innerHTML = p.oldPrice ? `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:10px;font-weight:500;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
+    $('qv-price').innerHTML = p.oldPrice && p.oldPrice > p.price ? `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:10px;font-weight:500;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
     $('qv-action-area').dataset.id = id; $('qv-action-area').innerHTML = getCardControls(id); 
     $('qv-overlay').style.display = 'block';
     document.getElementById('quick-view-lateral').classList.add('open');
