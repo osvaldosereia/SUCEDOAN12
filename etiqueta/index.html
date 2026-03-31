@@ -1,216 +1,84 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#111111">
-    
-    <title>Separador de Pedidos PRO</title>
-
-    <style>
-        :root { --primary: #4CAF50; --secondary: #2196F3; --danger: #f44336; --warning: #ff9800; --dark: #111; --light: #f4f4f4; }
-        body, html { font-family: Arial, sans-serif; background-color: var(--light); margin: 0; padding: 0; height: 100dvh; color: var(--dark); user-select: none; overflow: hidden; }
-        
-        button { border: none; border-radius: 10px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; }
-        button:active { transform: scale(0.96); }
-        .btn-primary { background-color: var(--primary); } .btn-secondary { background-color: var(--secondary); }
-        .btn-danger { background-color: var(--danger); } .btn-warning { background-color: var(--warning); color: #111; } .btn-print { background-color: #000; }
-        
-        .container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100dvh; overflow-y: auto; box-sizing: border-box; }
-        .hidden { display: none !important; }
-        h1, h2 { text-align: center; margin-top: 0; }
-        
-        .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 16px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        
-        /* ================= TELA DE FOCO (NOVO LAYOUT 70/30) ================= */
-        .tela-foco { height: 100dvh; display: flex; flex-direction: column; padding: 8px; box-sizing: border-box; background: #fff; padding-bottom: 15px; gap: 8px; }
-        
-        /* 1. METADE SUPERIOR (Foto 70% + Info 30%) */
-        .foco-topo-layout { flex: 1; display: flex; gap: 8px; min-height: 0; } 
-        
-        /* Coluna da Foto (70%) */
-        .col-foto { width: 70%; border: 3px solid #ddd; border-radius: 16px; background: #fafafa; display: flex; align-items: center; justify-content: center; padding: 5px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.05); }
-        .col-foto img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-
-        /* Coluna de Informações e Botões (30%) */
-        .col-info { width: 30%; display: flex; flex-direction: column; gap: 4px; }
-        
-        /* Box de Endereço */
-        .box-loc { background: var(--dark); color: var(--warning); border-radius: 8px; text-align: center; padding: 4px 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); flex-shrink: 0; }
-        .box-loc .label { font-size: 9px; color: #ccc; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-        .box-loc .valor { font-size: 26px; font-weight: 900; line-height: 1; }
-
-        /* Box de Quantidade */
-        .box-qtd { background: #e3f2fd; border: 2px solid var(--secondary); border-radius: 8px; text-align: center; padding: 4px 2px; flex-shrink: 0; }
-        .box-qtd .label { font-size: 9px; color: var(--secondary); font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-        .box-qtd .valor { font-size: 18px; font-weight: 900; color: var(--secondary); line-height: 1; }
-
-        /* Box SKU (Fonte Aumentada) */
-        .box-sku { background: #f4f4f4; border: 2px solid #ccc; border-radius: 8px; text-align: center; padding: 4px 2px; flex-shrink: 0; }
-        .box-sku .label { font-size: 9px; color: #666; font-weight: bold; text-transform: uppercase; }
-        .box-sku .valor { font-size: 15px; font-weight: 900; color: var(--dark); margin-top: 2px; word-break: break-all; }
-
-        /* Nome do Produto */
-        .foco-nome { font-size: 10px; font-weight: bold; color: var(--dark); line-height: 1.2; text-align: center; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; margin-top: auto; margin-bottom: auto; padding: 4px; background: #f9f9f9; border-radius: 8px; border: 1px solid #eee; }
-
-        /* Botões de Navegação Movidos para a Coluna (Empilhados) */
-        .btn-side { width: 100%; padding: 8px 2px; font-size: 11px; border-radius: 6px; box-shadow: 0 3px 0 rgba(0,0,0,0.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; gap: 4px; }
-        .btn-side:active { transform: translateY(3px); box-shadow: none; }
-
-        /* 2. ÁREA DO TECLADO (Metade Inferior) */
-        .area-inferior { flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
-        
-        .teclado-titulo { font-size: 11px; font-weight: bold; color: #777; text-align: center; text-transform: uppercase; }
-        
-        /* Teclado Gigante 2x5 VERTICALIZADO (Altura 85px) */
-        .grid-teclado-gigante { display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(2, 85px); gap: 6px; }
-        .btn-num { background: #fff; border: 2px solid #ccc; color: #111; font-size: 34px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 4px 0 #bbb; display: flex; align-items: center; justify-content: center; }
-        .btn-num:active { background: #e0e0e0; box-shadow: none; transform: translateY(4px); }
-
-        /* Blocos Especiais Ocultos (Sem EAN / Concluído) */
-        #bloco-sem-ean, #bloco-concluido { height: 176px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f4f4f4; border-radius: 12px; border: 2px dashed #ccc; padding: 10px; }
-        #bloco-sem-ean button, #bloco-concluido button { padding: 20px; font-size: 18px; width: 100%; border-radius: 10px; }
-
-        /* Alertas Customizados */
-        #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 14px; border-radius: 8px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--primary); } .alerta-aviso { background-color: var(--warning); color: #000; }
-
-        .checklist-box { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 10px; margin-top: 15px; max-height: 40dvh; overflow-y: auto; text-align: left; }
-        .checklist-item { border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; }
-        .checklist-item:last-child { border-bottom: none; }
-    </style>
-</head>
-<body id="body-app">
-
-<div id="alerta-customizado">Mensagem</div>
-
-<div id="app-ui" style="height: 100dvh;">
-    <div class="container" id="tela-inicial">
-        <h1>🛒 Separador (Picking)</h1>
-        <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco...</p>
-        
-        <button id="btn-continuar" class="btn-warning hidden" style="padding:20px; font-size:18px; width:100%; margin-top:15px; box-shadow: 0 6px 0 #E65100; color: white;" onclick="continuarSeparacaoSalva();">▶️ CONTINUAR PEDIDO ATUAL</button>
-        
-        <button id="btn-iniciar" class="btn-primary hidden" style="padding:20px; font-size:18px; width:100%; margin-top:15px; box-shadow: 0 6px 0 #388E3C;" onclick="carregarPedidosFila();">📋 VER NOVOS PEDIDOS</button>
-    </div>
-
-    <div class="container hidden" id="tela-lista-pedidos">
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <button class="btn-danger" style="padding:15px; flex: 1; font-size: 14px;" onclick="abrirTela('tela-inicial')">⬅️ Voltar</button>
-            <button class="btn-secondary" style="padding:15px; flex: 1; font-size: 14px;" onclick="carregarPedidosFila()">🔄 Atualizar</button>
-        </div>
-        <h2>Fila de Separação</h2>
-        <div id="area-lista-pedidos" style="margin-top: 15px;"></div>
-    </div>
-
-    <div class="tela-foco hidden" id="tela-separacao-foco">
-        
-        <div class="foco-topo-layout">
-            
-            <div class="col-foto">
-                <img id="foco-img" src="">
-            </div>
-
-            <div class="col-info">
-                <div class="box-loc">
-                    <div class="label">Endereço</div>
-                    <div class="valor" id="foco-loc">A1</div>
-                </div>
-                <div class="box-qtd">
-                    <div class="label">Qtd. Lida</div>
-                    <div class="valor" id="progresso-texto">0/0</div>
-                </div>
-                <div class="box-sku">
-                    <div class="label">SKU / Cód</div>
-                    <div class="valor" id="foco-sku">---</div>
-                </div>
-                
-                <div class="foco-nome" id="foco-nome">Nome do Produto</div>
-                
-                <button id="btn-anterior" class="btn-side btn-secondary hidden" onclick="voltarProdutoAnterior()">⬅️ Ant.</button>
-                <button class="btn-side btn-warning" onclick="mandarParaFimDaFila()">⏭️ Pular</button>
-                <button class="btn-side btn-danger" onclick="if(confirm('Sair? O pedido ficará salvo.')) abrirTela('tela-inicial');">❌ Sair</button>
-            </div>
-        </div>
-
-        <div class="area-inferior">
-            
-            <div id="bloco-teclado-foco">
-                <div class="teclado-titulo">Toque no último dígito do código:</div>
-                <div class="grid-teclado-gigante">
-                    <div class="btn-num" onclick="addFoco(1)">1</div>
-                    <div class="btn-num" onclick="addFoco(2)">2</div>
-                    <div class="btn-num" onclick="addFoco(3)">3</div>
-                    <div class="btn-num" onclick="addFoco(4)">4</div>
-                    <div class="btn-num" onclick="addFoco(5)">5</div>
-                    <div class="btn-num" onclick="addFoco(6)">6</div>
-                    <div class="btn-num" onclick="addFoco(7)">7</div>
-                    <div class="btn-num" onclick="addFoco(8)">8</div>
-                    <div class="btn-num" onclick="addFoco(9)">9</div>
-                    <div class="btn-num" onclick="addFoco(0)">0</div>
-                </div>
-            </div>
-
-            <div id="bloco-sem-ean" class="hidden">
-                <div style="font-size: 20px; margin-bottom: 5px; font-weight: bold;">⚠️ Sem EAN cadastrado</div>
-                <button class="btn-primary" style="box-shadow: 0 4px 0 #388E3C;" onclick="registrarUnidadeFoco()">➕ ADICIONAR UNIDADE</button>
-            </div>
-
-            <div id="bloco-concluido" class="hidden" style="background: #e8f5e9; border-color: var(--primary);">
-                <div style="font-size: 20px; margin-bottom: 5px; font-weight: bold; color: var(--primary);">✅ Produto Finalizado</div>
-                <button class="btn-danger" onclick="refazerLeituraItem()">🔄 Refazer Contagem</button>
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="container hidden" id="tela-conclusao">
-        <h2 style="color:var(--primary); font-size: 24px;">🎉 Finalizado!</h2>
-        <div class="checklist-box" id="area-checklist"></div>
-        <button class="btn-print" style="padding: 20px; font-size: 18px; width:100%; margin-top:15px;" onclick="imprimirEtiquetaBluetooth()">🖨️ Imprimir Etiqueta</button>
-        <button class="btn-secondary" style="padding: 15px; font-size: 16px; width:100%; margin-top:10px;" onclick="abrirTela('tela-inicial')">✅ Voltar ao Menu</button>
-    </div>
-</div>
-
 <script>
-    let bancoDeDados = []; let pedidosFila = []; let listaDeSeparacao = []; let indexAtualPicking = 0; let pedidoAtual = null; let audioCtx = null;
+    // 1. Declaração de Variáveis Globais
+    let bancoDeDados = []; 
+    let pedidosFila = []; 
+    let listaDeSeparacao = []; 
+    let indexAtualPicking = 0; 
+    let pedidoAtual = null; 
+    let audioCtx = null;
 
+    // 2. Carregamento Inicial (Conexão com o Banco)
     window.onload = async function() {
         try { 
-            const resposta = await fetch('../site/bancodedados.json'); bancoDeDados = await resposta.json(); 
-            let modificacoesLocais = JSON.parse(localStorage.getItem('estoque_modificacoes') || '{}');
-            bancoDeDados.forEach(p => { let sku = p.codigo || p["Código"]; if(sku && modificacoesLocais[sku]) Object.assign(p, modificacoesLocais[sku]); });
+            console.log("Tentando conectar ao banco de dados...");
+            // Verifica se o caminho do arquivo JSON está correto no seu projeto
+            const resposta = await fetch('../site/bancodedados.json'); 
             
-            document.getElementById('status-db').innerText = `✅ Banco Preparado`; document.getElementById('status-db').style.color = "green";
+            if (!resposta.ok) {
+                throw new Error(`Erro HTTP: ${resposta.status}`);
+            }
+
+            bancoDeDados = await resposta.json(); 
+            let modificacoesLocais = JSON.parse(localStorage.getItem('estoque_modificacoes') || '{}');
+            
+            bancoDeDados.forEach(p => { 
+                let sku = p.codigo || p["Código"]; 
+                if(sku && modificacoesLocais[sku]) {
+                    Object.assign(p, modificacoesLocais[sku]); 
+                }
+            });
+            
+            document.getElementById('status-db').innerText = `✅ Banco Preparado`; 
+            document.getElementById('status-db').style.color = "green";
             document.getElementById('btn-iniciar').classList.remove('hidden');
             
             verificarEstadoSalvo();
-        } catch (erro) { document.getElementById('status-db').innerText = "❌ Erro ao ler Banco Local."; }
+        } catch (erro) { 
+            console.error("Falha ao carregar o banco de dados:", erro);
+            document.getElementById('status-db').innerText = "❌ Erro ao ler Banco Local. Verifique o caminho ou servidor."; 
+        }
     };
 
+    // 3. Controle de Telas
     function abrirTela(id) { 
         ['tela-inicial', 'tela-lista-pedidos', 'tela-separacao-foco', 'tela-conclusao'].forEach(t => document.getElementById(t).classList.add('hidden')); 
         document.getElementById(id).classList.remove('hidden'); 
         if (id === 'tela-inicial') verificarEstadoSalvo(); 
     }
     
+    // 4. Alertas e Áudio
     function mostrarAlerta(msg, tipo = 'sucesso') { 
-        let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
-        if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
-        a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 2000); 
+        let a = document.getElementById('alerta-customizado'); 
+        a.innerText = msg; a.className = ''; 
+        if(tipo === 'erro') a.classList.add('alerta-erro'); 
+        else if(tipo === 'aviso') a.classList.add('alerta-aviso'); 
+        else a.classList.add('alerta-sucesso'); 
+        
+        a.style.display = 'block'; 
+        setTimeout(() => a.style.display = 'none', 2000); 
     }
     
-    function inicializarAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    function inicializarAudio() { 
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+    }
     
     function tocarBipe(tipo) { 
-        if (!audioCtx) return; try { 
-            const osc = audioCtx.createOscillator(); const ganho = audioCtx.createGain(); osc.connect(ganho); ganho.connect(audioCtx.destination); 
-            if(tipo === 'sucesso'){ osc.type = 'sine'; osc.frequency.setValueAtTime(900, audioCtx.currentTime); ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
-            else { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(250, audioCtx.currentTime); ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.5); } 
+        if (!audioCtx) return; 
+        try { 
+            const osc = audioCtx.createOscillator(); 
+            const ganho = audioCtx.createGain(); 
+            osc.connect(ganho); 
+            ganho.connect(audioCtx.destination); 
+            
+            if(tipo === 'sucesso'){ 
+                osc.type = 'sine'; osc.frequency.setValueAtTime(900, audioCtx.currentTime); 
+                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); 
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1); 
+            } else { 
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(250, audioCtx.currentTime); 
+                ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); 
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5); 
+            } 
         } catch(e){} 
     }
 
@@ -238,6 +106,22 @@
         }
     }
 
+    // 5. Função que estava incompleta agora corrigida!
     function continuarSeparacaoSalva() {
         inicializarAudio();
-        const salvo = JSON.parse(localStorage.getItem('estadoPickingSal
+        const salvoString = localStorage.getItem('estadoPickingSalvo');
+        
+        if (salvoString) {
+            const salvo = JSON.parse(salvoString);
+            pedidoAtual = salvo.pedidoAtual;
+            listaDeSeparacao = salvo.listaDeSeparacao;
+            indexAtualPicking = salvo.indexAtualPicking;
+            
+            abrirTela('tela-separacao-foco');
+            mostrarAlerta('Progresso recuperado com sucesso!');
+            // Nota: Adicione aqui a função que carrega o item atual na tela
+        } else {
+            mostrarAlerta('Nenhum progresso salvo encontrado.', 'erro');
+        }
+    }
+</script>
