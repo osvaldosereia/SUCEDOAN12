@@ -955,34 +955,40 @@ async function init() {
                 }
             });
 
-          // 3. OFERTAS OBRIGATÓRIAS PARA TODOS OS PRODUTOS (10% a 25%)
+       // 3. OFERTAS COM DISTRIBUIÇÃO PERSONALIZADA (100% de cobertura)
 STATE.prods.forEach(p => {
-    // Mantemos a regra de ignorar o que já tem desconto de validade ou é Cesta/Combo
     if(p.discountApplied || p._isBasket || p._isCombo) return;
 
     let sementeProd = sementeSemanal + parseInt(p.blingId || p.id);
     let discRoll = geradorAleatorio(sementeProd + 1)(); 
     
-    let desc = 0.10; // Piso padrão de 10%
+    let desc = 0.10; 
     let nomeNorm = norm(p.name);
 
-    // Lista de produtos com margem protegida (10% a 15%)
     const itensEssenciais = ["arroz", "feijao", "oleo", "cafe", "farinha"];
     const eEssencial = itensEssenciais.some(essencial => nomeNorm.startsWith(essencial));
 
     if (eEssencial) {
-        // Para itens essenciais: sorteio entre 10% e 15% (50/50 de chance)
-        desc = (discRoll < 0.50) ? 0.10 : 0.15;
+        // Para essenciais, mantemos a proporção de 40% (para 10 de desc) e 30% (para 15 de desc)
+        // Isso dá aproximadamente 57% de chance para o desconto de 10%.
+        desc = (discRoll < 0.57) ? 0.10 : 0.15;
     } else {
-        // Para os demais produtos: distribuição igualitária (25% de chance para cada faixa)
-        if (discRoll >= 0.25 && discRoll < 0.50) desc = 0.15;
-        else if (discRoll >= 0.50 && discRoll < 0.75) desc = 0.20;
-        else if (discRoll >= 0.75) desc = 0.25;
+        // NOVA DISTRIBUIÇÃO GERAL:
+        if (discRoll < 0.40) {
+            desc = 0.10; // 40% de chance
+        } else if (discRoll < 0.70) {
+            desc = 0.15; // 30% de chance (0.70 - 0.40)
+        } else if (discRoll < 0.90) {
+            desc = 0.20; // 20% de chance (0.90 - 0.70)
+        } else if (discRoll < 0.97) {
+            desc = 0.25; // 7% de chance (0.97 - 0.90)
+        } else {
+            desc = 0.30; // 3% de chance (o restante até 1.00)
+        }
     }
     
-    // IMPORTANTE: p.price aqui já contém o aumento da TAXA_AUMENTO_GLOBAL
+    // Aplicação dos preços
     if(!p.oldPrice || p.oldPrice <= p.price) p.oldPrice = p.price * 1.10;
-    
     p.price = p.oldPrice * (1 - desc);
     p.discountApplied = true;
 });
