@@ -74,12 +74,40 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; 
 }
 
-.info-banners { display: flex; flex-direction: column; gap: 8px; padding: 15px; max-width: 1000px; margin: 0 auto; }
-.info-banner-item { font-size: 0.85rem; font-weight: 600; text-align: center; padding: 10px; border-radius: 8px; text-transform: uppercase; letter-spacing: 0.5px; width: 100%;}
+/* BANNERS MOBILE OTIMIZADOS (Scroll Horizontal) */
+.info-banners { 
+    display: flex; 
+    flex-direction: row; 
+    gap: 8px; 
+    padding: 10px 15px; 
+    max-width: 1000px; 
+    margin: 0 auto; 
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory; 
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; 
+}
+.info-banners::-webkit-scrollbar { display: none; }
+
+.info-banner-item { 
+    font-size: 0.75rem; 
+    font-weight: 700; 
+    text-align: center; 
+    padding: 8px 14px; 
+    border-radius: 8px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.2px; 
+    white-space: nowrap; 
+    flex-shrink: 0; 
+    scroll-snap-align: start;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 
 @media (min-width: 800px) {
-    .info-banners { flex-direction: row; justify-content: space-between; padding: 15px 15px 5px; gap: 10px; }
-    .info-banner-item { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;}
+    .info-banners { justify-content: space-between; overflow-x: visible; padding: 15px 15px 5px; }
+    .info-banner-item { flex: 1; justify-content: center; }
 }
 
 /* CARDS DA HOME */
@@ -703,10 +731,10 @@ const STATE = {
     returnToUpsell: false, 
     
     banners: [
-      { texto: "Entrega grátis em Cuiabá e VG", corFundo: "#f0fdf4", corTexto: "#15803d" },
-      { texto: "Pedidos a partir de R$ 75", corFundo: "#f0f9ff", corTexto: "#0369a1" },
-      { texto: "Parcele em até 3x sem juros", corFundo: "#fff7ed", corTexto: "#c2410c" },
-      { texto: "Aceitamos Alimentação e Refeição", corFundo: "#faf5ff", corTexto: "#6b21a8" }
+      { texto: "🚚 Entrega grátis (Cuiabá e VG)", corFundo: "#f0fdf4", corTexto: "#15803d" },
+      { texto: "📦 Pedidos a partir de R$ 75", corFundo: "#f0f9ff", corTexto: "#0369a1" },
+      { texto: "💳 Parcele em até 3x sem juros", corFundo: "#fff7ed", corTexto: "#c2410c" },
+      { texto: "🍽️ Aceitamos Alimentação", corFundo: "#faf5ff", corTexto: "#6b21a8" }
     ], 
     
 deptos: {
@@ -775,6 +803,18 @@ const TERMOS_CATEGORIAS = {
     ]
 };
 
+// BLINDAGEM: forçando String() para evitar que produtos com nome/id somente de números quebrem o código
+function norm(str) { return str ? String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
+function formatName(s) { return s ? String(s).toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
+function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+
+function converterDataValidade(dataStr) {
+    if (!dataStr) return new Date(8640000000000000).getTime(); 
+    let partes = dataStr.split('/');
+    if (partes.length === 3) return new Date(partes[2], partes[1] - 1, partes[0]).getTime();
+    return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
+}
+
 function agruparCategoria(produto) {
     let nomeProd = " " + norm(produto.name || "").replace(/[^a-z0-9 ]/g, ' ') + " ";
     let melhorCategoria = 'alimentos';
@@ -803,23 +843,12 @@ function agruparCategoria(produto) {
         }
     }
 
-    let tag = produto.name.split(' ')[0];
+    let tag = String(produto.name).split(' ')[0];
     if (tag && tag.length > 3 && !STATE.deptos[melhorCategoria].tags.includes(formatName(tag))) {
         STATE.deptos[melhorCategoria].tags.push(formatName(tag));
     }
 
     return melhorCategoria; 
-}
-
-function norm(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
-function fmt(v) { return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-function formatName(s) { return s ? s.toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
-
-function converterDataValidade(dataStr) {
-    if (!dataStr) return new Date(8640000000000000).getTime(); 
-    let partes = dataStr.split('/');
-    if (partes.length === 3) return new Date(partes[2], partes[1] - 1, partes[0]).getTime();
-    return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
 }
 
 function renderHomeCards() {
@@ -884,7 +913,7 @@ async function init() {
                 return {
                     id: String(p.codigo || p.id), 
                     blingId: String(p.id), 
-                    name: p.nome, 
+                    name: String(p.nome), // Blindagem
                     price: precoBase,      // Inicia igual ao preço base (Sem Desconto)
                     oldPrice: precoBase,   // O preço base de segurança
                     stock: parseInt(p.estoque) || 0, 
@@ -952,8 +981,8 @@ async function init() {
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
                 
-                // Uma conta simples usando o tamanho do nome e ID para selecionar 1 a cada 5 produtos (20%)
-                let hashDaIsca = (p.name.length + p.id.charCodeAt(0)) % 5;
+                // Blindagem extra para nomes numéricos não quebrarem o calculo
+                let hashDaIsca = (String(p.name).length + String(p.id).charCodeAt(0)) % 5;
                 
                 if (hashDaIsca === 0) {
                     let base = p.oldPrice;
@@ -977,7 +1006,7 @@ async function init() {
             
             let gruposCJ = {};
             elegiveisCJ.forEach(p => {
-                let words = p.name.split(' ').filter(w => w.trim().length > 0);
+                let words = String(p.name).split(' ').filter(w => w.trim().length > 0);
                 if(words.length >= 2) {
                     let key = norm(words[0] + ' ' + words[1]);
                     if(!gruposCJ[key]) gruposCJ[key] = [];
@@ -998,7 +1027,7 @@ async function init() {
                             let cjId = 'cj_' + p1.id + '_' + p2.id;
                             let cjCombo = {
                                 id: cjId,
-                                nome: `${p1.name.split(' ').slice(0,2).join(' ')}`,
+                                nome: `${String(p1.name).split(' ').slice(0,2).join(' ')}`,
                                 preco: precoPor,
                                 precoOriginal: precoDe,
                                 produtos: [`1x ${p1.id}`, `1x ${p2.id}`],
@@ -1017,7 +1046,7 @@ async function init() {
 
             Object.values(STATE.deptos).forEach(d => { 
                 if(d.type === 'PROD') {
-                    d.data.sort((a,b) => a.name.localeCompare(b.name));
+                    d.data.sort((a,b) => String(a.name).localeCompare(String(b.name)));
                     d.tags = [...new Set(d.tags)].sort();
                 }
             });
@@ -1211,6 +1240,10 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     STATE.viewStack = 'DEPTO_LIST';
     STATE.returnToUpsell = fromUpsell; 
 
+    // BLINDAGEM: Sempre reseta os filtros independente da aba aberta, evitando herdar buscas passadas
+    STATE.currentSort = 'maior_desconto';
+    STATE.currentKeyword = 'all';
+
     let d = STATE.deptos[deptoId];
     
     document.getElementById('see-all-title').innerText = d.title;
@@ -1227,8 +1260,6 @@ window.openDepto = function(deptoId, fromUpsell = false) {
         document.getElementById('normal-filters').style.display = 'flex';
         document.getElementById('insta-tabs').style.display = 'none';
         
-        STATE.currentSort = 'maior_desconto';
-        STATE.currentKeyword = 'all';
         document.getElementById('label-sort').innerText = 'Ofertas';
         document.getElementById('label-keyword').innerText = 'Todos';
         
@@ -1320,7 +1351,7 @@ window.applyDeptoFilters = function() {
             let topExpiring = filtered.filter(p => p.isExpiringSoon);
             let normalProds = filtered.filter(p => !p.isExpiringSoon);
 
-            if(sortType === 'az') { normalProds.sort((a,b) => a.name.localeCompare(b.name)); } 
+            if(sortType === 'az') { normalProds.sort((a,b) => String(a.name).localeCompare(String(b.name))); } 
             else if(sortType === 'menor_preco') { normalProds.sort((a,b) => a.price - b.price); } 
             else if(sortType === 'maior_desconto') {
                 normalProds.sort((a,b) => {
