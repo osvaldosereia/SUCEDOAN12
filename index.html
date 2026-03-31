@@ -1042,11 +1042,11 @@ async function init() {
             Object.values(gruposCJ).forEach(grupo => {
                 if(grupo.length >= 2) {
                     for(let i=0; i<grupo.length-1; i+=2) {
-                        if(grupo[i+1] && STATE.compreJuntoCombos.length < 30) { // Trava em exatos 30 combos
+                        if(grupo[i+1] && STATE.compreJuntoCombos.length < 50) { // Trava em exatos 50 combos
                             let p1 = grupo[i];
                             let p2 = grupo[i+1];
                             let precoDe = p1.oldPrice + p2.oldPrice;
-                            let precoPor = precoDe * 0.80; // 20% de desconto no combo fechado
+                            let precoPor = precoDe * 0.10; // 10% de desconto no combo fechado
                             
                             let cjId = 'cj_' + p1.id + '_' + p2.id;
                             let cjCombo = {
