@@ -122,7 +122,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     font-size: 1.15rem;
     text-align: center;
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); /* Sombra elegante */
-    transition: transform 0.2s;
+    transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
 }
 .promo-whatsapp-banner:active {
     transform: scale(0.97); /* Efeito de clique */
@@ -469,9 +469,9 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 <main class="main-stage" id="scroll-stage">
 <div class="layout-limit info-banners info-banners-render" id="auto-scroll-banners"></div>
 
-<a href="https://wa.me/5565998150975?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20como%20ganhar%20os%20R%24%2025%20de%20desconto%21" target="_blank" class="promo-whatsapp-banner">
+<div id="promo-banner-btn" onclick="activateAutoCoupons()" class="promo-whatsapp-banner" style="cursor: pointer;">
     🎁 Ganhe até R$ 25 de desconto na sua compra!
-</a>
+</div>
     <div id="grid-home-sections" class="grid-home-sections"></div>
 </main>
 
@@ -748,7 +748,7 @@ const MARCAS_DESTAQUE = [
     { id: "Apti", nome: "Apti", palavrasChave: ["apti"] },
     { id: "Fugini", nome: "Fugini", palavrasChave: ["fugini"] },
     { id: "Frisco", nome: "Frisco", palavrasChave: ["frisco"] }
-]; // Fechamento correto com ];
+];
 
 const carouselObserver = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
@@ -790,10 +790,11 @@ const carouselObserver = new IntersectionObserver((entries, observer) => {
     });
 }, { rootMargin: '250px' });
 
+// Etapa 2: Adicionada a variável autoCouponsActive para controlar a inteligência do carrinho
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
     currentInstaTab: 'maiores_descontos', currentMarcaTab: 'nestle', baskets: [], prods: [], coupons: [], combos: [], compreJuntoCombos: [],
-    returnToUpsell: false, 
+    returnToUpsell: false, autoCouponsActive: false,
     
     banners: [
       { texto: "🚚 Entrega grátis (Cuiabá e VG)", corFundo: "#f0fdf4", corTexto: "#15803d" },
@@ -869,7 +870,6 @@ const TERMOS_CATEGORIAS = {
     ]
 };
 
-// BLINDAGEM: forçando String() para evitar que produtos com nome/id somente de números quebrem o código
 function norm(str) { return str ? String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 function formatName(s) { return s ? String(s).toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
 function fmt(v) { 
@@ -986,7 +986,6 @@ async function init() {
         STATE.deptos.cestas.data = STATE.baskets; STATE.deptos.combos.data = STATE.combos;
 
        if (r2 && r2.length > 0) {
-            // 1. APLICAR AUMENTO GLOBAL (PREÇO BASE)
             const TAXA_AUMENTO_GLOBAL = 1.03;
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
@@ -995,27 +994,23 @@ async function init() {
                 return {
                     id: String(p.codigo || p.id), 
                     blingId: String(p.id), 
-                    name: String(p.nome), // Blindagem
-                    price: precoBase,      // Inicia igual ao preço base (Sem Desconto)
-                    oldPrice: precoBase,   // O preço base de segurança
+                    name: String(p.nome),
+                    price: precoBase,
+                    oldPrice: precoBase,
                     stock: parseInt(p.estoque) || 0, 
                     validade: p.validade || null,
                     img: `/site/img/produtos/${p.codigo || p.id}.webp`, 
                     categoria: p.categoria || "",
                     campanhasInsta: [],
-                    discountApplied: false // Controle rígido de hierarquia
+                    discountApplied: false
                 };
             });
             
-            // 2. ORGANIZAR EM CATEGORIAS
             STATE.prods.forEach(p => { 
                 let grupo = agruparCategoria(p); 
                 STATE.deptos[grupo].data.push(p); 
             });
 
-            // --- HIERARQUIA DE DESCONTOS (O FUNIL DA PRATELEIRA) ---
-
-            // Prioridade 1: REGRA DE VALIDADE (30% OFF)
             let hojeTime = new Date().getTime();
             let produtosParaValidade = [...STATE.deptos.alimentos.data, ...STATE.deptos.bebidas.data].filter(p => {
                 if(!p.validade || p.stock <= 0) return false;
@@ -1027,12 +1022,11 @@ async function init() {
             let top5Validade = produtosParaValidade.slice(0, 5);
             
             top5Validade.forEach(p => {
-                p.price = p.oldPrice * 0.85; // 15% de desconto
+                p.price = p.oldPrice * 0.85;
                 p.discountApplied = true;
                 p.isExpiringSoon = true; 
             });
 
-            // Prioridade 2: LÓGICA DAS CAMPANHAS DO INSTAGRAM
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
                 
@@ -1058,12 +1052,9 @@ async function init() {
                 }
             });
 
-            // Prioridade 3: OFERTAS DO DIA "ISCAS" (Somente em 20% do estoque restante)
-            // Em vez de dar desconto em 100% dos produtos, escolhemos matematicamente ~20%
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
                 
-                // Blindagem extra para nomes numéricos não quebrarem o calculo
                 let hashDaIsca = (String(p.name).length + String(p.id).charCodeAt(0)) % 5;
                 
                 if (hashDaIsca === 0) {
@@ -1073,16 +1064,13 @@ async function init() {
                     if (base > 40) desc = 0.15;
                     else if (base > 20) desc = 0.12;
                     else if (base > 10) desc = 0.10;
-                    else desc = 0.05; // Protege a margem dos baratinhos
+                    else desc = 0.05;
                     
                     p.price = base * (1 - desc);
                     p.discountApplied = true;
                 }
             });
-
-            // --- FIM DA PRATELEIRA. AGORA, COMPRE JUNTO (Somente com Preço Cheio) ---
             
-            // Pega APENAS itens que NÃO ganharam nenhum desconto na prateleira
             let elegiveisCJ = STATE.prods.filter(p => !p.discountApplied && !p._isBasket && !p._isCombo && p.stock > 0 && p.oldPrice <= 15.00);
             
             let gruposCJ = {};
@@ -1099,11 +1087,11 @@ async function init() {
             Object.values(gruposCJ).forEach(grupo => {
                 if(grupo.length >= 2) {
                     for(let i=0; i<grupo.length-1; i+=2) {
-                        if(grupo[i+1] && STATE.compreJuntoCombos.length < 50) { // Trava em exatos 50 combos
+                        if(grupo[i+1] && STATE.compreJuntoCombos.length < 50) {
                             let p1 = grupo[i];
                             let p2 = grupo[i+1];
                             let precoDe = p1.oldPrice + p2.oldPrice;
-                            let precoPor = precoDe * 0.90; // 10% de desconto no combo fechado
+                            let precoPor = precoDe * 0.90;
                             
                             let cjId = 'cj_' + p1.id + '_' + p2.id;
                             let cjCombo = {
@@ -1132,7 +1120,6 @@ async function init() {
                 }
             });
 
-            // Popula os descontos para o Carrossel do Upsell usar sem quebrar
             let todasOfertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
             todasOfertas.sort((a,b) => {
                 let descA = (a.oldPrice - a.price) / a.oldPrice;
@@ -1192,7 +1179,6 @@ window.gerarReels = function() {
 
     const pantones = ['#FFD1DC', '#F0E6D2', '#B9D7D9', '#F9E4B7', '#D1C4E9', '#F2D2BD', '#C5E1A5', '#FFCCB6', '#E1BEE7', '#B2DFDB'];
 
-    // 1. Gera os Slides dos Produtos (Com a mesma caixa de imagem do site)
     let slidesHtml = produtos.map((p, index) => {
         let pImgSegura = p.img || '/site/img/produtos/cesta.webp';
         let bgColor = pantones[index % pantones.length];
@@ -1205,7 +1191,6 @@ window.gerarReels = function() {
         `;
     }).join('');
 
-   // 2. Cria o Overlay Persistente (Com os 3 cards empilhados)
     let overlayHtml = `
     <div id="reels-persistent-overlay" class="reel-overlay" style="display:none;">
         <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-small">
@@ -1241,9 +1226,8 @@ function iniciarAutoScroll(tempoMs, produtos) {
     
     if(totalSlides === 0) return;
     
-    // Configurações iniciais
     overlay.style.display = 'flex'; 
-    studio.style.backgroundColor = slides[0].dataset.color; // Puxa a cor do primeiro slide
+    studio.style.backgroundColor = slides[0].dataset.color;
     slides[0].classList.add('active');
     
     function moveNext() {
@@ -1251,24 +1235,21 @@ function iniciarAutoScroll(tempoMs, produtos) {
             slides[currentSlide].classList.remove('active');
             currentSlide++;
             
-            // Troca a cor do fundo e ativa o próximo slide
             studio.style.backgroundColor = slides[currentSlide].dataset.color;
             slides[currentSlide].classList.add('active');
             
             setTimeout(moveNext, tempoMs);
         } else {
-            // FIM DO REELS: Animação de Desfoque e Clarão Branco
             setTimeout(() => {
                 studio.classList.add('reel-fade-out');
                 setTimeout(() => {
-                    // Restaura o site normal
                     document.getElementById('reels-studio-wrapper').style.display = 'none';
                     studio.classList.remove('reel-fade-out');
                     studio.innerHTML = '';
                     document.getElementById('header-wrapper').style.display = 'block';
                     document.getElementById('scroll-stage').style.display = 'block';
                     updateTotals();
-                }, 700); // Tempo da animação de saída
+                }, 700); 
             }, tempoMs);
         }
     }
@@ -1280,10 +1261,8 @@ function toggleDropdown(type) {
     let list = document.getElementById(`list-${type}`);
     let isShowing = list.classList.contains('show');
     
-    // Fecha todos os dropdowns abertos para não encavalarem
     document.querySelectorAll('.custom-dropdown-list').forEach(el => el.classList.remove('show'));
     
-    // Abre apenas o que foi clicado
     if (!isShowing && list) list.classList.add('show');
 }
 
@@ -1313,7 +1292,6 @@ function selectKeywordOption(value, label, el) {
     applyDeptoFilters();
 }
 
-// === NOVAS FUNÇÕES DO DROPDOWN DE MARCAS ===
 function renderMarcaTabs() {
     let marcaAtual = MARCAS_DESTAQUE.find(m => m.id === STATE.currentMarcaTab);
     if(marcaAtual && document.getElementById('label-marcas')) {
@@ -1340,7 +1318,6 @@ window.selectMarcaOption = function(tabId, nome) {
     renderMarcaTabs();
     applyDeptoFilters();
 };
-// ============================================
 
 window.goToHome = function() { 
     document.getElementById('see-all-view').classList.remove('open');
@@ -1357,7 +1334,6 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     STATE.viewStack = 'DEPTO_LIST';
     STATE.returnToUpsell = fromUpsell; 
 
-    // BLINDAGEM: Sempre reseta os filtros independente da aba aberta, evitando herdar buscas passadas
     STATE.currentSort = 'maior_desconto';
     STATE.currentKeyword = 'all';
 
@@ -1368,20 +1344,16 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     document.getElementById('see-all-footer').style.display = 'none'; 
     document.getElementById('depto-search').value = ''; 
     
-    // 👇 1. Oculta todos os filtros por padrão primeiro
     document.getElementById('normal-filters').style.display = 'none';
     document.getElementById('insta-tabs').style.display = 'none';
     if (document.getElementById('marcas-filters')) document.getElementById('marcas-filters').style.display = 'none';
 
-    // 👇 2. Decide qual filtro mostrar com base na aba clicada
     if (deptoId === 'ofertas_insta') {
         document.getElementById('insta-tabs').style.display = 'flex';
         STATE.currentInstaTab = 'maiores_descontos';
         renderInstaTabs();
     } else if (deptoId === 'marcas') {
-        // MOSTRA O NOVO DROPDOWN DE MARCAS
         if (document.getElementById('marcas-filters')) document.getElementById('marcas-filters').style.display = 'flex';
-        // FORÇA A PRIMEIRA MARCA A ESTAR SELECIONADA
         STATE.currentMarcaTab = MARCAS_DESTAQUE[0].id; 
         renderMarcaTabs();
     } else if (d.type === 'PROD') {
@@ -1407,7 +1379,6 @@ window.openDepto = function(deptoId, fromUpsell = false) {
 
     document.getElementById('see-all-view').classList.add('open');
     
-    // 👇 3. Carrega os produtos da marca automaticamente
     applyDeptoFilters(); 
     updateTotals();
     
@@ -1447,7 +1418,6 @@ function buildCompreJuntoCardHtml(cj) {
     `;
 }
 
-// Foi adicionado o parametro preventScroll para não ficar pulando a tela ao clicar em Compre Junto
 window.applyDeptoFilters = function(preventScroll = false) {
     if(!STATE.activeDeptoId) return;
     let query = norm(document.getElementById('depto-search').value);
@@ -1523,7 +1493,6 @@ window.applyDeptoFilters = function(preventScroll = false) {
     
     document.getElementById('see-all-grid').innerHTML = html;
     
-    // Trava para o conteúdo não pular para o topo se tiver só atualizando o carrinho
     if (!preventScroll) {
         document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
     }
@@ -1842,7 +1811,6 @@ let imgAreaClass = 'u-img-area';
         }
     } else {
         onClick = isEsgotado ? '' : `openQuickView('${id}')`;
-        // Só exibe o traço de preço antigo se ele de fato for maior que o preço atual (garante que itens normais não fiquem com 2 preços)
         if (item.oldPrice && item.oldPrice > pPrice) {
             oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
         }
@@ -1861,7 +1829,7 @@ let imgAreaClass = 'u-img-area';
 
     let atacadoHtml = '';
     if (!isKit && !isBasket && pPrice) {
-        let atacadoPrice = pPrice * 0.94; // Regra dos 6% adicionais para atacado (3+ unidades)
+        let atacadoPrice = pPrice * 0.94;
         atacadoHtml = `<div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 600; margin-top: 2px;">Leve 3+ por ${fmt(atacadoPrice)}/un</div>`;
     }
 
@@ -1916,11 +1884,9 @@ window.updCompreJunto = function(cjId, delta) {
         }
     }
     
-    // Atualiza individualmente pulando a verificação de perda de kit
     upd(cj.p1.id, delta, true);
     upd(cj.p2.id, delta, true);
     
-    // Gerencia o combo aplicado manualmente
     let existing = STATE.appliedCombos.find(ac => ac.id === cjId);
     if (delta > 0) {
         if (existing) existing.qty += delta;
@@ -1935,7 +1901,7 @@ window.updCompreJunto = function(cjId, delta) {
     }
     
     updateTotals();
-    applyDeptoFilters(true); // Chamando com preventScroll=true para a tela não pular pro topo
+    applyDeptoFilters(true); 
 }
 
 function upd(id, delta, skipKitCheck = false) { 
@@ -1984,11 +1950,38 @@ window.handleAddClick = function(e, id) {
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a sacola?")) { 
         STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.atacadoDiscount = 0; STATE.appliedCombos = []; STATE.coupon = null; 
+        STATE.autoCouponsActive = false; // Etapa 3b: Resetamos os cupons automáticos caso ele zere o carrinho.
+        
+        // Retornamos o visual original do banner, caso ele mude de ideia depois
+        let banner = document.getElementById('promo-banner-btn');
+        if (banner) {
+            banner.innerHTML = '🎁 Ganhe até R$ 25 de desconto na sua compra!';
+            banner.style.background = 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)';
+            banner.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.3)';
+            banner.onclick = activateAutoCoupons;
+        }
+
         document.querySelectorAll('[data-id]').forEach(el => { let id = el.dataset.id; if (id) { let addBtn = el.querySelector(`.add-btn-${id}`); if (addBtn) { addBtn.innerHTML = '+'; addBtn.classList.remove('has-item'); } } });
         updateTotals(); closeCheckout(); goToHome(); 
     }
 };
 
+// Etapa 3: A função que ativa e mostra o feedback positivo para o cliente!
+window.activateAutoCoupons = function() {
+    STATE.autoCouponsActive = true;
+    let banner = document.getElementById('promo-banner-btn');
+    if (banner) {
+        // Feedback visual incrível de que os cupons foram ativados
+        banner.innerHTML = '✅ Cupons Automáticos Ativados!';
+        banner.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)'; // Fica verdinho sólido
+        banner.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+        banner.onclick = null; // Impede que ele fique clicando várias vezes à toa
+    }
+    showToast("Cupons ativados! O melhor desconto será aplicado no carrinho.", "s");
+    updateTotals(); // Força o sistema a varrer e aplicar o desconto caso o cliente já tenha itens!
+};
+
+// Etapa 4: Atualizamos a inteligência do carrinho para aplicar o melhor cupom automaticamente
 function updateTotals() {
     let sum = 0;
     let atacadoDiscount = 0;
@@ -2005,12 +1998,45 @@ function updateTotals() {
     STATE.atacadoDiscount = atacadoDiscount;
 
     let subtotal = sum + STATE.basketExtraFee; 
-    if (STATE.coupon && STATE.coupon.valorMinimo && subtotal < STATE.coupon.valorMinimo) {
-        STATE.coupon = null; if ($('chk-cupom')) $('chk-cupom').value = ''; 
-        if ($('cupom-msg')) { $('cupom-msg').innerText = "Cupom removido: valor mínimo não atingido."; $('cupom-msg').style.color = "var(--c-err)"; $('cupom-msg').style.display = "block"; }
+    
+    // 👇 O novo cérebro de verificação automática do cupom 👇
+    if (STATE.autoCouponsActive && STATE.coupons && STATE.coupons.length > 0) {
+        let bestCoupon = null;
+        let maxDiscount = 0;
+        
+        // Verifica qual cupom válido dá o maior desconto
+        STATE.coupons.forEach(c => {
+            let vMin = c.valorMinimo || 0;
+            if (subtotal >= vMin && c.desconto > maxDiscount) {
+                bestCoupon = c;
+                maxDiscount = c.desconto;
+            }
+        });
+        
+        STATE.coupon = bestCoupon;
+        
+        // Se encontrou um bom cupom, nós ativamos ele visualmente no checkout
+        if (bestCoupon && $('chk-cupom')) {
+            $('chk-cupom').value = bestCoupon.codigo;
+            if ($('cupom-msg')) {
+                $('cupom-msg').innerText = "Cupom automático aplicado!";
+                $('cupom-msg').style.color = "var(--c-ok)";
+                $('cupom-msg').style.display = "block";
+            }
+        } else if (!bestCoupon && $('chk-cupom') && !$('chk-cupom').value.trim()) {
+            // Se o carrinho baixou de valor e perdeu a regra do cupom, limpamos ele do visual.
+            $('chk-cupom').value = '';
+            if ($('cupom-msg')) $('cupom-msg').style.display = 'none';
+        }
+    } else {
+        // Mantive a lógica antiga caso a ativação automática não esteja ligada (mas ele digitar manualmente)
+        if (STATE.coupon && STATE.coupon.valorMinimo && subtotal < STATE.coupon.valorMinimo) {
+            STATE.coupon = null; if ($('chk-cupom')) $('chk-cupom').value = ''; 
+            if ($('cupom-msg')) { $('cupom-msg').innerText = "Cupom removido: valor mínimo não atingido."; $('cupom-msg').style.color = "var(--c-err)"; $('cupom-msg').style.display = "block"; }
+        }
     }
+    // 👆 Fim da nova inteligência 👆
 
-    // Calcula de forma dinâmica os descontos de todos os Kits e Compre Juntos aplicados
     let totalDescontosKits = 0;
     STATE.appliedCombos.forEach(ac => {
         let c = STATE.combos.find(x => String(x.id) === String(ac.id));
@@ -2150,7 +2176,7 @@ function reorder(orderId) {
     if(!STATE.dataLoaded) return showToast("Sincronizando loja, aguarde...", "s");
     let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); let order = history.find(o => o.id === orderId); if(!order) return;
 
-    STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.atacadoDiscount = 0; STATE.appliedCombos = []; STATE.coupon = null;
+    STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.atacadoDiscount = 0; STATE.appliedCombos = []; STATE.coupon = null; STATE.autoCouponsActive = false; // Reset de segurança
     let missing = false;
     order.items.forEach(item => { let p = STATE.prods.find(x => x.id === item.id); if (p && p.stock > 0) { let addQty = Math.min(item.qty, p.stock); STATE.cart[p.id] = addQty; STATE.cartOrder.push(p.id); } else { missing = true; } });
 
@@ -2213,7 +2239,6 @@ async function sendOrder() {
     setTimeout(() => { window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`; setTimeout(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = `ENVIAR PEDIDO`; }, 3000); }, 400);
 }
 
-// Função para exibir as mensagens de sucesso ou erro (Toasts)
 function showToast(m, t) { 
     let d = document.createElement('div'); 
     d.className = 'toast'; 
@@ -2223,35 +2248,28 @@ function showToast(m, t) {
     setTimeout(() => d.remove(), 2500); 
 }
 
-// Função atualizada para renderizar e animar os banners
 function renderBanners() {
     const containers = document.querySelectorAll('.info-banners-render');
     if (!containers.length || !STATE.banners || STATE.banners.length === 0) return;
     
-    // 1. Cria o HTML dos banners
     let html = ''; 
     STATE.banners.forEach(b => { 
         html += `<div class="info-banner-item" style="background-color: ${b.corFundo}; color: ${b.corTexto};">${b.texto}</div>`; 
     });
     
-    // 2. Insere na tela e inicia o loop
     containers.forEach(c => {
         c.innerHTML = html;
         
         let currentIndex = 0;
         
-        // Configura um temporizador para rolar a cada 3.5 segundos
         setInterval(() => {
-            // Se não for tela de telemóvel ou não tiver filhos, ignora a animação
             if (!c.children.length || window.innerWidth >= 800) return; 
             
             currentIndex++;
-            // Se chegou no último, volta para o primeiro (0)
             if (currentIndex >= c.children.length) {
                 currentIndex = 0;
             }
             
-            // Calcula o tamanho do item + gap (8px) para saber o quanto rolar
             const itemWidth = c.children[0].offsetWidth + 8; 
             
             c.scrollTo({
@@ -2262,8 +2280,6 @@ function renderBanners() {
     });
 }
     
-
-// 👇 ESTE É O BLOCO QUE FOI APAGADO E PRECISA VOLTAR 👇
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 10); 
     let isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -2277,7 +2293,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-// 👆 FIM DO BLOCO QUE PRECISA VOLTAR 👆
+
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch((erro) => { console.error('Erro SW', erro); }); }); }
 let eventoInstalacao;
 window.addEventListener('beforeinstallprompt', (evento) => { evento.preventDefault(); eventoInstalacao = evento; if (!localStorage.getItem('donaAntoniaAppDismissed')) { let btn = document.getElementById('btn-install'); if(btn) btn.style.display = 'block'; } });
