@@ -89,25 +89,50 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .info-banners::-webkit-scrollbar { display: none; }
 
+/* Faz cada item ocupar a largura total no mobile para a rotação funcionar bem */
 .info-banner-item { 
-    font-size: 0.75rem; 
+    font-size: 0.8rem; 
     font-weight: 700; 
     text-align: center; 
-    padding: 8px 14px; 
+    padding: 10px 14px; 
     border-radius: 8px; 
     text-transform: uppercase; 
     letter-spacing: 0.2px; 
-    white-space: nowrap; 
     flex-shrink: 0; 
-    scroll-snap-align: start;
+    scroll-snap-align: center;
+    width: 100%; /* ← Alteração principal: ocupa 100% da visualização */
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
 }
 
+/* Estilo do Novo Banner do WhatsApp (Chamativo e mais alto) */
+.promo-whatsapp-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%); /* Verde WhatsApp gradient */
+    color: #ffffff;
+    text-decoration: none;
+    padding: 24px 15px; /* Altura aprox. 3x maior que o banner normal */
+    margin: 0 15px 20px 15px; /* Margem lateral e inferior */
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1.15rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); /* Sombra elegante */
+    transition: transform 0.2s;
+}
+.promo-whatsapp-banner:active {
+    transform: scale(0.97); /* Efeito de clique */
+}
+
+/* Ajuste para telas maiores (Desktop) */
 @media (min-width: 800px) {
     .info-banners { justify-content: space-between; overflow-x: visible; padding: 15px 15px 5px; }
-    .info-banner-item { flex: 1; justify-content: center; }
+    .info-banner-item { width: auto; flex: 1; } /* Volta ao formato de colunas no PC */
+    .promo-whatsapp-banner { max-width: 970px; margin: 0 auto 20px auto; }
 }
 
 /* CARDS DA HOME */
@@ -442,7 +467,11 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 </div>
 
 <main class="main-stage" id="scroll-stage">
-    <div class="layout-limit info-banners info-banners-render"></div>
+<div class="layout-limit info-banners info-banners-render" id="auto-scroll-banners"></div>
+
+<a href="https://wa.me/5565998150975?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20como%20ganhar%20os%20R%24%2025%20de%20desconto%21" target="_blank" class="promo-whatsapp-banner">
+    🎁 Ganhe até R$ 25 de desconto na sua compra!
+</a>
     <div id="grid-home-sections" class="grid-home-sections"></div>
 </main>
 
@@ -2126,15 +2155,45 @@ async function sendOrder() {
     setTimeout(() => { window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`; setTimeout(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = `ENVIAR PEDIDO`; }, 3000); }, 400);
 }
 
+// Função atualizada para renderizar e animar os banners
 function renderBanners() {
     const containers = document.querySelectorAll('.info-banners-render');
     if (!containers.length || !STATE.banners || STATE.banners.length === 0) return;
-    let html = ''; STATE.banners.forEach(b => { html += `<div class="info-banner-item" style="background-color: ${b.corFundo}; color: ${b.corTexto};">${b.texto}</div>`; });
-    containers.forEach(c => c.innerHTML = html);
+    
+    // 1. Cria o HTML dos banners
+    let html = ''; 
+    STATE.banners.forEach(b => { 
+        html += `<div class="info-banner-item" style="background-color: ${b.corFundo}; color: ${b.corTexto};">${b.texto}</div>`; 
+    });
+    
+    // 2. Insere na tela e inicia o loop
+    containers.forEach(c => {
+        c.innerHTML = html;
+        
+        let currentIndex = 0;
+        
+        // Configura um temporizador para rolar a cada 3.5 segundos
+        setInterval(() => {
+            // Se não for tela de celular ou não tiver filhos, ignora a animação
+            if (!c.children.length || window.innerWidth >= 800) return; 
+            
+            currentIndex++;
+            // Se chegou no último, volta para o primeiro (0)
+            if (currentIndex >= c.children.length) {
+                currentIndex = 0;
+            }
+            
+            // Calcula o tamanho do item + gap (8px) para saber o quanto rolar
+            const itemWidth = c.children[0].offsetWidth + 8; 
+            
+            c.scrollTo({
+                left: currentIndex * itemWidth,
+                behavior: 'smooth'
+            });
+        }, 3500); 
+    });
 }
-
-function showToast(m, t) { let d = document.createElement('div'); d.className = 'toast'; d.style.background = (t === 'r') ? '#dc2626' : '#16a34a'; d.innerText = m; $('toast-container').appendChild(d); setTimeout(() => d.remove(), 2500); }
-
+// 👇 ESTE É O BLOCO QUE FOI APAGADO E PRECISA VOLTAR 👇
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 10); 
     let isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -2148,7 +2207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
+// 👆 FIM DO BLOCO QUE PRECISA VOLTAR 👆
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch((erro) => { console.error('Erro SW', erro); }); }); }
 let eventoInstalacao;
 window.addEventListener('beforeinstallprompt', (evento) => { evento.preventDefault(); eventoInstalacao = evento; if (!localStorage.getItem('donaAntoniaAppDismissed')) { let btn = document.getElementById('btn-install'); if(btn) btn.style.display = 'block'; } });
