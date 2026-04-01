@@ -19,10 +19,9 @@
         
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 18px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
-        /* ================= TELA DE FOCO (CRAVADA, SEM ROLAGEM) ================= */
+        /* ================= TELA DE FOCO ================= */
         .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; background: #fff; }
         
-        /* 1. TOPO DIVIDIDO (FOTO E INFO) */
         .foco-topo-split { display: flex; gap: 10px; height: 26vh; margin-bottom: 10px; flex-shrink: 0; }
         
         .foco-img-container { flex: 1; border: 2px solid #ddd; border-radius: 12px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; padding: 5px; }
@@ -35,38 +34,40 @@
         .foco-qtd-box { background: rgba(255,255,255,0.15); padding: 5px 12px; border-radius: 8px; font-size: 13px; }
         .foco-qtd-box span { font-size: 20px; font-weight: bold; color: var(--secondary); }
 
-        /* 2. NOME DO PRODUTO (CENTRALIZADO) */
-        .foco-nome { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 2px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 5px; flex-shrink: 0; }
-        .foco-sku { font-size: 14px; color: #666; text-align: center; margin-bottom: 5px; font-weight: bold; flex-shrink: 0; }
+        .foco-nome { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 5px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 5px; flex-shrink: 0; }
         
-        /* 3. TICKS DE QUANTIDADE */
+        /* SKU MAIOR E MAIS VISÍVEL */
+        .foco-sku { font-size: 24px; color: #b71c1c; text-align: center; margin-bottom: 8px; font-weight: 900; flex-shrink: 0; background: #ffcdd2; border: 2px dashed #f44336; border-radius: 8px; padding: 5px; letter-spacing: 1px; }
+        
         .ticks-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 10px; flex-shrink: 0; }
         .tick-box { width: 24px; height: 24px; border-radius: 4px; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: transparent; border: 1px solid #ccc; }
         .tick-box.active { background-color: var(--primary); color: white; border-color: var(--primary); }
 
-        /* 4. ÁREA DE INTERAÇÃO FLEXÍVEL (TECLADO SE ADAPTA AQUI) */
-        .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; } /* min-height:0 é o segredo para não cortar! */
+        .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; } 
         
+        /* NOVA BARRA DE AÇÕES (ANTERIOR, PULAR, INÍCIO) */
+        .botoes-acao-foco { display: flex; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
+        .btn-acao { flex: 1; padding: 12px 5px; font-size: 14px; font-weight: bold; border-radius: 8px; color: white; border: none; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; line-height: 1.2;}
+        .btn-acao-voltar { background-color: #607d8b; }
+        .btn-acao-pular { background-color: #ff9800; color: #000; }
+        .btn-acao-inicio { background-color: #d32f2f; }
+
         #bloco-teclado-foco { display: flex; flex-direction: column; height: 100%; }
         .display-teclado { text-align: center; font-size: 32px; font-weight: 900; letter-spacing: 15px; color: var(--secondary); height: 40px; margin-bottom: 5px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
         
-        /* O Grid que calcula a altura sozinho */
         .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; flex: 1; min-height: 0; padding-bottom: 5px; }
-        .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 28px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 2px 0 #ccc; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 26px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 2px 0 #ccc; height: 100%; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
 
-        /* Desempate Otimizado */
         .area-desempate { display: flex; gap: 8px; overflow-x: auto; background: #ffebee; padding: 8px; border-radius: 10px; border: 2px solid #ffcdd2; margin-bottom: 5px; align-items: center; flex-shrink:0; }
         .card-desempate { background: white; padding: 4px; border-radius: 6px; text-align: center; width: 70px; flex-shrink: 0; border: 1px solid #ccc; }
         .card-desempate img { width: 100%; height: 50px; object-fit: contain; } 
         .card-desempate .desc { font-size: 11px; font-weight: 900; color: var(--danger); margin-top: 3px;}
 
-        /* Alertas Customizados */
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--primary); } .alerta-aviso { background-color: var(--warning); color: #000; }
 
-        /* Checklist Conclusão */
         .checklist-box { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 15px; margin-top: 15px; max-height: 40vh; overflow-y: auto; text-align: left; }
         .checklist-item { border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; }
         .checklist-item:last-child { border-bottom: none; }
@@ -111,7 +112,7 @@
             </div>
         </div>
 
-        <div class="foco-nome" id="foco-nome">Nome do Produto Completo Aqui Centralizado</div>
+        <div class="foco-nome" id="foco-nome">Nome do Produto</div>
         <div class="foco-sku" id="foco-sku">SKU: ---</div>
         
         <div class="ticks-container" id="foco-ticks"></div>
@@ -120,8 +121,14 @@
         
         <div class="area-interacao">
             
+            <div class="botoes-acao-foco">
+                <button class="btn-acao btn-acao-voltar" onclick="voltarProdutoAnterior()">⬅️<br>Anterior</button>
+                <button class="btn-acao btn-acao-pular" onclick="pularProduto()">⏭️<br>Pular</button>
+                <button class="btn-acao btn-acao-inicio" onclick="if(confirm('Cancelar separação?')) abrirTela('tela-inicial');">🏠<br>Início</button>
+            </div>
+
             <div id="bloco-teclado-foco">
-                <div id="foco-teclado-titulo" style="text-align:center; font-size:13px; font-weight:bold; color:#555;">Digite os 4 últimos do EAN</div>
+                <div id="foco-teclado-titulo" style="text-align:center; font-size:14px; font-weight:bold; color:#555;">Digite o ÚLTIMO dígito do EAN</div>
                 <div id="display-foco" class="display-teclado"></div>
                 
                 <div class="grid-teclado">
@@ -134,9 +141,10 @@
                     <div class="btn-num" onclick="addFoco(7)">7</div>
                     <div class="btn-num" onclick="addFoco(8)">8</div>
                     <div class="btn-num" onclick="addFoco(9)">9</div>
-                    <button class="btn-danger" style="font-size:15px; font-weight:bold; border-radius:10px; margin:0;" onclick="if(confirm('Cancelar separação?')) abrirTela('tela-inicial');">❌ Sair</button>
+                    <div style="visibility:hidden;"></div>
                     <div class="btn-num" onclick="addFoco(0)">0</div>
-                    <div style="visibility:hidden;"></div> </div>
+                    <div style="visibility:hidden;"></div> 
+                </div>
             </div>
 
             <div id="bloco-add-foco" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">
@@ -144,7 +152,6 @@
                 <button class="btn-secondary" style="width:100%; flex:1; font-size:28px; border-radius:16px; font-weight:900; box-shadow: 0 6px 0 #1976D2; margin-bottom: 10px;" onclick="registrarUnidadeFoco()">
                     ➕ ADICIONAR UNIDADE
                 </button>
-                <button class="btn-danger" style="padding:15px; width:100%; font-size:16px;" onclick="if(confirm('Cancelar separação?')) abrirTela('tela-inicial');">❌ Abortar Pedido</button>
             </div>
 
             <div id="bloco-confirmacao-item" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:#fff3e0; border:3px solid var(--warning); border-radius:12px; padding:15px; box-sizing:border-box;">
@@ -162,8 +169,7 @@
         <h2 style="color:var(--primary); font-size: 28px;">🎉 Pedido Finalizado!</h2>
         <p style="text-align:center; color:#666;">Confira a lista abaixo antes de imprimir.</p>
         
-        <div class="checklist-box" id="area-checklist">
-            </div>
+        <div class="checklist-box" id="area-checklist"></div>
 
         <button class="btn-print" style="padding: 25px; font-size: 20px; width:100%; margin-top:20px;" onclick="imprimirEtiquetaBluetooth()">🖨️ Imprimir Etiqueta (48mm)</button>
         <button class="btn-secondary" style="padding: 20px; font-size: 18px; width:100%; margin-top:15px;" onclick="abrirTela('tela-inicial')">✅ Voltar ao Menu</button>
@@ -172,7 +178,7 @@
 
 <script>
     let bancoDeDados = []; let pedidosFila = []; let listaDeSeparacao = []; let indexAtualPicking = 0; let pedidoAtual = null; let audioCtx = null;
-    let focoDisplayStr = ""; let focoModo = "EAN"; let focoLimite = 4; let focoProdutosEmpatados = [];
+    let focoDisplayStr = ""; let focoModo = "EAN"; let focoLimite = 1; let focoProdutosEmpatados = [];
 
     window.onload = async function() {
         try { 
@@ -209,7 +215,6 @@
         } catch(e){} 
     }
 
-    /* Modal de Foto Grande */
     function abrirFotoTelaCheia() {
         let imgSrc = document.getElementById('foco-img').src;
         if(imgSrc && !imgSrc.includes("Sem%20Foto")) {
@@ -240,6 +245,33 @@
         abrirTela('tela-separacao-foco'); renderizarItemFoco();
     }
 
+    // ================= FUNÇÕES DOS NOVOS BOTÕES =================
+    function voltarProdutoAnterior() {
+        if (indexAtualPicking > 0) {
+            indexAtualPicking--;
+            // Zera a contagem do produto anterior para obrigar o separador a reconferir
+            listaDeSeparacao[indexAtualPicking].unidadesLidas = 0; 
+            listaDeSeparacao[indexAtualPicking].status = 'pendente';
+            renderizarItemFoco();
+        } else {
+            mostrarAlerta("Este já é o primeiro produto!", "aviso");
+        }
+    }
+
+    function pularProduto() {
+        if (indexAtualPicking < listaDeSeparacao.length - 1) {
+            // Retira o produto atual da posição e joga para o final da fila de separação
+            let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0];
+            itemAtual.unidadesLidas = 0; // Reseta a leitura
+            listaDeSeparacao.push(itemAtual);
+            
+            mostrarAlerta("Produto enviado para o final da lista.", "aviso");
+            renderizarItemFoco();
+        } else {
+            mostrarAlerta("Este é o último produto restante!", "aviso");
+        }
+    }
+
     function renderizarItemFoco() {
         if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPedido(); return; }
         
@@ -249,7 +281,6 @@
         
         let imgTag = document.getElementById('foco-img');
         imgTag.src = `../site/img/produtos/${skuItem}.webp`; 
-        // fallback visual sem usar arquivo externo:
         imgTag.onerror = function() { this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; };
 
         document.getElementById('foco-nome').innerText = item.nomePedido; 
@@ -273,7 +304,7 @@
 
         if (item.unidadesLidas === 0) { 
             document.getElementById('bloco-teclado-foco').classList.remove('hidden'); 
-            resetarTecladoFoco("EAN", 4, "DIGITE OS 4 ÚLTIMOS DO EAN"); 
+            resetarTecladoFoco("EAN", 1, "DIGITE O ÚLTIMO DÍGITO DO EAN"); 
         } else if (item.unidadesLidas < item.quantidadeTotal) { 
             document.getElementById('bloco-add-foco').classList.remove('hidden'); 
         } else {
@@ -283,7 +314,6 @@
         }
     }
 
-    // ================== TECLADO COM AUTO-SUBMIT ==================
     function resetarTecladoFoco(modo, limite, titulo) { 
         focoModo = modo; focoLimite = limite; focoDisplayStr = ""; 
         document.getElementById('foco-teclado-titulo').innerText = titulo; 
@@ -295,9 +325,8 @@
         if(focoDisplayStr.length < focoLimite) { 
             focoDisplayStr += num; 
             atualizarDisplayFoco(); 
-            // O Segredo do Auto-Submit Instantâneo:
             if(focoDisplayStr.length === focoLimite) {
-                setTimeout(avaliarFoco, 100); // 100ms para o usuário ver o ultimo numero
+                setTimeout(avaliarFoco, 100); 
             }
         } 
     }
@@ -350,7 +379,6 @@
         renderizarItemFoco();
     }
 
-    // ================== CONCLUSÃO E IMPRESSÃO (BLUETOOTH TÉRMICA 48mm) ==================
     function finalizarPedido() {
         let areaCheck = document.getElementById('area-checklist'); areaCheck.innerHTML = '';
         listaDeSeparacao.forEach(i => { areaCheck.innerHTML += `<div class="checklist-item"><span>${i.nomePedido.substring(0,25)}...</span> <span>${i.quantidadeTotal}x</span></div>`; });
