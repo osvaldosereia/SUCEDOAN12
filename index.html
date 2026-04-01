@@ -499,24 +499,33 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
         </div>
         
         <div class="filters-row" id="normal-filters">
-            <div class="custom-dropdown" id="dropdown-keyword">
-                <div class="custom-dropdown-btn" onclick="toggleDropdown('keyword')">
-                    <span id="label-keyword">Todos</span> <span>▼</span>
-                </div>
-                <div class="custom-dropdown-list" id="list-keyword"></div>
-            </div>
-
-            <div class="custom-dropdown" id="dropdown-sort">
-                <div class="custom-dropdown-btn" onclick="toggleDropdown('sort')">
-                    <span id="label-sort">Ofertas</span> <span>▼</span>
-                </div>
-                <div class="custom-dropdown-list" id="list-sort">
-                    <div class="custom-dropdown-item active" onclick="selectSortOption('maior_desconto', 'Ofertas')">Ofertas</div>
-                    <div class="custom-dropdown-item" onclick="selectSortOption('menor_preco', 'Menor Preço')">Menor Preço</div>
-                    <div class="custom-dropdown-item" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
-                </div>
-            </div>
+    <div class="custom-dropdown" id="dropdown-keyword">
+        <div class="custom-dropdown-btn" onclick="toggleDropdown('keyword')">
+            <span id="label-keyword">Todos</span> <span>▼</span>
         </div>
+        <div class="custom-dropdown-list" id="list-keyword"></div>
+    </div>
+
+    <div class="custom-dropdown" id="dropdown-sort">
+        <div class="custom-dropdown-btn" onclick="toggleDropdown('sort')">
+            <span id="label-sort">Ofertas</span> <span>▼</span>
+        </div>
+        <div class="custom-dropdown-list" id="list-sort">
+            <div class="custom-dropdown-item active" onclick="selectSortOption('maior_desconto', 'Ofertas')">Ofertas</div>
+            <div class="custom-dropdown-item" onclick="selectSortOption('menor_preco', 'Menor Preço')">Menor Preço</div>
+            <div class="custom-dropdown-item" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
+        </div>
+    </div>
+</div>
+
+<div class="filters-row" id="marcas-filters" style="display: none;">
+    <div class="custom-dropdown" id="dropdown-marcas" style="width: 100%;">
+        <div class="custom-dropdown-btn" onclick="toggleDropdown('marcas')">
+            <span id="label-marcas">Marca</span> <span>▼</span>
+        </div>
+        <div class="custom-dropdown-list" id="list-marcas"></div>
+    </div>
+</div>
 
         <div class="insta-tabs-container" id="insta-tabs" style="display:none;">
             </div>
@@ -1262,16 +1271,22 @@ function iniciarAutoScroll(tempoMs, produtos) {
 // -------------------------------------------------------------
 
 function toggleDropdown(type) {
-    let otherType = type === 'sort' ? 'keyword' : 'sort';
-    document.getElementById(`list-${otherType}`).classList.remove('show');
-    document.getElementById(`list-${type}`).classList.toggle('show');
+    let list = document.getElementById(`list-${type}`);
+    let isShowing = list.classList.contains('show');
+    
+    // Fecha todos os dropdowns abertos para não encavalarem
+    document.querySelectorAll('.custom-dropdown-list').forEach(el => el.classList.remove('show'));
+    
+    // Abre apenas o que foi clicado
+    if (!isShowing && list) list.classList.add('show');
 }
+
 window.onclick = function(event) {
     if (!event.target.closest('.custom-dropdown')) {
-        document.getElementById('list-sort')?.classList.remove('show');
-        document.getElementById('list-keyword')?.classList.remove('show');
+        document.querySelectorAll('.custom-dropdown-list').forEach(el => el.classList.remove('show'));
     }
 }
+
 function selectSortOption(value, label) {
     STATE.currentSort = value;
     document.getElementById('label-sort').innerText = label;
@@ -1281,6 +1296,7 @@ function selectSortOption(value, label) {
     event.target.classList.add('active');
     applyDeptoFilters();
 }
+
 function selectKeywordOption(value, label, el) {
     STATE.currentKeyword = value;
     document.getElementById('label-keyword').innerText = label;
@@ -1290,6 +1306,35 @@ function selectKeywordOption(value, label, el) {
     el.classList.add('active');
     applyDeptoFilters();
 }
+
+// === NOVAS FUNÇÕES DO DROPDOWN DE MARCAS ===
+function renderMarcaTabs() {
+    let marcaAtual = MARCAS_DESTAQUE.find(m => m.id === STATE.currentMarcaTab);
+    if(marcaAtual && document.getElementById('label-marcas')) {
+        document.getElementById('label-marcas').innerText = marcaAtual.nome;
+    }
+
+    let html = MARCAS_DESTAQUE.map(m => {
+        let isActive = STATE.currentMarcaTab === m.id ? 'active' : '';
+        return `<div class="custom-dropdown-item ${isActive}" onclick="selectMarcaOption('${m.id}', '${m.nome}')">${m.nome}</div>`;
+    }).join('');
+    
+    let listMarcas = document.getElementById('list-marcas');
+    if(listMarcas) listMarcas.innerHTML = html;
+}
+
+window.selectMarcaOption = function(tabId, nome) {
+    STATE.currentMarcaTab = tabId;
+    let labelMarcas = document.getElementById('label-marcas');
+    if(labelMarcas) labelMarcas.innerText = nome;
+    
+    let listMarcas = document.getElementById('list-marcas');
+    if(listMarcas) listMarcas.classList.remove('show');
+    
+    renderMarcaTabs();
+    applyDeptoFilters();
+};
+// ============================================
 
 window.goToHome = function() { 
     document.getElementById('see-all-view').classList.remove('open');
