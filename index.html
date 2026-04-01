@@ -836,7 +836,7 @@ const TERMOS_CATEGORIAS = {
         "infantil", "shampoo", "enxague", "elastico", "palito dental", "laminas", "bucha vegetal"
     ],
     beleza: [
-        "maquiagem", "condicionador", "mascara", "tintura", "creme", "hidratante", "locao", 
+        "maquiagem", "farmax", "condicionador", "mascara", "tintura", "creme", "hidratante", "locao", 
         "acetona", "farmax", "paris", "esmalte", "pinca", "lixa", "escova de cabelo", "pente", "presilha", 
         "água oxigenada crem", "tratamento capilar", "cor&tom", "elseve", "removedor", "cortador de unha"
     ],
@@ -1362,19 +1362,24 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     document.getElementById('see-all-footer').style.display = 'none'; 
     document.getElementById('depto-search').value = ''; 
     
+    // 👇 1. Oculta todos os filtros por padrão primeiro
+    document.getElementById('normal-filters').style.display = 'none';
+    document.getElementById('insta-tabs').style.display = 'none';
+    if (document.getElementById('marcas-filters')) document.getElementById('marcas-filters').style.display = 'none';
+
+    // 👇 2. Decide qual filtro mostrar com base na aba clicada
     if (deptoId === 'ofertas_insta') {
-        document.getElementById('normal-filters').style.display = 'none';
         document.getElementById('insta-tabs').style.display = 'flex';
         STATE.currentInstaTab = 'maiores_descontos';
         renderInstaTabs();
     } else if (deptoId === 'marcas') {
-        document.getElementById('normal-filters').style.display = 'none';
-        document.getElementById('insta-tabs').style.display = 'flex';
-        if(!STATE.currentMarcaTab) STATE.currentMarcaTab = MARCAS_DESTAQUE[0].id;
+        // MOSTRA O NOVO DROPDOWN DE MARCAS
+        if (document.getElementById('marcas-filters')) document.getElementById('marcas-filters').style.display = 'flex';
+        // FORÇA A PRIMEIRA MARCA A ESTAR SELECIONADA
+        STATE.currentMarcaTab = MARCAS_DESTAQUE[0].id; 
         renderMarcaTabs();
     } else if (d.type === 'PROD') {
         document.getElementById('normal-filters').style.display = 'flex';
-        document.getElementById('insta-tabs').style.display = 'none';
         
         document.getElementById('label-sort').innerText = 'Ofertas';
         document.getElementById('label-keyword').innerText = 'Todos';
@@ -1395,6 +1400,8 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     document.getElementById('cesta-info-banner').innerHTML = '';
 
     document.getElementById('see-all-view').classList.add('open');
+    
+    // 👇 3. Carrega os produtos da marca automaticamente
     applyDeptoFilters(); 
     updateTotals();
     
