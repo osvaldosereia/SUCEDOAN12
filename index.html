@@ -2155,6 +2155,16 @@ async function sendOrder() {
     setTimeout(() => { window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`; setTimeout(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = `ENVIAR PEDIDO`; }, 3000); }, 400);
 }
 
+// Função para exibir as mensagens de sucesso ou erro (Toasts)
+function showToast(m, t) { 
+    let d = document.createElement('div'); 
+    d.className = 'toast'; 
+    d.style.background = (t === 'r') ? '#dc2626' : '#16a34a'; 
+    d.innerText = m; 
+    document.getElementById('toast-container').appendChild(d); 
+    setTimeout(() => d.remove(), 2500); 
+}
+
 // Função atualizada para renderizar e animar os banners
 function renderBanners() {
     const containers = document.querySelectorAll('.info-banners-render');
@@ -2174,7 +2184,7 @@ function renderBanners() {
         
         // Configura um temporizador para rolar a cada 3.5 segundos
         setInterval(() => {
-            // Se não for tela de celular ou não tiver filhos, ignora a animação
+            // Se não for tela de telemóvel ou não tiver filhos, ignora a animação
             if (!c.children.length || window.innerWidth >= 800) return; 
             
             currentIndex++;
@@ -2193,6 +2203,8 @@ function renderBanners() {
         }, 3500); 
     });
 }
+    
+
 // 👇 ESTE É O BLOCO QUE FOI APAGADO E PRECISA VOLTAR 👇
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(init, 10); 
