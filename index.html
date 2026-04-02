@@ -74,63 +74,42 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; 
 }
 
-/* BANNERS MOBILE OTIMIZADOS (Scroll Horizontal) */
+/* BANNERS MOBILE OTIMIZADOS */
 .info-banners { 
-    display: flex; 
-    flex-direction: row; 
-    gap: 8px; 
-    padding: 10px 15px; 
-    max-width: 1000px; 
-    margin: 0 auto; 
-    overflow-x: auto; 
-    scroll-snap-type: x mandatory; 
-    -webkit-overflow-scrolling: touch;
+    display: flex; flex-direction: row; gap: 8px; padding: 10px 15px; 
+    max-width: 1000px; margin: 0 auto; overflow-x: auto; 
+    scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
     scrollbar-width: none; 
 }
 .info-banners::-webkit-scrollbar { display: none; }
 
 .info-banner-item { 
-    font-size: 0.8rem; 
-    font-weight: 700; 
-    text-align: center; 
-    padding: 10px 14px; 
-    border-radius: 8px; 
-    text-transform: uppercase; 
-    letter-spacing: 0.2px; 
-    flex-shrink: 0; 
-    scroll-snap-align: center;
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    font-size: 0.8rem; font-weight: 700; text-align: center; padding: 10px 14px; 
+    border-radius: 8px; text-transform: uppercase; letter-spacing: 0.2px; 
+    flex-shrink: 0; scroll-snap-align: center; width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 
-/* Estilo do Novo Banner do WhatsApp */
+/* NOVO: BANNER DO WHATSAPP E BOTÃO INTERNO */
 .promo-whatsapp-banner {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
-    color: #ffffff;
-    text-decoration: none;
-    padding: 24px 15px; 
-    margin: 0 15px 20px 15px;
-    border-radius: 12px;
-    font-weight: 800;
-    font-size: 1.15rem;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); 
-    transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
+    color: #ffffff; text-decoration: none; padding: 18px 15px; margin: 0 15px 20px 15px;
+    border-radius: 12px; font-weight: 800; font-size: 1.05rem; text-align: center;
+    box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); transition: transform 0.2s; gap: 10px;
 }
-.promo-whatsapp-banner:active {
-    transform: scale(0.97); 
+.promo-whatsapp-banner:active { transform: scale(0.97); }
+
+.btn-ativar-desconto {
+    background: #fff; color: #128C7E; border-radius: 20px; padding: 6px 16px;
+    font-weight: 800; font-size: 0.85rem; text-transform: uppercase;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1); pointer-events: none; /* Deixa o clique passar para o banner pai */
 }
 
 @media (min-width: 800px) {
     .info-banners { justify-content: space-between; overflow-x: visible; padding: 15px 15px 5px; }
     .info-banner-item { width: auto; flex: 1; }
-    .promo-whatsapp-banner { max-width: 970px; margin: 0 auto 20px auto; }
+    .promo-whatsapp-banner { max-width: 970px; margin: 0 auto 20px auto; flex-direction: row; justify-content: space-between; padding: 20px 25px;}
 }
 
 /* CARDS DA HOME */
@@ -144,21 +123,17 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 
 .home-card { 
-    border-radius: 16px; padding: 20px 10px; display: flex; flex-direction: column; 
-    align-items: center; justify-content: center; gap: 12px; text-align: center;
+    border-radius: 16px; padding: 12px 10px; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; gap: 8px; text-align: center;
     box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-    aspect-ratio: 1/1; position: relative; overflow: hidden; background: #fff; border: 1px solid var(--c-bd);
+    aspect-ratio: 1 / 0.8; position: relative; overflow: hidden; background: #fff; border: 1px solid var(--c-bd);
 }
 .home-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
 .home-card:active { transform: scale(0.96); }
 
-.home-card::before {
-    content: ''; position: absolute; top:0; left:0; width:100%; height:100%;
-    background: var(--card-color); opacity: 0.3; pointer-events: none; z-index: 0;
-}
-
-.home-card-icon { font-size: 2.8rem; z-index: 2; margin-bottom: 5px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
-.home-card-title { color: var(--c-p); font-size: 1rem; font-weight: 600; line-height: 1.2; z-index: 2; letter-spacing: 0.2px;}
+.home-card::before { content: ''; position: absolute; top:0; left:0; width:100%; height:100%; background: var(--card-color); opacity: 0.3; pointer-events: none; z-index: 0; }
+.home-card-icon { font-size: 2.2rem; z-index: 2; margin-bottom: 2px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
+.home-card-title { color: var(--c-p); font-size: 0.9rem; font-weight: 600; line-height: 1.2; z-index: 2; letter-spacing: 0.2px;}
 
 /* COMPRE JUNTO */
 .cj-card { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s, box-shadow 0.2s; height: 100%; }
@@ -172,10 +147,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 /* CARRINHO FLUTUANTE */
 .floating-cart {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    width: 92%; max-width: 400px; background-color: var(--c-a); color: #fff;
-    border-radius: 12px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;
-    box-shadow: 0 4px 12px rgba(234, 29, 44, 0.3); z-index: 95; cursor: pointer; transition: transform 0.2s, opacity 0.2s;
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; 
+    background-color: var(--c-a); color: #fff; border-radius: 12px; padding: 14px 20px; display: flex; 
+    justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(234, 29, 44, 0.3); z-index: 95; cursor: pointer; transition: transform 0.2s, opacity 0.2s;
 }
 .floating-cart:active { transform: translateX(-50%) scale(0.96); }
 .fc-left { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1rem; }
@@ -194,10 +168,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .see-all-title { font-size: 1.1rem; font-weight: 600; color: var(--c-p); margin: 0; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: right;}
 
 /* SELETORES CUSTOMIZADOS */
-.see-all-controls {
-    padding: 12px 15px; background: #fff; border-bottom: 1px solid var(--c-bd);
-    display: flex; flex-direction: column; gap: 10px; position: sticky; top: 0; z-index: 10;
-}
+.see-all-controls { padding: 12px 15px; background: #fff; border-bottom: 1px solid var(--c-bd); display: flex; flex-direction: column; gap: 10px; position: sticky; top: 0; z-index: 10; }
 .search-wrapper-aba { position: relative; width: 100%; }
 .depto-search { width: 100%; padding: 12px 10px 12px 38px; border-radius: 8px; border: 1px solid var(--c-bd); background: var(--c-img-bg); font-size: 0.95rem; font-weight: 400; color: var(--c-p); transition: 0.2s;}
 .depto-search:focus { background: #fff; border-color: var(--c-a); box-shadow: 0 0 0 1px var(--c-a); }
@@ -211,19 +182,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .custom-dropdown-item { padding: 12px 10px; font-size: 0.85rem; font-weight: 500; color: var(--c-s); cursor: pointer; border-bottom: 1px solid var(--c-img-bg); }
 .custom-dropdown-item:hover, .custom-dropdown-item.active { background: #f8fafc; color: var(--c-a); font-weight: 600; }
 
-/* ABAS DO INSTAGRAM & MARCAS */
-.insta-tabs-container {
-    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;
-}
+.insta-tabs-container { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
 .insta-tabs-container::-webkit-scrollbar { display: none; }
-.insta-tab {
-    padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700;
-    background: var(--c-img-bg); color: var(--c-s); white-space: nowrap; cursor: pointer;
-    transition: 0.2s; border: 1px solid transparent;
-}
-.insta-tab.active {
-    background: #fff0f2; color: var(--c-a); border: 1px solid var(--c-a);
-}
+.insta-tab { padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; background: var(--c-img-bg); color: var(--c-s); white-space: nowrap; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+.insta-tab.active { background: #fff0f2; color: var(--c-a); border: 1px solid var(--c-a); }
 
 .see-all-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 180px; position: relative; background: var(--c-bg);}
 
@@ -241,11 +203,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .u-img-area { width: 100%; aspect-ratio: 3/4; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; transition: 0.3s;}
-
 .basket-img-area, .kit-img-area { background: transparent !important; aspect-ratio: 1/1 !important; }
 .basket-img-area img, .kit-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 8px; mix-blend-mode: normal !important;}
 .basket-img-area { background: transparent !important; }
-.basket-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 8px; mix-blend-mode: normal !important;}
 
 /* Etiquetas */
 .vencimento-tag { position: absolute; top: 8px; left: 8px; background: var(--c-err); color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 600; border-radius: 6px; z-index: 5; }
@@ -256,22 +216,17 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-add-btn { position: absolute; bottom: 8px; right: 8px; width: 32px; height: 32px; background: #fff; color: var(--c-a); border: 1px solid var(--c-bd); border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1; font-size: 1.2rem; font-weight: 500; z-index: 10; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.15s;}
 .card-add-btn.has-item { background: var(--c-a); color: #fff; border-color: var(--c-a); }
 .card-add-btn:active { transform: scale(0.85); }
-
 .card-add-btn-wide { background: var(--c-a); color: #fff; border-radius: 8px; padding: 8px; font-weight: 600; font-size: 0.9rem; border: none; transition: 0.15s; white-space: nowrap; width: 100%; margin-top: 8px; }
-.card-add-btn-wide:active { transform: scale(0.97); opacity: 0.9; }
 
 .u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between;}
 .u-name { font-size: 0.9rem; font-weight: 500; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
 .kit-name-large { font-size: 1rem !important; font-weight: 600 !important; } 
-
 .u-price { font-size: 1.05rem; font-weight: 600; color: var(--c-p); line-height: 1; }
 .combo-strike { text-decoration: line-through; color: var(--c-t); font-size: 0.8rem; font-weight: 500; display: block; margin-bottom: 2px; }
 
 .card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid var(--c-bd); border-radius: 8px; height: 34px; margin-top: 10px; width: 100%; overflow: hidden;}
 .card-qty-ctrl button { font-size: 1.2rem; background: transparent; color: var(--c-p); border: none; width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;}
-.card-qty-ctrl button:active { background: var(--c-img-bg); }
 .card-qty-ctrl span { font-weight: 600; font-size: 0.95rem; color: var(--c-p); flex: 1; text-align: center;}
-
 .see-all-footer { position: absolute; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 80; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -2px 10px rgba(0,0,0,0.03); }
 .expander-total { font-size: 1rem; font-weight: 600; color: var(--c-p); text-align: center; }
 
@@ -280,11 +235,9 @@ dialog { border: none; border-radius: 16px; width: 92%; max-width: 450px; paddin
 dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .modal-body { padding: 25px 20px; text-align: center; position: relative; max-height: 85vh; overflow-y: auto; overflow-x: hidden; }
 .btn-close-modal { position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; background: var(--c-img-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; color: var(--c-p); border: none; z-index: 50; transition: 0.2s;}
-.btn-close-modal:active { transform: scale(0.9); }
 .btn-modal { width: 100%; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;}
 .btn-modal.primary { background: var(--c-a); color: #fff; }
 .btn-modal.secondary { background: #fff; border: 1px solid var(--c-bd); color: var(--c-p); }
-.btn-modal.secondary:active { background: var(--c-img-bg); }
 
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 999999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
 .toast { padding: 12px 20px; color: #fff; border-radius: 8px; font-weight: 500; font-size: 0.9rem; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: toastPop 0.3s ease-out; z-index: 999999; }
@@ -296,8 +249,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 .chk-section { background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
 .chk-section-title { font-weight: 600; font-size: 1.05rem; color: var(--c-p); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;}
-
-/* Cores de fundo super sutis para cada sessão */
 .sec-1 { background-color: #ffffff; }
 .sec-2 { background-color: #f8fafc; border-color: #e2e8f0; }
 .sec-3 { background-color: #fffbeb; border-color: #fde68a; }
@@ -308,7 +259,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .chk-item-card { border: 1px solid var(--c-bd); border-radius: 8px; padding: 10px; background: #fff; display: flex; align-items: center; gap: 12px; }
 .chk-item-card img { width: 50px; height: 50px; object-fit: contain; background: var(--c-img-bg); border-radius: 6px; padding: 4px;}
 .chk-item-card .name { font-size: 0.85rem; font-weight: 500; color: var(--c-p); line-height: 1.2; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
-.chk-item-card .card-qty-ctrl { width: auto; margin-top: 0; min-width: 90px; }
 
 .del-option { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid var(--c-bd); border-radius: 8px; cursor: pointer; background: #fff; margin-bottom: 8px; transition: 0.2s;}
 .del-option.selected { border-color: var(--c-a); box-shadow: 0 0 0 1px var(--c-a); }
@@ -317,137 +267,29 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 .input-chk { width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--c-bd); font-family: inherit; font-size: 0.95rem; transition: 0.2s; background: #fff; }
 .input-chk:focus { border-color: var(--c-a); outline: none; }
-
 .pay-opt { padding: 12px; border: 1px solid var(--c-bd); border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: var(--c-s); background: #fff; user-select: none; flex: 1; min-width: 45%; text-align: center; transition: 0.2s;}
 .pay-opt.selected { border-color: var(--c-a); background: #fff5f5; color: var(--c-a); box-shadow: 0 0 0 1px var(--c-a); font-weight: 600;}
 .input-error { border-color: var(--c-err) !important; background-color: #fef2f2 !important; }
 
-.checkout-footer {
-    position: absolute; bottom: 0; left: 0; width: 100%; 
-    background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); 
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.03); z-index: 10;
-}
+.checkout-footer { position: absolute; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); box-shadow: 0 -2px 10px rgba(0,0,0,0.03); z-index: 10; }
 .btn-big-action { width: 100%; background: var(--c-a); color: #fff; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: flex; justify-content: center; align-items: center; border: none; transition: 0.2s;}
-.btn-big-action:active { opacity: 0.9; }
 
-/* --- SESSÃO UPSELL (CARROSSÉIS) --- */
+/* --- SESSÃO UPSELL --- */
 .upsell-section { grid-column: 1 / -1; margin-top: 0px; padding-top: 10px; }
 .upsell-header-title { font-size: 1.2rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; text-align: left; }
 .upsell-header-sub { font-size: 0.9rem; color: var(--c-s); margin-bottom: 25px; text-align: left; font-weight: 400; }
-
-.carousel-wrapper { margin-bottom: 30px; }
-.carousel-title { font-size: 1.05rem; font-weight: 600; color: var(--c-p); margin-bottom: 15px; text-align: left; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase;}
-.carousel-title span { font-size: 0.85rem; color: var(--c-a); font-weight: 500; cursor: pointer; text-transform: none;}
-
-.carousel-track { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 15px; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; }
-.carousel-track::-webkit-scrollbar { display: none; } 
-
-.carousel-item-wrapper { width: 140px; flex-shrink: 0; } 
-
-.card-ver-mais { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: transparent; border-radius: 12px; padding: 20px; text-align: center; color: var(--c-a); font-weight: 600; cursor: pointer; transition: 0.2s; border: 1px dashed var(--c-a); }
-.card-ver-mais:active { background: #fff5f5; }
-
-/* --- MODO ESTÚDIO (REELS) AUTOMÁTICO E REFINADO --- */
-#reels-studio-wrapper {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
-    background: #000; z-index: 99999; display: none;
-}
-
-#reels-studio {
-    width: 100vw; height: 100dvh; overflow: hidden; display: block; position: relative;
-    background-color: #fff; /* Cor inicial */
-    transition: background-color 0.15s ease-in-out; /* Transição de cor do fundo lisa e rápida */
-}
-
-/* OVERLAY FIXO (Logo, Site, Mensagem) */
-.reel-overlay {
-    position: absolute;
-    bottom: 18%; /* Subimos a logo e os textos para dar mais respiro em baixo */
-    left: 0;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px; /* Espaço entre os cards */
-    z-index: 50; 
-    pointer-events: none;
-}
-.reel-logo-small {
-    width: 80px; height: 80px; border-radius: 50%;
-    border: 3px solid #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    margin-bottom: 2px; object-fit: cover;
-}
-.reel-custom-card {
-    background: rgba(255, 255, 255, 0.95);
-    color: var(--c-p); /* Texto escuro */
-    padding: 8px 18px; border-radius: 12px;
-    font-size: 0.90rem; font-weight: 700;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-    max-width: 90%; text-align: center;
-    border: 1px solid rgba(0,0,0,0.05);
-}
-.reel-site-card {
-    background: var(--c-a); /* Fundo vermelho pro site destacar */
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 800;
-}
-.reel-custom-card.highlight {
-    color: var(--c-a); /* Texto vermelho para a frase 1 chamar atenção */
-}
-
-/* O PRODUTO MENOR COM RESPIRO */
-#reels-track { position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 10; }
-
-.reel-slide {
-    position: absolute; top: 0; left: 0; width: 100vw; height: 100dvh;
-    display: flex; align-items: flex-start; /* Joga o produto para cima */
-    justify-content: center;
-    padding-top: 12vh; /* Área de respiro no topo */
-    opacity: 0; pointer-events: none;
-    transform: scale(0.85); /* Começa levemente menor */
-    transition: opacity 0.1s ease-out, transform 0.2s cubic-bezier(0.1, 0.8, 0.3, 1);
-}
-.reel-slide.active {
-    opacity: 1; transform: scale(1); /* Pula na tela rapidamente */
-    z-index: 10;
-}
-/* O PRODUTO COM O MESMO RECURSO DOS CARDS DO SITE */
-.reel-product-box {
-    width: 75vw;
-    height: 45vh;
-    background: var(--c-img-bg); /* O mesmo fundo cinza clarinho do site! */
-    border-radius: 16px; /* Bordas arredondadas */
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 10px 35px rgba(0,0,0,0.12); /* Sombreado elegante para destacar do fundo colorido */
-    border: 1px solid var(--c-bd);
-}
-
-.reel-giant-img { 
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    object-fit: contain; 
-    mix-blend-mode: multiply; /* A mesma transparência exata do site */
-    padding: 5%; /* O mesmo respiro interno do site */
-}
+.carousel-title { font-size: 1.05rem; font-weight: 600; color: var(--c-p); text-align: left; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase;}
 
 /* ========================================= */
 /* NOVOS ESTILOS: MINIMALISMO E ABA LATERAL  */
 /* ========================================= */
-
-/* 1. Busca e Filtros em uma única linha no Desktop */
 @media(min-width: 800px) {
     .see-all-controls { flex-direction: row; align-items: center; justify-content: space-between; }
     .search-wrapper-aba { max-width: 350px; flex-shrink: 0; }
     .filters-row { flex: 1; justify-content: flex-end; }
-    .custom-dropdown { flex: 0 0 200px; } /* Define uma largura fixa para os botões no PC */
+    .custom-dropdown { flex: 0 0 200px; } 
 }
 
-/* 2. Card de Produto Minimalista */
 .u-card-minimal { 
     background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; 
     display: flex; flex-direction: column; overflow: hidden; position: relative; 
@@ -457,115 +299,55 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .u-card-minimal:active { transform: scale(0.98); }
 .u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
 
-.u-img-minimal { 
-    width: 100%; 
-    aspect-ratio: 3/4; 
-    background: #ffffff; /* ALTERADO: De cinza para Branco */
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    position: relative;
-    border-bottom: 1px solid var(--c-bd); /* Opcional: uma linha fina para separar do rodapé */
-}
+.u-img-minimal { width: 100%; aspect-ratio: 3/4; background: #ffffff; display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 1px solid var(--c-bd); }
 .u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 10%; }
-
-.u-bot-minimal { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 10px 12px; 
-    background: #f1f5f9; /* ALTERADO: De branco para o cinza clarinho da sua paleta */
-}
+.u-bot-minimal { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f1f5f9; flex:1;}
 .u-price-minimal { font-size: 1.15rem; font-weight: 700; color: var(--c-p); line-height: 1; }
 .u-tag-discount { background: var(--c-ok); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 700; border-radius: 6px; }
 
-/* Botão Flutuante de Adicionar no Card Minimalista */
-.btn-add-minimal {
-    position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; 
-    background: #fff; color: var(--c-a); border: 1px solid var(--c-bd); 
-    border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-    font-size: 1.4rem; font-weight: 500; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-}
+.btn-add-minimal { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-a); border: 1px solid var(--c-bd); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 500; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.08);}
 .btn-add-minimal.has-item { background: var(--c-a); color: #fff; border-color: var(--c-a); font-size: 1rem; font-weight: 600;}
 
-/* 3. Ajustes da Nova Aba Lateral (Quick View) */
-.lateral-view.quick-view { width: 90%; left: 100%; border-radius: 20px 0 0 20px; z-index: 110; } /* Z-index maior para cobrir a TV */
+/* QUICK VIEW */
+#qv-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:rgba(15,23,42,0.4); z-index:100; backdrop-filter: blur(2px);}
+.lateral-view.quick-view { width: 90%; left: 100%; border-radius: 20px 0 0 20px; z-index: 110; } 
 .lateral-view.quick-view.open { left: 10%; }
-@media(min-width: 800px) {
-    .lateral-view.quick-view { width: 450px; } 
-    .lateral-view.quick-view.open { left: calc(100% - 450px); }
-}
+@media(min-width: 800px) { .lateral-view.quick-view { width: 450px; } .lateral-view.quick-view.open { left: calc(100% - 450px); } }
 
-/* 4. Carrossel de Imagens e Vídeos */
-.qv-carousel { 
-    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; 
-    gap: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
-    border-radius: 12px; padding-bottom: 5px;
-}
+.qv-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch; border-radius: 12px; padding-bottom: 5px; }
 .qv-carousel::-webkit-scrollbar { display: none; }
-.qv-carousel-item { 
-    flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1/1; 
-    background: var(--c-img-bg); border-radius: 12px; overflow: hidden; position: relative;
-    display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-bd);
-}
+.qv-carousel-item { flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-bd); }
 .qv-carousel-item img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; }
 .qv-carousel-item iframe { width: 100%; height: 100%; border: none; }
-
-/* 5. Indicadores do Carrossel (Bolinhas) */
 .qv-dots { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; margin-bottom: 10px; }
 .qv-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-bd); transition: 0.3s; }
-.qv-dot.active { background: var(--c-a); width: 20px; border-radius: 4px; } /* Estica a bolinha ativa para dar destaque */
+.qv-dot.active { background: var(--c-a); width: 20px; border-radius: 4px; }
 
-/* ========================================= */
-/* FEED DE VÍDEOS (TV DONA ANTÔNIA)          */
-/* ========================================= */
-#video-feed-view { background: #000; z-index: 95; } /* Fica atrás do checkout e da Aba de Produto */
+/* FEED DE VÍDEOS (TV DONA ANTÔNIA) */
+#video-feed-view { background: #000; z-index: 95; } 
 #video-feed-view .see-all-header { background: #111; border-bottom: 1px solid #333; color: #fff; }
 #video-feed-view .see-all-title { color: #fff; }
 #video-feed-view .see-all-back { color: #fff; }
-
-.video-feed-container { 
-    height: calc(100dvh - 54px); /* Tira o tamanho do header */
-    overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; 
-    background: #000;
-}
+.video-feed-container { height: calc(100dvh - 54px); overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; background: #000; }
 .video-feed-container::-webkit-scrollbar { display: none; }
-
-.v-feed-item { 
-    width: 100%; height: calc(100dvh - 54px); 
-    scroll-snap-align: start; display: flex; flex-direction: column; 
-    position: relative; background: #111; border-bottom: 1px solid #222; 
-}
-.v-player { 
-    flex: 1; position: relative; display: flex; align-items: center; justify-content: center; 
-    overflow: hidden; background: #000; cursor: pointer;
-}
+.v-feed-item { width: 100%; height: calc(100dvh - 54px); scroll-snap-align: start; display: flex; flex-direction: column; position: relative; background: #111; border-bottom: 1px solid #222; }
+.v-player { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; cursor: pointer; }
 .v-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
-.v-play-btn { 
-    position: absolute; width: 60px; height: 60px; background: rgba(234,29,44,0.9); 
-    color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-    font-size: 1.8rem; z-index: 5; box-shadow: 0 4px 15px rgba(0,0,0,0.4); padding-left: 5px; 
-}
-
-/* Card de produto minimalista que fica abaixo do vídeo */
-.v-prod-card { 
-    background: #fff; padding: 12px 15px; display: flex; align-items: center; gap: 12px; 
-    cursor: pointer; border-top: 1px solid #333;
-}
-.v-prod-img { 
-    width: 55px; height: 55px; object-fit: contain; 
-    background: var(--c-img-bg); border-radius: 8px; padding: 4px; mix-blend-mode: multiply;
-}
+.v-play-btn { position: absolute; width: 60px; height: 60px; background: rgba(234,29,44,0.9); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; z-index: 5; box-shadow: 0 4px 15px rgba(0,0,0,0.4); padding-left: 5px; }
+.v-prod-card { background: #fff; padding: 12px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; border-top: 1px solid #333; }
+.v-prod-img { width: 55px; height: 55px; object-fit: contain; background: var(--c-img-bg); border-radius: 8px; padding: 4px; mix-blend-mode: multiply; }
 .v-prod-info { flex: 1; }
-.v-prod-name { 
-    font-size: 0.85rem; font-weight: 600; color: var(--c-p); 
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
-    overflow: hidden; line-height: 1.2; margin-bottom: 4px; 
-}
+.v-prod-name { font-size: 0.85rem; font-weight: 600; color: var(--c-p); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; margin-bottom: 4px; }
 .v-prod-price { font-size: 1.1rem; font-weight: 800; color: var(--c-a); }
-.v-prod-btn { 
-    background: var(--c-a); color: #fff; padding: 8px 16px; border-radius: 8px; 
-    font-weight: 600; font-size: 0.85rem; border: none; 
+.v-prod-btn { background: var(--c-a); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; border: none; }
+
+/* Ajuste Profissional Desktop (Opção 2 - Imersivo Centralizado) */
+@media(min-width: 800px) {
+    #video-feed-view { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); }
+    #video-feed-view .see-all-header, #video-feed-view .video-feed-container { max-width: 420px; margin: 0 auto; box-shadow: 0 10px 50px rgba(0,0,0,0.6); }
+    #video-feed-view .see-all-header { margin-top: 3vh; border-radius: 16px 16px 0 0; border: 1px solid #333; border-bottom: none; }
+    #video-feed-view .video-feed-container { height: calc(94vh - 54px); border-radius: 0 0 16px 16px; border: 1px solid #333; border-top: none; }
+    #video-feed-view .v-feed-item { height: calc(94vh - 54px); }
 }
 
 </style>
@@ -591,7 +373,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 <div class="layout-limit info-banners info-banners-render" id="auto-scroll-banners"></div>
 
 <div id="promo-banner-btn" onclick="activateAutoCoupons()" class="promo-whatsapp-banner" style="cursor: pointer;">
-    🎁 Ganhe até R$ 25 de desconto na sua compra!
+    <div style="font-size: 1.1rem;">🎁 Ganhe até R$ 25 de desconto na sua compra!</div>
+    <button class="btn-ativar-desconto">Ativar Desconto</button>
 </div>
     <div id="grid-home-sections" class="grid-home-sections"></div>
 </main>
@@ -682,8 +465,7 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
         <div id="qv-desc" style="font-size: 0.9rem; color: var(--c-s); line-height: 1.5; margin-bottom: 25px; text-align: left; display: none;"></div>
         
         <div id="qv-action-area" data-id=""></div>
-        <button class="btn-modal secondary" style="margin-top: 15px;" onclick="closeQuickView()">Voltar para a lista</button>
-    </div>
+        <div id="qv-bottom-buttons"></div> </div>
 </div>
 
 <div id="video-feed-view" class="lateral-view">
@@ -695,7 +477,7 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
         <h2 class="see-all-title">TV Dona Antônia</h2>
     </div>
     <div class="video-feed-container" id="v-feed-track">
-        </div>
+    </div>
 </div>
 
 <div id="checkout-view" class="lateral-view">
@@ -706,25 +488,20 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
         </button>
         <h2 class="see-all-title">Finalizar Pedido</h2>
     </div>
-    
     <div class="see-all-content" style="text-align: left; padding: 15px 15px 220px;">
-        
         <div class="chk-section sec-1">
             <h3 class="chk-section-title"><span>1.</span> Seus Produtos</h3>
             <div id="chk-list"></div>
             <button class="btn-modal secondary" style="border: 1px dashed var(--c-a); color: var(--c-a); background: transparent;" onclick="closeCheckout();">✚ Adicionar mais itens</button>        
         </div>
-
         <div class="chk-section sec-2">
             <h3 class="chk-section-title"><span>2.</span> Entrega</h3>
             <p style="font-size: 0.85rem; color: var(--c-s); margin-top: -6px; margin-bottom: 12px;">Planeje e ganhe desconto.</p>
             <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
-        
         <div class="chk-section" style="background: transparent; border: none; box-shadow: none; padding: 0 10px;">
             <div id="chk-summary-lines" style="font-size: 0.9rem; font-weight: 500; color: var(--c-s); line-height: 1.8;"></div>
         </div>
-
         <div class="chk-section sec-3">
             <h3 class="chk-section-title"><span>3.</span> Cupom</h3>
             <div style="display: flex; gap: 8px;">
@@ -733,7 +510,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
             </div>
             <div id="cupom-msg" style="font-size: 0.85rem; margin-top: 8px; display: none; font-weight: 500;"></div>
         </div>
-
         <div class="chk-section sec-4">
             <h3 class="chk-section-title"><span>4.</span> Dados Pessoais</h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -741,7 +517,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
                 <input type="text" id="chk-cpf" class="input-chk" placeholder="CPF">
             </div>
         </div>
-
         <div class="chk-section sec-5" style="margin-bottom: 35px;">
             <h3 class="chk-section-title"><span>5.</span> Pagamento</h3>
             <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 10px;">
@@ -753,12 +528,10 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
             </div>
             <input type="hidden" id="chk-pagamento" value="">
         </div>
-        
         <div style="text-align: center;">
             <button class="btn-modal" style="background: transparent; border: none; color: var(--c-s); font-size: 0.85rem;" onclick="clearCart()">🗑️ Esvaziar Sacola</button>
         </div>
     </div>
-    
     <div class="checkout-footer">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span style="font-weight: 500; color: var(--c-s); font-size: 0.9rem;">Total a pagar</span>
@@ -803,55 +576,11 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 <div id="toast-container"></div>
 
-<div id="reels-studio-wrapper">
-    <div id="reels-setup" style="position: fixed; top:0; left:0; width: 100vw; height: 100dvh; background: #fff; z-index: 100000; padding: 20px; overflow-y: auto;">
-        <h2 style="margin-bottom: 20px; font-weight: 700; color: var(--c-p);">🎬 Setup Reels</h2>
-        
-        <label style="font-weight: 600; display:block; margin-bottom: 8px;">Tipo de Ofertas:</label>
-        <select id="rs-tipo" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;" onchange="document.getElementById('rs-termos-container').style.display = this.value === 'termos' ? 'block' : 'none'">
-            <option value="geral">Maiores Descontos (Geral)</option>
-            <option value="termos">Buscar por Termos Específicos</option>
-        </select>
-        
-        <div id="rs-termos-container" style="display:none; margin-bottom: 15px;">
-            <label style="font-weight: 600; display:block; margin-bottom: 8px;">Palavras-chave (separe por vírgula):</label>
-            <input type="text" id="rs-termos" placeholder="Ex: arroz, omo, feijão" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
-        </div>
-        
-        <label style="font-weight: 600; display:block; margin-bottom: 8px;">Mensagem 1 (Destaque):</label>
-        <input type="text" id="rs-texto-custom" placeholder="Ex: Super Ofertas!" value="Super Ofertas da Semana!" style="width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
-
-        <label style="font-weight: 600; display:block; margin-bottom: 8px;">Mensagem 2 (Secundária):</label>
-        <input type="text" id="rs-texto-custom-2" placeholder="Ex: Válido até domingo" value="Aproveite enquanto durar o estoque!" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
-        
-        <label style="font-weight: 600; display:block; margin-bottom: 8px;">Tempo por Slide:</label>
-        <select id="rs-tempo" style="width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
-            <option value="400">0.4 Segundos (Flash Super Rápido)</option>
-            <option value="600">0.6 Segundos (Piscada)</option>
-            <option value="1000">1 Segundo</option>
-            <option value="1500" selected>1.5 Segundos</option>
-            <option value="2000">2 Segundos</option>
-        </select>
-        
-        <label style="font-weight: 600; display:block; margin-bottom: 8px;">Quantidade de Produtos:</label>
-        <input type="number" id="rs-qtd" value="10" min="1" max="50" style="width: 100%; padding: 12px; margin-bottom: 25px; border-radius: 8px; border: 1px solid var(--c-bd); font-size: 1rem; font-family: inherit;">
-        
-        <button onclick="gerarReels()" style="width: 100%; padding: 15px; background: var(--c-a); color: #fff; font-size: 1.1rem; font-weight: bold; border-radius: 8px; border: none; font-family: inherit;">Criar Slide ▶</button>
-    </div>
-
-    <div id="reels-countdown" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100dvh; background:var(--c-a); color:#fff; z-index:100001; align-items:center; justify-content:center; font-size: 8rem; font-weight: 800;">3</div>
-
-    <div id="reels-studio">
-        <div id="reels-track"></div>
-    </div>
-</div>
-
 <script>
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0], feriados: [] };
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-// Pega o ID limpo do vídeo do YouTube
 function getYouTubeVideoId(url) {
     if(!url) return '';
     let videoId = '';
@@ -866,87 +595,32 @@ function getYouTubeEmbedUrl(url) {
     return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : '';
 }
 
-// ==========================================
-// CONFIGURAÇÃO DAS CAMPANHAS DO INSTAGRAM E MARCAS
-// ==========================================
 const CAMPANHAS_INSTA = [
-    { id: "maiores_descontos", nome: "Maiores Descontos", desconto: 0, palavrasChave: [] }, // Fixa, não remova.
+    { id: "maiores_descontos", nome: "Maiores Descontos", desconto: 0, palavrasChave: [] },
     { id: "limpeza_pesada", nome: "Limpeza (7% OFF)", desconto: 7, palavrasChave: ["sabão", "desinfetante", "água sanitária", "vassoura", "pano limpeza", "pano de prato", "microfibra", "multiuso", "rodo", "detergente"] },
     { id: "chocolates", nome: "Chocolates (12% OFF)", desconto: 12, palavrasChave: ["chocolate", "bombom", "bom bom", "nestle", "lacta", "cory", "bis ", "kitkat" ] },
     { id: "higiene_pessoal", nome: "Higiene (6% OFF)", desconto: 6, palavrasChave: ["sabonete", "shampoo", "desodorante", "dental" ] }
 ];
 
 const MARCAS_DESTAQUE = [
-    { id: "Skala", nome: "Skala", palavrasChave: ["skala"] },
-    { id: "Monange", nome: "Monange", palavrasChave: ["monange"] },
-    { id: "Phebo", nome: "Phebo", palavrasChave: ["phebo"] },
-    { id: "Albany", nome: "Albany", palavrasChave: ["albany"] },
-    { id: "Novex", nome: "Novex", palavrasChave: ["novex"] },
-    { id: "Seda", nome: "Seda", palavrasChave: ["seda"] },
-    { id: "Dove", nome: "Dove", palavrasChave: ["dove"] },
-    { id: "Nivea", nome: "Nivea", palavrasChave: ["nivea"] },
-    { id: "tresemme", nome: "Tresemme", palavrasChave: ["tresemme"] },
-    { id: "Palmolive", nome: "Palmolive", palavrasChave: ["palmolive"] },
-    { id: "Rexona", nome: "Rexona", palavrasChave: ["rexona"] },
-    { id: "Colgate", nome: "Colgate", palavrasChave: ["colgate"] },
-    { id: "Ypê", nome: "Ypê", palavrasChave: ["ype"] },
-    { id: "Minuano", nome: "Minuano", palavrasChave: ["minuano"] },
-    { id: "Omo", nome: "Omo", palavrasChave: ["omo"] },
-    { id: "Downy", nome: "Downy", palavrasChave: ["Downy"] },
-    { id: "Confort", nome: "Confort", palavrasChave: ["confort"] },
-    { id: "Remus", nome: "Remmus", palavrasChave: ["Remmus"] },
-    { id: "Lacta", nome: "Lacta", palavrasChave: ["lacta"] },
-    { id: "Mabel", nome: "Mabel", palavrasChave: ["mabel"] },
-    { id: "Sinhá", nome: "Sinhá", palavrasChave: ["sinha"] },
-    { id: "Apti", nome: "Apti", palavrasChave: ["apti"] },
-    { id: "Fugini", nome: "Fugini", palavrasChave: ["fugini"] },
-    { id: "Frisco", nome: "Frisco", palavrasChave: ["frisco"] }
+    { id: "Skala", nome: "Skala", palavrasChave: ["skala"] }, { id: "Monange", nome: "Monange", palavrasChave: ["monange"] },
+    { id: "Phebo", nome: "Phebo", palavrasChave: ["phebo"] }, { id: "Albany", nome: "Albany", palavrasChave: ["albany"] },
+    { id: "Novex", nome: "Novex", palavrasChave: ["novex"] }, { id: "Seda", nome: "Seda", palavrasChave: ["seda"] },
+    { id: "Dove", nome: "Dove", palavrasChave: ["dove"] }, { id: "Nivea", nome: "Nivea", palavrasChave: ["nivea"] },
+    { id: "tresemme", nome: "Tresemme", palavrasChave: ["tresemme"] }, { id: "Palmolive", nome: "Palmolive", palavrasChave: ["palmolive"] },
+    { id: "Rexona", nome: "Rexona", palavrasChave: ["rexona"] }, { id: "Colgate", nome: "Colgate", palavrasChave: ["colgate"] },
+    { id: "Ypê", nome: "Ypê", palavrasChave: ["ype"] }, { id: "Minuano", nome: "Minuano", palavrasChave: ["minuano"] },
+    { id: "Omo", nome: "Omo", palavrasChave: ["omo"] }, { id: "Downy", nome: "Downy", palavrasChave: ["Downy"] },
+    { id: "Confort", nome: "Confort", palavrasChave: ["confort"] }, { id: "Remus", nome: "Remmus", palavrasChave: ["Remmus"] },
+    { id: "Lacta", nome: "Lacta", palavrasChave: ["lacta"] }, { id: "Mabel", nome: "Mabel", palavrasChave: ["mabel"] },
+    { id: "Sinhá", nome: "Sinhá", palavrasChave: ["sinha"] }, { id: "Apti", nome: "Apti", palavrasChave: ["apti"] },
+    { id: "Fugini", nome: "Fugini", palavrasChave: ["fugini"] }, { id: "Frisco", nome: "Frisco", palavrasChave: ["frisco"] }
 ];
-
-const carouselObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            const track = entry.target;
-            const deptoId = track.dataset.depto;
-            
-            if (deptoId && track.innerHTML === '') {
-                const depto = STATE.deptos[deptoId];
-                if (!depto || !depto.data) return;
-                
-                let sortedData = [...depto.data].sort((a, b) => {
-                    let descA = (a.oldPrice && a.oldPrice > a.price) ? (a.oldPrice - a.price) : 0;
-                    let descB = (b.oldPrice && b.oldPrice > b.price) ? (b.oldPrice - b.price) : 0;
-                    return descB - descA;
-                });
-
-                const topItems = sortedData.slice(0, 15);
-                
-                let html = topItems.map((item, idx) => `
-                    <div class="carousel-item-wrapper">
-                        ${buildCardHtml(item, depto.type, false, idx)}
-                    </div>
-                `).join('');
-                
-                html += `
-                    <div class="carousel-item-wrapper">
-                        <div class="card-ver-mais" onclick="openDepto('${deptoId}', true)">
-                            <span style="font-size: 1.5rem; margin-bottom: 8px;">➕</span>
-                            Ver mais<br>${depto.title}
-                        </div>
-                    </div>
-                `;
-                
-                track.innerHTML = html;
-                observer.unobserve(track);
-            }
-        }
-    });
-}, { rootMargin: '250px' });
 
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
     currentInstaTab: 'maiores_descontos', currentMarcaTab: 'nestle', baskets: [], prods: [], coupons: [], combos: [], compreJuntoCombos: [],
-    returnToUpsell: false, autoCouponsActive: false, allVideos: [], // Nova variável global para todos os vídeos
+    returnToUpsell: false, autoCouponsActive: false, allVideos: [], currentFilteredList: [], // Adicionado currentFilteredList
     
     banners: [
       { texto: "🚚 Entrega grátis (Cuiabá e VG)", corFundo: "#f0fdf4", corTexto: "#15803d" },
@@ -955,8 +629,8 @@ const STATE = {
       { texto: "🍽️ Aceitamos Alimentação", corFundo: "#faf5ff", corTexto: "#6b21a8" }
     ], 
     
-deptos: {
-        'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas do Instagram', type: 'PROD', data: [] },
+    deptos: {
+        'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas', type: 'PROD', data: [] }, // MUDANÇA: 'Ofertas do Instagram' para 'Ofertas'
         'marcas': { id: 'marcas', title: 'Encontre pela Marca', color: '#3b82f6', type: 'PROD', data: [] },
         'compre_junto': { id: 'compre_junto', title: 'Compre Junto', color: '#0d9488', type: 'COMPRE_JUNTO', data: [] },
         'cestas': { id: 'cestas', title: 'Cestas Básicas', color: '#10b981', type: 'BASKET', data: [] },
@@ -975,58 +649,19 @@ deptos: {
 };
 
 const TERMOS_CATEGORIAS = {
-    alimentos: [
-        "arroz", "sinha", "fugini", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", 
-        "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", 
-        "atum", "achocolatado", "amendoim", "aveia", "bala", "batata", "bombom", "caldo", "canjica", "catchup", 
-        "chantilly", "chiclete", "chocolate", "coco", "louro", "creme de leite", "drops", "fermento", "gelatina", 
-        "goiabada", "granola", "maionese", "mistura para bolo", "mostarda", "ovo", "pimenta", "pipoca", 
-        "queijo", "rosquinha", "salgadinho", "salsicha", "shoyu", "tapioca", "tempero", "wafer", "acafrao", 
-        "azeitona", "bicarbonato", "bis", "cereal", "chicle", "cogumelo", "colorifico", "erva", "mucilon", 
-        "oregano", "seleta", "toddy", "barra cereais", "barra de cereais", "milharina", "mistura pra bolo", "doce"
-    ],
-    bebidas: [
-        "leite integral", "suco", "cha", "refrigerante", "agua", "bebida", "energetico", "cerveja", "gatorade"
-    ],
-    higiene: [
-        "esponja de banho", "sabonete", "escova de banho", "creme dental", "escova de dente", "fio dental", 
-        "enxaguante", "papel higienico", "absorvente", "fralda", "lenco", "algodao", "desodorante", "talco", 
-        "curativo", "cotonete", "aparelho de barbear", "barbeador", "lamina", "gillette", "roll-on", "aerosol", 
-        "infantil", "shampoo", "enxague", "elastico", "palito dental", "laminas", "bucha vegetal"
-    ],
-    beleza: [
-        "maquiagem", "farmax", "condicionador", "mascara", "tintura", "creme", "hidratante", "locao", 
-        "acetona", "farmax", "paris", "esmalte", "pinca", "lixa", "escova de cabelo", "pente", "presilha", 
-        "água oxigenada crem", "tratamento capilar", "cor&tom", "elseve", "removedor", "cortador de unha"
-    ],
-    limpeza: [
-        "desinfetante", "multiuso", "qboa", "limpa aluminio", "agua sanitaria", "detergente", "inseticida", 
-        "esponja", "vassoura", "pano", "rodo", "pa de lixo", "saco", "balde 7", "purificador", "pedra sanitaria", 
-        "alcool", "veja", "cif", "glade", "escova sanitaria", "lava louca", "bucha de lavar"
-    ],
-    lavanderia: [
-        "sabao", "lava-roupas", "amaciante", "prendedor", "varal", "corda", "escova lavanderia", "tixan", 
-        "lav perfeita", "perfume para roupa", "perfume em cristais"
-    ],
-    casa: [
-        "balde de pipoca", "copo", "chaveiro", "coador", "prato", "jarra", "caneca", "talher", "lampada", "pilha", 
-        "panela", "fosforo", "isqueiro", "relogio", "livro", "caneta", "caderno", "agulha", "linha", 
-        "adaptador", "extensao", "abracadeira", "cabide", "cesto", "faca", "colher", "espatula", 
-        "descascador", "ralo", "peneira", "necessaire", "clips", "cola", "chinelo", "havaiana", "abridor", 
-        "agulheiro", "alfinete", "aparador", "cantoneira", "capa", "cesta", "cortina", "estilete", "fita", 
-        "forma", "grafite", "lapis", "papel aluminio", "pegador", "petisqueiras", "pilao", "porta comprimido", 
-        "porta objetos", "pote", "pratinho", "protetor", "supla", "tabua", "tigela", "lacre"
-    ],
-    pet: [
-        "racao", "petisco", "tapete higienico", "coleira", "areia"
-    ]
+    alimentos: [ "arroz", "sinha", "fugini", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", "atum", "achocolatado", "amendoim", "aveia", "bala", "batata", "bombom", "caldo", "canjica", "catchup", "chantilly", "chiclete", "chocolate", "coco", "louro", "creme de leite", "drops", "fermento", "gelatina", "goiabada", "granola", "maionese", "mistura para bolo", "mostarda", "ovo", "pimenta", "pipoca", "queijo", "rosquinha", "salgadinho", "salsicha", "shoyu", "tapioca", "tempero", "wafer", "acafrao", "azeitona", "bicarbonato", "bis", "cereal", "chicle", "cogumelo", "colorifico", "erva", "mucilon", "oregano", "seleta", "toddy", "barra cereais", "barra de cereais", "milharina", "mistura pra bolo", "doce" ],
+    bebidas: [ "leite integral", "suco", "cha", "refrigerante", "agua", "bebida", "energetico", "cerveja", "gatorade" ],
+    higiene: [ "esponja de banho", "sabonete", "escova de banho", "creme dental", "escova de dente", "fio dental", "enxaguante", "papel higienico", "absorvente", "fralda", "lenco", "algodao", "desodorante", "talco", "curativo", "cotonete", "aparelho de barbear", "barbeador", "lamina", "gillette", "roll-on", "aerosol", "infantil", "shampoo", "enxague", "elastico", "palito dental", "laminas", "bucha vegetal" ],
+    beleza: [ "maquiagem", "farmax", "condicionador", "mascara", "tintura", "creme", "hidratante", "locao", "acetona", "farmax", "paris", "esmalte", "pinca", "lixa", "escova de cabelo", "pente", "presilha", "água oxigenada crem", "tratamento capilar", "cor&tom", "elseve", "removedor", "cortador de unha" ],
+    limpeza: [ "desinfetante", "multiuso", "qboa", "limpa aluminio", "agua sanitaria", "detergente", "inseticida", "esponja", "vassoura", "pano", "rodo", "pa de lixo", "saco", "balde 7", "purificador", "pedra sanitaria", "alcool", "veja", "cif", "glade", "escova sanitaria", "lava louca", "bucha de lavar" ],
+    lavanderia: [ "sabao", "lava-roupas", "amaciante", "prendedor", "varal", "corda", "escova lavanderia", "tixan", "lav perfeita", "perfume para roupa", "perfume em cristais" ],
+    casa: [ "balde de pipoca", "copo", "chaveiro", "coador", "prato", "jarra", "caneca", "talher", "lampada", "pilha", "panela", "fosforo", "isqueiro", "relogio", "livro", "caneta", "caderno", "agulha", "linha", "adaptador", "extensao", "abracadeira", "cabide", "cesto", "faca", "colher", "espatula", "descascador", "ralo", "peneira", "necessaire", "clips", "cola", "chinelo", "havaiana", "abridor", "agulheiro", "alfinete", "aparador", "cantoneira", "capa", "cesta", "cortina", "estilete", "fita", "forma", "grafite", "lapis", "papel aluminio", "pegador", "petisqueiras", "pilao", "porta comprimido", "porta objetos", "pote", "pratinho", "protetor", "supla", "tabua", "tigela", "lacre" ],
+    pet: [ "racao", "petisco", "tapete higienico", "coleira", "areia" ]
 };
 
 function norm(str) { return str ? String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 function formatName(s) { return s ? String(s).toLowerCase().split(' ').map(w => w.length <= 3 ? w : w[0].toUpperCase() + w.slice(1)).join(' ') : ''; }
-function fmt(v) { 
-    return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); 
-}
+function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function converterDataValidade(dataStr) {
     if (!dataStr) return new Date(8640000000000000).getTime(); 
     let partes = dataStr.split('/');
@@ -1038,45 +673,31 @@ function agruparCategoria(produto) {
     let nomeProd = " " + norm(produto.name || "").replace(/[^a-z0-9 ]/g, ' ') + " ";
     let melhorCategoria = 'alimentos';
     let menorIndice = Infinity;
-
     const grupos = [
-        { id: 'alimentos', termos: TERMOS_CATEGORIAS.alimentos },
-        { id: 'bebidas', termos: TERMOS_CATEGORIAS.bebidas },
-        { id: 'higiene', termos: TERMOS_CATEGORIAS.higiene },
-        { id: 'beleza', termos: TERMOS_CATEGORIAS.beleza },
-        { id: 'limpeza', termos: TERMOS_CATEGORIAS.limpeza },
-        { id: 'lavanderia', termos: TERMOS_CATEGORIAS.lavanderia },
-        { id: 'casa', termos: TERMOS_CATEGORIAS.casa },
-        { id: 'pet', termos: TERMOS_CATEGORIAS.pet }
+        { id: 'alimentos', termos: TERMOS_CATEGORIAS.alimentos }, { id: 'bebidas', termos: TERMOS_CATEGORIAS.bebidas },
+        { id: 'higiene', termos: TERMOS_CATEGORIAS.higiene }, { id: 'beleza', termos: TERMOS_CATEGORIAS.beleza },
+        { id: 'limpeza', termos: TERMOS_CATEGORIAS.limpeza }, { id: 'lavanderia', termos: TERMOS_CATEGORIAS.lavanderia },
+        { id: 'casa', termos: TERMOS_CATEGORIAS.casa }, { id: 'pet', termos: TERMOS_CATEGORIAS.pet }
     ];
-
     for (let grupo of grupos) {
         for (let termo of grupo.termos) {
-            let termoNorm = " " + norm(termo) + " ";
-            let posicaoAchada = nomeProd.indexOf(termoNorm);
-
-            if (posicaoAchada !== -1 && posicaoAchada < menorIndice) {
-                menorIndice = posicaoAchada;
-                melhorCategoria = grupo.id;
-            }
+            let posicaoAchada = nomeProd.indexOf(" " + norm(termo) + " ");
+            if (posicaoAchada !== -1 && posicaoAchada < menorIndice) { menorIndice = posicaoAchada; melhorCategoria = grupo.id; }
         }
     }
-
     let tag = String(produto.name).split(' ')[0];
-    if (tag && tag.length > 3 && !STATE.deptos[melhorCategoria].tags.includes(formatName(tag))) {
-        STATE.deptos[melhorCategoria].tags.push(formatName(tag));
-    }
-
+    if (tag && tag.length > 3 && !STATE.deptos[melhorCategoria].tags.includes(formatName(tag))) { STATE.deptos[melhorCategoria].tags.push(formatName(tag)); }
     return melhorCategoria; 
 }
 
 function renderHomeCards() {
+    // MUDANÇA: Ordem dos Cards na Home + 'Ofertas'
     const cards = [
-        { id: 'compre_junto', title: 'Compre Junto', action: "openDepto('compre_junto')", icon: '🤝', color: 'rgba(13,148,136,1)' },
         { id: 'cestas', title: 'Cestas Básicas', action: "openDepto('cestas')", icon: '🧺', color: 'rgba(16,185,129,1)' },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: 'rgba(245,158,11,1)' },
-        { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: 'rgba(236,72,153,1)' }, /* ATUALIZADO: Botão do TikTok Shop */
-        { id: 'ofertas_insta', title: 'Ofertas do Instagram', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', mobileOnly: true },
+        { id: 'compre_junto', title: 'Compre Junto', action: "openDepto('compre_junto')", icon: '🤝', color: 'rgba(13,148,136,1)' },
+        { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: 'rgba(236,72,153,1)' },
+        { id: 'ofertas_insta', title: 'Ofertas', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', mobileOnly: true },
         { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: 'rgba(59,130,246,1)' },
         { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: 'rgba(234,88,12,1)' },
         { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: 'rgba(239,68,68,1)' },
@@ -1123,7 +744,6 @@ window.selectMarcaTab = function(tabId) {
     applyDeptoFilters();
 };
 
-// ATUALIZADO: Lógica do Feed de Vídeos (TV Dona Antônia)
 function compileVideos() {
     let list = [];
     STATE.prods.forEach(p => {
@@ -1134,7 +754,6 @@ function compileVideos() {
             });
         }
     });
-    // Embaralha a lista para sempre parecer fresco pro cliente (Fisher-Yates shuffle)
     for (let i = list.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [list[i], list[j]] = [list[j], list[i]];
@@ -1147,10 +766,12 @@ window.openVideoFeed = function() {
     if(STATE.allVideos.length === 0) compileVideos();
     if(STATE.allVideos.length === 0) return showToast("Nenhum vídeo disponível no momento.", "r");
     
+    // MUDANÇA: Preencher a currentFilteredList para o botão "Próximo" funcionar na TV
+    STATE.currentFilteredList = STATE.allVideos.map(v => v.product);
+
     STATE.viewStack = 'VIDEO_FEED';
     document.getElementById('video-feed-view').classList.add('open');
     
-    // Renderiza a lista com "Capas" (thumbnails) para não travar o celular com iframes
     let html = STATE.allVideos.map((v, index) => {
         return `
         <div class="v-feed-item">
@@ -1170,27 +791,24 @@ window.openVideoFeed = function() {
     }).join('');
     
     $('v-feed-track').innerHTML = html;
-    
     if (!history.state || !history.state.videoOpen) history.pushState({ videoOpen: true }, '');
 }
 
 window.playFeedVideo = function(index, videoId) {
     let container = $('v-player-' + index);
     if(!container) return;
-    // Toca o vídeo apenas quando clicado
     container.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1" style="width:100%; height:100%; border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 }
 
 window.closeVideoFeed = function() {
     document.getElementById('video-feed-view').classList.remove('open');
-    setTimeout(() => { $('v-feed-track').innerHTML = ''; }, 300); // Limpa para parar de tocar o áudio escondido
+    setTimeout(() => { $('v-feed-track').innerHTML = ''; }, 300);
     STATE.viewStack = 'HOME';
 }
 
-
 async function init() {
     renderHomeCards(); updateTotals(); renderBanners(); renderInstaTabs();
-    const versaoCache = Math.floor(Date.now() / 900000); 
+    const versaoCache = Math.floor(Date.now() / 300000); 
 
     try {
         const [r1, r2, r3, r4] = await Promise.all([
@@ -1206,45 +824,37 @@ async function init() {
        if (r2 && r2.length > 0) {
             const TAXA_AUMENTO_GLOBAL = 1.03;
 
-            // Localiza o STATE.prods = r2.filter(...).map(p => { ...
-STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
-    const codigoOuId = p.codigo || p.id;
-    const precoBase = parseFloat(p.preco) * 1.03;
+            STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
+                const codigoOuId = p.codigo || p.id;
+                const precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
+                
+                let imgs = [];
+                imgs.push(p.url_imagem || `/site/img/produtos/${codigoOuId}.webp?v=${versaoCache}`);
+                for(let i=2; i<=5; i++) {
+                    let extra = p[`url_imagem_${i}`] || `/site/img/produtos/${codigoOuId}_${i}.webp?v=${versaoCache}`;
+                    imgs.push(extra);
+                }
+                
+                let vids = [];
+                ['link_video','link_video_2','link_video_3','link_video_4','link_video_5'].forEach(k => { if(p[k]) vids.push(p[k]); });
 
-    // --- PARTE NOVA: CAPTURAR IMAGENS E VÍDEOS ---
-    let imagens = [];
-    // Se o JSON tiver link (url_imagem), usa-o. Se não, usa o padrão da pasta.
-    imagens.push(p.url_imagem || `/site/img/produtos/${codigoOuId}.webp?v=${versaoCache}`);
-    
-    // Tenta ler as fotos extras automáticas (_2, _3, _4, _5)
-    for(let i=2; i<=5; i++) {
-        // Se houver url_imagem_2 no JSON, usa. Senão, tenta o padrão CODIGO_2.webp
-        let extra = p[`url_imagem_${i}`] || `/site/img/produtos/${codigoOuId}_${i}.webp?v=${versaoCache}`;
-        imagens.push(extra);
-    }
-
-    // Captura os links de vídeos do YouTube
-    let videos = [];
-    let chavesVideo = ['link_video', 'link_video_2', 'link_video_3', 'link_video_4', 'link_video_5'];
-    chavesVideo.forEach(chave => { if(p[chave]) videos.push(p[chave]); });
-
-   return {
-        id: String(codigoOuId),
-        blingId: String(p.id),
-        name: String(p.nome),
-        price: precoBase,
-        oldPrice: precoBase,
-        stock: parseInt(p.estoque) || 0,
-        validade: p.validade || null,
-        img: imagens[0],          
-        imagensExtras: imagens,   
-        videosExtra: videos,      
-        descricao: p.descricao || "",
-        categoria: p.categoria || "",
-        campanhasInsta: [],       /* <- O VILÃO ESTAVA AQUI! */
-        discountApplied: false
-    };
-});
+                return {
+                    id: String(codigoOuId), 
+                    blingId: String(p.id), 
+                    name: String(p.nome),
+                    price: precoBase,
+                    oldPrice: precoBase,
+                    stock: parseInt(p.estoque) || 0, 
+                    validade: p.validade || null,
+                    img: imgs[0], 
+                    imagensExtras: imgs, 
+                    videosExtra: vids, 
+                    descricao: p.descricao || "", 
+                    categoria: p.categoria || "",
+                    campanhasInsta: [],
+                    discountApplied: false
+                };
+            });
             
             STATE.prods.forEach(p => { 
                 let grupo = agruparCategoria(p); 
@@ -1300,7 +910,6 @@ STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 if (hashDaIsca === 0) {
                     let base = p.oldPrice;
                     let desc = 0;
-
                     if (base > 40) desc = 0.15;
                     else if (base > 20) desc = 0.12;
                     else if (base > 10) desc = 0.10;
@@ -1367,138 +976,13 @@ STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 return descB - descA; 
             });
             STATE.deptos['ofertas_insta'].data = todasOfertas; 
-            
-            // Já compila os vídeos na inicialização para agilizar a abertura da TV
             compileVideos();
         }
         
         STATE.dataLoaded = true;
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('modo') === 'reels') {
-            iniciarModoEstudio();
-        }
 
     } catch (e) { console.error("Erro sincronização:", e); showToast("Erro ao conectar.", "r"); }
 }
-
-// -------------------------------------------------------------
-// LÓGICA DO MODO ESTÚDIO (REELS AUTOMATIZADO)
-// -------------------------------------------------------------
-function iniciarModoEstudio() {
-    document.getElementById('header-wrapper').style.display = 'none';
-    document.getElementById('scroll-stage').style.display = 'none';
-    document.getElementById('floating-cart').style.display = 'none';
-    document.getElementById('reels-studio-wrapper').style.display = 'block';
-}
-
-window.gerarReels = function() {
-   const tipo = document.getElementById('rs-tipo').value;
-    const termosInput = document.getElementById('rs-termos').value;
-    const tempoMs = parseInt(document.getElementById('rs-tempo').value);
-    const qtd = parseInt(document.getElementById('rs-qtd').value);
-    const customText1 = document.getElementById('rs-texto-custom').value || 'Super Ofertas Dona Antônia!';
-    const customText2 = document.getElementById('rs-texto-custom-2').value || 'Aproveite agora!';
-
-    let produtos = [];
-    let elegiveis = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
-    
-    if (tipo === 'termos' && termosInput.trim() !== '') {
-        let termos = termosInput.toLowerCase().split(',').map(t => norm(t.trim())).filter(t => t !== '');
-        let grupos = termos.map(t => ({ termo: t, itens: [] }));
-        elegiveis.forEach(p => {
-            let nomeNorm = norm(p.name);
-            for (let g of grupos) { if (nomeNorm.includes(g.termo)) { g.itens.push(p); break; } }
-        });
-        grupos.forEach(g => { g.itens = g.itens.map(value => ({ value, sort: Math.random() })).sort((a, b) => a.sort - b.sort).map(({ value }) => value); });
-        let hasMore = true;
-        while(hasMore && produtos.length < qtd) { hasMore = false; for (let g of grupos) { if (produtos.length >= qtd) break; if (g.itens.length > 0) { produtos.push(g.itens.shift()); hasMore = true; } } }
-    } else {
-        elegiveis.sort((a,b) => { let descA = (a.oldPrice - a.price) / a.oldPrice; let descB = (b.oldPrice - b.price) / b.oldPrice; return descB - descA; });
-        produtos = elegiveis.slice(0, qtd);
-    }
-
-    if (produtos.length === 0) { alert("Nenhum produto encontrado com esses parâmetros!"); return; }
-
-    const pantones = ['#FFD1DC', '#F0E6D2', '#B9D7D9', '#F9E4B7', '#D1C4E9', '#F2D2BD', '#C5E1A5', '#FFCCB6', '#E1BEE7', '#B2DFDB'];
-
-    let slidesHtml = produtos.map((p, index) => {
-        let pImgSegura = p.img || '/site/img/produtos/cesta.webp';
-        let bgColor = pantones[index % pantones.length];
-        return `
-        <div class="reel-slide" data-color="${bgColor}">
-            <div class="reel-product-box">
-                <img src="${pImgSegura}" class="reel-giant-img" onerror="this.src='/site/img/produtos/cesta.webp'">
-            </div>
-        </div>
-        `;
-    }).join('');
-
-    let overlayHtml = `
-    <div id="reels-persistent-overlay" class="reel-overlay" style="display:none;">
-        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="reel-logo-small">
-        <div class="reel-custom-card reel-site-card">www.donaantonia.com.br</div>
-        <div class="reel-custom-card highlight">${customText1}</div>
-        <div class="reel-custom-card">${customText2}</div>
-    </div>
-    `;
-
-    document.getElementById('reels-studio').innerHTML = overlayHtml + `<div id="reels-track">${slidesHtml}</div>`;
-    document.getElementById('reels-setup').style.display = 'none';
-    
-    let cd = 3;
-    const countdownEl = document.getElementById('reels-countdown');
-    countdownEl.style.display = 'flex';
-    countdownEl.innerText = cd;
-    
-    let cInt = setInterval(() => {
-        cd--;
-        if(cd > 0) { countdownEl.innerText = cd; } else {
-            clearInterval(cInt); countdownEl.style.display = 'none';
-            iniciarAutoScroll(tempoMs, produtos);
-        }
-    }, 1000);
-}
-
-function iniciarAutoScroll(tempoMs, produtos) {
-    let slides = document.querySelectorAll('.reel-slide');
-    let studio = document.getElementById('reels-studio');
-    let overlay = document.getElementById('reels-persistent-overlay');
-    let currentSlide = 0;
-    let totalSlides = slides.length; 
-    
-    if(totalSlides === 0) return;
-    
-    overlay.style.display = 'flex'; 
-    studio.style.backgroundColor = slides[0].dataset.color;
-    slides[0].classList.add('active');
-    
-    function moveNext() {
-        if(currentSlide < totalSlides - 1) {
-            slides[currentSlide].classList.remove('active');
-            currentSlide++;
-            
-            studio.style.backgroundColor = slides[currentSlide].dataset.color;
-            slides[currentSlide].classList.add('active');
-            
-            setTimeout(moveNext, tempoMs);
-        } else {
-            setTimeout(() => {
-                studio.classList.add('reel-fade-out');
-                setTimeout(() => {
-                    document.getElementById('reels-studio-wrapper').style.display = 'none';
-                    studio.classList.remove('reel-fade-out');
-                    studio.innerHTML = '';
-                    document.getElementById('header-wrapper').style.display = 'block';
-                    document.getElementById('scroll-stage').style.display = 'block';
-                    updateTotals();
-                }, 700); 
-            }, tempoMs);
-        }
-    }
-    setTimeout(moveNext, tempoMs);
-}
-// -------------------------------------------------------------
 
 function toggleDropdown(type) {
     let list = document.getElementById(`list-${type}`);
@@ -1533,21 +1017,6 @@ function selectKeywordOption(value, label, el) {
     document.querySelectorAll('#list-keyword .custom-dropdown-item').forEach(el => el.classList.remove('active'));
     el.classList.add('active');
     applyDeptoFilters();
-}
-
-function renderMarcaTabs() {
-    let marcaAtual = MARCAS_DESTAQUE.find(m => m.id === STATE.currentMarcaTab);
-    if(marcaAtual && document.getElementById('label-marcas')) {
-        document.getElementById('label-marcas').innerText = marcaAtual.nome;
-    }
-
-    let html = MARCAS_DESTAQUE.map(m => {
-        let isActive = STATE.currentMarcaTab === m.id ? 'active' : '';
-        return `<div class="custom-dropdown-item ${isActive}" onclick="selectMarcaOption('${m.id}', '${m.nome}')">${m.nome}</div>`;
-    }).join('');
-    
-    let listMarcas = document.getElementById('list-marcas');
-    if(listMarcas) listMarcas.innerHTML = html;
 }
 
 window.selectMarcaOption = function(tabId, nome) {
@@ -1724,6 +1193,9 @@ window.applyDeptoFilters = function(preventScroll = false) {
         }
     }
     
+    // MUDANÇA: Salvar a lista atual filtrada para o botão "Próximo" funcionar!
+    STATE.currentFilteredList = filtered;
+    
     let html = '';
     if(filtered.length === 0) { 
         html = '<p style="grid-column: 1/-1; text-align:center; padding: 40px 15px; color: var(--c-s); font-weight: 500;">Nenhum produto encontrado.</p>'; 
@@ -1736,10 +1208,7 @@ window.applyDeptoFilters = function(preventScroll = false) {
     }
     
     document.getElementById('see-all-grid').innerHTML = html;
-    
-    if (!preventScroll) {
-        document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
-    }
+    if (!preventScroll) { document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' }); }
 };
 
 window.handleLateralBack = function() {
@@ -1749,9 +1218,7 @@ window.handleLateralBack = function() {
     else if (STATE.viewStack === 'DEPTO_LIST' && STATE.returnToUpsell) {
         openUpsellView();
     }
-    else { 
-        closeSeeAll(); 
-    }
+    else { closeSeeAll(); }
 };
 
 window.closeSeeAll = function(isFromBrowser = false) {
@@ -1775,9 +1242,7 @@ window.addEventListener('popstate', function(event) {
         if (STATE.viewStack === 'DEPTO_LIST' && STATE.returnToUpsell) {
             history.pushState({ lateralOpen: true }, ''); 
             openUpsellView();
-        } else {
-            closeSeeAll(true);
-        }
+        } else { closeSeeAll(true); }
     } 
 });
 
@@ -1944,6 +1409,7 @@ window.commitExpander = function() {
 
 window.openUpsellView = function() {
     STATE.viewStack = 'UPSELL_VIEW';
+    STATE.currentFilteredList = []; // Limpa para não confundir o botão de 'próximo' da aba lateral
     document.getElementById('see-all-title').innerText = "Complete seu Pedido";
 
     let itemsHtml = `
@@ -1967,16 +1433,38 @@ window.openUpsellView = function() {
         { id: 'pet', nome: 'Pet' }
     ];
 
+    // MUDANÇA: Trocado Carrossel por Grade com apenas 4 produtos e botão Ver Todos
     sessoes.forEach(s => {
-        itemsHtml += `
-        <div class="carousel-wrapper">
-            <div class="carousel-title">
-                ${s.nome}
-                <span onclick="openDepto('${s.id}', true)">Ver mais ></span>
-            </div>
-            <div class="carousel-track lazy-carousel" data-depto="${s.id}"></div>
-        </div>
-        `;
+        let depto = STATE.deptos[s.id];
+        if (!depto || !depto.data || depto.data.length === 0) return;
+        
+        let items = [...depto.data];
+        if(s.id === 'ofertas_insta') {
+             items.sort((a,b) => ((b.oldPrice-b.price)/b.oldPrice) - ((a.oldPrice-a.price)/a.oldPrice));
+        } else {
+             items.sort((a,b) => String(a.name).localeCompare(String(b.name)));
+        }
+        
+        let top4 = items.slice(0, 4);
+        if(top4.length > 0) {
+            itemsHtml += `
+            <div style="margin-bottom: 35px;">
+                <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.1rem;">${s.nome}</div>
+                <div class="grid-ver-todos">
+            `;
+            
+            top4.forEach((item, idx) => {
+                itemsHtml += buildCardHtml(item, depto.type, false, idx);
+            });
+            
+            itemsHtml += `
+                    <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-a); cursor:pointer; min-height: 180px;" onclick="openDepto('${s.id}', true)">
+                        <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
+                        <span style="color: var(--c-a); font-weight: 700; text-align:center;">Ver Todos<br><span style="font-size:0.8rem; font-weight:500;">${s.nome}</span></span>
+                    </div>
+                </div>
+            </div>`;
+        }
     });
 
     itemsHtml += `</div>`;
@@ -1985,10 +1473,6 @@ window.openUpsellView = function() {
     document.getElementById('cesta-info-banner').innerHTML = '';
     document.getElementById('see-all-grid').innerHTML = itemsHtml;
     document.getElementById('see-all-grid').classList.remove('grid-cestas-kits');
-
-    document.querySelectorAll('.lazy-carousel').forEach(track => {
-        carouselObserver.observe(track);
-    });
 
     let contentDiv = document.getElementById('see-all-content');
     contentDiv.style.paddingBottom = '100px';
@@ -2096,8 +1580,7 @@ function getCardControls(id) {
     return `<button class="btn-big-action" onclick="event.stopPropagation(); upd('${id}',1)">Adicionar</button>`;
 }
 
-// ATUALIZADO: Carrossel ganha bolinhas (pontos) para indicar quantidade de fotos
-window.openQuickView = function(id) {
+window.openQuickView = function(id) { 
     let p = STATE.prods.find(x => x.id === id); 
     if (!p || p.stock <= 0) return; 
     
@@ -2107,7 +1590,6 @@ window.openQuickView = function(id) {
     // 1. MONTAGEM DO CARROSSEL DE IMAGENS
     if (p.imagensExtras && p.imagensExtras.length > 0) {
         p.imagensExtras.forEach(urlImg => {
-            // Usamos o onerror para esconder o slide caso a imagem não exista na pasta
             carrosselHtml += `
             <div class="qv-carousel-item" id="slide-img-${totalItems}">
                 <img src="${urlImg}" onerror="this.parentElement.style.display='none'; document.getElementById('dot-${totalItems}')?.remove();">
@@ -2184,6 +1666,23 @@ window.openQuickView = function(id) {
     
     $('qv-action-area').dataset.id = id; 
     $('qv-action-area').innerHTML = getCardControls(id); 
+
+    // MUDANÇA: Lógica do botão Próximo
+    let nextBtnHtml = '';
+    if (STATE.currentFilteredList && STATE.currentFilteredList.length > 0) {
+        let currentIndex = STATE.currentFilteredList.findIndex(x => x.id === id);
+        if (currentIndex !== -1 && currentIndex < STATE.currentFilteredList.length - 1) {
+            let nextId = STATE.currentFilteredList[currentIndex + 1].id;
+            nextBtnHtml = `<button class="btn-modal primary" style="flex:1;" onclick="openQuickView('${nextId}')">Próximo ⏭️</button>`;
+        }
+    }
+
+    $('qv-bottom-buttons').innerHTML = `
+        <div style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
+            <button class="btn-modal secondary" style="flex:1;" onclick="closeQuickView()">Voltar para a lista</button>
+            ${nextBtnHtml}
+        </div>
+    `;
     
     // 6. EXIBIÇÃO DA ABA
     $('qv-overlay').style.display = 'block';
@@ -2215,7 +1714,6 @@ window.updCompreJunto = function(cjId, delta) {
         }
     }
     
-    // Atualiza os dois produtos que compõem o combo
     upd(cj.p1.id, delta, true);
     upd(cj.p2.id, delta, true);
     
@@ -2233,7 +1731,7 @@ window.updCompreJunto = function(cjId, delta) {
     }
     
     updateTotals();
-    applyDeptoFilters(true); // Atualiza a grade sem resetar o scroll
+    applyDeptoFilters(true); 
 }
 
 function upd(id, delta, skipKitCheck = false) { 
@@ -2286,7 +1784,8 @@ window.clearCart = function() {
         
         let banner = document.getElementById('promo-banner-btn');
         if (banner) {
-            banner.innerHTML = '🎁 Ganhe até R$ 25 de desconto na sua compra!';
+            // Volta para a versão com botão
+            banner.innerHTML = '<div style="font-size: 1.1rem;">🎁 Ganhe até R$ 25 de desconto na sua compra!</div><button class="btn-ativar-desconto">Ativar Desconto</button>';
             banner.style.background = 'linear-gradient(135deg, #25D366 0%, #128C7E 100%)';
             banner.style.boxShadow = '0 4px 12px rgba(37, 211, 102, 0.3)';
             banner.onclick = activateAutoCoupons;
@@ -2304,6 +1803,7 @@ window.activateAutoCoupons = function() {
         banner.innerHTML = '✅ Cupons Automáticos Ativados!';
         banner.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)'; 
         banner.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+        banner.style.flexDirection = 'row';
         banner.onclick = null; 
     }
     showToast("Cupons ativados! O melhor desconto será aplicado no carrinho.", "s");
