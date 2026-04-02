@@ -761,14 +761,16 @@ function compileVideos() {
     STATE.allVideos = list;
 }
 
+// Variáveis para controlar qual vídeo está a tocar e o tempo de rolagem
+let feedScrollTimeout;
+let currentPlayingIndex = -1;
+
 window.openVideoFeed = function() {
     if(!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     if(STATE.allVideos.length === 0) compileVideos();
     if(STATE.allVideos.length === 0) return showToast("Nenhum vídeo disponível no momento.", "r");
     
-    // MUDANÇA: Preencher a currentFilteredList para o botão "Próximo" funcionar na TV
     STATE.currentFilteredList = STATE.allVideos.map(v => v.product);
-
     STATE.viewStack = 'VIDEO_FEED';
     document.getElementById('video-feed-view').classList.add('open');
     
@@ -791,17 +793,63 @@ window.openVideoFeed = function() {
     }).join('');
     
     $('v-feed-track').innerHTML = html;
+    
+    // --- NOVIDADE AQUI: O detetor de rolagem ---
+    $('v-feed-track').onscroll = function() {
+        clearTimeout(feedScrollTimeout);
+        feedScrollTimeout = setTimeout(() => {
+            let track = $('v-feed-track');
+            // Calcula qual é o item (índice) que está visível no ecrã agora
+            let activeIndex = Math.round(track.scrollTop / track.clientHeight);
+            
+            // Se há um vídeo a tocar e ele não é o que está no ecrã, paramos ele!
+            if (currentPlayingIndex !== -1 && currentPlayingIndex !== activeIndex) {
+                stopFeedVideo(currentPlayingIndex);
+            }
+        }, 150); // Aguarda um instante para a rolagem terminar
+    };
+    
     if (!history.state || !history.state.videoOpen) history.pushState({ videoOpen: true }, '');
 }
 
 window.playFeedVideo = function(index, videoId) {
+    // Bónus: Se já tiver outro vídeo a tocar, para-o antes de começar este
+    if (currentPlayingIndex !== -1 && currentPlayingIndex !== index) {
+        stopFeedVideo(currentPlayingIndex);
+    }
+    currentPlayingIndex = index;
+
     let container = $('v-player-' + index);
     if(!container) return;
+    // Injeta o iframe do YouTube a tocar automaticamente
     container.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1" style="width:100%; height:100%; border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+}
+
+// --- NOVA FUNÇÃO: Para o vídeo restaurando a capa (thumbnail) original ---
+window.stopFeedVideo = function(index) {
+    let container = $('v-player-' + index);
+    let v = STATE.allVideos[index];
+    if(!container || !v) return;
+    
+    // Remove o iframe do YouTube e volta a colocar a imagem
+    container.innerHTML = `
+        <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="v-thumb">
+        <div class="v-play-btn">▶</div>
+    `;
+    
+    if (currentPlayingIndex === index) {
+        currentPlayingIndex = -1;
+    }
 }
 
 window.closeVideoFeed = function() {
     document.getElementById('video-feed-view').classList.remove('open');
+    
+    // Garante que para o vídeo se o cliente fechar a aba da TV
+    if (currentPlayingIndex !== -1) {
+        stopFeedVideo(currentPlayingIndex);
+    }
+    
     setTimeout(() => { $('v-feed-track').innerHTML = ''; }, 300);
     STATE.viewStack = 'HOME';
 }
