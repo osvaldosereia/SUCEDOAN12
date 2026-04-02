@@ -1228,17 +1228,21 @@ STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
     let chavesVideo = ['link_video', 'link_video_2', 'link_video_3', 'link_video_4', 'link_video_5'];
     chavesVideo.forEach(chave => { if(p[chave]) videos.push(p[chave]); });
 
-    return {
+   return {
         id: String(codigoOuId),
+        blingId: String(p.id),
         name: String(p.nome),
         price: precoBase,
         oldPrice: precoBase,
         stock: parseInt(p.estoque) || 0,
-        img: imagens[0],          // Foto principal para a vitrine
-        imagensExtras: imagens,   // Lista para o carrossel na aba lateral
-        videosExtra: videos,      // Lista de vídeos para a aba lateral e TV
+        validade: p.validade || null,
+        img: imagens[0],          
+        imagensExtras: imagens,   
+        videosExtra: videos,      
         descricao: p.descricao || "",
-        categoria: p.categoria || ""
+        categoria: p.categoria || "",
+        campanhasInsta: [],       /* <- O VILÃO ESTAVA AQUI! */
+        discountApplied: false
     };
 });
             
