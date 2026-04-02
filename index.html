@@ -1206,36 +1206,41 @@ async function init() {
        if (r2 && r2.length > 0) {
             const TAXA_AUMENTO_GLOBAL = 1.03;
 
-            STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
-                let precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
-                
-                let imagens = [];
-                if (p.url_imagem) imagens.push(p.url_imagem);
-                else imagens.push(`/site/img/produtos/${p.codigo || p.id}.webp`);
-                
-                for(let i=2; i<=5; i++) { if(p[`url_imagem_${i}`]) imagens.push(p[`url_imagem_${i}`]); }
-                
-                let videos = [];
-                let chavesVideo = ['link_video', 'link_video_2', 'link_video_3', 'link_video_4', 'link_video_5'];
-                chavesVideo.forEach(chave => { if(p[chave]) videos.push(p[chave]); });
+            // Localiza o STATE.prods = r2.filter(...).map(p => { ...
+STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
+    const codigoOuId = p.codigo || p.id;
+    const precoBase = parseFloat(p.preco) * 1.03;
 
-                return {
-                    id: String(p.codigo || p.id), 
-                    blingId: String(p.id), 
-                    name: String(p.nome),
-                    price: precoBase,
-                    oldPrice: precoBase,
-                    stock: parseInt(p.estoque) || 0, 
-                    validade: p.validade || null,
-                    img: imagens[0], 
-                    imagensExtras: imagens, 
-                    videosExtra: videos, 
-                    descricao: p.descricao || "", 
-                    categoria: p.categoria || "",
-                    campanhasInsta: [],
-                    discountApplied: false
-                };
-            });
+    // --- PARTE NOVA: CAPTURAR IMAGENS E VÍDEOS ---
+    let imagens = [];
+    // Se o JSON tiver link (url_imagem), usa-o. Se não, usa o padrão da pasta.
+    imagens.push(p.url_imagem || `/site/img/produtos/${codigoOuId}.webp?v=${versaoCache}`);
+    
+    // Tenta ler as fotos extras automáticas (_2, _3, _4, _5)
+    for(let i=2; i<=5; i++) {
+        // Se houver url_imagem_2 no JSON, usa. Senão, tenta o padrão CODIGO_2.webp
+        let extra = p[`url_imagem_${i}`] || `/site/img/produtos/${codigoOuId}_${i}.webp?v=${versaoCache}`;
+        imagens.push(extra);
+    }
+
+    // Captura os links de vídeos do YouTube
+    let videos = [];
+    let chavesVideo = ['link_video', 'link_video_2', 'link_video_3', 'link_video_4', 'link_video_5'];
+    chavesVideo.forEach(chave => { if(p[chave]) videos.push(p[chave]); });
+
+    return {
+        id: String(codigoOuId),
+        name: String(p.nome),
+        price: precoBase,
+        oldPrice: precoBase,
+        stock: parseInt(p.estoque) || 0,
+        img: imagens[0],          // Foto principal para a vitrine
+        imagensExtras: imagens,   // Lista para o carrossel na aba lateral
+        videosExtra: videos,      // Lista de vídeos para a aba lateral e TV
+        descricao: p.descricao || "",
+        categoria: p.categoria || ""
+    };
+});
             
             STATE.prods.forEach(p => { 
                 let grupo = agruparCategoria(p); 
@@ -2088,15 +2093,21 @@ function getCardControls(id) {
 }
 
 // ATUALIZADO: Carrossel ganha bolinhas (pontos) para indicar quantidade de fotos
-window.openQuickView = function(id) { 
-    let p = STATE.prods.find(x => x.id === id); if (!p || p.stock <= 0) return; 
+wwindow.openQuickView = function(id) { 
+    let p = STATE.prods.find(x => x.id === id); 
+    if (!p || p.stock <= 0) return; 
     
     let carrosselHtml = '';
     let totalItems = 0;
     
+    // 1. MONTAGEM DO CARROSSEL DE IMAGENS
     if (p.imagensExtras && p.imagensExtras.length > 0) {
         p.imagensExtras.forEach(urlImg => {
-            carrosselHtml += `<div class="qv-carousel-item"><img src="${urlImg}" onerror="this.src='/site/img/produtos/cesta.webp'"></div>`;
+            // Usamos o onerror para esconder o slide caso a imagem não exista na pasta
+            carrosselHtml += `
+            <div class="qv-carousel-item" id="slide-img-${totalItems}">
+                <img src="${urlImg}" onerror="this.parentElement.style.display='none'; document.getElementById('dot-${totalItems}')?.remove();">
+            </div>`;
             totalItems++;
         });
     } else {
@@ -2104,11 +2115,15 @@ window.openQuickView = function(id) {
         totalItems++;
     }
     
+    // 2. MONTAGEM DO CARROSSEL DE VÍDEOS
     if (p.videosExtra && p.videosExtra.length > 0) {
         p.videosExtra.forEach(link => {
             let embedUrl = getYouTubeEmbedUrl(link);
             if(embedUrl) {
-                carrosselHtml += `<div class="qv-carousel-item"><iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+                carrosselHtml += `
+                <div class="qv-carousel-item">
+                    <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>`;
                 totalItems++;
             }
         });
@@ -2116,11 +2131,11 @@ window.openQuickView = function(id) {
     
     $('qv-carousel').innerHTML = carrosselHtml;
     
-    // Constrói os indicadores (bolinhas)
+    // 3. CONSTRUÇÃO DOS INDICADORES (BOLINHAS)
     let dotsHtml = '';
     if (totalItems > 1) {
         for(let i=0; i<totalItems; i++) {
-            dotsHtml += `<div class="qv-dot ${i === 0 ? 'active' : ''}"></div>`;
+            dotsHtml += `<div class="qv-dot ${i === 0 ? 'active' : ''}" id="dot-${i}"></div>`;
         }
         $('qv-swipe-hint').style.display = 'block';
     } else {
@@ -2128,11 +2143,12 @@ window.openQuickView = function(id) {
     }
     $('qv-dots').innerHTML = dotsHtml;
     
-    // Atualiza a bolinha ativa conforme o cliente rola o carrossel
+    // 4. ATUALIZAÇÃO DA BOLINHA AO ROLAR
     $('qv-carousel').onscroll = function() {
-        if(totalItems <= 1) return;
         let scrollLeft = this.scrollLeft;
         let itemWidth = this.offsetWidth;
+        if(itemWidth <= 0) return;
+        
         let activeIndex = Math.round(scrollLeft / itemWidth);
         let dots = document.querySelectorAll('#qv-dots .qv-dot');
         dots.forEach((d, i) => {
@@ -2141,6 +2157,7 @@ window.openQuickView = function(id) {
         });
     };
 
+    // 5. PREENCHIMENTO DE TEXTOS E PREÇO
     $('qv-name').innerText = p.name; 
     
     if (p.descricao) {
@@ -2164,8 +2181,10 @@ window.openQuickView = function(id) {
     $('qv-action-area').dataset.id = id; 
     $('qv-action-area').innerHTML = getCardControls(id); 
     
+    // 6. EXIBIÇÃO DA ABA
     $('qv-overlay').style.display = 'block';
     document.getElementById('quick-view-lateral').classList.add('open');
+    
     if (!history.state || !history.state.qvOpen) history.pushState({ qvOpen: true }, '');
     
     $('qv-carousel').scrollTo({ left: 0 });
@@ -2192,6 +2211,7 @@ window.updCompreJunto = function(cjId, delta) {
         }
     }
     
+    // Atualiza os dois produtos que compõem o combo
     upd(cj.p1.id, delta, true);
     upd(cj.p2.id, delta, true);
     
@@ -2209,7 +2229,7 @@ window.updCompreJunto = function(cjId, delta) {
     }
     
     updateTotals();
-    applyDeptoFilters(true); 
+    applyDeptoFilters(true); // Atualiza a grade sem resetar o scroll
 }
 
 function upd(id, delta, skipKitCheck = false) { 
