@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Painel - v56 (Prod JSON com Pedidos)</title>
+    <title>Sucedoan Painel - v57 (Prod JSON Limpo)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -72,7 +71,7 @@
         .cat-select { width: 100%; padding: 5px; border: 1px solid var(--border); border-radius: 4px; font-size: 11px; font-weight: 600; color: var(--text-primary); background: #f8fafc; cursor: pointer; }
         .cat-select:focus { border-color: var(--accent); background: white; outline: none; }
         .stat-readonly { width: 100%; padding: 5px; border: 1px solid transparent; font-size: 11px; font-weight: 700; color: var(--text-secondary); background: transparent; text-align: center; }
-        .card-footer { padding: 8px 12px; background: #f8fafc; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: center; }
+        .card-footer { padding: 8px 12px; background: #f8fafc; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; align-items: center; }
         .btn-sq { aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; border-radius: 6px; border: 1px solid var(--border); background: white; color: var(--text-secondary); cursor: pointer; transition: 0.2s; padding: 0; width: 100%; }
         .btn-sq:hover { border-color: var(--accent); color: var(--accent); background: #f1f5f9; }
         .btn-sq.sync { background: var(--success); color: white; border-color: var(--success); }
@@ -119,7 +118,7 @@
         .btn-icon:hover { background: var(--bg-body); color: var(--accent); border-color: var(--accent); }
         .btn-icon.del:hover { color: var(--danger); border-color: var(--danger); background: #fef2f2; }
         
-        .list-row { display: grid; grid-template-columns: 80px 1fr 110px 100px 100px 90px 60px 80px 70px 45px 70px 90px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 11px; transition: 0.2s; border-left: 3px solid transparent; }
+        .list-row { display: grid; grid-template-columns: 80px 1fr 110px 100px 100px 90px 60px 80px 70px 45px 70px 50px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 11px; transition: 0.2s; border-left: 3px solid transparent; }
         .list-row:hover { background: #f1f5f9; border-left-color: var(--accent); }
         .list-header { font-weight: bold; background: #e2e8f0; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-left: 3px solid transparent; cursor: default; }
         .list-header:hover { background: #e2e8f0; border-left-color: transparent; }
@@ -138,63 +137,18 @@
 
         .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); margin-top: 50px; }
 
-        /* --- ESTILOS DO CHECKOUT DE SEPARAÇÃO E FILA --- */
-        .pick-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border: 1px solid var(--border); border-radius: 8px; background: white; margin-bottom: 8px; transition: 0.2s; cursor: pointer; }
-        .pick-item:hover { border-color: var(--accent); }
-        .pick-item.partial { background: #fef08a; border-color: #fde047; }
-        .pick-item.done { background: #dcfce7; border-color: #86efac; opacity: 0.6; }
-        .pick-info { display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }
-        .pick-name { font-weight: 800; font-size: 14px; color: var(--text-primary); }
-        .pick-meta { font-size: 11px; color: var(--text-secondary); display: flex; gap: 10px; }
-        .pick-qtd-box { display: flex; align-items: center; gap: 10px; }
-        .pick-qtd { font-size: 24px; font-weight: 900; min-width: 60px; text-align: center; }
-        .pick-qtd span { font-size: 14px; color: var(--text-secondary); }
-        #picking-alert { padding: 12px; border-radius: 6px; font-weight: 900; text-align: center; color: white; margin-bottom: 10px; display: none; text-transform: uppercase; letter-spacing: 1px; }
-
-        /* NOVO: Estilo para os Badges de Status na fila de Pedidos */
-        .badge-status { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-        .badge-pendente { background: #fef08a; color: #854d0e; border: 1px solid #fde047; }
-        .badge-conferido { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-   /* --- TELA INICIAL DE PERFIS --- */
-        .profile-overlay { position: fixed; inset: 0; background: var(--bg-body); z-index: 9999; display: flex; justify-content: center; align-items: center; padding: 20px; transition: opacity 0.3s; }
-        .profile-card-modal { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 25px 50px rgba(0,0,0,0.15); max-width: 500px; width: 100%; text-align: center; border: 1px solid var(--border); }
-        .profile-card-modal h2 { color: var(--text-primary); margin-top: 0; font-weight: 900; font-size: 24px; }
-        .profile-card-modal p { color: var(--text-secondary); margin-bottom: 24px; font-size: 14px; }
-        .profile-buttons { display: flex; flex-direction: column; gap: 15px; }
-        .btn-profile { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; border-radius: 8px; border: 2px solid var(--border); background: #f8fafc; cursor: pointer; transition: 0.2s; outline: none; }
-        .btn-profile:hover { transform: translateY(-3px); box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
-        .btn-profile.pedidos { border-color: #fde047; background: #fefce8; color: #854d0e; }
-        .btn-profile.admin { border-color: #bae6fd; background: #f0f9ff; color: #0369a1; }
-        .btn-profile span { font-weight: 900; font-size: 18px; }
-        .btn-profile small { font-weight: 600; font-size: 12px; opacity: 0.8; }
-
-        /* Oculta elementos do Admin se estiver no perfil de Pedidos */
-        body.profile-pedidos .admin-only { display: none !important; }
-
-        /* --- RESPONSIVIDADE MOBILE (Telas menores que 768px) --- */
         @media (max-width: 768px) {
-            /* Ajuste do Cabeçalho e Botões Iniciais */
             header { padding: 10px; height: auto; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
             .brand { width: 100%; text-align: center; margin-bottom: 5px; }
             .nav-btn { flex: 1; justify-content: center; padding: 12px 8px; font-size: 11px; }
             .nav-btn.config { flex: 0 0 auto; }
-            
-            /* Ajuste da Barra de Ferramentas */
             .toolbar { flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; }
             .toolbar > div { margin-left: 0 !important; width: 100%; justify-content: space-between; border-left: none !important; padding-left: 0 !important; }
-            .search-container { order: -1; } /* Joga a barra de busca para o topo */
+            .search-container { order: -1; } 
             .toolbar-select, .search-input { height: 44px; font-size: 14px; }
-            
-            /* MÁGICA: Transformando a Tabela em Cards Verticais */
-            .list-header { display: none; } /* Esconde o cabeçalho original */
-            .list-row {
-                display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-                padding: 15px; border: 1px solid var(--border); border-radius: 8px;
-                margin-bottom: 12px; align-items: start;
-            }
+            .list-header { display: none; } 
+            .list-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 15px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; align-items: start; }
             .list-row > div { width: 100%; display: flex; flex-direction: column; }
-            
-            /* Criando rótulos artificiais baseados na ordem das colunas */
             .list-row > div::before { font-size: 10px; color: var(--accent); font-weight: bold; margin-bottom: 4px; }
             .list-row > div:nth-child(1)::before { content: "CÓDIGO"; }
             .list-row > div:nth-child(2) { grid-column: span 2; }
@@ -209,67 +163,32 @@
             .list-row > div:nth-child(10)::before { content: "LUCRO"; }
             .list-row > div:nth-child(11)::before { content: "PREÇO (R$)"; }
             .list-row > div:nth-child(12) { grid-column: span 2; flex-direction: row; justify-content: center; margin-top: 10px; }
-            
-            /* Aumentando a área de toque para os dedos (44px) */
             .list-input, .list-select { border: 1px solid var(--border); background: #f8fafc; padding: 10px; min-height: 44px; border-radius: 6px; }
             .list-btn-icon, .btn-mini-action { min-height: 44px; padding: 10px; font-size: 14px; }
-            
-            /* Ajuste dos Modais */
             .modal-card { width: 95% !important; max-height: 90vh; }
             .form-grid { grid-template-columns: 1fr; }
         }
-    
     </style>
 </head>
 <body>
 
-    <div id="profile-selector" class="profile-overlay">
-        <div class="profile-card-modal">
-            <h2>Selecione seu Perfil</h2>
-            <p>Como você deseja utilizar o sistema neste dispositivo?</p>
-            <div class="profile-buttons">
-                <button onclick="selecionarPerfil('pedidos')" class="btn-profile pedidos">
-                    <i data-lucide="package-check" size="36"></i>
-                    <span>Separação de Pedidos</span>
-                    <small>Apenas conferência e baixa de fila</small>
-                </button>
-                <button onclick="selecionarPerfil('admin')" class="btn-profile admin">
-                    <i data-lucide="settings" size="36"></i>
-                    <span>Painel Administrativo</span>
-                    <small>Gestão completa e edição de produtos</small>
-                </button>
-            </div>
-        </div>
-    </div>
     <script>
         let availableCategories = []; 
-        let pendingOrders = [];
         const STORAGE_KEY = 'sucedoan_data_v26';
         const CONFIG_KEY = 'sucedoan_config';
-        const ORDERS_LOCAL_KEY = 'sucedoan_orders_v1';
         
         const GONDOLAS = Array.from({length: 20}, (_, i) => String(i).padStart(2, '0'));
-        
-        // As prateleiras agora gerarão automaticamente A1, A2, B1, B2... até M2
         const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M']
                             .flatMap(letra => [`${letra}1`, `${letra}2`]);
-        
         const SEM_LOCAL = "SEM LOCAL";
-</script>
+    </script>
 
-   <header>
+    <header>
         <div class="brand">SUCEDOAN <span>PRO</span></div>
-        
-        <button id="btn-nav-products" class="nav-btn active admin-only" onclick="showSection('products', this)">
+        <button id="btn-nav-products" class="nav-btn active" onclick="showSection('products', this)">
             <i data-lucide="package" size="14"></i> PRODUTOS
         </button>
-        
-        <button id="btn-nav-orders" class="nav-btn" onclick="showSection('orders', this)">
-            <i data-lucide="package-check" size="14"></i> SEPARAÇÃO
-        </button>
-        
         <div style="flex-grow:1"></div>
-        
         <button class="nav-btn config" onclick="openConfigModal()">
             <i data-lucide="settings" size="14"></i>
         </button>
@@ -296,7 +215,7 @@
                     <option value="inativos">Somente Inativos</option>
                     <option value="ofertas">Em Oferta</option>
                     <option value="validity60">Vence < 60 dias</option>
-                    <option value="errors">Erros de Cadastro (GTIN/NCM/Preço)</option>
+                    <option value="errors">Erros de Cadastro</option>
                     <option value="margin_error">Preço Venda <= Custo</option>
                 </select>
                 <select id="sort-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value, true)">
@@ -313,10 +232,6 @@
                     <option value="markup_desc">Markup (Maior % &rarr; Menor %)</option>
                 </select>
             </div>
-            
-            <button class="nav-btn" onclick="openOrderModal()" style="background:#fef08a; border-color:#fde047; color:#854d0e; margin-left: 15px;">
-                <i data-lucide="plus" size="14"></i> NOVO PEDIDO
-            </button>
 
             <div class="search-container" style="margin-left: 15px;">
                 <i data-lucide="search" class="search-icon"></i>
@@ -324,74 +239,14 @@
             </div>
             <button class="nav-btn" onclick="saveDataManual()"><i data-lucide="save" size="14"></i> SALVAR DADOS</button>
             <button class="nav-btn" onclick="fetchAndMergeFromGithub()" title="Baixar produtos do site e atualizar dados locais"><i data-lucide="download-cloud" size="14"></i> IMPORTAR DO SITE</button>
-            <button class="nav-btn" onclick="queueSyncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub (produtos.json)"><i data-lucide="globe" size="14"></i> ATUALIZAR SITE</button>
+            <button class="nav-btn" onclick="queueSyncProductsToGithub()" title="Enviar todos produtos ativos para o GitHub"><i data-lucide="globe" size="14"></i> ATUALIZAR SITE</button>
             
             <div id="queue-status" style="display:none; align-items:center; gap:5px; font-size:11px; font-weight:bold; color:var(--warning); background:#fffbeb; padding:6px 12px; border-radius:6px; border:1px solid #fcd34d; margin-left: 10px;"></div>
             
             <button class="nav-btn" onclick="exportarCSV()"><i data-lucide="download" size="14"></i> CSV</button>
-            <button class="nav-btn" onclick="openPrintListModal()"><i data-lucide="printer" size="14"></i> LISTAS</button>
             <div id="total-count">0</div>
         </div>
         <div class="product-grid" id="product-grid"></div>
-    </div>
-
-    <div id="section-orders" class="view-section">
-        <div class="toolbar">
-            <button class="nav-btn" onclick="openOrderModal()" style="background:#fef08a; border-color:#fde047; color:#854d0e;">
-                <i data-lucide="plus" size="14"></i> COLAR NOVO PEDIDO (WHATSAPP)
-            </button>
-            <div style="display:flex; gap:5px; align-items:center; margin-left:15px;">
-                <select id="filter-orders" class="toolbar-select" onchange="renderOrdersQueue()">
-                    <option value="todos">Mostrar: Todos os Pedidos</option>
-                    <option value="pendentes" selected>Mostrar: Apenas Pendentes</option>
-                    <option value="conferidos">Mostrar: Apenas Conferidos</option>
-                </select>
-            </div>
-            
-            <div style="flex-grow:1"></div>
-            <div id="orders-count" style="font-size: 12px; color: var(--text-secondary); font-weight: bold; background: white; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);">0 PEDIDOS PENDENTES</div>
-        </div>
-        <div class="product-grid" id="orders-grid" style="display: flex; flex-direction: column; gap: 12px; align-items: center; padding-top: 20px;">
-            </div>
-    </div>
-
-    <div id="modal-order" class="modal-overlay">
-        <div class="modal-card" style="width: 500px;">
-            <div class="modal-header">
-                <span>Gerar Novo Pedido (WhatsApp)</span>
-                <button class="close-btn" onclick="closeModal('modal-order')"><i data-lucide="x"></i></button>
-            </div>
-            <div class="modal-body">
-                <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 10px;">
-                    Cole o texto do pedido. O sistema abaterá o estoque imediatamente e enviará o pedido para a Fila de Separação.
-                </p>
-                <textarea id="order-text-input" style="width: 100%; height: 250px; padding: 10px; font-family: monospace; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; resize: vertical;" placeholder="Cole o pedido aqui..."></textarea>
-                <button class="btn-full" onclick="processOrder()" style="background: var(--success);">GERAR PEDIDO E ENVIAR PARA FILA</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-picking" class="modal-overlay">
-        <div class="modal-card" style="width: 800px; max-width: 95%; height: 85vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <span id="picking-modal-title">Checkout de Separação</span>
-                <button class="close-btn" onclick="closeModal('modal-picking')"><i data-lucide="x"></i></button>
-            </div>
-            
-            <div class="modal-body" style="display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; padding: 20px;" onclick="document.getElementById('picking-scanner').focus()">
-                
-                <div id="picking-alert"></div>
-                
-                <input type="text" id="picking-scanner" onkeydown="handlePickingScan(event)" placeholder="Bipe o EAN, digite o Código ou Nome e aperte Enter..." style="width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border: 2px solid var(--accent); border-radius: 8px; outline: none; margin-bottom: 15px; text-align: center; background: #f8fafc;">
-                
-                <div id="picking-list" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
-                    </div>
-                
-                <button class="btn-full" onclick="finishPicking()" style="background: var(--accent); font-size: 16px; padding: 15px; margin-top: 15px;">
-                    <i data-lucide="check-circle" style="margin-right: 8px;"></i> FINALIZAR CONFERÊNCIA
-                </button>
-            </div>
-        </div>
     </div>
 
     <div id="modal-product-card" class="modal-overlay">
@@ -469,17 +324,6 @@
             </div>
         </div>
     </div>
-    
-    <div id="modal-print-list" class="modal-overlay">
-        <div class="modal-card" style="width:400px">
-            <div class="modal-header"><span>Imprimir Lista de Estoque (80mm)</span><button class="close-btn" onclick="closeModal('modal-print-list')"><i data-lucide="x"></i></button></div>
-            <div class="modal-body">
-                <div class="form-group"><label>Selecione a Gôndola</label><select id="print-gondola" onchange="updatePrintShelves()"><option value="ALL">TODAS</option></select></div>
-                <div class="form-group" style="margin-top:10px;"><label>Selecione a Prateleira</label><select id="print-shelf"><option value="ALL">TODAS</option></select></div>
-                <button class="btn-full" onclick="printStockList()">GERAR IMPRESSÃO</button>
-            </div>
-        </div>
-    </div>
 
     <div id="modal-categories" class="modal-overlay">
         <div class="modal-card" style="width:450px;">
@@ -495,7 +339,6 @@
     <div id="loader"><div class="spinner"></div><h3 id="loader-msg">Carregando...</h3></div>
 
     <script>
-        // ... (A parte de variáveis e Fila do Github continua igual) ...
         let products = [];
         let currentEditingId = null;
         let currentUser = null;
@@ -521,30 +364,6 @@
                 e.returnValue = 'Você tem envios pendentes para o site na fila. Se sair, eles não serão enviados. Deseja sair?';
             }
         });
-
-        // --- GERENCIAMENTO DE PERFIL ---
-        function selecionarPerfil(perfil) {
-            const overlay = document.getElementById('profile-selector');
-            overlay.style.opacity = '0'; // Faz o efeito suave de sumir
-            
-            setTimeout(() => {
-                overlay.style.display = 'none'; // Some de vez
-                
-                if (perfil === 'pedidos') {
-                    // Adiciona a classe que vai ocultar os botões de admin via CSS
-                    document.body.classList.add('profile-pedidos');
-                    // Força o sistema a abrir direto na tela de Pedidos
-                    showSection('orders', document.getElementById('btn-nav-orders'));
-                } else {
-                    // Modo Admin puro
-                    document.body.classList.remove('profile-pedidos');
-                    showSection('products', document.getElementById('btn-nav-products'));
-                }
-                
-                // Recria os ícones caso precisem atualizar
-                lucide.createIcons();
-            }, 300);
-        }
 
         function updateQueueUI(msg) {
             const el = document.getElementById('queue-status');
@@ -622,7 +441,6 @@
             lucide.createIcons();
             loadData();
             loadCategoriesFromGithub();
-            loadOrdersFromGithub(); // NOVO: Carregar a fila de pedidos na inicialização
             setupEditorEvents();
             document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value, true), 300));
         };
@@ -645,7 +463,6 @@
             }
         }
 
-        // --- SISTEMA DE PRODUTOS INTACTO ---
         function processCsvRow(d) {
             const getVal = (key) => d[key] ? d[key] : "";
             const getNum = (key) => { const v = getVal(key); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
@@ -739,7 +556,6 @@
        function exportarCSV() {
             if (products.length === 0) return alert("Nada para exportar.");
             const produtosParaExportar = products; 
-            if (produtosParaExportar.length === 0) return alert("Nada para exportar.");
             const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
             const dadosParaExportar = produtosParaExportar.map(p => {
                 const linha = {}; const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
@@ -768,51 +584,6 @@
             const csv = Papa.unparse({ fields: colunasModelo, data: [linha] }, { quotes: true, delimiter: ";" });
             const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
             l.download = `produto_${sku}.csv`; l.click();
-        }
-
-        function openPrintListModal() {
-            const gondolaSelect = document.getElementById('print-gondola');
-            const shelfSelect = document.getElementById('print-shelf');
-            gondolaSelect.innerHTML = '<option value="ALL">TODAS</option>'; shelfSelect.innerHTML = '<option value="ALL">TODAS</option>';
-            const uniqueGondolas = new Set();
-            products.forEach(p => { if(p.localizacao && p.localizacao.includes('-')) uniqueGondolas.add(p.localizacao.split('-')[0]); });
-            Array.from(uniqueGondolas).sort().forEach(g => { const opt = document.createElement('option'); opt.value = g; opt.innerText = "Gôndola " + g; gondolaSelect.appendChild(opt); });
-            openModal('modal-print-list');
-        }
-
-        function updatePrintShelves() {
-            const gondola = document.getElementById('print-gondola').value;
-            const shelfSelect = document.getElementById('print-shelf');
-            shelfSelect.innerHTML = '<option value="ALL">TODAS</option>';
-            if(gondola === 'ALL') return;
-            const uniqueShelves = new Set();
-            products.forEach(p => { if(p.localizacao && p.localizacao.startsWith(gondola + '-')) uniqueShelves.add(p.localizacao.split('-')[1]); });
-            Array.from(uniqueShelves).sort().forEach(s => { const opt = document.createElement('option'); opt.value = s; opt.innerText = "Prateleira " + s; shelfSelect.appendChild(opt); });
-        }
-
-        function printStockList() {
-            const gondola = document.getElementById('print-gondola').value;
-            const shelf = document.getElementById('print-shelf').value;
-            const filtered = products.filter(p => {
-                if(p.situacao === 'I' || !p.localizacao) return false;
-                const parts = p.localizacao.split('-');
-                if(gondola !== 'ALL' && parts[0] !== gondola) return false;
-                if(shelf !== 'ALL' && parts[1] !== shelf) return false;
-                return true;
-            });
-            filtered.sort((a,b) => a.localizacao.localeCompare(b.localizacao));
-            const w = window.open('', '', 'width=400,height=600');
-            let itemsHtml = '';
-            filtered.forEach(p => {
-                let isExpiring = false;
-                if(p.validade) { const dt = parseDate(p.validade); if(dt) { const diffDays = Math.ceil((dt - new Date()) / (1000 * 60 * 60 * 24)); if(diffDays < 30) isExpiring = true; } }
-                const styleExp = isExpiring ? 'font-weight:bold; text-decoration:underline;' : '';
-                const mark = isExpiring ? ' ***' : '';
-                itemsHtml += `<div class="item"><div class="line1"><span class="loc">[${p.localizacao}]</span><span class="name">${p.nome.substring(0, 30)}</span></div><div class="line2"><span>SKU: ${p.codigo}</span><span>EST: ${formatNum(p.estoque)}</span></div><div class="line3" style="${styleExp}">VAL: ${p.validade || '---'}${mark}</div></div>`;
-            });
-            w.document.write(`<html><head><style>@page { size: 80mm auto; margin: 0; } body { width: 80mm; margin: 0; padding: 5mm; box-sizing: border-box; font-family: monospace; font-size: 12px; } .header { text-align: center; font-weight: bold; margin-bottom: 10px; border-bottom: 1px dashed #000; padding-bottom: 5px; } .item { margin-bottom: 8px; border-bottom: 1px dotted #ccc; padding-bottom: 2px; } .line1 { display: flex; gap: 5px; font-weight: bold; } .loc { white-space: nowrap; } .line2 { display: flex; justify-content: space-between; font-size: 11px; } .line3 { font-size: 11px; }</style></head><body><div class="header">RELATÓRIO DE ESTOQUE<br>G: ${gondola} | P: ${shelf}<br>Data: ${new Date().toLocaleDateString()}</div>${itemsHtml}<script>window.onload = function() { window.print(); }<\/script></body></html>`);
-            w.document.close();
-            closeModal('modal-print-list');
         }
         
         function toggleLoader(show, msg) {
@@ -963,19 +734,51 @@
         }
 
         function createNewProduct() {
-            const timestamp = Date.now().toString(); const sku = timestamp.slice(-8); 
-            const baseEan = "2" + timestamp.slice(-11); const checkDigit = calculateEanCheckDigit(baseEan); const internalEan = baseEan + checkDigit;
-            const newProd = { codigo: sku, nome: "NOVO PRODUTO", preco: 0, preco_custo: 0, categoria: "", estoque: 0, localizacao: "SEM LOCAL", gtin: internalEan, url_imagem: "", ncm: "", validade: "", situacao: 'A', formato: 'S', em_oferta: false, _changed: true, _lastChange: "Criação Manual", 'Código': sku, 'Descrição': "NOVO PRODUTO", 'Preço': 0, 'Preço de custo': 0, 'Preço de Compra': 0, 'Categoria do produto': "", 'Estoque': 0, 'Localização': "SEM LOCAL", 'GTIN/EAN': internalEan };
+            const timestamp = Date.now();
+            const sku = timestamp.toString().slice(-8); 
+            const baseEan = "2" + timestamp.toString().slice(-11); 
+            const checkDigit = calculateEanCheckDigit(baseEan); 
+            const internalEan = baseEan + checkDigit;
+            
+            const newProd = { 
+                id: timestamp, // ID numérico corrigido
+                codigo: sku, nome: "NOVO PRODUTO", preco: 0, preco_custo: 0, categoria: "", estoque: 0, 
+                localizacao: "SEM LOCAL", gtin: internalEan, url_imagem: "", ncm: "", validade: "", 
+                situacao: 'A', formato: 'S', em_oferta: false, _changed: true, _lastChange: "Criação Manual", 
+                'ID': timestamp, 
+                'Código': sku, 'Descrição': "NOVO PRODUTO", 'Preço': 0, 'Preço de custo': 0, 'Preço de Compra': 0, 
+                'Categoria do produto': "", 'Estoque': 0, 'Localização': "SEM LOCAL", 'GTIN/EAN': internalEan 
+            };
+            
             products.unshift(newProd); saveData(); renderGrid(document.getElementById('search-input').value, true);
-            alert("Produto criado com código: " + sku + " e EAN: " + internalEan); document.getElementById('product-grid').scrollTop = 0;
+            alert("Produto criado com código: " + sku + " e ID: " + timestamp); document.getElementById('product-grid').scrollTop = 0;
         }
 
         function duplicateProduct(sku) {
             const p = products.find(x => x.codigo === sku); if(!p) return;
             if(!confirm("Duplicar este produto?")) return;
-            const timestamp = Date.now().toString(); const newSku = timestamp.slice(-8); const baseEan = "2" + timestamp.slice(-11); const checkDigit = calculateEanCheckDigit(baseEan); const internalEan = baseEan + checkDigit;
+            
+            const timestamp = Date.now(); 
+            const newSku = timestamp.toString().slice(-8); 
+            const baseEan = "2" + timestamp.toString().slice(-11); 
+            const checkDigit = calculateEanCheckDigit(baseEan); 
+            const internalEan = baseEan + checkDigit;
             const newProd = JSON.parse(JSON.stringify(p));
-            newProd.codigo = newSku; newProd['Código'] = newSku; newProd.gtin = internalEan; newProd['GTIN/EAN'] = internalEan; newProd.nome = "CÓPIA - " + p.nome; newProd['Descrição'] = newProd.nome; newProd.situacao = 'A'; newProd['Situação'] = 'A'; newProd.em_oferta = false; newProd._changed = true; newProd._lastChange = "Duplicação Manual"; delete newProd.id; delete newProd['ID'];
+            
+            newProd.id = timestamp; // ID numérico corrigido
+            newProd['ID'] = timestamp;
+            newProd.codigo = newSku; 
+            newProd['Código'] = newSku; 
+            newProd.gtin = internalEan; 
+            newProd['GTIN/EAN'] = internalEan; 
+            newProd.nome = "CÓPIA - " + p.nome; 
+            newProd['Descrição'] = newProd.nome; 
+            newProd.situacao = 'A'; 
+            newProd['Situação'] = 'A'; 
+            newProd.em_oferta = false; 
+            newProd._changed = true; 
+            newProd._lastChange = "Duplicação Manual"; 
+            
             products.unshift(newProd); saveData(); renderGrid(document.getElementById('search-input').value, true);
             alert("Produto duplicado! Novo SKU: " + newSku); document.getElementById('product-grid').scrollTop = 0; closeModal('modal-product-card');
         }
@@ -995,14 +798,6 @@
                 p.codigo = newSku; p['Código'] = newSku; p._changed = true; p._lastChange = new Date().toLocaleString(); saveData(); renderGrid(document.getElementById('search-input').value, true);
                 const container = document.getElementById('product-card-container'); if (container.innerHTML !== '' && document.getElementById('modal-product-card').style.display !== 'none') { openProductModal(newSku); }
             }
-        }
-
-        function printBarcode50mm(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            const code = p.gtin || p.codigo; 
-            const w = window.open('', '', 'width=900,height=600');
-            w.document.write(`<html><head><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script><style>@page { size: 50mm 30mm; margin: 0; } body { margin: 0; width: 50mm; height: 30mm; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; } .prod-name { font-family: sans-serif; font-size: 10px; font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 95%; margin-bottom: 2px; } #barcode { width: 95%; height: auto; }</style></head><body><div class="prod-name">${p.nome}</div><svg id="barcode"></svg><script>window.onload = function() { JsBarcode("#barcode", "${code}", { format: "CODE128", width: 1.5, height: 50, displayValue: true, fontSize: 10, margin: 0 }); setTimeout(() => { window.print(); }, 300); }<\/script></body></html>`);
-            w.document.close();
         }
 
         function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
@@ -1042,7 +837,7 @@
                 <div><input type="text" class="list-input number" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)" onclick="event.stopPropagation()"></div>
                 <div style="text-align:right; font-size:10px; font-weight:bold; color:${lucroColor}; padding-right:4px;">${lucroStr}</div>
                 <div><input type="text" class="list-input number" style="color:var(--success);" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)" onclick="event.stopPropagation()"></div>
-                <div><div style="display:flex; gap:4px; justify-content:center;"><button class="list-btn-icon" style="${isInactive ? 'color:var(--danger); background:#fef2f2; border-color:var(--danger);' : 'color:var(--success); border-color:var(--success);'}" onclick="event.stopPropagation(); toggleActive('${p.codigo}')" title="${isInactive ? 'Ativar Produto' : 'Desativar Produto'}"><i data-lucide="power" size="14"></i></button><button class="list-btn-icon" onclick="event.stopPropagation(); printLabel('${p.codigo}')" title="Imprimir Etiqueta"><i data-lucide="printer" size="14"></i></button><button class="list-btn-icon" onclick="event.stopPropagation(); queueSingleProductJson('${p.codigo}')" title="Atualizar no Site"><i data-lucide="globe" size="14"></i></button></div></div>
+                <div><div style="display:flex; gap:4px; justify-content:center;"><button class="list-btn-icon" style="${isInactive ? 'color:var(--danger); background:#fef2f2; border-color:var(--danger);' : 'color:var(--success); border-color:var(--success);'}" onclick="event.stopPropagation(); toggleActive('${p.codigo}')" title="${isInactive ? 'Ativar Produto' : 'Desativar Produto'}"><i data-lucide="power" size="14"></i></button></div></div>
             `;
             row.onclick = () => openProductModal(p.codigo); return row;
         }
@@ -1087,8 +882,8 @@
             let optionsP = `<option value="">--</option>`; PRATELEIRAS.forEach(pr => { optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`; });
             let optionsCat = `<option value="">-- SELECIONE --</option>`; const catList = [...availableCategories]; if(p.categoria && !catList.includes(p.categoria)) catList.push(p.categoria); catList.forEach(c => { optionsCat += `<option value="${c}" ${p.categoria === c ? 'selected' : ''}>${c}</option>`; });
             let lucroStr = "-", lucroClass = ""; if(p.preco && p.preco > 0 && p.preco_custo && p.preco_custo > 0) { const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100; lucroStr = markup.toFixed(1) + "%"; if(markup < 20) lucroClass = "color: #dc2626;"; else if(markup > 40) lucroClass = "color: #16a34a;"; }
-            const hasEan = p.gtin && p.gtin.length > 0; const searchBtn = `<button class="btn-mini-action" onclick="searchGoogle('${p.gtin || p.nome}')" title="Pesquisar Imagem"><i data-lucide="image" size="12"></i> IMAGEM</button>`; const printBtn = `<button class="btn-mini-action" onclick="printBarcode50mm('${p.codigo}')" title="Imprimir 50mm"><i data-lucide="printer" size="12"></i> IMPRIMIR</button>`; const generateBtn = `<button class="btn-mini-action" onclick="generateInternalEan('${p.codigo}')" style="background:#fffbeb; color:#d97706; border-color:#fcd34d;" title="Gerar Código 2..."><i data-lucide="wand-2" size="12"></i> GERAR</button>`;
-            const eanButtons = `<div class="ean-controls">${searchBtn}${printBtn}${!hasEan ? generateBtn : ''}</div>`; const safeName = p.nome ? p.nome.replace(/'/g, "\\'") : "";
+            const hasEan = p.gtin && p.gtin.length > 0; const searchBtn = `<button class="btn-mini-action" onclick="searchGoogle('${p.gtin || p.nome}')" title="Pesquisar Imagem"><i data-lucide="image" size="12"></i> IMAGEM</button>`; const generateBtn = `<button class="btn-mini-action" onclick="generateInternalEan('${p.codigo}')" style="background:#fffbeb; color:#d97706; border-color:#fcd34d;" title="Gerar Código 2..."><i data-lucide="wand-2" size="12"></i> GERAR</button>`;
+            const eanButtons = `<div class="ean-controls">${searchBtn}${!hasEan ? generateBtn : ''}</div>`; const safeName = p.nome ? p.nome.replace(/'/g, "\\'") : "";
             card.innerHTML = `
                 <div class="card-img-area" onclick="openEditor('${p.codigo}')"><img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'"><div class="img-overlay"><button class="overlay-btn" onclick="event.stopPropagation(); openEditor('${p.codigo}')" title="Editar Imagem"><i data-lucide="edit-2" size="16"></i></button><button class="overlay-btn" onclick="event.stopPropagation(); searchGoogle('${p.nome}')" title="Buscar no Google" style="margin-left:8px;"><i data-lucide="search" size="16"></i></button></div></div>
                 <div class="card-body">
@@ -1098,16 +893,8 @@
                     <div style="font-size:10px; color:var(--text-secondary); margin: 4px 0; display:grid; grid-template-columns: 1fr 1fr; gap:4px;"><div style="grid-column: span 2;"><div style="display:flex; align-items:center; gap:4px;"><span style="font-weight:bold;">EAN:</span><input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-"></div>${eanButtons}</div><div style="display:flex; align-items:center; gap:4px; margin-top:4px;"><span style="font-weight:bold;">NCM:</span><input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-"><button class="btn-mini-action" style="padding:2px; flex:none; width:24px;" onclick="searchNCM('${safeName}', '${p.gtin || ''}')" title="Buscar NCM no Google"><i data-lucide="search" size="10"></i></button></div><div style="display:flex; align-items:center; gap:4px; margin-top:4px;"><span style="font-weight:bold; color:var(--accent)">VAL:</span><input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? '#d97706' : 'var(--text-primary)'}"></div></div>
                     <div class="card-stats"><div class="stat-box"><span class="stat-label">Venda (R$)</span><input class="stat-input" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)"></div>${p.em_oferta ? `<div class="stat-box"><span class="stat-label" style="color:var(--warning)">Preço Antigo</span><input class="stat-input" style="border-color:var(--warning)" value="${formatNum(p.preco_antigo || 0)}" onchange="updateProduct('${p.codigo}', 'preco_antigo', this.value)"></div>` : ''}<div class="stat-box"><span class="stat-label">Estoque</span><input class="stat-input" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)"></div><div class="stat-box"><span class="stat-label">P. Compra</span><input class="stat-input" value="${formatNum(p['Preço de Compra'] || 0)}" onchange="updateProduct('${p.codigo}', 'Preço de Compra', this.value)"></div><div class="stat-box"><span class="stat-label">P. Custo</span><input class="stat-input" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)"></div><div class="stat-box" style="grid-column: span ${p.em_oferta ? '1' : '2'}"><span class="stat-label">Markup %</span><div class="stat-readonly" style="${lucroClass}">${lucroStr}</div></div></div>
                 </div>
-                <div class="card-footer"><button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes"><i data-lucide="list-plus" size="18"></i></button><button class="btn-sq" onclick="printLabel('${p.codigo}')" title="Etiqueta"><i data-lucide="printer" size="18"></i></button><button class="btn-sq" onclick="duplicateProduct('${p.codigo}')" title="Duplicar Produto"><i data-lucide="copy" size="18"></i></button><button class="btn-sq ${p.em_oferta ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta"><i data-lucide="tag" size="18"></i></button><button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}"><i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i></button><button class="btn-sq" onclick="queueSingleProductJson('${p.codigo}')" title="Atualizar este produto no site"><i data-lucide="globe" size="18"></i></button><button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto"><i data-lucide="download" size="18"></i></button></div>`;
+                <div class="card-footer"><button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Detalhes"><i data-lucide="list-plus" size="18"></i></button><button class="btn-sq" onclick="duplicateProduct('${p.codigo}')" title="Duplicar Produto"><i data-lucide="copy" size="18"></i></button><button class="btn-sq ${p.em_oferta ? 'offer-active' : ''}" onclick="toggleOffer('${p.codigo}')" title="Alternar Oferta"><i data-lucide="tag" size="18"></i></button><button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Inativo (Ativar)' : 'Ativo (Inativar)'}"><i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i></button><button class="btn-sq" onclick="exportSingleCSV('${p.codigo}')" title="Baixar CSV deste Produto"><i data-lucide="download" size="18"></i></button></div>`;
             return card;
-        }
-
-        function printLabel(sku) {
-            const p = products.find(x => x.codigo === sku); if (!p) return;
-            let gondola = "---", prateleira = "---"; if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); gondola = parts[0]; prateleira = parts[1]; }
-            const w = window.open('', '', 'width=900,height=600');
-            w.document.write(`<html><head><style>@page { size: 80mm 80mm; margin: 0; } body { width: 80mm; height: 80mm; margin: 0; padding: 2mm; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; font-family: sans-serif; text-align: center; } .loc-row { font-size: 20px; font-weight: 900; border-bottom: 2px solid #000; width: 100%; margin-bottom: 5px; display: flex; justify-content: space-around; } .name { font-size: 16px; font-weight: 900; margin-bottom: 2px; line-height: 1.1; text-transform: uppercase; max-height: 55px; overflow:hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; } .sku { font-size: 24px; font-weight: 900; margin: 2px 0; } .ean { font-size: 12px; font-weight: bold; } .val-box { margin-top: 5px; border: 2px solid #000; border-radius: 6px; padding: 2px 8px; font-weight: 900; font-size: 14px; width: 90%; } </style></head><body><div class="loc-row"><span>GON: ${gondola}</span><span>PRAT: ${prateleira}</span></div><div class="name">${p.nome}</div><div class="sku">${p.codigo}</div><div class="ean">EAN: ${p.gtin || ''}</div><div class="val-box">VAL: ${p.validade || '---'}</div><script>window.onload = function() { window.print(); }<\/script></body></html>`);
-            w.document.close();
         }
 
         function updateProduct(sku, field, value) {
@@ -1151,20 +938,6 @@
                 payload.sort((a,b) => a.nome.localeCompare(b.nome)); const contentStr = JSON.stringify(payload, null, 2); const base64 = btoa(unescape(encodeURIComponent(contentStr))); const body = { message: `Bulk Upd Prods via Painel (${payload.length} items)`, content: base64 }; if(sha) body.sha = sha;
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); if(!res.ok) throw new Error(await res.text());
             }, 240000); 
-        }
-
-        function queueSingleProductJson(sku) {
-            addToQueue('single', `Prod ${sku}`, async () => {
-                const p = products.find(x => x.codigo === sku); if(!p) throw new Error("Produto não encontrado.");
-                const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) throw new Error("Configure o Token do GitHub!");
-                const path = `site/produtos.json`; const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                let sha = null; let currentData = [];
-                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if (check.ok) { const json = await check.json(); sha = json.sha; try { const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, '')))); currentData = JSON.parse(decodedStr); } catch(e) { throw new Error("O arquivo produtos.json no GitHub está corrompido ou não é um JSON válido."); } } else if (check.status !== 404) { throw new Error(`Erro na API do GitHub ao tentar ler o arquivo: Status ${check.status}. Abortado para proteção de dados.`); }
-                const itemObj = prepararProdutoParaSite(p); const index = currentData.findIndex(item => item.codigo === sku); if(index >= 0) { currentData[index] = itemObj; } else { currentData.push(itemObj); }
-                const contentStr = JSON.stringify(currentData, null, 2); const base64 = btoa(unescape(encodeURIComponent(contentStr))); const body = { message: `Upd Prod: ${sku} via Painel`, content: base64 }; if(sha) body.sha = sha;
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); if(!res.ok) throw new Error(await res.text());
-            }, 60000); 
         }
 
         function queueImageUpload() {
@@ -1242,538 +1015,6 @@
         function downloadImage() { const link = document.createElement('a'); link.download = currentEditingId + '.webp'; link.href = canvas.toDataURL('image/webp', 0.9); link.click(); }
         
         function limparSistema() { if(confirm("ATENÇÃO: Isso vai apagar TODOS os produtos e configurações salvos neste navegador.\n\nAs configurações do GitHub serão MANTIDAS.\n\nDeseja realmente continuar?")) { const configSalva = localStorage.getItem(CONFIG_KEY); localStorage.clear(); if (configSalva) localStorage.setItem(CONFIG_KEY, configSalva); alert("Sistema limpo com sucesso! A página será recarregada para iniciar do zero."); window.location.reload(); } }
-
-        // --- SISTEMA DE FILA E CHECKOUT DE SEPARAÇÃO ATUALIZADO --- //
-
-        function openOrderModal() {
-            document.getElementById('order-text-input').value = '';
-            openModal('modal-order');
-        }
-
-        // NOVO: Funções de Sincronização de Pedidos com GitHub
-        async function loadOrdersFromGithub() {
-            const savedLocal = localStorage.getItem(ORDERS_LOCAL_KEY);
-            if(savedLocal) {
-                pendingOrders = JSON.parse(savedLocal);
-                renderOrdersQueue();
-            }
-
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return;
-
-            const path = `site/pedidos_fila.json`;
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`;
-            
-            try {
-                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
-                if(res.ok) {
-                    const data = await res.json();
-                    if(Array.isArray(data)) {
-                        pendingOrders = data;
-                        localStorage.setItem(ORDERS_LOCAL_KEY, JSON.stringify(pendingOrders));
-                        renderOrdersQueue();
-                    }
-                }
-            } catch(e) {
-                console.warn("Nenhum pedido anterior encontrado ou erro ao carregar do site:", e);
-            }
-        }
-
-        function saveOrdersToGithub() {
-            localStorage.setItem(ORDERS_LOCAL_KEY, JSON.stringify(pendingOrders)); // Backup instantâneo
-            
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return;
-
-            // Usa o sistema de Fila existente (delay baixo de 1s, pois pedidos são arquivos muito pequenos)
-            addToQueue('orders_sync', `Sincronizando Fila de Pedidos`, async () => {
-                const path = `site/pedidos_fila.json`;
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                
-                let sha = null;
-                try {
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                    if(check.ok) { const json = await check.json(); sha = json.sha; }
-                } catch(e) {}
-                
-                const contentStr = JSON.stringify(pendingOrders, null, 2);
-                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `Sincronizando pedidos_fila.json via Painel`, content: base64 };
-                if(sha) body.sha = sha;
-                
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error(await res.text());
-            }, 1000); 
-        }
-
-        function processOrder() {
-            const text = document.getElementById('order-text-input').value;
-            if(!text.trim()) return alert('Por favor, cole o texto do pedido!');
-
-            // Regex para resgatar Valores Únicos
-            const orderNumMatch = text.match(/\*?PEDIDO\s+(#[0-9]+)\*?/i);
-            const deliveryMatch = text.match(/\*?ENTREGA AGENDADA PARA:\*?\s+(.+)/i);
-            const discountMatch = text.match(/DESCONTO[^:]*:\s*(-?R\$\s*[0-9,]+)/i) || text.match(/DESCONTO[^:]*:\s*([^\n]+)/i);
-            const totalMatch = text.match(/\*?TOTAL:\s*(R\$\s*[0-9,]+)\*?/i) || text.match(/\*?TOTAL:\s*([^\n\*]+)/i);
-
-            // Resgatando o final do arquivo que possui notas.
-            let footerText = "";
-            const footerSplit = text.split(/------/);
-            if(footerSplit.length > 1) {
-                footerText = footerSplit[1].trim();
-            }
-
-            const lines = text.split('\n');
-            let items = [];
-            let inItemsSection = false;
-
-            for(let line of lines) {
-                line = line.trim();
-                if(line.includes('*ITENS:*') || line.includes('ITENS:')) {
-                    inItemsSection = true;
-                    continue;
-                }
-                
-                if(inItemsSection) {
-                    const itemMatch = line.match(/^(\d+)x\s+(.+)$/i);
-                    if(itemMatch) {
-                        items.push({
-                            qtd: parseInt(itemMatch[1]),
-                            nomeOriginal: itemMatch[2].trim(),
-                            foundProduct: null
-                        });
-                    } else if (line === '' || line.includes('DESCONTO') || line.includes('TOTAL') || line.includes('------')) {
-                        if(line.includes('TOTAL') || line.includes('------')) inItemsSection = false;
-                    }
-                }
-            }
-
-            if(items.length === 0) return alert("Nenhum item encontrado. Verifique se o formato tem '*ITENS:*' e '1x PRODUTO'.");
-
-            let changedAny = false;
-            
-            // Cruzando informações e Abatendo Estoque
-            // Cruzando informações e Abatendo Estoque
-            items.forEach(item => {
-                let bestMatch = products.find(p => p.nome && p.nome.toUpperCase() === item.nomeOriginal.toUpperCase());
-                if(!bestMatch) {
-                    bestMatch = products.find(p => p.nome && (p.nome.toUpperCase().includes(item.nomeOriginal.toUpperCase()) || item.nomeOriginal.toUpperCase().includes(p.nome.toUpperCase())));
-                }
-
-                if(bestMatch) {
-                    // ---------------------------------------------------------
-                    // OTIMIZAÇÃO: Criando um "Mini-Produto" super leve.
-                    // Pegamos apenas o que vai para a tela de impressão e conferência!
-                    // ---------------------------------------------------------
-                    item.foundProduct = {
-                        nome: bestMatch.nome,
-                        codigo: bestMatch.codigo,
-                        gtin: bestMatch.gtin,
-                        localizacao: bestMatch.localizacao || "SEM LOCAL"
-                    };
-                    
-                    // O abate de estoque continua funcionando normalmente no produto original do banco
-                    let currentStock = parseFloat(bestMatch.estoque) || 0;
-                    bestMatch.estoque = currentStock - item.qtd; 
-                    bestMatch['Estoque'] = bestMatch.estoque;
-                    bestMatch._changed = true; 
-                    bestMatch._lastChange = "Abate " + (orderNumMatch ? orderNumMatch[1] : "Sistema");
-                    changedAny = true;
-                }
-            });
-
-            if(changedAny) {
-                saveData();
-                renderGrid(document.getElementById('search-input').value, true); 
-            }
-
-            const grouped = {};
-            const notFound = [];
-
-            items.forEach(item => {
-                if(item.foundProduct) {
-                    const loc = item.foundProduct.localizacao || "SEM LOCAL";
-                    if(!grouped[loc]) grouped[loc] = [];
-                    grouped[loc].push(item);
-                } else {
-                    notFound.push(item);
-                }
-            });
-
-            // NOVO: Adiciona a data de criação e Status
-            const newOrder = {
-                id: Date.now(),
-                dataCriacao: new Date().toISOString(),
-                status: 'PENDENTE',
-                orderNumMatch: orderNumMatch,
-                orderNum: orderNumMatch ? orderNumMatch[1] : `AVULSO-${Math.floor(Math.random()*1000)}`,
-                deliveryMatch, discountMatch, totalMatch, grouped, notFound, items, footerText
-            };
-
-            // Adiciona sempre no início da fila
-            pendingOrders.unshift(newOrder);
-            
-            // Trava: Mantém no máximo 50 pedidos (os mais recentes)
-            if(pendingOrders.length > 50) {
-                pendingOrders.pop(); 
-            }
-            
-            // Salva as alterações para a Fila do Github
-            saveOrdersToGithub();
-            
-            closeModal('modal-order');
-            showSection('orders', document.getElementById('btn-nav-orders'));
-            renderOrdersQueue();
-        }
-
-       function renderOrdersQueue() {
-            const grid = document.getElementById('orders-grid');
-            grid.innerHTML = '';
-            
-            const filterValue = document.getElementById('filter-orders') ? document.getElementById('filter-orders').value : 'pendentes';
-            
-            let filteredOrders = pendingOrders;
-            if (filterValue === 'pendentes') filteredOrders = pendingOrders.filter(o => o.status !== 'CONFERIDO');
-            if (filterValue === 'conferidos') filteredOrders = pendingOrders.filter(o => o.status === 'CONFERIDO');
-
-            const countPendentes = pendingOrders.filter(o => o.status !== 'CONFERIDO').length;
-            const countLabel = document.getElementById('orders-count');
-            countLabel.innerText = `${countPendentes} PEDIDOS PENDENTES`;
-            
-            if(countPendentes > 0) {
-                countLabel.style.color = "var(--warning)";
-                countLabel.style.borderColor = "var(--warning)";
-            } else {
-                countLabel.style.color = "var(--text-secondary)";
-                countLabel.style.borderColor = "var(--border)";
-            }
-
-            if (filteredOrders.length === 0) {
-                grid.innerHTML = `<div class="empty-state"><i data-lucide="clipboard-check" size="48" style="opacity:0.3; margin-bottom:15px;"></i><h3>Nenhum pedido nesta lista</h3><p style="font-size:12px; margin-top:5px;">Cole um pedido ou altere os filtros.</p></div>`;
-                lucide.createIcons();
-                return;
-            }
-
-            filteredOrders.forEach(order => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                
-                // 👉 A CORREÇÃO ESTÁ AQUI: Impede que os cartões diminuam de tamanho e encavalem
-                card.style.flexShrink = '0';
-                
-                card.style.minHeight = 'auto';
-                card.style.width = '100%';
-                card.style.maxWidth = '800px';
-                card.style.padding = '15px 20px';
-                card.style.display = 'flex';
-                card.style.flexDirection = 'row';
-                card.style.justifyContent = 'space-between';
-                card.style.alignItems = 'center';
-                
-                const totalItems = order.items.reduce((acc, item) => acc + item.qtd, 0);
-                
-                const isConferido = order.status === 'CONFERIDO';
-                const badgeClass = isConferido ? 'badge-conferido' : 'badge-pendente';
-                const statusName = isConferido ? 'Conferido' : 'Pendente';
-                const dateStr = order.dataCriacao ? new Date(order.dataCriacao).toLocaleString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '--/--';
-
-                card.innerHTML = `
-                    <div style="display:flex; flex-direction:column; gap:5px;">
-                        <div style="display:flex; align-items:center; gap: 10px;">
-                            <h3 style="margin:0; font-size:16px; color:var(--accent);">PEDIDO ${order.orderNum}</h3>
-                            <span class="badge-status ${badgeClass}">${statusName}</span>
-                        </div>
-                        <span style="font-size:12px; color:var(--text-secondary); font-weight:bold;">${totalItems} unidades de ${order.items.length} produtos • Data: ${dateStr}</span>
-                        ${order.deliveryMatch ? `<span style="font-size:11px; color:var(--text-secondary);"><i data-lucide="truck" size="12"></i> ${order.deliveryMatch[1]}</span>` : ''}
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="btn-act" onclick="printQueueOrder(${order.id})" style="width:auto; padding:8px 15px;"><i data-lucide="printer" size="14"></i> IMPRIMIR</button>
-                        ${!isConferido ? 
-                            `<button class="btn-act primary" onclick="startQueuePicking(${order.id})" style="width:auto; padding:8px 15px;"><i data-lucide="check-square" size="14"></i> CONFERIR</button>` : 
-                            `<button class="btn-act" onclick="startQueuePicking(${order.id})" style="width:auto; padding:8px 15px; background:var(--bg-body);"><i data-lucide="eye" size="14"></i> REVISAR</button>`
-                        }
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-            lucide.createIcons();
-        }
-
-        function printQueueOrder(id) {
-            const order = pendingOrders.find(o => o.id === id);
-            if(!order) return;
-            printOrderReceipt(order.orderNumMatch, order.deliveryMatch, order.discountMatch, order.totalMatch, order.grouped, order.notFound, order.footerText);
-        }
-
-        function startQueuePicking(id) {
-            const order = pendingOrders.find(o => o.id === id);
-            if(!order) return;
-            startPickingSession(order);
-        }
-
-       function printOrderReceipt(orderNum, delivery, discount, total, grouped, notFound, footerText) {
-            const w = window.open('', '', 'width=400,height=600');
-            
-            let html = `
-                <html><head>
-                <title>Imprimir Pedido</title>
-                <style>
-                    @page { size: 80mm auto; margin: 0; }
-                    body { font-family: 'Courier New', Courier, monospace; width: 80mm; margin: 0; padding: 4mm; box-sizing: border-box; font-size: 14px; color: #000; background: #fff; }
-                    
-                    .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 8px; margin-bottom: 12px; }
-                    .header h2 { margin: 0 0 5px 0; font-size: 22px; }
-                    
-                    .loc-group { margin-bottom: 15px; }
-                    
-                    /* --- DESTAQUE DA LOCALIZAÇÃO: FUNDO BRANCO E TEXTO PRETO --- */
-                    .loc-title { 
-                        font-weight: 900; 
-                        font-size: 26px; 
-                        background: #ffffff; /* Fundo branco */
-                        color: #000000;      /* Texto preto */
-                        border: 2px solid #000000; /* Linha em volta para destacar */
-                        padding: 10px; 
-                        text-align: center; 
-                        margin-bottom: 12px; 
-                        text-transform: uppercase;
-                        border-radius: 4px;
-                        letter-spacing: 1px; 
-                    }
-                    
-                    .item { margin-bottom: 12px; border-bottom: 1px dotted #888; padding-bottom: 6px; }
-                    .item-name { font-weight: bold; font-size: 16px; line-height: 1.2; }
-                    
-                    .item-details { 
-                        display: flex; 
-                        flex-direction: column; 
-                        gap: 4px; 
-                        font-size: 18px; 
-                        margin-top: 6px; 
-                        color: #000; 
-                        font-weight: 900; 
-                    }
-                    
-                    .footer { margin-top: 15px; border-top: 2px dashed #000; padding-top: 8px; }
-                    .finance-row { display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px; }
-                    .total { font-size: 20px; font-weight: 900; }
-                    .notes { margin-top: 15px; font-size: 14px; text-align: center; border: 1px solid #000; padding: 5px; }
-                </style>
-                </head><body>
-                
-                <div class="header">
-                    <h2>${orderNum ? 'PEDIDO ' + orderNum[1] : 'PEDIDO AVULSO'}</h2>
-                    <div style="font-size: 14px;"><strong>ENTREGA:</strong> ${delivery ? delivery[1] : 'Não informada'}</div>
-                </div>
-            `;
-
-            const locs = Object.keys(grouped).sort(); 
-            
-            locs.forEach(loc => {
-                html += `<div class="loc-group"><div class="loc-title">LOCAL: ${loc}</div>`;
-                grouped[loc].forEach(item => {
-                    const p = item.foundProduct;
-                    html += `
-                        <div class="item">
-                            <div class="item-name">[ ${item.qtd}x ] ${p.nome}</div>
-                            <div class="item-details">
-                                <span>SKU: ${p.codigo || '---'}</span>
-                                <span>EAN: ${p.gtin || '---'}</span>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            });
-
-            if(notFound.length > 0) {
-                html += `<div class="loc-group"><div class="loc-title" style="font-size: 20px;">❓ NÃO ENCONTRADOS</div>`;
-                notFound.forEach(item => {
-                    html += `
-                        <div class="item">
-                            <div class="item-name">[ ${item.qtd}x ] ${item.nomeOriginal}</div>
-                            <div class="item-details"><span style="font-size: 14px; font-weight: normal;">Estoque NÃO abatido.</span></div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-            }
-
-            html += `<div class="footer">`;
-            if(discount) { html += `<div class="finance-row"><span>DESCONTO:</span> <span>${discount[1]}</span></div>`; }
-            if(total) { html += `<div class="finance-row total"><span>TOTAL:</span> <span>${total[1]}</span></div>`; }
-            if(footerText) { html += `<div class="notes"><strong>OBSERVAÇÕES:</strong><br>${footerText.replace(/\n/g, '<br>')}</div>`; }
-            
-            html += `</div><script>window.onload = function() { window.print(); }<\/script></body></html>`;
-            w.document.write(html);
-            w.document.close();
-        }
-
-        function startPickingSession(order) {
-            const itemsToPick = order.items.map(i => ({
-                ...i,
-                scanned: order.status === 'CONFERIDO' ? i.qtd : 0 
-            }));
-
-            currentPickingSession = {
-                id: order.id,
-                orderNumMatch: order.orderNumMatch,
-                orderNum: order.orderNum,
-                delivery: order.deliveryMatch,
-                discount: order.discountMatch,
-                total: order.totalMatch,
-                grouped: order.grouped,
-                notFound: order.notFound,
-                footerText: order.footerText,
-                itemsToPick: itemsToPick
-            };
-
-            document.getElementById('picking-modal-title').innerText = `Checkout de Separação - PEDIDO ${order.orderNum}`;
-            document.getElementById('picking-alert').style.display = 'none';
-            document.getElementById('picking-scanner').value = '';
-            renderPickingList();
-            openModal('modal-picking');
-            
-            setTimeout(() => document.getElementById('picking-scanner').focus(), 100);
-        }
-
-        function renderPickingList() {
-            const listContainer = document.getElementById('picking-list');
-            listContainer.innerHTML = '';
-
-            currentPickingSession.itemsToPick.forEach((item, index) => {
-                const p = item.foundProduct;
-                
-                let statusClass = '';
-                if (item.scanned >= item.qtd) statusClass = 'done';
-                else if (item.scanned > 0) statusClass = 'partial';
-
-                // CORREÇÃO: Validação estrita. Só usa a info do banco se ela realmente existir e não for vazia.
-                const name = (p && p.nome && p.nome.trim() !== '') ? p.nome : item.nomeOriginal;
-                const ean = (p && p.gtin && p.gtin.trim() !== '') ? p.gtin : 'SEM EAN';
-                const code = (p && p.codigo && p.codigo.trim() !== '') ? p.codigo : 'NÃO CADASTRADO';
-                
-                const row = document.createElement('div');
-                row.className = `pick-item ${statusClass}`;
-                row.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    manualPick(index); 
-                };
-                
-                row.innerHTML = `
-                    <div class="pick-info">
-                        <div class="pick-name">${name}</div>
-                        <div class="pick-meta">
-                            <span><strong>CÓD:</strong> ${code}</span>
-                            <span><strong>EAN:</strong> ${ean}</span>
-                        </div>
-                    </div>
-                    <div class="pick-qtd-box">
-                        <div class="pick-qtd">${item.scanned} <span>/ ${item.qtd}</span></div>
-                    </div>
-                `;
-                listContainer.appendChild(row);
-            });
-            
-            lucide.createIcons();
-        }
-
-       function handlePickingScan(e) {
-            if (e.key !== 'Enter') return;
-            
-            const input = e.target;
-            // 1. Forçamos o que foi bipado a ser Texto Limpo e em Maiúsculas
-            const val = String(input.value).trim().toUpperCase();
-            input.value = ''; 
-
-            if (!val) return;
-
-            const matches = currentPickingSession.itemsToPick.filter(item => {
-                const p = item.foundProduct;
-                if (!p) {
-                    return item.nomeOriginal ? String(item.nomeOriginal).toUpperCase().includes(val) : false;
-                }
-                
-                // 2. CORREÇÃO DE TIPO: Forçamos o EAN e o Código que vêm da base de dados 
-                // a passarem pelo conversor String() e a removerem espaços trim()
-                const matchEan = p.gtin ? (String(p.gtin).trim().toUpperCase() === val) : false;
-                const matchCodigo = p.codigo ? (String(p.codigo).trim().toUpperCase() === val) : false;
-                const matchNome = p.nome ? String(p.nome).toUpperCase().includes(val) : false;
-                const matchOriginal = item.nomeOriginal ? String(item.nomeOriginal).toUpperCase().includes(val) : false;
-
-                // 3. Se qualquer uma das condições for verdadeira, ele encontra o produto
-                return matchEan || matchCodigo || matchNome || matchOriginal;
-            });
-
-            if (matches.length === 0) {
-                showPickingAlert('PRODUTO ERRADO OU NÃO PERTENCE AO PEDIDO!', 'var(--danger)');
-                return;
-            }
-
-            const pendingMatch = matches.find(m => m.scanned < m.qtd);
-
-            if (!pendingMatch) {
-                showPickingAlert('QUANTIDADE MÁXIMA JÁ CONFERIDA PARA ESTE ITEM!', 'var(--warning)');
-                return;
-            }
-
-            pendingMatch.scanned++;
-            
-            const prodName = (pendingMatch.foundProduct && pendingMatch.foundProduct.nome) ? pendingMatch.foundProduct.nome : pendingMatch.nomeOriginal;
-            showPickingAlert(`✅ CONFERIDO: ${prodName}`, 'var(--success)');
-            
-            renderPickingList();
-        }
-
-        function manualPick(index) {
-            const item = currentPickingSession.itemsToPick[index];
-            if (item.scanned < item.qtd) {
-                item.scanned++;
-                const prodName = item.foundProduct ? item.foundProduct.nome : item.nomeOriginal;
-                showPickingAlert(`👆 CONFERÊNCIA MANUAL: ${prodName}`, 'var(--accent)');
-                renderPickingList();
-                document.getElementById('picking-scanner').focus();
-            } else {
-                showPickingAlert('ESTE ITEM JÁ ESTÁ COMPLETO!', 'var(--warning)');
-            }
-        }
-
-        function showPickingAlert(msg, color) {
-            const alertBox = document.getElementById('picking-alert');
-            alertBox.innerText = msg;
-            alertBox.style.background = color;
-            alertBox.style.display = 'block';
-            
-            clearTimeout(alertBox.timer);
-            alertBox.timer = setTimeout(() => {
-                alertBox.style.display = 'none';
-            }, 2500);
-        }
-
-        function finishPicking() {
-            const missingItems = currentPickingSession.itemsToPick.filter(item => item.scanned < item.qtd);
-            
-            if (missingItems.length > 0) {
-                let missingText = missingItems.map(m => `- ${m.qtd - m.scanned}x ${m.foundProduct ? m.foundProduct.nome : m.nomeOriginal}`).join('\n');
-                
-                const confirmResult = confirm(`ATENÇÃO! Há produtos faltando na separação:\n\n${missingText}\n\nDeseja dar baixa no pedido mesmo assim?`);
-                
-                if (!confirmResult) {
-                    document.getElementById('picking-scanner').focus();
-                    return; 
-                }
-            }
-
-            // NOVO: Em vez de deletar da lista, vamos mudar o status e salvar!
-            const index = pendingOrders.findIndex(o => o.id === currentPickingSession.id);
-            if(index !== -1) {
-                pendingOrders[index].status = 'CONFERIDO';
-                saveOrdersToGithub(); // Sincroniza com a nuvem
-            }
-            
-            renderOrdersQueue();
-            closeModal('modal-picking');
-        }
 
     </script>
 </body>
