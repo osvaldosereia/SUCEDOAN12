@@ -6,6 +6,8 @@
     <title>Sucedoan PIM - Gestão de Produtos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -54,22 +56,8 @@
         .product-grid { flex-grow: 1; overflow-y: auto; padding: 20px; }
         .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 80%; color: var(--text-secondary); text-align: center; }
         
-        /* ========================================= */
-        /* DESKTOP LIST ROW (CORREÇÃO CIRÚRGICA)     */
-        /* 10 Colunas cravadas com tamanhos precisos */
-        /* ========================================= */
-        .list-row { 
-            display: grid; 
-            /* 1:SKU | 2:NOME | 3:CAT | 4:EAN | 5:NCM | 6:EST | 7:VAL | 8:CUSTO | 9:VENDA | 10:AÇÕES */
-            grid-template-columns: 80px 2.5fr 1fr 110px 90px 70px 70px 85px 85px 110px; 
-            gap: 8px; 
-            padding: 8px 12px; 
-            border-bottom: 1px solid var(--border); 
-            background: var(--bg-card); 
-            align-items: center; 
-            font-size: 12px; 
-            transition: 0.2s; 
-        }
+        /* DESKTOP LIST ROW */
+        .list-row { display: grid; grid-template-columns: 80px 2.5fr 1fr 110px 90px 70px 70px 85px 85px 110px; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--bg-card); align-items: center; font-size: 12px; transition: 0.2s; }
         .list-row:hover { background: #f8fafc; }
         .list-header { font-weight: 700; background: #f1f5f9; color: var(--text-secondary); font-size: 10px; position: sticky; top: 0; z-index: 10; border-top: 1px solid var(--border); padding-top: 12px; padding-bottom: 12px;}
         
@@ -97,9 +85,7 @@
         canvas { background: #f8fafc; max-width: 100%; border: 1px dashed var(--border); margin: 0 auto; display: block; cursor: grab; border-radius: 8px; }
         .editor-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; background: #f1f5f9; padding: 10px; border-radius: 6px; }
 
-        /* ========================================= */
-        /* RESPONSIVO MOBILE (CORREÇÃO DE CARDS)     */
-        /* ========================================= */
+        /* RESPONSIVO MOBILE */
         @media (max-width: 768px) {
             header { flex-direction: column; align-items: stretch; }
             .brand { justify-content: center; margin-bottom: 10px; }
@@ -114,58 +100,31 @@
             .list-header { display: none; } 
             
             /* Cada linha vira um Card com 2 colunas */
-            .list-row { 
-                display: grid; 
-                grid-template-columns: 1fr 1fr; 
-                gap: 12px; 
-                padding: 16px; 
-                border: 1px solid var(--border); 
-                border-radius: 10px; 
-                margin-bottom: 16px; 
-                box-shadow: var(--shadow-sm); 
-            }
+            .list-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
             .list-row > div { width: 100%; display: flex; flex-direction: column; justify-content: center; }
             .list-row > div::before { font-size: 10px; color: var(--accent); font-weight: 800; margin-bottom: 4px; display: block; }
             
-            /* Mapeamento exato dos 10 elementos filhos */
             .list-row > div:nth-child(1) { grid-column: span 1; }
             .list-row > div:nth-child(1)::before { content: "SKU"; }
-            
             .list-row > div:nth-child(2) { grid-column: span 2; }
             .list-row > div:nth-child(2)::before { content: "NOME DO PRODUTO"; }
-            
             .list-row > div:nth-child(3) { grid-column: span 2; }
             .list-row > div:nth-child(3)::before { content: "CATEGORIA"; }
-            
             .list-row > div:nth-child(4) { grid-column: span 1; }
             .list-row > div:nth-child(4)::before { content: "EAN"; }
-            
             .list-row > div:nth-child(5) { grid-column: span 1; }
             .list-row > div:nth-child(5)::before { content: "NCM"; }
-            
             .list-row > div:nth-child(6) { grid-column: span 1; }
             .list-row > div:nth-child(6)::before { content: "ESTOQUE"; }
-            
             .list-row > div:nth-child(7) { grid-column: span 1; }
             .list-row > div:nth-child(7)::before { content: "VALIDADE"; }
-            
             .list-row > div:nth-child(8) { grid-column: span 1; }
             .list-row > div:nth-child(8)::before { content: "CUSTO (R$)"; }
-            
             .list-row > div:nth-child(9) { grid-column: span 1; }
             .list-row > div:nth-child(9)::before { content: "VENDA (R$)"; }
             
-            /* Ações ocupam a linha inteira no rodapé do card */
-            .list-row > div:nth-child(10) { 
-                grid-column: span 2; 
-                flex-direction: row; 
-                flex-wrap: wrap; 
-                justify-content: center; 
-                margin-top: 10px; 
-                border-top: 1px dashed var(--border); 
-                padding-top: 12px; 
-                gap: 8px; 
-            }
+            /* Ações */
+            .list-row > div:nth-child(10) { grid-column: span 2; flex-direction: row; flex-wrap: wrap; justify-content: center; margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 12px; gap: 8px; }
             .list-row > div:nth-child(10)::before { display: none; }
             .action-cell { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
             .btn-icon { padding: 10px; }
@@ -178,8 +137,14 @@
 
     <script>
         let availableCategories = []; 
-        const STORAGE_KEY = 'sucedoan_data_v30'; // Versionamento atualizado
+        const STORAGE_KEY = 'sucedoan_data_v30_idb'; // Nova chave limpa
         const CONFIG_KEY = 'sucedoan_config';
+        
+        // Inicializa o LocalForage para usar IndexedDB
+        localforage.config({
+            name: 'SucedoanPIM',
+            storeName: 'produtos_db' // Nome da tabela
+        });
     </script>
 
     <header>
@@ -207,14 +172,10 @@
                 <button class="nav-btn warning" onclick="forceBackupNow()" title="Forçar envio de dados aguardando na fila para a nuvem" id="btn-force-sync" style="display:none;">
                     <i data-lucide="upload-cloud" size="16"></i> SALVAR AGORA
                 </button>
-                
                 <button class="nav-btn success" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="16"></i> BAIXAR NUVEM</button>
-                
                 <input type="file" id="csv-file-append" accept=".csv" style="display:none">
                 <button class="nav-btn" onclick="document.getElementById('csv-file-append').click()"><i data-lucide="file-up" size="16"></i> LER CSV</button>
-                
                 <button class="nav-btn" onclick="exportarCSVCompleto()"><i data-lucide="file-down" size="16"></i> EXPORTAR CSV</button>
-
                 <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="16"></i> NOVO</button>
             </div>
         </div>
@@ -228,12 +189,10 @@
             <div class="modal-body">
                 <div style="font-size:11px; text-align:center; color:var(--text-secondary); margin-bottom:10px;">Cole a imagem com (Ctrl+V) ou busque no seu PC</div>
                 <canvas id="imageCanvas" width="400" height="400"></canvas>
-                
                 <div class="editor-tools">
                     <div><label style="font-size:10px;">Zoom</label><input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1" style="width:100%"></div>
                     <div><label style="font-size:10px;">Nitidez</label><input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0" style="width:100%"></div>
                 </div>
-                
                 <div style="display:flex; gap:10px; margin-top:15px;">
                     <button class="nav-btn" style="flex:1;" onclick="document.getElementById('fileInput').click()">BUSCAR NO PC</button>
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
@@ -251,6 +210,10 @@
                 <div style="margin-bottom: 10px;"><label style="font-size:12px;">Usuário</label><input type="text" id="cfg-user" style="width:100%; padding:10px; border-radius:6px; border:1px solid var(--border);"></div>
                 <div style="margin-bottom: 15px;"><label style="font-size:12px;">Repositório</label><input type="text" id="cfg-repo" style="width:100%; padding:10px; border-radius:6px; border:1px solid var(--border);"></div>
                 <button class="nav-btn primary" style="width:100%;" onclick="saveConfig()">SALVAR</button>
+                
+                <div style="margin-top: 30px; border-top: 1px dashed var(--border); padding-top: 20px;">
+                    <button class="nav-btn danger" style="width:100%; justify-content:center;" onclick="limparSistema()"><i data-lucide="trash-2" size="16"></i> RESETAR BANCO LOCAL</button>
+                </div>
             </div>
         </div>
     </div>
@@ -258,7 +221,6 @@
     <script>
         let products = [];
         
-        // --- ESTRATÉGIA AUTO-SAVE DEBOUNCE (5 MINUTOS) ---
         let autoSaveTimer = null;
         const AUTO_SAVE_DELAY = 5 * 60 * 1000; 
         
@@ -355,32 +317,44 @@
             }, 1000);
         }
 
-        // --- INICIALIZAÇÃO ---
-        window.onload = function() {
+        // --- INICIALIZAÇÃO ASSÍNCRONA ---
+        window.onload = async function() {
             lucide.createIcons();
-            loadData();
+            await loadData();
             document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value, true), 300));
             setupEditorEvents();
         };
 
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
-        function loadData() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if(saved) products = JSON.parse(saved);
+        async function loadData() {
+            try {
+                // Carrega do motor IndexedDB
+                const saved = await localforage.getItem(STORAGE_KEY);
+                if(saved && Array.isArray(saved)) {
+                    products = saved;
+                }
+            } catch (err) {
+                console.error("Erro ao carregar dados locais:", err);
+            }
             
+            // As credenciais continuam no LocalStorage pois são leves
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
             
             renderGrid();
         }
         
-        function saveData() { 
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); 
-            scheduleAutoSave();
+        async function saveData() { 
+            try {
+                await localforage.setItem(STORAGE_KEY, products);
+                scheduleAutoSave();
+            } catch (err) {
+                console.error("Erro ao salvar no IndexedDB:", err);
+                alert("Erro ao salvar localmente. Seu dispositivo pode estar sem espaço.");
+            }
         }
 
-        // --- BAIXAR DA NUVEM ---
         async function fetchFromGithub() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) { openConfigModal(); return alert("Configure as credenciais primeiro."); }
@@ -392,8 +366,21 @@
                 const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
                 if(!res.ok) throw new Error("Arquivo não encontrado.");
                 const data = await res.json();
-                if(Array.isArray(data)) { products = data; localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); renderGrid(); updateQueueUI('Baixado', 'cloud'); setTimeout(()=>updateQueueUI(''), 3000);}
+                if(Array.isArray(data)) { 
+                    products = data; 
+                    await saveData(); 
+                    renderGrid(); 
+                    updateQueueUI('Baixado', 'cloud'); 
+                    setTimeout(()=>updateQueueUI(''), 3000);
+                }
             } catch(e) { alert("Erro: " + e.message); updateQueueUI(''); }
+        }
+
+        async function limparSistema() {
+            if(confirm("ATENÇÃO: Vai apagar todos os produtos apenas DESTE NAVEGADOR. A nuvem não será apagada. Continuar?")) {
+                await localforage.clear();
+                location.reload();
+            }
         }
 
         // --- EXPORTAR CSV ORIGINAL ---
@@ -437,7 +424,6 @@
                 lucide.createIcons(); return;
             }
 
-            // Exatamente 10 colunas de cabeçalho
             const header = document.createElement('div'); 
             header.className = 'list-row list-header';
             header.innerHTML = `<div>SKU</div><div>NOME DO PRODUTO</div><div>CATEGORIA</div><div>EAN</div><div>NCM</div><div style="text-align:right;">ESTOQUE</div><div style="text-align:center;">VAL.</div><div style="text-align:right;">CUSTO</div><div style="text-align:right;">VENDA</div><div style="text-align:center;">AÇÕES</div>`;
@@ -457,30 +443,21 @@
             const btnSearchNcm = `<button class="btn-text-icon" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Buscar NCM"><i data-lucide="search" size="10"></i> BUSCAR NCM</button>`;
             const btnEditCanvas = `<button class="btn-icon" onclick="openEditor('${p.codigo}')" title="Anexar Imagem"><i data-lucide="camera" size="16"></i></button>`;
 
-            // Exatamente 10 div filhas diretas (para o CSS Grid funcionar perfeitamente)
             row.innerHTML = `
                 <div><input type="text" class="list-input" style="font-weight:800; color:var(--accent);" value="${p.codigo}" readonly></div>
-                
                 <div>
                     <input type="text" class="list-input" style="font-weight:600;" value="${p.nome || ''}" onchange="updateProduct('${p.codigo}', 'nome', this.value)">
                     <div style="display:flex; margin-top:2px;">${btnGoogleImg}</div>
                 </div>
-                
                 <div><input type="text" class="list-input" value="${p.categoria || ''}" onchange="updateProduct('${p.codigo}', 'categoria', this.value)" placeholder="Categoria"></div>
-                
                 <div><input type="text" class="list-input" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="EAN"></div>
-                
                 <div>
                     <input type="text" class="list-input" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="NCM">
                     <div style="display:flex; margin-top:2px;">${btnSearchNcm}</div>
                 </div>
-
                 <div><input type="text" class="list-input number" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)"></div>
-
                 <div><input type="text" class="list-input" style="text-align:center; color:${p.validade ? 'var(--warning)' : 'inherit'};" value="${p.validade || ''}" placeholder="DD/MM" onchange="updateProduct('${p.codigo}', 'validade', this.value)"></div>
-
                 <div><input type="text" class="list-input number" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)"></div>
-
                 <div><input type="text" class="list-input number" style="color:var(--success);" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)"></div>
                 
                 <div>
@@ -494,30 +471,30 @@
             return row;
         }
 
-        function updateProduct(sku, field, value) {
+        async function updateProduct(sku, field, value) {
             const p = products.find(x => x.codigo === sku); if(!p) return;
             let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.replace(',','.')) || 0;
             p[field] = finalVal;
-            saveData(); 
+            await saveData(); 
         }
 
-        function toggleActive(sku) { 
+        async function toggleActive(sku) { 
             const p = products.find(x => x.codigo === sku); if (!p) return; 
             p.situacao = p.situacao === 'I' ? 'A' : 'I'; 
-            saveData(); renderGrid(document.getElementById('search-input').value, true); 
+            await saveData(); renderGrid(document.getElementById('search-input').value, true); 
         }
 
-        function deleteProduct(sku) {
+        async function deleteProduct(sku) {
             if(!confirm(`Excluir SKU: ${sku}?`)) return;
             products = products.filter(p => p.codigo !== sku);
-            saveData(); renderGrid(document.getElementById('search-input').value, true);
+            await saveData(); renderGrid(document.getElementById('search-input').value, true);
         }
 
-        function createNewProduct() {
+        async function createNewProduct() {
             const timestamp = Date.now();
             const sku = timestamp.toString().slice(-8); 
             products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0 }); 
-            saveData(); renderGrid(document.getElementById('search-input').value, true);
+            await saveData(); renderGrid(document.getElementById('search-input').value, true);
             document.getElementById('product-grid').scrollTop = 0;
         }
 
@@ -559,24 +536,24 @@
                 let sha = null; try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
                 const body = { message: `Upload img ${sku}`, content: base64 }; if(sha) body.sha = sha;
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); 
-                if(res.ok) { const p = products.find(x => x.codigo === sku); if(p) { p.url_imagem = `../${folderPath}/${fileName}?v=${Date.now()}`; saveData(); } }
+                if(res.ok) { const p = products.find(x => x.codigo === sku); if(p) { p.url_imagem = `../${folderPath}/${fileName}?v=${Date.now()}`; await saveData(); } }
             }, 1000); 
             closeModal('modal-editor'); 
         }
 
-        // --- IMPORT CSV E CONFIGS ---
+        // --- IMPORT CSV ---
         document.getElementById('csv-file-append').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
             Papa.parse(e.target.files[0], {
                 header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
-                complete: (results) => {
+                complete: async (results) => {
                     results.data.forEach(d => {
                         const sku = d['Código']; if(!sku) return;
                         const pIdx = products.findIndex(p => p.codigo === sku);
                         let n = { codigo: sku, nome: d['Descrição'], preco: parseFloat(d['Preço']?.replace(',','.'))||0, preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, categoria: d['Categoria do produto'], gtin: d['GTIN/EAN'], ncm: d['NCM'] };
                         if(pIdx !== -1) products[pIdx] = {...products[pIdx], ...n}; else products.unshift({...n, id:Date.now()});
                     });
-                    saveData(); renderGrid(); alert("Lido com sucesso!");
+                    await saveData(); renderGrid(); alert("Lido com sucesso!");
                 }
             });
         });
