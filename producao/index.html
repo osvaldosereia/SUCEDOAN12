@@ -54,7 +54,7 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { animation: spin 2s linear infinite; }
 
-        /* GRID DE PRODUTOS (VITRINE MINIMALISTA) */
+        /* GRID DE PRODUTOS */
         .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
         
@@ -70,7 +70,7 @@
         .card-btn { background: #f4f4f5; border: none; border-radius: 6px; padding: 8px; font-size: 10px; font-weight: 900; color: var(--accent); cursor: pointer; width: 100%; transition: 0.2s; text-transform: uppercase; }
         .card-btn:hover { background: var(--accent); color: white; }
 
-        /* SISTEMA UNIVERSAL DE ABAS LATERAIS (OFFCANVAS) */
+        /* SISTEMA DE ABAS LATERAIS */
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
         
         .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
@@ -102,12 +102,12 @@
         .form-input:focus { border-color: var(--accent); background: #ffffff; }
         textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
         
-        /* BOTÕES DE INTELIGÊNCIA (SMART BUTTONS) */
+        /* BOTÕES SMART */
         .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; }
         .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
 
-        /* SLOTS DE IMAGEM */
-        .image-slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        /* SLOTS DE IMAGEM: Atualizado de 5 para 3 colunas */
+        .image-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .img-slot { aspect-ratio: 1; border: 1px dashed var(--border); border-radius: 6px; display: flex; justify-content: center; align-items: center; background: #fafafa; cursor: pointer; overflow: hidden; position: relative; transition: 0.2s; }
         .img-slot:hover { border-color: var(--accent); }
         .img-slot img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
@@ -127,6 +127,7 @@
             .sidebar { width: 100%; }
             .main-content { padding: 10px; }
             .card-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            /* Atualizado de 3 para suportar as 3 fotos no telemóvel sem falhas */
             .image-slots { grid-template-columns: repeat(3, 1fr); }
             .toolbar-group { flex-wrap: wrap; justify-content: center; }
         }
@@ -241,13 +242,12 @@
         let products = [];
         let currentEditingSku = null;
         let currentImageSlot = 1; 
-        let imageQueue = []; // Fila local de uploads de imagens
+        let imageQueue = [];
 
-        // --- SISTEMA DE FILA E RATE-LIMITING PARA O GITHUB (180 Segundos) ---
         let githubTasksQueue = [];
         let isProcessingTasks = false;
         let lastGithubSyncTime = 0;
-        const COOLDOWN_MS = 180 * 1000; // 180 Segundos exatos de obrigatoriedade entre envios
+        const COOLDOWN_MS = 180 * 1000;
 
         function updateQueueUI(msg, icon = 'info') {
             const el = document.getElementById('queue-status');
@@ -265,66 +265,43 @@
             }
         }
 
-        // Função principal que adiciona a tarefa à fila
         function enqueueGitHubTask(taskName, taskFunction, btnElement) {
             const originalHTML = btnElement.innerHTML;
-            
-            // Muda o botão para estado de "Fila"
             btnElement.innerHTML = `<i data-lucide="clock" size="14"></i> NA FILA`;
             btnElement.disabled = true;
             lucide.createIcons();
 
-            githubTasksQueue.push({
-                name: taskName,
-                fn: taskFunction,
-                btn: btnElement,
-                originalHTML: originalHTML
-            });
-
-            if (!isProcessingTasks) {
-                processGitHubQueue();
-            }
+            githubTasksQueue.push({ name: taskName, fn: taskFunction, btn: btnElement, originalHTML: originalHTML });
+            if (!isProcessingTasks) processGitHubQueue();
         }
 
-        // Executor da Fila
         async function processGitHubQueue() {
-            if (githubTasksQueue.length === 0) {
-                isProcessingTasks = false;
-                return;
-            }
+            if (githubTasksQueue.length === 0) { isProcessingTasks = false; return; }
 
             isProcessingTasks = true;
             const now = Date.now();
             const timeSinceLastSync = now - lastGithubSyncTime;
 
-            // Se ainda não se passaram os 180 segundos obrigatórios desde o último envio
             if (lastGithubSyncTime > 0 && timeSinceLastSync < COOLDOWN_MS) {
                 const waitTime = COOLDOWN_MS - timeSinceLastSync;
                 let remainingSecs = Math.ceil(waitTime / 1000);
 
-                // Contador visual no topo
                 updateQueueUI(`A aguardar limite da API: ${remainingSecs}s`, 'clock');
                 const interval = setInterval(() => {
                     remainingSecs--;
-                    if(remainingSecs >= 0) {
-                        updateQueueUI(`A aguardar limite da API: ${remainingSecs}s`, 'clock');
-                    }
+                    if(remainingSecs >= 0) updateQueueUI(`A aguardar limite da API: ${remainingSecs}s`, 'clock');
                 }, 1000);
 
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 clearInterval(interval);
             }
 
-            // Pega na tarefa atual da fila
             const task = githubTasksQueue.shift();
-            
-            // Atualiza Botão e Topo
             task.btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> A ENVIAR...`;
             updateQueueUI(`A enviar: ${task.name}...`, 'loader');
             lucide.createIcons();
 
             try {
-                // Executa o Envio
                 await task.fn();
                 updateQueueUI(`${task.name} enviado com sucesso!`, 'check');
             } catch (e) {
@@ -332,27 +309,16 @@
                 alert(`Erro ao enviar ${task.name}: ${e.message}`);
                 updateQueueUI(`Erro ao enviar ${task.name}`, 'info');
             } finally {
-                // Restaura o botão original
                 task.btn.innerHTML = task.originalHTML;
                 task.btn.disabled = false;
                 lucide.createIcons();
-                
-                // Grava o tempo que terminou esta tarefa para forçar os próximos 180s
                 lastGithubSyncTime = Date.now();
-                
-                // Aguarda um momento para ler a mensagem de sucesso e avança para a próxima
                 setTimeout(() => {
-                    if (githubTasksQueue.length > 0) {
-                        processGitHubQueue(); // Continua a processar
-                    } else {
-                        updateQueueUI(''); // Esconde a barra se a fila acabou
-                        isProcessingTasks = false;
-                    }
+                    if (githubTasksQueue.length > 0) processGitHubQueue(); 
+                    else { updateQueueUI(''); isProcessingTasks = false; }
                 }, 3000);
             }
         }
-
-        // --- FUNÇÕES DE UPLOAD MANUAL PARA GITHUB (AGORA PASSAM PELA FILA) ---
 
         function uploadBancodedados(btn) {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
@@ -396,16 +362,21 @@
                     validade: p.validade || "",
                     estoque: p.estoque || 0,
                     descricao: p.descricao || "",
+                    // 3 Imagens
                     url_imagem: p.url_imagem || "",
                     url_imagem_2: p.url_imagem_2 || "",
                     url_imagem_3: p.url_imagem_3 || "",
-                    url_imagem_4: p.url_imagem_4 || "",
-                    url_imagem_5: p.url_imagem_5 || "",
+                    // 10 Vídeos
                     link_video: p.link_video || "",
                     link_video_2: p.link_video_2 || "",
                     link_video_3: p.link_video_3 || "",
                     link_video_4: p.link_video_4 || "",
-                    link_video_5: p.link_video_5 || ""
+                    link_video_5: p.link_video_5 || "",
+                    link_video_6: p.link_video_6 || "",
+                    link_video_7: p.link_video_7 || "",
+                    link_video_8: p.link_video_8 || "",
+                    link_video_9: p.link_video_9 || "",
+                    link_video_10: p.link_video_10 || ""
                 }));
 
                 const contentStr = JSON.stringify(produtosResumidos, null, 2);
@@ -451,44 +422,30 @@
                                 pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; 
                                 pRef.last_update = Date.now(); 
                             }
-                            // Tira da fila local em caso de sucesso
                             imageQueue = imageQueue.filter(q => q !== item);
                             updateImageBadge();
                         } else {
                             errorCount++;
                         }
-                    } catch(e) {
-                        console.error("Erro na imagem:", e);
-                        errorCount++;
-                    }
+                    } catch(e) { console.error("Erro na imagem:", e); errorCount++; }
                 }
-
                 await localforage.setItem(STORAGE_KEY, products);
                 updateImageBadge();
-                
                 if (errorCount > 0) throw new Error(`Falha no envio de ${errorCount} imagens.`);
-
             }, btn);
         }
 
-        // Outros
         let isFilter24hActive = false;
-
         function toggleFilter24h() {
             isFilter24hActive = !isFilter24hActive;
             const btn = document.getElementById('btn-24h');
-            if(isFilter24hActive) btn.classList.add('primary');
-            else btn.classList.remove('primary');
+            if(isFilter24hActive) btn.classList.add('primary'); else btn.classList.remove('primary');
             renderGrid(document.getElementById('search-input').value);
         }
         
-        // --- GESTÃO DE ABAS LATERAIS (OFFCANVAS) ---
         function openSidebar(id) {
             document.getElementById('sidebar-overlay').style.display = 'block';
-            setTimeout(() => { 
-                document.getElementById('sidebar-overlay').style.opacity = '1'; 
-                document.getElementById(id).classList.add('open'); 
-            }, 10);
+            setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10);
         }
 
         function closeSidebar(id) {
@@ -511,7 +468,6 @@
             renderGrid(document.getElementById('search-input').value);
         }
 
-        // --- INICIALIZAÇÃO ---
         window.onload = async function() {
             lucide.createIcons();
             await loadData();
@@ -528,33 +484,18 @@
             renderGrid();
         }
         
-        function updateImageBadge() {
-            const badge = document.getElementById('img-badge');
-            if (badge) badge.innerText = `(${imageQueue.length})`;
-        }
+        function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
 
-        async function saveDataLocally() { 
-            try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {}
-        }
+        async function saveDataLocally() { try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} }
 
-
-        // --- VITRINE MINIMALISTA ---
         function renderGrid(filter = "") {
-            const gridContainer = document.getElementById('product-grid'); 
-            gridContainer.innerHTML = "";
+            const gridContainer = document.getElementById('product-grid'); gridContainer.innerHTML = "";
             let filtered = products;
             
-            // Filtro Texto
             if(filter) { const term = filter.toLowerCase(); filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term)); }
-            
-            // Filtro 24 Horas
             if(isFilter24hActive) {
-                const oneDay = 24 * 60 * 60 * 1000;
-                const now = Date.now();
-                filtered = filtered.filter(p => {
-                    const time = p.last_update || p.id || 0;
-                    return (now - time) <= oneDay;
-                });
+                const oneDay = 24 * 60 * 60 * 1000; const now = Date.now();
+                filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; });
             }
             
             if (filtered.length === 0) {
@@ -563,42 +504,35 @@
             }
 
             filtered.forEach(p => {
-                const card = document.createElement('div'); 
-                card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
+                const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
                 card.onclick = () => { openEditSidebar(p.codigo); };
-                
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 
-                card.innerHTML = `
-                    <div class="card-img-wrapper"><img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div>
-                    <div class="card-info">
-                        <div class="card-title">${p.nome || 'Produto Sem Nome'}</div>
-                        <button class="card-btn">EDITAR</button>
-                    </div>
-                `;
+                card.innerHTML = `<div class="card-img-wrapper"><img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div><div class="card-info"><div class="card-title">${p.nome || 'Produto Sem Nome'}</div><button class="card-btn">EDITAR</button></div>`;
                 gridContainer.appendChild(card);
             }); 
             lucide.createIcons();
         }
 
-        // --- SIDEBAR: EDIÇÃO DE PRODUTO ---
         function openEditSidebar(sku) {
             currentEditingSku = sku;
             const p = products.find(x => x.codigo === sku); if(!p) return;
             
             const isInactive = p.situacao === 'I';
-            const imgVars = [1,2,3,4,5].map(i => { const prop = i===1 ? 'url_imagem' : `url_imagem_${i}`; return p[prop] || ''; });
-            const vidVars = [1,2,3,4,5].map(i => { const prop = i===1 ? 'link_video' : `link_video_${i}`; return p[prop] || ''; });
+            // Array reduzido para 3 FOTOS
+            const imgVars = [1,2,3].map(i => { const prop = i===1 ? 'url_imagem' : `url_imagem_${i}`; return p[prop] || ''; });
+            // Array aumentado para 10 VÍDEOS
+            const vidVars = [1,2,3,4,5,6,7,8,9,10].map(i => { const prop = i===1 ? 'link_video' : `link_video_${i}`; return p[prop] || ''; });
             const safeName = (p.nome||'').replace(/'/g, "\\'");
 
             let htmlImages = '';
-            for(let i=1; i<=5; i++) {
+            for(let i=1; i<=3; i++) {
                 const src = imgVars[i-1] ? `<img src="${imgVars[i-1]}">` : `<i data-lucide="image-plus" size="20" style="color:#a1a1aa"></i>`;
                 htmlImages += `<div class="img-slot" onclick="openCanvasSidebar('${p.codigo}', ${i})">${src}<div class="slot-num">${i}</div></div>`;
             }
 
             let htmlVideos = '';
-            for(let i=1; i<=5; i++) {
+            for(let i=1; i<=10; i++) {
                 const prop = i===1 ? 'link_video' : `link_video_${i}`;
                 htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Url YouTube Shorts ${i}" onchange="updateField('${p.codigo}', '${prop}', this.value)">`;
             }
@@ -636,7 +570,7 @@
                     <div class="section-title">Média Rica (Vitrine)</div>
                     <div class="image-slots">${htmlImages}</div>
                     
-                    <div style="margin-top:15px; border:1px dashed var(--border); padding:12px; border-radius:8px; background:#fafafa;">
+                    <div style="margin-top:15px; border:1px dashed var(--border); padding:12px; border-radius:8px; background:#fafafa; max-height:220px; overflow-y:auto;">
                         <button class="nav-btn" style="width:100%; justify-content:center; color:#dc2626; border-color:#fecaca; background:#fef2f2; margin-bottom:12px;" onclick="searchYoutubeShorts('${safeName}')">
                             <i data-lucide="youtube" size="16"></i> PESQUISAR SHORTS NO YOUTUBE
                         </button>
@@ -651,8 +585,9 @@
                         <div class="form-group"><label class="form-label" style="color:var(--success)">Venda (R$)</label><input type="number" step="0.01" class="form-input" style="border-color:var(--success); color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
                         <div class="form-group"><label class="form-label">Estoque</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
                         <div class="form-group"><label class="form-label">Status</label><button class="nav-btn ${isInactive ? '' : 'primary'}" style="width:100%; height:38px; justify-content:center;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="14"></i> ${isInactive ? 'INATIVO' : 'ATIVO'}</button></div>
+                        <div class="form-group"><label class="form-label">Data de Validade</label><input type="date" class="form-input" value="${p.validade || ''}" onchange="updateField('${p.codigo}', 'validade', this.value)"></div>
+                        <div class="form-group"><label class="form-label">EAN</label><input type="text" class="form-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
                         <div class="form-group full"><label class="form-label">Categoria</label><input type="text" class="form-input" value="${p.categoria || ''}" onchange="updateField('${p.codigo}', 'categoria', this.value)"></div>
-                        <div class="form-group full"><label class="form-label">EAN</label><input type="text" class="form-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
                         
                         <div class="form-group full">
                             <label class="form-label">NCM</label>
@@ -671,9 +606,7 @@
         async function updateField(sku, field, value) {
             const p = products.find(x => x.codigo === sku); if(!p) return;
             let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0;
-            p[field] = finalVal;
-            p.last_update = Date.now();
-            await saveDataLocally(); 
+            p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); 
         }
 
         async function updateSku(oldSku, newSku) {
@@ -685,8 +618,7 @@
 
         async function toggleStatus(sku) { 
             const p = products.find(x => x.codigo === sku); if (!p) return; 
-            p.situacao = p.situacao === 'I' ? 'A' : 'I'; 
-            p.last_update = Date.now();
+            p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now();
             await saveDataLocally(); openEditSidebar(sku); 
         }
 
@@ -698,36 +630,28 @@
         }
 
         async function createNewProduct() {
-            const timestamp = Date.now();
-            const sku = timestamp.toString().slice(-8); 
+            const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); 
             products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); 
             await saveDataLocally(); renderGrid(document.getElementById('search-input').value); openEditSidebar(sku);
         }
 
-        function searchGoogleHD(nome) {
-            if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank');
-        }
+        function searchGoogleHD(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); }
 
         function searchAIReview(nome) {
-            if(!nome) return;
-            const prompt = `Faça uma pesquisa na web sobre opiniões de consumidores sobre o produto "${nome}". Resuma se vale a pena comprar e características em no maximo 50 palavras.`;
+            if(!nome) return; const prompt = `Faça uma pesquisa na web sobre opiniões de consumidores sobre o produto "${nome}". Resuma se vale a pena comprar e características em no maximo 50 palavras.`;
             window.open(`https://www.google.com/search?q=${encodeURIComponent(prompt)}&udm=50`, '_blank');
         }
 
         function searchYoutubeShorts(nome) {
-            if(!nome) return alert("Preencha o nome do produto primeiro.");
-            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome + ' shorts')}`, '_blank');
+            if(!nome) return alert("Preencha o nome do produto primeiro."); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome + ' shorts')}`, '_blank');
         }
 
-        // --- EDITOR CANVAS PRO EM SIDEBAR ---
-        const canvas = document.getElementById('imageCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d');
         let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
 
         function openCanvasSidebar(sku, slot) {
             const p = products.find(x => x.codigo === sku); if(!p) return;
-            currentImageSlot = slot;
-            imgOffsetX = 0; imgOffsetY = 0; 
+            currentImageSlot = slot; imgOffsetX = 0; imgOffsetY = 0; 
             document.getElementById('zoomRange').value = 1; document.getElementById('brightnessRange').value = 1; document.getElementById('sharpenRange').value = 0;
             
             const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
@@ -748,17 +672,11 @@
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if(loadedImage) { 
-                const zoom = parseFloat(document.getElementById('zoomRange').value); 
-                const bright = parseFloat(document.getElementById('brightnessRange').value); 
-                const sharpen = parseFloat(document.getElementById('sharpenRange').value); 
-                
+                const zoom = parseFloat(document.getElementById('zoomRange').value); const bright = parseFloat(document.getElementById('brightnessRange').value); const sharpen = parseFloat(document.getElementById('sharpenRange').value); 
                 ctx.filter = `brightness(${bright})`;
                 const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height) * zoom;
-                const w = loadedImage.width * ratio, h = loadedImage.height * ratio; 
-                const posX = ((canvas.width - w) / 2) + imgOffsetX; const posY = ((canvas.height - h) / 2) + imgOffsetY; 
-                
-                ctx.drawImage(loadedImage, posX, posY, w, h); 
-                ctx.filter = 'none';
+                const w = loadedImage.width * ratio, h = loadedImage.height * ratio; const posX = ((canvas.width - w) / 2) + imgOffsetX; const posY = ((canvas.height - h) / 2) + imgOffsetY; 
+                ctx.drawImage(loadedImage, posX, posY, w, h); ctx.filter = 'none';
                 if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
             } 
             else { ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; ctx.fillText("Cole foto (Ctrl+V) ou busque no PC", canvas.width/2, canvas.height/2); }
@@ -768,24 +686,14 @@
             ['zoomRange','brightnessRange','sharpenRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
             document.getElementById('fileInput').addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (evt) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = evt.target.result; }; reader.readAsDataURL(e.target.files[0]); } });
             window.addEventListener('paste', e => { 
-                const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open');
-                const isEditOpen = document.getElementById('edit-sidebar').classList.contains('open');
+                const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open'); const isEditOpen = document.getElementById('edit-sidebar').classList.contains('open');
                 if(!isEditorOpen && !isEditOpen) return;
-                
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items; 
                 for (let index in items) { 
                     const item = items[index]; 
                     if (item.kind === 'file' && item.type.includes('image/')) { 
                         const blob = item.getAsFile(); const reader = new FileReader(); 
-                        reader.onload = (event) => { 
-                            const img = new Image(); 
-                            img.onload = () => { 
-                                loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); 
-                                if(!isEditorOpen && currentEditingSku) openCanvasSidebar(currentEditingSku, 1);
-                            }; 
-                            img.src = event.target.result; 
-                        }; 
-                        reader.readAsDataURL(blob); 
+                        reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); if(!isEditorOpen && currentEditingSku) openCanvasSidebar(currentEditingSku, 1); }; img.src = event.target.result; }; reader.readAsDataURL(blob); 
                     } 
                 } 
             });
@@ -793,23 +701,11 @@
         }
 
         async function saveImageToQueue() {
-            if(!currentEditingSku) return; 
-            const sku = currentEditingSku; const slot = currentImageSlot;
-            
-            const base64full = canvas.toDataURL('image/webp', 0.9);
-            const base64data = base64full.split(',')[1];
-            
-            const p = products.find(x => x.codigo === sku);
-            const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
-            p[prop] = base64full; 
-            p.last_update = Date.now();
-            await saveDataLocally();
-            
-            imageQueue.push({ sku: sku, slot: slot, prop: prop, base64data: base64data });
-            updateImageBadge();
-
-            openEditSidebar(sku); 
-            closeSidebar('editor-sidebar');
+            if(!currentEditingSku) return; const sku = currentEditingSku; const slot = currentImageSlot;
+            const base64full = canvas.toDataURL('image/webp', 0.9); const base64data = base64full.split(',')[1];
+            const p = products.find(x => x.codigo === sku); const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
+            p[prop] = base64full; p.last_update = Date.now();
+            await saveDataLocally(); imageQueue.push({ sku: sku, slot: slot, prop: prop, base64data: base64data }); updateImageBadge(); openEditSidebar(sku); closeSidebar('editor-sidebar');
         }
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
@@ -822,9 +718,7 @@
                     results.data.forEach(d => {
                         const ean = d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '';
                         const fallbackSku = d['Código'] ? d['Código'].trim() : Date.now().toString().slice(-8);
-                        
-                        let pIdx = -1;
-                        if(ean !== '') { pIdx = products.findIndex(p => p.gtin === ean); }
+                        let pIdx = -1; if(ean !== '') { pIdx = products.findIndex(p => p.gtin === ean); }
                         if(pIdx === -1) { pIdx = products.findIndex(p => p.codigo === fallbackSku); }
                         
                         let n = { 
@@ -832,6 +726,9 @@
                             preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, 
                             categoria: d['Categoria do produto'], gtin: ean, ncm: d['NCM'], last_update: Date.now()
                         };
+                        // Importar data de validade, se existir no CSV
+                        if (d['Data Validade']) { n.validade = d['Data Validade']; }
+
                         if(pIdx !== -1) products[pIdx] = {...products[pIdx], ...n}; else products.unshift({...n, id:Date.now()});
                     });
                     await saveDataLocally(); 
@@ -860,6 +757,7 @@
                 const linha = {}; 
                 const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
                 p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Origem'] = '0'; p['Unidade'] = 'un';
+                p['Data Validade'] = p.validade || ""; // Mapeia validade
                 colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
                 linha['URL Imagens Externas'] = ""; linha['Link Externo'] = ""; linha['Vídeo'] = ""; linha['Descrição Curta'] = ""; return linha;
             });
