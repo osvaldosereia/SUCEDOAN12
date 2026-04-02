@@ -128,7 +128,7 @@
 <body>
 
     <script>
-        const STORAGE_KEY = 'sucedoan_pim_v35'; 
+        const STORAGE_KEY = 'sucedoan_pim_v36'; 
         const CONFIG_KEY = 'sucedoan_config';
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
@@ -314,7 +314,10 @@
                     const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                     let sha = null;
                     try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
-                    const contentStr = JSON.stringify(products);
+                    
+                    // JSON Formatado (Pretty Print)
+                    const contentStr = JSON.stringify(products, null, 2);
+                    
                     const base64 = btoa(unescape(encodeURIComponent(contentStr)));
                     const body = { message: `PIM AutoSave`, content: base64 };
                     if(sha) body.sha = sha;
@@ -650,7 +653,7 @@
             scheduleAutoSave();
         }
 
-        // --- SISTEMA DE IMPORTAÇÃO CSV POR EAN ---
+        // --- SISTEMA DE IMPORTAÇÃO CSV POR EAN & BLING EXPORT ---
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
         document.getElementById('csv-file-append').addEventListener('change', function(e) {
@@ -663,43 +666,29 @@
                         const fallbackSku = d['Código'] ? d['Código'].trim() : Date.now().toString().slice(-8);
                         
                         let pIdx = -1;
-                        if(ean !== '') {
-                            // Busca por EAN (Inteligência nova)
-                            pIdx = products.findIndex(p => p.gtin === ean);
-                        }
-                        // Se não achou por EAN (ou EAN está vazio), busca por SKU para garantir que não duplica
-                        if(pIdx === -1) {
-                            pIdx = products.findIndex(p => p.codigo === fallbackSku);
-                        }
+                        if(ean !== '') { pIdx = products.findIndex(p => p.gtin === ean); }
+                        if(pIdx === -1) { pIdx = products.findIndex(p => p.codigo === fallbackSku); }
                         
                         let n = { 
                             codigo: fallbackSku, 
                             nome: d['Descrição'], 
-                            descricao: d['Descrição Curta'], 
                             preco: parseFloat(d['Preço']?.replace(',','.'))||0, 
                             preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, 
                             estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, 
                             categoria: d['Categoria do produto'], 
                             gtin: ean, 
                             ncm: d['NCM'], 
-                            link_video: d['Vídeo'],
-                            last_update: Date.now() // Marca como tocado nas últimas 24h
+                            last_update: Date.now()
                         };
-                        
-                        if(d['URL Imagens Externas']) {
-                            const imgs = d['URL Imagens Externas'].split('|');
-                            n.url_imagem = imgs[0] || ''; n.url_imagem_2 = imgs[1] || ''; n.url_imagem_3 = imgs[2] || ''; n.url_imagem_4 = imgs[3] || ''; n.url_imagem_5 = imgs[4] || '';
-                        }
                         
                         if(pIdx !== -1) products[pIdx] = {...products[pIdx], ...n}; 
                         else products.unshift({...n, id:Date.now()});
                     });
                     await saveDataLocally(); 
-                    // Ativa o filtro de 24h automaticamente para você ver o que acabou de subir
                     if(!isFilter24hActive) toggleFilter24h(); 
                     else renderGrid(document.getElementById('search-input').value);
                     
-                    alert("Importação concluída! O filtro de 24H foi ativado para mostrar os produtos."); 
+                    alert("Importação concluída! Filtro de 24H ativado."); 
                     closeSidebar('config-sidebar');
                 }
             });
@@ -719,22 +708,56 @@
 
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Nada para exportar.");
-            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Localização", "GTIN/EAN", "URL Imagens Externas", "Vídeo", "Categoria do produto", "Descrição Curta" ];
+            
+            // EXPORTAÇÃO ESTRITA PARA O BLING (Sem Imagens e Textos Ricos para evitar erros de importação no ERP)
+            const colunasModelo = [ 
+                "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", 
+                "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", 
+                "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", 
+                "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", 
+                "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", 
+                "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", 
+                "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", 
+                "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", 
+                "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", 
+                "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", 
+                "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", 
+                "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", 
+                "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", 
+                "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", 
+                "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" 
+            ];
+            
             const dadosParaExportar = products.map(p => {
                 const linha = {}; 
                 const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
                 
-                let urlImgs = [p.url_imagem, p.url_imagem_2, p.url_imagem_3, p.url_imagem_4, p.url_imagem_5].filter(u => u && u.length > 5).join('|');
+                p['Descrição'] = p.nome; 
+                p['Preço'] = fmt(p.preco); 
+                p['Preço de custo'] = fmt(p.preco_custo); 
+                p['Estoque'] = fmt(p.estoque);
+                p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; 
+                p['Origem'] = '0'; 
+                p['Unidade'] = 'un';
                 
-                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque);
-                p['URL Imagens Externas'] = urlImgs; p['Vídeo'] = p.link_video || ""; p['Descrição Curta'] = p.descricao || "";
-                p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Origem'] = '0'; p['Unidade'] = 'un';
+                colunasModelo.forEach(col => { 
+                    linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; 
+                });
                 
-                colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
+                // Limpeza forçada dos campos de Mídia para proteger o Bling
+                linha['URL Imagens Externas'] = "";
+                linha['Link Externo'] = "";
+                linha['Vídeo'] = "";
+                linha['Descrição Curta'] = "";
+                
                 return linha;
             });
+            
             const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `bling_export_${new Date().getTime()}.csv`; l.click();
+            const l = document.createElement("a"); 
+            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
+            l.download = `bling_export_${new Date().getTime()}.csv`; 
+            l.click();
             closeSidebar('config-sidebar');
         }
     </script>
