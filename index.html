@@ -292,15 +292,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .toast { padding: 12px 20px; color: #fff; border-radius: 8px; font-weight: 500; font-size: 0.9rem; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); animation: toastPop 0.3s ease-out; z-index: 99999; }
 @keyframes toastPop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* QUICK VIEW */
-#qv-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:rgba(15,23,42,0.4); z-index:91; backdrop-filter: blur(2px);}
-.lateral-view.quick-view { z-index: 92; width: 85%; left: 100%; border-radius: 16px 0 0 16px; box-shadow: -4px 0 24px rgba(0,0,0,0.1); }
-.lateral-view.quick-view.open { left: 15%; }
-@media(min-width: 800px) {
-    .lateral-view.quick-view { width: 35%; }
-    .lateral-view.quick-view.open { left: 65%; }
-}
-
 /* CHECKOUT REFINADO E EM BLOCOS */
 #checkout-view { z-index: 100; background: var(--c-bg); }
 @media(min-width: 800px) { #checkout-view { width: 50%; } #checkout-view.open { left: 50%; } }
@@ -445,7 +436,73 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     mix-blend-mode: multiply; /* A mesma transparência exata do site */
     padding: 5%; /* O mesmo respiro interno do site */
 }
-    
+
+/* ========================================= */
+/* NOVOS ESTILOS: MINIMALISMO E ABA LATERAL  */
+/* ========================================= */
+
+/* 1. Busca e Filtros em uma única linha no Desktop */
+@media(min-width: 800px) {
+    .see-all-controls { flex-direction: row; align-items: center; justify-content: space-between; }
+    .search-wrapper-aba { max-width: 350px; flex-shrink: 0; }
+    .filters-row { flex: 1; justify-content: flex-end; }
+    .custom-dropdown { flex: 0 0 200px; } /* Define uma largura fixa para os botões no PC */
+}
+
+/* 2. Card de Produto Minimalista */
+.u-card-minimal { 
+    background: #fff; border: 1px solid var(--c-bd); border-radius: 12px; 
+    display: flex; flex-direction: column; overflow: hidden; position: relative; 
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; height: 100%;
+}
+.u-card-minimal:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.u-card-minimal:active { transform: scale(0.98); }
+.u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
+
+.u-img-minimal { 
+    width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); 
+    display: flex; align-items: center; justify-content: center; position: relative;
+}
+.u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 10%; }
+
+.u-bot-minimal { 
+    display: flex; justify-content: space-between; align-items: center; 
+    padding: 10px 12px; background: #fff;
+}
+.u-price-minimal { font-size: 1.15rem; font-weight: 700; color: var(--c-p); line-height: 1; }
+.u-tag-discount { background: var(--c-ok); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 700; border-radius: 6px; }
+
+/* Botão Flutuante de Adicionar no Card Minimalista */
+.btn-add-minimal {
+    position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; 
+    background: #fff; color: var(--c-a); border: 1px solid var(--c-bd); 
+    border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+    font-size: 1.4rem; font-weight: 500; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.btn-add-minimal.has-item { background: var(--c-a); color: #fff; border-color: var(--c-a); font-size: 1rem; font-weight: 600;}
+
+/* 3. Ajustes da Nova Aba Lateral (Quick View) */
+.lateral-view.quick-view { width: 90%; left: 100%; border-radius: 20px 0 0 20px; }
+.lateral-view.quick-view.open { left: 10%; }
+@media(min-width: 800px) {
+    .lateral-view.quick-view { width: 450px; } /* No PC, limita a largura para não ficar gigante */
+    .lateral-view.quick-view.open { left: calc(100% - 450px); }
+}
+
+/* 4. Carrossel de Imagens e Vídeos */
+.qv-carousel { 
+    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; 
+    gap: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    border-radius: 12px; padding-bottom: 5px;
+}
+.qv-carousel::-webkit-scrollbar { display: none; }
+.qv-carousel-item { 
+    flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1/1; 
+    background: var(--c-img-bg); border-radius: 12px; overflow: hidden; position: relative;
+    display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-bd);
+}
+.qv-carousel-item img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; }
+.qv-carousel-item iframe { width: 100%; height: 100%; border: none; }
 
 </style>
 </head>
@@ -546,15 +603,20 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
         </button>
-        <h2 class="see-all-title">Detalhes</h2>
+        <h2 class="see-all-title">Detalhes do Produto</h2>
     </div>
+    
     <div class="see-all-content" style="padding: 20px 15px 120px;">
-        <div style="display:flex; justify-content:center; margin-bottom: 20px; background:var(--c-img-bg); border-radius:12px; padding:20px; aspect-ratio: 1/1;">
-            <img id="qv-img" src="" alt="Produto" style="width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply;">
-        </div>
-        <h3 id="qv-name" style="font-size: 1.05rem; font-weight: 600; color: var(--c-p); margin-bottom: 8px; line-height: 1.4; text-align: left;"></h3>
+        <div class="qv-carousel" id="qv-carousel"></div>
+        <div id="qv-swipe-hint" style="text-align: center; font-size: 0.8rem; color: var(--c-s); margin-top: 5px; display: none;">← Arraste para ver mais →</div>
+        
+        <h3 id="qv-name" style="font-size: 1.15rem; font-weight: 700; color: var(--c-p); margin-top: 15px; margin-bottom: 8px; line-height: 1.3; text-align: left;"></h3>
         <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-err); margin-bottom: 12px; font-weight: 600; text-align: left; display: none;"></div>
-        <div id="qv-price" style="font-size: 1.6rem; font-weight: 700; color: var(--c-p); margin-bottom: 20px; text-align: left;"></div>
+        
+        <div id="qv-price" style="font-size: 1.8rem; font-weight: 800; color: var(--c-a); margin-bottom: 15px; text-align: left;"></div>
+        
+        <div id="qv-desc" style="font-size: 0.9rem; color: var(--c-s); line-height: 1.5; margin-bottom: 25px; text-align: left; display: none;"></div>
+        
         <div id="qv-action-area" data-id=""></div>
         <button class="btn-modal secondary" style="margin-top: 15px;" onclick="closeQuickView()">Voltar para a lista</button>
     </div>
@@ -712,6 +774,17 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0], feriados: [] };
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
+
+// Converte link do YouTube (Shorts ou Normal) para formato iFrame Embed
+function getYouTubeEmbedUrl(url) {
+    if(!url) return '';
+    let videoId = '';
+    if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
+    else if (url.includes('shorts/')) videoId = url.split('shorts/')[1].split('?')[0];
+    else if (url.includes('watch?v=')) videoId = url.split('watch?v=')[1].split('&')[0];
+    
+    return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0` : '';
+}
 
 // ==========================================
 // CONFIGURAÇÃO DAS CAMPANHAS DO INSTAGRAM E MARCAS
@@ -990,6 +1063,16 @@ async function init() {
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 let precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
+                
+                let imagens = [];
+                if (p.url_imagem) imagens.push(p.url_imagem);
+                else imagens.push(`/site/img/produtos/${p.codigo || p.id}.webp`);
+                
+                for(let i=2; i<=5; i++) { if(p[`url_imagem_${i}`]) imagens.push(p[`url_imagem_${i}`]); }
+                
+                let videos = [];
+                let chavesVideo = ['link_video', 'link_video_2', 'link_video_3', 'link_video_4', 'link_video_5'];
+                chavesVideo.forEach(chave => { if(p[chave]) videos.push(p[chave]); });
 
                 return {
                     id: String(p.codigo || p.id), 
@@ -999,7 +1082,10 @@ async function init() {
                     oldPrice: precoBase,
                     stock: parseInt(p.estoque) || 0, 
                     validade: p.validade || null,
-                    img: `/site/img/produtos/${p.codigo || p.id}.webp`, 
+                    img: imagens[0], 
+                    imagensExtras: imagens, 
+                    videosExtra: videos, 
+                    descricao: p.descricao || "", 
                     categoria: p.categoria || "",
                     campanhasInsta: [],
                     discountApplied: false
@@ -1767,83 +1853,81 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
     let name = item.name || item.nome; 
     let pPrice = item.price || item.preco;
-    let tagHtml = ''; let oldPriceHtml = ''; let priceHtml = fmt(pPrice); let onClick = '';
     let isKit = type === 'COMBO'; let isBasket = type === 'BASKET';
-    
     let isEsgotado = (item.stock <= 0);
-    let cardClass = isEsgotado ? 'u-card disabled' : 'u-card';
-    
-let imgAreaClass = 'u-img-area';
-    if (isBasket) imgAreaClass += ' basket-img-area';
-    if (isKit) imgAreaClass += ' kit-img-area';
-    
-    let addBtnHtml = ''; 
     let qty = STATE.cart[id] || 0;
     
-    if (item.isExpiringSoon) { 
-        tagHtml = `<div class="vencimento-tag">-15%</div>`; 
-    } else if (item.isInstaOffer && STATE.activeDeptoId === 'ofertas_insta') {
-        tagHtml = `<div class="insta-tag"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg> OFERTA</div>`;
-    }
-    
+    // --- LÓGICA PARA CESTAS E KITS (Mantém o design antigo com nome) ---
     if (isKit || isBasket) {
+        let tagHtml = ''; let oldPriceHtml = ''; let onClick = ''; let addBtnHtml = '';
+        let cardClass = isEsgotado ? 'u-card disabled' : 'u-card';
+        let imgAreaClass = isBasket ? 'u-img-area basket-img-area' : 'u-img-area kit-img-area';
         let precoDe = 0;
+
         if (item.produtos) { 
             item.produtos.forEach(s => { 
                 let partes = String(s).split('x'); 
                 if (partes.length > 1) {
-                    let q = partes[0]; 
-                    let r = partes[1]; 
-                    let p = STATE.prods.find(x => String(x.id) === r.trim()); 
-                    if (p) { precoDe += p.price * parseInt(q); }
+                    let p = STATE.prods.find(x => String(x.id) === partes[1].trim()); 
+                    if (p) precoDe += p.price * parseInt(partes[0]);
                 }
             }); 
         }
+
         if (isKit) {
             onClick = `openKitLateralView('${id}', 'COMBO')`;
-            if (precoDe > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`; else if(!tagHtml) tagHtml = `<div class="kit-tag">KIT</div>`; 
+            if (precoDe > pPrice) oldPriceHtml = `<span class="combo-strike">${fmt(precoDe)}</span>`; else tagHtml = `<div class="kit-tag">KIT</div>`; 
         } else { onClick = `openKitLateralView('${id}', 'BASKET')`; }
         
-        if (isEsgotado) {
-             addBtnHtml = `<button class="card-add-btn-wide" style="background:var(--c-bd); color:var(--c-s);">ESGOTADO</button>`;
-        } else {
-             addBtnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClick}">Ver Produtos</button>`;
-        }
-    } else {
-        onClick = isEsgotado ? '' : `openQuickView('${id}')`;
-        if (item.oldPrice && item.oldPrice > pPrice) {
-            oldPriceHtml = `<span class="combo-strike">${fmt(item.oldPrice)}</span>`;
-        }
-        if (isEsgotado) {
-            addBtnHtml = `<div style="position:absolute; bottom:8px; right:8px; background:var(--c-t); color:#fff; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:600;">ESGOTADO</div>`;
-        } else if (pPrice) {
-            let btnContent = qty > 0 ? `<span style="font-size:0.95rem;">${qty}</span>` : '+';
-            let btnClass = qty > 0 ? 'card-add-btn has-item add-btn-' + id : 'card-add-btn add-btn-' + id;
-            addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
-        }
-    }
+        addBtnHtml = isEsgotado ? `<button class="card-add-btn-wide" style="background:var(--c-bd); color:var(--c-s);">ESGOTADO</button>` : `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClick}">Ver Produtos</button>`;
 
-    let btnSection = (isKit || isBasket) ? addBtnHtml : '';
-    let btnOnPhoto = (isKit || isBasket) ? '' : addBtnHtml;
-    let nameClass = (isKit || isBasket) ? 'u-name kit-name-large' : 'u-name';
-
-    let atacadoHtml = '';
-    if (!isKit && !isBasket && pPrice) {
-        let atacadoPrice = pPrice * 0.94;
-        atacadoHtml = `<div style="font-size: 0.75rem; color: var(--c-ok); font-weight: 600; margin-top: 2px;">Leve 3+ por ${fmt(atacadoPrice)}/un</div>`;
-    }
-
-    return `
-    <div class="${cardClass}" data-id="${id}" onclick="${onClick}">
-        <div class="${imgAreaClass}">${tagHtml} <img src="${img}" alt="${formatName(name)}">${btnOnPhoto}</div>
-        <div class="u-info">
-            <div class="${nameClass}">${formatName(name)}</div>
-            <div style="display: flex; flex-direction: column; justify-content: flex-end;">
-                ${oldPriceHtml}
-                <div class="u-price">${priceHtml}</div>
-                ${atacadoHtml}
+        return `
+        <div class="${cardClass}" data-id="${id}" onclick="${onClick}">
+            <div class="${imgAreaClass}">${tagHtml} <img src="${img}" alt="Kit"></div>
+            <div class="u-info">
+                <div class="u-name kit-name-large">${formatName(name)}</div>
+                <div style="display: flex; flex-direction: column; justify-content: flex-end;">
+                    ${oldPriceHtml}
+                    <div class="u-price">${fmt(pPrice)}</div>
+                </div>
+                ${addBtnHtml}
             </div>
-            ${btnSection}
+        </div>`;
+    }
+
+    // --- LÓGICA PARA PRODUTOS AVULSOS (Novo Design Minimalista) ---
+    let cardClassMin = isEsgotado ? 'u-card-minimal disabled' : 'u-card-minimal';
+    let onClickMin = isEsgotado ? '' : `openQuickView('${id}')`;
+    
+    // Calcula o percentual de desconto real
+    let discountPercent = 0;
+    if (item.oldPrice && item.oldPrice > pPrice) {
+        discountPercent = Math.round(((item.oldPrice - pPrice) / item.oldPrice) * 100);
+    }
+    
+    let tagHtml = '';
+    if (discountPercent > 0) tagHtml = `<div class="u-tag-discount">-${discountPercent}%</div>`;
+    else if (item.isInstaOffer && STATE.activeDeptoId === 'ofertas_insta') tagHtml = `<div class="u-tag-discount" style="background: #e11d48;">OFERTA</div>`;
+    
+    let addBtnHtml = '';
+    if (isEsgotado) {
+        addBtnHtml = `<div class="btn-add-minimal" style="background:var(--c-t); color:#fff; font-size:0.65rem; border-radius:6px; height:auto; padding:4px 8px; width:auto; right: 4px; top: 4px;">ESGOTADO</div>`;
+    } else {
+        let btnContent = qty > 0 ? qty : '+';
+        let btnClass = qty > 0 ? 'btn-add-minimal has-item add-btn-' + id : 'btn-add-minimal add-btn-' + id;
+        addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
+    }
+
+    // Retorna o HTML simplificado, sem o nome do produto na grade
+    return `
+    <div class="${cardClassMin}" data-id="${id}" onclick="${onClickMin}">
+        <div class="u-img-minimal">
+            <img src="${img}" alt="Produto">
+            ${addBtnHtml}
+        </div>
+        <div class="u-bot-minimal">
+            <div class="u-price-minimal">${fmt(pPrice)}</div>
+            ${tagHtml}
         </div>
     </div>`;
 }
@@ -1858,18 +1942,76 @@ function getCardControls(id) {
 
 window.openQuickView = function(id) { 
     let p = STATE.prods.find(x => x.id === id); if (!p || p.stock <= 0) return; 
-    $('qv-img').src = p.img; $('qv-name').innerText = formatName(p.name); 
-    if (p.validade) { $('qv-validade').innerText = "Vencimento: " + p.validade; $('qv-validade').style.display = 'block'; } else { $('qv-validade').style.display = 'none'; }
-    $('qv-price').innerHTML = p.oldPrice && p.oldPrice > p.price ? `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:10px;font-weight:500;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
-    $('qv-action-area').dataset.id = id; $('qv-action-area').innerHTML = getCardControls(id); 
+    
+    // 1. Montar o Carrossel (Imagens + Vídeos)
+    let carrosselHtml = '';
+    let totalItems = 0;
+    
+    if (p.imagensExtras && p.imagensExtras.length > 0) {
+        p.imagensExtras.forEach(urlImg => {
+            carrosselHtml += `<div class="qv-carousel-item"><img src="${urlImg}" onerror="this.src='/site/img/produtos/cesta.webp'"></div>`;
+            totalItems++;
+        });
+    } else {
+        carrosselHtml = `<div class="qv-carousel-item"><img src="${p.img}"></div>`;
+        totalItems++;
+    }
+    
+    if (p.videosExtra && p.videosExtra.length > 0) {
+        p.videosExtra.forEach(link => {
+            let embedUrl = getYouTubeEmbedUrl(link);
+            if(embedUrl) {
+                carrosselHtml += `<div class="qv-carousel-item"><iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+                totalItems++;
+            }
+        });
+    }
+    
+    $('qv-carousel').innerHTML = carrosselHtml;
+    $('qv-swipe-hint').style.display = totalItems > 1 ? 'block' : 'none';
+
+    // 2. Preencher os Textos
+    $('qv-name').innerText = p.name; // Aqui usamos o nome original (p.name) para mostrar inteiro na aba
+    
+    if (p.descricao) {
+        $('qv-desc').innerHTML = p.descricao;
+        $('qv-desc').style.display = 'block';
+    } else {
+        $('qv-desc').style.display = 'none';
+    }
+
+    if (p.validade) { 
+        $('qv-validade').innerText = "📅 Vencimento: " + p.validade; 
+        $('qv-validade').style.display = 'block'; 
+    } else { 
+        $('qv-validade').style.display = 'none'; 
+    }
+    
+    $('qv-price').innerHTML = p.oldPrice && p.oldPrice > p.price 
+        ? `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:10px;font-weight:500;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
+        : fmt(p.price); 
+    
+    // 3. Botão de Ação
+    $('qv-action-area').dataset.id = id; 
+    $('qv-action-area').innerHTML = getCardControls(id); 
+    
+    // 4. Abrir Modal
     $('qv-overlay').style.display = 'block';
     document.getElementById('quick-view-lateral').classList.add('open');
     if (!history.state || !history.state.qvOpen) history.pushState({ qvOpen: true }, '');
+    
+    // Joga o scroll do carrossel e da aba pro começo
+    $('qv-carousel').scrollTo({ left: 0 });
+    document.querySelector('.quick-view .see-all-content').scrollTo({ top: 0 });
 }
 
 window.closeQuickView = function(isFromBrowser = false) {
     document.getElementById('quick-view-lateral').classList.remove('open');
-    setTimeout(() => { $('qv-overlay').style.display = 'none'; }, 300);
+    // Para os vídeos pararem de tocar quando fechar a aba
+    setTimeout(() => { 
+        $('qv-overlay').style.display = 'none'; 
+        $('qv-carousel').innerHTML = ''; 
+    }, 300);
 };
 
 window.updCompreJunto = function(cjId, delta) {
@@ -1928,7 +2070,7 @@ function upd(id, delta, skipKitCheck = false) {
     
     document.querySelectorAll(`.add-btn-${id}`).forEach(el => { 
         let qty = STATE.cart[id] || 0; 
-        el.innerHTML = qty > 0 ? `<span style="font-size:0.95rem;">${qty}</span>` : '+'; 
+        el.innerHTML = qty > 0 ? qty : '+'; 
         if(qty > 0) el.classList.add('has-item'); else el.classList.remove('has-item');
     });
     
