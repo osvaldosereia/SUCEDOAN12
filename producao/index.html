@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -128,7 +128,7 @@
 <body>
 
     <script>
-        const STORAGE_KEY = 'sucedoan_pim_v36'; 
+        const STORAGE_KEY = 'sucedoan_pim_v37'; 
         const CONFIG_KEY = 'sucedoan_config';
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
@@ -136,22 +136,22 @@
     <header>
         <div class="brand"><i data-lucide="package-search" size="20"></i> SUCEDOAN PIM</div>
         <div id="queue-status"></div>
-        <button class="nav-btn" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> API</button>
+        <button class="nav-btn" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES API</button>
     </header>
 
     <div class="toolbar">
         <div class="toolbar-group" style="flex-grow: 1;">
             <div class="search-container">
                 <i data-lucide="search" class="search-icon"></i>
-                <input type="text" class="search-input" id="search-input" placeholder="Buscar por SKU ou Nome...">
+                <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU ou Nome...">
             </div>
-            <button class="nav-btn" id="btn-24h" onclick="toggleFilter24h()" title="Mostrar apenas produtos cadastrados/editados nas últimas 24h">
+            <button class="nav-btn" id="btn-24h" onclick="toggleFilter24h()" title="Mostrar produtos adicionados/editados nas últimas 24h">
                 <i data-lucide="clock" size="14"></i> ÚLTIMAS 24H
             </button>
         </div>
         <div class="toolbar-group">
             <button class="nav-btn warning" onclick="forceBackupNow()" id="btn-force-sync" style="display:none;">
-                <i data-lucide="upload-cloud" size="14"></i> SALVAR AGORA
+                <i data-lucide="upload-cloud" size="14"></i> GRAVAR AGORA
             </button>
             <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO</button>
         </div>
@@ -206,21 +206,21 @@
             <div class="form-section">
                 <div class="section-title">Credenciais GitHub</div>
                 <div class="form-group"><label class="form-label">Token</label><input type="password" id="cfg-token" class="form-input"></div>
-                <div class="form-group"><label class="form-label">Usuário</label><input type="text" id="cfg-user" class="form-input"></div>
+                <div class="form-group"><label class="form-label">Utilizador</label><input type="text" id="cfg-user" class="form-input"></div>
                 <div class="form-group"><label class="form-label">Repositório</label><input type="text" id="cfg-repo" class="form-input"></div>
-                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="saveConfig()">SALVAR CREDENCIAIS</button>
+                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="saveConfig()">GUARDAR CREDENCIAIS</button>
             </div>
             
             <div class="form-section" style="margin-top:10px;">
                 <div class="section-title">Manutenção do Sistema</div>
-                <button class="nav-btn" style="height:40px; justify-content:center;" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="14"></i> BAIXAR DA NUVEM</button>
+                <button class="nav-btn" style="height:40px; justify-content:center;" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="14"></i> DESCARREGAR DA NUVEM</button>
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="exportarCSVCompleto()"><i data-lucide="file-down" size="14"></i> EXPORTAR CSV BLING</button>
                 <input type="file" id="csv-file-append" accept=".csv" style="display:none">
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="document.getElementById('csv-file-append').click()"><i data-lucide="file-up" size="14"></i> IMPORTAR CSV</button>
             </div>
         </div>
         <div class="sidebar-footer">
-            <button class="nav-btn" style="width:100%; height:40px; justify-content:center; color:var(--danger); border-color:#fecaca;" onclick="limparSistema()"><i data-lucide="trash-2" size="14"></i> RESETAR BANCO LOCAL</button>
+            <button class="nav-btn" style="width:100%; height:40px; justify-content:center; color:var(--danger); border-color:#fecaca;" onclick="limparSistema()"><i data-lucide="trash-2" size="14"></i> APAGAR BASE DE DADOS LOCAL</button>
         </div>
     </div>
 
@@ -269,11 +269,12 @@
             renderGrid(document.getElementById('search-input').value);
         }
 
-        // --- FILA PREGUIÇOSA (STRICT 5 MINUTOS) ---
+        // --- FILA PREGUIÇOSA (DUPLA GRAVAÇÃO + 2 MIN PAUSA) ---
         let autoSaveTimer = null;
         const AUTO_SAVE_DELAY = 5 * 60 * 1000; 
         let githubQueue = [];
         let isProcessingQueue = false;
+        let queueInterval = null;
         
         window.addEventListener('beforeunload', function (e) {
             if (autoSaveTimer || githubQueue.length > 0 || isProcessingQueue) { e.preventDefault(); e.returnValue = ''; }
@@ -305,36 +306,101 @@
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) { updateQueueUI(''); return; }
             
+            // Remove ficheiros antigos da fila
             githubQueue = githubQueue.filter(t => t.type !== 'json_backup');
+            
+            // TAREFA 1: bancodedados.json (Completo)
             githubQueue.push({
                 type: 'json_backup',
-                desc: 'Atualizando Banco...',
+                desc: 'A gravar Base (1/2)',
+                delay: 120000, // PAUSA OBRIGATÓRIA DE 2 MINUTOS (120 segundos) APÓS ESTA AÇÃO
                 task: async () => {
                     const path = `site/bancodedados.json`;
                     const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                     let sha = null;
                     try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
                     
-                    // JSON Formatado (Pretty Print)
-                    const contentStr = JSON.stringify(products, null, 2);
-                    
+                    const contentStr = JSON.stringify(products, null, 2); // Formatação Clean
                     const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                    const body = { message: `PIM AutoSave`, content: base64 };
+                    const body = { message: `PIM AutoSave: Base Completa`, content: base64 };
                     if(sha) body.sha = sha;
                     const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                    if(!res.ok) throw new Error("Falha no PUT");
+                    if(!res.ok) throw new Error("Falha na gravação do bancodedados.json");
                 }
             });
-            processQueue();
+
+            // TAREFA 2: produtos.json (Resumido com Média)
+            githubQueue.push({
+                type: 'json_backup',
+                desc: 'A gravar Vitrine (2/2)',
+                delay: 3000, // Fim rápido
+                task: async () => {
+                    const path = `site/produtos.json`;
+                    const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                    let sha = null;
+                    try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
+                    
+                    // Transforma e resume a base de dados mantendo as médias ricas
+                    const produtosResumidos = products.map(p => ({
+                        id: p.id || p['ID'] || Date.now(),
+                        nome: p.nome || "",
+                        preco: p.preco || 0,
+                        codigo: p.codigo || "",
+                        situacao: p.situacao || "A",
+                        categoria: p.categoria || "",
+                        validade: p.validade || "",
+                        estoque: p.estoque || 0,
+                        descricao: p.descricao || "",
+                        url_imagem: p.url_imagem || "",
+                        url_imagem_2: p.url_imagem_2 || "",
+                        url_imagem_3: p.url_imagem_3 || "",
+                        url_imagem_4: p.url_imagem_4 || "",
+                        url_imagem_5: p.url_imagem_5 || "",
+                        link_video: p.link_video || "",
+                        link_video_2: p.link_video_2 || "",
+                        link_video_3: p.link_video_3 || "",
+                        link_video_4: p.link_video_4 || "",
+                        link_video_5: p.link_video_5 || ""
+                    }));
+
+                    const contentStr = JSON.stringify(produtosResumidos, null, 2);
+                    const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+                    const body = { message: `PIM AutoSave: Vitrine Resumida`, content: base64 };
+                    if(sha) body.sha = sha;
+                    const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                    if(!res.ok) throw new Error("Falha na gravação do produtos.json");
+                }
+            });
+
+            if (!isProcessingQueue) processQueue();
         }
 
         async function processQueue() {
-            if(githubQueue.length === 0) { isProcessingQueue = false; updateQueueUI('Salvo!', 'cloud'); setTimeout(()=>updateQueueUI(''), 3000); return; }
+            if(githubQueue.length === 0) { 
+                isProcessingQueue = false; 
+                updateQueueUI('Sincronização Concluída!', 'cloud'); 
+                setTimeout(()=>updateQueueUI(''), 3000); 
+                return; 
+            }
+            
             isProcessingQueue = true;
             const item = githubQueue.shift();
             updateQueueUI(item.desc, 'loader');
-            try { await item.task(); } catch(e) {}
-            setTimeout(() => { processQueue(); }, 2000);
+            
+            try { await item.task(); } catch(e) { console.error("Erro na comunicação Cloud:", e); }
+            
+            let remaining = item.delay / 1000;
+            queueInterval = setInterval(() => {
+                remaining--;
+                if(remaining <= 0) {
+                    clearInterval(queueInterval); queueInterval = null;
+                    if(githubQueue.length > 0) processQueue(); 
+                    else { updateQueueUI('Gravado com Sucesso!', 'cloud'); setTimeout(()=>updateQueueUI(''), 3000); }
+                } else { 
+                    // Exibição clara para os 2 minutos de espera (120s)
+                    updateQueueUI(`Pausa de Segurança API: ${remaining}s`, 'loader'); 
+                }
+            }, 1000);
         }
 
         // --- INICIALIZAÇÃO ---
@@ -358,7 +424,7 @@
             try { await localforage.setItem(STORAGE_KEY, products); scheduleAutoSave(); } catch (err) {}
         }
 
-        // --- VITRINE MINIMALISTA (COM FILTROS) ---
+        // --- VITRINE MINIMALISTA ---
         function renderGrid(filter = "") {
             const gridContainer = document.getElementById('product-grid'); 
             gridContainer.innerHTML = "";
@@ -420,7 +486,7 @@
             let htmlVideos = '';
             for(let i=1; i<=5; i++) {
                 const prop = i===1 ? 'link_video' : `link_video_${i}`;
-                htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Url YouTube ${i}" onchange="updateField('${p.codigo}', '${prop}', this.value)">`;
+                htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Url YouTube Shorts ${i}" onchange="updateField('${p.codigo}', '${prop}', this.value)">`;
             }
 
             const sidebarBody = document.getElementById('sidebar-body');
@@ -439,7 +505,7 @@
                         <label class="form-label">Nome do Produto</label>
                         <div class="input-wrapper">
                             <input type="text" class="form-input" style="font-weight:700;" value="${p.nome || ''}" onchange="updateField('${p.codigo}', 'nome', this.value)">
-                            <button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens HD"><i data-lucide="image" size="16"></i></button>
+                            <button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button>
                         </div>
                     </div>
                     
@@ -447,18 +513,18 @@
                         <label class="form-label">Descrição Mínima</label>
                         <div class="input-wrapper">
                             <textarea class="form-input" placeholder="Escreva os benefícios do produto..." onchange="updateField('${p.codigo}', 'descricao', this.value)">${p.descricao || ''}</textarea>
-                            <button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Review IA (Módulo 50)"><i data-lucide="brain-circuit" size="16"></i></button>
+                            <button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Review Inteligente (Google IA)"><i data-lucide="brain-circuit" size="16"></i></button>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-section">
-                    <div class="section-title">Mídia Rica</div>
+                    <div class="section-title">Média Rica (Vitrine)</div>
                     <div class="image-slots">${htmlImages}</div>
                     
                     <div style="margin-top:15px; border:1px dashed var(--border); padding:12px; border-radius:8px; background:#fafafa;">
                         <button class="nav-btn" style="width:100%; justify-content:center; color:#dc2626; border-color:#fecaca; background:#fef2f2; margin-bottom:12px;" onclick="searchYoutubeShorts('${safeName}')">
-                            <i data-lucide="youtube" size="16"></i> BUSCAR SHORTS NO YOUTUBE
+                            <i data-lucide="youtube" size="16"></i> PESQUISAR SHORTS NO YOUTUBE
                         </button>
                         ${htmlVideos}
                     </div>
@@ -478,7 +544,7 @@
                             <label class="form-label">NCM</label>
                             <div class="input-wrapper">
                                 <input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)">
-                                <button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Buscar NCM"><i data-lucide="search" size="16"></i></button>
+                                <button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Procurar NCM"><i data-lucide="search" size="16"></i></button>
                             </div>
                         </div>
                     </div>
@@ -492,13 +558,13 @@
             const p = products.find(x => x.codigo === sku); if(!p) return;
             let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0;
             p[field] = finalVal;
-            p.last_update = Date.now(); // Rastreador 24h
+            p.last_update = Date.now(); // Registo para o filtro 24h
             await saveDataLocally(); 
         }
 
         async function updateSku(oldSku, newSku) {
             newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return;
-            if(products.find(p => p.codigo === newSku)) { alert("SKU já existe!"); openEditSidebar(oldSku); return; }
+            if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; }
             const p = products.find(p => p.codigo === oldSku);
             if(p) { p.codigo = newSku; p['Código'] = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); }
         }
@@ -512,7 +578,7 @@
 
         async function deleteCurrentProduct() {
             if(!currentEditingSku) return;
-            if(!confirm(`ATENÇÃO: Excluir permanentemente?`)) return;
+            if(!confirm(`ATENÇÃO: Deseja apagar este produto permanentemente?`)) return;
             products = products.filter(p => p.codigo !== currentEditingSku);
             await saveDataLocally(); closeSidebar('edit-sidebar');
         }
@@ -532,12 +598,13 @@
 
         function searchAIReview(nome) {
             if(!nome) return;
-            const prompt = `Avalie o produto "${nome}" para ajudar um consumidor a decidir a compra. Fale sobre os benefícios, inclua opiniões e avaliações reais. Seja persuasivo e objetivo, limitando a resposta a 50 palavras no máximo.`;
+            // Força o Google Generative AI (&udm=50) a pesquisar avaliações da Web e encurtar em 50 palavras.
+            const prompt = `Faça uma pesquisa na web sobre as opiniões e avaliações de consumidores reais sobre o produto "${nome}". Resuma se vale a pena comprar e as principais características de forma objetiva, em no máximo 50 palavras, para ajudar a decisão de compra.`;
             window.open(`https://www.google.com/search?q=${encodeURIComponent(prompt)}&udm=50`, '_blank');
         }
 
         function searchYoutubeShorts(nome) {
-            if(!nome) return alert("Digite o nome do produto primeiro.");
+            if(!nome) return alert("Preencha o nome do produto primeiro.");
             window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome + ' shorts')}`, '_blank');
         }
 
@@ -583,7 +650,7 @@
                 ctx.filter = 'none';
                 if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
             } 
-            else { ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; ctx.fillText("Ctrl+V ou busque foto no PC", canvas.width/2, canvas.height/2); }
+            else { ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; ctx.fillText("Cole foto (Ctrl+V) ou busque no PC", canvas.width/2, canvas.height/2); }
         }
 
         function setupEditorEvents() {
@@ -634,7 +701,7 @@
             
             githubQueue.push({
                 type: 'image_upload',
-                desc: `Subindo Foto ${slot}...`,
+                desc: `A carregar Foto ${slot}...`,
                 task: async () => {
                     const sufix = slot === 1 ? '' : `_${slot}`;
                     const folderPath = "site/img/produtos"; const fileName = `${sku}${sufix}.webp`; const fullPath = `${folderPath}/${fileName}`; 
@@ -653,7 +720,7 @@
             scheduleAutoSave();
         }
 
-        // --- SISTEMA DE IMPORTAÇÃO CSV POR EAN & BLING EXPORT ---
+        // --- SISTEMA DE IMPORTAÇÃO CSV POR EAN E EXPORTAÇÃO BLING ---
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
         document.getElementById('csv-file-append').addEventListener('change', function(e) {
@@ -695,21 +762,21 @@
         });
 
         async function fetchFromGithub() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure a API.");
-            if(products.length > 0) { if(!confirm("Baixar dados substituirá sua base local. Continuar?")) return; }
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure a API nas Definições.");
+            if(products.length > 0) { if(!confirm("Descarregar dados substituirá a base local pela da nuvem. Continuar?")) return; }
             try {
                 const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json?t=${Date.now()}`, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
                 const data = await res.json();
-                if(Array.isArray(data)) { products = data; await saveDataLocally(); renderGrid(); alert("Sincronizado!"); closeSidebar('config-sidebar'); }
-            } catch(e) { alert("Erro: " + e.message); }
+                if(Array.isArray(data)) { products = data; await saveDataLocally(); renderGrid(); alert("Sincronização concluída com sucesso!"); closeSidebar('config-sidebar'); }
+            } catch(e) { alert("Erro de sincronização: " + e.message); }
         }
 
-        async function limparSistema() { if(confirm("Apagar dados do NAVEGADOR? Nuvem NÃO será afetada.")) { await localforage.clear(); location.reload(); } }
+        async function limparSistema() { if(confirm("Apagar dados do Navegador Atual? A base na nuvem NÃO será afetada.")) { await localforage.clear(); location.reload(); } }
 
         function exportarCSVCompleto() {
-            if (products.length === 0) return alert("Nada para exportar.");
+            if (products.length === 0) return alert("Não há produtos para exportar.");
             
-            // EXPORTAÇÃO ESTRITA PARA O BLING (Sem Imagens e Textos Ricos para evitar erros de importação no ERP)
+            // Colunas exactas do Bling ERP (Protege os dados contra quebras de importação)
             const colunasModelo = [ 
                 "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", 
                 "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", 
@@ -740,11 +807,9 @@
                 p['Origem'] = '0'; 
                 p['Unidade'] = 'un';
                 
-                colunasModelo.forEach(col => { 
-                    linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; 
-                });
+                colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
                 
-                // Limpeza forçada dos campos de Mídia para proteger o Bling
+                // Omite os campos visuais e ricos (preservados no PIM para o Site)
                 linha['URL Imagens Externas'] = "";
                 linha['Link Externo'] = "";
                 linha['Vídeo'] = "";
@@ -756,7 +821,7 @@
             const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
-            l.download = `bling_export_${new Date().getTime()}.csv`; 
+            l.download = `bling_export_pim_${new Date().getTime()}.csv`; 
             l.click();
             closeSidebar('config-sidebar');
         }
