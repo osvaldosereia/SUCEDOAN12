@@ -459,15 +459,22 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 .u-img-minimal { 
     width: 100%; 
-    aspect-ratio: 3/4; /* ATUALIZADO: Deixando a imagem mais vertical (maior) */
-    background: var(--c-img-bg); 
-    display: flex; align-items: center; justify-content: center; position: relative;
+    aspect-ratio: 3/4; 
+    background: #ffffff; /* ALTERADO: De cinza para Branco */
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    position: relative;
+    border-bottom: 1px solid var(--c-bd); /* Opcional: uma linha fina para separar do rodapé */
 }
 .u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 10%; }
 
 .u-bot-minimal { 
-    display: flex; justify-content: space-between; align-items: center; 
-    padding: 10px 12px; background: #fff;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 12px; 
+    background: #f1f5f9; /* ALTERADO: De branco para o cinza clarinho da sua paleta */
 }
 .u-price-minimal { font-size: 1.15rem; font-weight: 700; color: var(--c-p); line-height: 1; }
 .u-tag-discount { background: var(--c-ok); color: #fff; font-size: 0.75rem; padding: 4px 8px; font-weight: 700; border-radius: 6px; }
