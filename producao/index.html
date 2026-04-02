@@ -32,6 +32,8 @@
         header { background: #ffffff; min-height: 54px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
         .brand { font-weight: 900; font-size: 16px; letter-spacing: -0.5px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
         
+        #queue-status { display:none; align-items:center; gap:6px; font-size:11px; font-weight:800; background:#fffbeb; color:#b45309; padding:6px 12px; border-radius:20px; border:1px solid #fde68a; }
+
         .toolbar { padding: 12px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
         .toolbar-group { display: flex; gap: 8px; align-items: center; }
         
@@ -41,12 +43,13 @@
         .search-icon { position: absolute; left: 12px; top: 11px; color: #a1a1aa; }
         
         .nav-btn { background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; font-size: 11px; box-shadow: var(--shadow); }
-        .nav-btn:hover { background: #f4f4f5; }
+        .nav-btn:hover:not(:disabled) { background: #f4f4f5; }
         .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
-        .nav-btn.primary:hover { background: var(--accent-hover); }
+        .nav-btn.primary:hover:not(:disabled) { background: var(--accent-hover); }
         .nav-btn.warning { background: var(--warning); color: white; border-color: var(--warning); }
         .nav-btn.sync-btn { background: #eff6ff; color: #1e3a8a; border-color: #bfdbfe; }
-        .nav-btn.sync-btn:hover { background: #dbeafe; }
+        .nav-btn.sync-btn:hover:not(:disabled) { background: #dbeafe; }
+        .nav-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { animation: spin 2s linear infinite; }
@@ -139,6 +142,7 @@
 
     <header>
         <div class="brand"><i data-lucide="package-search" size="20"></i> SUCEDOAN PIM</div>
+        <div id="queue-status"></div>
         <button class="nav-btn" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES API</button>
     </header>
 
@@ -154,13 +158,13 @@
         </div>
         
         <div class="toolbar-group">
-            <button class="nav-btn sync-btn" onclick="uploadBancodedados()" title="Salvar Base de Dados Completa">
+            <button class="nav-btn sync-btn" onclick="uploadBancodedados(this)" title="Salvar Base de Dados Completa">
                 <i data-lucide="database" size="14"></i> ENVIAR BASE
             </button>
-            <button class="nav-btn sync-btn" onclick="uploadProdutosJson()" title="Salvar Vitrine para o Site">
+            <button class="nav-btn sync-btn" onclick="uploadProdutosJson(this)" title="Salvar Vitrine para o Site">
                 <i data-lucide="layout-grid" size="14"></i> ENVIAR VITRINE
             </button>
-            <button class="nav-btn sync-btn" onclick="uploadImagens()" title="Processar Fila de Imagens">
+            <button class="nav-btn sync-btn" onclick="uploadImagens(this)" title="Processar Fila de Imagens">
                 <i data-lucide="image-up" size="14"></i> ENVIAR IMAGENS <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px;">(0)</span>
             </button>
             <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO</button>
@@ -178,8 +182,7 @@
             <div class="sidebar-title">Curadoria do Produto</div>
             <button class="btn-icon" onclick="closeSidebar('edit-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
-        <div class="sidebar-body" id="sidebar-body">
-            </div>
+        <div class="sidebar-body" id="sidebar-body"></div>
         <div class="sidebar-footer">
             <button class="nav-btn primary" style="flex:2; height:40px;" onclick="closeSidebar('edit-sidebar')"><i data-lucide="check" size="14"></i> CONCLUÍDO</button>
             <button class="nav-btn" style="flex:1; height:40px; color:var(--danger); border-color:#fecaca; background:#fef2f2;" onclick="deleteCurrentProduct()"><i data-lucide="trash-2" size="14"></i></button>
@@ -238,9 +241,237 @@
         let products = [];
         let currentEditingSku = null;
         let currentImageSlot = 1; 
-        let imageQueue = []; // Fila local de uploads
-        
-        // Controle do Filtro de 24h
+        let imageQueue = []; // Fila local de uploads de imagens
+
+        // --- SISTEMA DE FILA E RATE-LIMITING PARA O GITHUB (180 Segundos) ---
+        let githubTasksQueue = [];
+        let isProcessingTasks = false;
+        let lastGithubSyncTime = 0;
+        const COOLDOWN_MS = 180 * 1000; // 180 Segundos exatos de obrigatoriedade entre envios
+
+        function updateQueueUI(msg, icon = 'info') {
+            const el = document.getElementById('queue-status');
+            if(!el) return;
+            if(msg === '') { 
+                el.style.display = 'none'; 
+            } else {
+                el.style.display = 'flex';
+                let iconHtml = icon === 'clock' ? `<i data-lucide="clock" size="12"></i>` 
+                            : icon === 'loader' ? `<i data-lucide="loader" class="spin-icon" size="12"></i>` 
+                            : icon === 'check' ? `<i data-lucide="check-circle" size="12" style="color:#059669"></i>`
+                            : `<i data-lucide="cloud" size="12"></i>`;
+                el.innerHTML = `${iconHtml} <span>${msg}</span>`;
+                lucide.createIcons();
+            }
+        }
+
+        // Função principal que adiciona a tarefa à fila
+        function enqueueGitHubTask(taskName, taskFunction, btnElement) {
+            const originalHTML = btnElement.innerHTML;
+            
+            // Muda o botão para estado de "Fila"
+            btnElement.innerHTML = `<i data-lucide="clock" size="14"></i> NA FILA`;
+            btnElement.disabled = true;
+            lucide.createIcons();
+
+            githubTasksQueue.push({
+                name: taskName,
+                fn: taskFunction,
+                btn: btnElement,
+                originalHTML: originalHTML
+            });
+
+            if (!isProcessingTasks) {
+                processGitHubQueue();
+            }
+        }
+
+        // Executor da Fila
+        async function processGitHubQueue() {
+            if (githubTasksQueue.length === 0) {
+                isProcessingTasks = false;
+                return;
+            }
+
+            isProcessingTasks = true;
+            const now = Date.now();
+            const timeSinceLastSync = now - lastGithubSyncTime;
+
+            // Se ainda não se passaram os 180 segundos obrigatórios desde o último envio
+            if (lastGithubSyncTime > 0 && timeSinceLastSync < COOLDOWN_MS) {
+                const waitTime = COOLDOWN_MS - timeSinceLastSync;
+                let remainingSecs = Math.ceil(waitTime / 1000);
+
+                // Contador visual no topo
+                updateQueueUI(`A aguardar limite da API: ${remainingSecs}s`, 'clock');
+                const interval = setInterval(() => {
+                    remainingSecs--;
+                    if(remainingSecs >= 0) {
+                        updateQueueUI(`A aguardar limite da API: ${remainingSecs}s`, 'clock');
+                    }
+                }, 1000);
+
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+                clearInterval(interval);
+            }
+
+            // Pega na tarefa atual da fila
+            const task = githubTasksQueue.shift();
+            
+            // Atualiza Botão e Topo
+            task.btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> A ENVIAR...`;
+            updateQueueUI(`A enviar: ${task.name}...`, 'loader');
+            lucide.createIcons();
+
+            try {
+                // Executa o Envio
+                await task.fn();
+                updateQueueUI(`${task.name} enviado com sucesso!`, 'check');
+            } catch (e) {
+                console.error("Erro na tarefa:", e);
+                alert(`Erro ao enviar ${task.name}: ${e.message}`);
+                updateQueueUI(`Erro ao enviar ${task.name}`, 'info');
+            } finally {
+                // Restaura o botão original
+                task.btn.innerHTML = task.originalHTML;
+                task.btn.disabled = false;
+                lucide.createIcons();
+                
+                // Grava o tempo que terminou esta tarefa para forçar os próximos 180s
+                lastGithubSyncTime = Date.now();
+                
+                // Aguarda um momento para ler a mensagem de sucesso e avança para a próxima
+                setTimeout(() => {
+                    if (githubTasksQueue.length > 0) {
+                        processGitHubQueue(); // Continua a processar
+                    } else {
+                        updateQueueUI(''); // Esconde a barra se a fila acabou
+                        isProcessingTasks = false;
+                    }
+                }, 3000);
+            }
+        }
+
+        // --- FUNÇÕES DE UPLOAD MANUAL PARA GITHUB (AGORA PASSAM PELA FILA) ---
+
+        function uploadBancodedados(btn) {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
+
+            enqueueGitHubTask('Base de Dados Completa', async () => {
+                const path = `site/bancodedados.json`;
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                let sha = null;
+                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                if(check.ok) { const json = await check.json(); sha = json.sha; }
+
+                const contentStr = JSON.stringify(products, null, 2);
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+                const body = { message: `PIM Manual: Base Completa`, content: base64 };
+                if(sha) body.sha = sha;
+
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                if(!res.ok) throw new Error("Falha na gravação do bancodedados.json no GitHub.");
+            }, btn);
+        }
+
+        function uploadProdutosJson(btn) {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
+
+            enqueueGitHubTask('Vitrine (produtos.json)', async () => {
+                const path = `site/produtos.json`;
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                let sha = null;
+                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                if(check.ok) { const json = await check.json(); sha = json.sha; }
+
+                const produtosResumidos = products.map(p => ({
+                    id: p.id || p['ID'] || Date.now(),
+                    nome: p.nome || "",
+                    preco: p.preco || 0,
+                    codigo: p.codigo || "",
+                    situacao: p.situacao || "A",
+                    categoria: p.categoria || "",
+                    validade: p.validade || "",
+                    estoque: p.estoque || 0,
+                    descricao: p.descricao || "",
+                    url_imagem: p.url_imagem || "",
+                    url_imagem_2: p.url_imagem_2 || "",
+                    url_imagem_3: p.url_imagem_3 || "",
+                    url_imagem_4: p.url_imagem_4 || "",
+                    url_imagem_5: p.url_imagem_5 || "",
+                    link_video: p.link_video || "",
+                    link_video_2: p.link_video_2 || "",
+                    link_video_3: p.link_video_3 || "",
+                    link_video_4: p.link_video_4 || "",
+                    link_video_5: p.link_video_5 || ""
+                }));
+
+                const contentStr = JSON.stringify(produtosResumidos, null, 2);
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+                const body = { message: `PIM Manual: Vitrine Resumida`, content: base64 };
+                if(sha) body.sha = sha;
+
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                if(!res.ok) throw new Error("Falha na gravação.");
+            }, btn);
+        }
+
+        function uploadImagens(btn) {
+            if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
+            
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
+
+            enqueueGitHubTask(`Imagens (${imageQueue.length})`, async () => {
+                const queueCopy = [...imageQueue];
+                let errorCount = 0;
+
+                for (const item of queueCopy) {
+                    try {
+                        const sufix = item.slot === 1 ? '' : `_${item.slot}`;
+                        const folderPath = "site/img/produtos"; 
+                        const fileName = `${item.sku}${sufix}.webp`; 
+                        const fullPath = `${folderPath}/${fileName}`; 
+                        const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${fullPath}`;
+                        
+                        let sha = null; 
+                        const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); 
+                        if(check.ok) { const json = await check.json(); sha = json.sha; }
+                        
+                        const body = { message: `PIM Upload Img ${fileName}`, content: item.base64data }; 
+                        if(sha) body.sha = sha;
+
+                        const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); 
+                        
+                        if(res.ok) { 
+                            const pRef = products.find(x => x.codigo === item.sku); 
+                            if(pRef) { 
+                                pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; 
+                                pRef.last_update = Date.now(); 
+                            }
+                            // Tira da fila local em caso de sucesso
+                            imageQueue = imageQueue.filter(q => q !== item);
+                            updateImageBadge();
+                        } else {
+                            errorCount++;
+                        }
+                    } catch(e) {
+                        console.error("Erro na imagem:", e);
+                        errorCount++;
+                    }
+                }
+
+                await localforage.setItem(STORAGE_KEY, products);
+                updateImageBadge();
+                
+                if (errorCount > 0) throw new Error(`Falha no envio de ${errorCount} imagens.`);
+
+            }, btn);
+        }
+
+        // Outros
         let isFilter24hActive = false;
 
         function toggleFilter24h() {
@@ -297,165 +528,13 @@
             renderGrid();
         }
         
-        // --- GRAVAÇÃO LOCAL AUTOMÁTICA ---
-        async function saveDataLocally() { 
-            try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {}
-        }
-
-        // --- FUNÇÕES DE UPLOAD MANUAL PARA GITHUB ---
-
-        async function uploadBancodedados() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
-
-            const btn = event.currentTarget;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> ENVIANDO...`;
-            lucide.createIcons();
-
-            try {
-                const path = `site/bancodedados.json`;
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                let sha = null;
-                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if(check.ok) { const json = await check.json(); sha = json.sha; }
-
-                const contentStr = JSON.stringify(products, null, 2);
-                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `PIM Manual: Base Completa`, content: base64 };
-                if(sha) body.sha = sha;
-
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error("Falha na gravação do bancodedados.json no GitHub.");
-                
-                alert("Base completa (bancodedados.json) enviada com sucesso!");
-            } catch (e) {
-                alert("Erro ao enviar a Base: " + e.message);
-            } finally {
-                btn.innerHTML = originalHTML;
-                lucide.createIcons();
-            }
-        }
-
-        async function uploadProdutosJson() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
-
-            const btn = event.currentTarget;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> ENVIANDO...`;
-            lucide.createIcons();
-
-            try {
-                const path = `site/produtos.json`;
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                let sha = null;
-                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if(check.ok) { const json = await check.json(); sha = json.sha; }
-
-                const produtosResumidos = products.map(p => ({
-                    id: p.id || p['ID'] || Date.now(),
-                    nome: p.nome || "",
-                    preco: p.preco || 0,
-                    codigo: p.codigo || "",
-                    situacao: p.situacao || "A",
-                    categoria: p.categoria || "",
-                    validade: p.validade || "",
-                    estoque: p.estoque || 0,
-                    descricao: p.descricao || "",
-                    url_imagem: p.url_imagem || "",
-                    url_imagem_2: p.url_imagem_2 || "",
-                    url_imagem_3: p.url_imagem_3 || "",
-                    url_imagem_4: p.url_imagem_4 || "",
-                    url_imagem_5: p.url_imagem_5 || "",
-                    link_video: p.link_video || "",
-                    link_video_2: p.link_video_2 || "",
-                    link_video_3: p.link_video_3 || "",
-                    link_video_4: p.link_video_4 || "",
-                    link_video_5: p.link_video_5 || ""
-                }));
-
-                const contentStr = JSON.stringify(produtosResumidos, null, 2);
-                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `PIM Manual: Vitrine Resumida`, content: base64 };
-                if(sha) body.sha = sha;
-
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error("Falha na gravação do produtos.json no GitHub.");
-                
-                alert("Vitrine para o site (produtos.json) enviada com sucesso!");
-            } catch (e) {
-                alert("Erro ao enviar a Vitrine: " + e.message);
-            } finally {
-                btn.innerHTML = originalHTML;
-                lucide.createIcons();
-            }
-        }
-
         function updateImageBadge() {
             const badge = document.getElementById('img-badge');
             if (badge) badge.innerText = `(${imageQueue.length})`;
         }
 
-        async function uploadImagens() {
-            if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
-            
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
-
-            const btn = event.currentTarget;
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> A PROCESSAR...`;
-            lucide.createIcons();
-
-            let errorCount = 0;
-            const queueCopy = [...imageQueue];
-
-            for (const item of queueCopy) {
-                try {
-                    const sufix = item.slot === 1 ? '' : `_${item.slot}`;
-                    const folderPath = "site/img/produtos"; 
-                    const fileName = `${item.sku}${sufix}.webp`; 
-                    const fullPath = `${folderPath}/${fileName}`; 
-                    const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${fullPath}`;
-                    
-                    let sha = null; 
-                    const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); 
-                    if(check.ok) { const json = await check.json(); sha = json.sha; }
-                    
-                    const body = { message: `PIM Upload Img ${fileName}`, content: item.base64data }; 
-                    if(sha) body.sha = sha;
-
-                    const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); 
-                    
-                    if(res.ok) { 
-                        const pRef = products.find(x => x.codigo === item.sku); 
-                        if(pRef) { 
-                            pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; 
-                            pRef.last_update = Date.now(); 
-                        }
-                        // Remove item da fila principal após sucesso
-                        imageQueue = imageQueue.filter(q => q !== item);
-                    } else {
-                        errorCount++;
-                    }
-                } catch(e) {
-                    console.error("Erro na imagem:", e);
-                    errorCount++;
-                }
-            }
-
-            await localforage.setItem(STORAGE_KEY, products); // Atualiza os caminhos das URLs localmente
-            updateImageBadge();
-
-            btn.innerHTML = originalHTML;
-            lucide.createIcons();
-
-            if (errorCount > 0) {
-                alert(`Concluído, mas com falha em ${errorCount} imagem(ns). Tente novamente mais tarde.`);
-            } else {
-                alert("Todas as imagens da fila foram enviadas com sucesso!");
-            }
+        async function saveDataLocally() { 
+            try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {}
         }
 
 
@@ -593,7 +672,7 @@
             const p = products.find(x => x.codigo === sku); if(!p) return;
             let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0;
             p[field] = finalVal;
-            p.last_update = Date.now(); // Registo para o filtro 24h
+            p.last_update = Date.now();
             await saveDataLocally(); 
         }
 
@@ -625,15 +704,13 @@
             await saveDataLocally(); renderGrid(document.getElementById('search-input').value); openEditSidebar(sku);
         }
 
-        // --- INTELIGÊNCIA EXTERNA (GOOGLE & YOUTUBE) ---
         function searchGoogleHD(nome) {
-            if(!nome) return;
-            window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank');
+            if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank');
         }
 
         function searchAIReview(nome) {
             if(!nome) return;
-            const prompt = `Faça uma pesquisa na web sobre as opiniões e avaliações de consumidores reais sobre o produto "${nome}". Resuma se vale a pena comprar e as principais características de forma objetiva, em no máximo 50 palavras, para ajudar a decisão de compra.`;
+            const prompt = `Faça uma pesquisa na web sobre opiniões de consumidores sobre o produto "${nome}". Resuma se vale a pena comprar e características em no maximo 50 palavras.`;
             window.open(`https://www.google.com/search?q=${encodeURIComponent(prompt)}&udm=50`, '_blank');
         }
 
@@ -722,28 +799,19 @@
             const base64full = canvas.toDataURL('image/webp', 0.9);
             const base64data = base64full.split(',')[1];
             
-            // 1. Salvar localmente para visualização instantânea
             const p = products.find(x => x.codigo === sku);
             const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
             p[prop] = base64full; 
             p.last_update = Date.now();
             await saveDataLocally();
             
-            // 2. Adicionar na fila de upload de imagens
-            imageQueue.push({
-                sku: sku,
-                slot: slot,
-                prop: prop,
-                base64data: base64data
-            });
+            imageQueue.push({ sku: sku, slot: slot, prop: prop, base64data: base64data });
             updateImageBadge();
 
-            // 3. Atualizar e fechar UI
             openEditSidebar(sku); 
             closeSidebar('editor-sidebar');
         }
 
-        // --- SISTEMA DE IMPORTAÇÃO CSV POR EAN E EXPORTAÇÃO BLING ---
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
         document.getElementById('csv-file-append').addEventListener('change', function(e) {
@@ -760,91 +828,43 @@
                         if(pIdx === -1) { pIdx = products.findIndex(p => p.codigo === fallbackSku); }
                         
                         let n = { 
-                            codigo: fallbackSku, 
-                            nome: d['Descrição'], 
-                            preco: parseFloat(d['Preço']?.replace(',','.'))||0, 
-                            preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, 
-                            estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, 
-                            categoria: d['Categoria do produto'], 
-                            gtin: ean, 
-                            ncm: d['NCM'], 
-                            last_update: Date.now()
+                            codigo: fallbackSku, nome: d['Descrição'], preco: parseFloat(d['Preço']?.replace(',','.'))||0, 
+                            preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, 
+                            categoria: d['Categoria do produto'], gtin: ean, ncm: d['NCM'], last_update: Date.now()
                         };
-                        
-                        if(pIdx !== -1) products[pIdx] = {...products[pIdx], ...n}; 
-                        else products.unshift({...n, id:Date.now()});
+                        if(pIdx !== -1) products[pIdx] = {...products[pIdx], ...n}; else products.unshift({...n, id:Date.now()});
                     });
                     await saveDataLocally(); 
-                    if(!isFilter24hActive) toggleFilter24h(); 
-                    else renderGrid(document.getElementById('search-input').value);
-                    
-                    alert("Importação concluída! Filtro de 24H ativado."); 
-                    closeSidebar('config-sidebar');
+                    if(!isFilter24hActive) toggleFilter24h(); else renderGrid(document.getElementById('search-input').value);
+                    alert("Importação concluída!"); closeSidebar('config-sidebar');
                 }
             });
         });
 
         async function fetchFromGithub() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure a API nas Definições.");
-            if(products.length > 0) { if(!confirm("Descarregar dados substituirá a base local pela da nuvem. Continuar?")) return; }
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure a API.");
+            if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
             try {
                 const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json?t=${Date.now()}`, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
                 const data = await res.json();
-                if(Array.isArray(data)) { products = data; await saveDataLocally(); renderGrid(); alert("Sincronização concluída com sucesso!"); closeSidebar('config-sidebar'); }
+                if(Array.isArray(data)) { products = data; await saveDataLocally(); renderGrid(); alert("Sincronização concluída!"); closeSidebar('config-sidebar'); }
             } catch(e) { alert("Erro de sincronização: " + e.message); }
         }
 
-        async function limparSistema() { if(confirm("Apagar dados do Navegador Atual? A base na nuvem NÃO será afetada.")) { await localforage.clear(); location.reload(); } }
+        async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
 
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Não há produtos para exportar.");
-            
-            const colunasModelo = [ 
-                "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", 
-                "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", 
-                "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", 
-                "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", 
-                "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", 
-                "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", 
-                "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", 
-                "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", 
-                "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", 
-                "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", 
-                "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", 
-                "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", 
-                "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", 
-                "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", 
-                "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" 
-            ];
-            
+            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
             const dadosParaExportar = products.map(p => {
                 const linha = {}; 
                 const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-                
-                p['Descrição'] = p.nome; 
-                p['Preço'] = fmt(p.preco); 
-                p['Preço de custo'] = fmt(p.preco_custo); 
-                p['Estoque'] = fmt(p.estoque);
-                p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; 
-                p['Origem'] = '0'; 
-                p['Unidade'] = 'un';
-                
+                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Origem'] = '0'; p['Unidade'] = 'un';
                 colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
-                
-                linha['URL Imagens Externas'] = "";
-                linha['Link Externo'] = "";
-                linha['Vídeo'] = "";
-                linha['Descrição Curta'] = "";
-                
-                return linha;
+                linha['URL Imagens Externas'] = ""; linha['Link Externo'] = ""; linha['Vídeo'] = ""; linha['Descrição Curta'] = ""; return linha;
             });
-            
             const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
-            const l = document.createElement("a"); 
-            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
-            l.download = `bling_export_pim_${new Date().getTime()}.csv`; 
-            l.click();
-            closeSidebar('config-sidebar');
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `bling_export_pim_${new Date().getTime()}.csv`; l.click(); closeSidebar('config-sidebar');
         }
     </script>
 </body>
