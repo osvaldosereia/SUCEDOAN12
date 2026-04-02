@@ -1190,7 +1190,7 @@ window.closeVideoFeed = function() {
 
 async function init() {
     renderHomeCards(); updateTotals(); renderBanners(); renderInstaTabs();
-    const versaoCache = Math.floor(Date.now() / 86400000); 
+    const versaoCache = Math.floor(Date.now() / 900000); 
 
     try {
         const [r1, r2, r3, r4] = await Promise.all([
