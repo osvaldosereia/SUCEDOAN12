@@ -2093,7 +2093,7 @@ function getCardControls(id) {
 }
 
 // ATUALIZADO: Carrossel ganha bolinhas (pontos) para indicar quantidade de fotos
-wwindow.openQuickView = function(id) { 
+window.openQuickView = function(id) {
     let p = STATE.prods.find(x => x.id === id); 
     if (!p || p.stock <= 0) return; 
     
