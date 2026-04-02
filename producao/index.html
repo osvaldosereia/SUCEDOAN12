@@ -3,196 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sucedoan PIM - Gestão de Produtos</title>
+    <title>Sucedoan PIM - Curadoria e Gestão</title>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-body: #f8fafc;
+            --bg-body: #f4f4f5;
             --bg-card: #ffffff;
             --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --accent: #2563eb;
-            --accent-hover: #1d4ed8;
+            --text-secondary: #64748b;
+            --accent: #000000;
+            --accent-hover: #333333;
             --success: #10b981;
             --warning: #f59e0b;
             --danger: #ef4444;
-            --border: #e2e8f0;
-            --radius: 12px;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-            --shadow-md: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --border: #e4e4e7;
+            --radius: 16px;
+            --shadow: 0 4px 20px rgba(0,0,0,0.05);
         }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
         
-        /* HEADER */
-        header { background: #ffffff; min-height: 60px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 15px; flex-shrink: 0; z-index: 10; }
-        .brand { font-weight: 800; font-size: 16px; color: #0f172a; margin-right: auto; display: flex; align-items: center; gap: 8px; }
-        .brand span { color: var(--accent); }
+        /* HEADER & TOOLBAR MINIMALISTA */
+        header { background: #ffffff; min-height: 60px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
+        .brand { font-weight: 900; font-size: 18px; letter-spacing: -0.5px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
         
-        .nav-btn { background: #f8fafc; border: 1px solid var(--border); color: var(--text-secondary); padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; height: 38px; }
-        .nav-btn:hover { background: #e2e8f0; color: var(--text-primary); }
+        .toolbar { padding: 16px 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+        .toolbar-group { display: flex; gap: 10px; align-items: center; }
+        
+        .search-container { position: relative; width: 320px; }
+        .search-input { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 12px 12px 12px 40px; border-radius: 12px; font-size: 13px; font-weight: 500; outline: none; box-shadow: var(--shadow); transition: 0.2s; }
+        .search-input:focus { border-color: var(--accent); }
+        .search-icon { position: absolute; left: 14px; top: 13px; color: #a1a1aa; }
+        
+        .nav-btn { background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); padding: 10px 16px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 12px; box-shadow: var(--shadow); }
+        .nav-btn:hover { background: #f4f4f5; }
         .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
         .nav-btn.primary:hover { background: var(--accent-hover); }
-        .nav-btn.warning { background: #fffbeb; color: var(--warning); border-color: #fcd34d; }
+        .nav-btn.warning { background: var(--warning); color: white; border-color: var(--warning); }
         
-        #queue-status { display:none; align-items:center; gap:6px; font-size:12px; font-weight:600; color:#0369a1; background:#e0f2fe; padding:8px 16px; border-radius:20px; border:1px solid #bae6fd; }
+        #queue-status { display:none; align-items:center; gap:6px; font-size:11px; font-weight:700; background:#f4f4f5; padding:8px 14px; border-radius:20px; border:1px solid var(--border); }
 
-        /* TOOLBAR */
-        .toolbar { padding: 16px 24px; display: flex; gap: 12px; background: transparent; flex-shrink: 0; align-items: center; flex-wrap: wrap; justify-content: space-between; }
-        .toolbar-group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-        .search-container { position: relative; width: 300px; }
-        .search-input { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 13px; outline: none; height: 40px; box-shadow: var(--shadow-sm); }
-        .search-input:focus { border-color: var(--accent); }
-        .search-icon { position: absolute; left: 12px; top: 12px; color: #94a3b8; width: 16px; }
+        /* GRID DE PRODUTOS (VITRINE LIMPA) */
+        .main-content { flex-grow: 1; overflow-y: auto; padding: 0 24px 40px 24px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
         
-        /* MALHA DE CARTÕES (High Conversion Visual) */
-        .main-content { flex-grow: 1; overflow-y: auto; padding: 0 24px 24px 24px; }
-        .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+        .product-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+        .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 25px rgba(0,0,0,0.1); border-color: #d4d4d8; }
+        .product-card.inactive { opacity: 0.5; filter: grayscale(1); }
         
-        .product-card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; transition: 0.2s; box-shadow: var(--shadow-sm); position: relative; }
-        .product-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
-        .product-card.inactive { opacity: 0.6; }
-        .product-card.changed::after { content: ''; position: absolute; top: 10px; right: 10px; width: 10px; height: 10px; background: var(--warning); border-radius: 50%; box-shadow: 0 0 0 2px white; }
-        
-        .card-img-wrapper { height: 160px; background: #f8fafc; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid var(--border); overflow: hidden; padding: 10px; }
+        .card-img-wrapper { aspect-ratio: 1; background: #f4f4f5; display: flex; justify-content: center; align-items: center; padding: 10px; }
         .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
-        .card-info { padding: 12px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between; gap: 12px; }
-        .card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .card-btn { background: #f1f5f9; border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 11px; font-weight: 800; color: var(--accent); cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; width: 100%; transition: 0.2s; }
-        .card-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        .card-info { padding: 16px; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+        .card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-btn { background: #f4f4f5; border: none; border-radius: 8px; padding: 10px; font-size: 11px; font-weight: 900; color: var(--accent); cursor: pointer; width: 100%; transition: 0.2s; text-transform: uppercase; }
+        .card-btn:hover { background: var(--accent); color: white; }
 
-        /* ABA LATERAL (SIDEBAR) */
-        .sidebar-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: opacity 0.3s; }
-        .sidebar { position: fixed; top: 0; right: 0; width: 450px; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -5px 0 25px rgba(0,0,0,0.1); z-index: 1001; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        /* ABA LATERAL (SIDEBAR DE CURADORIA) */
+        .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(3px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
+        .sidebar { position: fixed; top: 0; right: 0; width: 500px; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); z-index: 1001; transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
         .sidebar.open { transform: translateX(0); }
         
-        .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
-        .sidebar-title { font-size: 14px; font-weight: 800; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
-        .sidebar-close { background: none; border: none; cursor: pointer; color: var(--text-secondary); display: flex; padding: 4px; border-radius: 4px; }
-        .sidebar-close:hover { background: #e2e8f0; color: var(--danger); }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .sidebar-title { font-size: 16px; font-weight: 900; }
+        .btn-icon { background: #f4f4f5; border: none; cursor: pointer; color: var(--text-primary); display: flex; padding: 8px; border-radius: 8px; transition: 0.2s; }
+        .btn-icon:hover { background: #e4e4e7; }
         
-        .sidebar-body { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 16px; }
+        .sidebar-body { padding: 24px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 24px; }
         
-        /* FORMULÁRIO NA SIDEBAR */
+        /* FORMULÁRIOS DA SIDEBAR */
+        .form-section { display: flex; flex-direction: column; gap: 16px; }
+        .section-title { font-size: 11px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group.full { grid-column: span 2; }
-        .form-label { font-size: 10px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-        .form-input { padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; color: var(--text-primary); background: #f8fafc; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
-        .form-input:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-        .form-input[readonly] { opacity: 0.7; cursor: not-allowed; }
+        .form-label { font-size: 11px; font-weight: 700; color: var(--text-primary); }
         
-        /* SLOTS DE IMAGEM (Até 3) */
-        .image-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 4px; }
-        .img-slot { aspect-ratio: 1; border: 1px dashed var(--border); border-radius: 8px; display: flex; justify-content: center; align-items: center; background: #f8fafc; cursor: pointer; overflow: hidden; position: relative; transition: 0.2s; }
-        .img-slot:hover { border-color: var(--accent); background: #eff6ff; }
+        .input-wrapper { display: flex; gap: 8px; align-items: stretch; }
+        .form-input { flex-grow: 1; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-weight: 500; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
+        .form-input:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+        textarea.form-input { resize: vertical; min-height: 80px; }
+        
+        /* BOTÕES DE CURADORIA INTELIGENTE */
+        .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 8px; width: 44px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-primary); transition: 0.2s; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
+        
+        /* 5 SLOTS DE IMAGEM */
+        .image-slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+        .img-slot { aspect-ratio: 1; border: 1px dashed var(--border); border-radius: 8px; display: flex; justify-content: center; align-items: center; background: #fafafa; cursor: pointer; overflow: hidden; position: relative; transition: 0.2s; }
+        .img-slot:hover { border-color: var(--accent); }
         .img-slot img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .img-slot .slot-label { position: absolute; bottom: 4px; background: rgba(0,0,0,0.6); color: white; font-size: 9px; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+        .img-slot .slot-num { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.7); color: white; font-size: 9px; padding: 2px 5px; border-radius: 4px; font-weight: 900; }
+
+        .sidebar-footer { padding: 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; background: #ffffff; }
+
+        /* EDITOR CANVAS PRO */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(5px); }
+        .modal-card { background: #ffffff; border-radius: 16px; width: 450px; max-width: 100%; display: flex; flex-direction: column; overflow: hidden; }
+        .modal-header { padding: 20px; background: #ffffff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 15px; }
+        canvas { background: #fafafa; width: 100%; aspect-ratio: 1; display: block; cursor: grab; border-bottom: 1px solid var(--border); }
         
-        /* BOTÕES SIDEBAR */
-        .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: #ffffff; }
-        
-        /* MODALS */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 16px; backdrop-filter: blur(2px); }
-        .modal-card { background: #ffffff; border-radius: 12px; width: 400px; max-width: 100%; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-        .modal-header { padding: 16px; background: #f8fafc; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 14px; }
-        
-        canvas { background: #f8fafc; width: 100%; aspect-ratio: 1; border-bottom: 1px solid var(--border); display: block; cursor: grab; }
+        .editor-controls { padding: 20px; display: flex; flex-direction: column; gap: 15px; background: #ffffff; }
+        .slider-group { display: flex; align-items: center; gap: 12px; }
+        .slider-group label { width: 20px; color: var(--text-secondary); }
+        input[type=range] { flex-grow: 1; accent-color: var(--accent); }
         
         @media (max-width: 768px) {
-            header { flex-wrap: wrap; height: auto; padding: 12px; }
-            .brand { width: 100%; justify-content: center; margin-bottom: 10px; }
-            #queue-status { width: 100%; justify-content: center; margin-bottom: 10px; }
-            .toolbar { flex-direction: column; align-items: stretch; padding: 12px; }
-            .toolbar-group { justify-content: space-between; width: 100%; }
+            header { padding: 12px; flex-wrap: wrap; }
+            .toolbar { padding: 12px; flex-direction: column; align-items: stretch; }
             .search-container { width: 100%; }
-            .sidebar { width: 100%; right: 0; }
+            .sidebar { width: 100%; }
+            .main-content { padding: 12px; }
+            .card-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .image-slots { grid-template-columns: repeat(3, 1fr); }
         }
     </style>
 </head>
 <body>
 
     <script>
-        const STORAGE_KEY = 'sucedoan_data_v32_idb'; 
+        const STORAGE_KEY = 'sucedoan_pim_v33'; 
         const CONFIG_KEY = 'sucedoan_config';
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
 
     <header>
-        <div class="brand"><i data-lucide="boxes" size="20" style="color:var(--accent)"></i> SUCEDOAN <span>PIM</span></div>
+        <div class="brand"><i data-lucide="box" size="22"></i> SUCEDOAN PIM</div>
         <div id="queue-status"></div>
-        <button class="nav-btn" onclick="openConfigModal()"><i data-lucide="settings" size="16"></i> API</button>
+        <button class="nav-btn" onclick="openConfigModal()"><i data-lucide="settings" size="16"></i></button>
     </header>
 
     <div class="toolbar">
         <div class="toolbar-group" style="flex-grow: 1;">
             <div class="search-container">
                 <i data-lucide="search" class="search-icon"></i>
-                <input type="text" class="search-input" id="search-input" placeholder="Buscar produto...">
+                <input type="text" class="search-input" id="search-input" placeholder="Buscar por nome, SKU...">
             </div>
         </div>
-
         <div class="toolbar-group">
             <button class="nav-btn warning" onclick="forceBackupNow()" id="btn-force-sync" style="display:none;">
                 <i data-lucide="upload-cloud" size="14"></i> SALVAR AGORA
             </button>
-            <input type="file" id="csv-file-append" accept=".csv" style="display:none">
-            <button class="nav-btn" onclick="document.getElementById('csv-file-append').click()"><i data-lucide="file-up" size="14"></i> IMPORTAR</button>
-            <button class="nav-btn" onclick="exportarCSVCompleto()"><i data-lucide="file-down" size="14"></i> EXPORTAR</button>
-            <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
+            <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> CRIAR PRODUTO</button>
         </div>
     </div>
     
-    <div class="main-content" id="main-content">
+    <div class="main-content">
         <div class="card-grid" id="product-grid"></div>
     </div>
 
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
     <div class="sidebar" id="edit-sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title"><i data-lucide="edit-3" size="16"></i> Editando Produto</div>
-            <button class="sidebar-close" onclick="closeSidebar()"><i data-lucide="x" size="20"></i></button>
+            <div class="sidebar-title">Curadoria do Produto</div>
+            <button class="btn-icon" onclick="closeSidebar()"><i data-lucide="x" size="20"></i></button>
         </div>
         <div class="sidebar-body" id="sidebar-body">
             </div>
         <div class="sidebar-footer">
-            <button class="nav-btn primary" style="flex:2" onclick="closeSidebar()"><i data-lucide="check" size="16"></i> CONCLUÍDO</button>
-            <button class="nav-btn" style="flex:1; color:var(--danger); border-color:var(--danger); background:#fef2f2;" onclick="deleteCurrentProduct()"><i data-lucide="trash-2" size="16"></i> APAGAR</button>
+            <button class="nav-btn primary" style="flex:2; height:44px;" onclick="closeSidebar()"><i data-lucide="check" size="16"></i> CONCLUÍDO</button>
+            <button class="nav-btn" style="flex:1; height:44px; color:var(--danger); border-color:#fecaca; background:#fef2f2;" onclick="deleteCurrentProduct()"><i data-lucide="trash-2" size="16"></i></button>
         </div>
     </div>
 
     <div id="modal-editor" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header"><span>Editor de Imagem</span><button class="sidebar-close" onclick="closeModal('modal-editor')"><i data-lucide="x" size="16"></i></button></div>
-            <canvas id="imageCanvas" width="400" height="400"></canvas>
-            <div style="padding: 16px;">
-                <div style="display:flex; gap:10px;">
-                    <button class="nav-btn" style="flex:1; height:40px;" onclick="document.getElementById('fileInput').click()"><i data-lucide="image-plus" size="16"></i> PC</button>
+            <div class="modal-header">Ajuste de Imagem <button class="btn-icon" onclick="closeModal('modal-editor')"><i data-lucide="x" size="16"></i></button></div>
+            <canvas id="imageCanvas" width="450" height="450"></canvas>
+            <div class="editor-controls">
+                <div class="slider-group"><label title="Zoom"><i data-lucide="zoom-in" size="16"></i></label><input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1"></div>
+                <div class="slider-group"><label title="Brilho"><i data-lucide="sun" size="16"></i></label><input type="range" id="brightnessRange" min="0.1" max="2" step="0.05" value="1"></div>
+                <div class="slider-group"><label title="Nitidez"><i data-lucide="focus" size="16"></i></label><input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0"></div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button class="nav-btn" style="flex:1; height:44px;" onclick="document.getElementById('fileInput').click()"><i data-lucide="folder-search" size="18"></i> PC</button>
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
-                    <button class="nav-btn primary" style="flex:2; height:40px;" onclick="saveImageToQueue()"><i data-lucide="save" size="16"></i> CONFIRMAR FOTO</button>
+                    <button class="nav-btn primary" style="flex:2; height:44px;" onclick="saveImageToQueue()"><i data-lucide="save" size="18"></i> APLICAR FOTO</button>
                 </div>
-                <div style="font-size:10px; color:var(--text-secondary); text-align:center; margin-top:10px;">Dica: Você também pode colar a imagem aqui (Ctrl+V)</div>
             </div>
         </div>
     </div>
 
     <div id="modal-config" class="modal-overlay">
-        <div class="modal-card" style="width:350px">
-            <div class="modal-header"><span>GitHub API</span><button class="sidebar-close" onclick="closeModal('modal-config')"><i data-lucide="x" size="16"></i></button></div>
-            <div style="padding: 20px; display:flex; flex-direction:column; gap:12px;">
-                <div class="form-group"><label class="form-label">Token</label><input type="password" id="cfg-token" class="form-input"></div>
+        <div class="modal-card" style="width:380px">
+            <div class="modal-header">Sistema & Integração <button class="btn-icon" onclick="closeModal('modal-config')"><i data-lucide="x" size="16"></i></button></div>
+            <div style="padding: 24px; display:flex; flex-direction:column; gap:16px;">
+                <div class="form-group"><label class="form-label">Token GitHub</label><input type="password" id="cfg-token" class="form-input"></div>
                 <div class="form-group"><label class="form-label">Usuário</label><input type="text" id="cfg-user" class="form-input"></div>
                 <div class="form-group"><label class="form-label">Repositório</label><input type="text" id="cfg-repo" class="form-input"></div>
-                <button class="nav-btn primary" style="height:40px; margin-top:10px;" onclick="saveConfig()">SALVAR CREDENCIAIS</button>
-                <div style="border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 15px; display:flex; flex-direction:column; gap:10px;">
-                    <button class="nav-btn success" style="height:40px;" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="14"></i> FORÇAR DOWNLOAD DA NUVEM</button>
-                    <button class="nav-btn" style="height:40px; color:var(--danger); border-color:#fecaca;" onclick="limparSistema()"><i data-lucide="trash-2" size="14"></i> LIMPAR BANCO LOCAL</button>
-                </div>
+                <button class="nav-btn primary" style="height:44px; width:100%; justify-content:center;" onclick="saveConfig()">SALVAR CREDENCIAIS</button>
+                
+                <div class="section-title" style="margin-top:20px;">Backup & Banco de Dados</div>
+                <button class="nav-btn" style="height:44px; width:100%; justify-content:center;" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="16"></i> BAIXAR DA NUVEM</button>
+                <button class="nav-btn" style="height:44px; width:100%; justify-content:center;" onclick="exportarCSVCompleto()"><i data-lucide="file-down" size="16"></i> EXPORTAR CSV BLING</button>
+                <input type="file" id="csv-file-append" accept=".csv" style="display:none">
+                <button class="nav-btn" style="height:44px; width:100%; justify-content:center;" onclick="document.getElementById('csv-file-append').click()"><i data-lucide="file-up" size="16"></i> IMPORTAR CSV</button>
+                <button class="nav-btn" style="height:44px; width:100%; justify-content:center; color:var(--danger); border-color:#fecaca; margin-top:10px;" onclick="limparSistema()"><i data-lucide="trash-2" size="16"></i> RESETAR SISTEMA LOCAL</button>
             </div>
         </div>
     </div>
@@ -200,11 +211,11 @@
     <script>
         let products = [];
         let currentEditingSku = null;
-        let currentImageSlot = 1; // 1, 2 ou 3
+        let currentImageSlot = 1; 
         
-        // --- MOTOR DE FILA PREGUIÇOSA (STRICT 5 MIN) ---
+        // --- FILA PREGUIÇOSA (STRICT 5 MINUTOS) ---
         let autoSaveTimer = null;
-        const AUTO_SAVE_DELAY = 5 * 60 * 1000; // 5 minutos absolutos
+        const AUTO_SAVE_DELAY = 5 * 60 * 1000; 
         let githubQueue = [];
         let isProcessingQueue = false;
         
@@ -227,30 +238,21 @@
             }
         }
 
-        // Função ÚNICA para agendar qualquer ida para nuvem
         function scheduleAutoSave() {
             if(autoSaveTimer) clearTimeout(autoSaveTimer);
-            updateQueueUI(`Salvando... Nuvem em 5 min`, 'clock');
-            
-            // O timer final que dispara a fila
-            autoSaveTimer = setTimeout(() => {
-                forceBackupNow();
-            }, AUTO_SAVE_DELAY);
+            updateQueueUI(`Nuvem em 5 min...`, 'clock');
+            autoSaveTimer = setTimeout(() => { forceBackupNow(); }, AUTO_SAVE_DELAY);
         }
 
         function forceBackupNow() {
             if(autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
-            
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) { updateQueueUI(''); return; }
             
-            // 1. Remove qualquer tarefa JSON antiga que tenha ficado na fila
             githubQueue = githubQueue.filter(t => t.type !== 'json_backup');
-            
-            // 2. Adiciona a tarefa definitiva do JSON no FINAL da fila
             githubQueue.push({
                 type: 'json_backup',
-                desc: 'Atualizando JSON...',
+                desc: 'Salvando Banco...',
                 task: async () => {
                     const path = `site/bancodedados.json`;
                     const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
@@ -264,27 +266,15 @@
                     if(!res.ok) throw new Error("Falha no PUT");
                 }
             });
-            
-            // 3. Inicia o processamento
             processQueue();
         }
 
-        // Processa a fila com 2 segundos de respiro entre cada requisição para evitar Rate Limit
         async function processQueue() {
-            if(githubQueue.length === 0) { 
-                isProcessingQueue = false; 
-                updateQueueUI('Tudo sincronizado!', 'cloud'); 
-                setTimeout(()=>updateQueueUI(''), 3000); 
-                return; 
-            }
-            
+            if(githubQueue.length === 0) { isProcessingQueue = false; updateQueueUI('Tudo Salvo na Nuvem!', 'cloud'); setTimeout(()=>updateQueueUI(''), 3000); return; }
             isProcessingQueue = true;
             const item = githubQueue.shift();
             updateQueueUI(item.desc, 'loader');
-            
-            try { await item.task(); } catch(e) { console.error("Erro na nuvem:", e); }
-            
-            // Espera obrigatória de 2s da API do GitHub antes de ir pro próximo item
+            try { await item.task(); } catch(e) { console.error("Erro Nuvem:", e); }
             setTimeout(() => { processQueue(); }, 2000);
         }
 
@@ -306,35 +296,33 @@
         }
         
         async function saveDataLocally() { 
-            try { await localforage.setItem(STORAGE_KEY, products); scheduleAutoSave(); } catch (err) { alert("Erro de espaço."); }
+            try { await localforage.setItem(STORAGE_KEY, products); scheduleAutoSave(); } catch (err) {}
         }
 
-        // --- RENDERIZAÇÃO DA UI (CARD GRID) ---
+        // --- VITRINE MINIMALISTA ---
         function renderGrid(filter = "") {
             const gridContainer = document.getElementById('product-grid'); 
             gridContainer.innerHTML = "";
-            
             let filtered = products;
             if(filter) { const term = filter.toLowerCase(); filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term)); }
             
             if (filtered.length === 0) {
-                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="package-open" size="48" style="opacity:0.3; margin-bottom:10px;"></i><h3>Nenhum Produto</h3></div>`; 
+                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="package-search" size="48" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto</h3></div>`; 
                 lucide.createIcons(); return;
             }
 
             filtered.forEach(p => {
-                const isInactive = p.situacao === 'I';
                 const card = document.createElement('div'); 
-                card.className = `product-card ${isInactive ? 'inactive' : ''}`;
+                card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
+                card.onclick = () => openSidebar(p.codigo);
                 
-                const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
+                const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 
                 card.innerHTML = `
-                    <div class="card-img-wrapper"><img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'"></div>
+                    <div class="card-img-wrapper"><img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div>
                     <div class="card-info">
-                        <div class="card-title">${p.nome || 'Produto sem nome'}</div>
-                        <div style="font-size:10px; color:var(--text-secondary); font-weight:800;">SKU: ${p.codigo}</div>
-                        <button class="card-btn" onclick="openSidebar('${p.codigo}')"><i data-lucide="edit-2" size="14"></i> EDITAR</button>
+                        <div class="card-title">${p.nome || 'Produto Sem Nome'}</div>
+                        <button class="card-btn">EDITAR</button>
                     </div>
                 `;
                 gridContainer.appendChild(card);
@@ -342,55 +330,83 @@
             lucide.createIcons();
         }
 
-        // --- SIDEBAR LOGIC ---
+        // --- SIDEBAR (CURADORIA DE DADOS & INTELIGÊNCIA) ---
         function openSidebar(sku) {
             currentEditingSku = sku;
             const p = products.find(x => x.codigo === sku); if(!p) return;
             
             const isInactive = p.situacao === 'I';
-            const img1 = p.url_imagem || 'https://placehold.co/150x150?text=FOTO+1';
-            const img2 = p.url_imagem_2 || 'https://placehold.co/150x150?text=FOTO+2';
-            const img3 = p.url_imagem_3 || 'https://placehold.co/150x150?text=FOTO+3';
+            const imgVars = [1,2,3,4,5].map(i => { const prop = i===1 ? 'url_imagem' : `url_imagem_${i}`; return p[prop] || ''; });
+            const vidVars = [1,2,3,4,5].map(i => { const prop = i===1 ? 'link_video' : `link_video_${i}`; return p[prop] || ''; });
+            const safeName = (p.nome||'').replace(/'/g, "\\'");
+
+            // Gera os 5 slots de imagem
+            let htmlImages = '';
+            for(let i=1; i<=5; i++) {
+                const src = imgVars[i-1] ? `<img src="${imgVars[i-1]}">` : `<i data-lucide="image-plus" size="24" style="color:#a1a1aa"></i>`;
+                htmlImages += `<div class="img-slot" onclick="openCanvasEditor('${p.codigo}', ${i})">${src}<div class="slot-num">${i}</div></div>`;
+            }
+
+            // Gera os 5 inputs de vídeo
+            let htmlVideos = '';
+            for(let i=1; i<=5; i++) {
+                const prop = i===1 ? 'link_video' : `link_video_${i}`;
+                htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Vídeo ${i}: https://youtube.com/..." onchange="updateField('${p.codigo}', '${prop}', this.value)">`;
+            }
 
             const sidebarBody = document.getElementById('sidebar-body');
             sidebarBody.innerHTML = `
-                <div class="form-grid">
-                    <div class="form-group full" style="flex-direction:row; justify-content:space-between; align-items:center; background:#f8fafc; padding:10px; border-radius:8px; border:1px solid var(--border);">
-                        <div><div class="form-label">SKU (ID)</div><div style="font-weight:800; color:var(--accent);">${p.codigo}</div></div>
-                        <button class="nav-btn ${isInactive ? 'danger' : 'success'}" style="height:30px;" onclick="toggleStatus('${p.codigo}')">
-                            <i data-lucide="power" size="14"></i> ${isInactive ? 'INATIVO' : 'ATIVO'}
-                        </button>
+                <div class="form-section">
+                    <div class="section-title">Identificação</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label class="form-label">SKU (Código)</label><input type="text" class="form-input" style="font-weight:900; color:var(--accent)" value="${p.codigo}" onchange="updateSku('${p.codigo}', this.value)"></div>
+                        <div class="form-group"><label class="form-label">ID (Sistema)</label><input type="text" class="form-input" value="${p.id || p['ID'] || ''}" onchange="updateField('${p.codigo}', 'id', this.value); updateField('${p.codigo}', 'ID', this.value)"></div>
                     </div>
-                    
-                    <div class="form-group full">
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">Apresentação Principal</div>
+                    <div class="form-group">
                         <label class="form-label">Nome do Produto</label>
-                        <input type="text" class="form-input" style="font-weight:600;" value="${p.nome || ''}" onchange="updateField('${p.codigo}', 'nome', this.value)">
-                    </div>
-
-                    <div class="form-group full">
-                        <label class="form-label">Imagens (Até 3)</label>
-                        <div class="image-slots">
-                            <div class="img-slot" onclick="openCanvasEditor('${p.codigo}', 1)"><img src="${img1}"><div class="slot-label">PRINCIPAL</div></div>
-                            <div class="img-slot" onclick="openCanvasEditor('${p.codigo}', 2)"><img src="${img2}"><div class="slot-label">IMG 2</div></div>
-                            <div class="img-slot" onclick="openCanvasEditor('${p.codigo}', 3)"><img src="${img3}"><div class="slot-label">IMG 3</div></div>
-                        </div>
-                    </div>
-
-                    <div class="form-group full">
-                        <label class="form-label">Link Vídeo (YouTube)</label>
-                        <div style="display:flex; gap:8px;">
-                            <input type="text" class="form-input" style="flex:1;" value="${p.link_video || ''}" placeholder="https://youtube.com/..." onchange="updateField('${p.codigo}', 'link_video', this.value)">
-                            <button class="nav-btn" style="background:#fef2f2; color:#dc2626; border-color:#fecaca;" onclick="searchYoutubeShorts('${(p.nome||'').replace(/'/g, "\\'")}')" title="Buscar Shorts do Produto"><i data-lucide="youtube" size="16"></i> SHORTS</button>
+                        <div class="input-wrapper">
+                            <input type="text" class="form-input" style="font-weight:700;" value="${p.nome || ''}" onchange="updateField('${p.codigo}', 'nome', this.value)">
+                            <button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Buscar Foto em Alta Definição no Google"><i data-lucide="image" size="18"></i></button>
                         </div>
                     </div>
                     
-                    <div class="form-group full"><label class="form-label">Categoria</label><input type="text" class="form-input" value="${p.categoria || ''}" onchange="updateField('${p.codigo}', 'categoria', this.value)"></div>
-                    <div class="form-group"><label class="form-label">EAN / Código Barras</label><input type="text" class="form-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
-                    <div class="form-group"><label class="form-label">NCM</label><input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
-                    <div class="form-group"><label class="form-label">Estoque Atual</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
-                    <div class="form-group"><label class="form-label">Validade</label><input type="text" class="form-input" value="${p.validade || ''}" placeholder="DD/MM/AAAA" onchange="updateField('${p.codigo}', 'validade', this.value)"></div>
-                    <div class="form-group"><label class="form-label">Preço de Custo (R$)</label><input type="number" step="0.01" class="form-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
-                    <div class="form-group"><label class="form-label" style="color:var(--success)">Preço de Venda (R$)</label><input type="number" step="0.01" class="form-input" style="border-color:var(--success); font-weight:800; color:var(--success);" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
+                    <div class="form-group">
+                        <label class="form-label">Descrição da Loja</label>
+                        <div class="input-wrapper">
+                            <textarea class="form-input" placeholder="Escreva os benefícios do produto..." onchange="updateField('${p.codigo}', 'descricao', this.value)">${p.descricao || ''}</textarea>
+                            <button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Avaliação com Google IA (Regra 50 Palavras)"><i data-lucide="brain-circuit" size="18"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">Mídia (Até 5)</div>
+                    <div class="image-slots">${htmlImages}</div>
+                    <div style="margin-top:10px;">${htmlVideos}</div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">Dados Comerciais & Fiscais</div>
+                    <div class="form-grid">
+                        <div class="form-group"><label class="form-label">Preço Custo (R$)</label><input type="number" step="0.01" class="form-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
+                        <div class="form-group"><label class="form-label" style="color:var(--success)">Preço Venda (R$)</label><input type="number" step="0.01" class="form-input" style="border-color:var(--success); color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
+                        <div class="form-group"><label class="form-label">Estoque Atual</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
+                        <div class="form-group"><label class="form-label">Status</label><button class="nav-btn ${isInactive ? '' : 'primary'}" style="width:100%; height:44px; justify-content:center;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="14"></i> ${isInactive ? 'INATIVO' : 'ATIVO'}</button></div>
+                        <div class="form-group full"><label class="form-label">Categoria</label><input type="text" class="form-input" value="${p.categoria || ''}" onchange="updateField('${p.codigo}', 'categoria', this.value)"></div>
+                        <div class="form-group full"><label class="form-label">EAN / Cód. Barras</label><input type="text" class="form-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
+                        
+                        <div class="form-group full">
+                            <label class="form-label">NCM Tributário</label>
+                            <div class="input-wrapper">
+                                <input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)">
+                                <button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Pesquisar NCM no Google"><i data-lucide="search" size="18"></i></button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
             lucide.createIcons();
@@ -402,7 +418,7 @@
         function closeSidebar() {
             document.getElementById('edit-sidebar').classList.remove('open');
             document.getElementById('sidebar-overlay').style.opacity = '0';
-            setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; currentEditingSku = null; }, 300);
+            setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; currentEditingSku = null; }, 400);
             renderGrid(document.getElementById('search-input').value);
         }
 
@@ -411,6 +427,13 @@
             let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0;
             p[field] = finalVal;
             await saveDataLocally(); 
+        }
+
+        async function updateSku(oldSku, newSku) {
+            newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return;
+            if(products.find(p => p.codigo === newSku)) { alert("Já existe um produto com este SKU!"); openSidebar(oldSku); return; }
+            const p = products.find(p => p.codigo === oldSku);
+            if(p) { p.codigo = newSku; p['Código'] = newSku; await saveDataLocally(); currentEditingSku = newSku; openSidebar(newSku); }
         }
 
         async function toggleStatus(sku) { 
@@ -429,16 +452,25 @@
         async function createNewProduct() {
             const timestamp = Date.now();
             const sku = timestamp.toString().slice(-8); 
-            products.unshift({ id: timestamp, codigo: sku, nome: "Novo Produto", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0 }); 
+            products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0 }); 
             await saveDataLocally(); renderGrid(); openSidebar(sku);
         }
 
-        function searchYoutubeShorts(nome) {
-            if(!nome) return alert("Digite um nome de produto primeiro.");
-            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome + ' shorts')}`, '_blank');
+        // --- INTELIGÊNCIA EXTERNA (GOOGLE) ---
+        function searchGoogleHD(nome) {
+            if(!nome) return;
+            // Busca no Google Imagens forçando resolução Large (tbs=isz:l)
+            window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank');
         }
 
-        // --- EDITOR CANVAS (COM FILA DE IMAGENS) ---
+        function searchAIReview(nome) {
+            if(!nome) return;
+            // Prompt focado em obter um review objetivo limitado (Regra das 50 palavras)
+            const prompt = `Faça uma avaliação e review objetivo do produto "${nome}". Resuma tudo em no máximo 50 palavras focado nos benefícios para vendas em loja virtual.`;
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(prompt)}`, '_blank');
+        }
+
+        // --- EDITOR CANVAS FOTOGRÁFICO PRO ---
         const canvas = document.getElementById('imageCanvas');
         const ctx = canvas.getContext('2d');
         let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
@@ -447,52 +479,66 @@
             const p = products.find(x => x.codigo === sku); if(!p) return;
             currentImageSlot = slot;
             imgOffsetX = 0; imgOffsetY = 0; 
-            const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
+            document.getElementById('zoomRange').value = 1; document.getElementById('brightnessRange').value = 1; document.getElementById('sharpenRange').value = 0;
             
+            const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
             const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p[prop] || ""; 
             img.onload = () => { loadedImage = img; drawCanvas(); document.getElementById('modal-editor').style.display = 'flex'; }; 
             img.onerror = () => { loadedImage = null; drawCanvas(); document.getElementById('modal-editor').style.display = 'flex'; };
         }
 
+        function applySharpen(context, w, h, mix) {
+            if (mix <= 0) return;
+            try {
+                const imageData = context.getImageData(0, 0, w, h); const data = imageData.data; const w4 = w * 4; const copy = new Uint8ClampedArray(data);
+                for (let y = 1; y < h - 1; y++) { for (let x = 1; x < w - 1; x++) { const i = (y * w + x) * 4; for (let c = 0; c < 3; c++) { const val = copy[i + c] * (1 + 4 * mix) + copy[i + c - 4] * (-mix) + copy[i + c + 4] * (-mix) + copy[i + c - w4] * (-mix) + copy[i + c + w4] * (-mix); data[i + c] = val; } } } 
+                context.putImageData(imageData, 0, 0);
+            } catch(e) {}
+        }
+
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if(loadedImage) { 
-                // Auto center logic
-                const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height);
+                const zoom = parseFloat(document.getElementById('zoomRange').value); 
+                const bright = parseFloat(document.getElementById('brightnessRange').value); 
+                const sharpen = parseFloat(document.getElementById('sharpenRange').value); 
+                
+                ctx.filter = `brightness(${bright})`;
+                const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height) * zoom;
                 const w = loadedImage.width * ratio, h = loadedImage.height * ratio; 
                 const posX = ((canvas.width - w) / 2) + imgOffsetX; const posY = ((canvas.height - h) / 2) + imgOffsetY; 
+                
                 ctx.drawImage(loadedImage, posX, posY, w, h); 
+                ctx.filter = 'none';
+                if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
             } 
-            else { ctx.font = "600 14px Inter"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center"; ctx.fillText("Cole (Ctrl+V) ou busque uma foto", canvas.width/2, canvas.height/2); }
+            else { ctx.font = "600 14px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; ctx.fillText("Ctrl+V ou busque no PC", canvas.width/2, canvas.height/2); }
         }
 
         function setupEditorEvents() {
+            ['zoomRange','brightnessRange','sharpenRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
             document.getElementById('fileInput').addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (evt) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = evt.target.result; }; reader.readAsDataURL(e.target.files[0]); } });
             window.addEventListener('paste', e => { if(document.getElementById('modal-editor').style.display === 'none') return; const items = (e.clipboardData || e.originalEvent.clipboardData).items; for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = event.target.result; }; reader.readAsDataURL(blob); } } });
             canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
         }
 
-        // SALVA A IMAGEM NA FILA E MOSTRA IMEDIATO NO FRONT
         async function saveImageToQueue() {
             if(!currentEditingSku) return; 
             const sku = currentEditingSku; const slot = currentImageSlot;
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); 
             
-            // Pega o base64
             const base64full = canvas.toDataURL('image/webp', 0.9);
             const base64data = base64full.split(',')[1];
             
-            // 1. Atualiza visualmente pro usuário não ter que esperar (Guarda localmente)
             const p = products.find(x => x.codigo === sku);
             const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
-            p[prop] = base64full; // Temporário local
+            p[prop] = base64full; 
             await saveDataLocally();
-            openSidebar(sku); // Recarrega a sidebar pra mostrar a foto nova
+            openSidebar(sku); 
             closeModal('modal-editor');
             
-            if(!cfg || !cfg.token) return; // Se não tiver API, fica só local.
+            if(!cfg || !cfg.token) return; 
             
-            // 2. Adiciona a tarefa silenciosa na fila de upload
             githubQueue.push({
                 type: 'image_upload',
                 desc: `Subindo Img ${slot}...`,
@@ -502,22 +548,19 @@
                     const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${fullPath}`;
                     let sha = null; try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
                     
-                    const body = { message: `Upload img ${fileName}`, content: base64data }; if(sha) body.sha = sha;
+                    const body = { message: `PIM Upload Img ${fileName}`, content: base64data }; if(sha) body.sha = sha;
                     const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); 
                     
                     if(res.ok) { 
-                        // Quando o upload terminar, substitui o base64 pela URL oficial limpa
                         const pRef = products.find(x => x.codigo === sku); 
                         if(pRef) { pRef[prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; await localforage.setItem(STORAGE_KEY, products); } 
                     }
                 }
             });
-            
-            // 3. Como houve alteração, zera o cronômetro para os 5 minutos começarem
             scheduleAutoSave();
         }
 
-        // --- SISTEMA ---
+        // --- SISTEMA E CSV ---
         function openConfigModal() { document.getElementById('modal-config').style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeModal('modal-config'); }
@@ -531,38 +574,50 @@
                         const sku = d['Código']; if(!sku) return;
                         const pIdx = products.findIndex(p => p.codigo === sku);
                         let n = { codigo: sku, nome: d['Descrição'], preco: parseFloat(d['Preço']?.replace(',','.'))||0, preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, categoria: d['Categoria do produto'], gtin: d['GTIN/EAN'], ncm: d['NCM'] };
+                        
+                        // Parse de múltiplas imagens do CSV Bling (Pipe | )
+                        if(d['URL Imagens Externas']) {
+                            const imgs = d['URL Imagens Externas'].split('|');
+                            n.url_imagem = imgs[0] || ''; n.url_imagem_2 = imgs[1] || ''; n.url_imagem_3 = imgs[2] || ''; n.url_imagem_4 = imgs[3] || ''; n.url_imagem_5 = imgs[4] || '';
+                        }
                         if(pIdx !== -1) products[pIdx] = {...products[pIdx], ...n}; else products.unshift({...n, id:Date.now()});
                     });
-                    await saveDataLocally(); renderGrid(); alert("Lido com sucesso!");
+                    await saveDataLocally(); renderGrid(); alert("Importado com sucesso!");
                 }
             });
         });
 
         async function fetchFromGithub() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure a API.");
-            if(products.length > 0) { if(!confirm("Substituir dados locais pelos da nuvem?")) return; }
+            if(products.length > 0) { if(!confirm("Baixar dados substituirá sua base local. Continuar?")) return; }
             try {
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json?t=${Date.now()}`;
-                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
+                const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json?t=${Date.now()}`, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
                 const data = await res.json();
-                if(Array.isArray(data)) { products = data; await saveDataLocally(); renderGrid(); alert("Baixado!"); closeModal('modal-config'); }
+                if(Array.isArray(data)) { products = data; await saveDataLocally(); renderGrid(); alert("Sincronizado!"); closeModal('modal-config'); }
             } catch(e) { alert("Erro: " + e.message); }
         }
 
-        async function limparSistema() { if(confirm("Apagar todos os produtos DO NAVEGADOR? A nuvem NÃO será afetada.")) { await localforage.clear(); location.reload(); } }
+        async function limparSistema() { if(confirm("Apagar dados do NAVEGADOR? Nuvem NÃO será afetada.")) { await localforage.clear(); location.reload(); } }
 
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Nada para exportar.");
-            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Localização", "GTIN/EAN", "URL Imagens Externas", "Link Externo", "Categoria do produto" ];
+            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Localização", "GTIN/EAN", "URL Imagens Externas", "Vídeo", "Categoria do produto", "Descrição Curta" ];
             const dadosParaExportar = products.map(p => {
                 const linha = {}; 
                 const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['URL Imagens Externas'] = p.url_imagem || ""; p['Link Externo'] = p.link_video || ""; p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Categoria do produto'] = p.categoria || ""; p['Origem'] = '0'; p['Unidade'] = 'un';
+                
+                // Concatena as 5 imagens com '|' para o Bling aceitar
+                let urlImgs = [p.url_imagem, p.url_imagem_2, p.url_imagem_3, p.url_imagem_4, p.url_imagem_5].filter(u => u && u.length > 5).join('|');
+                
+                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque);
+                p['URL Imagens Externas'] = urlImgs; p['Vídeo'] = p.link_video || ""; p['Descrição Curta'] = p.descricao || "";
+                p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Origem'] = '0'; p['Unidade'] = 'un';
+                
                 colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
                 return linha;
             });
             const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `backup_produtos.csv`; l.click();
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `bling_export_${new Date().getTime()}.csv`; l.click();
         }
     </script>
 </body>
