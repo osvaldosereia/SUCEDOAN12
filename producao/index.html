@@ -2,14 +2,13 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sucedoan PIM - Gestão de Produtos</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Paleta Moderna - Estilo SaaS (Ex: Vercel, Shopify Admin) */
             --bg-body: #f1f5f9;
             --bg-card: #ffffff;
             --text-primary: #0f172a;
@@ -17,6 +16,7 @@
             --accent: #2563eb;
             --accent-hover: #1d4ed8;
             --success: #10b981;
+            --success-hover: #059669;
             --warning: #f59e0b;
             --danger: #ef4444;
             --danger-hover: #dc2626;
@@ -26,147 +26,167 @@
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
         
         /* HEADER */
-        header { background: #ffffff; height: 60px; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); gap: 15px; flex-shrink: 0; box-shadow: var(--shadow-sm); z-index: 10; }
-        .brand { font-weight: 800; font-size: 18px; color: #0f172a; margin-right: auto; letter-spacing: -0.5px; }
+        header { background: #ffffff; min-height: 60px; display: flex; align-items: center; padding: 10px 24px; border-bottom: 1px solid var(--border); gap: 15px; flex-shrink: 0; box-shadow: var(--shadow-sm); z-index: 20; flex-wrap: wrap; }
+        .brand { font-weight: 800; font-size: 18px; color: #0f172a; margin-right: auto; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
         .brand span { color: var(--accent); }
-        .nav-btn { background: #f8fafc; border: 1px solid var(--border); color: var(--text-secondary); padding: 8px 16px; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+        .brand-icon { background: var(--accent); color: white; padding: 4px; border-radius: 6px; }
+        
+        .nav-btn { background: #f8fafc; border: 1px solid var(--border); color: var(--text-secondary); padding: 10px 16px; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; min-height: 44px; }
         .nav-btn:hover { background: #e2e8f0; color: var(--text-primary); }
         .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
         .nav-btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+        .nav-btn.success { background: var(--success); color: white; border-color: var(--success); }
+        .nav-btn.success:hover { background: var(--success-hover); border-color: var(--success-hover); }
         .nav-btn.danger { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
         .nav-btn.danger:hover { background: var(--danger); color: white; border-color: var(--danger); }
-        .nav-btn.config { color: var(--text-secondary); border-color: transparent; background: transparent; }
+        .nav-btn.config { color: var(--text-secondary); border-color: transparent; background: transparent; padding: 10px; }
         .nav-btn.config:hover { background: #e2e8f0; }
-
-        /* MAIN LAYOUT */
-        .view-section { display: flex; flex-grow: 1; overflow: hidden; flex-direction: column; }
-        
-        /* WORKFLOW TOOLBAR */
-        .toolbar { padding: 16px 24px; display: flex; gap: 16px; background: #ffffff; border-bottom: 1px solid var(--border); flex-shrink: 0; align-items: center; flex-wrap: wrap; justify-content: space-between; }
-        .toolbar-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .search-container { position: relative; width: 350px; }
-        .search-input { width: 100%; background: #f8fafc; border: 1px solid var(--border); color: var(--text-primary); padding: 10px 10px 10px 36px; border-radius: var(--radius); font-size: 13px; outline: none; transition: 0.2s; }
-        .search-input:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        .search-icon { position: absolute; left: 12px; top: 10px; color: #94a3b8; width: 16px; }
-        .toolbar-select { background: #f8fafc; border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: var(--radius); font-weight: 500; cursor: pointer; font-size: 12px; outline: none; height: 38px; }
-        .toolbar-select:focus { border-color: var(--accent); }
-        .divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
-        #total-count { font-size: 12px; color: var(--text-secondary); font-weight: 600; padding: 4px 12px; background: #f1f5f9; border-radius: 12px; }
-
-        /* GRID & CARDS */
-        .product-grid { flex-grow: 1; overflow-y: auto; padding: 24px; display: block; }
-        .category-header { width: 100%; font-size: 13px; font-weight: 800; color: var(--text-secondary); border-bottom: 1px solid var(--border); margin: 24px 0 16px 0; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .category-header:first-child { margin-top: 0; }
-        .category-items-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-content: start; margin-bottom: 24px; }
-        
-        .card { background: var(--bg-card); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; border: 1px solid var(--border); transition: all 0.2s ease; min-height: 500px; box-shadow: var(--shadow-sm); }
-        .card:hover { transform: translateY(-4px); border-color: #cbd5e1; box-shadow: var(--shadow-md); z-index: 10; }
-        .card.status-changed { border-top: 3px solid var(--warning); }
-        .card.status-inactive { opacity: 0.7; background: #f8fafc; border-top: 3px solid #cbd5e1; }
-        .card-img-area { height: 180px; background: #f8fafc; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; border-bottom: 1px solid var(--border); overflow: hidden; padding: 10px; }
-        .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .img-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); opacity: 0; display: flex; justify-content: center; align-items: center; gap: 12px; transition: 0.2s; backdrop-filter: blur(2px); }
-        .card-img-area:hover .img-overlay { opacity: 1; }
-        .overlay-btn { background: white; color: #0f172a; border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
-        .overlay-btn:hover { transform: scale(1.1); background: var(--accent); color: white; }
-        
-        .card-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
-        .card-sku { font-size: 11px; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center; }
-        .loc-controls { display: flex; gap: 4px; }
-        .loc-select { background: #f8fafc; border: 1px solid var(--border); border-radius: 4px; font-size: 10px; color: var(--text-primary); font-weight: 600; padding: 2px 4px; cursor: pointer; outline: none; }
-        .card-title-input { width: 100%; background: transparent; border: 1px solid transparent; color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; resize: none; overflow: hidden; min-height: 44px; line-height: 1.4; border-radius: 4px; padding: 4px; transition: 0.2s; }
-        .card-title-input:hover { background: #f8fafc; border-color: var(--border); }
-        .card-title-input:focus { background: #ffffff; border-color: var(--accent); outline: none; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
-        .card-input-small { background: transparent; border: 1px solid transparent; color: var(--text-primary); font-size: 11px; font-weight: 600; padding: 4px; border-radius: 4px; width: 100%; transition: 0.2s; }
-        .card-input-small:hover { background: #f8fafc; border-color: var(--border); }
-        .card-input-small:focus { background: #ffffff; border-color: var(--accent); outline: none; }
-        
-        .ean-controls { display: flex; gap: 4px; margin-top: 4px; }
-        .btn-mini-action { flex: 1; border: 1px solid var(--border); background: #ffffff; color: var(--text-secondary); border-radius: 4px; font-size: 10px; padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 600; transition: 0.2s; }
-        .btn-mini-action:hover { background: #f1f5f9; color: var(--text-primary); border-color: #cbd5e1; }
-        
-        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 12px; border-top: 1px dashed var(--border); }
-        .stat-box { display: flex; flex-direction: column; }
-        .stat-label { font-size: 10px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
-        .stat-input { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text-primary); background: #f8fafc; text-align: center; transition: 0.2s; }
-        .stat-input:focus { border-color: var(--accent); background: white; outline: none; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
-        .cat-select { width: 100%; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 500; color: var(--text-primary); background: #f8fafc; cursor: pointer; }
-        
-        .card-footer { padding: 12px 16px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-        .btn-sq { aspect-ratio: 1/1; display: flex; justify-content: center; align-items: center; border-radius: 8px; border: 1px solid var(--border); background: white; color: var(--text-secondary); cursor: pointer; transition: 0.2s; padding: 8px; width: 100%; }
-        .btn-sq:hover { border-color: #cbd5e1; color: var(--text-primary); background: #f1f5f9; }
-        .btn-sq.inactive-state { color: var(--warning); border-color: var(--warning); background: #fffbeb; }
-        .btn-sq.btn-del:hover { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
 
         /* QUEUE SYSTEM */
         #queue-status { display:none; align-items:center; gap:8px; font-size:12px; font-weight:600; color:#0369a1; background:#e0f2fe; padding:8px 16px; border-radius:20px; border:1px solid #bae6fd; }
 
-        /* TABLE/LIST ROW - Optimizada para leitura */
-        .list-row { display: grid; grid-template-columns: 80px 1.5fr 1fr 100px 90px 70px 60px 80px 80px 60px 80px 80px; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border); background: var(--bg-card); cursor: pointer; align-items: center; font-size: 12px; transition: 0.2s; border-left: 3px solid transparent; }
+        /* MAIN LAYOUT */
+        .view-section { display: flex; flex-grow: 1; overflow: hidden; flex-direction: column; position: relative; }
+        
+        /* WORKFLOW TOOLBAR - DIDÁTICA */
+        .toolbar { padding: 16px 24px; display: flex; gap: 16px; background: #ffffff; border-bottom: 1px solid var(--border); flex-shrink: 0; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+        .toolbar-group { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+        .search-container { position: relative; width: 300px; }
+        .search-input { width: 100%; background: #f8fafc; border: 1px solid var(--border); color: var(--text-primary); padding: 10px 10px 10px 36px; border-radius: var(--radius); font-size: 13px; outline: none; transition: 0.2s; min-height: 44px; }
+        .search-input:focus { border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .search-icon { position: absolute; left: 12px; top: 14px; color: #94a3b8; width: 16px; }
+        .toolbar-select { background: #f8fafc; border: 1px solid var(--border); color: var(--text-primary); padding: 10px 12px; border-radius: var(--radius); font-weight: 500; cursor: pointer; font-size: 13px; outline: none; min-height: 44px; }
+        .toolbar-select:focus { border-color: var(--accent); }
+        .divider { width: 1px; height: 30px; background: var(--border); margin: 0 4px; }
+        #total-count { font-size: 12px; color: var(--text-secondary); font-weight: 600; padding: 6px 12px; background: #f1f5f9; border-radius: 12px; }
+
+        /* GRID & EMPTY STATE */
+        .product-grid { flex-grow: 1; overflow-y: auto; padding: 24px; display: block; scroll-behavior: smooth; }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); text-align: center; padding: 20px; }
+        .empty-state-icon { color: var(--border); margin-bottom: 20px; }
+        .empty-state h3 { color: var(--text-primary); margin: 0 0 10px 0; font-size: 20px; }
+        .empty-state p { margin: 0 0 24px 0; max-width: 400px; line-height: 1.5; font-size: 14px; }
+        .empty-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+        /* LIST ROW - DESKTOP */
+        .list-row { display: grid; grid-template-columns: 80px 1.5fr 1fr 100px 90px 70px 60px 80px 80px 60px 80px 80px; gap: 8px; padding: 8px 16px; border-bottom: 1px solid var(--border); background: var(--bg-card); align-items: center; font-size: 12px; transition: 0.2s; border-left: 3px solid transparent; }
         .list-row:hover { background: #f8fafc; border-left-color: var(--accent); }
-        .list-header { font-weight: 600; background: #f1f5f9; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-top: 1px solid var(--border); letter-spacing: 0.5px; }
+        .list-header { font-weight: 600; background: #f1f5f9; color: var(--text-secondary); text-transform: uppercase; font-size: 10px; border-top: 1px solid var(--border); letter-spacing: 0.5px; position: sticky; top: 0; z-index: 10; }
         
-        .list-input { width: 100%; border: 1px solid transparent; background: transparent; font-size: 12px; padding: 6px; border-radius: 4px; color: var(--text-primary); font-family: 'Inter', sans-serif; transition: 0.2s; }
-        .list-input:hover { border-color: var(--border); background: #fff; }
-        .list-input:focus { border-color: var(--accent); background: #fff; outline: none; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
+        .list-input, .list-select { width: 100%; border: 1px solid transparent; background: transparent; font-size: 12px; padding: 8px 6px; border-radius: 4px; color: var(--text-primary); font-family: 'Inter', sans-serif; transition: 0.2s; min-height: 36px; }
+        .list-input:hover, .list-select:hover { border-color: var(--border); background: #fff; }
+        .list-input:focus, .list-select:focus { border-color: var(--accent); background: #fff; outline: none; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1); }
         .list-input.number { text-align: right; font-weight: 600; }
-        .list-select { width: 100%; border: 1px solid transparent; background: transparent; font-size: 11px; padding: 6px; border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: 0.2s; }
-        .list-select:hover { border-color: var(--border); background: #fff; }
         
-        .list-btn-icon { background: white; border: 1px solid var(--border); padding: 6px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display:flex; justify-content:center; align-items:center; width: 100%; transition:0.2s;}
+        .list-btn-icon { background: white; border: 1px solid var(--border); padding: 8px; border-radius: 6px; cursor: pointer; color: var(--text-secondary); display:flex; justify-content:center; align-items:center; width: 100%; transition:0.2s; min-height: 36px;}
         .list-btn-icon:hover { background: #f1f5f9; color: var(--text-primary); border-color: #cbd5e1; }
         .list-btn-icon.del:hover { background: #fef2f2; color: var(--danger); border-color: #fecaca; }
 
-        /* MODALS (Mantidos e refatorados esteticamente) */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.6); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-        .modal-card { background: #ffffff; padding: 0; border-radius: 12px; width: 600px; max-width: 95%; max-height: 90vh; display: flex; flex-direction: column; border: 1px solid var(--border); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); overflow: hidden; }
-        .modal-header { padding: 16px 20px; background: #ffffff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; color: var(--text-primary); font-weight: 800; font-size: 16px; }
-        .modal-body { padding: 20px; overflow-y: auto; color: var(--text-primary); }
-        .close-btn { background: #f1f5f9; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        /* CARDS NO MODAL */
+        .card { background: var(--bg-card); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; position: relative; border: 1px solid var(--border); min-height: 500px; width: 100%; box-shadow: var(--shadow-sm); }
+        .card-img-area { height: 180px; background: #f8fafc; position: relative; display: flex; justify-content: center; align-items: center; cursor: pointer; border-bottom: 1px solid var(--border); padding: 10px; }
+        .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .img-overlay { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.6); opacity: 0; display: flex; justify-content: center; align-items: center; transition: 0.2s; backdrop-filter: blur(2px); color: white; font-weight: bold; font-size: 14px; gap: 8px; }
+        .card-img-area:hover .img-overlay { opacity: 1; }
+        
+        .card-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; flex-grow: 1; }
+        .card-title-input { width: 100%; background: #f8fafc; border: 1px solid var(--border); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; resize: none; min-height: 50px; border-radius: 6px; padding: 8px; transition: 0.2s; }
+        .card-title-input:focus { background: #ffffff; border-color: var(--accent); outline: none; }
+        .card-input-small { background: #f8fafc; border: 1px solid var(--border); color: var(--text-primary); font-size: 12px; font-weight: 600; padding: 8px; border-radius: 6px; width: 100%; transition: 0.2s; }
+        .card-input-small:focus { background: #ffffff; border-color: var(--accent); outline: none; }
+        
+        .card-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px dashed var(--border); padding-top: 12px; }
+        .stat-label { font-size: 10px; color: var(--text-secondary); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; display: block; }
+        .stat-input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; font-weight: 600; color: var(--text-primary); background: #f8fafc; text-align: center; }
+        
+        .card-footer { padding: 12px 16px; background: #f8fafc; border-top: 1px solid var(--border); display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .btn-sq { display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 8px; border: 1px solid var(--border); background: white; color: var(--text-secondary); cursor: pointer; transition: 0.2s; padding: 10px 4px; gap: 4px; font-size: 9px; font-weight: bold; }
+        .btn-sq:hover { border-color: var(--accent); color: var(--accent); background: #eff6ff; }
+        .btn-sq.btn-del:hover { background: #fef2f2; color: var(--danger); border-color: var(--danger); }
+
+        /* MODALS */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(4px); padding: 16px; }
+        .modal-card { background: #ffffff; border-radius: 12px; width: 600px; max-width: 100%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); overflow: hidden; }
+        .modal-header { padding: 16px 20px; background: #ffffff; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 16px; }
+        .modal-body { padding: 20px; overflow-y: auto; }
+        .close-btn { background: #f1f5f9; border: none; color: var(--text-secondary); cursor: pointer; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .close-btn:hover { background: #e2e8f0; color: var(--text-primary); }
-        
-        /* UTILIDADES EDITOR E INPUTS */
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; }
-        .form-group input, .form-group select { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 10px; border-radius: 6px; color: var(--text-primary); font-size: 13px; outline: none; transition: 0.2s; }
-        .form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-        .btn-full { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; margin-top: 20px; background: var(--accent); color: white; font-size: 14px; transition: 0.2s; }
+
+        /* UTILS */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-group input, .form-group select { width: 100%; border: 1px solid var(--border); padding: 12px; border-radius: 8px; font-size: 14px; outline: none; background: #f8fafc; transition: 0.2s; }
+        .form-group input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .btn-full { width: 100%; padding: 14px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; background: var(--accent); color: white; font-size: 14px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
         .btn-full:hover { background: var(--accent-hover); }
-        canvas { background: #f8fafc; max-width: 100%; border: 1px dashed var(--border); margin: 0 auto; display: block; cursor: grab; border-radius: 8px; }
-        
-        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary); margin-top: 60px; }
-        
-        /* SPINNER DE LOADING GERAL */
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 3000; display: none; justify-content: center; align-items: center; color: var(--text-primary); flex-direction: column; gap: 15px; backdrop-filter: blur(2px); }
-        .spinner { width: 40px; height: 40px; border: 4px solid #e2e8f0; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
+
+        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 3000; display: none; justify-content: center; align-items: center; flex-direction: column; gap: 15px; backdrop-filter: blur(2px); }
+        .spinner { width: 48px; height: 48px; border: 4px solid #e2e8f0; border-top-color: var(--accent); border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* RESPONSIVO */
+        /* RESPONSIVIDADE MOBILE SUPERIOR */
         @media (max-width: 768px) {
-            .toolbar { flex-direction: column; align-items: stretch; padding: 16px; }
-            .toolbar-group { justify-content: space-between; }
-            .search-container { width: 100%; order: -1; }
+            header { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 12px; }
+            .brand { width: 100%; justify-content: space-between; }
+            #queue-status { width: 100%; justify-content: center; }
+            
+            .toolbar { flex-direction: column; align-items: stretch; padding: 16px; gap: 12px; }
+            .toolbar-group { justify-content: space-between; width: 100%; }
+            .search-container { width: 100%; }
             .divider { display: none; }
-            .list-header { display: none; }
-            .list-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; }
+            .nav-btn { flex: 1; padding: 12px; font-size: 12px; }
+            
+            .product-grid { padding: 12px; }
+            .list-header { display: none; } /* Esconde o cabeçalho da tabela no mobile */
+            
+            /* Transforma a linha da tabela em um Card Mobile */
+            .list-row { 
+                display: flex; 
+                flex-direction: column; 
+                gap: 12px; 
+                padding: 16px; 
+                border: 1px solid var(--border); 
+                border-radius: 12px; 
+                margin-bottom: 16px; 
+                background: white;
+                box-shadow: var(--shadow-sm);
+            }
+            .list-row:hover { transform: none; border-color: var(--border); }
+            
+            /* Reorganiza os inputs dentro do card mobile */
             .list-row > div { width: 100%; display: flex; flex-direction: column; }
-            .list-row > div::before { font-size: 10px; color: var(--text-secondary); font-weight: 600; margin-bottom: 4px; }
-            .list-row > div:nth-child(1)::before { content: "CÓDIGO"; }
-            .list-row > div:nth-child(2) { grid-column: span 2; }
-            .list-row > div:nth-child(2)::before { content: "PRODUTO"; }
+            .list-row > div::before { font-size: 10px; color: var(--accent); font-weight: 800; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+            
+            .list-row > div:nth-child(1)::before { content: "CÓDIGO (SKU)"; }
+            .list-row > div:nth-child(2)::before { content: "NOME DO PRODUTO"; }
             .list-row > div:nth-child(3)::before { content: "CATEGORIA"; }
+            
+            /* Agrupa EAN, NCM, LOCAL, ESTOQUE em um grid menor dentro do card */
+            .mobile-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+            .list-row > div:nth-child(4) { grid-column: span 1; }
             .list-row > div:nth-child(4)::before { content: "EAN"; }
+            .list-row > div:nth-child(5) { grid-column: span 1; }
             .list-row > div:nth-child(5)::before { content: "NCM"; }
-            .list-row > div:nth-child(6)::before { content: "LOCAL"; }
+            
             .list-row > div:nth-child(7)::before { content: "ESTOQUE"; }
             .list-row > div:nth-child(8)::before { content: "VALIDADE"; }
+            
             .list-row > div:nth-child(9)::before { content: "CUSTO (R$)"; }
-            .list-row > div:nth-child(10)::before { content: "LUCRO"; }
-            .list-row > div:nth-child(11)::before { content: "PREÇO (R$)"; }
-            .list-row > div:nth-child(12) { grid-column: span 2; flex-direction: row; justify-content: center; margin-top: 10px; gap: 10px; }
+            .list-row > div:nth-child(11)::before { content: "PREÇO VENDA (R$)"; }
+            
+            /* Esconde as colunas menos importantes no card mobile ou reposiciona */
+            .list-row > div:nth-child(6) { display: none; } /* Local */
+            .list-row > div:nth-child(10) { display: none; } /* Markup Text */
+            
+            /* Ações ocupam a linha toda embaixo */
+            .list-row > div:nth-child(12) { flex-direction: row; justify-content: space-between; margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 12px; }
+            .list-row > div:nth-child(12)::before { display: none; }
+            .list-row > div:nth-child(12) button { flex: 1; margin: 0 4px; min-height: 44px; }
+            
+            .list-input, .list-select { border: 1px solid var(--border); background: #f8fafc; padding: 12px; font-size: 14px; border-radius: 8px; }
         }
     </style>
 </head>
@@ -174,21 +194,18 @@
 
     <script>
         let availableCategories = []; 
-        const STORAGE_KEY = 'sucedoan_data_v27'; // Chave atualizada para nova versão limpa
+        const STORAGE_KEY = 'sucedoan_data_v28'; // Versão atualizada
         const CONFIG_KEY = 'sucedoan_config';
-        
-        const GONDOLAS = Array.from({length: 20}, (_, i) => String(i).padStart(2, '0'));
-        const PRATELEIRAS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M']
-                            .flatMap(letra => [`${letra}1`, `${letra}2`]);
-        const SEM_LOCAL = "SEM LOCAL";
     </script>
 
     <header>
-        <div class="brand">SUCEDOAN <span>PIM</span></div>
+        <div class="brand">
+            <div class="brand-icon"><i data-lucide="package-search" size="20"></i></div>
+            SUCEDOAN <span>PIM</span>
+        </div>
         <div id="queue-status"></div>
-        <div style="flex-grow:1"></div>
-        <button class="nav-btn config" onclick="openConfigModal()" title="Configurações GitHub">
-            <i data-lucide="settings" size="18"></i>
+        <button class="nav-btn config" onclick="openConfigModal()" title="Configurações do Sistema">
+            <i data-lucide="settings" size="20"></i>
         </button>
     </header>
 
@@ -197,23 +214,13 @@
             <div class="toolbar-group">
                 <div class="search-container">
                     <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" class="search-input" id="search-input" placeholder="Buscar por Nome, SKU, EAN, Local...">
+                    <input type="text" class="search-input" id="search-input" placeholder="Buscar produto...">
                 </div>
                 <select id="filter-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value, true)">
-                    <option value="all">Filtro: Todos</option>
+                    <option value="all">Status: Todos</option>
                     <option value="ativos">Status: Ativos</option>
                     <option value="inativos">Status: Inativos</option>
-                    <option value="validity60">Alerta: Vence < 60 dias</option>
-                    <option value="errors">Alerta: Erro Cadastro</option>
                     <option value="margin_error">Alerta: Preço <= Custo</option>
-                </select>
-                <select id="sort-select" class="toolbar-select" onchange="renderGrid(document.getElementById('search-input').value, true)">
-                    <option value="name">Ordenar: A-Z</option>
-                    <option value="gondola">Agrupar: Gôndola</option>
-                    <option value="group_category">Agrupar: Categoria</option>
-                    <option value="validity">Ordenar: Validade Próxima</option>
-                    <option value="stock_desc">Ordenar: Maior Estoque</option>
-                    <option value="price_desc">Ordenar: Maior Preço</option>
                 </select>
             </div>
 
@@ -221,124 +228,77 @@
                 <div id="total-count">0 PRODUTOS</div>
                 <div class="divider"></div>
                 
+                <button class="nav-btn success" onclick="fetchFromGithub()" title="Baixa os produtos salvos no GitHub para o seu navegador">
+                    <i data-lucide="cloud-download" size="16"></i> SINCRONIZAR NUVEM
+                </button>
+                
                 <input type="file" id="csv-file-append" accept=".csv" style="display:none">
-                <button class="nav-btn" onclick="document.getElementById('csv-file-append').click()" title="Adicionar novos ou atualizar via CSV">
-                    <i data-lucide="upload" size="14"></i> IMPORTAR
-                </button>
-                <button class="nav-btn" onclick="exportarCSV()" title="Baixar planilha">
-                    <i data-lucide="download" size="14"></i> EXPORTAR
-                </button>
-                <button class="nav-btn" onclick="openCategoryManager()" title="Gerenciar Categorias">
-                    <i data-lucide="list" size="14"></i> CATS
+                <button class="nav-btn" onclick="document.getElementById('csv-file-append').click()" title="Importar planilha de produtos">
+                    <i data-lucide="upload" size="16"></i> CSV
                 </button>
                 
                 <div class="divider"></div>
 
                 <button class="nav-btn primary" onclick="createNewProduct()">
-                    <i data-lucide="plus" size="14"></i> NOVO PRODUTO
-                </button>
-                <button class="nav-btn" style="background:#f1f5f9; border-color:#cbd5e1;" onclick="queueSyncProductsToGithub()" title="Forçar envio de todos os dados pro site">
-                    <i data-lucide="cloud-upload" size="14"></i> FORÇAR SYNC GERAL
+                    <i data-lucide="plus" size="16"></i> NOVO
                 </button>
             </div>
         </div>
         
-        <div class="product-grid" id="product-grid"></div>
+        <div class="product-grid" id="product-grid">
+            </div>
     </div>
 
     <div id="modal-product-card" class="modal-overlay">
-        <div class="modal-card" style="width: 380px; max-height: 95vh;">
-            <div class="modal-header"><span>Editar Produto</span><button class="close-btn" onclick="closeModal('modal-product-card')"><i data-lucide="x" size="18"></i></button></div>
-            <div class="modal-body" id="product-card-container" style="padding: 20px; background: #f8fafc; flex-grow: 1; display: flex; justify-content: center;"></div>
-        </div>
-    </div>
-
-    <div id="modal-editor" class="modal-overlay">
-        <div class="modal-card" style="width:450px;">
-            <div class="modal-header"><span>Editor de Imagem (Ctrl+V para Colar)</span><button class="close-btn" onclick="closeModal('modal-editor')"><i data-lucide="x" size="18"></i></button></div>
-            <div class="modal-body">
-                <canvas id="imageCanvas" width="450" height="450"></canvas>
-                <div class="file-info"><span id="file-name-preview" style="color:var(--accent); font-weight: 600;">img.webp</span><span id="file-size-preview">0kb</span></div>
-                
-                <div class="editor-tools">
-                    <div class="tool-group"><label><span>Zoom</span></label><input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1"></div>
-                    <div class="tool-group"><label><span>Nitidez</span></label><input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0"></div>
-                    <div class="tool-group" style="grid-column: span 2;"><label><span>Brilho</span></label><input type="range" id="brightnessRange" min="0" max="2" step="0.1" value="1"></div>
-                </div>
-                
-                <div style="display:flex; gap:10px; margin-top:20px;">
-                    <button class="nav-btn" style="flex:1; justify-content:center;" onclick="document.getElementById('fileInput').click()">BUSCAR NO PC</button>
-                    <input type="file" id="fileInput" style="display:none" accept="image/*">
-                    <button class="btn-full" style="flex:2; margin-top:0;" onclick="queueImageUpload()">ENVIAR PARA O SITE</button>
-                </div>
+        <div class="modal-card" style="width: 400px;">
+            <div class="modal-header">
+                <span>Editar Produto</span>
+                <button class="close-btn" onclick="closeModal('modal-product-card')"><i data-lucide="x" size="20"></i></button>
             </div>
-        </div>
-    </div>
-
-    <div id="modal-details" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header"><span>Detalhes Técnicos</span><button class="close-btn" onclick="saveDetails()"><i data-lucide="check" size="18"></i></button></div>
-            <div class="modal-body">
-                <div class="form-grid" id="details-form"></div>
-                <button class="btn-full" onclick="saveDetails()">SALVAR DETALHES</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-categories" class="modal-overlay">
-        <div class="modal-card" style="width:450px;">
-            <div class="modal-header"><span>Gerenciar Categorias</span><button class="close-btn" onclick="closeModal('modal-categories')"><i data-lucide="x" size="18"></i></button></div>
-            <div class="modal-body">
-                <div style="display:flex; gap:10px; margin-bottom: 15px;">
-                    <input type="text" id="new-cat-input" placeholder="Nova Categoria..." style="flex:1; padding:10px; border-radius:6px; border:1px solid var(--border); font-size:13px; outline:none;">
-                    <button class="nav-btn primary" onclick="addNewCategory()"><i data-lucide="plus" size="16"></i> ADICIONAR</button>
-                </div>
-                <div id="cat-list-container" class="cat-list"></div>
-                </div>
+            <div class="modal-body" id="product-card-container" style="padding: 24px; background: #f8fafc; display: flex; justify-content: center;"></div>
         </div>
     </div>
 
     <div id="modal-config" class="modal-overlay">
         <div class="modal-card" style="width:450px">
-            <div class="modal-header"><span>Configuração de Conexão</span><button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x" size="18"></i></button></div>
+            <div class="modal-header">
+                <span>Configuração de Conexão</span>
+                <button class="close-btn" onclick="closeModal('modal-config')"><i data-lucide="x" size="20"></i></button>
+            </div>
             <div class="modal-body">
-                <div class="form-group"><label>Token GitHub (Acesso Pessoal)</label><input type="password" id="cfg-token"></div>
-                <div class="form-group"><label>Usuário GitHub</label><input type="text" id="cfg-user"></div>
-                <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo"></div>
-                <div class="form-group"><label>Caminho Imagens (Opcional)</label><input type="text" id="cfg-path" placeholder="site/img/produtos"></div>
-                <button class="btn-full" onclick="saveConfig()">SALVAR CREDENCIAIS</button>
+                <div style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; padding: 12px; border-radius: 8px; font-size: 12px; margin-bottom: 20px; line-height: 1.5;">
+                    <strong>Dica:</strong> Estas credenciais conectam seu sistema ao banco de dados na nuvem (GitHub). Sem elas, os produtos ficam salvos apenas neste navegador.
+                </div>
+                <div class="form-group"><label>Token GitHub (Acesso Pessoal)</label><input type="password" id="cfg-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"></div>
+                <div class="form-group"><label>Usuário GitHub</label><input type="text" id="cfg-user" placeholder="Seu usuario"></div>
+                <div class="form-group"><label>Repositório</label><input type="text" id="cfg-repo" placeholder="Nome do repositorio"></div>
+                
+                <button class="btn-full" onclick="saveConfig()"><i data-lucide="save" size="18"></i> SALVAR CONFIGURAÇÕES</button>
                 
                 <div style="margin-top: 30px; border-top: 1px dashed var(--border); padding-top: 20px;">
-                    <label style="font-size: 11px; font-weight: bold; color: var(--text-secondary); text-transform: uppercase;">Ações Avançadas</label>
-                    <button class="nav-btn" style="width:100%; justify-content:center; margin-top:10px;" onclick="restaurarLinksPadraoSite()"><i data-lucide="link" size="14"></i> PADRONIZAR LINKS DE IMAGEM</button>
-                    <button class="nav-btn danger" style="width:100%; justify-content:center; margin-top:10px;" onclick="limparSistema()"><i data-lucide="trash-2" size="14"></i> RESETAR SISTEMA LOCAL</button>
+                    <button class="nav-btn danger" style="width:100%; justify-content:center;" onclick="limparSistema()"><i data-lucide="trash-2" size="16"></i> RESETAR SISTEMA LOCAL</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="loader"><div class="spinner"></div><h3 id="loader-msg" style="font-size: 14px; color: var(--text-secondary);">Processando...</h3></div>
+    <div id="loader">
+        <div class="spinner"></div>
+        <h3 id="loader-msg" style="font-size: 16px; font-weight: 600; color: var(--text-primary); margin-top: 10px;">Processando...</h3>
+        <p style="font-size: 12px; color: var(--text-secondary);">Por favor, aguarde.</p>
+    </div>
 
     <script>
         let products = [];
-        let currentEditingId = null;
-        let productScrollPos = 0;
-        const canvas = document.getElementById('imageCanvas');
-        const ctx = canvas.getContext('2d');
-        let loadedImage = null;
-        let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
-
-        // --- SISTEMA DE FILA UNIVERSAL (BACKGROUND SYNC) ---
         let githubQueue = [];
         let isProcessingQueue = false;
         let queueInterval = null;
 
-        window.addEventListener('beforeunload', function (e) {
-            if (githubQueue.length > 0 || isProcessingQueue || queueInterval) {
-                e.preventDefault();
-                e.returnValue = 'Existem envios pendentes para a nuvem. Se sair, eles serão perdidos.';
-            }
-        });
+        // --- SISTEMA DE FILA E CARREGAMENTO ---
+        function toggleLoader(show, msg) {
+            document.getElementById('loader').style.display = show ? 'flex' : 'none';
+            if(msg) document.getElementById('loader-msg').innerText = msg;
+        }
 
         function updateQueueUI(msg) {
             const el = document.getElementById('queue-status');
@@ -347,156 +307,114 @@
                 el.innerHTML = ''; el.style.display = 'none';
             } else {
                 el.style.display = 'flex';
-                let iconHtml = isProcessingQueue ? `<i data-lucide="loader" class="spin-icon" size="14"></i>` : `<i data-lucide="clock" size="14"></i>`;
-                el.innerHTML = `${iconHtml} <span>${msg || `Fila: ${githubQueue.length}`}</span>`;
+                let iconHtml = isProcessingQueue ? `<i data-lucide="loader" class="spin-icon" size="14"></i>` : `<i data-lucide="cloud-upload" size="14"></i>`;
+                el.innerHTML = `${iconHtml} <span>${msg || `Sincronizando...`}</span>`;
                 lucide.createIcons();
             }
         }
 
-        // Adiciona uma tarefa à fila com um delay (Para evitar Rate Limit da API)
         function addToQueue(type, desc, taskFunc, delayMs = 3000) {
             githubQueue.push({ type, desc, task: taskFunc, delay: delayMs });
-            updateQueueUI(`Pendente: ${desc}`);
-            if(!isProcessingQueue && !queueInterval) {
-                processQueue();
-            }
+            updateQueueUI(`Aguardando...`);
+            if(!isProcessingQueue && !queueInterval) processQueue();
         }
 
         async function processQueue() {
-            if(githubQueue.length === 0) {
-                isProcessingQueue = false; updateQueueUI(); return;
-            }
-            
+            if(githubQueue.length === 0) { isProcessingQueue = false; updateQueueUI(); return; }
             isProcessingQueue = true;
             const item = githubQueue.shift();
-            
-            updateQueueUI(`Sincronizando: ${item.desc}...`);
-            
-            try {
-                await item.task();
-            } catch(e) {
-                console.error(`Erro na Fila (${item.desc}):`, e);
-                // Retorna pra fila em caso de erro leve ou alerta se grave
-                if(confirm(`Falha de comunicação com o GitHub ao sincronizar: ${item.desc}.\n\nErro: ${e.message}\n\nDeseja tentar de novo?`)) {
-                     githubQueue.unshift(item); // Põe no topo da fila de novo
-                }
-            }
-
+            updateQueueUI(`Enviando dados...`);
+            try { await item.task(); } catch(e) { console.error(`Erro na Fila:`, e); }
             isProcessingQueue = false; 
             let remaining = item.delay / 1000;
-            updateQueueUI(`Aguardando API: ${remaining}s...`);
-            
             queueInterval = setInterval(() => {
                 remaining--;
                 if(remaining <= 0) {
                     clearInterval(queueInterval); queueInterval = null;
                     if(githubQueue.length > 0) processQueue(); else updateQueueUI();
-                } else {
-                    updateQueueUI(`Aguardando API: ${remaining}s...`);
-                }
+                } else { updateQueueUI(`Próximo em ${remaining}s...`); }
             }, 1000);
-        }
-
-        function debounce(func, wait) {
-            let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); };
         }
 
         // --- INICIALIZAÇÃO ---
         window.onload = function() {
             lucide.createIcons();
             loadData();
-            loadCategoriesFromGithub(); // Dispara background fetch
-            setupEditorEvents();
             document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value, true), 300));
         };
 
-        // --- IMPORTAÇÃO E EXPORTAÇÃO ---
-        function processCsvRow(d) {
-            const getVal = (key) => d[key] ? d[key] : "";
-            const getNum = (key) => { const v = getVal(key); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
-            const codigoLimpo = getVal('Código').trim();
-            let rawLoc = getVal('Localização');
-            if(rawLoc) { rawLoc = rawLoc.trim().toUpperCase().replace(/\s*-\s*/, '-'); if(rawLoc.match(/^\d-[A-Z0-9]+$/)) rawLoc = '0' + rawLoc; }
-            const cost = getNum('Preço de custo') || getNum('Preço de Compra');
-            const cat = getVal('Categoria do produto') ? getVal('Categoria do produto').trim().toUpperCase() : "";
-            const isInactive = getVal('Situação').toUpperCase() === 'INATIVO' || getVal('situacao').toUpperCase() === 'I';
-            const base = {
-                id: getVal('ID') ? Number(getVal('ID')) : Date.now(),
-                codigo: codigoLimpo, nome: getVal('Descrição'), preco: getNum('Preço'), preco_custo: cost, categoria: cat, estoque: getNum('Estoque'),
-                localizacao: rawLoc, gtin: getVal('GTIN/EAN'), url_imagem: getVal('URL Imagens Externas'), ncm: getVal('NCM'), validade: getVal('Data Validade'),
-                situacao: isInactive ? 'I' : 'A', formato: 'S', _changed: true, _lastChange: "Importação CSV"
-            };
-            Object.keys(d).forEach(k => { if(base[k] === undefined) base[k] = d[k]; });
-            base['Código'] = codigoLimpo; base['Localização'] = rawLoc; base['Preço de custo'] = cost; base['Preço de Compra'] = cost; base['Categoria do produto'] = cat;
-            base['Origem'] = '0'; base['Unidade'] = 'un'; base['Situação'] = isInactive ? 'INATIVO' : 'ATIVO'; 
-            return base;
+        function debounce(func, wait) {
+            let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); };
         }
 
-        function extractCategoriesFromCSV(novosProdutos) {
-            let catAdded = false;
-            novosProdutos.forEach(p => { if (p.categoria && !availableCategories.includes(p.categoria)) { availableCategories.push(p.categoria); catAdded = true; } });
-            if (catAdded) availableCategories.sort((a,b) => a.localeCompare(b));
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if(saved) {
+                products = JSON.parse(saved);
+                renderGrid("", false);
+            } else {
+                renderGrid("", false); // Renderiza vazio para mostrar o botão de baixar
+            }
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
+            if(cfg.token) {
+                document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user;
+                document.getElementById('cfg-repo').value = cfg.repo;
+            }
         }
+        
+        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
 
-        document.getElementById('csv-file-append').addEventListener('change', function(e) {
-            if(!e.target.files[0]) return;
-            toggleLoader(true, "Lendo CSV e Mesclando Dados...");
-            Papa.parse(e.target.files[0], {
-                header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
-                complete: (results) => {
-                    const novos = results.data.map(processCsvRow);
-                    if(novos.length > 0) { 
-                        let adicionados = 0; let atualizados = 0;
-                        const csvTemSituacao = results.meta.fields.includes('Situação');
-                        novos.forEach(n => {
-                            const idx = products.findIndex(p => p.codigo === n.codigo);
-                            if(idx !== -1) {
-                                const prodExistente = products[idx];
-                                if (!csvTemSituacao) { n.situacao = prodExistente.situacao; n['Situação'] = prodExistente['Situação']; }
-                                if (!n.url_imagem && prodExistente.url_imagem) { n.url_imagem = prodExistente.url_imagem; }
-                                products[idx] = n; atualizados++;
-                            } else {
-                                products.unshift(n); adicionados++;
-                            }
-                        });
-                        extractCategoriesFromCSV(novos); saveData(); renderGrid(document.getElementById('search-input').value, false); 
-                        alert(`CSV importado com sucesso!\n${adicionados} novos produtos.\n${atualizados} produtos atualizados.`);
-                        
-                        // Agenda um backup automático via Fila
-                        queueBackupDadosJSON();
-                    }
-                    toggleLoader(false); e.target.value = ''; 
+        // --- A FUNÇÃO DE PUXAR DA NUVEM (QUE FALTAVA) ---
+        async function fetchFromGithub() {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) {
+                openConfigModal();
+                return alert("Para sincronizar com a nuvem, configure as credenciais do GitHub primeiro.");
+            }
+            
+            if(products.length > 0) {
+                if(!confirm("Atenção: Baixar da nuvem irá substituir seus produtos atuais nesta tela pelos produtos salvos no banco de dados remoto. Deseja continuar?")) return;
+            }
+            
+            toggleLoader(true, "Baixando banco de dados...");
+            try {
+                // Adiciona um timestamp na URL para forçar não usar cache do navegador
+                const path = `site/bancodedados.json`;
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`;
+                
+                const res = await fetch(url, { 
+                    headers: { 
+                        "Authorization": `token ${cfg.token}`, 
+                        "Accept": "application/vnd.github.v3.raw" 
+                    } 
+                });
+                
+                if(!res.ok) {
+                    if(res.status === 404) throw new Error("O arquivo 'bancodedados.json' ainda não existe na nuvem. Crie um produto e ele será gerado.");
+                    throw new Error(`Erro de conexão (Status: ${res.status}). Verifique as configurações.`);
                 }
-            });
-        });
-
-       function exportarCSV() {
-            if (products.length === 0) return alert("Nada para exportar.");
-            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Situação", "Estoque", "Preço de custo", "Localização", "GTIN/EAN", "Data Validade", "URL Imagens Externas", "Categoria do produto" ];
-            const dadosParaExportar = products.map(p => {
-                const linha = {}; const fmt = (n) => (n !== undefined && n !== null) ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque);
-                p['Localização'] = p.localizacao; p['GTIN/EAN'] = p.gtin; p['URL Imagens Externas'] = p.url_imagem || ""; p['NCM'] = p.ncm; 
-                p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Categoria do produto'] = p.categoria; p['Origem'] = '0'; p['Unidade'] = 'un';
-                colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
-                return linha;
-            });
-            const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-            l.download = "PIM_produtos_export.csv"; l.click();
+                
+                const data = await res.json();
+                if(Array.isArray(data)) {
+                    products = data;
+                    saveData();
+                    renderGrid();
+                    alert("✅ Produtos baixados com sucesso!");
+                } else {
+                    throw new Error("O formato do arquivo na nuvem é inválido.");
+                }
+            } catch(e) {
+                alert("Erro ao sincronizar: " + e.message);
+            } finally {
+                toggleLoader(false);
+            }
         }
 
-        function toggleLoader(show, msg) {
-            document.getElementById('loader').style.display = show ? 'flex' : 'none';
-            if(msg) document.getElementById('loader-msg').innerText = msg;
-        }
-
-        // --- GITHUB SYNC VASCULHANDO PELA FILA ---
+        // --- GITHUB PUSH ---
         function queueBackupDadosJSON() {
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
             if(!cfg || !cfg.token) return;
-            
-            addToQueue('backup', 'Backup Local -> Site (bancodedados.json)', async () => {
+            addToQueue('backup', 'Salvando Alterações', async () => {
                 const path = `site/bancodedados.json`;
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 let sha = null;
@@ -506,447 +424,231 @@
                 } catch(e) {}
                 const contentStr = JSON.stringify(products);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `Backup bancodedados.json via PIM`, content: base64 };
+                const body = { message: `Atualização PIM (Auto Save)`, content: base64 };
                 if(sha) body.sha = sha;
                 const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error(await res.text());
-            }, 5000);
-        }
-
-        function queueSyncProductsToGithub() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure o Token do GitHub antes!");
-            
-            // Backup Full 
-            queueBackupDadosJSON();
-
-            // Sync de Ativos (produtos.json)
-            addToQueue('full_sync', 'Sincronizar Vitrine (produtos.json)', async () => {
-                const payload = products.map(p => ({
-                    id: Number(p['ID'] || p.id || 0), nome: p.nome || "", preco: Number(p.preco || 0), 
-                    codigo: p.codigo || "", situacao: p.situacao || "A", categoria: p.categoria || "", 
-                    validade: p.validade || "", estoque: Number(p.estoque || 0)
-                }));
-                if(payload.length === 0) return;
-                
-                const path = `site/produtos.json`; const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                let sha = null; const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); 
-                if (check.ok) { const json = await check.json(); sha = json.sha; }
-                
-                payload.sort((a,b) => a.nome.localeCompare(b.nome)); 
-                const contentStr = JSON.stringify(payload, null, 2); 
-                const base64 = btoa(unescape(encodeURIComponent(contentStr))); 
-                const body = { message: `Sincronização PIM -> Site (${payload.length} itens)`, content: base64 }; 
-                if(sha) body.sha = sha;
-                
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); 
-                if(!res.ok) throw new Error(await res.text());
-            }, 10000); // Dá um fôlego grande após um update full
-        }
-
-        // --- GESTÃO DE CATEGORIAS VIA FILA ---
-        async function loadCategoriesFromGithub() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return;
-            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/categorias-padrao.json`;
-            try {
-                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if(res.ok) {
-                    const json = await res.json();
-                    const decodedStr = decodeURIComponent(escape(atob(json.content.replace(/\s/g, ''))));
-                    availableCategories = JSON.parse(decodedStr); availableCategories.sort((a,b) => a.localeCompare(b));
-                    renderGrid(document.getElementById('search-input').value, false);
-                }
-            } catch(e) {}
-        }
-
-        function queueSyncCategories() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return;
-            addToQueue('cats_sync', 'Sincronizar Categorias', async () => {
-                const path = `site/categorias-padrao.json`; const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                let sha = null; try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
-                availableCategories.sort((a,b) => a.localeCompare(b)); 
-                const contentStr = JSON.stringify(availableCategories, null, 2); const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `Update Categories via PIM`, content: base64 }; if(sha) body.sha = sha;
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error(await res.text());
+                if(!res.ok) throw new Error("Erro ao salvar no GitHub.");
             }, 3000);
         }
 
-        function addNewCategory() {
-            const input = document.getElementById('new-cat-input'); const newCat = input.value.trim().toUpperCase();
-            if(!newCat) return;
-            if(availableCategories.includes(newCat)) return alert("Categoria já existe!");
-            
-            availableCategories.push(newCat); availableCategories.sort((a,b) => a.localeCompare(b));
-            input.value = "";
-            renderCategoryManager(); renderGrid(document.getElementById('search-input').value, true);
-            
-            // Joga para a fila silenciosamente
-            queueSyncCategories();
-        }
-
-        function deleteCategory(cat) {
-            if(!confirm(`Tem certeza que deseja apagar a categoria "${cat}"? Isso não apaga os produtos.`)) return;
-            availableCategories = availableCategories.filter(c => c !== cat);
-            renderCategoryManager(); renderGrid(document.getElementById('search-input').value, true);
-            queueSyncCategories();
-        }
-
-        function editCategory(oldName) {
-            const newName = prompt("Novo nome para a categoria:", oldName);
-            if(newName && newName.trim() !== "" && newName !== oldName) {
-                const upperName = newName.trim().toUpperCase();
-                if(availableCategories.includes(upperName)) return alert("Esta categoria já existe.");
-                const idx = availableCategories.indexOf(oldName); if(idx !== -1) availableCategories[idx] = upperName;
-                
-                products.forEach(p => { if(p.categoria === oldName || p['Categoria do produto'] === oldName) { p.categoria = upperName; p['Categoria do produto'] = upperName; p._changed = true; } });
-                
-                saveData(); renderCategoryManager(); renderGrid(document.getElementById('search-input').value, true);
-                queueSyncCategories();
-            }
-        }
-
-        function renderCategoryManager() {
-            const container = document.getElementById('cat-list-container'); container.innerHTML = '';
-            availableCategories.sort((a,b) => a.localeCompare(b));
-            availableCategories.forEach((cat) => {
-                const row = document.createElement('div'); row.className = 'cat-row';
-                row.innerHTML = `<span>${cat}</span><div class="cat-actions"><button class="btn-icon" onclick="editCategory('${cat}')" title="Editar Nome"><i data-lucide="edit-2" size="14"></i></button><button class="btn-icon del" onclick="deleteCategory('${cat}')" title="Apagar"><i data-lucide="trash-2" size="14"></i></button></div>`;
-                container.appendChild(row);
-            });
-            lucide.createIcons();
-        }
-        function openCategoryManager() { renderCategoryManager(); openModal('modal-categories'); }
-
-        // --- GESTÃO LOCAL DE PRODUTOS ---
-        function loadData() {
-            const saved = localStorage.getItem(STORAGE_KEY);
-            if(saved) products = JSON.parse(saved);
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            if(cfg.token) {
-                document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user;
-                document.getElementById('cfg-repo').value = cfg.repo; document.getElementById('cfg-path').value = cfg.path;
-            }
-            renderGrid("", false);
-        }
-        
-        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
-
-        function calculateEanCheckDigit(code12) {
-            if(code12.length !== 12) return '0'; let sum = 0;
-            for(let i = 0; i < 12; i++) { const digit = parseInt(code12[i]); if(i % 2 === 0) sum += digit * 1; else sum += digit * 3; }
-            const remainder = sum % 10; return ((10 - remainder) % 10).toString();
-        }
-
+        // --- GESTÃO LOCAL ---
         function createNewProduct() {
             const timestamp = Date.now();
             const sku = timestamp.toString().slice(-8); 
-            const baseEan = "2" + timestamp.toString().slice(-11); 
-            const internalEan = baseEan + calculateEanCheckDigit(baseEan); 
             
             const newProd = { 
-                id: timestamp, codigo: sku, nome: "NOVO PRODUTO", preco: 0, preco_custo: 0, categoria: "", estoque: 0, 
-                localizacao: "SEM LOCAL", gtin: internalEan, url_imagem: "", ncm: "", validade: "", 
-                situacao: 'A', formato: 'S', _changed: true, _lastChange: "Criação Manual", 
-                'ID': timestamp, 'Código': sku, 'Descrição': "NOVO PRODUTO", 'Preço': 0, 'Preço de custo': 0, 
-                'Categoria do produto': "", 'Estoque': 0, 'Localização': "SEM LOCAL", 'GTIN/EAN': internalEan 
+                id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, categoria: "", estoque: 0, 
+                situacao: 'A', _changed: true, _lastChange: "Criação"
             };
             
-            products.unshift(newProd); saveData(); renderGrid(document.getElementById('search-input').value, true);
+            products.unshift(newProd); 
+            saveData(); 
+            renderGrid(document.getElementById('search-input').value, true);
             document.getElementById('product-grid').scrollTop = 0;
-            
-            // Abre direto no modal de edição
-            openProductModal(sku);
+            openProductModal(sku); // Abre edição direto
+            queueBackupDadosJSON(); // Salva na nuvem
         }
 
-        function duplicateProduct(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            const timestamp = Date.now(); 
-            const newSku = timestamp.toString().slice(-8); 
-            const baseEan = "2" + timestamp.toString().slice(-11); 
-            const internalEan = baseEan + calculateEanCheckDigit(baseEan); 
-            
-            const newProd = JSON.parse(JSON.stringify(p));
-            newProd.id = timestamp; newProd['ID'] = timestamp;
-            newProd.codigo = newSku; newProd['Código'] = newSku; 
-            newProd.gtin = internalEan; newProd['GTIN/EAN'] = internalEan; 
-            newProd.nome = "CÓPIA - " + p.nome; newProd['Descrição'] = newProd.nome; 
-            newProd.situacao = 'A'; newProd['Situação'] = 'A'; 
-            newProd._changed = true; newProd._lastChange = "Duplicação"; 
-            
-            products.unshift(newProd); saveData(); renderGrid(document.getElementById('search-input').value, true);
-            closeModal('modal-product-card'); document.getElementById('product-grid').scrollTop = 0;
-        }
-
-        // NOVO: Função para Excluir o Produto
         function deleteProduct(sku) {
-            if(!confirm(`ATENÇÃO! Tem certeza que deseja excluir permanentemente o produto (SKU: ${sku}) do sistema?`)) return;
-            
+            if(!confirm(`Tem certeza que deseja excluir o produto (SKU: ${sku}) permanentemente?`)) return;
             products = products.filter(p => p.codigo !== sku);
             saveData();
-            closeModal('modal-product-card');
             renderGrid(document.getElementById('search-input').value, true);
-            
-            // Opcional: Acionar a fila para atualizar o JSON caso você queira que ele suma do front-end automaticamente
-            queueSyncProductsToGithub();
+            queueBackupDadosJSON();
         }
 
-        function generateInternalEan(sku) {
-            const timestamp = Date.now().toString(); const baseEan = "2" + timestamp.slice(-11); const internalEan = baseEan + calculateEanCheckDigit(baseEan);
-            updateProduct(sku, 'gtin', internalEan);
-            if (document.getElementById('modal-product-card').style.display === 'flex') openProductModal(sku); 
-        }
-        
-        function changeProductCode(oldSku, newSku) {
-            newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return;
-            if(products.find(p => p.codigo === newSku)) { alert("Já existe um produto com este código!"); renderGrid(document.getElementById('search-input').value, true); return; }
-            const p = products.find(p => p.codigo === oldSku);
-            if(p) { p.codigo = newSku; p['Código'] = newSku; p._changed = true; saveData(); renderGrid(document.getElementById('search-input').value, true); if (document.getElementById('modal-product-card').style.display === 'flex') openProductModal(newSku); }
-        }
-
-        // --- RENDERIZAÇÃO DA UI (LISTAS E CARDS) ---
-        function createListRow(p) {
-            const isInactive = p.situacao === 'I';
-            const row = document.createElement('div'); row.className = `list-row`;
-            if (p._changed) row.style.borderLeftColor = "var(--warning)";
-            if (isInactive) row.style.opacity = "0.5";
-            
-            let optionsCat = `<option value="">-- SELECIONE --</option>`; const catList = [...availableCategories]; if(p.categoria && !catList.includes(p.categoria)) catList.push(p.categoria);
-            catList.forEach(c => { optionsCat += `<option value="${c}" ${p.categoria === c ? 'selected' : ''}>${c.substring(0,20)}</option>`; });
-            
-            let currentG = "", currentP = ""; if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); currentG = parts[0]; currentP = parts[1]; }
-            let optionsG = `<option value="">GON</option>`; GONDOLAS.forEach(g => { optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>${g}</option>`; });
-            let optionsP = `<option value="">PRT</option>`; PRATELEIRAS.forEach(pr => { optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>${pr}</option>`; });
-            
-            let lucroStr = "-", lucroColor = "var(--text-secondary)";
-            if(p.preco > 0 && p.preco_custo > 0) { const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100; lucroStr = markup.toFixed(1) + "%"; if(markup < 20) lucroColor = "var(--danger)"; else if(markup > 40) lucroColor = "var(--success)"; }
-            
-            const safeName = p.nome ? p.nome.replace(/'/g, "\\'") : "";
-            
-            row.innerHTML = `
-                <div><input type="text" class="list-input" style="font-weight:800;" value="${p.codigo}" onchange="changeProductCode('${p.codigo}', this.value)" onclick="event.stopPropagation()"></div>
-                <div><input type="text" class="list-input" style="font-weight:600;" value="${p.nome}" onchange="updateProduct('${p.codigo}', 'nome', this.value)" onclick="event.stopPropagation()"></div>
-                <div><select class="list-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)" onclick="event.stopPropagation()">${optionsCat}</select></div>
-                <div><input type="text" class="list-input" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" onclick="event.stopPropagation()"></div>
-                <div style="display:flex; align-items:center; gap:2px;"><input type="text" class="list-input" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" onclick="event.stopPropagation()"><button class="list-btn-icon" style="padding:2px; width:24px; border:none; background:transparent;" onclick="event.stopPropagation(); window.open('https://www.google.com/search?q=NCM+${safeName}', '_blank')" title="Buscar NCM"><i data-lucide="search" size="12"></i></button></div>
-                <div><div style="display:flex; gap:2px; justify-content:center;"><select class="list-select" style="padding:2px; text-align:center;" onchange="updateProduct('${p.codigo}', 'gondola', this.value)" onclick="event.stopPropagation()">${optionsG}</select><select class="list-select" style="padding:2px; text-align:center;" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)" onclick="event.stopPropagation()">${optionsP}</select></div></div>
-                <div><input type="text" class="list-input number" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)" onclick="event.stopPropagation()"></div>
-                <div><input type="text" class="list-input" style="color:${p.validade ? '#d97706' : 'inherit'}; text-align:center;" value="${p.validade || ''}" placeholder="DD/MM" onchange="updateProduct('${p.codigo}', 'validade', this.value)" onclick="event.stopPropagation()"></div>
-                <div><input type="text" class="list-input number" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)" onclick="event.stopPropagation()"></div>
-                <div style="text-align:right; font-size:11px; font-weight:800; color:${lucroColor}; padding-right:4px;">${lucroStr}</div>
-                <div><input type="text" class="list-input number" style="color:var(--accent);" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)" onclick="event.stopPropagation()"></div>
-                <div><div style="display:flex; gap:4px; justify-content:center;">
-                    <button class="list-btn-icon" style="${isInactive ? 'color:var(--danger); border-color:var(--danger);' : 'color:var(--success); border-color:var(--success);'}" onclick="event.stopPropagation(); toggleActive('${p.codigo}')" title="${isInactive ? 'Ativar' : 'Inativar'}"><i data-lucide="power" size="14"></i></button>
-                    <button class="list-btn-icon del" onclick="event.stopPropagation(); deleteProduct('${p.codigo}')" title="Excluir"><i data-lucide="trash-2" size="14"></i></button>
-                </div></div>
-            `;
-            row.onclick = () => openProductModal(p.codigo); return row;
-        }
-
-        function createCard(p) {
-            let currentG = "", currentP = ""; if(p.localizacao && p.localizacao.includes('-')) { const parts = p.localizacao.split('-'); currentG = parts[0]; currentP = parts[1]; }
-            const isInactive = p.situacao === 'I'; const card = document.createElement('div'); card.id = `card-${p.codigo}`; card.className = `card ${p._changed ? 'status-changed' : ''} ${isInactive ? 'status-inactive' : ''}`;
-            const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300?text=SEM+FOTO';
-            
-            let optionsG = `<option value="">--</option>`; GONDOLAS.forEach(g => { optionsG += `<option value="${g}" ${g === currentG ? 'selected' : ''}>GON ${g}</option>`; });
-            let optionsP = `<option value="">--</option>`; PRATELEIRAS.forEach(pr => { optionsP += `<option value="${pr}" ${pr === currentP ? 'selected' : ''}>PRAT ${pr}</option>`; });
-            let optionsCat = `<option value="">-- SELECIONE --</option>`; const catList = [...availableCategories]; if(p.categoria && !catList.includes(p.categoria)) catList.push(p.categoria); catList.forEach(c => { optionsCat += `<option value="${c}" ${p.categoria === c ? 'selected' : ''}>${c}</option>`; });
-            
-            let lucroStr = "-", lucroClass = ""; if(p.preco > 0 && p.preco_custo > 0) { const markup = ((p.preco - p.preco_custo) / p.preco_custo) * 100; lucroStr = markup.toFixed(1) + "%"; if(markup < 20) lucroClass = "color: var(--danger);"; else if(markup > 40) lucroClass = "color: var(--success);"; }
-            
-            const searchBtn = `<button class="btn-mini-action" onclick="window.open('https://www.google.com/search?tbm=isch&q=${encodeURIComponent(p.nome)}', '_blank')" title="Buscar Imagem Google"><i data-lucide="image" size="12"></i> IMAGEM</button>`; 
-            const generateBtn = `<button class="btn-mini-action" onclick="generateInternalEan('${p.codigo}')" style="background:#fffbeb; color:var(--warning); border-color:#fcd34d;"><i data-lucide="wand-2" size="12"></i> GERAR EAN</button>`;
-            
-            card.innerHTML = `
-                <div class="card-img-area" onclick="openEditor('${p.codigo}')">
-                    <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300?text=ERRO'">
-                    <div class="img-overlay"><button class="overlay-btn" title="Editar Imagem"><i data-lucide="camera" size="18"></i></button></div>
-                </div>
-                <div class="card-body">
-                    <div class="card-sku">
-                        <input type="text" class="card-input-small" style="font-size:13px; font-weight:800; width:110px; padding:0; color:var(--accent);" value="${p.codigo}" onchange="changeProductCode('${p.codigo}', this.value)" title="Editar Código">
-                        <div class="loc-controls"><select class="loc-select" onchange="updateProduct('${p.codigo}', 'gondola', this.value)">${optionsG}</select><select class="loc-select" onchange="updateProduct('${p.codigo}', 'prateleira', this.value)">${optionsP}</select></div>
-                    </div>
-                    <textarea class="card-title-input" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
-                    
-                    <div style="margin-top:4px;"><select class="cat-select" onchange="updateProduct('${p.codigo}', 'categoria', this.value)">${optionsCat}</select></div>
-                    
-                    <div style="font-size:11px; margin: 8px 0; display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-                        <div style="grid-column: span 2;">
-                            <div style="display:flex; align-items:center; gap:4px;"><span style="font-weight:600; color:var(--text-secondary)">EAN:</span><input class="card-input-small" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="-"></div>
-                            <div class="ean-controls">${searchBtn}${!(p.gtin && p.gtin.length>0) ? generateBtn : ''}</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:4px; margin-top:4px;"><span style="font-weight:600; color:var(--text-secondary)">NCM:</span><input class="card-input-small" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="-"></div>
-                        <div style="display:flex; align-items:center; gap:4px; margin-top:4px;"><span style="font-weight:600; color:var(--text-secondary)">VAL:</span><input class="card-input-small" value="${p.validade || ''}" onchange="updateProduct('${p.codigo}', 'validade', this.value)" placeholder="DD/MM/AAAA" style="color:${p.validade ? 'var(--warning)' : 'inherit'}"></div>
-                    </div>
-                    
-                    <div class="card-stats">
-                        <div class="stat-box"><span class="stat-label">Custo Base</span><input class="stat-input" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)"></div>
-                        <div class="stat-box"><span class="stat-label">Estoque Atual</span><input class="stat-input" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)"></div>
-                        <div class="stat-box"><span class="stat-label">Markup Estimado</span><div class="stat-input" style="border-color:transparent; background:transparent; font-size:14px; ${lucroClass}">${lucroStr}</div></div>
-                        <div class="stat-box"><span class="stat-label" style="color:var(--accent)">Preço de Venda</span><input class="stat-input" style="border-color:var(--accent); color:var(--accent);" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)"></div>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <button class="btn-sq" onclick="openDetails('${p.codigo}')" title="Especificações Técnicas"><i data-lucide="sliders-horizontal" size="18"></i></button>
-                    <button class="btn-sq" onclick="duplicateProduct('${p.codigo}')" title="Clonar Produto"><i data-lucide="copy" size="18"></i></button>
-                    <button class="btn-sq ${isInactive ? 'inactive-state' : ''}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Produto Inativo (Clique para Ativar)' : 'Produto Ativo (Clique para Desativar)'}"><i data-lucide="power" size="18" style="${isInactive ? '' : 'color:var(--success)'}"></i></button>
-                    <button class="btn-sq btn-del" onclick="deleteProduct('${p.codigo}')" title="Excluir Permanentemente"><i data-lucide="trash-2" size="18"></i></button>
-                </div>`;
-            return card;
-        }
-
+        // --- RENDERIZAÇÃO DA UI DIDÁTICA ---
         function renderGrid(filter = "", forceShow = false) {
-            const gridContainer = document.getElementById('product-grid'); gridContainer.innerHTML = "";
-            const filterMode = document.getElementById('filter-select').value; const sortMode = document.getElementById('sort-select').value;
+            const gridContainer = document.getElementById('product-grid'); 
+            gridContainer.innerHTML = "";
+            const filterMode = document.getElementById('filter-select').value; 
             
             let filtered = products;
-            if(filter) { const term = filter.toLowerCase(); filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term) || (p.gtin||"").includes(term) || (p.localizacao||"").toLowerCase().includes(term)); }
-            
+            if(filter) { const term = filter.toLowerCase(); filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term)); }
             if(filterMode === 'ativos') filtered = filtered.filter(p => p.situacao !== 'I');
             else if (filterMode === 'inativos') filtered = filtered.filter(p => p.situacao === 'I');
-            else if(filterMode === 'validity60') { const limit = new Date(); limit.setDate(limit.getDate() + 60); filtered = filtered.filter(p => { if(!p.validade) return false; const dt = parseDate(p.validade); return dt && dt <= limit; }); }
-            else if (filterMode === 'errors') filtered = filtered.filter(p => !p.gtin || !p.ncm || !p.preco || p.preco === 0);
-            else if (filterMode === 'margin_error') filtered = filtered.filter(p => (p.preco || 0) <= (p.preco_custo || 0));
-            
-            if(sortMode === 'name') filtered.sort((a,b) => a.nome.localeCompare(b.nome));
-            else if (sortMode === 'validity') filtered.sort((a,b) => { const da = parseDate(a.validade); const db = parseDate(b.validade); if(!da) return 1; if(!db) return -1; return da - db; });
-            else if (sortMode === 'stock_desc') filtered.sort((a,b) => (b.estoque||0) - (a.estoque||0));
-            else if (sortMode === 'price_desc') filtered.sort((a,b) => (b.preco||0) - (a.preco||0));
             
             document.getElementById('total-count').innerText = `${filtered.length} PRODUTOS`;
 
+            // ESTADO VAZIO DIDÁTICO
             if (filtered.length === 0) {
-                gridContainer.innerHTML = `<div class="empty-state"><i data-lucide="search-x" size="48" style="opacity:0.3; margin-bottom:15px;"></i><h3>Nenhum produto encontrado</h3><p>Ajuste os filtros ou adicione novos produtos.</p></div>`; lucide.createIcons(); return;
+                gridContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i data-lucide="package-open" size="64" class="empty-state-icon"></i>
+                        <h3>Nenhum produto encontrado</h3>
+                        <p>${products.length === 0 ? "Seu sistema está vazio. Você pode criar um produto manualmente agora mesmo ou puxar os dados que estão salvos na nuvem." : "Nenhum produto bate com a sua busca ou filtro atual."}</p>
+                        <div class="empty-actions">
+                            <button class="nav-btn success" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="18"></i> Baixar da Nuvem</button>
+                            <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="18"></i> Criar Produto</button>
+                        </div>
+                    </div>`; 
+                lucide.createIcons(); 
+                return;
             }
 
-            const buildList = (items, container) => {
-                const header = document.createElement('div'); header.className = 'list-row list-header';
-                header.innerHTML = `<div>CÓDIGO</div><div>PRODUTO</div><div>CATEGORIA</div><div>EAN</div><div>NCM</div><div style="text-align:center;">LOCAL</div><div style="text-align:right;">ESTOQUE</div><div style="text-align:center;">VAL.</div><div style="text-align:right;">CUSTO</div><div style="text-align:right;">MKP</div><div style="text-align:right;">VENDA</div><div style="text-align:center;">AÇÕES</div>`;
-                container.appendChild(header);
-                const subGrid = document.createElement('div'); subGrid.className = 'category-items-container'; subGrid.style.display = 'flex'; subGrid.style.flexDirection = 'column'; subGrid.style.gap = '0';
-                items.forEach(p => { subGrid.appendChild(createListRow(p)); }); container.appendChild(subGrid);
-            };
+            const header = document.createElement('div'); 
+            header.className = 'list-row list-header';
+            header.innerHTML = `<div>CÓDIGO SKU</div><div>NOME DO PRODUTO</div><div>CATEGORIA</div><div>EAN</div><div>NCM</div><div>ESTOQUE</div><div>VAL.</div><div>CUSTO</div><div>VENDA</div><div>AÇÕES</div>`;
+            gridContainer.appendChild(header);
 
-            if(sortMode === 'gondola' || sortMode === 'group_category') {
-                let groups = [];
-                if (sortMode === 'gondola') {
-                    groups = [...GONDOLAS, SEM_LOCAL];
-                    groups.forEach(g => { let sec = filtered.filter(p => { if (g === SEM_LOCAL) { if (!p.localizacao) return true; return !GONDOLAS.includes(p.localizacao.split('-')[0]); } else { if (!p.localizacao) return false; return p.localizacao.split('-')[0] === g; } }); if (sec.length > 0) { const h = document.createElement('div'); h.className = 'category-header'; h.innerText = g === SEM_LOCAL ? "SEM LOCALIZAÇÃO" : `GÔNDOLA ${g}`; gridContainer.appendChild(h); buildList(sec, gridContainer); } });
-                } else if (sortMode === 'group_category') {
-                    const uniqueCats = new Set(); filtered.forEach(p => uniqueCats.add(p.categoria ? p.categoria.toUpperCase() : "SEM CATEGORIA")); groups = Array.from(uniqueCats).sort();
-                    groups.forEach(c => { let sec = filtered.filter(p => (p.categoria ? p.categoria.toUpperCase() : "SEM CATEGORIA") === c); if (sec.length > 0) { const h = document.createElement('div'); h.className = 'category-header'; h.innerText = c; gridContainer.appendChild(h); buildList(sec, gridContainer); } });
-                }
-                lucide.createIcons(); return;
-            }
+            filtered.forEach(p => { gridContainer.appendChild(createListRow(p)); }); 
+            lucide.createIcons();
+        }
+
+        function createListRow(p) {
+            const isInactive = p.situacao === 'I';
+            const row = document.createElement('div'); 
+            row.className = `list-row`;
+            if (isInactive) row.style.opacity = "0.6";
             
-            // Default list rendering
-            buildList(filtered, gridContainer); lucide.createIcons();
+            row.innerHTML = `
+                <div><input type="text" class="list-input" style="font-weight:800; color:var(--accent);" value="${p.codigo}" readonly onclick="openProductModal('${p.codigo}')"></div>
+                <div><input type="text" class="list-input" style="font-weight:600;" value="${p.nome || 'Sem Nome'}" onchange="updateProduct('${p.codigo}', 'nome', this.value)"></div>
+                <div><input type="text" class="list-input" value="${p.categoria || ''}" onchange="updateProduct('${p.codigo}', 'categoria', this.value)" placeholder="Geral"></div>
+                
+                <div class="mobile-grid-2">
+                    <input type="text" class="list-input" value="${p.gtin || ''}" onchange="updateProduct('${p.codigo}', 'gtin', this.value)" placeholder="EAN">
+                    <input type="text" class="list-input" value="${p.ncm || ''}" onchange="updateProduct('${p.codigo}', 'ncm', this.value)" placeholder="NCM">
+                </div>
+
+                <div class="mobile-grid-2">
+                    <input type="text" class="list-input number" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
+                    <input type="text" class="list-input" style="text-align:center;" value="${p.validade || ''}" placeholder="DD/MM" onchange="updateProduct('${p.codigo}', 'validade', this.value)">
+                </div>
+
+                <div class="mobile-grid-2">
+                    <input type="text" class="list-input number" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)">
+                    <input type="text" class="list-input number" style="color:var(--success);" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)">
+                </div>
+                
+                <div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="list-btn-icon" style="${isInactive ? 'color:var(--danger); border-color:var(--danger);' : 'color:var(--success); border-color:var(--success);'}" onclick="toggleActive('${p.codigo}')" title="${isInactive ? 'Ativar' : 'Inativar'}"><i data-lucide="power" size="18"></i></button>
+                        <button class="list-btn-icon" onclick="openProductModal('${p.codigo}')" title="Editar Completo"><i data-lucide="edit" size="18"></i></button>
+                        <button class="list-btn-icon del" onclick="deleteProduct('${p.codigo}')" title="Excluir"><i data-lucide="trash-2" size="18"></i></button>
+                    </div>
+                </div>
+            `;
+            return row;
+        }
+
+        function openProductModal(sku) {
+            const p = products.find(x => x.codigo === sku); if(!p) return;
+            const container = document.getElementById('product-card-container'); container.innerHTML = '';
+            
+            const isInactive = p.situacao === 'I'; 
+            const card = document.createElement('div'); card.className = `card`;
+            const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x300?text=Clique+para+Foto';
+            
+            card.innerHTML = `
+                <div class="card-img-area">
+                    <img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/400x300?text=FOTO+ERRO'">
+                    <div class="img-overlay"><i data-lucide="camera" size="24"></i> URL IMAGEM</div>
+                </div>
+                <div class="card-body">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:10px; font-weight:800; color:var(--text-secondary);">SKU</span>
+                        <input type="text" class="card-input-small" style="width:120px; color:var(--accent);" value="${p.codigo}" readonly>
+                    </div>
+                    <textarea class="card-title-input" placeholder="Nome Completo do Produto" onchange="updateProduct('${p.codigo}', 'nome', this.value)">${p.nome}</textarea>
+                    
+                    <div class="card-stats">
+                        <div>
+                            <span class="stat-label">Preço de Custo</span>
+                            <input class="stat-input" value="${formatNum(p.preco_custo)}" onchange="updateProduct('${p.codigo}', 'preco_custo', this.value)">
+                        </div>
+                        <div>
+                            <span class="stat-label" style="color:var(--success)">Preço de Venda</span>
+                            <input class="stat-input" style="border-color:var(--success); color:var(--success);" value="${formatNum(p.preco)}" onchange="updateProduct('${p.codigo}', 'preco', this.value)">
+                        </div>
+                        <div>
+                            <span class="stat-label">Estoque</span>
+                            <input class="stat-input" value="${formatNum(p.estoque)}" onchange="updateProduct('${p.codigo}', 'estoque', this.value)">
+                        </div>
+                        <div>
+                            <span class="stat-label">URL da Imagem</span>
+                            <input class="stat-input" style="font-size:10px; font-weight:400;" value="${p.url_imagem || ''}" placeholder="Cole o link da foto" onchange="updateProduct('${p.codigo}', 'url_imagem', this.value)">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn-sq ${isInactive ? '' : 'btn-del'}" onclick="toggleActive('${p.codigo}')">
+                        <i data-lucide="power" size="20" style="${isInactive ? 'color:var(--danger)' : 'color:var(--success)'}"></i>
+                        ${isInactive ? 'ATIVAR' : 'INATIVAR'}
+                    </button>
+                    <button class="btn-sq btn-del" onclick="deleteProduct('${p.codigo}')">
+                        <i data-lucide="trash-2" size="20"></i>
+                        EXCLUIR
+                    </button>
+                </div>`;
+            
+            container.appendChild(card); lucide.createIcons();
+            document.getElementById('modal-product-card').style.display = 'flex';
         }
 
         function updateProduct(sku, field, value) {
             const p = products.find(x => x.codigo === sku); if(!p) return;
-            if(field === 'gondola' || field === 'prateleira') {
-                let parts = (p.localizacao || "-").split('-'); let g = field === 'gondola' ? value : (parts[0] || ""); let pr = field === 'prateleira' ? value : (parts[1] || "");
-                p.localizacao = `${g}-${pr}`; p['Localização'] = p.localizacao;
-            } else {
-                let finalVal = value; if(['preco','estoque','preco_custo','Preço de Compra'].includes(field)) finalVal = parseFloat(value.replace(',','.')) || 0;
-                if(field === 'preco_custo' || field === 'Preço de Compra') { p['preco_custo'] = finalVal; p['Preço de custo'] = finalVal; p['Preço de Compra'] = finalVal; }
-                else {
-                    p[field] = finalVal; if(field === 'nome') p['Descrição'] = finalVal; if(field === 'preco') p['Preço'] = value; if(field === 'estoque') p['Estoque'] = value; if(field === 'categoria') p['Categoria do produto'] = value; if(field === 'gtin') p['GTIN/EAN'] = value; if(field === 'ncm') p['NCM'] = value; if(field === 'validade') p['Data Validade'] = value;
-                }
-            }
-            p._changed = true; p._lastChange = new Date().toLocaleString(); saveData();
-            const card = document.getElementById('card-' + sku); if(card) card.classList.add('status-changed');
+            let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.replace(',','.')) || 0;
+            p[field] = finalVal;
+            p._changed = true; saveData();
+            queueBackupDadosJSON(); // Fila automática
             
-            // Agenda sync dinâmico via fila caso altere estoque ou preço (Opcional: Pode tirar se achar que faz muito spam)
-            // queueBackupDadosJSON(); 
+            // Atualiza a listagem se estivermos mudando o nome para não ficar fora de sincronia visual
+            if(field === 'nome' || field === 'url_imagem') renderGrid(document.getElementById('search-input').value, true);
         }
 
         function toggleActive(sku) { 
             const p = products.find(x => x.codigo === sku); if (!p) return; 
-            p.situacao = p.situacao === 'I' ? 'A' : 'I'; p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; 
+            p.situacao = p.situacao === 'I' ? 'A' : 'I'; 
             p._changed = true; saveData(); 
+            queueBackupDadosJSON();
             if (document.getElementById('modal-product-card').style.display === 'flex') openProductModal(sku); 
             renderGrid(document.getElementById('search-input').value, true); 
         }
 
         function formatNum(n) { return n ? n.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '0,00'; }
-        function parseDate(str) { if(!str) return null; const parts = str.split('/'); if(parts.length === 3) return new Date(parts[2], parts[1]-1, parts[0]); return null; }
 
-        // --- EDITOR DE IMAGEM & DETALHES ---
-        function openProductModal(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            const container = document.getElementById('product-card-container'); container.innerHTML = '';
-            const cardElement = createCard(p); cardElement.style.width = '100%'; cardElement.style.boxShadow = 'none'; cardElement.style.border = 'none';
-            container.appendChild(cardElement); lucide.createIcons(); openModal('modal-product-card');
+        // --- CSV IMPORT (Adição) ---
+        document.getElementById('csv-file-append').addEventListener('change', function(e) {
+            if(!e.target.files[0]) return;
+            toggleLoader(true, "Lendo CSV...");
+            Papa.parse(e.target.files[0], {
+                header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
+                complete: (results) => {
+                    const novos = results.data.map(d => {
+                        const getVal = (key) => d[key] ? d[key] : "";
+                        const getNum = (key) => { const v = getVal(key); return v ? parseFloat(v.toString().replace(/\./g,'').replace(',','.'))||0 : 0; };
+                        return {
+                            id: getVal('ID') ? Number(getVal('ID')) : Date.now(),
+                            codigo: getVal('Código').trim(), nome: getVal('Descrição'), preco: getNum('Preço'), preco_custo: getNum('Preço de custo'), categoria: getVal('Categoria do produto'), estoque: getNum('Estoque'),
+                            gtin: getVal('GTIN/EAN'), url_imagem: getVal('URL Imagens Externas'), ncm: getVal('NCM'), validade: getVal('Data Validade'), situacao: getVal('Situação').toUpperCase() === 'INATIVO' ? 'I' : 'A'
+                        };
+                    });
+                    if(novos.length > 0) { 
+                        novos.forEach(n => {
+                            const idx = products.findIndex(p => p.codigo === n.codigo);
+                            if(idx !== -1) products[idx] = {...products[idx], ...n}; else products.unshift(n);
+                        });
+                        saveData(); renderGrid(); queueBackupDadosJSON();
+                        alert("CSV importado com sucesso!");
+                    }
+                    toggleLoader(false); e.target.value = ''; 
+                }
+            });
+        });
+
+        // --- CONFIGURAÇÕES ---
+        function openConfigModal() { document.getElementById('modal-config').style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function saveConfig() { 
+            const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; 
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeModal('modal-config'); alert("Salvo! Agora você pode baixar/enviar da nuvem."); 
         }
-
-        function openDetails(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return; currentEditingId = sku; const form = document.getElementById('details-form'); form.innerHTML = '';
-            const keys = Object.keys(p).filter(k => !k.startsWith('_') && k !== 'formato'); const priorities = ['codigo', 'nome', 'localizacao', 'situacao', 'gtin', 'ncm', 'cest', 'preco', 'preco_custo', 'estoque'];
-            keys.sort((a,b) => { const ia = priorities.indexOf(a), ib = priorities.indexOf(b); if(ia !== -1 && ib !== -1) return ia - ib; if(ia !== -1) return -1; if(ib !== -1) return 1; return a.localeCompare(b); });
-            keys.forEach(k => { const div = document.createElement('div'); div.className = 'form-group'; const valStr = String(p[k]||''); if(valStr.length > 30 || k === 'nome' || k === 'Descrição' || k.includes('URL') || k.includes('Obs')) div.style.gridColumn = "span 2"; div.innerHTML = `<label>${k}</label><input type="text" value="${p[k]!==undefined && p[k]!==null ? p[k] : ''}" data-key="${k}" class="detail-input">`; form.appendChild(div); });
-            openModal('modal-details');
+        function limparSistema() { 
+            if(confirm("ATENÇÃO: Vai apagar todos os produtos apenas Deste Navegador. A nuvem não será apagada. Continuar?")) { 
+                const configSalva = localStorage.getItem(CONFIG_KEY); localStorage.clear(); if (configSalva) localStorage.setItem(CONFIG_KEY, configSalva); location.reload(); 
+            } 
         }
-
-        function saveDetails() {
-            const p = products.find(x => x.codigo === currentEditingId); if(!p) return; let changed = false;
-            document.querySelectorAll('.detail-input').forEach(inp => { const k = inp.getAttribute('data-key'); let val = inp.value; if(['preco','preco_custo','estoque','pesoLiquido','pesoBruto','largura','altura','profundidade'].includes(k)) { const num = parseFloat(val.replace(',','.')); if(!isNaN(num)) val = num; } if(p[k] != val) { p[k] = val; changed = true; } });
-            if(changed) { p._changed = true; saveData(); renderGrid(document.getElementById('search-input').value, true); }
-            closeModal('modal-details');
-        }
-
-        function queueImageUpload() {
-            if(!currentEditingId) return; const sku = currentEditingId; const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure o Token do GitHub!");
-            const base64 = canvas.toDataURL('image/webp', 0.9).split(',')[1];
-            
-            addToQueue('image_upload', `Imagem: ${sku}`, async () => {
-                const folderPath = cfg.path || "site/img/produtos"; const fileName = sku + ".webp"; const fullPath = `${folderPath}/${fileName}`.replace('//','/'); const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${fullPath}`;
-                let sha = null; try { const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); if(check.ok) { const json = await check.json(); sha = json.sha; } } catch(e) {}
-                const body = { message: `Upload Imagem: ${sku} via PIM`, content: base64 }; if(sha) body.sha = sha;
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); if(!res.ok) throw new Error(await res.text());
-                
-                const p = products.find(x => x.codigo === sku);
-                if(p) { p.url_imagem = `../${folderPath}/${fileName}?v=${Date.now()}`; p._changed = true; saveData(); }
-            }, 3000); 
-            
-            closeModal('modal-editor'); 
-        }
-
-        function openEditor(sku) {
-            const p = products.find(x => x.codigo === sku); currentEditingId = sku; document.getElementById('file-name-preview').innerText = sku + ".webp";
-            imgOffsetX = 0; imgOffsetY = 0; document.getElementById('zoomRange').value = 1; document.getElementById('brightnessRange').value = 1; document.getElementById('sharpenRange').value = 0;
-            const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p.url_imagem || ""; img.onload = () => { loadedImage = img; drawCanvas(); openModal('modal-editor'); }; img.onerror = () => { loadedImage = null; drawCanvas(); openModal('modal-editor'); };
-        }
-
-        function setupEditorEvents() {
-            ['zoomRange','sharpenRange','brightnessRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
-            document.getElementById('fileInput').addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (evt) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = evt.target.result; document.getElementById('file-size-preview').innerText = Math.round(e.target.files[0].size/1024) + "kb"; }; reader.readAsDataURL(e.target.files[0]); } });
-            window.addEventListener('paste', e => { if(document.getElementById('modal-editor').style.display === 'none') return; const items = (e.clipboardData || e.originalEvent.clipboardData).items; for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = event.target.result; document.getElementById('file-size-preview').innerText = "Área de Transf."; }; reader.readAsDataURL(blob); } } });
-            canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
-        }
-
-        function applySharpen(ctx, w, h, mix) {
-            if (mix <= 0) return;
-            try {
-                const imageData = ctx.getImageData(0, 0, w, h); const data = imageData.data; const w4 = w * 4; const copy = new Uint8ClampedArray(data);
-                for (let y = 1; y < h - 1; y++) { for (let x = 1; x < w - 1; x++) { const i = (y * w + x) * 4; for (let c = 0; c < 3; c++) { const val = copy[i + c] * (1 + 4 * mix) + copy[i + c - 4] * (-mix) + copy[i + c + 4] * (-mix) + copy[i + c - w4] * (-mix) + copy[i + c + w4] * (-mix); data[i + c] = val; } } } ctx.putImageData(imageData, 0, 0);
-            } catch(e) {}
-        }
-
-        function drawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(loadedImage) { const zoom = parseFloat(document.getElementById('zoomRange').value); const bright = parseFloat(document.getElementById('brightnessRange').value); const sharpen = parseFloat(document.getElementById('sharpenRange').value); ctx.filter = `brightness(${bright})`; const w = loadedImage.width * zoom, h = loadedImage.height * zoom; const posX = ((canvas.width - w) / 2) + imgOffsetX; const posY = ((canvas.height - h) / 2) + imgOffsetY; ctx.drawImage(loadedImage, posX, posY, w, h); ctx.filter = 'none'; if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen); } else { ctx.font = "600 16px Inter"; ctx.fillStyle = "#94a3b8"; ctx.textAlign = "center"; ctx.fillText("Cole uma imagem ou faça upload", canvas.width/2, canvas.height/2); }
-        }
-
-        // --- SISTEMA E CONFIGURAÇÃO ---
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; if(id === 'modal-product-card') { renderGrid(document.getElementById('search-input').value, true); } }
-        function openConfigModal() { const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); document.getElementById('cfg-token').value = cfg.token||''; document.getElementById('cfg-user').value = cfg.user||''; document.getElementById('cfg-repo').value = cfg.repo||''; document.getElementById('cfg-path').value = cfg.path||''; openModal('modal-config'); }
-        function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value, path: document.getElementById('cfg-path').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeModal('modal-config'); alert("Configurações Salvas!"); queueBackupDadosJSON(); }
-        function restaurarLinksPadraoSite() { if(!confirm("Isso mudará TODAS as imagens para 'i/..site/img/produtos/CODIGO.webp'. Continuar?")) return; let count = 0; products.forEach(p => { const novoLink = `../site/img/produtos/${p.codigo}.webp?v=${Date.now()}`; if(p.url_imagem !== novoLink) { p.url_imagem = novoLink; p._changed = true; count++; } }); saveData(); renderGrid(document.getElementById('search-input').value, true); alert(`${count} produtos atualizados!`); queueBackupDadosJSON(); closeModal('modal-config'); }
-        function limparSistema() { if(confirm("ATENÇÃO: Isso vai apagar TODOS os produtos salvos localmente.\n\nDeseja continuar?")) { const configSalva = localStorage.getItem(CONFIG_KEY); localStorage.clear(); if (configSalva) localStorage.setItem(CONFIG_KEY, configSalva); alert("Sistema resetado."); window.location.reload(); } }
     </script>
 </body>
 </html>
