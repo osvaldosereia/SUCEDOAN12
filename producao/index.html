@@ -62,9 +62,23 @@
         .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: #d4d4d8; }
         .product-card.inactive { opacity: 0.5; filter: grayscale(1); }
         
-        .card-img-wrapper { aspect-ratio: 1; background: #f4f4f5; display: flex; justify-content: center; align-items: center; padding: 10px; }
+        .card-img-wrapper { aspect-ratio: 1; background: #f4f4f5; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
+        /* TAG FLUTUANTE */
+        .product-tag {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            color: #ffffff;
+            font-weight: 900;
+            padding: 4px 8px;
+            border-radius: 6px;
+            z-index: 5;
+            line-height: 1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
         .card-info { padding: 12px; display: flex; flex-direction: column; gap: 10px; text-align: center; }
         .card-title { font-size: 11px; font-weight: 800; color: var(--text-primary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .card-btn { background: #f4f4f5; border: none; border-radius: 6px; padding: 8px; font-size: 10px; font-weight: 900; color: var(--accent); cursor: pointer; width: 100%; transition: 0.2s; text-transform: uppercase; }
@@ -106,7 +120,7 @@
         .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; }
         .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
 
-        /* SLOTS DE IMAGEM: Atualizado de 5 para 3 colunas */
+        /* SLOTS DE IMAGEM */
         .image-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .img-slot { aspect-ratio: 1; border: 1px dashed var(--border); border-radius: 6px; display: flex; justify-content: center; align-items: center; background: #fafafa; cursor: pointer; overflow: hidden; position: relative; transition: 0.2s; }
         .img-slot:hover { border-color: var(--accent); }
@@ -127,7 +141,6 @@
             .sidebar { width: 100%; }
             .main-content { padding: 10px; }
             .card-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            /* Atualizado de 3 para suportar as 3 fotos no telemóvel sem falhas */
             .image-slots { grid-template-columns: repeat(3, 1fr); }
             .toolbar-group { flex-wrap: wrap; justify-content: center; }
         }
@@ -362,6 +375,10 @@
                     validade: p.validade || "",
                     estoque: p.estoque || 0,
                     descricao: p.descricao || "",
+                    // Tag Flutuante
+                    tag_texto: p.tag_texto || "",
+                    tag_cor: p.tag_cor || "#000000",
+                    tag_tamanho: p.tag_tamanho || 10,
                     // 3 Imagens
                     url_imagem: p.url_imagem || "",
                     url_imagem_2: p.url_imagem_2 || "",
@@ -508,7 +525,15 @@
                 card.onclick = () => { openEditSidebar(p.codigo); };
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 
-                card.innerHTML = `<div class="card-img-wrapper"><img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div><div class="card-info"><div class="card-title">${p.nome || 'Produto Sem Nome'}</div><button class="card-btn">EDITAR</button></div>`;
+                // Construção dinâmica da Tag
+                let htmlTag = '';
+                if (p.tag_texto && p.tag_texto.trim() !== '') {
+                    const tagCor = p.tag_cor || '#000000';
+                    const tagTam = p.tag_tamanho || 10;
+                    htmlTag = `<div class="product-tag" style="background-color: ${tagCor}; font-size: ${tagTam}px;">${p.tag_texto}</div>`;
+                }
+
+                card.innerHTML = `<div class="card-img-wrapper">${htmlTag}<img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div><div class="card-info"><div class="card-title">${p.nome || 'Produto Sem Nome'}</div><button class="card-btn">EDITAR</button></div>`;
                 gridContainer.appendChild(card);
             }); 
             lucide.createIcons();
@@ -562,6 +587,15 @@
                         <div class="input-wrapper">
                             <textarea class="form-input" placeholder="Escreva os benefícios do produto..." onchange="updateField('${p.codigo}', 'descricao', this.value)">${p.descricao || ''}</textarea>
                             <button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Review Inteligente (Google IA)"><i data-lucide="brain-circuit" size="16"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;">
+                        <label class="form-label">Tag na Imagem (Ex: 50% OFF, NOVO)</label>
+                        <div class="input-wrapper" style="align-items: center;">
+                            <input type="text" class="form-input" placeholder="Texto da Tag" value="${p.tag_texto || ''}" onchange="updateField('${p.codigo}', 'tag_texto', this.value); renderGrid();">
+                            <input type="color" class="form-input" style="width: 40px; padding: 2px; cursor:pointer;" value="${p.tag_cor || '#000000'}" title="Cor do Fundo" onchange="updateField('${p.codigo}', 'tag_cor', this.value); renderGrid();">
+                            <input type="number" class="form-input" style="width: 70px;" title="Tamanho Fonte (px)" placeholder="Tam" value="${p.tag_tamanho || 10}" min="8" max="24" onchange="updateField('${p.codigo}', 'tag_tamanho', this.value); renderGrid();">
                         </div>
                     </div>
                 </div>
