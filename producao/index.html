@@ -638,7 +638,7 @@
         function searchGoogleHD(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); }
 
         function searchAIReview(nome) {
-            if(!nome) return; const prompt = `Faça uma pesquisa na web sobre opiniões de consumidores sobre o produto "${nome}". Resuma se vale a pena comprar e características em no maximo 50 palavras.`;
+            if(!nome) return; const prompt = `Pesquise sobre o produto "${nome}" no site do fabricante, no youtube e em sites especializados. Escreva uma resenha com até 100 palavras e com 4 paragrafos. Não use listas, apenas texto, não use links.`;
             window.open(`https://www.google.com/search?q=${encodeURIComponent(prompt)}&udm=50`, '_blank');
         }
 
