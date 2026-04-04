@@ -171,9 +171,40 @@
     let bancoDeDados = []; let pedidosFila = []; let listaDeSeparacao = []; let indexAtualPicking = 0; let pedidoAtual = null; let audioCtx = null;
     let focoDisplayStr = ""; let focoLimite = 1;
 
+    // ==========================================================
+    // NOVA FUNÇÃO: Limpeza Rigorosa de Nomes
+    // ==========================================================
+    function limparTexto(texto) {
+        if (!texto) return "";
+        return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                    .replace(/[^\w\s]/gi, '') // Remove caracteres especiais
+                    .replace(/\s+/g, ' ') // Transforma vários espaços num só
+                    .trim().toUpperCase();
+    }
+
+    // ==========================================================
+    // NOVA FUNÇÃO: Extrator à Prova de Falhas para Imagens
+    // ==========================================================
+    function resolverImagemProduto(produtoDb) {
+        let sku = (produtoDb.codigo || produtoDb["Código"] || "---").toString().trim().toUpperCase();
+        if (sku === "---") return null;
+
+        let url = produtoDb.url_imagem || produtoDb["URL Imagens Externas"];
+        
+        if (url && url.length > 5) {
+            if (url.startsWith('data:image')) return url; // Base64
+            
+            let partesUrl = url.split('/');
+            let nomeArquivo = partesUrl[partesUrl.length - 1];
+            
+            return `../site/img/produtos/${nomeArquivo}`;
+        }
+        
+        return `../site/img/produtos/${sku}.webp`;
+    }
+
     window.onload = async function() {
         try { 
-            // ADICIONADO: ?t=${Date.now()} para evitar cache do navegador
             const resposta = await fetch(`../site/bancodedados.json?t=${Date.now()}`); 
             bancoDeDados = await resposta.json(); 
             
@@ -208,7 +239,7 @@
 
     function abrirFotoTelaCheia() {
         let imgSrc = document.getElementById('foco-img').src;
-        if(imgSrc && !imgSrc.includes("Sem%20Foto")) {
+        if(imgSrc && !imgSrc.includes("Sem%20Foto") && imgSrc !== 'caminho_invalido') {
             document.getElementById('img-full').src = imgSrc;
             document.getElementById('modal-foto-full').classList.remove('hidden');
         }
@@ -219,7 +250,6 @@
         inicializarAudio(); abrirTela('tela-lista-pedidos');
         let container = document.getElementById('area-lista-pedidos'); container.innerHTML = '<p style="text-align:center;">⏳ Buscando...</p>';
         try {
-            // ADICIONADO: ?t=${Date.now()} para evitar cache
             const resposta = await fetch(`../site/pedidos_fila.json?t=${Date.now()}`); 
             pedidosFila = await resposta.json(); 
             container.innerHTML = '';
@@ -243,10 +273,13 @@
         
         if(pedido.itens) {
             pedido.itens.forEach(item => { 
-                let produtoDb = bancoDeDados.find(p => 
-                    (p.descricao || p["Descrição"] || "").trim().toUpperCase() === item.nomeOriginal.trim().toUpperCase() ||
-                    (p.nome || "").trim().toUpperCase() === item.nomeOriginal.trim().toUpperCase()
-                );
+                
+                let nomeZapLimpo = limparTexto(item.nomeOriginal);
+                
+                let produtoDb = bancoDeDados.find(p => {
+                    let nomeBancoLimpo = limparTexto(p.nome || p.descricao || p["Descrição"]);
+                    return nomeBancoLimpo === nomeZapLimpo;
+                });
                 
                 if (!produtoDb) {
                     produtoDb = { codigo: "---", "Código": "---", localizacao: "SEM LOC", "Localização": "SEM LOC" };
@@ -295,29 +328,23 @@
         if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPedido(); return; }
         
         let item = listaDeSeparacao[indexAtualPicking]; 
-        let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
+        let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "---";
         
         document.getElementById('foco-pedido-info').innerText = `Pedido: ${pedidoAtual.orderNum}`; 
         document.getElementById('foco-loc').innerText = `${item.localizacao}`; 
         
         let imgTag = document.getElementById('foco-img');
         
-        // NOVO SISTEMA DE IMAGENS: Tenta usar a URL gravada pelo PIM primeiro
-        let urlOficial = item.produtoDb.url_imagem || item.produtoDb["URL Imagens Externas"];
+        let urlCorreta = resolverImagemProduto(item.produtoDb);
         
-        if (urlOficial && urlOficial.length > 5) {
-            imgTag.src = urlOficial;
-        } else if (skuItem !== "---") {
-            // Fallback: se não houver URL no banco, mas houver um SKU válido, tenta adivinhar o caminho
-            imgTag.src = `../site/img/produtos/${skuItem}.webp`;
+        if (urlCorreta) {
+            imgTag.src = urlCorreta;
         } else {
-            // Se o produto não foi encontrado (SKU "---"), força o erro para carregar o placeholder
             imgTag.src = 'caminho_invalido'; 
         }
 
-        // Tratamento de erro melhorado para evitar loop infinito
         imgTag.onerror = function() { 
-            this.onerror = null; // Remove o evento para evitar loops se o placeholder falhar
+            this.onerror = null; 
             this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; 
         };
 
