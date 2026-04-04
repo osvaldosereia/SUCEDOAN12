@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sucedoan PIM - High Density</title>
+    <title>Sucedoan PIM & picking PRO</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -11,18 +11,32 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        :root { --bg-body: #f4f4f5; --bg-card: #ffffff; --text-primary: #0f172a; --text-secondary: #64748b; --accent: #000000; --accent-hover: #27272a; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --border: #e4e4e7; --radius: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        /* =========================================================
+           CSS DO PIM (BASE)
+           ========================================================= */
+        :root {
+            --bg-body: #f4f4f5; --bg-card: #ffffff; --text-primary: #0f172a; --text-secondary: #64748b;
+            --accent: #000000; --accent-hover: #27272a; --success: #10b981; --warning: #f59e0b;
+            --danger: #ef4444; --border: #e4e4e7; --radius: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.04);
+            
+            /* Variáveis do Separador */
+            --sep-primary: #4CAF50; --sep-secondary: #2196F3; --sep-danger: #f44336; 
+            --sep-warning: #ff9800; --sep-dark: #111; --sep-light: #f4f4f4;
+        }
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
+        
         header { background: #ffffff; min-height: 54px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
         .brand { font-weight: 900; font-size: 16px; letter-spacing: -0.5px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
         #queue-status { display:none; align-items:center; gap:6px; font-size:11px; font-weight:800; background:#fffbeb; color:#b45309; padding:6px 12px; border-radius:20px; border:1px solid #fde68a; }
         .toolbar { padding: 12px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
         .toolbar-group { display: flex; gap: 8px; align-items: center; }
+        
         .search-container { position: relative; width: 280px; }
         .search-input { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 12px; font-weight: 600; outline: none; box-shadow: var(--shadow); transition: 0.2s; }
         .search-input:focus { border-color: var(--accent); }
         .search-icon { position: absolute; left: 12px; top: 11px; color: #a1a1aa; }
+        
         .nav-btn { background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; font-size: 11px; box-shadow: var(--shadow); }
         .nav-btn:hover:not(:disabled) { background: #f4f4f5; }
         .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
@@ -30,37 +44,51 @@
         .nav-btn.warning { background: var(--warning); color: white; border-color: var(--warning); }
         .nav-btn.sync-btn { background: #eff6ff; color: #1e3a8a; border-color: #bfdbfe; }
         .nav-btn.sync-btn:hover:not(:disabled) { background: #dbeafe; }
+        .nav-btn.success-btn { background: var(--success); color: white; border-color: var(--success); }
+        .nav-btn.success-btn:hover:not(:disabled) { background: #059669; }
         .nav-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { animation: spin 2s linear infinite; }
+
         .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+        
         .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; transition: 0.2s; cursor: pointer; }
         .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: #d4d4d8; }
         .product-card.inactive { opacity: 0.5; filter: grayscale(1); }
+        
         .card-img-wrapper { aspect-ratio: 1; background: #f4f4f5; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        
         .tags-container { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 5; align-items: flex-start; }
         .product-tag { font-weight: 600; padding: 4px 8px; border-radius: 6px; line-height: 1.2; box-shadow: 0 2px 5px rgba(0,0,0,0.2); word-break: break-word; }
+
         .card-info { padding: 12px; display: flex; flex-direction: column; gap: 10px; text-align: center; }
         .card-title { font-size: 11px; font-weight: 800; color: var(--text-primary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .card-btn { background: #f4f4f5; border: none; border-radius: 6px; padding: 8px; font-size: 10px; font-weight: 900; color: var(--accent); cursor: pointer; width: 100%; transition: 0.2s; text-transform: uppercase; }
         .card-btn:hover { background: var(--accent); color: white; }
+
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
         .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
         .sidebar.open { transform: translateX(0); }
+        
         #edit-sidebar { z-index: 1001; width: 480px; }
         #editor-sidebar { z-index: 1002; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1003; width: 380px; }
         #whatsapp-sidebar { z-index: 1004; width: 420px; } 
+        
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
         .btn-icon { background: #f4f4f5; border: 1px solid var(--border); cursor: pointer; color: var(--text-primary); display: flex; justify-content: center; align-items: center; width: 28px; height: 28px; border-radius: 6px; transition: 0.2s; flex-shrink: 0; }
         .btn-icon:hover { background: var(--accent); color: white; border-color: var(--accent); }
+        
         .sidebar-body { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 20px; }
         .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: #ffffff; }
+
         .form-section { display: flex; flex-direction: column; gap: 12px; }
         .section-title { font-size: 10px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         .form-group.full { grid-column: span 2; }
@@ -72,19 +100,76 @@
         textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
         .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; }
         .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
+
         .image-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .img-slot { aspect-ratio: 1; border: 1px dashed var(--border); border-radius: 6px; display: flex; justify-content: center; align-items: center; background: #fafafa; cursor: pointer; overflow: hidden; position: relative; transition: 0.2s; }
         .img-slot:hover { border-color: var(--accent); }
         .img-slot img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .img-slot .slot-num { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: white; font-size: 8px; padding: 2px 4px; border-radius: 4px; font-weight: 900; }
+
         canvas { background: #fafafa; width: 100%; aspect-ratio: 1; display: block; cursor: grab; border-bottom: 1px solid var(--border); }
         .editor-controls { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         .slider-group { display: flex; align-items: center; gap: 12px; }
         .slider-group label { width: 16px; color: var(--text-secondary); display: flex; justify-content: center;}
         input[type=range] { flex-grow: 1; accent-color: var(--accent); }
-        .cartao-pedido { background-color: #fafafa; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        .cartao-info { display: flex; flex-direction: column; gap: 4px; }
+
+        .cartao-pedido { background-color: #ffffff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: stretch; box-shadow: 0 2px 5px rgba(0,0,0,0.02); gap: 10px; }
+        .cartao-info { display: flex; flex-direction: column; gap: 4px; flex-grow:1; }
         .cartao-info strong { font-size: 12px; color: var(--accent); }
+        .cartao-acoes { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; width: 110px;}
+        
+        /* =========================================================
+           CSS DO SEPARADOR DE PEDIDOS (MODO FOCO INTEGRADO)
+           ========================================================= */
+        #separador-overlay { position: fixed; inset: 0; background: var(--bg-body); z-index: 2000; display: none; flex-direction: column; overflow: hidden; }
+        
+        .sep-btn { border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; }
+        .sep-btn:active { transform: scale(0.96); }
+        .sep-btn-primary { background-color: var(--sep-primary); } .sep-btn-secondary { background-color: var(--sep-secondary); }
+        .sep-btn-danger { background-color: var(--sep-danger); } .sep-btn-print { background-color: #000; }
+        
+        .sep-container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100vh; overflow-y: auto; box-sizing: border-box; width: 100%; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
+        
+        .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 10px 10px 0px 10px; box-sizing: border-box; background: #fff; max-width: 600px; margin: 0 auto; width:100%; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
+        
+        .foco-topo-split { display: flex; gap: 10px; height: 20vh; min-height: 120px; margin-bottom: 8px; flex-shrink: 0; }
+        .foco-img-container { flex: 1; border: 2px solid #ddd; border-radius: 12px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; padding: 5px; }
+        .foco-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        
+        .foco-info-container { flex: 1; background: var(--sep-dark); color: white; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .foco-pedido-info { font-size: 13px; color: #ccc; font-weight: bold; }
+        .foco-loc { color: var(--sep-warning); font-size: 34px; font-weight: 900; letter-spacing: 1px; line-height: 1; margin: 6px 0; }
+        .foco-qtd-box { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 8px; font-size: 12px; }
+        .foco-qtd-box span { font-size: 18px; font-weight: bold; color: var(--sep-secondary); }
+
+        .foco-nome { font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 4px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 5px; flex-shrink: 0; color:var(--accent); }
+        .foco-sku { font-size: 20px; color: #b71c1c; text-align: center; margin-bottom: 6px; font-weight: 900; flex-shrink: 0; background: #ffcdd2; border: 2px dashed #f44336; border-radius: 8px; padding: 4px; letter-spacing: 1px; }
+        
+        .ticks-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; flex-shrink: 0; }
+        .tick-box { width: 22px; height: 22px; border-radius: 4px; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: transparent; border: 1px solid #ccc; }
+        .tick-box.active { background-color: var(--sep-primary); color: white; border-color: var(--sep-primary); }
+
+        .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; } 
+        .botoes-acao-foco { display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0; }
+        .btn-acao { flex: 1; padding: 10px 4px; font-size: 13px; font-weight: bold; border-radius: 8px; color: white; border: none; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; line-height: 1.2;}
+        .btn-acao-voltar { background-color: #607d8b; }
+        .btn-acao-pular { background-color: #ff9800; color: #000; }
+        .btn-acao-inicio { background-color: #d32f2f; }
+
+        .display-teclado { text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; color: var(--sep-secondary); height: 32px; margin-bottom: 4px; flex-shrink: 0; }
+        .display-teclado.erro { color: var(--sep-danger); }
+        
+        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 5px; flex: 1; min-height: 0; padding-bottom: 25px; }
+        .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 22px; font-weight: 900; border-radius: 8px; margin: 0; box-shadow: 0 2px 0 #ccc; height: 100%; max-height: 55px; display: flex; align-items: center; justify-content: center; }
+        .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
+
+        #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .alerta-erro { background-color: var(--sep-danger); } .alerta-sucesso { background-color: var(--sep-primary); } .alerta-aviso { background-color: var(--sep-warning); color: #000; }
+
+        .checklist-box { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 15px; margin-top: 15px; max-height: 40vh; overflow-y: auto; text-align: left; }
+        .checklist-item { border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; color:var(--accent); }
+        .checklist-item:last-child { border-bottom: none; }
+
         @media (max-width: 768px) {
             header { padding: 10px; flex-wrap: wrap; }
             .toolbar { padding: 10px; flex-direction: column; align-items: stretch; }
@@ -106,11 +191,20 @@
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
 
+    <div id="alerta-customizado">Mensagem</div>
+
+    <div id="modal-foto-full" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; display:flex; flex-direction:column; padding:15px; box-sizing:border-box;">
+        <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+            <img id="img-full" src="" style="max-width:100%; max-height:100%; object-fit:contain;">
+        </div>
+        <button class="sep-btn sep-btn-danger" style="padding:25px; font-size:22px; margin-top:15px; font-weight:900;" onclick="fecharFotoTelaCheia()">❌ FECHAR FOTO</button>
+    </div>
+
     <header>
-        <div class="brand"><i data-lucide="package-search" size="20"></i> SUCEDOAN PIM</div>
+        <div class="brand"><i data-lucide="package-search" size="20"></i> SUCEDOAN PIM & PICKING</div>
         <div id="queue-status"></div>
         <button class="nav-btn primary" onclick="openSidebar('whatsapp-sidebar')"><i data-lucide="shopping-cart" size="14"></i> PEDIDOS WHATSAPP</button>
-        <button class="nav-btn" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES API</button>
+        <button class="nav-btn" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES</button>
     </header>
 
     <div class="toolbar">
@@ -146,7 +240,7 @@
 
     <div class="sidebar" id="whatsapp-sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title">Fila de Pedidos</div>
+            <div class="sidebar-title">Fila de Pedidos & Separação</div>
             <button class="btn-icon" onclick="closeSidebar('whatsapp-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
         <div class="sidebar-body" style="gap:16px;">
@@ -157,24 +251,12 @@
                     <i data-lucide="arrow-down-to-line" size="14"></i> TRADUZIR PEDIDO
                 </button>
             </div>
-            <div class="form-section">
-                <div class="section-title">Pedidos Pendentes</div>
+            
+            <div class="form-section" style="border-top: 1px solid var(--border); padding-top: 15px;">
+                <div class="section-title">Fila de Separação (Picking)</div>
                 <div id="containerPedidosCards">
                     <p class="texto-vazio" style="font-size:11px; color:var(--text-secondary); text-align:center;">Nenhum pedido processado ainda.</p>
                 </div>
-            </div>
-            
-            <div class="form-section" style="border-top: 1px solid var(--border); padding-top: 15px;">
-                <div class="section-title">Sincronização Manual (Fila GitHub)</div>
-                <button id="btnSyncFila" class="nav-btn sync-btn" style="width:100%; justify-content:center; margin-bottom:5px;" onclick="uploadFilaPedidosGithub(this)">
-                    <i data-lucide="upload-cloud" size="14"></i> ATUALIZAR PEDIDOS_FILA.JSON
-                </button>
-                <button id="btnSyncBD" class="nav-btn sync-btn" style="width:100%; justify-content:center; margin-bottom:5px;" onclick="uploadBancodedados(this)">
-                    <i data-lucide="database" size="14"></i> ATUALIZAR ESTOQUE (BANCODEDADOS)
-                </button>
-                <button id="btnSyncVitrine" class="nav-btn sync-btn" style="width:100%; justify-content:center;" onclick="uploadProdutosJson(this)">
-                    <i data-lucide="layout-grid" size="14"></i> ATUALIZAR ESTOQUE (PRODUTOS)
-                </button>
             </div>
         </div>
         <div class="sidebar-footer" style="flex-direction:column; gap:8px;">
@@ -182,7 +264,7 @@
                 <i data-lucide="cloud-download" size="14"></i> PUXAR FILA DA NUVEM
             </button>
             <button class="nav-btn" style="width:100%; height:40px; justify-content:center; background:var(--accent); color:white;" onclick="darBaixaEstoqueMaster()">
-                <i data-lucide="package-minus" size="14"></i> DAR BAIXA NO ESTOQUE
+                <i data-lucide="package-minus" size="14"></i> DAR BAIXA GERAL (BULK)
             </button>
         </div>
     </div>
@@ -233,13 +315,15 @@
                 <div class="form-group"><label class="form-label">Repositório</label><input type="text" id="cfg-repo" class="form-input"></div>
                 <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="saveConfig()">GUARDAR CREDENCIAIS</button>
             </div>
-            
             <div class="form-section" style="margin-top:10px;">
                 <div class="section-title">Manutenção do Sistema</div>
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="14"></i> DESCARREGAR DA NUVEM</button>
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="exportarCSVCompleto()"><i data-lucide="file-down" size="14"></i> EXPORTAR CSV BLING</button>
                 <input type="file" id="csv-file-append" accept=".csv" style="display:none">
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="document.getElementById('csv-file-append').click()"><i data-lucide="file-up" size="14"></i> IMPORTAR CSV</button>
+                
+                <div class="section-title" style="margin-top:15px;">Ações Manuais GitHub</div>
+                <button id="btnSyncFila" class="nav-btn sync-btn" style="height:36px; justify-content:center;" onclick="uploadFilaPedidosGithub(this)"><i data-lucide="upload-cloud" size="14"></i> FORÇAR PEDIDOS_FILA</button>
             </div>
         </div>
         <div class="sidebar-footer">
@@ -247,18 +331,94 @@
         </div>
     </div>
 
+    <div id="separador-overlay">
+        
+        <div class="tela-foco hidden" id="tela-separacao-foco">
+            <div class="foco-topo-split">
+                <div class="foco-img-container" onclick="abrirFotoTelaCheia()"><div class="icone-lupa">🔍</div><img id="foco-img" src=""></div>
+                <div class="foco-info-container">
+                    <div class="foco-pedido-info" id="foco-pedido-info">Ped: 000</div>
+                    <div class="foco-loc" id="foco-loc">A1</div>
+                    <div class="foco-qtd-box">Faltam <span id="span-faltam">0</span>/<span id="span-total">0</span></div>
+                </div>
+            </div>
+
+            <div class="foco-nome" id="foco-nome">Nome do Produto</div>
+            <div class="foco-sku" id="foco-sku">SKU: ---</div>
+            <div class="ticks-container" id="foco-ticks"></div>
+            
+            <div class="area-interacao">
+                <div class="botoes-acao-foco">
+                    <button class="btn-acao btn-acao-voltar" onclick="voltarProdutoAnterior()">⬅️<br>Anterior</button>
+                    <button class="btn-acao btn-acao-pular" onclick="pularProduto()">⏭️<br>Pular</button>
+                    <button class="btn-acao btn-acao-inicio" onclick="fecharSeparador()">🏠<br>Sair</button>
+                </div>
+
+                <div id="bloco-teclado-foco">
+                    <div id="foco-teclado-titulo" style="text-align:center; font-size:13px; font-weight:bold; color:#555; margin-bottom: 4px;">Digite o ÚLTIMO dígito do EAN</div>
+                    <div id="display-foco" class="display-teclado"></div>
+                    <div class="grid-teclado">
+                        <div class="btn-num" onclick="addFoco(1)">1</div><div class="btn-num" onclick="addFoco(2)">2</div><div class="btn-num" onclick="addFoco(3)">3</div>
+                        <div class="btn-num" onclick="addFoco(4)">4</div><div class="btn-num" onclick="addFoco(5)">5</div><div class="btn-num" onclick="addFoco(6)">6</div>
+                        <div class="btn-num" onclick="addFoco(7)">7</div><div class="btn-num" onclick="addFoco(8)">8</div><div class="btn-num" onclick="addFoco(9)">9</div>
+                        <div style="visibility:hidden;"></div><div class="btn-num" onclick="addFoco(0)">0</div><div style="visibility:hidden;"></div> 
+                    </div>
+                </div>
+
+                <div id="bloco-add-foco" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding-bottom:20px;">
+                    <div style="color:green; font-weight:900; margin-bottom:15px; font-size:18px;">✅ PRODUTO CORRETO!</div>
+                    <button class="sep-btn sep-btn-secondary" style="width:100%; flex:1; font-size:26px; border-radius:16px; font-weight:900; box-shadow: 0 6px 0 #1976D2; margin-bottom: 10px; max-height:120px;" onclick="registrarUnidadeFoco()">➕ ADICIONAR</button>
+                </div>
+
+                <div id="bloco-confirmacao-item" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:#fff3e0; border:3px solid var(--warning); border-radius:12px; padding:15px; box-sizing:border-box; margin-bottom:20px;">
+                    <h2 style="color:var(--sep-warning); font-size:22px; margin-bottom:10px;">⚠️ ATENÇÃO</h2>
+                    <p style="text-align:center; font-size:16px; font-weight:bold; color:#333; margin-bottom: 15px;">Você separou realmente <br><span style="font-size:38px; color:var(--sep-primary); font-weight:900;" id="conf-qtd">0</span><br> unidades?</p>
+                    <button class="sep-btn sep-btn-primary" style="width:100%; flex:1; font-size:18px; box-shadow: 0 5px 0 #388E3C; max-height:80px;" onclick="confirmarFimItem()">✅ SIM, CONFERIDO</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sep-container hidden" id="tela-conclusao">
+            <h2 style="color:var(--sep-primary); font-size: 28px;">🎉 Pedido Separado!</h2>
+            <p style="text-align:center; color:#666;">Confira a lista abaixo antes de imprimir.</p>
+            
+            <div class="checklist-box" id="area-checklist"></div>
+
+            <button class="sep-btn sep-btn-print" style="padding: 20px; font-size: 16px; width:100%; margin-top:20px;" onclick="imprimirEtiquetaBluetooth()">🖨️ Imprimir Etiqueta (48mm)</button>
+            <button class="nav-btn success-btn" style="padding: 20px; font-size: 16px; width:100%; margin-top:15px; justify-content:center;" onclick="finalizarEDarBaixaPedidoAtual()">📦 CONCLUIR E DAR BAIXA NO ESTOQUE</button>
+            <button class="sep-btn sep-btn-danger" style="padding: 15px; font-size: 14px; width:100%; margin-top:15px;" onclick="fecharSeparador()">Cancelar (Sair sem dar Baixa)</button>
+        </div>
+    </div>
+
+
     <script>
+        // ==========================================================
+        // VARIÁVEIS GLOBAIS DO PIM
+        // ==========================================================
         let products = [];
         let currentEditingSku = null;
         let currentImageSlot = 1; 
         let imageQueue = [];
         let filaDePedidos = []; 
 
+        // ==========================================================
+        // VARIÁVEIS DO SEPARADOR DE PEDIDOS
+        // ==========================================================
+        let listaDeSeparacao = []; 
+        let indexAtualPicking = 0; 
+        let pedidoAtualParaSeparacao = null; 
+        let audioCtx = null;
+        let focoDisplayStr = ""; 
+        let focoLimite = 1;
+
+        // ==========================================================
+        // GESTOR DE COMUNICAÇÃO COM GITHUB (O CÉREBRO DA API)
+        // ==========================================================
         const GitHubAPI = {
             getConfig: function() {
                 const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
                 if (!cfg || !cfg.token || !cfg.user || !cfg.repo) {
-                    alert("Atenção: Configure as credenciais da API na aba 'Definições API' primeiro!");
+                    alert("Atenção: Configure as credenciais da API na aba 'Definições' primeiro!");
                     return null;
                 }
                 return cfg;
@@ -291,6 +451,7 @@
             }
         };
 
+        // FILA DE TAREFAS OTIMIZADA PARA O GITHUB
         let githubTasksQueue = [];
         let isProcessingTasks = false;
 
@@ -322,29 +483,31 @@
             finally { task.btn.innerHTML = task.originalHTML; task.btn.disabled = false; lucide.createIcons(); setTimeout(() => { processGitHubQueue(); }, 1000); }
         }
 
+        // ==========================================================
+        // FUNÇÕES GERAIS DE SINCRONIZAÇÃO
+        // ==========================================================
         function sanitizeProductsForExport(prods) {
             return prods.map(p => {
                 let cleanP = { ...p };
                 [1, 2, 3].forEach(i => {
                     const prop = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
                     if (cleanP[prop] && cleanP[prop].startsWith('data:image')) {
-                        const sufix = i === 1 ? '' : `_${i}`;
-                        cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
+                        const sufix = i === 1 ? '' : `_${i}`; cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
                     }
                 });
                 return cleanP;
             });
         }
 
-        function uploadBancodedados(btn) { enqueueGitHubTask('Base de Dados Completa', async () => { const produtosLimpos = sanitizeProductsForExport(products); await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Atualização da Base de Dados`); }, btn); }
+        function uploadBancodedados(btn) { enqueueGitHubTask('Base Completa', async () => { const produtosLimpos = sanitizeProductsForExport(products); await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`); }, btn); }
 
         function uploadProdutosJson(btn) {
-            enqueueGitHubTask('Vitrine (produtos.json)', async () => {
+            enqueueGitHubTask('Vitrine do Site', async () => {
                 const produtosLimpos = sanitizeProductsForExport(products);
                 const produtosResumidos = produtosLimpos.map(p => ({
                     id: p.id || p['ID'] || Date.now(), nome: p.nome || "", preco: p.preco || 0, codigo: p.codigo || "", situacao: p.situacao || "A", categoria: p.categoria || "", validade: p.validade || "", estoque: p.estoque || 0, descricao: p.descricao || "", tags: p.tags || [], url_imagem: p.url_imagem || "", url_imagem_2: p.url_imagem_2 || "", url_imagem_3: p.url_imagem_3 || "", link_video: p.link_video || "", link_video_2: p.link_video_2 || "", link_video_3: p.link_video_3 || "", link_video_4: p.link_video_4 || "", link_video_5: p.link_video_5 || "", link_video_6: p.link_video_6 || "", link_video_7: p.link_video_7 || "", link_video_8: p.link_video_8 || "", link_video_9: p.link_video_9 || "", link_video_10: p.link_video_10 || ""
                 }));
-                await GitHubAPI.saveFile(`site/produtos.json`, produtosResumidos, `PIM Sync: Atualização da Vitrine`);
+                await GitHubAPI.saveFile(`site/produtos.json`, produtosResumidos, `PIM Sync: Vitrine Atualizada`);
             }, btn);
         }
 
@@ -366,7 +529,7 @@
 
         function uploadFilaPedidosGithub(btn = null) {
             const targetBtn = btn || document.createElement('button'); 
-            enqueueGitHubTask('Forçar Sincronização da Fila', async () => { await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila de Pedidos Forçada`); }, targetBtn);
+            enqueueGitHubTask('Sincronizar Fila', async () => { await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); }, targetBtn);
         }
 
         async function baixarFilaNuvem() {
@@ -389,11 +552,10 @@
         }
 
         // ==========================================================
-        // FUNÇÃO DE LIMPEZA OTIMIZADA PARA REMOVER "(OFERTA)"
+        // WHATSAPP E GESTÃO DE FILA (COM INTELIGÊNCIA)
         // ==========================================================
         function limparTexto(texto) {
             if (!texto) return "";
-            // Tira as palavras "Oferta" ou "(Oferta)" que os catálogos do WhatsApp colocam
             let textoLimpo = texto.replace(/\(oferta\)/gi, '').replace(/oferta/gi, '');
             return textoLimpo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
         }
@@ -418,45 +580,29 @@
                     const partes = textoLinha.split('x '); 
                     const qtd = parseInt(partes[0].trim());
                     const nomeProduto = partes.slice(1).join('x ').trim();
-                    
                     let nomeZapLimpo = limparTexto(nomeProduto);
                     
-                    // Busca 1: Tenta o "Match Perfeito" (Nome Exato após limpar)
-                    let produtoEncontrado = products.find(p => {
-                        let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || "");
-                        return nomeBancoLimpo === nomeZapLimpo;
-                    });
-                    
-                    // Busca 2: Match Parcial / Flexível. Se não encontrou no nome exato, verifica se uma string está dentro da outra.
-                    // Exemplo: WhatsApp ("Sabonete Rexona") e Banco ("Sabonete Rexona Branco 90g")
+                    let produtoEncontrado = products.find(p => { let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || ""); return nomeBancoLimpo === nomeZapLimpo; });
                     if (!produtoEncontrado) {
                         produtoEncontrado = products.find(p => {
                             let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || "");
-                            if (nomeZapLimpo.length > 5 && nomeBancoLimpo.length > 5) {
-                                return nomeBancoLimpo.includes(nomeZapLimpo) || nomeZapLimpo.includes(nomeBancoLimpo);
-                            }
+                            if (nomeZapLimpo.length > 5 && nomeBancoLimpo.length > 5) { return nomeBancoLimpo.includes(nomeZapLimpo) || nomeZapLimpo.includes(nomeBancoLimpo); }
                             return false;
                         });
                     }
                     
-                    let skuFinal = produtoEncontrado ? produtoEncontrado.codigo : "---";
-                    let imagemFinal = produtoEncontrado ? (produtoEncontrado.url_imagem || "") : "";
-
                     novoPedido.itens.push({ 
                         qtd: qtd, 
                         nomeOriginal: nomeProduto,
-                        sku: skuFinal,           
-                        imagem: imagemFinal      
+                        sku: produtoEncontrado ? produtoEncontrado.codigo : "---",           
+                        imagem: produtoEncontrado ? (produtoEncontrado.url_imagem || "") : ""      
                     });
                 } else if (textoLinha === '' || textoLinha.includes('------')) { lendoItens = false; }
             });
 
-            filaDePedidos.push(novoPedido);
-            renderizarCartoes();
-            document.getElementById('textoPedidoWhatsapp').value = "";
-
+            filaDePedidos.push(novoPedido); renderizarCartoes(); document.getElementById('textoPedidoWhatsapp').value = "";
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
-            enqueueGitHubTask('Adicionar Pedido', async () => {
+            enqueueGitHubTask('Gravar Pedido Novo', async () => {
                 let filaRemota = await getFilaRemota();
                 if (!filaRemota.find(p => p.id === novoPedido.id)) { filaRemota.push(novoPedido); }
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
@@ -474,10 +620,17 @@
                     <div class="cartao-info">
                         <strong>Pedido ${pedido.orderNum || '#...'}</strong>
                         <span>👤 ${pedido.cliente || 'Desconhecido'}</span>
-                        <span>📅 Entrega: ${pedido.entrega || 'N/A'}</span>
-                        <span>💰 Total: R$ ${pedido.valorTotal || '0,00'}</span>
+                        <span>📦 ${pedido.itens ? pedido.itens.length : 0} Produtos</span>
+                        <span>💰 R$ ${pedido.valorTotal || '0,00'}</span>
                     </div>
-                    <button class="btn-apagar" onclick="apagarPedido(${pedido.id})"><i data-lucide="trash-2" size="14"></i></button>
+                    <div class="cartao-acoes">
+                        <button class="nav-btn success-btn" style="width:100%; justify-content:center; padding:10px 0;" onclick="abrirSeparador(${pedido.id})">
+                            <i data-lucide="package-check" size="14"></i> SEPARAR
+                        </button>
+                        <button class="nav-btn" style="width:100%; justify-content:center; color:var(--danger); border-color:#fecaca;" onclick="apagarPedido(${pedido.id})">
+                            <i data-lucide="trash-2" size="14"></i> APAGAR
+                        </button>
+                    </div>
                 `;
                 container.appendChild(cartao);
             });
@@ -496,49 +649,256 @@
             }, btn);
         }
 
+        // DAR BAIXA EM MASSA (Caso o utilizador queira)
         async function darBaixaEstoqueMaster() {
-            if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) { return alert("Não há pedidos PENDENTES na fila para dar baixa."); }
+            if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) { return alert("Não há pedidos PENDENTES na fila."); }
+            if(!confirm("Atenção: Isto vai dar baixa em TODOS os pedidos pendentes sem separar. Continuar?")) return;
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
-            enqueueGitHubTask('Dar Baixa e Limpar', async () => {
+            enqueueGitHubTask('Baixa Geral e Limpar', async () => {
                 let filaRemota = await getFilaRemota();
                 let pendentes = filaRemota.filter(p => p.status === "PENDENTE");
-                if(pendentes.length === 0) throw new Error("A nuvem não tem pedidos PENDENTES. Tente puxar da nuvem primeiro.");
+                if(pendentes.length === 0) throw new Error("A nuvem não tem pedidos PENDENTES.");
 
                 let itensVendidos = {}; let countBaixas = 0;
                 filaRemota.forEach(pedido => {
                     if (pedido.status === "PENDENTE") {
                         let listaItens = pedido.items || pedido.itens; 
                         if (listaItens) {
-                            listaItens.forEach(item => {
-                                const skuOrNome = item.sku && item.sku !== "---" ? item.sku : item.nomeOriginal;
-                                itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + item.qtd;
-                            });
+                            listaItens.forEach(item => { const skuOrNome = item.sku && item.sku !== "---" ? item.sku : item.nomeOriginal; itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + item.qtd; });
                         }
                         pedido.status = "CONCLUIDO"; countBaixas++;
                     }
                 });
 
                 if(countBaixas === 0) throw new Error("Nenhum item processado.");
-
-                let mudouAlgoLocalmente = false;
-                for (const [idVendido, qtdVendida] of Object.entries(itensVendidos)) {
-                    let p = products.find(prod => prod.codigo === idVendido || prod.nome === idVendido);
-                    if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgoLocalmente = true; }
-                }
+                let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
 
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Efetuada`);
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
-                if(mudouAlgoLocalmente) {
-                    await saveDataLocally(); renderGrid(document.getElementById('search-input').value);
-                    uploadBancodedados(document.getElementById('btnSyncBD'));      
-                    uploadProdutosJson(document.getElementById('btnSyncVitrine')); 
-                }
-                renderizarCartoes(); alert("Sucesso! Baixa no estoque efetuada.");
+                if(mudouAlgoLocalmente) { await saveDataLocally(); renderGrid(document.getElementById('search-input').value); uploadBancodedados(document.getElementById('btnSyncBD')); }
+                renderizarCartoes(); alert("Sucesso! Baixa geral no estoque efetuada.");
             }, btn);
         }
 
+        // Função utilitária para reduzir stock
+        function processarBaixaEstoqueLocal(itensVendidosMap) {
+            let mudouAlgo = false;
+            for (const [idVendido, qtdVendida] of Object.entries(itensVendidosMap)) {
+                let p = products.find(prod => prod.codigo === idVendido || prod.nome === idVendido);
+                if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgo = true; }
+            }
+            return mudouAlgo;
+        }
+
+        // ==========================================================
+        // MODO DE SEPARAÇÃO (PICKING / FULLSCREEN) INTEGRADO AO PIM
+        // ==========================================================
+
+        function mostrarAlerta(msg, tipo = 'sucesso') { 
+            let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
+            if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
+            a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 2000); 
+        }
+        
+        function inicializarAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        
+        function tocarBipe(tipo) { 
+            if (!audioCtx) return; try { 
+                const osc = audioCtx.createOscillator(); const ganho = audioCtx.createGain(); osc.connect(ganho); ganho.connect(audioCtx.destination); 
+                if(tipo === 'sucesso'){ osc.type = 'sine'; osc.frequency.setValueAtTime(900, audioCtx.currentTime); ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+                else { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(250, audioCtx.currentTime); ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.5); } 
+            } catch(e){} 
+        }
+
+        function abrirFotoTelaCheia() {
+            let imgSrc = document.getElementById('foco-img').src;
+            if(imgSrc && !imgSrc.includes("Sem%20Foto") && imgSrc !== 'caminho_invalido') {
+                document.getElementById('img-full').src = imgSrc;
+                document.getElementById('modal-foto-full').classList.remove('hidden');
+            }
+        }
+        function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
+
+        function abrirSeparador(pedidoId) {
+            const pedido = filaDePedidos.find(p => p.id === pedidoId);
+            if (!pedido) return alert("Erro: Pedido não encontrado.");
+            
+            inicializarAudio();
+            closeAllSidebars(); // Fecha as barras do PIM
+            
+            // Abre o Overlay do Separador
+            document.getElementById('separador-overlay').style.display = 'flex';
+            
+            // Lógica de Construção da Lista
+            listaDeSeparacao = []; pedidoAtualParaSeparacao = pedido; 
+            
+            if(pedido.itens) {
+                pedido.itens.forEach(item => { 
+                    let skuRecebido = item.sku || "---";
+                    // Busca a referência diretamente no PIM na memória (Super Rápido!)
+                    let produtoDb = products.find(p => (p.codigo || "").toString().trim().toUpperCase() === skuRecebido );
+                    
+                    if (produtoDb) {
+                        if (item.imagem && item.imagem.length > 5) { produtoDb.url_imagem = item.imagem; }
+                    } else {
+                        produtoDb = { codigo: skuRecebido, localizacao: "SEM LOC", url_imagem: item.imagem };
+                    }
+
+                    listaDeSeparacao.push({ 
+                        quantidadeTotal: item.qtd, unidadesLidas: 0, nomePedido: item.nomeOriginal, produtoDb: produtoDb, 
+                        imagemOriginalDoPedido: item.imagem, localizacao: produtoDb.localizacao || "SEM LOC", status: 'pendente' 
+                    }); 
+                });
+            }
+            
+            listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
+            indexAtualPicking = 0; 
+            
+            document.getElementById('tela-separacao-foco').classList.remove('hidden');
+            document.getElementById('tela-conclusao').classList.add('hidden');
+            renderizarItemFoco();
+        }
+
+        function fecharSeparador() {
+            document.getElementById('separador-overlay').style.display = 'none';
+            openSidebar('whatsapp-sidebar'); // Volta para a aba de pedidos
+        }
+
+        function resolverImagemProdutoSep(produtoDb, imagemFallback) {
+            let sku = (produtoDb.codigo || "---").toString().trim().toUpperCase();
+            let url = imagemFallback || produtoDb.url_imagem;
+            if (url && url.length > 5) {
+                if (url.startsWith('data:image')) return url; 
+                let partesUrl = url.split('/'); let nomeArquivo = partesUrl[partesUrl.length - 1];
+                return `../site/img/produtos/${nomeArquivo}`;
+            }
+            if (sku !== "---") return `../site/img/produtos/${sku}.webp`;
+            return null;
+        }
+
+        function renderizarItemFoco() {
+            if (indexAtualPicking >= listaDeSeparacao.length) { finalizarModoPicking(); return; }
+            
+            let item = listaDeSeparacao[indexAtualPicking]; 
+            let skuItem = item.produtoDb.codigo || "---";
+            
+            document.getElementById('foco-pedido-info').innerText = `Pedido: ${pedidoAtualParaSeparacao.orderNum}`; 
+            document.getElementById('foco-loc').innerText = `${item.localizacao}`; 
+            
+            let imgTag = document.getElementById('foco-img');
+            let urlCorreta = resolverImagemProdutoSep(item.produtoDb, item.imagemOriginalDoPedido);
+            if (urlCorreta) { imgTag.src = urlCorreta; } else { imgTag.src = 'caminho_invalido'; }
+            imgTag.onerror = function() { this.onerror = null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+
+            document.getElementById('foco-nome').innerText = item.nomePedido; 
+            document.getElementById('foco-sku').innerText = `SKU: ${skuItem}`;
+            
+            let faltam = item.quantidadeTotal - item.unidadesLidas;
+            document.getElementById('span-faltam').innerText = faltam; document.getElementById('span-total').innerText = item.quantidadeTotal;
+            
+            let cTicks = document.getElementById('foco-ticks'); cTicks.innerHTML = '';
+            for(let i=0; i<item.quantidadeTotal; i++) { 
+                let tick = document.createElement('div'); tick.className = 'tick-box'; 
+                if(i<item.unidadesLidas) { tick.classList.add('active'); tick.innerHTML='✓'; } 
+                cTicks.appendChild(tick); 
+            }
+            
+            document.getElementById('bloco-teclado-foco').classList.add('hidden');
+            document.getElementById('bloco-add-foco').classList.add('hidden');
+            document.getElementById('bloco-confirmacao-item').classList.add('hidden');
+
+            if (item.unidadesLidas === 0) { document.getElementById('bloco-teclado-foco').classList.remove('hidden'); resetarTecladoFoco(); 
+            } else if (item.unidadesLidas < item.quantidadeTotal) { document.getElementById('bloco-add-foco').classList.remove('hidden'); 
+            } else { document.getElementById('conf-qtd').innerText = item.quantidadeTotal; document.getElementById('bloco-confirmacao-item').classList.remove('hidden'); tocarBipe('sucesso'); }
+        }
+
+        function voltarProdutoAnterior() { if (indexAtualPicking > 0) { indexAtualPicking--; listaDeSeparacao[indexAtualPicking].unidadesLidas = 0; listaDeSeparacao[indexAtualPicking].status = 'pendente'; renderizarItemFoco(); } else { mostrarAlerta("Este já é o primeiro produto!", "aviso"); } }
+        function pularProduto() { if (indexAtualPicking < listaDeSeparacao.length - 1) { let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0]; itemAtual.unidadesLidas = 0; listaDeSeparacao.push(itemAtual); mostrarAlerta("Produto enviado para o final da lista.", "aviso"); renderizarItemFoco(); } else { mostrarAlerta("Este é o último produto restante!", "aviso"); } }
+
+        function resetarTecladoFoco() { focoDisplayStr = ""; document.getElementById('foco-teclado-titulo').innerText = "DIGITE O ÚLTIMO DÍGITO DO EAN"; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }
+        function addFoco(num) { if(focoDisplayStr.length < focoLimite) { focoDisplayStr += num; atualizarDisplayFoco(); if(focoDisplayStr.length === focoLimite) { setTimeout(avaliarFoco, 100); } } }
+        function apagarFocoErro(msgAlerta) { tocarBipe('erro'); mostrarAlerta(msgAlerta, "erro"); document.getElementById('display-foco').classList.add('erro'); setTimeout(() => { focoDisplayStr = ""; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }, 600); }
+        function atualizarDisplayFoco() { document.getElementById('display-foco').innerText = focoDisplayStr + "-".repeat(focoLimite - focoDisplayStr.length); }
+
+        function avaliarFoco() {
+            let itemAtual = listaDeSeparacao[indexAtualPicking];
+            let skuCorreto = String(itemAtual.produtoDb.codigo || "").trim().toUpperCase();
+            let eanCorreto = String(itemAtual.produtoDb.gtin || "").replace(/\D/g, "").replace(/^0+/, "");
+            
+            if (skuCorreto === "---") { registrarUnidadeFoco(); return; }
+            if (eanCorreto && eanCorreto.endsWith(focoDisplayStr)) { registrarUnidadeFoco(); } else { apagarFocoErro("❌ Produto Errado!"); }
+        }
+
+        function registrarUnidadeFoco() { let item = listaDeSeparacao[indexAtualPicking]; item.unidadesLidas++; tocarBipe('sucesso'); renderizarItemFoco(); }
+        function confirmarFimItem() { let item = listaDeSeparacao[indexAtualPicking]; item.status = 'concluido'; indexAtualPicking++; renderizarItemFoco(); }
+
+        function finalizarModoPicking() {
+            document.getElementById('tela-separacao-foco').classList.add('hidden');
+            let areaCheck = document.getElementById('area-checklist'); areaCheck.innerHTML = '';
+            listaDeSeparacao.forEach(i => { areaCheck.innerHTML += `<div class="checklist-item"><span>${i.nomePedido.substring(0,25)}...</span> <span>${i.quantidadeTotal}x</span></div>`; });
+            document.getElementById('tela-conclusao').classList.remove('hidden');
+        }
+
+        function imprimirEtiquetaBluetooth() {
+            let n = pedidoAtualParaSeparacao ? (pedidoAtualParaSeparacao.orderNum || 'N/A') : 'N/A'; let dataHora = new Date().toLocaleString('pt-BR');
+            let iframe = document.getElementById('f-print') || document.createElement('iframe'); iframe.id = 'f-print'; iframe.style.display = 'none'; document.body.appendChild(iframe);
+            let doc = iframe.contentWindow.document; doc.open();
+            let html = `<html><head><style>@page { margin: 0; size: 48mm auto; } body { width: 48mm; font-family: 'Courier New', monospace; font-size: 11px; margin: 0; padding: 2mm 0; color: #000; text-align: center; } h2 { font-size: 18px; font-weight: 900; margin: 0 0 5px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 5px 0; } .data { font-size: 10px; margin-bottom: 10px; font-weight: bold; } .item { text-align: left; border-bottom: 1px dashed #000; padding: 4px 0; display: flex; justify-content: space-between; font-weight: bold; } .nome-item { width: 80%; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .qtd-item { width: 20%; text-align: right; font-size: 14px; } .fim { margin-top: 15px; text-align: center; font-size: 12px; border-bottom: 2px dashed #000; padding-bottom: 20px;}</style></head><body><h2>PEDIDO<br>${n}</h2><div class="data">Expedição:<br>${dataHora}</div><div style="border-top: 1px solid #000; margin-bottom: 5px;"></div><div style="text-align:left; font-weight:900; margin-bottom:2px;">Qtd  - Produto</div>`;
+            listaDeSeparacao.forEach(i => { html += `<div class="item"><span class="qtd-item">${i.quantidadeTotal}x</span> <span class="nome-item" style="margin-left:5px;">${i.nomePedido}</span></div>`; });
+            doc.write(html + `<div class="fim">SEPARAÇÃO CONCLUÍDA</div><br><br><br></body></html>`); doc.close(); setTimeout(() => iframe.contentWindow.print(), 800);
+        }
+
+        // A MÁGICA FINAL: Dar Baixa apenas neste pedido e sincronizar o GitHub
+        function finalizarEDarBaixaPedidoAtual() {
+            const btnSyncFila = document.getElementById('btnSyncFila') || document.createElement('button');
+            
+            enqueueGitHubTask('Baixa do Pedido Separado', async () => {
+                // 1. Pega a versão mais atual da nuvem
+                let filaRemota = await getFilaRemota();
+                
+                // 2. Procura o nosso pedido exato lá e muda o status
+                let pedidoRemotoIndex = filaRemota.findIndex(p => p.id === pedidoAtualParaSeparacao.id);
+                if(pedidoRemotoIndex === -1) throw new Error("Pedido não encontrado na nuvem para dar baixa.");
+                
+                filaRemota[pedidoRemotoIndex].status = "CONCLUIDO";
+
+                // 3. Prepara o mapa de redução de stock
+                let itensVendidos = {};
+                listaDeSeparacao.forEach(i => {
+                    const skuOrNome = i.produtoDb.codigo !== "---" ? i.produtoDb.codigo : i.nomePedido;
+                    itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + i.quantidadeTotal;
+                });
+
+                // 4. Reduz no banco de dados do PIM localmente
+                let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
+
+                // 5. Apaga concluídos para manter fila limpa e salva a fila no GitHub
+                filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Concluído`);
+                
+                // 6. Atualiza o local
+                filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+                
+                // 7. Envia os novos estoques para o GitHub
+                if(mudouAlgoLocalmente) {
+                    await saveDataLocally(); 
+                    renderGrid(document.getElementById('search-input').value);
+                    uploadBancodedados(document.getElementById('btnSyncBD'));      
+                    uploadProdutosJson(document.getElementById('btnSyncVitrine')); 
+                }
+
+                renderizarCartoes();
+                fecharSeparador();
+                alert(`✅ Pedido ${pedidoAtualParaSeparacao.orderNum} concluído e estoque reduzido com sucesso!`);
+            }, btnSyncFila);
+        }
+
+        // ==========================================================
+        // PIM CORE (UI & EVENTOS GERAIS)
+        // ==========================================================
+        
         let isFilter24hActive = false;
         function toggleFilter24h() { isFilter24hActive = !isFilter24hActive; const btn = document.getElementById('btn-24h'); if(isFilter24hActive) btn.classList.add('primary'); else btn.classList.remove('primary'); renderGrid(document.getElementById('search-input').value); }
         function openSidebar(id) { document.getElementById('sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); }
