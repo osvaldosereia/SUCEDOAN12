@@ -563,7 +563,7 @@
             return [];
         }
 
-        // ==========================================================
+       // ==========================================================
         // FUNÇÃO DE LIMPEZA (Para o PIM cruzar os dados perfeitamente)
         // ==========================================================
         function limparTexto(texto) {
@@ -603,7 +603,7 @@
                     const qtd = parseInt(partes[0].trim());
                     const nomeProduto = partes.slice(1).join('x ').trim();
                     
-                    // A MÁGICA ACONTECE AQUI: O PIM procura logo o produto e a imagem!
+                    // A MÁGICA ACONTECE AQUI: O PIM procura logo o produto!
                     let nomeZapLimpo = limparTexto(nomeProduto);
                     let produtoEncontrado = products.find(p => limparTexto(p.nome) === nomeZapLimpo);
                     
@@ -613,30 +613,25 @@
                     novoPedido.itens.push({ 
                         qtd: qtd, 
                         nomeOriginal: nomeProduto,
-                        sku: skuFinal,           // GRAVA O SKU NO PEDIDO JSON
-                        imagem: imagemFinal      // GRAVA A FOTO NO PEDIDO JSON
+                        sku: skuFinal,           // GRAVA O SKU
+                        imagem: imagemFinal      // GRAVA A FOTO
                     });
                 } else if (textoLinha === '' || textoLinha.includes('------')) { lendoItens = false; }
             });
 
-            // 1. Adiciona localmente para dar feedback visual imediato
+            // 1. Adiciona localmente
             filaDePedidos.push(novoPedido);
             renderizarCartoes();
             document.getElementById('textoPedidoWhatsapp').value = "";
 
-            // 2. Atualização Inteligente no GitHub (Puxa, Adiciona e Guarda)
+            // 2. Atualização Inteligente no GitHub
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
             enqueueGitHubTask('Adicionar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
-                
-                // Garante que não duplica
                 if (!filaRemota.find(p => p.id === novoPedido.id)) {
                     filaRemota.push(novoPedido);
                 }
-                
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
-                
-                // Atualiza o teu local
                 filaDePedidos = filaRemota;
                 await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 renderizarCartoes();
