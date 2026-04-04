@@ -412,7 +412,16 @@
         let focoLimite = 1;
 
         // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB (O CÉREBRO DA API)
+        // FUNÇÃO GLOBAL DE LIMPEZA DE TEXTO (A Prova de Balas)
+        // ==========================================================
+        function limparTexto(texto) {
+            if (!texto) return "";
+            let textoLimpo = texto.replace(/\(oferta\)/gi, '').replace(/oferta/gi, '');
+            return textoLimpo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
+        }
+
+        // ==========================================================
+        // GESTOR DE COMUNICAÇÃO COM GITHUB
         // ==========================================================
         const GitHubAPI = {
             getConfig: function() {
@@ -451,7 +460,7 @@
             }
         };
 
-        // FILA DE TAREFAS OTIMIZADA PARA O GITHUB
+        // FILA DE TAREFAS
         let githubTasksQueue = [];
         let isProcessingTasks = false;
 
@@ -552,13 +561,8 @@
         }
 
         // ==========================================================
-        // WHATSAPP E GESTÃO DE FILA (COM INTELIGÊNCIA)
+        // WHATSAPP E GESTÃO DE FILA
         // ==========================================================
-        function limparTexto(texto) {
-            if (!texto) return "";
-            let textoLimpo = texto.replace(/\(oferta\)/gi, '').replace(/oferta/gi, '');
-            return textoLimpo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
-        }
 
         async function gerarPedidoWhatsapp() {
             const texto = document.getElementById('textoPedidoWhatsapp').value;
@@ -649,7 +653,24 @@
             }, btn);
         }
 
-        // DAR BAIXA EM MASSA (Caso o utilizador queira)
+        // Função de Baixa Automática Segura (Usando Text Cleaner)
+        function processarBaixaEstoqueLocal(itensVendidosMap) {
+            let mudouAlgo = false;
+            for (const [idVendido, qtdVendida] of Object.entries(itensVendidosMap)) {
+                // Tenta achar direto pelo SKU
+                let p = products.find(prod => prod.codigo === idVendido);
+                
+                // Se falhar (era um item sem SKU), tenta achar pelo nome limpo
+                if (!p) {
+                    let idLimpo = limparTexto(idVendido);
+                    p = products.find(prod => limparTexto(prod.nome || prod.descricao || "") === idLimpo);
+                }
+
+                if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgo = true; }
+            }
+            return mudouAlgo;
+        }
+
         async function darBaixaEstoqueMaster() {
             if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) { return alert("Não há pedidos PENDENTES na fila."); }
             if(!confirm("Atenção: Isto vai dar baixa em TODOS os pedidos pendentes sem separar. Continuar?")) return;
@@ -680,16 +701,6 @@
                 if(mudouAlgoLocalmente) { await saveDataLocally(); renderGrid(document.getElementById('search-input').value); uploadBancodedados(document.getElementById('btnSyncBD')); }
                 renderizarCartoes(); alert("Sucesso! Baixa geral no estoque efetuada.");
             }, btn);
-        }
-
-        // Função utilitária para reduzir stock
-        function processarBaixaEstoqueLocal(itensVendidosMap) {
-            let mudouAlgo = false;
-            for (const [idVendido, qtdVendida] of Object.entries(itensVendidosMap)) {
-                let p = products.find(prod => prod.codigo === idVendido || prod.nome === idVendido);
-                if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgo = true; }
-            }
-            return mudouAlgo;
         }
 
         // ==========================================================
@@ -726,22 +737,32 @@
             if (!pedido) return alert("Erro: Pedido não encontrado.");
             
             inicializarAudio();
-            closeAllSidebars(); // Fecha as barras do PIM
-            
-            // Abre o Overlay do Separador
+            closeAllSidebars(); 
             document.getElementById('separador-overlay').style.display = 'flex';
             
-            // Lógica de Construção da Lista
             listaDeSeparacao = []; pedidoAtualParaSeparacao = pedido; 
             
             if(pedido.itens) {
                 pedido.itens.forEach(item => { 
                     let skuRecebido = item.sku || "---";
-                    // Busca a referência diretamente no PIM na memória (Super Rápido!)
                     let produtoDb = products.find(p => (p.codigo || "").toString().trim().toUpperCase() === skuRecebido );
                     
+                    // RESGATE DE PEDIDO LEGACY: Tenta achar pelo nome se não tiver SKU
+                    if (!produtoDb && skuRecebido === "---") {
+                        let nomeZapLimpo = limparTexto(item.nomeOriginal);
+                        produtoDb = products.find(p => {
+                            let nBanco = limparTexto(p.nome || p["Descrição"] || "");
+                            return nBanco === nomeZapLimpo || (nomeZapLimpo.length > 5 && nBanco.includes(nomeZapLimpo));
+                        });
+                    }
+
                     if (produtoDb) {
-                        if (item.imagem && item.imagem.length > 5) { produtoDb.url_imagem = item.imagem; }
+                        item.sku = produtoDb.codigo; // Corrige o item em memória
+                        if (item.imagem && item.imagem.length > 5) { 
+                            produtoDb.url_imagem = item.imagem; 
+                        } else {
+                            item.imagem = produtoDb.url_imagem;
+                        }
                     } else {
                         produtoDb = { codigo: skuRecebido, localizacao: "SEM LOC", url_imagem: item.imagem };
                     }
@@ -763,17 +784,14 @@
 
         function fecharSeparador() {
             document.getElementById('separador-overlay').style.display = 'none';
-            openSidebar('whatsapp-sidebar'); // Volta para a aba de pedidos
+            openSidebar('whatsapp-sidebar'); 
         }
 
+        // Simplificado: Confia na URL do PIM!
         function resolverImagemProdutoSep(produtoDb, imagemFallback) {
-            let sku = (produtoDb.codigo || "---").toString().trim().toUpperCase();
             let url = imagemFallback || produtoDb.url_imagem;
-            if (url && url.length > 5) {
-                if (url.startsWith('data:image')) return url; 
-                let partesUrl = url.split('/'); let nomeArquivo = partesUrl[partesUrl.length - 1];
-                return `../site/img/produtos/${nomeArquivo}`;
-            }
+            if (url && url.length > 5) return url;
+            let sku = (produtoDb.codigo || "---").toString().trim().toUpperCase();
             if (sku !== "---") return `../site/img/produtos/${sku}.webp`;
             return null;
         }
@@ -855,33 +873,26 @@
             const btnSyncFila = document.getElementById('btnSyncFila') || document.createElement('button');
             
             enqueueGitHubTask('Baixa do Pedido Separado', async () => {
-                // 1. Pega a versão mais atual da nuvem
                 let filaRemota = await getFilaRemota();
                 
-                // 2. Procura o nosso pedido exato lá e muda o status
                 let pedidoRemotoIndex = filaRemota.findIndex(p => p.id === pedidoAtualParaSeparacao.id);
                 if(pedidoRemotoIndex === -1) throw new Error("Pedido não encontrado na nuvem para dar baixa.");
                 
                 filaRemota[pedidoRemotoIndex].status = "CONCLUIDO";
 
-                // 3. Prepara o mapa de redução de stock
                 let itensVendidos = {};
                 listaDeSeparacao.forEach(i => {
                     const skuOrNome = i.produtoDb.codigo !== "---" ? i.produtoDb.codigo : i.nomePedido;
                     itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + i.quantidadeTotal;
                 });
 
-                // 4. Reduz no banco de dados do PIM localmente
                 let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
 
-                // 5. Apaga concluídos para manter fila limpa e salva a fila no GitHub
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Concluído`);
                 
-                // 6. Atualiza o local
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
-                // 7. Envia os novos estoques para o GitHub
                 if(mudouAlgoLocalmente) {
                     await saveDataLocally(); 
                     renderGrid(document.getElementById('search-input').value);
