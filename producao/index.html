@@ -548,10 +548,23 @@
             }
         }
 
-        // ==========================================================
-        // FUNÇÕES DO WHATSAPP & ESTOQUE
+       // ==========================================================
+        // FUNÇÕES DO WHATSAPP & ESTOQUE (AGORA INTELIGENTES)
         // ==========================================================
         
+        // Função auxiliar para ir buscar SEMPRE a versão mais recente ao GitHub
+        async function getFilaRemota() {
+            try {
+                const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
+                if (data && data.content) {
+                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                    const parsedData = JSON.parse(decodedContent);
+                    if(Array.isArray(parsedData)) return parsedData;
+                }
+            } catch(e) { console.warn("Aviso: Fila remota não encontrada, a iniciar nova."); }
+            return [];
+        }
+
         async function gerarPedidoWhatsapp() {
             const texto = document.getElementById('textoPedidoWhatsapp').value;
             if (!texto) {
@@ -563,49 +576,48 @@
             let novoPedido = {
                 id: Date.now(),
                 status: "PENDENTE",
-                orderNumMatch: [],
-                orderNum: "",
-                cliente: "",
-                entrega: "",
-                valorTotal: "",
-                itens: [] 
+                orderNumMatch: [], orderNum: "", cliente: "", entrega: "", valorTotal: "", itens: [] 
             };
 
             let lendoItens = false;
 
             linhas.forEach(linha => {
                 const textoLinha = linha.trim();
-                
                 if (textoLinha.includes('*PEDIDO #')) {
                     const match = textoLinha.match(/#(\d+)/);
-                    if (match) {
-                        novoPedido.orderNum = `#${match[1]}`;
-                        novoPedido.orderNumMatch = [textoLinha, novoPedido.orderNum];
-                    }
-                } else if (textoLinha.includes('*CLIENTE:*')) {
-                    novoPedido.cliente = textoLinha.replace('*CLIENTE:*', '').trim();
-                } else if (textoLinha.includes('*ENTREGA:*')) {
-                    novoPedido.entrega = textoLinha.replace('*ENTREGA:*', '').trim();
-                } else if (textoLinha.includes('*TOTAL:')) {
-                    const match = textoLinha.match(/R\$\s?([\d.,]+)/);
-                    if (match) novoPedido.valorTotal = match[1];
-                } else if (textoLinha.includes('*ITENS:*')) {
-                    lendoItens = true;
+                    if (match) { novoPedido.orderNum = `#${match[1]}`; novoPedido.orderNumMatch = [textoLinha, novoPedido.orderNum]; }
+                } else if (textoLinha.includes('*CLIENTE:*')) { novoPedido.cliente = textoLinha.replace('*CLIENTE:*', '').trim();
+                } else if (textoLinha.includes('*ENTREGA:*')) { novoPedido.entrega = textoLinha.replace('*ENTREGA:*', '').trim();
+                } else if (textoLinha.includes('*TOTAL:')) { const match = textoLinha.match(/R\$\s?([\d.,]+)/); if (match) novoPedido.valorTotal = match[1];
+                } else if (textoLinha.includes('*ITENS:*')) { lendoItens = true;
                 } else if (lendoItens && textoLinha.match(/^\d+x/)) {
-                    const partes = textoLinha.split('x ');
-                    const qtd = parseInt(partes[0].trim());
-                    const nomeProduto = partes.slice(1).join('x ').trim();
-                    novoPedido.itens.push({ qtd: qtd, nomeOriginal: nomeProduto });
-                } else if (textoLinha === '' || textoLinha.includes('------')) {
-                    lendoItens = false;
-                }
+                    const partes = textoLinha.split('x '); const qtd = parseInt(partes[0].trim());
+                    novoPedido.itens.push({ qtd: qtd, nomeOriginal: partes.slice(1).join('x ').trim() });
+                } else if (textoLinha === '' || textoLinha.includes('------')) { lendoItens = false; }
             });
 
+            // 1. Adiciona localmente para dar feedback visual imediato a ti
             filaDePedidos.push(novoPedido);
-            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
             renderizarCartoes();
             document.getElementById('textoPedidoWhatsapp').value = "";
-            uploadFilaPedidosGithub(document.getElementById('btnSyncFila'));
+
+            // 2. Atualização Inteligente no GitHub (Puxa, Adiciona e Guarda)
+            const btn = document.getElementById('btnSyncFila') || document.createElement('button');
+            enqueueGitHubTask('Adicionar Pedido', async () => {
+                let filaRemota = await getFilaRemota();
+                
+                // Garante que não duplica se clicares duas vezes sem querer
+                if (!filaRemota.find(p => p.id === novoPedido.id)) {
+                    filaRemota.push(novoPedido);
+                }
+                
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
+                
+                // Atualiza o teu local para ficar igual à versão definitiva do servidor
+                filaDePedidos = filaRemota;
+                await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+                renderizarCartoes();
+            }, btn);
         }
 
         function renderizarCartoes() {
@@ -620,7 +632,6 @@
             }
 
             pendentes.forEach((pedido) => {
-                const realIndex = filaDePedidos.findIndex(p => p.id === pedido.id);
                 const cartao = document.createElement('div');
                 cartao.className = 'cartao-pedido';
                 
@@ -631,7 +642,7 @@
                         <span>📅 Entrega: ${pedido.entrega || 'N/A'}</span>
                         <span>💰 Total: R$ ${pedido.valorTotal || '0,00'}</span>
                     </div>
-                    <button class="btn-apagar" onclick="apagarPedido(${realIndex})">
+                    <button class="btn-apagar" onclick="apagarPedido(${pedido.id})">
                         <i data-lucide="trash-2" size="14"></i>
                     </button>
                 `;
@@ -640,68 +651,104 @@
             lucide.createIcons();
         }
 
-        async function apagarPedido(index) {
+        async function apagarPedido(pedidoId) {
             if(!confirm("Tem certeza que deseja apagar este pedido da fila?")) return;
-            filaDePedidos.splice(index, 1);
-            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+            
+            // 1. Remove localmente para feedback visual imediato
+            filaDePedidos = filaDePedidos.filter(p => p.id !== pedidoId);
             renderizarCartoes();
-            uploadFilaPedidosGithub(document.getElementById('btnSyncFila'));
+            
+            // 2. Atualização Inteligente no GitHub (Puxa, Remove o ID, e Guarda)
+            const btn = document.getElementById('btnSyncFila') || document.createElement('button');
+            enqueueGitHubTask('Apagar Pedido', async () => {
+                let filaRemota = await getFilaRemota();
+                
+                // Filtra apagando APENAS o ID específico
+                filaRemota = filaRemota.filter(p => p.id !== pedidoId);
+                
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
+                
+                // Atualiza o local com a versão definitiva do servidor
+                filaDePedidos = filaRemota;
+                await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+                renderizarCartoes();
+            }, btn);
         }
 
         async function darBaixaEstoqueMaster() {
-            const pendentes = filaDePedidos.filter(p => p.status === "PENDENTE");
-            if(pendentes.length === 0) return alert("Não há pedidos PENDENTES na fila para dar baixa.");
+            // Verifica se vale a pena avançar
+            if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) {
+                return alert("Não há pedidos PENDENTES na fila para dar baixa.");
+            }
 
-            let itensVendidos = {};
-            let countBaixas = 0;
+            const btn = document.getElementById('btnSyncFila') || document.createElement('button');
+            enqueueGitHubTask('Dar Baixa e Limpar', async () => {
+                // 1. Lemos a nuvem primeiro para garantir que agimos com a verdade absoluta
+                let filaRemota = await getFilaRemota();
+                let pendentes = filaRemota.filter(p => p.status === "PENDENTE");
+                
+                if(pendentes.length === 0) throw new Error("A nuvem não tem pedidos PENDENTES. Tente puxar da nuvem primeiro.");
 
-            filaDePedidos.forEach(pedido => {
-                if (pedido.status === "PENDENTE") {
-                    let listaItens = pedido.items || pedido.itens; 
-                    if (listaItens) {
-                        listaItens.forEach(item => {
-                            const nome = item.nomeOriginal;
-                            if (itensVendidos[nome]) {
-                                itensVendidos[nome] += item.qtd;
-                            } else {
-                                itensVendidos[nome] = item.qtd;
-                            }
-                        });
+                let itensVendidos = {};
+                let countBaixas = 0;
+
+                filaRemota.forEach(pedido => {
+                    if (pedido.status === "PENDENTE") {
+                        let listaItens = pedido.items || pedido.itens; 
+                        if (listaItens) {
+                            listaItens.forEach(item => {
+                                const nome = item.nomeOriginal;
+                                itensVendidos[nome] = (itensVendidos[nome] || 0) + item.qtd;
+                            });
+                        }
+                        pedido.status = "CONCLUIDO"; 
+                        countBaixas++;
                     }
-                    pedido.status = "CONCLUIDO"; 
-                    countBaixas++;
+                });
+
+                if(countBaixas === 0) throw new Error("Nenhum item processado.");
+
+                // 2. Atualiza os teus produtos localmente
+                let mudouAlgoLocalmente = false;
+                for (const [nomeVendido, qtdVendida] of Object.entries(itensVendidos)) {
+                    let p = products.find(prod => prod.nome === nomeVendido);
+                    if (p) {
+                        p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida;
+                        p.last_update = Date.now();
+                        mudouAlgoLocalmente = true;
+                    }
                 }
-            });
 
-            if(countBaixas === 0) return alert("Nenhum item processado.");
-
-            let mudouAlgoLocalmente = false;
-            for (const [nomeVendido, qtdVendida] of Object.entries(itensVendidos)) {
-                let p = products.find(prod => prod.nome === nomeVendido);
-                if (p) {
-                    p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida;
-                    p.last_update = Date.now();
-                    mudouAlgoLocalmente = true;
+                // 3. Limpa os concluídos da fila na nuvem para manter o ficheiro pequeno e rápido
+                filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
+                
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Efetuada`);
+                
+                // 4. Sincroniza o local
+                filaDePedidos = filaRemota;
+                await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+                
+                // 5. Se os produtos mudaram, atualiza os outros ficheiros!
+                if(mudouAlgoLocalmente) {
+                    await saveDataLocally();
+                    renderGrid(document.getElementById('search-input').value);
+                    uploadBancodedados(document.getElementById('btnSyncBD'));      
+                    uploadProdutosJson(document.getElementById('btnSyncVitrine')); 
                 }
-            }
 
-            filaDePedidos = filaDePedidos.filter(p => p.status !== "CONCLUIDO");
-            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-            
-            if(mudouAlgoLocalmente) {
-                await saveDataLocally();
-                renderGrid(document.getElementById('search-input').value);
-            }
+                renderizarCartoes();
+                alert("Sucesso! Baixa no estoque efetuada.");
+            }, btn);
+        }
 
-            renderizarCartoes();
-            alert("Sucesso! Baixa no estoque efetuada.");
-
-            uploadFilaPedidosGithub(document.getElementById('btnSyncFila')); 
-            
-            if(mudouAlgoLocalmente) {
-                uploadBancodedados(document.getElementById('btnSyncBD'));      
-                uploadProdutosJson(document.getElementById('btnSyncVitrine')); 
-            }
+        function uploadFilaPedidosGithub(btn = null) {
+            // Este botão manual agora atua como um "Forçar Substituição" da nuvem pelo local, 
+            // caso queiras forçar a tua versão local para a nuvem em caso de erro. 
+            // No dia-a-dia, Adicionar e Apagar já fazem tudo sozinhos e com segurança!
+            const targetBtn = btn || document.createElement('button'); 
+            enqueueGitHubTask('Forçar Sincronização da Fila', async () => {
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila de Pedidos Forçada`);
+            }, targetBtn);
         }
 
         // ==========================================================
