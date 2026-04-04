@@ -65,18 +65,24 @@
         .card-img-wrapper { aspect-ratio: 1; background: #f4f4f5; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
-        /* TAG FLUTUANTE */
-        .product-tag {
+        /* TAG FLUTUANTE - ATUALIZADO PARA SUPORTAR MÚLTIPLAS */
+        .tags-container {
             position: absolute;
             top: 8px;
             left: 8px;
-            color: #ffffff;
-            font-weight: 900;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 5;
+        }
+        
+        .product-tag {
+            font-weight: 600; /* Fonte mais leve, como pedido (era 900) */
             padding: 4px 8px;
             border-radius: 6px;
-            z-index: 5;
-            line-height: 1;
+            line-height: 1.2;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            word-break: break-word;
         }
 
         .card-info { padding: 12px; display: flex; flex-direction: column; gap: 10px; text-align: center; }
@@ -112,8 +118,13 @@
         .form-label { font-size: 10px; font-weight: 800; color: var(--text-primary); }
         
         .input-wrapper { display: flex; gap: 6px; align-items: stretch; }
+        
+        /* Modificado para suportar o contenteditable de forma fluida */
         .form-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
         .form-input:focus { border-color: var(--accent); background: #ffffff; }
+        
+        /* Estilos do Div Rich Text (O mini-word) */
+        div.form-input[contenteditable="true"] { resize: vertical; min-height: 90px; line-height: 1.5; font-weight: 400; overflow-y: auto; cursor: text;}
         textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
         
         /* BOTÕES SMART */
@@ -375,9 +386,10 @@
                     validade: p.validade || "",
                     estoque: p.estoque || 0,
                     descricao: p.descricao || "",
-                    // Tag Flutuante
+                    // Tags Flutuantes
                     tag_texto: p.tag_texto || "",
                     tag_cor: p.tag_cor || "#000000",
+                    tag_cor_texto: p.tag_cor_texto || "#ffffff",
                     tag_tamanho: p.tag_tamanho || 10,
                     // 3 Imagens
                     url_imagem: p.url_imagem || "",
@@ -525,12 +537,22 @@
                 card.onclick = () => { openEditSidebar(p.codigo); };
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 
-                // Construção dinâmica da Tag
+                // Construção dinâmica de Múltiplas Tags
                 let htmlTag = '';
                 if (p.tag_texto && p.tag_texto.trim() !== '') {
-                    const tagCor = p.tag_cor || '#000000';
+                    const tagCorFundo = p.tag_cor || '#000000';
+                    const tagCorTexto = p.tag_cor_texto || '#ffffff';
                     const tagTam = p.tag_tamanho || 10;
-                    htmlTag = `<div class="product-tag" style="background-color: ${tagCor}; font-size: ${tagTam}px;">${p.tag_texto}</div>`;
+                    
+                    // Separa o texto por quebras de linha e cria uma tag para cada linha preenchida
+                    const linhas = p.tag_texto.split('\n').filter(l => l.trim() !== '');
+                    const tagsGeradas = linhas.map(linha => 
+                        `<div class="product-tag" style="background-color: ${tagCorFundo}; color: ${tagCorTexto}; font-size: ${tagTam}px;">${linha}</div>`
+                    ).join('');
+                    
+                    if(tagsGeradas) {
+                        htmlTag = `<div class="tags-container">${tagsGeradas}</div>`;
+                    }
                 }
 
                 card.innerHTML = `<div class="card-img-wrapper">${htmlTag}<img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div><div class="card-info"><div class="card-title">${p.nome || 'Produto Sem Nome'}</div><button class="card-btn">EDITAR</button></div>`;
@@ -544,9 +566,7 @@
             const p = products.find(x => x.codigo === sku); if(!p) return;
             
             const isInactive = p.situacao === 'I';
-            // Array reduzido para 3 FOTOS
             const imgVars = [1,2,3].map(i => { const prop = i===1 ? 'url_imagem' : `url_imagem_${i}`; return p[prop] || ''; });
-            // Array aumentado para 10 VÍDEOS
             const vidVars = [1,2,3,4,5,6,7,8,9,10].map(i => { const prop = i===1 ? 'link_video' : `link_video_${i}`; return p[prop] || ''; });
             const safeName = (p.nome||'').replace(/'/g, "\\'");
 
@@ -583,19 +603,28 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Descrição Mínima</label>
+                        <label class="form-label">Descrição (Aceita Formatação/Rich Text)</label>
                         <div class="input-wrapper">
-                            <textarea class="form-input" placeholder="Escreva os benefícios do produto..." onchange="updateField('${p.codigo}', 'descricao', this.value)">${p.descricao || ''}</textarea>
+                            <div contenteditable="true" class="form-input" placeholder="Cole aqui a descrição..." onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${p.descricao || ''}</div>
                             <button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Review Inteligente (Google IA)"><i data-lucide="brain-circuit" size="16"></i></button>
                         </div>
                     </div>
 
                     <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;">
-                        <label class="form-label">Tag na Imagem (Ex: 50% OFF, NOVO)</label>
-                        <div class="input-wrapper" style="align-items: center;">
-                            <input type="text" class="form-input" placeholder="Texto da Tag" value="${p.tag_texto || ''}" onchange="updateField('${p.codigo}', 'tag_texto', this.value); renderGrid();">
-                            <input type="color" class="form-input" style="width: 40px; padding: 2px; cursor:pointer;" value="${p.tag_cor || '#000000'}" title="Cor do Fundo" onchange="updateField('${p.codigo}', 'tag_cor', this.value); renderGrid();">
-                            <input type="number" class="form-input" style="width: 70px;" title="Tamanho Fonte (px)" placeholder="Tam" value="${p.tag_tamanho || 10}" min="8" max="24" onchange="updateField('${p.codigo}', 'tag_tamanho', this.value); renderGrid();">
+                        <label class="form-label">Tags na Imagem (Uma por linha)</label>
+                        <div class="input-wrapper" style="flex-direction: column; gap: 8px;">
+                            <textarea class="form-input" placeholder="Ex:&#10;50% OFF&#10;NOVO" style="min-height: 55px;" onchange="updateField('${p.codigo}', 'tag_texto', this.value); renderGrid();">${p.tag_texto || ''}</textarea>
+                            
+                            <div style="display:flex; gap: 8px; align-items: center; background: #fafafa; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
+                                <label style="font-size: 10px; font-weight:800; color:var(--text-secondary);">FUNDO:</label>
+                                <input type="color" class="form-input" style="width: 35px; padding: 0; cursor:pointer; height:24px; border:none;" value="${p.tag_cor || '#000000'}" title="Cor do Fundo" onchange="updateField('${p.codigo}', 'tag_cor', this.value); renderGrid();">
+                                
+                                <label style="font-size: 10px; font-weight:800; color:var(--text-secondary); margin-left: 10px;">TEXTO:</label>
+                                <input type="color" class="form-input" style="width: 35px; padding: 0; cursor:pointer; height:24px; border:none;" value="${p.tag_cor_texto || '#ffffff'}" title="Cor do Texto" onchange="updateField('${p.codigo}', 'tag_cor_texto', this.value); renderGrid();">
+                                
+                                <label style="font-size: 10px; font-weight:800; color:var(--text-secondary); margin-left: 10px;">TAM. (PX):</label>
+                                <input type="number" class="form-input" style="width: 60px; height:24px; padding: 4px;" title="Tamanho Fonte" value="${p.tag_tamanho || 10}" min="8" max="24" onchange="updateField('${p.codigo}', 'tag_tamanho', this.value); renderGrid();">
+                            </div>
                         </div>
                     </div>
                 </div>
