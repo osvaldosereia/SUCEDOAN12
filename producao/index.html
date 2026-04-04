@@ -11,6 +11,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
+        /* [O CSS MANTÉM-SE EXATAMENTE IGUAL AO ORIGINAL] */
         :root {
             --bg-body: #f4f4f5;
             --bg-card: #ffffff;
@@ -28,7 +29,6 @@
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
         
-        /* HEADER & TOOLBAR */
         header { background: #ffffff; min-height: 54px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
         .brand { font-weight: 900; font-size: 16px; letter-spacing: -0.5px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
         
@@ -54,7 +54,6 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { animation: spin 2s linear infinite; }
 
-        /* GRID DE PRODUTOS */
         .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
         
@@ -65,42 +64,22 @@
         .card-img-wrapper { aspect-ratio: 1; background: #f4f4f5; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
-        /* TAGS FLUTUANTES */
-        .tags-container {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            z-index: 5;
-            align-items: flex-start;
-        }
-        
-        .product-tag {
-            font-weight: 600; 
-            padding: 4px 8px;
-            border-radius: 6px;
-            line-height: 1.2;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            word-break: break-word;
-        }
+        .tags-container { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 5; align-items: flex-start; }
+        .product-tag { font-weight: 600; padding: 4px 8px; border-radius: 6px; line-height: 1.2; box-shadow: 0 2px 5px rgba(0,0,0,0.2); word-break: break-word; }
 
         .card-info { padding: 12px; display: flex; flex-direction: column; gap: 10px; text-align: center; }
         .card-title { font-size: 11px; font-weight: 800; color: var(--text-primary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .card-btn { background: #f4f4f5; border: none; border-radius: 6px; padding: 8px; font-size: 10px; font-weight: 900; color: var(--accent); cursor: pointer; width: 100%; transition: 0.2s; text-transform: uppercase; }
         .card-btn:hover { background: var(--accent); color: white; }
 
-        /* SISTEMA DE ABAS LATERAIS */
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
-        
         .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
         .sidebar.open { transform: translateX(0); }
         
         #edit-sidebar { z-index: 1001; width: 480px; }
         #editor-sidebar { z-index: 1002; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1003; width: 380px; }
-        #whatsapp-sidebar { z-index: 1004; width: 420px; } /* NOVA ABA WHATSAPP */
+        #whatsapp-sidebar { z-index: 1004; width: 420px; } 
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -110,7 +89,6 @@
         .sidebar-body { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 20px; }
         .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: #ffffff; }
 
-        /* FORMULÁRIOS DA SIDEBAR */
         .form-section { display: flex; flex-direction: column; gap: 12px; }
         .section-title { font-size: 10px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
         
@@ -123,29 +101,24 @@
         .form-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
         .form-input:focus { border-color: var(--accent); background: #ffffff; }
         
-        /* Div Rich Text */
         div.form-input[contenteditable="true"] { resize: vertical; min-height: 90px; line-height: 1.5; font-weight: 400; overflow-y: auto; cursor: text;}
         textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
         
-        /* BOTÕES SMART */
         .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; }
         .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
 
-        /* SLOTS DE IMAGEM */
         .image-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .img-slot { aspect-ratio: 1; border: 1px dashed var(--border); border-radius: 6px; display: flex; justify-content: center; align-items: center; background: #fafafa; cursor: pointer; overflow: hidden; position: relative; transition: 0.2s; }
         .img-slot:hover { border-color: var(--accent); }
         .img-slot img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .img-slot .slot-num { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: white; font-size: 8px; padding: 2px 4px; border-radius: 4px; font-weight: 900; }
 
-        /* EDITOR CANVAS PRO */
         canvas { background: #fafafa; width: 100%; aspect-ratio: 1; display: block; cursor: grab; border-bottom: 1px solid var(--border); }
         .editor-controls { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         .slider-group { display: flex; align-items: center; gap: 12px; }
         .slider-group label { width: 16px; color: var(--text-secondary); display: flex; justify-content: center;}
         input[type=range] { flex-grow: 1; accent-color: var(--accent); }
 
-        /* CARTÕES WHATSAPP */
         .cartao-pedido { background-color: #fafafa; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .cartao-info { display: flex; flex-direction: column; gap: 4px; }
         .cartao-info strong { font-size: 12px; color: var(--accent); }
@@ -165,9 +138,10 @@
 <body>
 
     <script>
+        // Configuração Inicial de Armazenamento Local
         const STORAGE_KEY = 'sucedoan_pim_v37'; 
         const CONFIG_KEY = 'sucedoan_config';
-        const PEDIDOS_KEY = 'sucedoan_pedidos'; // Chave para os pedidos locais
+        const PEDIDOS_KEY = 'sucedoan_pedidos';
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
 
@@ -317,29 +291,85 @@
         let currentEditingSku = null;
         let currentImageSlot = 1; 
         let imageQueue = [];
-        
-        let filaDePedidos = []; // Array da Gaveta do WhatsApp
+        let filaDePedidos = []; 
 
+        // ==========================================================
+        // GESTOR DE COMUNICAÇÃO COM GITHUB (NOVO SERVIÇO)
+        // ==========================================================
+        const GitHubAPI = {
+            // 1. Vai buscar as credenciais de forma segura
+            getConfig: function() {
+                const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+                if (!cfg || !cfg.token || !cfg.user || !cfg.repo) {
+                    alert("Atenção: Configure as credenciais da API na aba 'Definições API' primeiro!");
+                    return null;
+                }
+                return cfg;
+            },
+
+            // 2. Função genérica para LER ficheiros do GitHub
+            getFileData: async function(path) {
+                const cfg = this.getConfig();
+                if (!cfg) throw new Error("Credenciais ausentes");
+
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                // Usamos cache: 'no-store' para garantir que não recebemos versões antigas do navegador
+                const res = await fetch(url, { 
+                    headers: { "Authorization": `token ${cfg.token}` },
+                    cache: "no-store" 
+                });
+                
+                if (res.status === 404) return null; // Ficheiro ainda não existe
+                if (!res.ok) throw new Error(`Falha ao ler ${path}`);
+                
+                return await res.json();
+            },
+
+            // 3. Função genérica para GRAVAR ficheiros no GitHub
+            saveFile: async function(path, content, message, isBase64Ready = false) {
+                const cfg = this.getConfig();
+                if (!cfg) throw new Error("Credenciais ausentes");
+
+                // Descobre o 'sha' atual do ficheiro (necessário para atualizar ficheiros existentes)
+                let sha = null;
+                try {
+                    const existingFile = await this.getFileData(path);
+                    if (existingFile) sha = existingFile.sha;
+                } catch(e) {
+                    console.warn(`Aviso: Não foi possível obter o SHA prévio de ${path}. Vai tentar criar.`);
+                }
+
+                // Preparar o conteúdo
+                let finalBase64 = content;
+                if (!isBase64Ready) {
+                    const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+                    // Método seguro para converter textos com acentos para Base64
+                    finalBase64 = btoa(unescape(encodeURIComponent(contentStr))); 
+                }
+
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                const body = { message: message, content: finalBase64 };
+                if (sha) body.sha = sha;
+
+                const res = await fetch(url, { 
+                    method: 'PUT', 
+                    headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, 
+                    body: JSON.stringify(body) 
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(`Erro do GitHub: ${errorData.message}`);
+                }
+                return await res.json();
+            }
+        };
+
+        // ==========================================================
+        // SISTEMA DE FILA DE TAREFAS (QUEUE) OTIMIZADO
+        // ==========================================================
         let githubTasksQueue = [];
         let isProcessingTasks = false;
-        let lastGithubSyncTime = 0;
-        const COOLDOWN_MS = 60 * 1000;
-
-        // FUNÇÃO DE LIMPEZA DE BASE64 (Impede links gigantes de ir para o GitHub)
-        function sanitizeProductsForExport(prods) {
-            return prods.map(p => {
-                let cleanP = { ...p };
-                [1, 2, 3].forEach(i => {
-                    const prop = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
-                    // Se o link for um Base64 (data:image...), substitui pelo caminho da regra do site
-                    if (cleanP[prop] && cleanP[prop].startsWith('data:image')) {
-                        const sufix = i === 1 ? '' : `_${i}`;
-                        cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
-                    }
-                });
-                return cleanP;
-            });
-        }
 
         function updateQueueUI(msg, icon = 'info') {
             const el = document.getElementById('queue-status');
@@ -368,33 +398,21 @@
         }
 
         async function processGitHubQueue() {
-            if (githubTasksQueue.length === 0) { isProcessingTasks = false; return; }
-
-            isProcessingTasks = true;
-            const now = Date.now();
-            const timeSinceLastSync = now - lastGithubSyncTime;
-
-            if (lastGithubSyncTime > 0 && timeSinceLastSync < COOLDOWN_MS) {
-                const waitTime = COOLDOWN_MS - timeSinceLastSync;
-                let remainingSecs = Math.ceil(waitTime / 1000);
-
-                updateQueueUI(`A aguardar limite da API: ${remainingSecs}s`, 'clock');
-                const interval = setInterval(() => {
-                    remainingSecs--;
-                    if(remainingSecs >= 0) updateQueueUI(`A aguardar limite da API: ${remainingSecs}s`, 'clock');
-                }, 1000);
-
-                await new Promise(resolve => setTimeout(resolve, waitTime));
-                clearInterval(interval);
+            if (githubTasksQueue.length === 0) { 
+                isProcessingTasks = false; 
+                setTimeout(() => updateQueueUI(''), 3000); 
+                return; 
             }
 
-            const task = githubTasksQueue.shift();
+            isProcessingTasks = true;
+            const task = githubTasksQueue.shift(); 
+            
             task.btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> A ENVIAR...`;
             updateQueueUI(`A enviar: ${task.name}...`, 'loader');
             lucide.createIcons();
 
             try {
-                await task.fn();
+                await task.fn(); 
                 updateQueueUI(`${task.name} enviado com sucesso!`, 'check');
             } catch (e) {
                 console.error("Erro na tarefa:", e);
@@ -404,52 +422,42 @@
                 task.btn.innerHTML = task.originalHTML;
                 task.btn.disabled = false;
                 lucide.createIcons();
-                lastGithubSyncTime = Date.now();
+                
+                // Intervalo de 1 segundo entre envios para respeitar a API
                 setTimeout(() => {
-                    if (githubTasksQueue.length > 0) processGitHubQueue(); 
-                    else { updateQueueUI(''); isProcessingTasks = false; }
-                }, 3000);
+                    processGitHubQueue(); 
+                }, 1000); 
             }
         }
 
+        // FUNÇÃO DE LIMPEZA DE BASE64
+        function sanitizeProductsForExport(prods) {
+            return prods.map(p => {
+                let cleanP = { ...p };
+                [1, 2, 3].forEach(i => {
+                    const prop = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
+                    if (cleanP[prop] && cleanP[prop].startsWith('data:image')) {
+                        const sufix = i === 1 ? '' : `_${i}`;
+                        cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
+                    }
+                });
+                return cleanP;
+            });
+        }
+
+        // ==========================================================
+        // FUNÇÕES DE SINCRONIZAÇÃO GITHUB REFEITAS
+        // ==========================================================
         function uploadBancodedados(btn) {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
-
             enqueueGitHubTask('Base de Dados Completa', async () => {
-                const path = `site/bancodedados.json`;
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                let sha = null;
-                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if(check.ok) { const json = await check.json(); sha = json.sha; }
-
-                // SANITIZAÇÃO ANTES DO ENVIO! Remove o base64 para evitar inchar o arquivo.
                 const produtosLimpos = sanitizeProductsForExport(products);
-
-                const contentStr = JSON.stringify(produtosLimpos, null, 2);
-                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `PIM Manual: Base Completa`, content: base64 };
-                if(sha) body.sha = sha;
-
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error("Falha na gravação do bancodedados.json no GitHub.");
+                await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Atualização da Base de Dados`);
             }, btn);
         }
 
         function uploadProdutosJson(btn) {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
-
             enqueueGitHubTask('Vitrine (produtos.json)', async () => {
-                const path = `site/produtos.json`;
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                let sha = null;
-                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if(check.ok) { const json = await check.json(); sha = json.sha; }
-
-                // Aplica a mesma limpeza aos links das imagens
                 const produtosLimpos = sanitizeProductsForExport(products);
-
                 const produtosResumidos = produtosLimpos.map(p => ({
                     id: p.id || p['ID'] || Date.now(),
                     nome: p.nome || "",
@@ -460,13 +468,10 @@
                     validade: p.validade || "",
                     estoque: p.estoque || 0,
                     descricao: p.descricao || "",
-                    // Array Dinâmico de Tags
                     tags: p.tags || [],
-                    // 3 Imagens Limpas
                     url_imagem: p.url_imagem || "",
                     url_imagem_2: p.url_imagem_2 || "",
                     url_imagem_3: p.url_imagem_3 || "",
-                    // 10 Vídeos
                     link_video: p.link_video || "",
                     link_video_2: p.link_video_2 || "",
                     link_video_3: p.link_video_3 || "",
@@ -478,24 +483,14 @@
                     link_video_9: p.link_video_9 || "",
                     link_video_10: p.link_video_10 || ""
                 }));
-
-                const contentStr = JSON.stringify(produtosResumidos, null, 2);
-                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `PIM Manual: Vitrine Resumida`, content: base64 };
-                if(sha) body.sha = sha;
-
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error("Falha na gravação.");
+                await GitHubAPI.saveFile(`site/produtos.json`, produtosResumidos, `PIM Sync: Atualização da Vitrine`);
             }, btn);
         }
 
         function uploadImagens(btn) {
             if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
-            
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return alert("Configure as credenciais primeiro!");
 
-            enqueueGitHubTask(`Imagens (${imageQueue.length})`, async () => {
+            enqueueGitHubTask(`Upload de Imagens (${imageQueue.length})`, async () => {
                 const queueCopy = [...imageQueue];
                 let errorCount = 0;
 
@@ -505,34 +500,52 @@
                         const folderPath = "site/img/produtos"; 
                         const fileName = `${item.sku}${sufix}.webp`; 
                         const fullPath = `${folderPath}/${fileName}`; 
-                        const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${fullPath}`;
                         
-                        let sha = null; 
-                        const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } }); 
-                        if(check.ok) { const json = await check.json(); sha = json.sha; }
+                        await GitHubAPI.saveFile(fullPath, item.base64data, `PIM Sync: Imagem ${fileName}`, true);
                         
-                        const body = { message: `PIM Upload Img ${fileName}`, content: item.base64data }; 
-                        if(sha) body.sha = sha;
-
-                        const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) }); 
-                        
-                        if(res.ok) { 
-                            const pRef = products.find(x => x.codigo === item.sku); 
-                            if(pRef) { 
-                                pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; 
-                                pRef.last_update = Date.now(); 
-                            }
-                            imageQueue = imageQueue.filter(q => q !== item);
-                            updateImageBadge();
-                        } else {
-                            errorCount++;
+                        const pRef = products.find(x => x.codigo === item.sku); 
+                        if(pRef) { 
+                            pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; 
+                            pRef.last_update = Date.now(); 
                         }
-                    } catch(e) { console.error("Erro na imagem:", e); errorCount++; }
+                        imageQueue = imageQueue.filter(q => q !== item);
+                        updateImageBadge();
+                    } catch(e) { 
+                        console.error("Erro ao enviar imagem:", e); errorCount++; 
+                    }
                 }
                 await localforage.setItem(STORAGE_KEY, products);
                 updateImageBadge();
                 if (errorCount > 0) throw new Error(`Falha no envio de ${errorCount} imagens.`);
             }, btn);
+        }
+
+        function uploadFilaPedidosGithub(btn = null) {
+            const targetBtn = btn || document.createElement('button'); 
+            enqueueGitHubTask('Fila de Pedidos (WhatsApp)', async () => {
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila de Pedidos Atualizada`);
+            }, targetBtn);
+        }
+
+        async function baixarFilaNuvem() {
+            try {
+                const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
+                if (data && data.content) {
+                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                    const parsedData = JSON.parse(decodedContent);
+                    
+                    if(Array.isArray(parsedData)) {
+                        filaDePedidos = parsedData;
+                        await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+                        renderizarCartoes();
+                        alert("Fila sincronizada com a nuvem com sucesso!");
+                        return;
+                    }
+                }
+                alert("O ficheiro pedidos_fila.json não tem o formato esperado ou está vazio.");
+            } catch(e) { 
+                alert("Erro ao baixar a fila: " + e.message); 
+            }
         }
 
         // ==========================================================
@@ -555,7 +568,7 @@
                 cliente: "",
                 entrega: "",
                 valorTotal: "",
-                itens: [] // Mapeado como "itens" para compatibilidade com o leitor
+                itens: [] 
             };
 
             let lendoItens = false;
@@ -592,8 +605,6 @@
             await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
             renderizarCartoes();
             document.getElementById('textoPedidoWhatsapp').value = "";
-            
-            // Sincroniza logo após inserir, refletindo a nova adição
             uploadFilaPedidosGithub(document.getElementById('btnSyncFila'));
         }
 
@@ -601,7 +612,6 @@
             const container = document.getElementById('containerPedidosCards');
             container.innerHTML = "";
 
-            // Filtramos visualmente para mostrar apenas os pendentes
             const pendentes = filaDePedidos.filter(p => p.status === "PENDENTE");
 
             if (pendentes.length === 0) {
@@ -610,9 +620,7 @@
             }
 
             pendentes.forEach((pedido) => {
-                // Encontrar index real no array original
                 const realIndex = filaDePedidos.findIndex(p => p.id === pedido.id);
-                
                 const cartao = document.createElement('div');
                 cartao.className = 'cartao-pedido';
                 
@@ -637,8 +645,6 @@
             filaDePedidos.splice(index, 1);
             await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
             renderizarCartoes();
-            
-            // Sincroniza logo após remover, garantindo que foi apagado no arquivo oficial
             uploadFilaPedidosGithub(document.getElementById('btnSyncFila'));
         }
 
@@ -649,10 +655,9 @@
             let itensVendidos = {};
             let countBaixas = 0;
 
-            // 1. Somar tudo que foi vendido na fila
             filaDePedidos.forEach(pedido => {
                 if (pedido.status === "PENDENTE") {
-                    let listaItens = pedido.items || pedido.itens; // Suporta as duas nomenclaturas
+                    let listaItens = pedido.items || pedido.itens; 
                     if (listaItens) {
                         listaItens.forEach(item => {
                             const nome = item.nomeOriginal;
@@ -663,14 +668,13 @@
                             }
                         });
                     }
-                    pedido.status = "CONCLUIDO"; // Muda o status
+                    pedido.status = "CONCLUIDO"; 
                     countBaixas++;
                 }
             });
 
             if(countBaixas === 0) return alert("Nenhum item processado.");
 
-            // 2. Atualizar a Base Local
             let mudouAlgoLocalmente = false;
             for (const [nomeVendido, qtdVendida] of Object.entries(itensVendidos)) {
                 let p = products.find(prod => prod.nome === nomeVendido);
@@ -681,7 +685,6 @@
                 }
             }
 
-            // 3. Limpar a fila removendo os "CONCLUIDO" para manter tudo leve
             filaDePedidos = filaDePedidos.filter(p => p.status !== "CONCLUIDO");
             await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
             
@@ -693,56 +696,18 @@
             renderizarCartoes();
             alert("Sucesso! Baixa no estoque efetuada.");
 
-            // 4. Jogar a BaseAtualizada e a FilaAtualizada para o GitHub
-            uploadFilaPedidosGithub(document.getElementById('btnSyncFila')); // Envia o fila limpa
+            uploadFilaPedidosGithub(document.getElementById('btnSyncFila')); 
             
             if(mudouAlgoLocalmente) {
-                uploadBancodedados(document.getElementById('btnSyncBD'));      // Atualiza banco
-                uploadProdutosJson(document.getElementById('btnSyncVitrine')); // Atualiza vitrine
+                uploadBancodedados(document.getElementById('btnSyncBD'));      
+                uploadProdutosJson(document.getElementById('btnSyncVitrine')); 
             }
         }
 
-        function uploadFilaPedidosGithub(btn = null) {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
-            if(!cfg || !cfg.token) return;
-            const targetBtn = btn || document.createElement('button');
-            
-            enqueueGitHubTask('Fila (pedidos_fila.json)', async () => {
-                const path = `site/pedidos_fila.json`;
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                let sha = null;
-                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
-                if(check.ok) { const json = await check.json(); sha = json.sha; }
-
-                const contentStr = JSON.stringify(filaDePedidos, null, 2);
-                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
-                const body = { message: `PIM Sync: Fila de Pedidos`, content: base64 };
-                if(sha) body.sha = sha;
-
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
-                if(!res.ok) throw new Error("Falha na gravação da fila.");
-            }, targetBtn);
-        }
-
-        async function baixarFilaNuvem() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure a API.");
-            try {
-                const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidos_fila.json?t=${Date.now()}`, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
-                if(res.ok) {
-                    const data = await res.json();
-                    if(Array.isArray(data)) {
-                        filaDePedidos = data;
-                        await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-                        renderizarCartoes();
-                        alert("Fila sincronizada com a nuvem com sucesso!");
-                    }
-                } else {
-                    alert("Arquivo pedidos_fila.json não encontrado na nuvem.");
-                }
-            } catch(e) { alert("Erro ao baixar a fila: " + e.message); }
-        }
         // ==========================================================
-
+        // UI & EVENTOS GERAIS
+        // ==========================================================
+        
         let isFilter24hActive = false;
         function toggleFilter24h() {
             isFilter24hActive = !isFilter24hActive;
@@ -793,45 +758,29 @@
             if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
             
             renderGrid();
-            renderizarCartoes(); // Renderiza a fila no painel do whatsapp
+            renderizarCartoes(); 
         }
         
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
-
         async function saveDataLocally() { try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} }
 
-        // --- FUNÇÕES GLOBAIS PARA O NOVO SISTEMA DE TAGS ---
         window.updateTag = async function(sku, idx, field, value) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return;
-            if(!p.tags) p.tags = [];
-            p.tags[idx][field] = value;
-            p.last_update = Date.now();
-            await saveDataLocally();
-            renderGrid(document.getElementById('search-input').value);
+            const p = products.find(x => x.codigo === sku); if(!p) return;
+            if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now();
+            await saveDataLocally(); renderGrid(document.getElementById('search-input').value);
         }
 
         window.addTag = async function(sku) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p) return;
-            if(!p.tags) p.tags = [];
-            p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 });
-            p.last_update = Date.now();
-            await saveDataLocally();
-            openEditSidebar(sku); // Recarrega os inputs no sidebar
-            renderGrid(document.getElementById('search-input').value); // Atualiza grid
+            const p = products.find(x => x.codigo === sku); if(!p) return;
+            if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now();
+            await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); 
         }
 
         window.removeTag = async function(sku, idx) {
-            const p = products.find(x => x.codigo === sku);
-            if(!p || !p.tags) return;
-            p.tags.splice(idx, 1);
-            p.last_update = Date.now();
-            await saveDataLocally();
-            openEditSidebar(sku); // Recarrega os inputs
-            renderGrid(document.getElementById('search-input').value); // Atualiza grid
+            const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return;
+            p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally();
+            openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); 
         }
-        // ----------------------------------------------------
 
         function renderGrid(filter = "") {
             const gridContainer = document.getElementById('product-grid'); gridContainer.innerHTML = "";
@@ -853,11 +802,9 @@
                 card.onclick = () => { openEditSidebar(p.codigo); };
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 
-                // --- Processar Tags (Nova Lógica e Lógica Antiga por compatibilidade) ---
                 let htmlTag = '';
                 let tagsToRender = p.tags ? [...p.tags] : [];
                 
-                // Se houver texto antigo perdido, converte para o formato novo dinamicamente
                 if (p.tag_texto && tagsToRender.length === 0) {
                      p.tag_texto.split('\n').filter(l => l.trim() !== '').forEach(l => {
                          tagsToRender.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 });
@@ -870,7 +817,6 @@
                     ).join('');
                     htmlTag = `<div class="tags-container">${tagsGeradas}</div>`;
                 }
-                // ------------------------------------------------------------------------
 
                 card.innerHTML = `<div class="card-img-wrapper">${htmlTag}<img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div><div class="card-info"><div class="card-title">${p.nome || 'Produto Sem Nome'}</div><button class="card-btn">EDITAR</button></div>`;
                 gridContainer.appendChild(card);
@@ -899,16 +845,14 @@
                 htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Url YouTube Shorts ${i}" onchange="updateField('${p.codigo}', '${prop}', this.value)">`;
             }
 
-            // --- Construção dos Inputs Dinâmicos de Tags ---
             let htmlEditorTags = '';
             const tags = p.tags || [];
             
-            // Compatibilidade com a versão anterior (se tiver tag_texto, converte em memória visualmente)
             if (p.tag_texto && tags.length === 0) {
                  p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => {
                      tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 });
                  });
-                 p.tag_texto = ''; // Limpa a variável antiga
+                 p.tag_texto = ''; 
                  p.tags = tags;
             }
 
@@ -924,7 +868,6 @@
                 `;
             });
             htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG</button>`;
-            // ------------------------------------------------
 
             const sidebarBody = document.getElementById('sidebar-body');
             sidebarBody.innerHTML = `
@@ -1134,13 +1077,28 @@
         });
 
         async function fetchFromGithub() {
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure a API.");
-            if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
             try {
-                const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json?t=${Date.now()}`, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
-                const data = await res.json();
-                if(Array.isArray(data)) { products = data; await saveDataLocally(); renderGrid(); alert("Sincronização concluída!"); closeSidebar('config-sidebar'); }
-            } catch(e) { alert("Erro de sincronização: " + e.message); }
+                const data = await GitHubAPI.getFileData(`site/bancodedados.json`);
+                
+                if (data && data.content) {
+                    if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
+                    
+                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
+                    const parsedData = JSON.parse(decodedContent);
+                    
+                    if(Array.isArray(parsedData)) {
+                        products = parsedData;
+                        await saveDataLocally();
+                        renderGrid();
+                        alert("Sincronização da Base concluída!");
+                        closeSidebar('config-sidebar');
+                        return;
+                    }
+                }
+                alert("O ficheiro bancodedados.json não tem o formato esperado ou não foi encontrado.");
+            } catch(e) { 
+                alert("Erro ao descarregar a base da nuvem: " + e.message); 
+            }
         }
 
         async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
