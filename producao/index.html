@@ -228,6 +228,19 @@
                     <p class="texto-vazio" style="font-size:11px; color:var(--text-secondary); text-align:center;">Nenhum pedido processado ainda.</p>
                 </div>
             </div>
+            
+            <div class="form-section" style="border-top: 1px solid var(--border); padding-top: 15px;">
+                <div class="section-title">Sincronização Manual (Fila GitHub)</div>
+                <button id="btnSyncFila" class="nav-btn sync-btn" style="width:100%; justify-content:center; margin-bottom:5px;" onclick="uploadFilaPedidosGithub(this)">
+                    <i data-lucide="upload-cloud" size="14"></i> ATUALIZAR PEDIDOS_FILA.JSON
+                </button>
+                <button id="btnSyncBD" class="nav-btn sync-btn" style="width:100%; justify-content:center; margin-bottom:5px;" onclick="uploadBancodedados(this)">
+                    <i data-lucide="database" size="14"></i> ATUALIZAR ESTOQUE (BANCODEDADOS)
+                </button>
+                <button id="btnSyncVitrine" class="nav-btn sync-btn" style="width:100%; justify-content:center;" onclick="uploadProdutosJson(this)">
+                    <i data-lucide="layout-grid" size="14"></i> ATUALIZAR ESTOQUE (PRODUTOS)
+                </button>
+            </div>
         </div>
         <div class="sidebar-footer" style="flex-direction:column; gap:8px;">
             <button class="nav-btn sync-btn" style="width:100%; height:40px; justify-content:center;" onclick="baixarFilaNuvem()">
@@ -580,8 +593,8 @@
             renderizarCartoes();
             document.getElementById('textoPedidoWhatsapp').value = "";
             
-            // Sincroniza logo após inserir
-            uploadFilaPedidosGithub();
+            // Sincroniza logo após inserir, refletindo a nova adição
+            uploadFilaPedidosGithub(document.getElementById('btnSyncFila'));
         }
 
         function renderizarCartoes() {
@@ -624,7 +637,9 @@
             filaDePedidos.splice(index, 1);
             await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
             renderizarCartoes();
-            uploadFilaPedidosGithub();
+            
+            // Sincroniza logo após remover, garantindo que foi apagado no arquivo oficial
+            uploadFilaPedidosGithub(document.getElementById('btnSyncFila'));
         }
 
         async function darBaixaEstoqueMaster() {
@@ -679,15 +694,11 @@
             alert("Sucesso! Baixa no estoque efetuada.");
 
             // 4. Jogar a BaseAtualizada e a FilaAtualizada para o GitHub
-            const btnMockFila = document.createElement('button'); btnMockFila.innerHTML = "Mock";
-            const btnMockDB = document.createElement('button'); btnMockDB.innerHTML = "Mock";
-            const btnMockVitrine = document.createElement('button'); btnMockVitrine.innerHTML = "Mock";
-            
-            uploadFilaPedidosGithub(btnMockFila); // Envia o fila limpa
+            uploadFilaPedidosGithub(document.getElementById('btnSyncFila')); // Envia o fila limpa
             
             if(mudouAlgoLocalmente) {
-                uploadBancodedados(btnMockDB);      // Atualiza banco
-                uploadProdutosJson(btnMockVitrine); // Atualiza vitrine
+                uploadBancodedados(document.getElementById('btnSyncBD'));      // Atualiza banco
+                uploadProdutosJson(document.getElementById('btnSyncVitrine')); // Atualiza vitrine
             }
         }
 
