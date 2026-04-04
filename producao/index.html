@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -12,6 +12,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         /* =========================================================
+           UTILITÁRIOS GERAIS E CORREÇÕES CRÍTICAS
+           ========================================================= */
+        * { box-sizing: border-box; }
+        .hidden { display: none !important; } /* <-- A PEÇA QUE FALTAVA! */
+
+        /* =========================================================
            CSS DO PIM (BASE)
            ========================================================= */
         :root {
@@ -23,7 +29,7 @@
             --sep-primary: #4CAF50; --sep-secondary: #2196F3; --sep-danger: #f44336; 
             --sep-warning: #ff9800; --sep-dark: #111; --sep-light: #f4f4f4;
         }
-        * { box-sizing: border-box; }
+        
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
         
         header { background: #ffffff; min-height: 54px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
@@ -70,13 +76,13 @@
         .card-btn:hover { background: var(--accent); color: white; }
 
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
-        .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
+        .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; z-index: 1005; }
         .sidebar.open { transform: translateX(0); }
         
-        #edit-sidebar { z-index: 1001; width: 480px; }
-        #editor-sidebar { z-index: 1002; width: 420px; border-left: 1px solid var(--border); }
-        #config-sidebar { z-index: 1003; width: 380px; }
-        #whatsapp-sidebar { z-index: 1004; width: 420px; } 
+        #edit-sidebar { z-index: 1010; width: 480px; }
+        #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
+        #config-sidebar { z-index: 1012; width: 380px; }
+        #whatsapp-sidebar { z-index: 1013; width: 420px; } 
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -182,7 +188,7 @@
         }
     </style>
 </head>
-<body>
+<body id="body-app">
 
     <script>
         const STORAGE_KEY = 'sucedoan_pim_v37'; 
@@ -873,26 +879,33 @@
             const btnSyncFila = document.getElementById('btnSyncFila') || document.createElement('button');
             
             enqueueGitHubTask('Baixa do Pedido Separado', async () => {
+                // 1. Pega a versão mais atual da nuvem
                 let filaRemota = await getFilaRemota();
                 
+                // 2. Procura o nosso pedido exato lá e muda o status
                 let pedidoRemotoIndex = filaRemota.findIndex(p => p.id === pedidoAtualParaSeparacao.id);
                 if(pedidoRemotoIndex === -1) throw new Error("Pedido não encontrado na nuvem para dar baixa.");
                 
                 filaRemota[pedidoRemotoIndex].status = "CONCLUIDO";
 
+                // 3. Prepara o mapa de redução de stock
                 let itensVendidos = {};
                 listaDeSeparacao.forEach(i => {
                     const skuOrNome = i.produtoDb.codigo !== "---" ? i.produtoDb.codigo : i.nomePedido;
                     itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + i.quantidadeTotal;
                 });
 
+                // 4. Reduz no banco de dados do PIM localmente
                 let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
 
+                // 5. Apaga concluídos para manter fila limpa e salva a fila no GitHub
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Concluído`);
                 
+                // 6. Atualiza o local
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
+                // 7. Envia os novos estoques para o GitHub
                 if(mudouAlgoLocalmente) {
                     await saveDataLocally(); 
                     renderGrid(document.getElementById('search-input').value);
