@@ -11,7 +11,6 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        /* [O CSS MANTÉM-SE EXATAMENTE IGUAL AO ORIGINAL] */
         :root {
             --bg-body: #f4f4f5;
             --bg-card: #ffffff;
@@ -522,8 +521,8 @@
 
         function uploadFilaPedidosGithub(btn = null) {
             const targetBtn = btn || document.createElement('button'); 
-            enqueueGitHubTask('Fila de Pedidos (WhatsApp)', async () => {
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila de Pedidos Atualizada`);
+            enqueueGitHubTask('Forçar Sincronização da Fila', async () => {
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila de Pedidos Forçada`);
             }, targetBtn);
         }
 
@@ -548,11 +547,10 @@
             }
         }
 
-       // ==========================================================
+        // ==========================================================
         // FUNÇÕES DO WHATSAPP & ESTOQUE (AGORA INTELIGENTES)
         // ==========================================================
         
-        // Função auxiliar para ir buscar SEMPRE a versão mais recente ao GitHub
         async function getFilaRemota() {
             try {
                 const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
@@ -563,6 +561,15 @@
                 }
             } catch(e) { console.warn("Aviso: Fila remota não encontrada, a iniciar nova."); }
             return [];
+        }
+
+        // ==========================================================
+        // FUNÇÃO DE LIMPEZA (Para o PIM cruzar os dados perfeitamente)
+        // ==========================================================
+        function limparTexto(texto) {
+            if (!texto) return "";
+            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
         }
 
         async function gerarPedidoWhatsapp() {
@@ -583,6 +590,7 @@
 
             linhas.forEach(linha => {
                 const textoLinha = linha.trim();
+                
                 if (textoLinha.includes('*PEDIDO #')) {
                     const match = textoLinha.match(/#(\d+)/);
                     if (match) { novoPedido.orderNum = `#${match[1]}`; novoPedido.orderNumMatch = [textoLinha, novoPedido.orderNum]; }
@@ -591,12 +599,27 @@
                 } else if (textoLinha.includes('*TOTAL:')) { const match = textoLinha.match(/R\$\s?([\d.,]+)/); if (match) novoPedido.valorTotal = match[1];
                 } else if (textoLinha.includes('*ITENS:*')) { lendoItens = true;
                 } else if (lendoItens && textoLinha.match(/^\d+x/)) {
-                    const partes = textoLinha.split('x '); const qtd = parseInt(partes[0].trim());
-                    novoPedido.itens.push({ qtd: qtd, nomeOriginal: partes.slice(1).join('x ').trim() });
+                    const partes = textoLinha.split('x '); 
+                    const qtd = parseInt(partes[0].trim());
+                    const nomeProduto = partes.slice(1).join('x ').trim();
+                    
+                    // A MÁGICA ACONTECE AQUI: O PIM procura logo o produto e a imagem!
+                    let nomeZapLimpo = limparTexto(nomeProduto);
+                    let produtoEncontrado = products.find(p => limparTexto(p.nome) === nomeZapLimpo);
+                    
+                    let skuFinal = produtoEncontrado ? produtoEncontrado.codigo : "---";
+                    let imagemFinal = produtoEncontrado ? (produtoEncontrado.url_imagem || "") : "";
+
+                    novoPedido.itens.push({ 
+                        qtd: qtd, 
+                        nomeOriginal: nomeProduto,
+                        sku: skuFinal,           // GRAVA O SKU NO PEDIDO JSON
+                        imagem: imagemFinal      // GRAVA A FOTO NO PEDIDO JSON
+                    });
                 } else if (textoLinha === '' || textoLinha.includes('------')) { lendoItens = false; }
             });
 
-            // 1. Adiciona localmente para dar feedback visual imediato a ti
+            // 1. Adiciona localmente para dar feedback visual imediato
             filaDePedidos.push(novoPedido);
             renderizarCartoes();
             document.getElementById('textoPedidoWhatsapp').value = "";
@@ -606,14 +629,14 @@
             enqueueGitHubTask('Adicionar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
                 
-                // Garante que não duplica se clicares duas vezes sem querer
+                // Garante que não duplica
                 if (!filaRemota.find(p => p.id === novoPedido.id)) {
                     filaRemota.push(novoPedido);
                 }
                 
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
                 
-                // Atualiza o teu local para ficar igual à versão definitiva do servidor
+                // Atualiza o teu local
                 filaDePedidos = filaRemota;
                 await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 renderizarCartoes();
@@ -654,21 +677,14 @@
         async function apagarPedido(pedidoId) {
             if(!confirm("Tem certeza que deseja apagar este pedido da fila?")) return;
             
-            // 1. Remove localmente para feedback visual imediato
             filaDePedidos = filaDePedidos.filter(p => p.id !== pedidoId);
             renderizarCartoes();
             
-            // 2. Atualização Inteligente no GitHub (Puxa, Remove o ID, e Guarda)
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
             enqueueGitHubTask('Apagar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
-                
-                // Filtra apagando APENAS o ID específico
                 filaRemota = filaRemota.filter(p => p.id !== pedidoId);
-                
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
-                
-                // Atualiza o local com a versão definitiva do servidor
                 filaDePedidos = filaRemota;
                 await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 renderizarCartoes();
@@ -676,14 +692,12 @@
         }
 
         async function darBaixaEstoqueMaster() {
-            // Verifica se vale a pena avançar
             if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) {
                 return alert("Não há pedidos PENDENTES na fila para dar baixa.");
             }
 
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
             enqueueGitHubTask('Dar Baixa e Limpar', async () => {
-                // 1. Lemos a nuvem primeiro para garantir que agimos com a verdade absoluta
                 let filaRemota = await getFilaRemota();
                 let pendentes = filaRemota.filter(p => p.status === "PENDENTE");
                 
@@ -697,8 +711,8 @@
                         let listaItens = pedido.items || pedido.itens; 
                         if (listaItens) {
                             listaItens.forEach(item => {
-                                const nome = item.nomeOriginal;
-                                itensVendidos[nome] = (itensVendidos[nome] || 0) + item.qtd;
+                                const skuOrNome = item.sku && item.sku !== "---" ? item.sku : item.nomeOriginal;
+                                itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + item.qtd;
                             });
                         }
                         pedido.status = "CONCLUIDO"; 
@@ -708,10 +722,10 @@
 
                 if(countBaixas === 0) throw new Error("Nenhum item processado.");
 
-                // 2. Atualiza os teus produtos localmente
                 let mudouAlgoLocalmente = false;
-                for (const [nomeVendido, qtdVendida] of Object.entries(itensVendidos)) {
-                    let p = products.find(prod => prod.nome === nomeVendido);
+                for (const [idVendido, qtdVendida] of Object.entries(itensVendidos)) {
+                    // Tenta achar pelo SKU primeiro, ou pelo nome se não tiver SKU
+                    let p = products.find(prod => prod.codigo === idVendido || prod.nome === idVendido);
                     if (p) {
                         p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida;
                         p.last_update = Date.now();
@@ -719,16 +733,12 @@
                     }
                 }
 
-                // 3. Limpa os concluídos da fila na nuvem para manter o ficheiro pequeno e rápido
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
-                
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Efetuada`);
                 
-                // 4. Sincroniza o local
                 filaDePedidos = filaRemota;
                 await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
-                // 5. Se os produtos mudaram, atualiza os outros ficheiros!
                 if(mudouAlgoLocalmente) {
                     await saveDataLocally();
                     renderGrid(document.getElementById('search-input').value);
@@ -739,16 +749,6 @@
                 renderizarCartoes();
                 alert("Sucesso! Baixa no estoque efetuada.");
             }, btn);
-        }
-
-        function uploadFilaPedidosGithub(btn = null) {
-            // Este botão manual agora atua como um "Forçar Substituição" da nuvem pelo local, 
-            // caso queiras forçar a tua versão local para a nuvem em caso de erro. 
-            // No dia-a-dia, Adicionar e Apagar já fazem tudo sozinhos e com segurança!
-            const targetBtn = btn || document.createElement('button'); 
-            enqueueGitHubTask('Forçar Sincronização da Fila', async () => {
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila de Pedidos Forçada`);
-            }, targetBtn);
         }
 
         // ==========================================================
