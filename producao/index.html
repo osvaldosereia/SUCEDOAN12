@@ -514,7 +514,7 @@
             });
         }
 
-        function uploadBancodedados(btn) { enqueueGitHubTask('Base Completa', async () => { const produtosLimpos = sanitizeProductsForExport(products); await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`); }, btn); }
+        function uploadBancodedados(btn) { enqueueGitHubTask('Base Completa', async () => { const produtosLimpos = sanitizeProductsForExport(products); await GitHubAPI.saveFile(`../site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`); }, btn); }
 
         function uploadProdutosJson(btn) {
             enqueueGitHubTask('Vitrine do Site', async () => {
@@ -522,7 +522,7 @@
                 const produtosResumidos = produtosLimpos.map(p => ({
                     id: p.id || p['ID'] || Date.now(), nome: p.nome || "", preco: p.preco || 0, codigo: p.codigo || "", situacao: p.situacao || "A", categoria: p.categoria || "", validade: p.validade || "", estoque: p.estoque || 0, descricao: p.descricao || "", tags: p.tags || [], url_imagem: p.url_imagem || "", url_imagem_2: p.url_imagem_2 || "", url_imagem_3: p.url_imagem_3 || "", link_video: p.link_video || "", link_video_2: p.link_video_2 || "", link_video_3: p.link_video_3 || "", link_video_4: p.link_video_4 || "", link_video_5: p.link_video_5 || "", link_video_6: p.link_video_6 || "", link_video_7: p.link_video_7 || "", link_video_8: p.link_video_8 || "", link_video_9: p.link_video_9 || "", link_video_10: p.link_video_10 || ""
                 }));
-                await GitHubAPI.saveFile(`site/produtos.json`, produtosResumidos, `PIM Sync: Vitrine Atualizada`);
+                await GitHubAPI.saveFile(`../site/produtos.json`, produtosResumidos, `PIM Sync: Vitrine Atualizada`);
             }, btn);
         }
 
@@ -532,7 +532,7 @@
                 const queueCopy = [...imageQueue]; let errorCount = 0;
                 for (const item of queueCopy) {
                     try {
-                        const sufix = item.slot === 1 ? '' : `_${item.slot}`; const folderPath = "site/img/produtos"; const fileName = `${item.sku}${sufix}.webp`; const fullPath = `${folderPath}/${fileName}`; 
+                        const sufix = item.slot === 1 ? '' : `_${item.slot}`; const folderPath = "../site/img/produtos"; const fileName = `${item.sku}${sufix}.webp`; const fullPath = `${folderPath}/${fileName}`; 
                         await GitHubAPI.saveFile(fullPath, item.base64data, `PIM Sync: Imagem ${fileName}`, true);
                         const pRef = products.find(x => x.codigo === item.sku); if(pRef) { pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; pRef.last_update = Date.now(); }
                         imageQueue = imageQueue.filter(q => q !== item); updateImageBadge();
@@ -544,12 +544,12 @@
 
         function uploadFilaPedidosGithub(btn = null) {
             const targetBtn = btn || document.createElement('button'); 
-            enqueueGitHubTask('Sincronizar Fila', async () => { await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); }, targetBtn);
+            enqueueGitHubTask('Sincronizar Fila', async () => { await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); }, targetBtn);
         }
 
         async function baixarFilaNuvem() {
             try {
-                const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
+                const data = await GitHubAPI.getFileData(`../site/pedidos_fila.json`);
                 if (data && data.content) {
                     const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent);
                     if(Array.isArray(parsedData)) { filaDePedidos = parsedData; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes(); alert("Fila sincronizada com a nuvem com sucesso!"); return; }
@@ -560,7 +560,7 @@
 
         async function getFilaRemota() {
             try {
-                const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
+                const data = await GitHubAPI.getFileData(`../site/pedidos_fila.json`);
                 if (data && data.content) { const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent); if(Array.isArray(parsedData)) return parsedData; }
             } catch(e) { console.warn("Aviso: Fila remota não encontrada, a iniciar nova."); }
             return [];
@@ -615,7 +615,7 @@
             enqueueGitHubTask('Gravar Pedido Novo', async () => {
                 let filaRemota = await getFilaRemota();
                 if (!filaRemota.find(p => p.id === novoPedido.id)) { filaRemota.push(novoPedido); }
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
+                await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes();
             }, btn);
         }
@@ -654,7 +654,7 @@
             enqueueGitHubTask('Apagar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
                 filaRemota = filaRemota.filter(p => p.id !== pedidoId);
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
+                await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes();
             }, btn);
         }
@@ -701,7 +701,7 @@
                 let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
 
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
+                await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
                 if(mudouAlgoLocalmente) { await saveDataLocally(); renderGrid(document.getElementById('search-input').value); uploadBancodedados(document.getElementById('btnSyncBD')); }
@@ -900,7 +900,7 @@
 
                 // 5. Apaga concluídos para manter fila limpa e salva a fila no GitHub
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Concluído`);
+                await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Concluído`);
                 
                 // 6. Atualiza o local
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
@@ -1089,7 +1089,7 @@
 
         async function fetchFromGithub() {
             try {
-                const data = await GitHubAPI.getFileData(`site/bancodedados.json`);
+                const data = await GitHubAPI.getFileData(`../site/bancodedados.json`);
                 if (data && data.content) {
                     if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
                     const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent);
