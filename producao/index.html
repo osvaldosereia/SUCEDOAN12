@@ -1087,42 +1087,46 @@
             });
         });
 
-      async function fetchFromGithub() {
+    async function fetchFromGithub() {
             try {
-                // 1. Vai buscar o token para usarmos no download do repositório privado
+                // 1. Vai buscar as tuas credenciais
                 const cfg = GitHubAPI.getConfig();
                 if (!cfg) return;
 
-                // 2. CORREÇÃO: O caminho da API do GitHub não usa "../", apenas "site/..."
-                const data = await GitHubAPI.getFileData(`site/bancodedados.json`);
+                // 2. Pedimos o ficheiro DIRETAMENTE à API principal do GitHub
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json`;
                 
-                if (data) {
+                const response = await fetch(url, {
+                    headers: { 
+                        "Authorization": `token ${cfg.token}`,
+                        // 3. A MÁGICA: Diz ao GitHub para nos dar o ficheiro "cru" e não o base64!
+                        "Accept": "application/vnd.github.v3.raw" 
+                    },
+                    cache: "no-store" // Garante que puxa sempre a versão mais recente
+                });
+
+                // Se o ficheiro ainda não existir no GitHub
+                if (response.status === 404) {
+                    return alert("O ficheiro 'site/bancodedados.json' não foi encontrado. Tente clicar em 'ENVIAR BASE' primeiro.");
+                }
+
+                if (!response.ok) throw new Error("Falha na comunicação com o GitHub.");
+
+                // 4. Como usamos o método RAW, o ficheiro já vem limpo, é só ler!
+                const parsedData = await response.json();
+
+                if (parsedData && Array.isArray(parsedData)) {
                     if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
                     
-                    let parsedData = null;
+                    products = parsedData;
+                    await saveDataLocally();
+                    renderGrid(document.getElementById('search-input').value);
                     
-                    // 3. OTIMIZAÇÃO: Usa o link de download direto (Ignora limites de tamanho)
-                    if (data.download_url) {
-                        const rawResponse = await fetch(data.download_url + `?t=${Date.now()}`, {
-                            headers: { "Authorization": `token ${cfg.token}` }
-                        }); 
-                        parsedData = await rawResponse.json();
-                    } 
-                    else if (data.content) {
-                        const decodedContent = decodeURIComponent(escape(atob(data.content))); 
-                        parsedData = JSON.parse(decodedContent);
-                    }
-
-                    if(parsedData && Array.isArray(parsedData)) {
-                        products = parsedData;
-                        await saveDataLocally();
-                        renderGrid(document.getElementById('search-input').value);
-                        alert("Sincronização da Base concluída com sucesso!");
-                        closeSidebar('config-sidebar');
-                        return;
-                    }
+                    alert("Sincronização da Base concluída com sucesso!");
+                    closeSidebar('config-sidebar');
+                } else {
+                    alert("O ficheiro transferido não tem o formato esperado.");
                 }
-                alert("O ficheiro 'site/bancodedados.json' não foi encontrado. Tente clicar em 'ENVIAR BASE' primeiro.");
             } catch(e) { 
                 alert("Erro ao descarregar a base da nuvem: " + e.message); 
             }
