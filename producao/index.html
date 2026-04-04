@@ -100,6 +100,7 @@
         #edit-sidebar { z-index: 1001; width: 480px; }
         #editor-sidebar { z-index: 1002; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1003; width: 380px; }
+        #whatsapp-sidebar { z-index: 1004; width: 420px; } /* NOVA ABA WHATSAPP */
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -143,6 +144,11 @@
         .slider-group { display: flex; align-items: center; gap: 12px; }
         .slider-group label { width: 16px; color: var(--text-secondary); display: flex; justify-content: center;}
         input[type=range] { flex-grow: 1; accent-color: var(--accent); }
+
+        /* CARTÕES WHATSAPP */
+        .cartao-pedido { background-color: #fafafa; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .cartao-info { display: flex; flex-direction: column; gap: 4px; }
+        .cartao-info strong { font-size: 12px; color: var(--accent); }
         
         @media (max-width: 768px) {
             header { padding: 10px; flex-wrap: wrap; }
@@ -161,12 +167,14 @@
     <script>
         const STORAGE_KEY = 'sucedoan_pim_v37'; 
         const CONFIG_KEY = 'sucedoan_config';
+        const PEDIDOS_KEY = 'sucedoan_pedidos'; // Chave para os pedidos locais
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
 
     <header>
         <div class="brand"><i data-lucide="package-search" size="20"></i> SUCEDOAN PIM</div>
         <div id="queue-status"></div>
+        <button class="nav-btn primary" onclick="openSidebar('whatsapp-sidebar')"><i data-lucide="shopping-cart" size="14"></i> PEDIDOS WHATSAPP</button>
         <button class="nav-btn" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES API</button>
     </header>
 
@@ -200,6 +208,36 @@
     </div>
 
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAllSidebars()"></div>
+
+    <div class="sidebar" id="whatsapp-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Fila de Pedidos</div>
+            <button class="btn-icon" onclick="closeSidebar('whatsapp-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body" style="gap:16px;">
+            <div class="form-section">
+                <div class="section-title">Importar do WhatsApp</div>
+                <textarea id="textoPedidoWhatsapp" class="form-input" rows="6" placeholder="Cole o pedido aqui... (*PEDIDO #...)" style="resize:vertical;"></textarea>
+                <button class="nav-btn primary" style="justify-content:center; height:36px; margin-top: 5px;" onclick="gerarPedidoWhatsapp()">
+                    <i data-lucide="arrow-down-to-line" size="14"></i> TRADUZIR PEDIDO
+                </button>
+            </div>
+            <div class="form-section">
+                <div class="section-title">Pedidos Pendentes</div>
+                <div id="containerPedidosCards">
+                    <p class="texto-vazio" style="font-size:11px; color:var(--text-secondary); text-align:center;">Nenhum pedido processado ainda.</p>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer" style="flex-direction:column; gap:8px;">
+            <button class="nav-btn sync-btn" style="width:100%; height:40px; justify-content:center;" onclick="baixarFilaNuvem()">
+                <i data-lucide="cloud-download" size="14"></i> PUXAR FILA DA NUVEM
+            </button>
+            <button class="nav-btn" style="width:100%; height:40px; justify-content:center; background:var(--accent); color:white;" onclick="darBaixaEstoqueMaster()">
+                <i data-lucide="package-minus" size="14"></i> DAR BAIXA NO ESTOQUE
+            </button>
+        </div>
+    </div>
 
     <div class="sidebar" id="edit-sidebar">
         <div class="sidebar-header">
@@ -266,6 +304,8 @@
         let currentEditingSku = null;
         let currentImageSlot = 1; 
         let imageQueue = [];
+        
+        let filaDePedidos = []; // Array da Gaveta do WhatsApp
 
         let githubTasksQueue = [];
         let isProcessingTasks = false;
@@ -482,6 +522,216 @@
             }, btn);
         }
 
+        // ==========================================================
+        // FUNÇÕES DO WHATSAPP & ESTOQUE
+        // ==========================================================
+        
+        async function gerarPedidoWhatsapp() {
+            const texto = document.getElementById('textoPedidoWhatsapp').value;
+            if (!texto) {
+                alert("Por favor, cole o texto do pedido primeiro!");
+                return;
+            }
+
+            const linhas = texto.split('\n');
+            let novoPedido = {
+                id: Date.now(),
+                status: "PENDENTE",
+                orderNumMatch: [],
+                orderNum: "",
+                cliente: "",
+                entrega: "",
+                valorTotal: "",
+                itens: [] // Mapeado como "itens" para compatibilidade com o leitor
+            };
+
+            let lendoItens = false;
+
+            linhas.forEach(linha => {
+                const textoLinha = linha.trim();
+                
+                if (textoLinha.includes('*PEDIDO #')) {
+                    const match = textoLinha.match(/#(\d+)/);
+                    if (match) {
+                        novoPedido.orderNum = `#${match[1]}`;
+                        novoPedido.orderNumMatch = [textoLinha, novoPedido.orderNum];
+                    }
+                } else if (textoLinha.includes('*CLIENTE:*')) {
+                    novoPedido.cliente = textoLinha.replace('*CLIENTE:*', '').trim();
+                } else if (textoLinha.includes('*ENTREGA:*')) {
+                    novoPedido.entrega = textoLinha.replace('*ENTREGA:*', '').trim();
+                } else if (textoLinha.includes('*TOTAL:')) {
+                    const match = textoLinha.match(/R\$\s?([\d.,]+)/);
+                    if (match) novoPedido.valorTotal = match[1];
+                } else if (textoLinha.includes('*ITENS:*')) {
+                    lendoItens = true;
+                } else if (lendoItens && textoLinha.match(/^\d+x/)) {
+                    const partes = textoLinha.split('x ');
+                    const qtd = parseInt(partes[0].trim());
+                    const nomeProduto = partes.slice(1).join('x ').trim();
+                    novoPedido.itens.push({ qtd: qtd, nomeOriginal: nomeProduto });
+                } else if (textoLinha === '' || textoLinha.includes('------')) {
+                    lendoItens = false;
+                }
+            });
+
+            filaDePedidos.push(novoPedido);
+            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+            renderizarCartoes();
+            document.getElementById('textoPedidoWhatsapp').value = "";
+            
+            // Sincroniza logo após inserir
+            uploadFilaPedidosGithub();
+        }
+
+        function renderizarCartoes() {
+            const container = document.getElementById('containerPedidosCards');
+            container.innerHTML = "";
+
+            // Filtramos visualmente para mostrar apenas os pendentes
+            const pendentes = filaDePedidos.filter(p => p.status === "PENDENTE");
+
+            if (pendentes.length === 0) {
+                container.innerHTML = '<p class="texto-vazio">Nenhum pedido pendente na fila.</p>';
+                return;
+            }
+
+            pendentes.forEach((pedido) => {
+                // Encontrar index real no array original
+                const realIndex = filaDePedidos.findIndex(p => p.id === pedido.id);
+                
+                const cartao = document.createElement('div');
+                cartao.className = 'cartao-pedido';
+                
+                cartao.innerHTML = `
+                    <div class="cartao-info">
+                        <strong>Pedido ${pedido.orderNum || '#...'}</strong>
+                        <span>👤 ${pedido.cliente || 'Desconhecido'}</span>
+                        <span>📅 Entrega: ${pedido.entrega || 'N/A'}</span>
+                        <span>💰 Total: R$ ${pedido.valorTotal || '0,00'}</span>
+                    </div>
+                    <button class="btn-apagar" onclick="apagarPedido(${realIndex})">
+                        <i data-lucide="trash-2" size="14"></i>
+                    </button>
+                `;
+                container.appendChild(cartao);
+            });
+            lucide.createIcons();
+        }
+
+        async function apagarPedido(index) {
+            if(!confirm("Tem certeza que deseja apagar este pedido da fila?")) return;
+            filaDePedidos.splice(index, 1);
+            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+            renderizarCartoes();
+            uploadFilaPedidosGithub();
+        }
+
+        async function darBaixaEstoqueMaster() {
+            const pendentes = filaDePedidos.filter(p => p.status === "PENDENTE");
+            if(pendentes.length === 0) return alert("Não há pedidos PENDENTES na fila para dar baixa.");
+
+            let itensVendidos = {};
+            let countBaixas = 0;
+
+            // 1. Somar tudo que foi vendido na fila
+            filaDePedidos.forEach(pedido => {
+                if (pedido.status === "PENDENTE") {
+                    let listaItens = pedido.items || pedido.itens; // Suporta as duas nomenclaturas
+                    if (listaItens) {
+                        listaItens.forEach(item => {
+                            const nome = item.nomeOriginal;
+                            if (itensVendidos[nome]) {
+                                itensVendidos[nome] += item.qtd;
+                            } else {
+                                itensVendidos[nome] = item.qtd;
+                            }
+                        });
+                    }
+                    pedido.status = "CONCLUIDO"; // Muda o status
+                    countBaixas++;
+                }
+            });
+
+            if(countBaixas === 0) return alert("Nenhum item processado.");
+
+            // 2. Atualizar a Base Local
+            let mudouAlgoLocalmente = false;
+            for (const [nomeVendido, qtdVendida] of Object.entries(itensVendidos)) {
+                let p = products.find(prod => prod.nome === nomeVendido);
+                if (p) {
+                    p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida;
+                    p.last_update = Date.now();
+                    mudouAlgoLocalmente = true;
+                }
+            }
+
+            // 3. Limpar a fila removendo os "CONCLUIDO" para manter tudo leve
+            filaDePedidos = filaDePedidos.filter(p => p.status !== "CONCLUIDO");
+            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+            
+            if(mudouAlgoLocalmente) {
+                await saveDataLocally();
+                renderGrid(document.getElementById('search-input').value);
+            }
+
+            renderizarCartoes();
+            alert("Sucesso! Baixa no estoque efetuada.");
+
+            // 4. Jogar a BaseAtualizada e a FilaAtualizada para o GitHub
+            const btnMockFila = document.createElement('button'); btnMockFila.innerHTML = "Mock";
+            const btnMockDB = document.createElement('button'); btnMockDB.innerHTML = "Mock";
+            const btnMockVitrine = document.createElement('button'); btnMockVitrine.innerHTML = "Mock";
+            
+            uploadFilaPedidosGithub(btnMockFila); // Envia o fila limpa
+            
+            if(mudouAlgoLocalmente) {
+                uploadBancodedados(btnMockDB);      // Atualiza banco
+                uploadProdutosJson(btnMockVitrine); // Atualiza vitrine
+            }
+        }
+
+        function uploadFilaPedidosGithub(btn = null) {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
+            if(!cfg || !cfg.token) return;
+            const targetBtn = btn || document.createElement('button');
+            
+            enqueueGitHubTask('Fila (pedidos_fila.json)', async () => {
+                const path = `site/pedidos_fila.json`;
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+                let sha = null;
+                const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
+                if(check.ok) { const json = await check.json(); sha = json.sha; }
+
+                const contentStr = JSON.stringify(filaDePedidos, null, 2);
+                const base64 = btoa(unescape(encodeURIComponent(contentStr)));
+                const body = { message: `PIM Sync: Fila de Pedidos`, content: base64 };
+                if(sha) body.sha = sha;
+
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                if(!res.ok) throw new Error("Falha na gravação da fila.");
+            }, targetBtn);
+        }
+
+        async function baixarFilaNuvem() {
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)); if(!cfg || !cfg.token) return alert("Configure a API.");
+            try {
+                const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/pedidos_fila.json?t=${Date.now()}`, { headers: { "Authorization": `token ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" } });
+                if(res.ok) {
+                    const data = await res.json();
+                    if(Array.isArray(data)) {
+                        filaDePedidos = data;
+                        await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+                        renderizarCartoes();
+                        alert("Fila sincronizada com a nuvem com sucesso!");
+                    }
+                } else {
+                    alert("Arquivo pedidos_fila.json não encontrado na nuvem.");
+                }
+            } catch(e) { alert("Erro ao baixar a fila: " + e.message); }
+        }
+        // ==========================================================
+
         let isFilter24hActive = false;
         function toggleFilter24h() {
             isFilter24hActive = !isFilter24hActive;
@@ -526,9 +776,13 @@
 
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
+            try { const savedPedidos = await localforage.getItem(PEDIDOS_KEY); if(savedPedidos && Array.isArray(savedPedidos)) filaDePedidos = savedPedidos; } catch (err) {}
+            
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
             if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
+            
             renderGrid();
+            renderizarCartoes(); // Renderiza a fila no painel do whatsapp
         }
         
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
