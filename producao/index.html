@@ -208,8 +208,6 @@
             .card-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .image-slots { grid-template-columns: repeat(3, 1fr); }
             .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
-            .balanco-card { flex-direction: column !important; }
-            .balanco-card img { width: 100% !important; height: 180px !important; }
         }
     </style>
 </head>
@@ -700,7 +698,7 @@
         }
 
         // ==========================================================
-        // NOVO MÓDULO: BALANÇO DE ESTOQUE
+        // NOVO MÓDULO: BALANÇO DE ESTOQUE (OTIMIZADO MOBILE)
         // ==========================================================
         let balancoEditsCount = 0;
 
@@ -721,13 +719,11 @@
                 let c = (p.codigo || "").toLowerCase();
                 let ean = String(p.gtin || "").replace(/\D/g, "");
 
-                // Se digitou >= 4 números, busca pelo final do EAN (modo bipe)
                 if (isNumeric && term.length >= 4 && ean.length > 0 && ean.endsWith(term)) return true;
-                // Busca geral por nome ou SKU
                 if (n.includes(term) || c.includes(term)) return true;
                 
                 return false;
-            }).slice(0, 15); // Limita a 15 para não travar o mobile
+            }).slice(0, 15);
 
             if(found.length === 0) { 
                 container.innerHTML = '<p style="text-align:center; color:#888;">Nenhum produto encontrado com estes dados.</p>'; 
@@ -737,45 +733,44 @@
             container.innerHTML = found.map(p => {
                 let img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/100x100/f4f4f5/a1a1aa?text=SEM+FOTO';
                 return `
-                <div class="product-card balanco-card" style="display:flex; flex-direction:row; padding:15px; gap:15px; cursor:default; background:#fff; border-radius:12px; border:1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
-                    <img src="${img}" style="width:100px; height:100px; object-fit:contain; border-radius:8px; border:1px solid #eee; background:#fafafa;">
+                <div class="product-card" style="padding:15px; background:#fff; border-radius:12px; border:1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 15px; cursor:default;">
                     
-                    <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
-                        <div>
-                            <label style="font-size:10px; font-weight:bold; color:#666;">Nome do Produto</label>
-                            <input type="text" id="bal-nome-${p.codigo}" value="${p.nome}" class="form-input" style="font-weight:bold; font-size:14px; padding:8px;">
-                        </div>
-                        
-                        <div style="display:flex; gap:10px;">
-                            <div style="flex:1;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <img src="${img}" style="width:85px; height:85px; object-fit:contain; border-radius:8px; border:1px solid #eee; background:#fafafa; flex-shrink: 0;">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <label style="font-size:10px; font-weight:bold; color:#666;">Nome do Produto</label>
+                                <input type="text" id="bal-nome-${p.codigo}" value="${p.nome}" class="form-input" style="font-weight:bold; font-size:13px; padding:8px; width:100%;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <label style="font-size:10px; font-weight:bold; color:#666;">SKU</label>
-                                <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="font-size:12px; padding:8px;">
-                            </div>
-                            <div style="flex:1;">
-                                <label style="font-size:10px; font-weight:bold; color:#666;">EAN</label>
-                                <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="font-size:12px; padding:8px;">
+                                <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="font-size:12px; padding:8px; width:100%;">
                             </div>
                         </div>
+                    </div>
 
-                        <div style="display:flex; gap:10px;">
-                            <div style="flex:1;">
-                                <label style="font-size:10px; font-weight:bold; color:#666;">Validade</label>
-                                <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding:8px; font-size:12px;">
-                            </div>
-                            <div style="flex:1;">
-                                <label style="font-size:10px; font-weight:bold; color:var(--sep-primary);">Estoque Real</label>
-                                <input type="number" id="bal-est-${p.codigo}" value="${p.estoque||0}" class="form-input" style="padding:8px; border-color:var(--sep-primary); font-weight:900; font-size:16px; text-align:center;">
-                            </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <label style="font-size:10px; font-weight:bold; color:#666;">EAN</label>
+                            <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="font-size:12px; padding:8px; width:100%;">
                         </div>
+                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                            <label style="font-size:10px; font-weight:bold; color:#666;">Validade</label>
+                            <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding:8px; font-size:12px; width:100%;">
+                        </div>
+                        <div style="grid-column: span 2; display: flex; flex-direction: column; gap: 2px;">
+                            <label style="font-size:10px; font-weight:bold; color:var(--sep-primary); text-align:center;">Estoque Real (Contagem)</label>
+                            <input type="number" id="bal-est-${p.codigo}" value="${p.estoque||0}" class="form-input" style="padding:12px; border-color:var(--sep-primary); font-weight:900; font-size:20px; text-align:center; width:100%; color:var(--sep-primary);">
+                        </div>
+                    </div>
 
-                        <div style="display:flex; gap:8px; margin-top:5px;">
-                            <button class="nav-btn primary" style="flex:1; justify-content:center; padding:12px;" onclick="salvarBalanco('${p.codigo}', false, this)">
-                                <i data-lucide="save" size="14"></i> SALVAR (FILA)
-                            </button>
-                            <button class="nav-btn success-btn" style="flex:1; justify-content:center; padding:12px;" onclick="salvarBalanco('${p.codigo}', true, this)">
-                                <i data-lucide="cloud-upload" size="14"></i> ENVIAR AGORA
-                            </button>
-                        </div>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <button class="nav-btn primary" style="flex:1; justify-content:center; padding:12px; font-size:11px;" onclick="salvarBalanco('${p.codigo}', false, this)">
+                            <i data-lucide="save" size="14"></i> SALVAR (FILA)
+                        </button>
+                        <button class="nav-btn success-btn" style="flex:1; justify-content:center; padding:12px; font-size:11px;" onclick="salvarBalanco('${p.codigo}', true, this)">
+                            <i data-lucide="cloud-upload" size="14"></i> ENVIAR AGORA
+                        </button>
                     </div>
                 </div>`;
             }).join('');
@@ -792,7 +787,6 @@
             let newVal = document.getElementById(`bal-val-${oldSku}`).value;
             let newEst = parseFloat(document.getElementById(`bal-est-${oldSku}`).value) || 0;
 
-            // Se o utilizador tentou mudar o SKU, temos que verificar se o novo já existe (para não subscrever)
             if(newSku !== oldSku && products.find(x => x.codigo === newSku)) {
                 mostrarAlerta("Este SKU já está em uso!", "erro");
                 return;
@@ -808,7 +802,6 @@
 
             await saveDataLocally();
             
-            // Corrige os IDs dos campos HTML caso o SKU tenha mudado
             if(newSku !== oldSku) {
                 document.getElementById(`bal-nome-${oldSku}`).id = `bal-nome-${newSku}`;
                 document.getElementById(`bal-sku-${oldSku}`).id = `bal-sku-${newSku}`;
