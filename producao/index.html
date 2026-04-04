@@ -11,36 +11,18 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-body: #f4f4f5;
-            --bg-card: #ffffff;
-            --text-primary: #0f172a;
-            --text-secondary: #64748b;
-            --accent: #000000;
-            --accent-hover: #27272a;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --border: #e4e4e7;
-            --radius: 12px;
-            --shadow: 0 4px 20px rgba(0,0,0,0.04);
-        }
+        :root { --bg-body: #f4f4f5; --bg-card: #ffffff; --text-primary: #0f172a; --text-secondary: #64748b; --accent: #000000; --accent-hover: #27272a; --success: #10b981; --warning: #f59e0b; --danger: #ef4444; --border: #e4e4e7; --radius: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.04); }
         * { box-sizing: border-box; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
-        
         header { background: #ffffff; min-height: 54px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
         .brand { font-weight: 900; font-size: 16px; letter-spacing: -0.5px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
-        
         #queue-status { display:none; align-items:center; gap:6px; font-size:11px; font-weight:800; background:#fffbeb; color:#b45309; padding:6px 12px; border-radius:20px; border:1px solid #fde68a; }
-
         .toolbar { padding: 12px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
         .toolbar-group { display: flex; gap: 8px; align-items: center; }
-        
         .search-container { position: relative; width: 280px; }
         .search-input { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 12px; font-weight: 600; outline: none; box-shadow: var(--shadow); transition: 0.2s; }
         .search-input:focus { border-color: var(--accent); }
         .search-icon { position: absolute; left: 12px; top: 11px; color: #a1a1aa; }
-        
         .nav-btn { background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; font-size: 11px; box-shadow: var(--shadow); }
         .nav-btn:hover:not(:disabled) { background: #f4f4f5; }
         .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
@@ -49,79 +31,60 @@
         .nav-btn.sync-btn { background: #eff6ff; color: #1e3a8a; border-color: #bfdbfe; }
         .nav-btn.sync-btn:hover:not(:disabled) { background: #dbeafe; }
         .nav-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { animation: spin 2s linear infinite; }
-
         .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
-        
         .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; transition: 0.2s; cursor: pointer; }
         .product-card:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: #d4d4d8; }
         .product-card.inactive { opacity: 0.5; filter: grayscale(1); }
-        
         .card-img-wrapper { aspect-ratio: 1; background: #f4f4f5; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        
         .tags-container { position: absolute; top: 8px; left: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 5; align-items: flex-start; }
         .product-tag { font-weight: 600; padding: 4px 8px; border-radius: 6px; line-height: 1.2; box-shadow: 0 2px 5px rgba(0,0,0,0.2); word-break: break-word; }
-
         .card-info { padding: 12px; display: flex; flex-direction: column; gap: 10px; text-align: center; }
         .card-title { font-size: 11px; font-weight: 800; color: var(--text-primary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .card-btn { background: #f4f4f5; border: none; border-radius: 6px; padding: 8px; font-size: 10px; font-weight: 900; color: var(--accent); cursor: pointer; width: 100%; transition: 0.2s; text-transform: uppercase; }
         .card-btn:hover { background: var(--accent); color: white; }
-
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
         .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; }
         .sidebar.open { transform: translateX(0); }
-        
         #edit-sidebar { z-index: 1001; width: 480px; }
         #editor-sidebar { z-index: 1002; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1003; width: 380px; }
         #whatsapp-sidebar { z-index: 1004; width: 420px; } 
-        
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
         .btn-icon { background: #f4f4f5; border: 1px solid var(--border); cursor: pointer; color: var(--text-primary); display: flex; justify-content: center; align-items: center; width: 28px; height: 28px; border-radius: 6px; transition: 0.2s; flex-shrink: 0; }
         .btn-icon:hover { background: var(--accent); color: white; border-color: var(--accent); }
-        
         .sidebar-body { padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: column; gap: 20px; }
         .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; background: #ffffff; }
-
         .form-section { display: flex; flex-direction: column; gap: 12px; }
         .section-title { font-size: 10px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
-        
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .form-group { display: flex; flex-direction: column; gap: 4px; }
         .form-group.full { grid-column: span 2; }
         .form-label { font-size: 10px; font-weight: 800; color: var(--text-primary); }
-        
         .input-wrapper { display: flex; gap: 6px; align-items: stretch; }
         .form-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
         .form-input:focus { border-color: var(--accent); background: #ffffff; }
-        
         div.form-input[contenteditable="true"] { resize: vertical; min-height: 90px; line-height: 1.5; font-weight: 400; overflow-y: auto; cursor: text;}
         textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
-        
         .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; }
         .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
-
         .image-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .img-slot { aspect-ratio: 1; border: 1px dashed var(--border); border-radius: 6px; display: flex; justify-content: center; align-items: center; background: #fafafa; cursor: pointer; overflow: hidden; position: relative; transition: 0.2s; }
         .img-slot:hover { border-color: var(--accent); }
         .img-slot img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .img-slot .slot-num { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: white; font-size: 8px; padding: 2px 4px; border-radius: 4px; font-weight: 900; }
-
         canvas { background: #fafafa; width: 100%; aspect-ratio: 1; display: block; cursor: grab; border-bottom: 1px solid var(--border); }
         .editor-controls { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         .slider-group { display: flex; align-items: center; gap: 12px; }
         .slider-group label { width: 16px; color: var(--text-secondary); display: flex; justify-content: center;}
         input[type=range] { flex-grow: 1; accent-color: var(--accent); }
-
         .cartao-pedido { background-color: #fafafa; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
         .cartao-info { display: flex; flex-direction: column; gap: 4px; }
         .cartao-info strong { font-size: 12px; color: var(--accent); }
-        
         @media (max-width: 768px) {
             header { padding: 10px; flex-wrap: wrap; }
             .toolbar { padding: 10px; flex-direction: column; align-items: stretch; }
@@ -137,7 +100,6 @@
 <body>
 
     <script>
-        // Configuração Inicial de Armazenamento Local
         const STORAGE_KEY = 'sucedoan_pim_v37'; 
         const CONFIG_KEY = 'sucedoan_config';
         const PEDIDOS_KEY = 'sucedoan_pedidos';
@@ -292,11 +254,7 @@
         let imageQueue = [];
         let filaDePedidos = []; 
 
-        // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB (NOVO SERVIÇO)
-        // ==========================================================
         const GitHubAPI = {
-            // 1. Vai buscar as credenciais de forma segura
             getConfig: function() {
                 const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY));
                 if (!cfg || !cfg.token || !cfg.user || !cfg.repo) {
@@ -305,131 +263,65 @@
                 }
                 return cfg;
             },
-
-            // 2. Função genérica para LER ficheiros do GitHub
             getFileData: async function(path) {
                 const cfg = this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
-
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                // Usamos cache: 'no-store' para garantir que não recebemos versões antigas do navegador
-                const res = await fetch(url, { 
-                    headers: { "Authorization": `token ${cfg.token}` },
-                    cache: "no-store" 
-                });
-                
-                if (res.status === 404) return null; // Ficheiro ainda não existe
+                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` }, cache: "no-store" });
+                if (res.status === 404) return null; 
                 if (!res.ok) throw new Error(`Falha ao ler ${path}`);
-                
                 return await res.json();
             },
-
-            // 3. Função genérica para GRAVAR ficheiros no GitHub
             saveFile: async function(path, content, message, isBase64Ready = false) {
                 const cfg = this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
-
-                // Descobre o 'sha' atual do ficheiro (necessário para atualizar ficheiros existentes)
                 let sha = null;
-                try {
-                    const existingFile = await this.getFileData(path);
-                    if (existingFile) sha = existingFile.sha;
-                } catch(e) {
-                    console.warn(`Aviso: Não foi possível obter o SHA prévio de ${path}. Vai tentar criar.`);
-                }
-
-                // Preparar o conteúdo
+                try { const existingFile = await this.getFileData(path); if (existingFile) sha = existingFile.sha; } catch(e) {}
                 let finalBase64 = content;
                 if (!isBase64Ready) {
                     const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
-                    // Método seguro para converter textos com acentos para Base64
                     finalBase64 = btoa(unescape(encodeURIComponent(contentStr))); 
                 }
-
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const body = { message: message, content: finalBase64 };
                 if (sha) body.sha = sha;
-
-                const res = await fetch(url, { 
-                    method: 'PUT', 
-                    headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, 
-                    body: JSON.stringify(body) 
-                });
-
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(`Erro do GitHub: ${errorData.message}`);
-                }
+                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                if (!res.ok) { const errorData = await res.json(); throw new Error(`Erro do GitHub: ${errorData.message}`); }
                 return await res.json();
             }
         };
 
-        // ==========================================================
-        // SISTEMA DE FILA DE TAREFAS (QUEUE) OTIMIZADO
-        // ==========================================================
         let githubTasksQueue = [];
         let isProcessingTasks = false;
 
         function updateQueueUI(msg, icon = 'info') {
             const el = document.getElementById('queue-status');
             if(!el) return;
-            if(msg === '') { 
-                el.style.display = 'none'; 
-            } else {
+            if(msg === '') { el.style.display = 'none'; } else {
                 el.style.display = 'flex';
-                let iconHtml = icon === 'clock' ? `<i data-lucide="clock" size="12"></i>` 
-                            : icon === 'loader' ? `<i data-lucide="loader" class="spin-icon" size="12"></i>` 
-                            : icon === 'check' ? `<i data-lucide="check-circle" size="12" style="color:#059669"></i>`
-                            : `<i data-lucide="cloud" size="12"></i>`;
-                el.innerHTML = `${iconHtml} <span>${msg}</span>`;
-                lucide.createIcons();
+                let iconHtml = icon === 'clock' ? `<i data-lucide="clock" size="12"></i>` : icon === 'loader' ? `<i data-lucide="loader" class="spin-icon" size="12"></i>` : icon === 'check' ? `<i data-lucide="check-circle" size="12" style="color:#059669"></i>` : `<i data-lucide="cloud" size="12"></i>`;
+                el.innerHTML = `${iconHtml} <span>${msg}</span>`; lucide.createIcons();
             }
         }
 
         function enqueueGitHubTask(taskName, taskFunction, btnElement) {
             const originalHTML = btnElement.innerHTML;
             btnElement.innerHTML = `<i data-lucide="clock" size="14"></i> NA FILA`;
-            btnElement.disabled = true;
-            lucide.createIcons();
-
+            btnElement.disabled = true; lucide.createIcons();
             githubTasksQueue.push({ name: taskName, fn: taskFunction, btn: btnElement, originalHTML: originalHTML });
             if (!isProcessingTasks) processGitHubQueue();
         }
 
         async function processGitHubQueue() {
-            if (githubTasksQueue.length === 0) { 
-                isProcessingTasks = false; 
-                setTimeout(() => updateQueueUI(''), 3000); 
-                return; 
-            }
-
-            isProcessingTasks = true;
-            const task = githubTasksQueue.shift(); 
-            
+            if (githubTasksQueue.length === 0) { isProcessingTasks = false; setTimeout(() => updateQueueUI(''), 3000); return; }
+            isProcessingTasks = true; const task = githubTasksQueue.shift(); 
             task.btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> A ENVIAR...`;
-            updateQueueUI(`A enviar: ${task.name}...`, 'loader');
-            lucide.createIcons();
-
-            try {
-                await task.fn(); 
-                updateQueueUI(`${task.name} enviado com sucesso!`, 'check');
-            } catch (e) {
-                console.error("Erro na tarefa:", e);
-                alert(`Erro ao enviar ${task.name}: ${e.message}`);
-                updateQueueUI(`Erro ao enviar ${task.name}`, 'info');
-            } finally {
-                task.btn.innerHTML = task.originalHTML;
-                task.btn.disabled = false;
-                lucide.createIcons();
-                
-                // Intervalo de 1 segundo entre envios para respeitar a API
-                setTimeout(() => {
-                    processGitHubQueue(); 
-                }, 1000); 
-            }
+            updateQueueUI(`A enviar: ${task.name}...`, 'loader'); lucide.createIcons();
+            try { await task.fn(); updateQueueUI(`${task.name} enviado com sucesso!`, 'check'); } 
+            catch (e) { console.error("Erro na tarefa:", e); alert(`Erro ao enviar ${task.name}: ${e.message}`); updateQueueUI(`Erro ao enviar ${task.name}`, 'info'); } 
+            finally { task.btn.innerHTML = task.originalHTML; task.btn.disabled = false; lucide.createIcons(); setTimeout(() => { processGitHubQueue(); }, 1000); }
         }
 
-        // FUNÇÃO DE LIMPEZA DE BASE64
         function sanitizeProductsForExport(prods) {
             return prods.map(p => {
                 let cleanP = { ...p };
@@ -444,43 +336,13 @@
             });
         }
 
-        // ==========================================================
-        // FUNÇÕES DE SINCRONIZAÇÃO GITHUB REFEITAS
-        // ==========================================================
-        function uploadBancodedados(btn) {
-            enqueueGitHubTask('Base de Dados Completa', async () => {
-                const produtosLimpos = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Atualização da Base de Dados`);
-            }, btn);
-        }
+        function uploadBancodedados(btn) { enqueueGitHubTask('Base de Dados Completa', async () => { const produtosLimpos = sanitizeProductsForExport(products); await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Atualização da Base de Dados`); }, btn); }
 
         function uploadProdutosJson(btn) {
             enqueueGitHubTask('Vitrine (produtos.json)', async () => {
                 const produtosLimpos = sanitizeProductsForExport(products);
                 const produtosResumidos = produtosLimpos.map(p => ({
-                    id: p.id || p['ID'] || Date.now(),
-                    nome: p.nome || "",
-                    preco: p.preco || 0,
-                    codigo: p.codigo || "",
-                    situacao: p.situacao || "A",
-                    categoria: p.categoria || "",
-                    validade: p.validade || "",
-                    estoque: p.estoque || 0,
-                    descricao: p.descricao || "",
-                    tags: p.tags || [],
-                    url_imagem: p.url_imagem || "",
-                    url_imagem_2: p.url_imagem_2 || "",
-                    url_imagem_3: p.url_imagem_3 || "",
-                    link_video: p.link_video || "",
-                    link_video_2: p.link_video_2 || "",
-                    link_video_3: p.link_video_3 || "",
-                    link_video_4: p.link_video_4 || "",
-                    link_video_5: p.link_video_5 || "",
-                    link_video_6: p.link_video_6 || "",
-                    link_video_7: p.link_video_7 || "",
-                    link_video_8: p.link_video_8 || "",
-                    link_video_9: p.link_video_9 || "",
-                    link_video_10: p.link_video_10 || ""
+                    id: p.id || p['ID'] || Date.now(), nome: p.nome || "", preco: p.preco || 0, codigo: p.codigo || "", situacao: p.situacao || "A", categoria: p.categoria || "", validade: p.validade || "", estoque: p.estoque || 0, descricao: p.descricao || "", tags: p.tags || [], url_imagem: p.url_imagem || "", url_imagem_2: p.url_imagem_2 || "", url_imagem_3: p.url_imagem_3 || "", link_video: p.link_video || "", link_video_2: p.link_video_2 || "", link_video_3: p.link_video_3 || "", link_video_4: p.link_video_4 || "", link_video_5: p.link_video_5 || "", link_video_6: p.link_video_6 || "", link_video_7: p.link_video_7 || "", link_video_8: p.link_video_8 || "", link_video_9: p.link_video_9 || "", link_video_10: p.link_video_10 || ""
                 }));
                 await GitHubAPI.saveFile(`site/produtos.json`, produtosResumidos, `PIM Sync: Atualização da Vitrine`);
             }, btn);
@@ -488,112 +350,66 @@
 
         function uploadImagens(btn) {
             if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
-
             enqueueGitHubTask(`Upload de Imagens (${imageQueue.length})`, async () => {
-                const queueCopy = [...imageQueue];
-                let errorCount = 0;
-
+                const queueCopy = [...imageQueue]; let errorCount = 0;
                 for (const item of queueCopy) {
                     try {
-                        const sufix = item.slot === 1 ? '' : `_${item.slot}`;
-                        const folderPath = "site/img/produtos"; 
-                        const fileName = `${item.sku}${sufix}.webp`; 
-                        const fullPath = `${folderPath}/${fileName}`; 
-                        
+                        const sufix = item.slot === 1 ? '' : `_${item.slot}`; const folderPath = "site/img/produtos"; const fileName = `${item.sku}${sufix}.webp`; const fullPath = `${folderPath}/${fileName}`; 
                         await GitHubAPI.saveFile(fullPath, item.base64data, `PIM Sync: Imagem ${fileName}`, true);
-                        
-                        const pRef = products.find(x => x.codigo === item.sku); 
-                        if(pRef) { 
-                            pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; 
-                            pRef.last_update = Date.now(); 
-                        }
-                        imageQueue = imageQueue.filter(q => q !== item);
-                        updateImageBadge();
-                    } catch(e) { 
-                        console.error("Erro ao enviar imagem:", e); errorCount++; 
-                    }
+                        const pRef = products.find(x => x.codigo === item.sku); if(pRef) { pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; pRef.last_update = Date.now(); }
+                        imageQueue = imageQueue.filter(q => q !== item); updateImageBadge();
+                    } catch(e) { console.error("Erro ao enviar imagem:", e); errorCount++; }
                 }
-                await localforage.setItem(STORAGE_KEY, products);
-                updateImageBadge();
-                if (errorCount > 0) throw new Error(`Falha no envio de ${errorCount} imagens.`);
+                await localforage.setItem(STORAGE_KEY, products); updateImageBadge(); if (errorCount > 0) throw new Error(`Falha no envio de ${errorCount} imagens.`);
             }, btn);
         }
 
         function uploadFilaPedidosGithub(btn = null) {
             const targetBtn = btn || document.createElement('button'); 
-            enqueueGitHubTask('Forçar Sincronização da Fila', async () => {
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila de Pedidos Forçada`);
-            }, targetBtn);
+            enqueueGitHubTask('Forçar Sincronização da Fila', async () => { await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila de Pedidos Forçada`); }, targetBtn);
         }
 
         async function baixarFilaNuvem() {
             try {
                 const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
                 if (data && data.content) {
-                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                    const parsedData = JSON.parse(decodedContent);
-                    
-                    if(Array.isArray(parsedData)) {
-                        filaDePedidos = parsedData;
-                        await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-                        renderizarCartoes();
-                        alert("Fila sincronizada com a nuvem com sucesso!");
-                        return;
-                    }
+                    const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent);
+                    if(Array.isArray(parsedData)) { filaDePedidos = parsedData; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes(); alert("Fila sincronizada com a nuvem com sucesso!"); return; }
                 }
                 alert("O ficheiro pedidos_fila.json não tem o formato esperado ou está vazio.");
-            } catch(e) { 
-                alert("Erro ao baixar a fila: " + e.message); 
-            }
+            } catch(e) { alert("Erro ao baixar a fila: " + e.message); }
         }
 
-        // ==========================================================
-        // FUNÇÕES DO WHATSAPP & ESTOQUE (AGORA INTELIGENTES)
-        // ==========================================================
-        
         async function getFilaRemota() {
             try {
                 const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
-                if (data && data.content) {
-                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                    const parsedData = JSON.parse(decodedContent);
-                    if(Array.isArray(parsedData)) return parsedData;
-                }
+                if (data && data.content) { const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent); if(Array.isArray(parsedData)) return parsedData; }
             } catch(e) { console.warn("Aviso: Fila remota não encontrada, a iniciar nova."); }
             return [];
         }
 
-       // ==========================================================
-        // FUNÇÃO DE LIMPEZA (Para o PIM cruzar os dados perfeitamente)
+        // ==========================================================
+        // FUNÇÃO DE LIMPEZA OTIMIZADA PARA REMOVER "(OFERTA)"
         // ==========================================================
         function limparTexto(texto) {
             if (!texto) return "";
-            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                        .replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
+            // Tira as palavras "Oferta" ou "(Oferta)" que os catálogos do WhatsApp colocam
+            let textoLimpo = texto.replace(/\(oferta\)/gi, '').replace(/oferta/gi, '');
+            return textoLimpo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
         }
 
         async function gerarPedidoWhatsapp() {
             const texto = document.getElementById('textoPedidoWhatsapp').value;
-            if (!texto) {
-                alert("Por favor, cole o texto do pedido primeiro!");
-                return;
-            }
+            if (!texto) { alert("Por favor, cole o texto do pedido primeiro!"); return; }
 
             const linhas = texto.split('\n');
-            let novoPedido = {
-                id: Date.now(),
-                status: "PENDENTE",
-                orderNumMatch: [], orderNum: "", cliente: "", entrega: "", valorTotal: "", itens: [] 
-            };
-
+            let novoPedido = { id: Date.now(), status: "PENDENTE", orderNumMatch: [], orderNum: "", cliente: "", entrega: "", valorTotal: "", itens: [] };
             let lendoItens = false;
 
             linhas.forEach(linha => {
                 const textoLinha = linha.trim();
                 
-                if (textoLinha.includes('*PEDIDO #')) {
-                    const match = textoLinha.match(/#(\d+)/);
-                    if (match) { novoPedido.orderNum = `#${match[1]}`; novoPedido.orderNumMatch = [textoLinha, novoPedido.orderNum]; }
+                if (textoLinha.includes('*PEDIDO #')) { const match = textoLinha.match(/#(\d+)/); if (match) { novoPedido.orderNum = `#${match[1]}`; novoPedido.orderNumMatch = [textoLinha, novoPedido.orderNum]; }
                 } else if (textoLinha.includes('*CLIENTE:*')) { novoPedido.cliente = textoLinha.replace('*CLIENTE:*', '').trim();
                 } else if (textoLinha.includes('*ENTREGA:*')) { novoPedido.entrega = textoLinha.replace('*ENTREGA:*', '').trim();
                 } else if (textoLinha.includes('*TOTAL:')) { const match = textoLinha.match(/R\$\s?([\d.,]+)/); if (match) novoPedido.valorTotal = match[1];
@@ -603,9 +419,25 @@
                     const qtd = parseInt(partes[0].trim());
                     const nomeProduto = partes.slice(1).join('x ').trim();
                     
-                    // A MÁGICA ACONTECE AQUI: O PIM procura logo o produto!
                     let nomeZapLimpo = limparTexto(nomeProduto);
-                    let produtoEncontrado = products.find(p => limparTexto(p.nome) === nomeZapLimpo);
+                    
+                    // Busca 1: Tenta o "Match Perfeito" (Nome Exato após limpar)
+                    let produtoEncontrado = products.find(p => {
+                        let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || "");
+                        return nomeBancoLimpo === nomeZapLimpo;
+                    });
+                    
+                    // Busca 2: Match Parcial / Flexível. Se não encontrou no nome exato, verifica se uma string está dentro da outra.
+                    // Exemplo: WhatsApp ("Sabonete Rexona") e Banco ("Sabonete Rexona Branco 90g")
+                    if (!produtoEncontrado) {
+                        produtoEncontrado = products.find(p => {
+                            let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || "");
+                            if (nomeZapLimpo.length > 5 && nomeBancoLimpo.length > 5) {
+                                return nomeBancoLimpo.includes(nomeZapLimpo) || nomeZapLimpo.includes(nomeBancoLimpo);
+                            }
+                            return false;
+                        });
+                    }
                     
                     let skuFinal = produtoEncontrado ? produtoEncontrado.codigo : "---";
                     let imagemFinal = produtoEncontrado ? (produtoEncontrado.url_imagem || "") : "";
@@ -613,46 +445,31 @@
                     novoPedido.itens.push({ 
                         qtd: qtd, 
                         nomeOriginal: nomeProduto,
-                        sku: skuFinal,           // GRAVA O SKU
-                        imagem: imagemFinal      // GRAVA A FOTO
+                        sku: skuFinal,           
+                        imagem: imagemFinal      
                     });
                 } else if (textoLinha === '' || textoLinha.includes('------')) { lendoItens = false; }
             });
 
-            // 1. Adiciona localmente
             filaDePedidos.push(novoPedido);
             renderizarCartoes();
             document.getElementById('textoPedidoWhatsapp').value = "";
 
-            // 2. Atualização Inteligente no GitHub
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
             enqueueGitHubTask('Adicionar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
-                if (!filaRemota.find(p => p.id === novoPedido.id)) {
-                    filaRemota.push(novoPedido);
-                }
+                if (!filaRemota.find(p => p.id === novoPedido.id)) { filaRemota.push(novoPedido); }
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
-                filaDePedidos = filaRemota;
-                await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-                renderizarCartoes();
+                filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes();
             }, btn);
         }
 
         function renderizarCartoes() {
-            const container = document.getElementById('containerPedidosCards');
-            container.innerHTML = "";
-
+            const container = document.getElementById('containerPedidosCards'); container.innerHTML = "";
             const pendentes = filaDePedidos.filter(p => p.status === "PENDENTE");
-
-            if (pendentes.length === 0) {
-                container.innerHTML = '<p class="texto-vazio">Nenhum pedido pendente na fila.</p>';
-                return;
-            }
-
+            if (pendentes.length === 0) { container.innerHTML = '<p class="texto-vazio">Nenhum pedido pendente na fila.</p>'; return; }
             pendentes.forEach((pedido) => {
-                const cartao = document.createElement('div');
-                cartao.className = 'cartao-pedido';
-                
+                const cartao = document.createElement('div'); cartao.className = 'cartao-pedido';
                 cartao.innerHTML = `
                     <div class="cartao-info">
                         <strong>Pedido ${pedido.orderNum || '#...'}</strong>
@@ -660,9 +477,7 @@
                         <span>📅 Entrega: ${pedido.entrega || 'N/A'}</span>
                         <span>💰 Total: R$ ${pedido.valorTotal || '0,00'}</span>
                     </div>
-                    <button class="btn-apagar" onclick="apagarPedido(${pedido.id})">
-                        <i data-lucide="trash-2" size="14"></i>
-                    </button>
+                    <button class="btn-apagar" onclick="apagarPedido(${pedido.id})"><i data-lucide="trash-2" size="14"></i></button>
                 `;
                 container.appendChild(cartao);
             });
@@ -671,36 +486,25 @@
 
         async function apagarPedido(pedidoId) {
             if(!confirm("Tem certeza que deseja apagar este pedido da fila?")) return;
-            
-            filaDePedidos = filaDePedidos.filter(p => p.id !== pedidoId);
-            renderizarCartoes();
-            
+            filaDePedidos = filaDePedidos.filter(p => p.id !== pedidoId); renderizarCartoes();
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
             enqueueGitHubTask('Apagar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
                 filaRemota = filaRemota.filter(p => p.id !== pedidoId);
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
-                filaDePedidos = filaRemota;
-                await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-                renderizarCartoes();
+                filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes();
             }, btn);
         }
 
         async function darBaixaEstoqueMaster() {
-            if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) {
-                return alert("Não há pedidos PENDENTES na fila para dar baixa.");
-            }
-
+            if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) { return alert("Não há pedidos PENDENTES na fila para dar baixa."); }
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
             enqueueGitHubTask('Dar Baixa e Limpar', async () => {
                 let filaRemota = await getFilaRemota();
                 let pendentes = filaRemota.filter(p => p.status === "PENDENTE");
-                
                 if(pendentes.length === 0) throw new Error("A nuvem não tem pedidos PENDENTES. Tente puxar da nuvem primeiro.");
 
-                let itensVendidos = {};
-                let countBaixas = 0;
-
+                let itensVendidos = {}; let countBaixas = 0;
                 filaRemota.forEach(pedido => {
                     if (pedido.status === "PENDENTE") {
                         let listaItens = pedido.items || pedido.itens; 
@@ -710,8 +514,7 @@
                                 itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + item.qtd;
                             });
                         }
-                        pedido.status = "CONCLUIDO"; 
-                        countBaixas++;
+                        pedido.status = "CONCLUIDO"; countBaixas++;
                     }
                 });
 
@@ -719,249 +522,103 @@
 
                 let mudouAlgoLocalmente = false;
                 for (const [idVendido, qtdVendida] of Object.entries(itensVendidos)) {
-                    // Tenta achar pelo SKU primeiro, ou pelo nome se não tiver SKU
                     let p = products.find(prod => prod.codigo === idVendido || prod.nome === idVendido);
-                    if (p) {
-                        p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida;
-                        p.last_update = Date.now();
-                        mudouAlgoLocalmente = true;
-                    }
+                    if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgoLocalmente = true; }
                 }
 
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Efetuada`);
-                
-                filaDePedidos = filaRemota;
-                await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+                filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
                 if(mudouAlgoLocalmente) {
-                    await saveDataLocally();
-                    renderGrid(document.getElementById('search-input').value);
+                    await saveDataLocally(); renderGrid(document.getElementById('search-input').value);
                     uploadBancodedados(document.getElementById('btnSyncBD'));      
                     uploadProdutosJson(document.getElementById('btnSyncVitrine')); 
                 }
-
-                renderizarCartoes();
-                alert("Sucesso! Baixa no estoque efetuada.");
+                renderizarCartoes(); alert("Sucesso! Baixa no estoque efetuada.");
             }, btn);
         }
 
-        // ==========================================================
-        // UI & EVENTOS GERAIS
-        // ==========================================================
-        
         let isFilter24hActive = false;
-        function toggleFilter24h() {
-            isFilter24hActive = !isFilter24hActive;
-            const btn = document.getElementById('btn-24h');
-            if(isFilter24hActive) btn.classList.add('primary'); else btn.classList.remove('primary');
-            renderGrid(document.getElementById('search-input').value);
-        }
-        
-        function openSidebar(id) {
-            document.getElementById('sidebar-overlay').style.display = 'block';
-            setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10);
-        }
+        function toggleFilter24h() { isFilter24hActive = !isFilter24hActive; const btn = document.getElementById('btn-24h'); if(isFilter24hActive) btn.classList.add('primary'); else btn.classList.remove('primary'); renderGrid(document.getElementById('search-input').value); }
+        function openSidebar(id) { document.getElementById('sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); }
+        function closeSidebar(id) { document.getElementById(id).classList.remove('open'); setTimeout(() => { const openSidebars = document.querySelectorAll('.sidebar.open'); if(openSidebars.length === 0) { document.getElementById('sidebar-overlay').style.opacity = '0'; setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); if(id === 'edit-sidebar') { currentEditingSku = null; renderGrid(document.getElementById('search-input').value); } } }, 50); }
+        function closeAllSidebars() { document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open')); document.getElementById('sidebar-overlay').style.opacity = '0'; setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); currentEditingSku = null; renderGrid(document.getElementById('search-input').value); }
 
-        function closeSidebar(id) {
-            document.getElementById(id).classList.remove('open');
-            setTimeout(() => {
-                const openSidebars = document.querySelectorAll('.sidebar.open');
-                if(openSidebars.length === 0) {
-                    document.getElementById('sidebar-overlay').style.opacity = '0';
-                    setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300);
-                    if(id === 'edit-sidebar') { currentEditingSku = null; renderGrid(document.getElementById('search-input').value); }
-                }
-            }, 50);
-        }
-
-        function closeAllSidebars() {
-            document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open'));
-            document.getElementById('sidebar-overlay').style.opacity = '0';
-            setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300);
-            currentEditingSku = null;
-            renderGrid(document.getElementById('search-input').value);
-        }
-
-        window.onload = async function() {
-            lucide.createIcons();
-            await loadData();
-            document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value), 300));
-            setupEditorEvents();
-        };
-
+        window.onload = async function() { lucide.createIcons(); await loadData(); document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value), 300)); setupEditorEvents(); };
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
             try { const savedPedidos = await localforage.getItem(PEDIDOS_KEY); if(savedPedidos && Array.isArray(savedPedidos)) filaDePedidos = savedPedidos; } catch (err) {}
-            
-            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}');
-            if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
-            
-            renderGrid();
-            renderizarCartoes(); 
+            const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
+            renderGrid(); renderizarCartoes(); 
         }
         
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
         async function saveDataLocally() { try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} }
 
-        window.updateTag = async function(sku, idx, field, value) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now();
-            await saveDataLocally(); renderGrid(document.getElementById('search-input').value);
-        }
-
-        window.addTag = async function(sku) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now();
-            await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); 
-        }
-
-        window.removeTag = async function(sku, idx) {
-            const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return;
-            p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally();
-            openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); 
-        }
+        window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); renderGrid(document.getElementById('search-input').value); }
+        window.addTag = async function(sku) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); }
+        window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); }
 
         function renderGrid(filter = "") {
-            const gridContainer = document.getElementById('product-grid'); gridContainer.innerHTML = "";
-            let filtered = products;
-            
+            const gridContainer = document.getElementById('product-grid'); gridContainer.innerHTML = ""; let filtered = products;
             if(filter) { const term = filter.toLowerCase(); filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term)); }
-            if(isFilter24hActive) {
-                const oneDay = 24 * 60 * 60 * 1000; const now = Date.now();
-                filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; });
-            }
-            
-            if (filtered.length === 0) {
-                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto</h3></div>`; 
-                lucide.createIcons(); return;
-            }
+            if(isFilter24hActive) { const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); }
+            if (filtered.length === 0) { gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto</h3></div>`; lucide.createIcons(); return; }
 
             filtered.forEach(p => {
-                const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
-                card.onclick = () => { openEditSidebar(p.codigo); };
+                const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`; card.onclick = () => { openEditSidebar(p.codigo); };
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
-                
-                let htmlTag = '';
-                let tagsToRender = p.tags ? [...p.tags] : [];
-                
-                if (p.tag_texto && tagsToRender.length === 0) {
-                     p.tag_texto.split('\n').filter(l => l.trim() !== '').forEach(l => {
-                         tagsToRender.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 });
-                     });
-                }
-                
-                if (tagsToRender.length > 0) {
-                    const tagsGeradas = tagsToRender.map(t => 
-                        `<div class="product-tag" style="background-color: ${t.bg}; color: ${t.txt}; font-size: ${t.tam}px;">${t.texto}</div>`
-                    ).join('');
-                    htmlTag = `<div class="tags-container">${tagsGeradas}</div>`;
-                }
-
+                let htmlTag = ''; let tagsToRender = p.tags ? [...p.tags] : [];
+                if (p.tag_texto && tagsToRender.length === 0) { p.tag_texto.split('\n').filter(l => l.trim() !== '').forEach(l => { tagsToRender.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); }
+                if (tagsToRender.length > 0) { const tagsGeradas = tagsToRender.map(t => `<div class="product-tag" style="background-color: ${t.bg}; color: ${t.txt}; font-size: ${t.tam}px;">${t.texto}</div>`).join(''); htmlTag = `<div class="tags-container">${tagsGeradas}</div>`; }
                 card.innerHTML = `<div class="card-img-wrapper">${htmlTag}<img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div><div class="card-info"><div class="card-title">${p.nome || 'Produto Sem Nome'}</div><button class="card-btn">EDITAR</button></div>`;
                 gridContainer.appendChild(card);
-            }); 
-            lucide.createIcons();
+            }); lucide.createIcons();
         }
 
         function openEditSidebar(sku) {
-            currentEditingSku = sku;
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            
+            currentEditingSku = sku; const p = products.find(x => x.codigo === sku); if(!p) return;
             const isInactive = p.situacao === 'I';
             const imgVars = [1,2,3].map(i => { const prop = i===1 ? 'url_imagem' : `url_imagem_${i}`; return p[prop] || ''; });
             const vidVars = [1,2,3,4,5,6,7,8,9,10].map(i => { const prop = i===1 ? 'link_video' : `link_video_${i}`; return p[prop] || ''; });
             const safeName = (p.nome||'').replace(/'/g, "\\'");
 
             let htmlImages = '';
-            for(let i=1; i<=3; i++) {
-                const src = imgVars[i-1] ? `<img src="${imgVars[i-1]}">` : `<i data-lucide="image-plus" size="20" style="color:#a1a1aa"></i>`;
-                htmlImages += `<div class="img-slot" onclick="openCanvasSidebar('${p.codigo}', ${i})">${src}<div class="slot-num">${i}</div></div>`;
-            }
+            for(let i=1; i<=3; i++) { const src = imgVars[i-1] ? `<img src="${imgVars[i-1]}">` : `<i data-lucide="image-plus" size="20" style="color:#a1a1aa"></i>`; htmlImages += `<div class="img-slot" onclick="openCanvasSidebar('${p.codigo}', ${i})">${src}<div class="slot-num">${i}</div></div>`; }
 
             let htmlVideos = '';
-            for(let i=1; i<=10; i++) {
-                const prop = i===1 ? 'link_video' : `link_video_${i}`;
-                htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Url YouTube Shorts ${i}" onchange="updateField('${p.codigo}', '${prop}', this.value)">`;
-            }
+            for(let i=1; i<=10; i++) { const prop = i===1 ? 'link_video' : `link_video_${i}`; htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Url YouTube Shorts ${i}" onchange="updateField('${p.codigo}', '${prop}', this.value)">`; }
 
-            let htmlEditorTags = '';
-            const tags = p.tags || [];
-            
-            if (p.tag_texto && tags.length === 0) {
-                 p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => {
-                     tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 });
-                 });
-                 p.tag_texto = ''; 
-                 p.tags = tags;
-            }
-
+            let htmlEditorTags = ''; const tags = p.tags || [];
+            if (p.tag_texto && tags.length === 0) { p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => { tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); p.tag_texto = ''; p.tags = tags; }
             tags.forEach((t, idx) => {
-                htmlEditorTags += `
-                <div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
+                htmlEditorTags += `<div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
                     <input type="text" class="form-input" style="flex-grow:1; padding:6px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)">
                     <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" title="Fundo" onchange="updateTag('${p.codigo}', ${idx}, 'bg', this.value)">
                     <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.txt}" title="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
                     <input type="number" class="form-input" style="width: 50px; height:24px; padding: 4px; font-size:11px;" value="${t.tam}" title="Tam." onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)">
-                    <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button>
-                </div>
-                `;
+                    <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button></div>`;
             });
             htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG</button>`;
 
             const sidebarBody = document.getElementById('sidebar-body');
             sidebarBody.innerHTML = `
-                <div class="form-section">
-                    <div class="section-title">Identificação</div>
-                    <div class="form-grid">
+                <div class="form-section"><div class="section-title">Identificação</div><div class="form-grid">
                         <div class="form-group"><label class="form-label">SKU (Código)</label><input type="text" class="form-input" style="font-weight:900; color:var(--accent)" value="${p.codigo}" onchange="updateSku('${p.codigo}', this.value)"></div>
                         <div class="form-group"><label class="form-label">ID (Sistema)</label><input type="text" class="form-input" value="${p.id || p['ID'] || ''}" onchange="updateField('${p.codigo}', 'id', this.value)"></div>
-                    </div>
+                </div></div>
+                <div class="form-section"><div class="section-title">Apresentação Principal</div>
+                    <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${p.nome || ''}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
+                    <div class="form-group"><label class="form-label">Descrição (Aceita Formatação/Rich Text)</label><div class="input-wrapper"><div contenteditable="true" class="form-input" placeholder="Cole aqui a descrição..." onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${p.descricao || ''}</div><button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Review Inteligente (Google IA)"><i data-lucide="brain-circuit" size="16"></i></button></div></div>
+                    <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;"><label class="form-label">Tags da Imagem (Independentes)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div>
                 </div>
-
-                <div class="form-section">
-                    <div class="section-title">Apresentação Principal</div>
-                    <div class="form-group">
-                        <label class="form-label">Nome do Produto</label>
-                        <div class="input-wrapper">
-                            <input type="text" class="form-input" style="font-weight:700;" value="${p.nome || ''}" onchange="updateField('${p.codigo}', 'nome', this.value)">
-                            <button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">Descrição (Aceita Formatação/Rich Text)</label>
-                        <div class="input-wrapper">
-                            <div contenteditable="true" class="form-input" placeholder="Cole aqui a descrição..." onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${p.descricao || ''}</div>
-                            <button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Review Inteligente (Google IA)"><i data-lucide="brain-circuit" size="16"></i></button>
-                        </div>
-                    </div>
-
-                    <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;">
-                        <label class="form-label">Tags da Imagem (Independentes)</label>
-                        <div style="display:flex; flex-direction:column; gap:2px;">
-                            ${htmlEditorTags}
-                        </div>
-                    </div>
+                <div class="form-section"><div class="section-title">Média Rica (Vitrine)</div><div class="image-slots">${htmlImages}</div>
+                    <div style="margin-top:15px; border:1px dashed var(--border); padding:12px; border-radius:8px; background:#fafafa; max-height:220px; overflow-y:auto;"><button class="nav-btn" style="width:100%; justify-content:center; color:#dc2626; border-color:#fecaca; background:#fef2f2; margin-bottom:12px;" onclick="searchYoutubeShorts('${safeName}')"><i data-lucide="youtube" size="16"></i> PESQUISAR SHORTS NO YOUTUBE</button>${htmlVideos}</div>
                 </div>
-
-                <div class="form-section">
-                    <div class="section-title">Média Rica (Vitrine)</div>
-                    <div class="image-slots">${htmlImages}</div>
-                    
-                    <div style="margin-top:15px; border:1px dashed var(--border); padding:12px; border-radius:8px; background:#fafafa; max-height:220px; overflow-y:auto;">
-                        <button class="nav-btn" style="width:100%; justify-content:center; color:#dc2626; border-color:#fecaca; background:#fef2f2; margin-bottom:12px;" onclick="searchYoutubeShorts('${safeName}')">
-                            <i data-lucide="youtube" size="16"></i> PESQUISAR SHORTS NO YOUTUBE
-                        </button>
-                        ${htmlVideos}
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <div class="section-title">Comercial & Tributário</div>
-                    <div class="form-grid">
+                <div class="form-section"><div class="section-title">Comercial & Tributário</div><div class="form-grid">
                         <div class="form-group"><label class="form-label">Custo (R$)</label><input type="number" step="0.01" class="form-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
                         <div class="form-group"><label class="form-label" style="color:var(--success)">Venda (R$)</label><input type="number" step="0.01" class="form-input" style="border-color:var(--success); color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
                         <div class="form-group"><label class="form-label">Estoque</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
@@ -969,114 +626,54 @@
                         <div class="form-group"><label class="form-label">Data de Validade</label><input type="date" class="form-input" value="${p.validade || ''}" onchange="updateField('${p.codigo}', 'validade', this.value)"></div>
                         <div class="form-group"><label class="form-label">EAN</label><input type="text" class="form-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
                         <div class="form-group full"><label class="form-label">Categoria</label><input type="text" class="form-input" value="${p.categoria || ''}" onchange="updateField('${p.codigo}', 'categoria', this.value)"></div>
-                        
-                        <div class="form-group full">
-                            <label class="form-label">NCM</label>
-                            <div class="input-wrapper">
-                                <input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)">
-                                <button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Procurar NCM"><i data-lucide="search" size="16"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                        <div class="form-group full"><label class="form-label">NCM</label><div class="input-wrapper"><input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"><button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Procurar NCM"><i data-lucide="search" size="16"></i></button></div></div>
+                </div></div>
             `;
-            lucide.createIcons();
-            openSidebar('edit-sidebar');
+            lucide.createIcons(); openSidebar('edit-sidebar');
         }
 
-        async function updateField(sku, field, value) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0;
-            p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); 
-        }
-
-        async function updateSku(oldSku, newSku) {
-            newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return;
-            if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; }
-            const p = products.find(p => p.codigo === oldSku);
-            if(p) { p.codigo = newSku; p['Código'] = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); }
-        }
-
-        async function toggleStatus(sku) { 
-            const p = products.find(x => x.codigo === sku); if (!p) return; 
-            p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now();
-            await saveDataLocally(); openEditSidebar(sku); 
-        }
-
-        async function deleteCurrentProduct() {
-            if(!currentEditingSku) return;
-            if(!confirm(`ATENÇÃO: Deseja apagar este produto permanentemente?`)) return;
-            products = products.filter(p => p.codigo !== currentEditingSku);
-            await saveDataLocally(); closeSidebar('edit-sidebar');
-        }
-
-        async function createNewProduct() {
-            const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); 
-            products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); 
-            await saveDataLocally(); renderGrid(document.getElementById('search-input').value); openEditSidebar(sku);
-        }
+        async function updateField(sku, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0; p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); }
+        async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p['Código'] = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); } }
+        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); }
+        async function deleteCurrentProduct() { if(!currentEditingSku) return; if(!confirm(`ATENÇÃO: Deseja apagar este produto permanentemente?`)) return; products = products.filter(p => p.codigo !== currentEditingSku); await saveDataLocally(); closeSidebar('edit-sidebar'); }
+        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); await saveDataLocally(); renderGrid(document.getElementById('search-input').value); openEditSidebar(sku); }
 
         function searchGoogleHD(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); }
+        function searchAIReview(nome) { if(!nome) return; const prompt = `Pesquise sobre o produto "${nome}" no site do fabricante, no youtube e em sites especializados. Escreva uma resenha com até 100 palavras e com 4 paragrafos. Não use listas, apenas texto, não use links.`; window.open(`https://www.google.com/search?q=${encodeURIComponent(prompt)}&udm=50`, '_blank'); }
+        function searchYoutubeShorts(nome) { if(!nome) return alert("Preencha o nome do produto primeiro."); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome + ' shorts')}`, '_blank'); }
 
-        function searchAIReview(nome) {
-            if(!nome) return; const prompt = `Pesquise sobre o produto "${nome}" no site do fabricante, no youtube e em sites especializados. Escreva uma resenha com até 100 palavras e com 4 paragrafos. Não use listas, apenas texto, não use links.`;
-            window.open(`https://www.google.com/search?q=${encodeURIComponent(prompt)}&udm=50`, '_blank');
-        }
-
-        function searchYoutubeShorts(nome) {
-            if(!nome) return alert("Preencha o nome do produto primeiro."); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome + ' shorts')}`, '_blank');
-        }
-
-        const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d');
-        let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
+        const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
 
         function openCanvasSidebar(sku, slot) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            currentImageSlot = slot; imgOffsetX = 0; imgOffsetY = 0; 
+            const p = products.find(x => x.codigo === sku); if(!p) return; currentImageSlot = slot; imgOffsetX = 0; imgOffsetY = 0; 
             document.getElementById('zoomRange').value = 1; document.getElementById('brightnessRange').value = 1; document.getElementById('sharpenRange').value = 0;
-            
-            const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
-            const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p[prop] || ""; 
-            img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; 
-            img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
+            const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`; const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p[prop] || ""; 
+            img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
         }
 
         function applySharpen(context, w, h, mix) {
             if (mix <= 0) return;
-            try {
-                const imageData = context.getImageData(0, 0, w, h); const data = imageData.data; const w4 = w * 4; const copy = new Uint8ClampedArray(data);
+            try { const imageData = context.getImageData(0, 0, w, h); const data = imageData.data; const w4 = w * 4; const copy = new Uint8ClampedArray(data);
                 for (let y = 1; y < h - 1; y++) { for (let x = 1; x < w - 1; x++) { const i = (y * w + x) * 4; for (let c = 0; c < 3; c++) { const val = copy[i + c] * (1 + 4 * mix) + copy[i + c - 4] * (-mix) + copy[i + c + 4] * (-mix) + copy[i + c - w4] * (-mix) + copy[i + c + w4] * (-mix); data[i + c] = val; } } } 
-                context.putImageData(imageData, 0, 0);
-            } catch(e) {}
+                context.putImageData(imageData, 0, 0); } catch(e) {}
         }
 
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if(loadedImage) { 
-                const zoom = parseFloat(document.getElementById('zoomRange').value); const bright = parseFloat(document.getElementById('brightnessRange').value); const sharpen = parseFloat(document.getElementById('sharpenRange').value); 
-                ctx.filter = `brightness(${bright})`;
-                const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height) * zoom;
-                const w = loadedImage.width * ratio, h = loadedImage.height * ratio; const posX = ((canvas.width - w) / 2) + imgOffsetX; const posY = ((canvas.height - h) / 2) + imgOffsetY; 
-                ctx.drawImage(loadedImage, posX, posY, w, h); ctx.filter = 'none';
-                if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
-            } 
-            else { ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; ctx.fillText("Cole foto (Ctrl+V) ou busque no PC", canvas.width/2, canvas.height/2); }
+                const zoom = parseFloat(document.getElementById('zoomRange').value); const bright = parseFloat(document.getElementById('brightnessRange').value); const sharpen = parseFloat(document.getElementById('sharpenRange').value); ctx.filter = `brightness(${bright})`;
+                const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height) * zoom; const w = loadedImage.width * ratio, h = loadedImage.height * ratio; const posX = ((canvas.width - w) / 2) + imgOffsetX; const posY = ((canvas.height - h) / 2) + imgOffsetY; 
+                ctx.drawImage(loadedImage, posX, posY, w, h); ctx.filter = 'none'; if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
+            } else { ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; ctx.fillText("Cole foto (Ctrl+V) ou busque no PC", canvas.width/2, canvas.height/2); }
         }
 
         function setupEditorEvents() {
             ['zoomRange','brightnessRange','sharpenRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
             document.getElementById('fileInput').addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (evt) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = evt.target.result; }; reader.readAsDataURL(e.target.files[0]); } });
             window.addEventListener('paste', e => { 
-                const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open'); const isEditOpen = document.getElementById('edit-sidebar').classList.contains('open');
-                if(!isEditorOpen && !isEditOpen) return;
+                const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open'); const isEditOpen = document.getElementById('edit-sidebar').classList.contains('open'); if(!isEditorOpen && !isEditOpen) return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items; 
-                for (let index in items) { 
-                    const item = items[index]; 
-                    if (item.kind === 'file' && item.type.includes('image/')) { 
-                        const blob = item.getAsFile(); const reader = new FileReader(); 
-                        reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); if(!isEditorOpen && currentEditingSku) openCanvasSidebar(currentEditingSku, 1); }; img.src = event.target.result; }; reader.readAsDataURL(blob); 
-                    } 
-                } 
+                for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); if(!isEditorOpen && currentEditingSku) openCanvasSidebar(currentEditingSku, 1); }; img.src = event.target.result; }; reader.readAsDataURL(blob); } } 
             });
             canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
         }
@@ -1084,8 +681,7 @@
         async function saveImageToQueue() {
             if(!currentEditingSku) return; const sku = currentEditingSku; const slot = currentImageSlot;
             const base64full = canvas.toDataURL('image/webp', 0.9); const base64data = base64full.split(',')[1];
-            const p = products.find(x => x.codigo === sku); const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
-            p[prop] = base64full; p.last_update = Date.now();
+            const p = products.find(x => x.codigo === sku); const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`; p[prop] = base64full; p.last_update = Date.now();
             await saveDataLocally(); imageQueue.push({ sku: sku, slot: slot, prop: prop, base64data: base64data }); updateImageBadge(); openEditSidebar(sku); closeSidebar('editor-sidebar');
         }
 
@@ -1093,27 +689,16 @@
 
         document.getElementById('csv-file-append').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
-            Papa.parse(e.target.files[0], {
-                header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
+            Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: async (results) => {
                     results.data.forEach(d => {
-                        const ean = d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '';
-                        const fallbackSku = d['Código'] ? d['Código'].trim() : Date.now().toString().slice(-8);
-                        let pIdx = -1; if(ean !== '') { pIdx = products.findIndex(p => p.gtin === ean); }
-                        if(pIdx === -1) { pIdx = products.findIndex(p => p.codigo === fallbackSku); }
-                        
-                        let n = { 
-                            codigo: fallbackSku, nome: d['Descrição'], preco: parseFloat(d['Preço']?.replace(',','.'))||0, 
-                            preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, 
-                            categoria: d['Categoria do produto'], gtin: ean, ncm: d['NCM'], last_update: Date.now()
-                        };
+                        const ean = d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : ''; const fallbackSku = d['Código'] ? d['Código'].trim() : Date.now().toString().slice(-8);
+                        let pIdx = -1; if(ean !== '') { pIdx = products.findIndex(p => p.gtin === ean); } if(pIdx === -1) { pIdx = products.findIndex(p => p.codigo === fallbackSku); }
+                        let n = { codigo: fallbackSku, nome: d['Descrição'], preco: parseFloat(d['Preço']?.replace(',','.'))||0, preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, categoria: d['Categoria do produto'], gtin: ean, ncm: d['NCM'], last_update: Date.now() };
                         if (d['Data Validade']) { n.validade = d['Data Validade']; }
-
                         if(pIdx !== -1) products[pIdx] = {...products[pIdx], ...n}; else products.unshift({...n, id:Date.now()});
                     });
-                    await saveDataLocally(); 
-                    if(!isFilter24hActive) toggleFilter24h(); else renderGrid(document.getElementById('search-input').value);
-                    alert("Importação concluída!"); closeSidebar('config-sidebar');
+                    await saveDataLocally(); if(!isFilter24hActive) toggleFilter24h(); else renderGrid(document.getElementById('search-input').value); alert("Importação concluída!"); closeSidebar('config-sidebar');
                 }
             });
         });
@@ -1121,26 +706,13 @@
         async function fetchFromGithub() {
             try {
                 const data = await GitHubAPI.getFileData(`site/bancodedados.json`);
-                
                 if (data && data.content) {
                     if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
-                    
-                    const decodedContent = decodeURIComponent(escape(atob(data.content)));
-                    const parsedData = JSON.parse(decodedContent);
-                    
-                    if(Array.isArray(parsedData)) {
-                        products = parsedData;
-                        await saveDataLocally();
-                        renderGrid();
-                        alert("Sincronização da Base concluída!");
-                        closeSidebar('config-sidebar');
-                        return;
-                    }
+                    const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent);
+                    if(Array.isArray(parsedData)) { products = parsedData; await saveDataLocally(); renderGrid(); alert("Sincronização da Base concluída!"); closeSidebar('config-sidebar'); return; }
                 }
                 alert("O ficheiro bancodedados.json não tem o formato esperado ou não foi encontrado.");
-            } catch(e) { 
-                alert("Erro ao descarregar a base da nuvem: " + e.message); 
-            }
+            } catch(e) { alert("Erro ao descarregar a base da nuvem: " + e.message); }
         }
 
         async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
@@ -1149,15 +721,11 @@
             if (products.length === 0) return alert("Não há produtos para exportar.");
             const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais" ];
             const dadosParaExportar = products.map(p => {
-                const linha = {}; 
-                const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Origem'] = '0'; p['Unidade'] = 'un';
-                p['Data Validade'] = p.validade || "";
-                colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
-                linha['URL Imagens Externas'] = ""; linha['Link Externo'] = ""; linha['Vídeo'] = ""; linha['Descrição Curta'] = ""; return linha;
+                const linha = {}; const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
+                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Origem'] = '0'; p['Unidade'] = 'un'; p['Data Validade'] = p.validade || "";
+                colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; }); linha['URL Imagens Externas'] = ""; linha['Link Externo'] = ""; linha['Vídeo'] = ""; linha['Descrição Curta'] = ""; return linha;
             });
-            const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" });
-            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `bling_export_pim_${new Date().getTime()}.csv`; l.click(); closeSidebar('config-sidebar');
+            const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" }); const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `bling_export_pim_${new Date().getTime()}.csv`; l.click(); closeSidebar('config-sidebar');
         }
     </script>
 </body>
