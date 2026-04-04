@@ -20,7 +20,8 @@
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 18px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         /* ================= TELA DE FOCO ================= */
-        .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 10px 10px 35px 10px; box-sizing: border-box; background: #fff; }
+        /* Ajuste de Respiro: padding inferior aumentado para 60px para dar espaço ao teclado */
+        .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 10px 10px 60px 10px; box-sizing: border-box; background: #fff; }
         
         .foco-topo-split { display: flex; gap: 10px; height: 26vh; margin-bottom: 10px; flex-shrink: 0; }
         
@@ -54,7 +55,8 @@
         .display-teclado { text-align: center; font-size: 32px; font-weight: 900; letter-spacing: 15px; color: var(--secondary); height: 40px; margin-bottom: 5px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
         
-        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; flex: 1; min-height: 0; padding-bottom: 15px; }
+        /* Ajuste de Respiro: padding-bottom do teclado aumentado para 25px */
+        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; flex: 1; min-height: 0; padding-bottom: 25px; }
         .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 26px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 2px 0 #ccc; height: 100%; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
 
@@ -172,17 +174,6 @@
     let focoDisplayStr = ""; let focoLimite = 1;
 
     // ==========================================================
-    // NOVA FUNÇÃO: Limpeza Rigorosa de Nomes
-    // ==========================================================
-    function limparTexto(texto) {
-        if (!texto) return "";
-        return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-                    .replace(/[^\w\s]/gi, '') // Remove caracteres especiais
-                    .replace(/\s+/g, ' ') // Transforma vários espaços num só
-                    .trim().toUpperCase();
-    }
-
-    // ==========================================================
     // NOVA FUNÇÃO: Extrator à Prova de Falhas para Imagens
     // ==========================================================
     function resolverImagemProduto(produtoDb) {
@@ -274,15 +265,22 @@
         if(pedido.itens) {
             pedido.itens.forEach(item => { 
                 
-                let nomeZapLimpo = limparTexto(item.nomeOriginal);
+                // O Separador agora confia cegamente no SKU e Imagem que o PIM enviou!
+                let skuRecebido = item.sku || "---";
                 
-                let produtoDb = bancoDeDados.find(p => {
-                    let nomeBancoLimpo = limparTexto(p.nome || p.descricao || p["Descrição"]);
-                    return nomeBancoLimpo === nomeZapLimpo;
-                });
+                let produtoDb = bancoDeDados.find(p => 
+                    (p.codigo || p["Código"] || "").toString().trim().toUpperCase() === skuRecebido
+                );
                 
+                // Se não encontrar no banco local, usa os dados do pedido
                 if (!produtoDb) {
-                    produtoDb = { codigo: "---", "Código": "---", localizacao: "SEM LOC", "Localização": "SEM LOC" };
+                    produtoDb = { 
+                        codigo: skuRecebido, 
+                        "Código": skuRecebido, 
+                        localizacao: "SEM LOC", 
+                        "Localização": "SEM LOC",
+                        url_imagem: item.imagem 
+                    };
                 }
 
                 listaDeSeparacao.push({ 
