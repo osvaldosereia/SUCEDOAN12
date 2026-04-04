@@ -65,7 +65,7 @@
         .card-img-wrapper { aspect-ratio: 1; background: #f4f4f5; display: flex; justify-content: center; align-items: center; padding: 10px; position: relative; }
         .card-img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         
-        /* TAG FLUTUANTE - ATUALIZADO PARA SUPORTAR MÚLTIPLAS */
+        /* TAGS FLUTUANTES */
         .tags-container {
             position: absolute;
             top: 8px;
@@ -74,10 +74,11 @@
             flex-direction: column;
             gap: 4px;
             z-index: 5;
+            align-items: flex-start;
         }
         
         .product-tag {
-            font-weight: 600; /* Fonte mais leve, como pedido (era 900) */
+            font-weight: 600; 
             padding: 4px 8px;
             border-radius: 6px;
             line-height: 1.2;
@@ -118,12 +119,10 @@
         .form-label { font-size: 10px; font-weight: 800; color: var(--text-primary); }
         
         .input-wrapper { display: flex; gap: 6px; align-items: stretch; }
-        
-        /* Modificado para suportar o contenteditable de forma fluida */
         .form-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
         .form-input:focus { border-color: var(--accent); background: #ffffff; }
         
-        /* Estilos do Div Rich Text (O mini-word) */
+        /* Div Rich Text */
         div.form-input[contenteditable="true"] { resize: vertical; min-height: 90px; line-height: 1.5; font-weight: 400; overflow-y: auto; cursor: text;}
         textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
         
@@ -273,6 +272,22 @@
         let lastGithubSyncTime = 0;
         const COOLDOWN_MS = 180 * 1000;
 
+        // FUNÇÃO DE LIMPEZA DE BASE64 (Impede links gigantes de ir para o GitHub)
+        function sanitizeProductsForExport(prods) {
+            return prods.map(p => {
+                let cleanP = { ...p };
+                [1, 2, 3].forEach(i => {
+                    const prop = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
+                    // Se o link for um Base64 (data:image...), substitui pelo caminho da regra do site
+                    if (cleanP[prop] && cleanP[prop].startsWith('data:image')) {
+                        const sufix = i === 1 ? '' : `_${i}`;
+                        cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
+                    }
+                });
+                return cleanP;
+            });
+        }
+
         function updateQueueUI(msg, icon = 'info') {
             const el = document.getElementById('queue-status');
             if(!el) return;
@@ -355,7 +370,10 @@
                 const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
                 if(check.ok) { const json = await check.json(); sha = json.sha; }
 
-                const contentStr = JSON.stringify(products, null, 2);
+                // SANITIZAÇÃO ANTES DO ENVIO! Remove o base64 para evitar inchar o arquivo.
+                const produtosLimpos = sanitizeProductsForExport(products);
+
+                const contentStr = JSON.stringify(produtosLimpos, null, 2);
                 const base64 = btoa(unescape(encodeURIComponent(contentStr)));
                 const body = { message: `PIM Manual: Base Completa`, content: base64 };
                 if(sha) body.sha = sha;
@@ -376,7 +394,10 @@
                 const check = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` } });
                 if(check.ok) { const json = await check.json(); sha = json.sha; }
 
-                const produtosResumidos = products.map(p => ({
+                // Aplica a mesma limpeza aos links das imagens
+                const produtosLimpos = sanitizeProductsForExport(products);
+
+                const produtosResumidos = produtosLimpos.map(p => ({
                     id: p.id || p['ID'] || Date.now(),
                     nome: p.nome || "",
                     preco: p.preco || 0,
@@ -386,12 +407,9 @@
                     validade: p.validade || "",
                     estoque: p.estoque || 0,
                     descricao: p.descricao || "",
-                    // Tags Flutuantes
-                    tag_texto: p.tag_texto || "",
-                    tag_cor: p.tag_cor || "#000000",
-                    tag_cor_texto: p.tag_cor_texto || "#ffffff",
-                    tag_tamanho: p.tag_tamanho || 10,
-                    // 3 Imagens
+                    // Array Dinâmico de Tags
+                    tags: p.tags || [],
+                    // 3 Imagens Limpas
                     url_imagem: p.url_imagem || "",
                     url_imagem_2: p.url_imagem_2 || "",
                     url_imagem_3: p.url_imagem_3 || "",
@@ -517,6 +535,39 @@
 
         async function saveDataLocally() { try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} }
 
+        // --- FUNÇÕES GLOBAIS PARA O NOVO SISTEMA DE TAGS ---
+        window.updateTag = async function(sku, idx, field, value) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            if(!p.tags) p.tags = [];
+            p.tags[idx][field] = value;
+            p.last_update = Date.now();
+            await saveDataLocally();
+            renderGrid(document.getElementById('search-input').value);
+        }
+
+        window.addTag = async function(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            if(!p.tags) p.tags = [];
+            p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 });
+            p.last_update = Date.now();
+            await saveDataLocally();
+            openEditSidebar(sku); // Recarrega os inputs no sidebar
+            renderGrid(document.getElementById('search-input').value); // Atualiza grid
+        }
+
+        window.removeTag = async function(sku, idx) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p || !p.tags) return;
+            p.tags.splice(idx, 1);
+            p.last_update = Date.now();
+            await saveDataLocally();
+            openEditSidebar(sku); // Recarrega os inputs
+            renderGrid(document.getElementById('search-input').value); // Atualiza grid
+        }
+        // ----------------------------------------------------
+
         function renderGrid(filter = "") {
             const gridContainer = document.getElementById('product-grid'); gridContainer.innerHTML = "";
             let filtered = products;
@@ -537,23 +588,24 @@
                 card.onclick = () => { openEditSidebar(p.codigo); };
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 
-                // Construção dinâmica de Múltiplas Tags
+                // --- Processar Tags (Nova Lógica e Lógica Antiga por compatibilidade) ---
                 let htmlTag = '';
-                if (p.tag_texto && p.tag_texto.trim() !== '') {
-                    const tagCorFundo = p.tag_cor || '#000000';
-                    const tagCorTexto = p.tag_cor_texto || '#ffffff';
-                    const tagTam = p.tag_tamanho || 10;
-                    
-                    // Separa o texto por quebras de linha e cria uma tag para cada linha preenchida
-                    const linhas = p.tag_texto.split('\n').filter(l => l.trim() !== '');
-                    const tagsGeradas = linhas.map(linha => 
-                        `<div class="product-tag" style="background-color: ${tagCorFundo}; color: ${tagCorTexto}; font-size: ${tagTam}px;">${linha}</div>`
-                    ).join('');
-                    
-                    if(tagsGeradas) {
-                        htmlTag = `<div class="tags-container">${tagsGeradas}</div>`;
-                    }
+                let tagsToRender = p.tags ? [...p.tags] : [];
+                
+                // Se houver texto antigo perdido, converte para o formato novo dinamicamente
+                if (p.tag_texto && tagsToRender.length === 0) {
+                     p.tag_texto.split('\n').filter(l => l.trim() !== '').forEach(l => {
+                         tagsToRender.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 });
+                     });
                 }
+                
+                if (tagsToRender.length > 0) {
+                    const tagsGeradas = tagsToRender.map(t => 
+                        `<div class="product-tag" style="background-color: ${t.bg}; color: ${t.txt}; font-size: ${t.tam}px;">${t.texto}</div>`
+                    ).join('');
+                    htmlTag = `<div class="tags-container">${tagsGeradas}</div>`;
+                }
+                // ------------------------------------------------------------------------
 
                 card.innerHTML = `<div class="card-img-wrapper">${htmlTag}<img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div><div class="card-info"><div class="card-title">${p.nome || 'Produto Sem Nome'}</div><button class="card-btn">EDITAR</button></div>`;
                 gridContainer.appendChild(card);
@@ -581,6 +633,33 @@
                 const prop = i===1 ? 'link_video' : `link_video_${i}`;
                 htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Url YouTube Shorts ${i}" onchange="updateField('${p.codigo}', '${prop}', this.value)">`;
             }
+
+            // --- Construção dos Inputs Dinâmicos de Tags ---
+            let htmlEditorTags = '';
+            const tags = p.tags || [];
+            
+            // Compatibilidade com a versão anterior (se tiver tag_texto, converte em memória visualmente)
+            if (p.tag_texto && tags.length === 0) {
+                 p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => {
+                     tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 });
+                 });
+                 p.tag_texto = ''; // Limpa a variável antiga
+                 p.tags = tags;
+            }
+
+            tags.forEach((t, idx) => {
+                htmlEditorTags += `
+                <div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
+                    <input type="text" class="form-input" style="flex-grow:1; padding:6px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)">
+                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" title="Fundo" onchange="updateTag('${p.codigo}', ${idx}, 'bg', this.value)">
+                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.txt}" title="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
+                    <input type="number" class="form-input" style="width: 50px; height:24px; padding: 4px; font-size:11px;" value="${t.tam}" title="Tam." onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)">
+                    <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button>
+                </div>
+                `;
+            });
+            htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG</button>`;
+            // ------------------------------------------------
 
             const sidebarBody = document.getElementById('sidebar-body');
             sidebarBody.innerHTML = `
@@ -611,20 +690,9 @@
                     </div>
 
                     <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;">
-                        <label class="form-label">Tags na Imagem (Uma por linha)</label>
-                        <div class="input-wrapper" style="flex-direction: column; gap: 8px;">
-                            <textarea class="form-input" placeholder="Ex:&#10;50% OFF&#10;NOVO" style="min-height: 55px;" onchange="updateField('${p.codigo}', 'tag_texto', this.value); renderGrid();">${p.tag_texto || ''}</textarea>
-                            
-                            <div style="display:flex; gap: 8px; align-items: center; background: #fafafa; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border);">
-                                <label style="font-size: 10px; font-weight:800; color:var(--text-secondary);">FUNDO:</label>
-                                <input type="color" class="form-input" style="width: 35px; padding: 0; cursor:pointer; height:24px; border:none;" value="${p.tag_cor || '#000000'}" title="Cor do Fundo" onchange="updateField('${p.codigo}', 'tag_cor', this.value); renderGrid();">
-                                
-                                <label style="font-size: 10px; font-weight:800; color:var(--text-secondary); margin-left: 10px;">TEXTO:</label>
-                                <input type="color" class="form-input" style="width: 35px; padding: 0; cursor:pointer; height:24px; border:none;" value="${p.tag_cor_texto || '#ffffff'}" title="Cor do Texto" onchange="updateField('${p.codigo}', 'tag_cor_texto', this.value); renderGrid();">
-                                
-                                <label style="font-size: 10px; font-weight:800; color:var(--text-secondary); margin-left: 10px;">TAM. (PX):</label>
-                                <input type="number" class="form-input" style="width: 60px; height:24px; padding: 4px;" title="Tamanho Fonte" value="${p.tag_tamanho || 10}" min="8" max="24" onchange="updateField('${p.codigo}', 'tag_tamanho', this.value); renderGrid();">
-                            </div>
+                        <label class="form-label">Tags da Imagem (Independentes)</label>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            ${htmlEditorTags}
                         </div>
                     </div>
                 </div>
@@ -789,7 +857,6 @@
                             preco_custo: parseFloat(d['Preço de custo']?.replace(',','.'))||0, estoque: parseFloat(d['Estoque']?.replace(',','.'))||0, 
                             categoria: d['Categoria do produto'], gtin: ean, ncm: d['NCM'], last_update: Date.now()
                         };
-                        // Importar data de validade, se existir no CSV
                         if (d['Data Validade']) { n.validade = d['Data Validade']; }
 
                         if(pIdx !== -1) products[pIdx] = {...products[pIdx], ...n}; else products.unshift({...n, id:Date.now()});
@@ -820,7 +887,7 @@
                 const linha = {}; 
                 const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
                 p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Origem'] = '0'; p['Unidade'] = 'un';
-                p['Data Validade'] = p.validade || ""; // Mapeia validade
+                p['Data Validade'] = p.validade || "";
                 colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; });
                 linha['URL Imagens Externas'] = ""; linha['Link Externo'] = ""; linha['Vídeo'] = ""; linha['Descrição Curta'] = ""; return linha;
             });
