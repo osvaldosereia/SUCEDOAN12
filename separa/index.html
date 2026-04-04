@@ -88,7 +88,7 @@
     <div class="container" id="tela-inicial">
         <h1>🛒 Separador (Picking)</h1>
         <p id="status-db" style="text-align:center; font-weight:bold; color:#721c24;">⏳ Carregando banco...</p>
-        <button id="btn-iniciar" class="btn-primary hidden" style="padding:30px; font-size:24px; width:100%; margin-top:40px; box-shadow: 0 6px 0 #388E3C;" onclick="entrarTelaCheia(); carregarPedidosFila();">📋 VER PEDIDOS</button>
+        <button id="btn-iniciar" class="btn-primary hidden" style="padding:30px; font-size:24px; width:100%; margin-top:40px; box-shadow: 0 6px 0 #388E3C;" onclick="carregarPedidosFila();">📋 VER PEDIDOS</button>
     </div>
 
     <div class="container hidden" id="tela-lista-pedidos">
@@ -190,13 +190,6 @@
         } catch (erro) { document.getElementById('status-db').innerText = "❌ Erro ao ler Banco Local."; }
     };
 
-    function entrarTelaCheia() {
-        let elem = document.documentElement;
-        if (elem.requestFullscreen) { elem.requestFullscreen(); }
-        else if (elem.webkitRequestFullscreen) { elem.webkitRequestFullscreen(); }
-        else if (elem.msRequestFullscreen) { elem.msRequestFullscreen(); }
-    }
-
     function abrirTela(id) { ['tela-inicial', 'tela-lista-pedidos', 'tela-separacao-foco', 'tela-conclusao'].forEach(t => document.getElementById(t).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
     
     function mostrarAlerta(msg, tipo = 'sucesso') { 
@@ -232,7 +225,13 @@
             let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE'); if(pendentes.length===0) return container.innerHTML = '<h3 style="color:green; text-align:center;">✅ Fila Vazia!</h3>';
             pendentes.forEach(pedido => {
                 let div = document.createElement('div'); div.className = 'resultado-item'; 
-                div.innerHTML = `Pedido: ${pedido.orderNum} <br><span style="font-size:14px; color:#555; font-weight:normal;">📦 ${pedido.items?pedido.items.length:0} Produtos</span>`;
+                // Adaptado para ler a chave "itens" e exibir o nome do cliente
+                let qtdItens = pedido.itens ? pedido.itens.length : 0;
+                let nomeCliente = pedido.cliente ? pedido.cliente.split(' ')[0] : 'Cliente';
+                
+                div.innerHTML = `Pedido: ${pedido.orderNum} <br>
+                                 <span style="font-size:14px; color:#555; font-weight:normal;">📦 ${qtdItens} Produtos</span><br>
+                                 <span style="font-size:13px; color:#888;">👤 ${nomeCliente}</span>`;
                 div.onclick = () => iniciarSeparacaoPedido(pedido); container.appendChild(div);
             });
         } catch (e) { container.innerHTML = '<p style="color:red; text-align:center;">❌ Falha de conexão.</p>'; }
@@ -240,7 +239,38 @@
 
     function iniciarSeparacaoPedido(pedido) {
         listaDeSeparacao = []; pedidoAtual = pedido; 
-        pedido.items.forEach(item => { if (item.foundProduct) listaDeSeparacao.push({ quantidadeTotal: item.qtd, unidadesLidas: 0, nomePedido: item.nomeOriginal, produtoDb: item.foundProduct, localizacao: item.foundProduct.localizacao || item.foundProduct["Localização"] || "SEM LOC", status: 'pendente' }); });
+        
+        // Iteramos sobre o novo array 'itens' em vez de 'items'
+        if(pedido.itens) {
+            pedido.itens.forEach(item => { 
+                // Como o JSON novo não traz o "foundProduct" mastigado, fazemos uma busca rápida no bancoDeDados
+                // pelo NomeOriginal para encontrar as localizações e SKUs.
+                let produtoDb = bancoDeDados.find(p => 
+                    (p.descricao || p["Descrição"] || "").trim().toUpperCase() === item.nomeOriginal.trim().toUpperCase() ||
+                    (p.nome || "").trim().toUpperCase() === item.nomeOriginal.trim().toUpperCase()
+                );
+                
+                // Caso não encontre no Banco de Dados (para não quebrar o app)
+                if (!produtoDb) {
+                    produtoDb = {
+                        codigo: "---",
+                        "Código": "---",
+                        localizacao: "SEM LOC",
+                        "Localização": "SEM LOC"
+                    };
+                }
+
+                listaDeSeparacao.push({ 
+                    quantidadeTotal: item.qtd, 
+                    unidadesLidas: 0, 
+                    nomePedido: item.nomeOriginal, 
+                    produtoDb: produtoDb, 
+                    localizacao: produtoDb.localizacao || produtoDb["Localização"] || "SEM LOC", 
+                    status: 'pendente' 
+                }); 
+            });
+        }
+        
         listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); indexAtualPicking = 0; 
         abrirTela('tela-separacao-foco'); renderizarItemFoco();
     }
@@ -249,7 +279,6 @@
     function voltarProdutoAnterior() {
         if (indexAtualPicking > 0) {
             indexAtualPicking--;
-            // Zera a contagem do produto anterior para obrigar o separador a reconferir
             listaDeSeparacao[indexAtualPicking].unidadesLidas = 0; 
             listaDeSeparacao[indexAtualPicking].status = 'pendente';
             renderizarItemFoco();
@@ -260,9 +289,8 @@
 
     function pularProduto() {
         if (indexAtualPicking < listaDeSeparacao.length - 1) {
-            // Retira o produto atual da posição e joga para o final da fila de separação
             let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0];
-            itemAtual.unidadesLidas = 0; // Reseta a leitura
+            itemAtual.unidadesLidas = 0; 
             listaDeSeparacao.push(itemAtual);
             
             mostrarAlerta("Produto enviado para o final da lista.", "aviso");
@@ -342,6 +370,9 @@
     function avaliarFoco() {
         let skuCorreto = String(listaDeSeparacao[indexAtualPicking].produtoDb.codigo || listaDeSeparacao[indexAtualPicking].produtoDb["Código"] || "").trim().toUpperCase();
         
+        // Se o produto não estava no banco, deixamos ele passar direto pro ADD UNIDADE para não travar o fluxo
+        if (skuCorreto === "---") { registrarUnidadeFoco(); return; }
+
         if(focoModo === "EAN") {
             let achados = bancoDeDados.filter(p => String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "").endsWith(focoDisplayStr));
             if (achados.length === 0) { apagarFocoErro("❌ EAN não encontrado!"); } 
