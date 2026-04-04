@@ -323,7 +323,7 @@
         let githubTasksQueue = [];
         let isProcessingTasks = false;
         let lastGithubSyncTime = 0;
-        const COOLDOWN_MS = 180 * 1000;
+        const COOLDOWN_MS = 60 * 1000;
 
         // FUNÇÃO DE LIMPEZA DE BASE64 (Impede links gigantes de ir para o GitHub)
         function sanitizeProductsForExport(prods) {
