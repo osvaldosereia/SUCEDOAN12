@@ -32,6 +32,20 @@
         
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
         
+        /* SISTEMA DE TELAS VIRTUAIS */
+        .app-screen { display: none; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; }
+        .app-screen.active { display: flex; }
+
+        /* TELA INICIAL (LANDING) */
+        #landing-screen { background: var(--accent); color: white; justify-content: center; align-items: center; padding: 20px; }
+        .landing-title { font-size: 24px; font-weight: 900; margin-bottom: 40px; text-align: center; letter-spacing: -1px; }
+        .landing-btn-group { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 320px; }
+        .landing-btn { width: 100%; padding: 20px; font-size: 16px; font-weight: 900; border-radius: 16px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); transition: 0.2s; }
+        .landing-btn:active { transform: scale(0.96); }
+        .landing-btn-admin { background: #ffffff; color: var(--accent); }
+        .landing-btn-sep { background: var(--sep-primary); color: white; }
+        .landing-btn-bal { background: var(--warning); color: #000; }
+
         header { background: #ffffff; min-height: 54px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
         .brand { font-weight: 900; font-size: 16px; letter-spacing: -0.5px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
         #queue-status { display:none; align-items:center; gap:6px; font-size:11px; font-weight:800; background:#fffbeb; color:#b45309; padding:6px 12px; border-radius:20px; border:1px solid #fde68a; }
@@ -83,6 +97,7 @@
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 380px; }
         #whatsapp-sidebar { z-index: 1013; width: 420px; } 
+        #menu-sidebar { z-index: 1014; width: 300px; }
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -176,15 +191,25 @@
         .checklist-item { border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; color:var(--accent); }
         .checklist-item:last-child { border-bottom: none; }
 
+        /* =========================================================
+           ADAPTAÇÕES MOBILE PRODUTIVAS
+           ========================================================= */
+        .mobile-only { display: none !important; }
+
         @media (max-width: 768px) {
-            header { padding: 10px; flex-wrap: wrap; }
-            .toolbar { padding: 10px; flex-direction: column; align-items: stretch; }
-            .search-container { width: 100%; }
-            .sidebar { width: 100%; }
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+            header { padding: 10px 15px; flex-wrap: nowrap; justify-content: space-between; }
+            .toolbar { padding: 10px 15px; flex-wrap: nowrap; }
+            .toolbar-group { width: 100%; justify-content: space-between; }
+            .search-container { width: 100%; flex-grow: 1; }
+            .search-input { width: 100%; }
             .main-content { padding: 10px; }
             .card-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
             .image-slots { grid-template-columns: repeat(3, 1fr); }
-            .toolbar-group { flex-wrap: wrap; justify-content: center; }
+            .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
+            .balanco-card { flex-direction: column !important; }
+            .balanco-card img { width: 100% !important; height: 180px !important; }
         }
     </style>
 </head>
@@ -206,43 +231,99 @@
         <button class="sep-btn sep-btn-danger" style="padding:25px; font-size:22px; margin-top:15px; font-weight:900;" onclick="fecharFotoTelaCheia()">❌ FECHAR FOTO</button>
     </div>
 
-    <header>
-        <div class="brand"><i data-lucide="package-search" size="20"></i> SUCEDOAN PIM & PICKING</div>
-        <div id="queue-status"></div>
-        <button class="nav-btn primary" onclick="openSidebar('whatsapp-sidebar')"><i data-lucide="shopping-cart" size="14"></i> PEDIDOS WHATSAPP</button>
-        <button class="nav-btn" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES</button>
-    </header>
-
-    <div class="toolbar">
-        <div class="toolbar-group" style="flex-grow: 1;">
-            <div class="search-container">
-                <i data-lucide="search" class="search-icon"></i>
-                <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU ou Nome...">
-            </div>
-            <button class="nav-btn" id="btn-24h" onclick="toggleFilter24h()" title="Mostrar produtos adicionados/editados nas últimas 24h">
-                <i data-lucide="clock" size="14"></i> ÚLTIMAS 24H
-            </button>
-        </div>
-        
-        <div class="toolbar-group">
-            <button class="nav-btn sync-btn" onclick="uploadBancodedados(this)" title="Salvar Base de Dados Completa">
-                <i data-lucide="database" size="14"></i> ENVIAR BASE
-            </button>
-            <button class="nav-btn sync-btn" onclick="uploadProdutosJson(this)" title="Salvar Vitrine para o Site">
-                <i data-lucide="layout-grid" size="14"></i> ENVIAR VITRINE
-            </button>
-            <button class="nav-btn sync-btn" onclick="uploadImagens(this)" title="Processar Fila de Imagens">
-                <i data-lucide="image-up" size="14"></i> ENVIAR IMAGENS <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px;">(0)</span>
-            </button>
-            <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO</button>
+    <div id="landing-screen" class="app-screen active">
+        <div class="landing-title"><i data-lucide="boxes" size="48" style="margin-bottom:15px; display:block; margin:0 auto;"></i> SUCEDOAN<br>OPERACIONAL</div>
+        <div class="landing-btn-group">
+            <button class="landing-btn landing-btn-admin" onclick="startAdmin()"><i data-lucide="database" size="24"></i> Administrador PIM</button>
+            <button class="landing-btn landing-btn-sep" onclick="startSeparador()"><i data-lucide="shopping-cart" size="24"></i> Separador (Picking)</button>
+            <button class="landing-btn landing-btn-bal" onclick="startBalanco()"><i data-lucide="scale" size="24"></i> Balanço de Estoque</button>
         </div>
     </div>
-    
-    <div class="main-content">
-        <div class="card-grid" id="product-grid"></div>
+
+    <div id="pim-screen" class="app-screen">
+        <header>
+            <button class="btn-icon" onclick="goToLanding()" title="Voltar ao Início"><i data-lucide="home" size="18"></i></button>
+            <div class="brand">ADMINISTRADOR</div>
+            <div id="queue-status"></div>
+            <button class="nav-btn primary desktop-only" onclick="openSidebar('whatsapp-sidebar')"><i data-lucide="shopping-cart" size="14"></i> PEDIDOS</button>
+            <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES</button>
+            <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
+        </header>
+
+        <div class="toolbar">
+            <div class="toolbar-group" style="flex-grow: 1;">
+                <div class="search-container">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU ou Nome...">
+                </div>
+                <button class="nav-btn desktop-only" id="btn-24h" onclick="toggleFilter24h()" title="Mostrar produtos adicionados/editados nas últimas 24h">
+                    <i data-lucide="clock" size="14"></i> ÚLTIMAS 24H
+                </button>
+            </div>
+            
+            <div class="toolbar-group desktop-only">
+                <button class="nav-btn sync-btn" onclick="uploadBancodedados(this)" title="Salvar Base de Dados Completa">
+                    <i data-lucide="database" size="14"></i> ENVIAR BASE
+                </button>
+                <button class="nav-btn sync-btn" onclick="uploadProdutosJson(this)" title="Salvar Vitrine para o Site">
+                    <i data-lucide="layout-grid" size="14"></i> ENVIAR VITRINE
+                </button>
+                <button class="nav-btn sync-btn" onclick="uploadImagens(this)" title="Processar Fila de Imagens">
+                    <i data-lucide="image-up" size="14"></i> ENVIAR IMAGENS <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px;">(0)</span>
+                </button>
+                <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO</button>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="card-grid" id="product-grid"></div>
+        </div>
+    </div>
+
+    <div id="balanco-screen" class="app-screen">
+        <header>
+            <button class="btn-icon" onclick="goToLanding()" title="Voltar ao Início"><i data-lucide="home" size="18"></i></button>
+            <div class="brand">BALANÇO</div>
+            <div style="font-size:11px; font-weight:900; background:#fffbeb; color:#b45309; padding:6px 12px; border-radius:20px; border:1px solid #fde68a;">
+                FILA DE ENVIO: <span id="balanco-fila-count" style="font-size:14px;">0</span>/5
+            </div>
+        </header>
+
+        <div class="toolbar" style="border-bottom: 1px solid var(--border);">
+            <div class="search-container" style="width: 100%;">
+                <i data-lucide="search" class="search-icon"></i>
+                <input type="text" class="search-input" id="search-balanco" placeholder="Busque por Nome, SKU ou os 4 últimos dígitos do EAN...">
+            </div>
+        </div>
+        
+        <div class="main-content" id="balanco-results" style="padding: 15px; display: flex; flex-direction: column; gap: 15px; max-width: 800px; margin: 0 auto; width: 100%;">
+            <p style="text-align:center; color:var(--text-secondary); margin-top:30px;"><i data-lucide="scan-barcode" size="48" style="opacity:0.3; margin-bottom:15px;"></i><br>Digite para começar a contar...</p>
+        </div>
     </div>
 
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAllSidebars()"></div>
+
+    <div class="sidebar" id="menu-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Menu de Ações</div>
+            <button class="btn-icon" onclick="closeSidebar('menu-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body">
+            <div class="form-section">
+                <div class="section-title">Navegação Principal</div>
+                <button class="nav-btn primary menu-sidebar-btn" onclick="openSidebar('whatsapp-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="shopping-cart" size="14"></i> PEDIDOS WHATSAPP</button>
+                <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="settings" size="14"></i> DEFINIÇÕES</button>
+                <button class="nav-btn menu-sidebar-btn" id="btn-24h-mobile" onclick="toggleFilter24h(); closeSidebar('menu-sidebar');"><i data-lucide="clock" size="14"></i> FILTRAR ÚLTIMAS 24H</button>
+            </div>
+            <div class="form-section" style="border-top: 1px solid var(--border); padding-top: 15px;">
+                <div class="section-title">Sincronização Nuvem</div>
+                <button class="nav-btn sync-btn menu-sidebar-btn" onclick="uploadBancodedados(this); closeSidebar('menu-sidebar');"><i data-lucide="database" size="14"></i> ENVIAR BASE</button>
+                <button class="nav-btn sync-btn menu-sidebar-btn" onclick="uploadProdutosJson(this); closeSidebar('menu-sidebar');"><i data-lucide="layout-grid" size="14"></i> ENVIAR VITRINE</button>
+                <button class="nav-btn sync-btn menu-sidebar-btn" onclick="uploadImagens(this); closeSidebar('menu-sidebar');"><i data-lucide="image-up" size="14"></i> ENVIAR IMAGENS</button>
+            </div>
+        </div>
+    </div>
 
     <div class="sidebar" id="whatsapp-sidebar">
         <div class="sidebar-header">
@@ -427,7 +508,7 @@
         }
 
         // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB (CORRIGIDO)
+        // GESTOR DE COMUNICAÇÃO COM GITHUB
         // ==========================================================
         const GitHubAPI = {
             getConfig: function() {
@@ -448,7 +529,6 @@
             getFileData: async function(path) {
                 const cfg = this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
-                // API do GitHub restringe paths com '../'. Deve ser relativo à raiz do repo.
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const res = await fetch(url, { headers: this.getHeaders(cfg), cache: "no-store" });
                 if (res.status === 404) return null; 
@@ -495,9 +575,11 @@
         }
 
         function enqueueGitHubTask(taskName, taskFunction, btnElement) {
-            const originalHTML = btnElement.innerHTML;
-            btnElement.innerHTML = `<i data-lucide="clock" size="14"></i> NA FILA`;
-            btnElement.disabled = true; lucide.createIcons();
+            const originalHTML = btnElement ? btnElement.innerHTML : '';
+            if(btnElement) {
+                btnElement.innerHTML = `<i data-lucide="clock" size="14"></i> NA FILA`;
+                btnElement.disabled = true; lucide.createIcons();
+            }
             githubTasksQueue.push({ name: taskName, fn: taskFunction, btn: btnElement, originalHTML: originalHTML });
             if (!isProcessingTasks) processGitHubQueue();
         }
@@ -505,11 +587,11 @@
         async function processGitHubQueue() {
             if (githubTasksQueue.length === 0) { isProcessingTasks = false; setTimeout(() => updateQueueUI(''), 3000); return; }
             isProcessingTasks = true; const task = githubTasksQueue.shift(); 
-            task.btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> A ENVIAR...`;
-            updateQueueUI(`A enviar: ${task.name}...`, 'loader'); lucide.createIcons();
+            if(task.btn) { task.btn.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> A ENVIAR...`; lucide.createIcons(); }
+            updateQueueUI(`A enviar: ${task.name}...`, 'loader'); 
             try { await task.fn(); updateQueueUI(`${task.name} enviado com sucesso!`, 'check'); } 
             catch (e) { console.error("Erro na tarefa:", e); alert(`Erro ao enviar ${task.name}: ${e.message}`); updateQueueUI(`Erro ao enviar ${task.name}`, 'info'); } 
-            finally { task.btn.innerHTML = task.originalHTML; task.btn.disabled = false; lucide.createIcons(); setTimeout(() => { processGitHubQueue(); }, 1000); }
+            finally { if(task.btn) { task.btn.innerHTML = task.originalHTML; task.btn.disabled = false; lucide.createIcons(); } setTimeout(() => { processGitHubQueue(); }, 1000); }
         }
 
         // ==========================================================
@@ -529,7 +611,6 @@
         }
 
         function uploadBancodedados(btn) { 
-            // CORREÇÃO: Removido '../' do path do github
             enqueueGitHubTask('Base Completa', async () => { const produtosLimpos = sanitizeProductsForExport(products); await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`); }, btn); 
         }
 
@@ -539,7 +620,6 @@
                 const produtosResumidos = produtosLimpos.map(p => ({
                     id: p.id || p['ID'] || Date.now(), nome: p.nome || "", preco: p.preco || 0, codigo: p.codigo || "", situacao: p.situacao || "A", categoria: p.categoria || "", validade: p.validade || "", estoque: p.estoque || 0, descricao: p.descricao || "", tags: p.tags || [], url_imagem: p.url_imagem || "", url_imagem_2: p.url_imagem_2 || "", url_imagem_3: p.url_imagem_3 || "", link_video: p.link_video || "", link_video_2: p.link_video_2 || "", link_video_3: p.link_video_3 || "", link_video_4: p.link_video_4 || "", link_video_5: p.link_video_5 || "", link_video_6: p.link_video_6 || "", link_video_7: p.link_video_7 || "", link_video_8: p.link_video_8 || "", link_video_9: p.link_video_9 || "", link_video_10: p.link_video_10 || ""
                 }));
-                // CORREÇÃO: Removido '../' do path
                 await GitHubAPI.saveFile(`site/produtos.json`, produtosResumidos, `PIM Sync: Vitrine Atualizada`);
             }, btn);
         }
@@ -552,14 +632,10 @@
                     try {
                         const sufix = item.slot === 1 ? '' : `_${item.slot}`; 
                         const fileName = `${item.sku}${sufix}.webp`; 
-                        
-                        // CORREÇÃO: Separar diretório local do caminho da API REST do GitHub.
                         const githubFolderPath = "site/img/produtos"; 
                         const localFolderPath = "../site/img/produtos";
                         
                         await GitHubAPI.saveFile(`${githubFolderPath}/${fileName}`, item.base64data, `PIM Sync: Imagem ${fileName}`, true);
-                        
-                        // Atualiza a URL mantendo a relatividade local da aplicação
                         const pRef = products.find(x => x.codigo === item.sku); 
                         if(pRef) { pRef[item.prop] = `${localFolderPath}/${fileName}?v=${Date.now()}`; pRef.last_update = Date.now(); }
                         imageQueue = imageQueue.filter(q => q !== item); updateImageBadge();
@@ -571,13 +647,11 @@
 
         function uploadFilaPedidosGithub(btn = null) {
             const targetBtn = btn || document.createElement('button'); 
-            // CORREÇÃO: Removido '../' do path do github
             enqueueGitHubTask('Sincronizar Fila', async () => { await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); }, targetBtn);
         }
 
         async function baixarFilaNuvem() {
             try {
-                // CORREÇÃO: Removido '../'
                 const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
                 if (data && data.content) {
                     const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent);
@@ -589,7 +663,6 @@
 
         async function getFilaRemota() {
             try {
-                // CORREÇÃO: Removido '../'
                 const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
                 if (data && data.content) { const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent); if(Array.isArray(parsedData)) return parsedData; }
             } catch(e) { console.warn("Aviso: Fila remota não encontrada, a iniciar nova."); }
@@ -597,7 +670,172 @@
         }
 
         // ==========================================================
-        // WHATSAPP E GESTÃO DE FILA
+        // NAVEGAÇÃO ENTRE TELAS DO APP (ROUTING INTELIGENTE)
+        // ==========================================================
+        function goToLanding() {
+            document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('landing-screen').classList.add('active');
+            closeAllSidebars();
+            document.getElementById('separador-overlay').style.display = 'none';
+        }
+        
+        function startAdmin() {
+            document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('pim-screen').classList.add('active');
+            renderGrid(document.getElementById('search-input').value);
+        }
+        
+        function startSeparador() {
+            document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('pim-screen').classList.add('active'); 
+            openSidebar('whatsapp-sidebar');
+        }
+        
+        function startBalanco() {
+            document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('balanco-screen').classList.add('active');
+            document.getElementById('search-balanco').value = '';
+            document.getElementById('balanco-results').innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:30px;"><i data-lucide="scan-barcode" size="48" style="opacity:0.3; margin-bottom:15px;"></i><br>Digite para começar a contar...</p>';
+            lucide.createIcons();
+        }
+
+        // ==========================================================
+        // NOVO MÓDULO: BALANÇO DE ESTOQUE
+        // ==========================================================
+        let balancoEditsCount = 0;
+
+        document.getElementById('search-balanco').addEventListener('input', debounce((e) => {
+            let term = e.target.value.trim().toLowerCase();
+            let container = document.getElementById('balanco-results');
+            
+            if (term.length < 3) { 
+                container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:30px;"><i data-lucide="scan-barcode" size="48" style="opacity:0.3; margin-bottom:15px;"></i><br>Digite pelo menos 3 caracteres...</p>'; 
+                lucide.createIcons();
+                return; 
+            }
+
+            let isNumeric = /^\d+$/.test(term);
+
+            let found = products.filter(p => {
+                let n = (p.nome || "").toLowerCase();
+                let c = (p.codigo || "").toLowerCase();
+                let ean = String(p.gtin || "").replace(/\D/g, "");
+
+                // Se digitou >= 4 números, busca pelo final do EAN (modo bipe)
+                if (isNumeric && term.length >= 4 && ean.length > 0 && ean.endsWith(term)) return true;
+                // Busca geral por nome ou SKU
+                if (n.includes(term) || c.includes(term)) return true;
+                
+                return false;
+            }).slice(0, 15); // Limita a 15 para não travar o mobile
+
+            if(found.length === 0) { 
+                container.innerHTML = '<p style="text-align:center; color:#888;">Nenhum produto encontrado com estes dados.</p>'; 
+                return; 
+            }
+
+            container.innerHTML = found.map(p => {
+                let img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/100x100/f4f4f5/a1a1aa?text=SEM+FOTO';
+                return `
+                <div class="product-card balanco-card" style="display:flex; flex-direction:row; padding:15px; gap:15px; cursor:default; background:#fff; border-radius:12px; border:1px solid #ddd; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+                    <img src="${img}" style="width:100px; height:100px; object-fit:contain; border-radius:8px; border:1px solid #eee; background:#fafafa;">
+                    
+                    <div style="flex:1; display:flex; flex-direction:column; gap:8px;">
+                        <div>
+                            <label style="font-size:10px; font-weight:bold; color:#666;">Nome do Produto</label>
+                            <input type="text" id="bal-nome-${p.codigo}" value="${p.nome}" class="form-input" style="font-weight:bold; font-size:14px; padding:8px;">
+                        </div>
+                        
+                        <div style="display:flex; gap:10px;">
+                            <div style="flex:1;">
+                                <label style="font-size:10px; font-weight:bold; color:#666;">SKU</label>
+                                <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="font-size:12px; padding:8px;">
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-size:10px; font-weight:bold; color:#666;">EAN</label>
+                                <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="font-size:12px; padding:8px;">
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px;">
+                            <div style="flex:1;">
+                                <label style="font-size:10px; font-weight:bold; color:#666;">Validade</label>
+                                <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding:8px; font-size:12px;">
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-size:10px; font-weight:bold; color:var(--sep-primary);">Estoque Real</label>
+                                <input type="number" id="bal-est-${p.codigo}" value="${p.estoque||0}" class="form-input" style="padding:8px; border-color:var(--sep-primary); font-weight:900; font-size:16px; text-align:center;">
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:8px; margin-top:5px;">
+                            <button class="nav-btn primary" style="flex:1; justify-content:center; padding:12px;" onclick="salvarBalanco('${p.codigo}', false, this)">
+                                <i data-lucide="save" size="14"></i> SALVAR (FILA)
+                            </button>
+                            <button class="nav-btn success-btn" style="flex:1; justify-content:center; padding:12px;" onclick="salvarBalanco('${p.codigo}', true, this)">
+                                <i data-lucide="cloud-upload" size="14"></i> ENVIAR AGORA
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+            lucide.createIcons();
+        }), 400);
+
+        async function salvarBalanco(oldSku, forceSync, btnElement) {
+            let p = products.find(x => x.codigo === oldSku);
+            if(!p) return;
+
+            let newNome = document.getElementById(`bal-nome-${oldSku}`).value;
+            let newSku = document.getElementById(`bal-sku-${oldSku}`).value.trim().toUpperCase();
+            let newEan = document.getElementById(`bal-ean-${oldSku}`).value.trim();
+            let newVal = document.getElementById(`bal-val-${oldSku}`).value;
+            let newEst = parseFloat(document.getElementById(`bal-est-${oldSku}`).value) || 0;
+
+            // Se o utilizador tentou mudar o SKU, temos que verificar se o novo já existe (para não subscrever)
+            if(newSku !== oldSku && products.find(x => x.codigo === newSku)) {
+                mostrarAlerta("Este SKU já está em uso!", "erro");
+                return;
+            }
+
+            p.nome = newNome;
+            p.codigo = newSku;
+            p['Código'] = newSku;
+            p.gtin = newEan;
+            p.validade = newVal;
+            p.estoque = newEst;
+            p.last_update = Date.now();
+
+            await saveDataLocally();
+            
+            // Corrige os IDs dos campos HTML caso o SKU tenha mudado
+            if(newSku !== oldSku) {
+                document.getElementById(`bal-nome-${oldSku}`).id = `bal-nome-${newSku}`;
+                document.getElementById(`bal-sku-${oldSku}`).id = `bal-sku-${newSku}`;
+                document.getElementById(`bal-ean-${oldSku}`).id = `bal-ean-${newSku}`;
+                document.getElementById(`bal-val-${oldSku}`).id = `bal-val-${newSku}`;
+                document.getElementById(`bal-est-${oldSku}`).id = `bal-est-${newSku}`;
+            }
+
+            if (forceSync) {
+                mostrarAlerta("Enviando diretamente...", "aviso");
+                uploadBancodedados(btnElement); 
+                balancoEditsCount = 0;
+            } else {
+                balancoEditsCount++;
+                if (balancoEditsCount >= 5) {
+                    mostrarAlerta("Lote atingido. Enviando automaticamente...", "aviso");
+                    uploadBancodedados(btnElement); 
+                    balancoEditsCount = 0;
+                } else {
+                    mostrarAlerta(`Salvo localmente! (Fila: ${balancoEditsCount}/5)`, "sucesso");
+                }
+            }
+            document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
+        }
+
+        // ==========================================================
+        // WHATSAPP E GESTÃO DE FILA (CONT.)
         // ==========================================================
 
         async function gerarPedidoWhatsapp() {
@@ -645,7 +883,6 @@
             enqueueGitHubTask('Gravar Pedido Novo', async () => {
                 let filaRemota = await getFilaRemota();
                 if (!filaRemota.find(p => p.id === novoPedido.id)) { filaRemota.push(novoPedido); }
-                // CORREÇÃO: Removido '../'
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes();
             }, btn);
@@ -685,25 +922,20 @@
             enqueueGitHubTask('Apagar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
                 filaRemota = filaRemota.filter(p => p.id !== pedidoId);
-                // CORREÇÃO: Removido '../'
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes();
             }, btn);
         }
 
-        // Função de Baixa Automática Segura (Usando Text Cleaner)
+        // Função de Baixa Automática Segura
         function processarBaixaEstoqueLocal(itensVendidosMap) {
             let mudouAlgo = false;
             for (const [idVendido, qtdVendida] of Object.entries(itensVendidosMap)) {
-                // Tenta achar direto pelo SKU
                 let p = products.find(prod => prod.codigo === idVendido);
-                
-                // Se falhar (era um item sem SKU), tenta achar pelo nome limpo
                 if (!p) {
                     let idLimpo = limparTexto(idVendido);
                     p = products.find(prod => limparTexto(prod.nome || prod.descricao || "") === idLimpo);
                 }
-
                 if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgo = true; }
             }
             return mudouAlgo;
@@ -733,7 +965,6 @@
                 let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
 
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
-                // CORREÇÃO: Removido '../'
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
@@ -786,7 +1017,6 @@
                     let skuRecebido = item.sku || "---";
                     let produtoDb = products.find(p => (p.codigo || "").toString().trim().toUpperCase() === skuRecebido );
                     
-                    // RESGATE DE PEDIDO LEGACY: Tenta achar pelo nome se não tiver SKU
                     if (!produtoDb && skuRecebido === "---") {
                         let nomeZapLimpo = limparTexto(item.nomeOriginal);
                         produtoDb = products.find(p => {
@@ -796,7 +1026,7 @@
                     }
 
                     if (produtoDb) {
-                        item.sku = produtoDb.codigo; // Corrige o item em memória
+                        item.sku = produtoDb.codigo;
                         if (item.imagem && item.imagem.length > 5) { 
                             produtoDb.url_imagem = item.imagem; 
                         } else {
@@ -826,7 +1056,6 @@
             openSidebar('whatsapp-sidebar'); 
         }
 
-        // Simplificado: Confia na URL do PIM!
         function resolverImagemProdutoSep(produtoDb, imagemFallback) {
             let url = imagemFallback || produtoDb.url_imagem;
             if (url && url.length > 5) return url;
@@ -875,17 +1104,42 @@
         function pularProduto() { if (indexAtualPicking < listaDeSeparacao.length - 1) { let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0]; itemAtual.unidadesLidas = 0; listaDeSeparacao.push(itemAtual); mostrarAlerta("Produto enviado para o final da lista.", "aviso"); renderizarItemFoco(); } else { mostrarAlerta("Este é o último produto restante!", "aviso"); } }
 
         function resetarTecladoFoco() { focoDisplayStr = ""; document.getElementById('foco-teclado-titulo').innerText = "DIGITE O ÚLTIMO DÍGITO DO EAN"; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }
-        function addFoco(num) { if(focoDisplayStr.length < focoLimite) { focoDisplayStr += num; atualizarDisplayFoco(); if(focoDisplayStr.length === focoLimite) { setTimeout(avaliarFoco, 100); } } }
+        
+        function addFoco(num) { 
+            if(focoDisplayStr.length < focoLimite) { 
+                focoDisplayStr += num.toString(); 
+                atualizarDisplayFoco(); 
+                if(focoDisplayStr.length === focoLimite) { 
+                    setTimeout(avaliarFoco, 100); 
+                } 
+            } 
+        }
+        
         function apagarFocoErro(msgAlerta) { tocarBipe('erro'); mostrarAlerta(msgAlerta, "erro"); document.getElementById('display-foco').classList.add('erro'); setTimeout(() => { focoDisplayStr = ""; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }, 600); }
         function atualizarDisplayFoco() { document.getElementById('display-foco').innerText = focoDisplayStr + "-".repeat(focoLimite - focoDisplayStr.length); }
 
         function avaliarFoco() {
             let itemAtual = listaDeSeparacao[indexAtualPicking];
             let skuCorreto = String(itemAtual.produtoDb.codigo || "").trim().toUpperCase();
-            let eanCorreto = String(itemAtual.produtoDb.gtin || "").replace(/\D/g, "").replace(/^0+/, "");
+            
+            let eanCorreto = String(itemAtual.produtoDb.gtin || "").trim().replace(/\D/g, "");
             
             if (skuCorreto === "---") { registrarUnidadeFoco(); return; }
-            if (eanCorreto && eanCorreto.endsWith(focoDisplayStr)) { registrarUnidadeFoco(); } else { apagarFocoErro("❌ Produto Errado!"); }
+            
+            if (eanCorreto.length > 0) {
+                if (eanCorreto.endsWith(focoDisplayStr)) { 
+                    registrarUnidadeFoco(); 
+                } else { 
+                    apagarFocoErro("❌ EAN Incorreto!"); 
+                }
+            } else {
+                let skuNumeros = skuCorreto.replace(/\D/g, "");
+                if (skuNumeros.length > 0 && skuNumeros.endsWith(focoDisplayStr)) {
+                    registrarUnidadeFoco();
+                } else {
+                    apagarFocoErro("❌ Produto sem EAN! (Falha SKU)");
+                }
+            }
         }
 
         function registrarUnidadeFoco() { let item = listaDeSeparacao[indexAtualPicking]; item.unidadesLidas++; tocarBipe('sucesso'); renderizarItemFoco(); }
@@ -912,34 +1166,26 @@
             const btnSyncFila = document.getElementById('btnSyncFila') || document.createElement('button');
             
             enqueueGitHubTask('Baixa do Pedido Separado', async () => {
-                // 1. Pega a versão mais atual da nuvem
                 let filaRemota = await getFilaRemota();
                 
-                // 2. Procura o nosso pedido exato lá e muda o status
                 let pedidoRemotoIndex = filaRemota.findIndex(p => p.id === pedidoAtualParaSeparacao.id);
                 if(pedidoRemotoIndex === -1) throw new Error("Pedido não encontrado na nuvem para dar baixa.");
                 
                 filaRemota[pedidoRemotoIndex].status = "CONCLUIDO";
 
-                // 3. Prepara o mapa de redução de stock
                 let itensVendidos = {};
                 listaDeSeparacao.forEach(i => {
                     const skuOrNome = i.produtoDb.codigo !== "---" ? i.produtoDb.codigo : i.nomePedido;
                     itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + i.quantidadeTotal;
                 });
 
-                // 4. Reduz no banco de dados do PIM localmente
                 let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
 
-                // 5. Apaga concluídos para manter fila limpa e salva a fila no GitHub
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
-                // CORREÇÃO: Removido '../'
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Concluído`);
                 
-                // 6. Atualiza o local
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
-                // 7. Envia os novos estoques para o GitHub
                 if(mudouAlgoLocalmente) {
                     await saveDataLocally(); 
                     renderGrid(document.getElementById('search-input').value);
@@ -958,7 +1204,7 @@
         // ==========================================================
         
         let isFilter24hActive = false;
-        function toggleFilter24h() { isFilter24hActive = !isFilter24hActive; const btn = document.getElementById('btn-24h'); if(isFilter24hActive) btn.classList.add('primary'); else btn.classList.remove('primary'); renderGrid(document.getElementById('search-input').value); }
+        function toggleFilter24h() { isFilter24hActive = !isFilter24hActive; const btn = document.getElementById('btn-24h'); const btnMobile = document.getElementById('btn-24h-mobile'); if(isFilter24hActive) { btn.classList.add('primary'); btnMobile.classList.add('primary'); } else { btn.classList.remove('primary'); btnMobile.classList.remove('primary'); } renderGrid(document.getElementById('search-input').value); }
         function openSidebar(id) { document.getElementById('sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); }
         function closeSidebar(id) { document.getElementById(id).classList.remove('open'); setTimeout(() => { const openSidebars = document.querySelectorAll('.sidebar.open'); if(openSidebars.length === 0) { document.getElementById('sidebar-overlay').style.opacity = '0'; setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); if(id === 'edit-sidebar') { currentEditingSku = null; renderGrid(document.getElementById('search-input').value); } } }, 50); }
         function closeAllSidebars() { document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open')); document.getElementById('sidebar-overlay').style.opacity = '0'; setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); currentEditingSku = null; renderGrid(document.getElementById('search-input').value); }
@@ -1123,11 +1369,9 @@
 
     async function fetchFromGithub() {
             try {
-                // 1. Vai buscar as tuas credenciais
                 const cfg = GitHubAPI.getConfig();
                 if (!cfg) return;
 
-                // 2. Pedimos o ficheiro DIRETAMENTE à API principal do GitHub (CORREÇÃO: mantido sem '../')
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json`;
                 
                 const response = await fetch(url, {
@@ -1139,14 +1383,12 @@
                     cache: "no-store" 
                 });
 
-                // Se o ficheiro ainda não existir no GitHub
                 if (response.status === 404) {
                     return alert("O ficheiro 'site/bancodedados.json' não foi encontrado. Tente clicar em 'ENVIAR BASE' primeiro.");
                 }
 
                 if (!response.ok) throw new Error("Falha na comunicação com o GitHub.");
 
-                // 4. Como usamos o método RAW, o ficheiro já vem limpo, é só ler!
                 const parsedData = await response.json();
 
                 if (parsedData && Array.isArray(parsedData)) {
