@@ -15,7 +15,7 @@
            UTILITÁRIOS GERAIS E CORREÇÕES CRÍTICAS
            ========================================================= */
         * { box-sizing: border-box; }
-        .hidden { display: none !important; } /* <-- A PEÇA QUE FALTAVA! */
+        .hidden { display: none !important; }
 
         /* =========================================================
            CSS DO PIM (BASE)
@@ -427,7 +427,7 @@
         }
 
         // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB
+        // GESTOR DE COMUNICAÇÃO COM GITHUB (CORRIGIDO)
         // ==========================================================
         const GitHubAPI = {
             getConfig: function() {
@@ -438,11 +438,19 @@
                 }
                 return cfg;
             },
+            getHeaders: function(cfg) {
+                return {
+                    "Authorization": `Bearer ${cfg.token}`,
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Content-Type": "application/json"
+                };
+            },
             getFileData: async function(path) {
                 const cfg = this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
+                // API do GitHub restringe paths com '../'. Deve ser relativo à raiz do repo.
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-                const res = await fetch(url, { headers: { "Authorization": `token ${cfg.token}` }, cache: "no-store" });
+                const res = await fetch(url, { headers: this.getHeaders(cfg), cache: "no-store" });
                 if (res.status === 404) return null; 
                 if (!res.ok) throw new Error(`Falha ao ler ${path}`);
                 return await res.json();
@@ -460,7 +468,13 @@
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const body = { message: message, content: finalBase64 };
                 if (sha) body.sha = sha;
-                const res = await fetch(url, { method: 'PUT', headers: { "Authorization": `token ${cfg.token}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+                
+                const res = await fetch(url, { 
+                    method: 'PUT', 
+                    headers: this.getHeaders(cfg), 
+                    body: JSON.stringify(body) 
+                });
+                
                 if (!res.ok) { const errorData = await res.json(); throw new Error(`Erro do GitHub: ${errorData.message}`); }
                 return await res.json();
             }
@@ -514,7 +528,10 @@
             });
         }
 
-        function uploadBancodedados(btn) { enqueueGitHubTask('Base Completa', async () => { const produtosLimpos = sanitizeProductsForExport(products); await GitHubAPI.saveFile(`../site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`); }, btn); }
+        function uploadBancodedados(btn) { 
+            // CORREÇÃO: Removido '../' do path do github
+            enqueueGitHubTask('Base Completa', async () => { const produtosLimpos = sanitizeProductsForExport(products); await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`); }, btn); 
+        }
 
         function uploadProdutosJson(btn) {
             enqueueGitHubTask('Vitrine do Site', async () => {
@@ -522,7 +539,8 @@
                 const produtosResumidos = produtosLimpos.map(p => ({
                     id: p.id || p['ID'] || Date.now(), nome: p.nome || "", preco: p.preco || 0, codigo: p.codigo || "", situacao: p.situacao || "A", categoria: p.categoria || "", validade: p.validade || "", estoque: p.estoque || 0, descricao: p.descricao || "", tags: p.tags || [], url_imagem: p.url_imagem || "", url_imagem_2: p.url_imagem_2 || "", url_imagem_3: p.url_imagem_3 || "", link_video: p.link_video || "", link_video_2: p.link_video_2 || "", link_video_3: p.link_video_3 || "", link_video_4: p.link_video_4 || "", link_video_5: p.link_video_5 || "", link_video_6: p.link_video_6 || "", link_video_7: p.link_video_7 || "", link_video_8: p.link_video_8 || "", link_video_9: p.link_video_9 || "", link_video_10: p.link_video_10 || ""
                 }));
-                await GitHubAPI.saveFile(`../site/produtos.json`, produtosResumidos, `PIM Sync: Vitrine Atualizada`);
+                // CORREÇÃO: Removido '../' do path
+                await GitHubAPI.saveFile(`site/produtos.json`, produtosResumidos, `PIM Sync: Vitrine Atualizada`);
             }, btn);
         }
 
@@ -532,9 +550,18 @@
                 const queueCopy = [...imageQueue]; let errorCount = 0;
                 for (const item of queueCopy) {
                     try {
-                        const sufix = item.slot === 1 ? '' : `_${item.slot}`; const folderPath = "../site/img/produtos"; const fileName = `${item.sku}${sufix}.webp`; const fullPath = `${folderPath}/${fileName}`; 
-                        await GitHubAPI.saveFile(fullPath, item.base64data, `PIM Sync: Imagem ${fileName}`, true);
-                        const pRef = products.find(x => x.codigo === item.sku); if(pRef) { pRef[item.prop] = `../${folderPath}/${fileName}?v=${Date.now()}`; pRef.last_update = Date.now(); }
+                        const sufix = item.slot === 1 ? '' : `_${item.slot}`; 
+                        const fileName = `${item.sku}${sufix}.webp`; 
+                        
+                        // CORREÇÃO: Separar diretório local do caminho da API REST do GitHub.
+                        const githubFolderPath = "site/img/produtos"; 
+                        const localFolderPath = "../site/img/produtos";
+                        
+                        await GitHubAPI.saveFile(`${githubFolderPath}/${fileName}`, item.base64data, `PIM Sync: Imagem ${fileName}`, true);
+                        
+                        // Atualiza a URL mantendo a relatividade local da aplicação
+                        const pRef = products.find(x => x.codigo === item.sku); 
+                        if(pRef) { pRef[item.prop] = `${localFolderPath}/${fileName}?v=${Date.now()}`; pRef.last_update = Date.now(); }
                         imageQueue = imageQueue.filter(q => q !== item); updateImageBadge();
                     } catch(e) { console.error("Erro ao enviar imagem:", e); errorCount++; }
                 }
@@ -544,12 +571,14 @@
 
         function uploadFilaPedidosGithub(btn = null) {
             const targetBtn = btn || document.createElement('button'); 
-            enqueueGitHubTask('Sincronizar Fila', async () => { await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); }, targetBtn);
+            // CORREÇÃO: Removido '../' do path do github
+            enqueueGitHubTask('Sincronizar Fila', async () => { await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); }, targetBtn);
         }
 
         async function baixarFilaNuvem() {
             try {
-                const data = await GitHubAPI.getFileData(`../site/pedidos_fila.json`);
+                // CORREÇÃO: Removido '../'
+                const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
                 if (data && data.content) {
                     const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent);
                     if(Array.isArray(parsedData)) { filaDePedidos = parsedData; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes(); alert("Fila sincronizada com a nuvem com sucesso!"); return; }
@@ -560,7 +589,8 @@
 
         async function getFilaRemota() {
             try {
-                const data = await GitHubAPI.getFileData(`../site/pedidos_fila.json`);
+                // CORREÇÃO: Removido '../'
+                const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
                 if (data && data.content) { const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent); if(Array.isArray(parsedData)) return parsedData; }
             } catch(e) { console.warn("Aviso: Fila remota não encontrada, a iniciar nova."); }
             return [];
@@ -615,7 +645,8 @@
             enqueueGitHubTask('Gravar Pedido Novo', async () => {
                 let filaRemota = await getFilaRemota();
                 if (!filaRemota.find(p => p.id === novoPedido.id)) { filaRemota.push(novoPedido); }
-                await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
+                // CORREÇÃO: Removido '../'
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes();
             }, btn);
         }
@@ -654,7 +685,8 @@
             enqueueGitHubTask('Apagar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
                 filaRemota = filaRemota.filter(p => p.id !== pedidoId);
-                await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
+                // CORREÇÃO: Removido '../'
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); renderizarCartoes();
             }, btn);
         }
@@ -701,7 +733,8 @@
                 let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
 
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
-                await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
+                // CORREÇÃO: Removido '../'
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
                 
                 if(mudouAlgoLocalmente) { await saveDataLocally(); renderGrid(document.getElementById('search-input').value); uploadBancodedados(document.getElementById('btnSyncBD')); }
@@ -900,7 +933,8 @@
 
                 // 5. Apaga concluídos para manter fila limpa e salva a fila no GitHub
                 filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
-                await GitHubAPI.saveFile(`../site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Concluído`);
+                // CORREÇÃO: Removido '../'
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Concluído`);
                 
                 // 6. Atualiza o local
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
@@ -1093,16 +1127,16 @@
                 const cfg = GitHubAPI.getConfig();
                 if (!cfg) return;
 
-                // 2. Pedimos o ficheiro DIRETAMENTE à API principal do GitHub
+                // 2. Pedimos o ficheiro DIRETAMENTE à API principal do GitHub (CORREÇÃO: mantido sem '../')
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json`;
                 
                 const response = await fetch(url, {
                     headers: { 
-                        "Authorization": `token ${cfg.token}`,
-                        // 3. A MÁGICA: Diz ao GitHub para nos dar o ficheiro "cru" e não o base64!
+                        "Authorization": `Bearer ${cfg.token}`,
+                        "X-GitHub-Api-Version": "2022-11-28",
                         "Accept": "application/vnd.github.v3.raw" 
                     },
-                    cache: "no-store" // Garante que puxa sempre a versão mais recente
+                    cache: "no-store" 
                 });
 
                 // Se o ficheiro ainda não existir no GitHub
