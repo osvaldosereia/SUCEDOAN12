@@ -20,7 +20,8 @@
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 18px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         /* ================= TELA DE FOCO ================= */
-        .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; background: #fff; }
+        /* Adicionado padding-bottom extra para criar a área de respiro na tela toda */
+        .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 10px 10px 35px 10px; box-sizing: border-box; background: #fff; }
         
         .foco-topo-split { display: flex; gap: 10px; height: 26vh; margin-bottom: 10px; flex-shrink: 0; }
         
@@ -36,7 +37,6 @@
 
         .foco-nome { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 5px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 5px; flex-shrink: 0; }
         
-        /* SKU MAIOR E MAIS VISÍVEL */
         .foco-sku { font-size: 24px; color: #b71c1c; text-align: center; margin-bottom: 8px; font-weight: 900; flex-shrink: 0; background: #ffcdd2; border: 2px dashed #f44336; border-radius: 8px; padding: 5px; letter-spacing: 1px; }
         
         .ticks-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 10px; flex-shrink: 0; }
@@ -45,7 +45,6 @@
 
         .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; } 
         
-        /* NOVA BARRA DE AÇÕES (ANTERIOR, PULAR, INÍCIO) */
         .botoes-acao-foco { display: flex; gap: 8px; margin-bottom: 10px; flex-shrink: 0; }
         .btn-acao { flex: 1; padding: 12px 5px; font-size: 14px; font-weight: bold; border-radius: 8px; color: white; border: none; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; line-height: 1.2;}
         .btn-acao-voltar { background-color: #607d8b; }
@@ -56,14 +55,10 @@
         .display-teclado { text-align: center; font-size: 32px; font-weight: 900; letter-spacing: 15px; color: var(--secondary); height: 40px; margin-bottom: 5px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
         
-        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; flex: 1; min-height: 0; padding-bottom: 5px; }
+        /* Adicionado padding-bottom no teclado para o respiro interno do container */
+        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; flex: 1; min-height: 0; padding-bottom: 15px; }
         .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 26px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 2px 0 #ccc; height: 100%; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
-
-        .area-desempate { display: flex; gap: 8px; overflow-x: auto; background: #ffebee; padding: 8px; border-radius: 10px; border: 2px solid #ffcdd2; margin-bottom: 5px; align-items: center; flex-shrink:0; }
-        .card-desempate { background: white; padding: 4px; border-radius: 6px; text-align: center; width: 70px; flex-shrink: 0; border: 1px solid #ccc; }
-        .card-desempate img { width: 100%; height: 50px; object-fit: contain; } 
-        .card-desempate .desc { font-size: 11px; font-weight: 900; color: var(--danger); margin-top: 3px;}
 
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--primary); } .alerta-aviso { background-color: var(--warning); color: #000; }
@@ -116,8 +111,6 @@
         <div class="foco-sku" id="foco-sku">SKU: ---</div>
         
         <div class="ticks-container" id="foco-ticks"></div>
-
-        <div id="bloco-desempate" class="area-desempate hidden"></div>
         
         <div class="area-interacao">
             
@@ -178,7 +171,7 @@
 
 <script>
     let bancoDeDados = []; let pedidosFila = []; let listaDeSeparacao = []; let indexAtualPicking = 0; let pedidoAtual = null; let audioCtx = null;
-    let focoDisplayStr = ""; let focoModo = "EAN"; let focoLimite = 1; let focoProdutosEmpatados = [];
+    let focoDisplayStr = ""; let focoLimite = 1;
 
     window.onload = async function() {
         try { 
@@ -225,7 +218,6 @@
             let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE'); if(pendentes.length===0) return container.innerHTML = '<h3 style="color:green; text-align:center;">✅ Fila Vazia!</h3>';
             pendentes.forEach(pedido => {
                 let div = document.createElement('div'); div.className = 'resultado-item'; 
-                // Adaptado para ler a chave "itens" e exibir o nome do cliente
                 let qtdItens = pedido.itens ? pedido.itens.length : 0;
                 let nomeCliente = pedido.cliente ? pedido.cliente.split(' ')[0] : 'Cliente';
                 
@@ -240,24 +232,15 @@
     function iniciarSeparacaoPedido(pedido) {
         listaDeSeparacao = []; pedidoAtual = pedido; 
         
-        // Iteramos sobre o novo array 'itens' em vez de 'items'
         if(pedido.itens) {
             pedido.itens.forEach(item => { 
-                // Como o JSON novo não traz o "foundProduct" mastigado, fazemos uma busca rápida no bancoDeDados
-                // pelo NomeOriginal para encontrar as localizações e SKUs.
                 let produtoDb = bancoDeDados.find(p => 
                     (p.descricao || p["Descrição"] || "").trim().toUpperCase() === item.nomeOriginal.trim().toUpperCase() ||
                     (p.nome || "").trim().toUpperCase() === item.nomeOriginal.trim().toUpperCase()
                 );
                 
-                // Caso não encontre no Banco de Dados (para não quebrar o app)
                 if (!produtoDb) {
-                    produtoDb = {
-                        codigo: "---",
-                        "Código": "---",
-                        localizacao: "SEM LOC",
-                        "Localização": "SEM LOC"
-                    };
+                    produtoDb = { codigo: "---", "Código": "---", localizacao: "SEM LOC", "Localização": "SEM LOC" };
                 }
 
                 listaDeSeparacao.push({ 
@@ -275,7 +258,6 @@
         abrirTela('tela-separacao-foco'); renderizarItemFoco();
     }
 
-    // ================= FUNÇÕES DOS NOVOS BOTÕES =================
     function voltarProdutoAnterior() {
         if (indexAtualPicking > 0) {
             indexAtualPicking--;
@@ -324,15 +306,13 @@
             cTicks.appendChild(tick); 
         }
         
-        focoProdutosEmpatados = []; document.getElementById('bloco-desempate').classList.add('hidden');
-        
         document.getElementById('bloco-teclado-foco').classList.add('hidden');
         document.getElementById('bloco-add-foco').classList.add('hidden');
         document.getElementById('bloco-confirmacao-item').classList.add('hidden');
 
         if (item.unidadesLidas === 0) { 
             document.getElementById('bloco-teclado-foco').classList.remove('hidden'); 
-            resetarTecladoFoco("EAN", 1, "DIGITE O ÚLTIMO DÍGITO DO EAN"); 
+            resetarTecladoFoco(); 
         } else if (item.unidadesLidas < item.quantidadeTotal) { 
             document.getElementById('bloco-add-foco').classList.remove('hidden'); 
         } else {
@@ -342,9 +322,9 @@
         }
     }
 
-    function resetarTecladoFoco(modo, limite, titulo) { 
-        focoModo = modo; focoLimite = limite; focoDisplayStr = ""; 
-        document.getElementById('foco-teclado-titulo').innerText = titulo; 
+    function resetarTecladoFoco() { 
+        focoDisplayStr = ""; 
+        document.getElementById('foco-teclado-titulo').innerText = "DIGITE O ÚLTIMO DÍGITO DO EAN"; 
         document.getElementById('display-foco').classList.remove('erro');
         atualizarDisplayFoco(); 
     }
@@ -368,33 +348,19 @@
     function atualizarDisplayFoco() { document.getElementById('display-foco').innerText = focoDisplayStr + "-".repeat(focoLimite - focoDisplayStr.length); }
 
     function avaliarFoco() {
-        let skuCorreto = String(listaDeSeparacao[indexAtualPicking].produtoDb.codigo || listaDeSeparacao[indexAtualPicking].produtoDb["Código"] || "").trim().toUpperCase();
+        // Função simplificada: Verifica o dígito direto no item atual, sem desempate.
+        let itemAtual = listaDeSeparacao[indexAtualPicking];
+        let skuCorreto = String(itemAtual.produtoDb.codigo || itemAtual.produtoDb["Código"] || "").trim().toUpperCase();
+        let eanCorreto = String(itemAtual.produtoDb.gtin || itemAtual.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "");
         
         // Se o produto não estava no banco, deixamos ele passar direto pro ADD UNIDADE para não travar o fluxo
         if (skuCorreto === "---") { registrarUnidadeFoco(); return; }
 
-        if(focoModo === "EAN") {
-            let achados = bancoDeDados.filter(p => String(p.gtin || p["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "").endsWith(focoDisplayStr));
-            if (achados.length === 0) { apagarFocoErro("❌ EAN não encontrado!"); } 
-            else if (achados.length === 1) { 
-                if(String(achados[0].codigo || achados[0]["Código"] || "").trim().toUpperCase() === skuCorreto) registrarUnidadeFoco(); 
-                else { apagarFocoErro("❌ Produto Errado!"); } 
-            } 
-            else { tocarBipe('erro'); mostrarAlerta("⚠️ Conflito! Preciso do SKU.", "aviso"); acionarDesempateFoco(achados); }
-        } else if (focoModo === "SKU") {
-            let match = focoProdutosEmpatados.find(p => String(p.codigo || p["Código"] || "").trim().toUpperCase().endsWith(focoDisplayStr));
-            if(match) { 
-                if(String(match.codigo || match["Código"] || "").trim().toUpperCase() === skuCorreto) registrarUnidadeFoco(); 
-                else { apagarFocoErro("❌ Produto Errado!"); } 
-            } 
-            else { apagarFocoErro("❌ SKU não bate com a foto."); }
+        if (eanCorreto && eanCorreto.endsWith(focoDisplayStr)) {
+            registrarUnidadeFoco();
+        } else {
+            apagarFocoErro("❌ Produto Errado!");
         }
-    }
-
-    function acionarDesempateFoco(lista) {
-        focoProdutosEmpatados = lista; let area = document.getElementById('bloco-desempate'); area.innerHTML = '';
-        lista.forEach(p => { let sku = String(p.codigo || p["Código"]); area.innerHTML += `<div class="card-desempate"><img src="../site/img/produtos/${sku}.webp" onerror="this.style.display='none'"><div class="desc">SKU: ${sku.slice(-2)}</div></div>`; });
-        area.classList.remove('hidden'); resetarTecladoFoco("SKU", 2, "⚠️ DESEMPATE: Digite os 2 últimos do SKU");
     }
 
     function registrarUnidadeFoco() {
