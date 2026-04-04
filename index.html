@@ -163,10 +163,19 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .see-all-back:active { opacity: 0.7; }
 .see-all-title { font-size: 1.1rem; font-weight: 600; color: var(--c-p); margin: 0; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; text-align: right;}
 
+/* Substitua a classe .see-all-controls atual por esta: */
 .see-all-controls { 
-    padding: 12px 15px; background: #f8fafc; border-bottom: 1px solid var(--c-bd); 
-    display: flex; flex-direction: row; gap: 10px; position: sticky; top: 0; z-index: 50; 
-    align-items: center; overflow-x: auto; scrollbar-width: none;
+    padding: 12px 15px; 
+    background: #f8fafc; 
+    border-bottom: 1px solid var(--c-bd); 
+    display: flex; 
+    flex-direction: row; 
+    gap: 10px; 
+    position: sticky; 
+    top: 0; 
+    z-index: 50; 
+    align-items: center; 
+    flex-wrap: wrap; /* Isso substitui a rolagem e resolve o corte do menu! */
 }
 .see-all-controls::-webkit-scrollbar { display: none; }
 
