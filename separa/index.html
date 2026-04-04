@@ -20,7 +20,6 @@
         .resultado-item { padding: 15px; margin-bottom: 10px; background-color: #e3f2fd; border: 1px solid #90caf9; border-radius: 12px; font-size: 18px; font-weight: bold; color: #0d47a1; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         
         /* ================= TELA DE FOCO ================= */
-        /* Adicionado padding-bottom extra para criar a área de respiro na tela toda */
         .tela-foco { height: 100vh; display: flex; flex-direction: column; padding: 10px 10px 35px 10px; box-sizing: border-box; background: #fff; }
         
         .foco-topo-split { display: flex; gap: 10px; height: 26vh; margin-bottom: 10px; flex-shrink: 0; }
@@ -55,7 +54,6 @@
         .display-teclado { text-align: center; font-size: 32px; font-weight: 900; letter-spacing: 15px; color: var(--secondary); height: 40px; margin-bottom: 5px; flex-shrink: 0; }
         .display-teclado.erro { color: var(--danger); }
         
-        /* Adicionado padding-bottom no teclado para o respiro interno do container */
         .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 6px; flex: 1; min-height: 0; padding-bottom: 15px; }
         .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 26px; font-weight: 900; border-radius: 10px; margin: 0; box-shadow: 0 2px 0 #ccc; height: 100%; display: flex; align-items: center; justify-content: center; }
         .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
@@ -175,12 +173,19 @@
 
     window.onload = async function() {
         try { 
-            const resposta = await fetch('../site/bancodedados.json'); bancoDeDados = await resposta.json(); 
+            // ADICIONADO: ?t=${Date.now()} para evitar cache do navegador
+            const resposta = await fetch(`../site/bancodedados.json?t=${Date.now()}`); 
+            bancoDeDados = await resposta.json(); 
+            
             let modificacoesLocais = JSON.parse(localStorage.getItem('estoque_modificacoes') || '{}');
             bancoDeDados.forEach(p => { let sku = p.codigo || p["Código"]; if(sku && modificacoesLocais[sku]) Object.assign(p, modificacoesLocais[sku]); });
-            document.getElementById('status-db').innerText = `✅ Banco Preparado`; document.getElementById('status-db').style.color = "green";
+            
+            document.getElementById('status-db').innerText = `✅ Banco Preparado`; 
+            document.getElementById('status-db').style.color = "green";
             document.getElementById('btn-iniciar').classList.remove('hidden');
-        } catch (erro) { document.getElementById('status-db').innerText = "❌ Erro ao ler Banco Local."; }
+        } catch (erro) { 
+            document.getElementById('status-db').innerText = "❌ Erro ao ler Banco Local."; 
+        }
     };
 
     function abrirTela(id) { ['tela-inicial', 'tela-lista-pedidos', 'tela-separacao-foco', 'tela-conclusao'].forEach(t => document.getElementById(t).classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); }
@@ -214,7 +219,11 @@
         inicializarAudio(); abrirTela('tela-lista-pedidos');
         let container = document.getElementById('area-lista-pedidos'); container.innerHTML = '<p style="text-align:center;">⏳ Buscando...</p>';
         try {
-            const resposta = await fetch('../site/pedidos_fila.json'); pedidosFila = await resposta.json(); container.innerHTML = '';
+            // ADICIONADO: ?t=${Date.now()} para evitar cache
+            const resposta = await fetch(`../site/pedidos_fila.json?t=${Date.now()}`); 
+            pedidosFila = await resposta.json(); 
+            container.innerHTML = '';
+            
             let pendentes = pedidosFila.filter(p => p.status === 'PENDENTE'); if(pendentes.length===0) return container.innerHTML = '<h3 style="color:green; text-align:center;">✅ Fila Vazia!</h3>';
             pendentes.forEach(pedido => {
                 let div = document.createElement('div'); div.className = 'resultado-item'; 
@@ -285,13 +294,32 @@
     function renderizarItemFoco() {
         if (indexAtualPicking >= listaDeSeparacao.length) { finalizarPedido(); return; }
         
-        let item = listaDeSeparacao[indexAtualPicking]; let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
+        let item = listaDeSeparacao[indexAtualPicking]; 
+        let skuItem = item.produtoDb.codigo || item.produtoDb["Código"] || "";
+        
         document.getElementById('foco-pedido-info').innerText = `Pedido: ${pedidoAtual.orderNum}`; 
         document.getElementById('foco-loc').innerText = `${item.localizacao}`; 
         
         let imgTag = document.getElementById('foco-img');
-        imgTag.src = `../site/img/produtos/${skuItem}.webp`; 
-        imgTag.onerror = function() { this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; };
+        
+        // NOVO SISTEMA DE IMAGENS: Tenta usar a URL gravada pelo PIM primeiro
+        let urlOficial = item.produtoDb.url_imagem || item.produtoDb["URL Imagens Externas"];
+        
+        if (urlOficial && urlOficial.length > 5) {
+            imgTag.src = urlOficial;
+        } else if (skuItem !== "---") {
+            // Fallback: se não houver URL no banco, mas houver um SKU válido, tenta adivinhar o caminho
+            imgTag.src = `../site/img/produtos/${skuItem}.webp`;
+        } else {
+            // Se o produto não foi encontrado (SKU "---"), força o erro para carregar o placeholder
+            imgTag.src = 'caminho_invalido'; 
+        }
+
+        // Tratamento de erro melhorado para evitar loop infinito
+        imgTag.onerror = function() { 
+            this.onerror = null; // Remove o evento para evitar loops se o placeholder falhar
+            this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; 
+        };
 
         document.getElementById('foco-nome').innerText = item.nomePedido; 
         document.getElementById('foco-sku').innerText = `SKU: ${skuItem}`;
@@ -348,12 +376,10 @@
     function atualizarDisplayFoco() { document.getElementById('display-foco').innerText = focoDisplayStr + "-".repeat(focoLimite - focoDisplayStr.length); }
 
     function avaliarFoco() {
-        // Função simplificada: Verifica o dígito direto no item atual, sem desempate.
         let itemAtual = listaDeSeparacao[indexAtualPicking];
         let skuCorreto = String(itemAtual.produtoDb.codigo || itemAtual.produtoDb["Código"] || "").trim().toUpperCase();
         let eanCorreto = String(itemAtual.produtoDb.gtin || itemAtual.produtoDb["GTIN/EAN"] || "").replace(/\D/g, "").replace(/^0+/, "");
         
-        // Se o produto não estava no banco, deixamos ele passar direto pro ADD UNIDADE para não travar o fluxo
         if (skuCorreto === "---") { registrarUnidadeFoco(); return; }
 
         if (eanCorreto && eanCorreto.endsWith(focoDisplayStr)) {
