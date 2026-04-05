@@ -117,6 +117,7 @@
         .input-wrapper { display: flex; gap: 6px; align-items: stretch; }
         .form-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
         .form-input:focus { border-color: var(--accent); background: #ffffff; }
+        select.form-input { appearance: auto; cursor: pointer; }
         div.form-input[contenteditable="true"] { resize: vertical; min-height: 90px; line-height: 1.5; font-weight: 400; overflow-y: auto; cursor: text;}
         textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
         .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; min-height: 36px;}
@@ -144,7 +145,7 @@
            ========================================================= */
         #separador-overlay { 
             position: fixed; inset: 0; background: var(--bg-body); z-index: 2000; display: none; flex-direction: column; 
-            overflow-y: auto; /* Permite rolar a tela se o celular for muito pequeno */
+            overflow-y: auto; 
         }
         
         .sep-btn { border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; min-height: 44px;}
@@ -155,9 +156,9 @@
         .sep-container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100vh; overflow-y: auto; box-sizing: border-box; width: 100%; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
         
         .tela-foco { 
-            min-height: 100vh; height: auto; /* Deixa a tela crescer se necessário */
+            min-height: 100vh; height: auto; 
             display: flex; flex-direction: column; 
-            padding: 10px 10px 40px 10px; /* 40px de respiro no fundo (abaixo do teclado) */
+            padding: 10px 10px 40px 10px; 
             box-sizing: border-box; background: #fff; max-width: 600px; margin: 0 auto; width:100%; box-shadow: 0 0 40px rgba(0,0,0,0.1); 
         }
         
@@ -527,12 +528,33 @@
         let focoLimite = 1;
 
         // ==========================================================
-        // FUNÇÃO GLOBAL DE LIMPEZA DE TEXTO
+        // FUNÇÃO GLOBAL DE LIMPEZA DE TEXTO E GERADORES DE OPÇÕES
         // ==========================================================
         function limparTexto(texto) {
             if (!texto) return "";
             let textoLimpo = texto.replace(/\(oferta\)/gi, '').replace(/oferta/gi, '');
             return textoLimpo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
+        }
+
+        function getGondolaOptions(selectedValue) {
+            let optionsHtml = '<option value="">Sel. Gôndola</option>';
+            for(let i = 0; i <= 20; i++) {
+                let val = i.toString().padStart(2, '0');
+                let selected = (selectedValue === val) ? 'selected' : '';
+                optionsHtml += `<option value="${val}" ${selected}>Gôndola ${val}</option>`;
+            }
+            return optionsHtml;
+        }
+
+        function getPrateleiraOptions(selectedValue) {
+            let optionsHtml = '<option value="">Sel. Prateleira</option>';
+            const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
+            letras.forEach(l => {
+                let p1 = `${l}1`; let p2 = `${l}2`;
+                optionsHtml += `<option value="${p1}" ${selectedValue === p1 ? 'selected' : ''}>Prateleira ${p1}</option>`;
+                optionsHtml += `<option value="${p2}" ${selectedValue === p2 ? 'selected' : ''}>Prateleira ${p2}</option>`;
+            });
+            return optionsHtml;
         }
 
         // ==========================================================
@@ -686,8 +708,8 @@
                     if(Array.isArray(parsedData)) { 
                         filaDePedidos = parsedData; 
                         await localforage.setItem(PEDIDOS_KEY, filaDePedidos); 
-                        renderizarCartoes(); // Atualiza sidebar
-                        if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen(); // Atualiza tela principal
+                        renderizarCartoes(); 
+                        if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen(); 
                         alert("Fila sincronizada com a nuvem com sucesso!"); return; 
                     }
                 }
@@ -704,7 +726,7 @@
         }
 
         // ==========================================================
-        // NAVEGAÇÃO ENTRE TELAS DO APP (ROUTING INTELIGENTE)
+        // NAVEGAÇÃO ENTRE TELAS DO APP
         // ==========================================================
         function showScreen(screenId) {
             document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
@@ -734,7 +756,6 @@
             lucide.createIcons();
         }
 
-        // Função global para abrir qualquer foto em ecrã inteiro
         function abrirModalFoto(src) {
             if(!src || src.includes("SEM+FOTO") || src === 'caminho_invalido') return;
             document.getElementById('img-full').src = src;
@@ -803,14 +824,20 @@
                                 <label class="form-label" style="font-size: 11px;">EAN</label>
                                 <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="padding: 10px; font-size: 14px;">
                             </div>
+                            
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <label class="form-label" style="font-size: 11px;">Gôndola</label>
-                                <input type="text" id="bal-gon-${p.codigo}" value="${p.gondola||''}" placeholder="Ex: A" class="form-input" style="padding: 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+                                <select id="bal-gon-${p.codigo}" class="form-input" style="padding: 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+                                    ${getGondolaOptions(p.gondola)}
+                                </select>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 4px;">
                                 <label class="form-label" style="font-size: 11px;">Prateleira</label>
-                                <input type="text" id="bal-pra-${p.codigo}" value="${p.prateleira||''}" placeholder="Ex: 01" class="form-input" style="padding: 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+                                <select id="bal-pra-${p.codigo}" class="form-input" style="padding: 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+                                    ${getPrateleiraOptions(p.prateleira)}
+                                </select>
                             </div>
+
                             <div style="display: flex; flex-direction: column; gap: 4px; grid-column: span 2;">
                                 <label class="form-label" style="font-size: 11px;">Validade</label>
                                 <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding: 10px; font-size: 14px;">
@@ -843,8 +870,11 @@
             let newNome = document.getElementById(`bal-nome-${oldSku}`).value;
             let newSku = document.getElementById(`bal-sku-${oldSku}`).value.trim().toUpperCase();
             let newEan = document.getElementById(`bal-ean-${oldSku}`).value.trim();
-            let newGon = document.getElementById(`bal-gon-${oldSku}`).value.trim().toUpperCase();
-            let newPra = document.getElementById(`bal-pra-${oldSku}`).value.trim().toUpperCase();
+            
+            // Lendo os select box
+            let newGon = document.getElementById(`bal-gon-${oldSku}`).value;
+            let newPra = document.getElementById(`bal-pra-${oldSku}`).value;
+            
             let newVal = document.getElementById(`bal-val-${oldSku}`).value;
             let newEst = parseFloat(document.getElementById(`bal-est-${oldSku}`).value) || 0;
 
@@ -919,7 +949,6 @@
                 } else if (textoLinha.includes('*TOTAL:')) { const match = textoLinha.match(/R\$\s?([\d.,]+)/); if (match) novoPedido.valorTotal = match[1];
                 } else if (textoLinha.includes('*ITENS:*')) { lendoItens = true;
                 
-                // NOVO LEITOR: Entende "11x", "11X", "11 x", "11xOleo" (Aceita maiúsculas e falta de espaços)
                 } else if (lendoItens && textoLinha.match(/^\d+\s*[xX]/)) {
                     const matchItem = textoLinha.match(/^(\d+)\s*[xX]\s*(.+)$/);
                     if (matchItem) {
@@ -963,7 +992,6 @@
             }, btn);
         }
 
-        // TELA 4: Renderizador dos cartões na tela dedicada de Fila
         function renderizarPedidosScreen() {
             const container = document.getElementById('grid-pedidos-screen');
             if(!container) return;
@@ -1006,7 +1034,6 @@
             lucide.createIcons();
         }
 
-        // SIDEBAR: Renderizador (Mantido para PIM view)
         function renderizarCartoes() {
             const container = document.getElementById('containerPedidosCards'); 
             if(!container) return;
@@ -1063,7 +1090,6 @@
             return mudouAlgo;
         }
 
-        // BAIXA GERAL DO ESTOQUE
         async function darBaixaEstoqueMaster() {
             if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) { return alert("Não há pedidos PENDENTES na fila."); }
             if(!confirm("Atenção: Isto vai dar baixa em TODOS os pedidos pendentes sem separar. Continuar?")) return;
@@ -1121,8 +1147,6 @@
             } catch(e){} 
         }
 
-        // Função de ampliação de imagem vinculada à imagem principal do modo separador
-        function abrirFotoTelaCheia() { abrirModalFoto(document.getElementById('foco-img').src); }
         function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
 
         function abrirSeparador(pedidoId) {
@@ -1283,7 +1307,6 @@
             doc.write(html + `<div class="fim">SEPARAÇÃO CONCLUÍDA</div><br><br><br></body></html>`); doc.close(); setTimeout(() => iframe.contentWindow.print(), 800);
         }
 
-        // DAR BAIXA E MARCAR COMO SEPARADO
         function finalizarEDarBaixaPedidoAtual() {
             const btnSyncFila = document.getElementById('btnSyncFila') || document.createElement('button');
             
@@ -1321,7 +1344,6 @@
             }, btnSyncFila);
         }
 
-        // ESTORNO DE PEDIDOS SEPARADOS
         async function estornarPedido(pedidoId) {
             if(!confirm("Atenção: Isto vai devolver os produtos deste pedido ao estoque e cancelar a separação. Continuar?")) return;
             
@@ -1457,10 +1479,20 @@
                     <div class="form-group"><label class="form-label">Descrição (Aceita Formatação/Rich Text)</label><div class="input-wrapper"><div contenteditable="true" class="form-input" placeholder="Cole aqui a descrição..." onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${p.descricao || ''}</div><button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Review Inteligente (Google IA)"><i data-lucide="brain-circuit" size="16"></i></button></div></div>
                     <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;"><label class="form-label">Tags da Imagem (Independentes)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div>
                 </div>
+                
                 <div class="form-section"><div class="section-title">Logística & Localização</div><div class="form-grid">
-                    <div class="form-group"><label class="form-label">Gôndola / Corredor</label><input type="text" class="form-input" value="${p.gondola || ''}" placeholder="Ex: A" onchange="updateField('${p.codigo}', 'gondola', this.value); updateLocalizacao('${p.codigo}')"></div>
-                    <div class="form-group"><label class="form-label">Prateleira / Nível</label><input type="text" class="form-input" value="${p.prateleira || ''}" placeholder="Ex: 01" onchange="updateField('${p.codigo}', 'prateleira', this.value); updateLocalizacao('${p.codigo}')"></div>
+                    <div class="form-group"><label class="form-label">Gôndola / Corredor</label>
+                        <select class="form-input" onchange="updateField('${p.codigo}', 'gondola', this.value); updateLocalizacao('${p.codigo}')">
+                            ${getGondolaOptions(p.gondola)}
+                        </select>
+                    </div>
+                    <div class="form-group"><label class="form-label">Prateleira / Nível</label>
+                        <select class="form-input" onchange="updateField('${p.codigo}', 'prateleira', this.value); updateLocalizacao('${p.codigo}')">
+                            ${getPrateleiraOptions(p.prateleira)}
+                        </select>
+                    </div>
                 </div></div>
+
                 <div class="form-section"><div class="section-title">Média Rica (Vitrine)</div><div class="image-slots">${htmlImages}</div>
                     <div style="margin-top:15px; border:1px dashed var(--border); padding:12px; border-radius:8px; background:#fafafa; max-height:220px; overflow-y:auto;"><button class="nav-btn" style="width:100%; justify-content:center; color:#dc2626; border-color:#fecaca; background:#fef2f2; margin-bottom:12px;" onclick="searchYoutubeShorts('${safeName}')"><i data-lucide="youtube" size="16"></i> PESQUISAR SHORTS NO YOUTUBE</button>${htmlVideos}</div>
                 </div>
