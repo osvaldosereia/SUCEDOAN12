@@ -52,12 +52,12 @@
         .toolbar { padding: 12px 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
         .toolbar-group { display: flex; gap: 8px; align-items: center; }
         
-        .search-container { position: relative; width: 280px; }
-        .search-input { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 12px; font-weight: 600; outline: none; box-shadow: var(--shadow); transition: 0.2s; min-height: 40px; }
+        .search-container { position: relative; width: 280px; max-width: 100%; }
+        .search-input { width: 100%; background: #ffffff; border: 1px solid var(--border); padding: 10px 10px 10px 36px; border-radius: 8px; font-size: 12px; font-weight: 600; outline: none; box-shadow: var(--shadow); transition: 0.2s; min-height: 40px; box-sizing: border-box; }
         .search-input:focus { border-color: var(--accent); }
         .search-icon { position: absolute; left: 12px; top: 11px; color: #a1a1aa; }
         
-        .nav-btn { background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; font-size: 11px; box-shadow: var(--shadow); min-height: 36px;}
+        .nav-btn { background: #ffffff; border: 1px solid var(--border); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px; font-size: 11px; box-shadow: var(--shadow); min-height: 36px; box-sizing: border-box;}
         .nav-btn:hover:not(:disabled) { background: #f4f4f5; }
         .nav-btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
         .nav-btn.primary:hover:not(:disabled) { background: var(--accent-hover); }
@@ -111,15 +111,18 @@
         .section-title { font-size: 10px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); padding-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
         
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
         .form-group.full { grid-column: span 2; }
         .form-label { font-size: 10px; font-weight: 800; color: var(--text-primary); }
-        .input-wrapper { display: flex; gap: 6px; align-items: stretch; }
-        .form-input { flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; }
+        .input-wrapper { display: flex; gap: 6px; align-items: stretch; width: 100%; box-sizing: border-box; }
+        
+        /* CORREÇÃO AQUI: Garante que os inputs NUNCA explodem a tela para a direita */
+        .form-input { width: 100%; max-width: 100%; flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-sizing: border-box; }
         .form-input:focus { border-color: var(--accent); background: #ffffff; }
         select.form-input { appearance: auto; cursor: pointer; }
         div.form-input[contenteditable="true"] { resize: vertical; min-height: 90px; line-height: 1.5; font-weight: 400; overflow-y: auto; cursor: text;}
         textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
+        
         .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; min-height: 36px;}
         .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
 
@@ -136,9 +139,9 @@
         input[type=range] { flex-grow: 1; accent-color: var(--accent); }
 
         .cartao-pedido { background-color: #ffffff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: stretch; box-shadow: 0 2px 5px rgba(0,0,0,0.02); gap: 10px; }
-        .cartao-info { display: flex; flex-direction: column; gap: 4px; flex-grow:1; }
+        .cartao-info { display: flex; flex-direction: column; gap: 4px; flex-grow:1; min-width: 0;}
         .cartao-info strong { font-size: 12px; color: var(--accent); }
-        .cartao-acoes { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; width: 110px;}
+        .cartao-acoes { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; width: 110px; flex-shrink: 0;}
         
         /* =========================================================
            CSS DO SEPARADOR DE PEDIDOS E BALANÇO MODO FOCO
@@ -275,9 +278,6 @@
                 <button class="nav-btn sync-btn" onclick="uploadProdutosJson(this)" title="Salvar Vitrine para o Site">
                     <i data-lucide="layout-grid" size="14"></i> ENVIAR VITRINE
                 </button>
-                <button class="nav-btn sync-btn" onclick="uploadImagens(this)" title="Processar Fila de Imagens">
-                    <i data-lucide="image-up" size="14"></i> ENVIAR IMAGENS <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px;">(0)</span>
-                </button>
                 <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO</button>
             </div>
         </div>
@@ -352,7 +352,6 @@
                 <div class="section-title">Sincronização Nuvem</div>
                 <button class="nav-btn sync-btn menu-sidebar-btn" onclick="uploadBancodedados(this); closeSidebar('menu-sidebar');"><i data-lucide="database" size="14"></i> ENVIAR BASE</button>
                 <button class="nav-btn sync-btn menu-sidebar-btn" onclick="uploadProdutosJson(this); closeSidebar('menu-sidebar');"><i data-lucide="layout-grid" size="14"></i> ENVIAR VITRINE</button>
-                <button class="nav-btn sync-btn menu-sidebar-btn" onclick="uploadImagens(this); closeSidebar('menu-sidebar');"><i data-lucide="image-up" size="14"></i> ENVIAR IMAGENS</button>
             </div>
         </div>
     </div>
@@ -414,7 +413,7 @@
         <div class="sidebar-footer">
             <input type="file" id="fileInput" style="display:none" accept="image/*">
             <button class="nav-btn" style="flex:1; height:44px;" onclick="document.getElementById('fileInput').click()"><i data-lucide="folder-search" size="14"></i> PC</button>
-            <button class="nav-btn primary" style="flex:2; height:44px;" onclick="saveImageToQueue()"><i data-lucide="save" size="14"></i> APLICAR FOTO</button>
+            <button class="nav-btn primary" style="flex:2; height:44px;" onclick="aplicarEEnviarFoto(this)"><i data-lucide="save" size="14"></i> APLICAR FOTO</button>
         </div>
     </div>
 
@@ -514,7 +513,6 @@
         let products = [];
         let currentEditingSku = null;
         let currentImageSlot = 1; 
-        let imageQueue = [];
         let filaDePedidos = []; 
 
         // ==========================================================
@@ -674,27 +672,6 @@
             }, btn);
         }
 
-        function uploadImagens(btn) {
-            if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
-            enqueueGitHubTask(`Upload de Imagens (${imageQueue.length})`, async () => {
-                const queueCopy = [...imageQueue]; let errorCount = 0;
-                for (const item of queueCopy) {
-                    try {
-                        const sufix = item.slot === 1 ? '' : `_${item.slot}`; 
-                        const fileName = `${item.sku}${sufix}.webp`; 
-                        const githubFolderPath = "site/img/produtos"; 
-                        const localFolderPath = "../site/img/produtos";
-                        
-                        await GitHubAPI.saveFile(`${githubFolderPath}/${fileName}`, item.base64data, `PIM Sync: Imagem ${fileName}`, true);
-                        const pRef = products.find(x => x.codigo === item.sku); 
-                        if(pRef) { pRef[item.prop] = `${localFolderPath}/${fileName}?v=${Date.now()}`; pRef.last_update = Date.now(); }
-                        imageQueue = imageQueue.filter(q => q !== item); updateImageBadge();
-                    } catch(e) { console.error("Erro ao enviar imagem:", e); errorCount++; }
-                }
-                await localforage.setItem(STORAGE_KEY, products); updateImageBadge(); if (errorCount > 0) throw new Error(`Falha no envio de ${errorCount} imagens.`);
-            }, btn);
-        }
-
         function uploadFilaPedidosGithub(btn = null) {
             const targetBtn = btn || document.createElement('button'); 
             enqueueGitHubTask('Sincronizar Fila', async () => { await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); }, targetBtn);
@@ -807,7 +784,7 @@
                                 <i data-lucide="zoom-in" size="14"></i>
                             </div>
                         </div>
-                        <div style="padding: 15px; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center;">
+                        <div style="padding: 15px; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; min-width: 0;">
                             <label class="form-label" style="font-size: 11px;">Nome do Produto</label>
                             <input type="text" id="bal-nome-${p.codigo}" value="${p.nome || ''}" class="form-input" style="padding: 10px; font-weight: 800; font-size: 15px;">
                         </div>
@@ -815,30 +792,30 @@
 
                     <div style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; box-sizing: border-box;">
+                            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
                                 <label class="form-label" style="font-size: 11px;">SKU</label>
                                 <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="padding: 10px; font-size: 14px;">
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
                                 <label class="form-label" style="font-size: 11px;">EAN</label>
                                 <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="padding: 10px; font-size: 14px;">
                             </div>
                             
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
                                 <label class="form-label" style="font-size: 11px;">Gôndola</label>
                                 <select id="bal-gon-${p.codigo}" class="form-input" style="padding: 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
                                     ${getGondolaOptions(p.gondola)}
                                 </select>
                             </div>
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0;">
                                 <label class="form-label" style="font-size: 11px;">Prateleira</label>
                                 <select id="bal-pra-${p.codigo}" class="form-input" style="padding: 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
                                     ${getPrateleiraOptions(p.prateleira)}
                                 </select>
                             </div>
 
-                            <div style="display: flex; flex-direction: column; gap: 4px; grid-column: span 2;">
+                            <div style="display: flex; flex-direction: column; gap: 4px; grid-column: span 2; min-width: 0;">
                                 <label class="form-label" style="font-size: 11px;">Validade</label>
                                 <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding: 10px; font-size: 14px;">
                             </div>
@@ -871,7 +848,6 @@
             let newSku = document.getElementById(`bal-sku-${oldSku}`).value.trim().toUpperCase();
             let newEan = document.getElementById(`bal-ean-${oldSku}`).value.trim();
             
-            // Lendo os select box
             let newGon = document.getElementById(`bal-gon-${oldSku}`).value;
             let newPra = document.getElementById(`bal-pra-${oldSku}`).value;
             
@@ -1147,8 +1123,6 @@
             } catch(e){} 
         }
 
-        function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
-
         function abrirSeparador(pedidoId) {
             const pedido = filaDePedidos.find(p => p.id === pedidoId);
             if (!pedido) return alert("Erro: Pedido não encontrado.");
@@ -1411,7 +1385,6 @@
             renderGrid(); renderizarCartoes(); if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
         }
         
-        function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
         async function saveDataLocally() { try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} }
 
         window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); renderGrid(document.getElementById('search-input').value); }
@@ -1556,11 +1529,58 @@
             canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
         }
 
-        async function saveImageToQueue() {
-            if(!currentEditingSku) return; const sku = currentEditingSku; const slot = currentImageSlot;
-            const base64full = canvas.toDataURL('image/webp', 0.9); const base64data = base64full.split(',')[1];
-            const p = products.find(x => x.codigo === sku); const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`; p[prop] = base64full; p.last_update = Date.now();
-            await saveDataLocally(); imageQueue.push({ sku: sku, slot: slot, prop: prop, base64data: base64data }); updateImageBadge(); openEditSidebar(sku); closeSidebar('editor-sidebar');
+        // ==============================================================================
+        // NOVA LÓGICA DE FOTOS: APLICAR E ENVIAR AO MESMO TEMPO (ADEUS FILA DE IMAGENS)
+        // ==============================================================================
+        async function aplicarEEnviarFoto(btnElement) {
+            if(!currentEditingSku) return; 
+            
+            const sku = currentEditingSku; 
+            const slot = currentImageSlot;
+            
+            // Pega o base64
+            const base64full = canvas.toDataURL('image/webp', 0.9); 
+            const base64data = base64full.split(',')[1];
+            
+            const p = products.find(x => x.codigo === sku); 
+            const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`; 
+            
+            // 1. Atualiza visualmente logo (Local)
+            p[prop] = base64full; 
+            p.last_update = Date.now();
+            await saveDataLocally(); 
+            
+            // 2. Cria a Tarefa Direta para o GitHub no fundo
+            enqueueGitHubTask(`Foto: ${sku} (${slot})`, async () => {
+                const sufix = slot === 1 ? '' : `_${slot}`; 
+                const fileName = `${sku}${sufix}.webp`; 
+                const githubFolderPath = "site/img/produtos"; 
+                const localFolderPath = "../site/img/produtos";
+                
+                // Envia a imagem .webp
+                await GitHubAPI.saveFile(`${githubFolderPath}/${fileName}`, base64data, `PIM Sync: Imagem ${fileName}`, true);
+                
+                // Troca o base64 pesado pelo link final para guardar nos JSONs
+                const pRef = products.find(x => x.codigo === sku); 
+                if(pRef) { 
+                    pRef[prop] = `${localFolderPath}/${fileName}?v=${Date.now()}`; 
+                    pRef.last_update = Date.now(); 
+                    await saveDataLocally();
+                }
+                
+                // Atualiza Banco e Vitrine na nuvem instantaneamente
+                await GitHubAPI.saveFile(`site/bancodedados.json`, sanitizeProductsForExport(products), `PIM Sync: DB após imagem`);
+                
+                const vitrine = sanitizeProductsForExport(products).map(prod => ({
+                    id: prod.id || prod['ID'] || Date.now(), nome: prod.nome || "", preco: prod.preco || 0, codigo: prod.codigo || "", situacao: prod.situacao || "A", categoria: prod.categoria || "", validade: prod.validade || "", estoque: prod.estoque || 0, descricao: prod.descricao || "", tags: prod.tags || [], url_imagem: prod.url_imagem || "", url_imagem_2: prod.url_imagem_2 || "", url_imagem_3: prod.url_imagem_3 || "", link_video: prod.link_video || "", link_video_2: prod.link_video_2 || "", link_video_3: prod.link_video_3 || "", link_video_4: prod.link_video_4 || "", link_video_5: prod.link_video_5 || "", link_video_6: prod.link_video_6 || "", link_video_7: prod.link_video_7 || "", link_video_8: prod.link_video_8 || "", link_video_9: prod.link_video_9 || "", link_video_10: prod.link_video_10 || ""
+                }));
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM Sync: Vitrine após imagem`);
+
+            }, btnElement);
+
+            // 3. Fecha o editor e volta para o produto
+            openEditSidebar(sku); 
+            closeSidebar('editor-sidebar');
         }
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
