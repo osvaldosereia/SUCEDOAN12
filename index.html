@@ -1041,7 +1041,7 @@ async function init() {
         STATE.deptos.cestas.data = STATE.baskets; STATE.deptos.combos.data = STATE.combos;
 
        if (r2 && r2.length > 0) {
-            const TAXA_AUMENTO_GLOBAL = 1.10;
+            const TAXA_AUMENTO_GLOBAL = 1.03;
 
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 const codigoOuId = p.codigo || p.id;
