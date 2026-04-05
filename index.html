@@ -79,8 +79,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .sub-btn:active { transform: scale(0.98); }
 
+/* AJUSTE: padding-top aumentado para 140px para descolar o título dos botões */
 .main-stage { 
-    position: relative; height: 100dvh; padding-top: 125px; padding-bottom: 90px; 
+    position: relative; height: 100dvh; padding-top: 140px; padding-bottom: 90px; 
     overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; 
 }
 
@@ -101,6 +102,25 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 @media (min-width: 800px) {
     .promo-whatsapp-banner { max-width: 970px; margin: 15px auto 20px auto; flex-direction: row; justify-content: space-between; padding: 20px 25px;}
+}
+
+/* NOVO: Estilos do Carrossel de Ofertas Relâmpago */
+.ho-wrapper { position: relative; width: 100%; max-width: 1000px; margin: 0 auto; padding-top: 5px; padding-bottom: 10px; }
+.ho-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 8px; scrollbar-width: none; padding-bottom: 10px; -webkit-overflow-scrolling: touch; padding-left: 15px; padding-right: 15px;}
+.ho-carousel::-webkit-scrollbar { display: none; }
+.ho-carousel-item { flex: 0 0 calc(28.5% - 6px); scroll-snap-align: start; }
+@media(min-width: 800px) {
+    .ho-carousel { gap: 12px; }
+    .ho-carousel-item { flex: 0 0 calc(16.666% - 10px); }
+}
+.ho-arrow { position: absolute; top: 60%; transform: translateY(-50%); z-index: 10; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 1rem; color: var(--c-p); display: flex; align-items: center; justify-content: center; }
+.ho-arrow:active { transform: translateY(-50%) scale(0.95); }
+.ho-arrow.left { left: 5px; }
+.ho-arrow.right { right: 5px; }
+@media (min-width: 800px) {
+    .ho-arrow { width: 40px; height: 40px; }
+    .ho-arrow.left { left: -20px; }
+    .ho-arrow.right { right: -20px; }
 }
 
 .grid-home-sections { 
@@ -188,7 +208,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .grid-cestas-kits { grid-template-columns: 1fr !important; }
 @media(min-width: 800px) { .grid-cestas-kits { grid-template-columns: repeat(3, 1fr) !important; } }
 
-/* GRADES MICRO (3 col mobile, 6 desktop) */
 .grid-micro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 @media(min-width: 800px) { .grid-micro { grid-template-columns: repeat(6, 1fr); gap: 12px; } }
 .grid-micro-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
@@ -201,7 +220,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-card:active { transform: scale(0.98); }
 .u-card.disabled { opacity: 0.5; pointer-events: none; cursor: default; }
 
-/* MODIFICAÇÃO: Fotos rigorosamente quadradas */
 .u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; transition: 0.3s;}
 .basket-img-area, .kit-img-area { background: transparent !important; aspect-ratio: 1/1 !important; }
@@ -280,7 +298,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .u-card-minimal:active { transform: scale(0.98); }
 .u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
 
-/* MODIFICAÇÃO: Fotos rigorosamente quadradas */
 .u-img-minimal { 
     width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); 
     border-radius: 20px; display: flex; align-items: center; justify-content: center; 
@@ -295,7 +312,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .btn-add-minimal { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-a); border: 1px solid var(--c-bd); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 500; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.08);}
 .btn-add-minimal.has-item { background: var(--c-a); color: #fff; border-color: var(--c-a); font-size: 1rem; font-weight: 600;}
 
-/* MODIFICAÇÃO: Ícone indicador de Vídeo no produto */
 .video-indicator { position: absolute; bottom: 8px; right: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.95); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
 .video-indicator svg { width: 12px; height: 12px; fill: var(--c-a); }
 
@@ -373,7 +389,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 </div>
 
 <main class="main-stage" id="scroll-stage">
-    <div id="home-super-offers" style="padding: 0 15px;"></div>
+    
+    <div id="home-super-offers"></div>
 
     <div id="promo-banner-btn" onclick="activateAutoCoupons()" class="promo-whatsapp-banner" style="cursor: pointer;">
         <div style="font-size: 1.1rem;">🎁 Ganhe até R$ 25 de desconto na sua compra!</div>
@@ -693,7 +710,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 <div id="toast-container"></div>
 
 <script>
-// MODIFICAÇÃO: Removido 'feriados: []' da CONFIG_ENTREGA
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
@@ -1040,7 +1056,6 @@ async function fetchWithCache(url, key, ttlMinutes) {
     }
 }
 
-// MODIFICAÇÃO: Lógica para Ofertas Relâmpago na Home
 function applyHomeSuperOffers() {
     let exc = ["arroz", "feijao", "feijão", "oleo", "óleo", "acucar", "açúcar", "cafe", "café"];
     let valid = STATE.prods.filter(p => {
@@ -1058,32 +1073,43 @@ function applyHomeSuperOffers() {
     
     let selected = valid.slice(0, 12);
     selected.forEach(p => {
-        // Criar um clone do objeto para não bagunçar os valores globais na loja
         let clone = { ...p, id: p.id + '_so' };
         clone.oldPrice = p.price * 1.10;
         clone.price = clone.oldPrice * 0.70;
         clone.discountApplied = true;
         clone._isHomeSuperOffer = true;
         STATE.homeSuperOffers.push(clone);
-        STATE.prods.push(clone); // Registra globalmente para o carrinho funcionar
+        STATE.prods.push(clone); 
     });
 }
 
+// MODIFICAÇÃO: Renderiza como Carrossel (com setas para desktop e mobile)
 function renderHomeSuperOffers() {
     if(!STATE.homeSuperOffers || STATE.homeSuperOffers.length === 0) return '';
     let html = `
-    <div style="margin-bottom: 20px;">
-        <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.1rem; color: #ea1d2c;">🔥 Ofertas Relâmpago</div>
-        <div class="grid-micro">
+    <div class="ho-wrapper">
+        <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.15rem; color: #ea1d2c; padding-left: 15px;">🔥 Ofertas Relâmpago</div>
+        <button class="ho-arrow left" onclick="scrollHoCarousel(-1)">❮</button>
+        <div class="ho-carousel" id="ho-carousel">
     `;
     STATE.homeSuperOffers.forEach(p => {
-        html += buildCardHtml(p, 'PROD');
+        html += `<div class="ho-carousel-item">${buildCardHtml(p, 'PROD')}</div>`;
     });
-    html += '</div></div>';
+    html += `
+        </div>
+        <button class="ho-arrow right" onclick="scrollHoCarousel(1)">❯</button>
+    </div>`;
     return html;
 }
 
-// MODIFICAÇÃO: Recomendações na Quick View
+window.scrollHoCarousel = function(dir) {
+    let c = document.getElementById('ho-carousel');
+    if(c) {
+        c.scrollBy({ left: dir * (c.clientWidth * 0.8), behavior: 'smooth' });
+    }
+}
+
+// MODIFICAÇÃO: Exibindo até 12 produtos
 function renderQvRecommendations(currentId) {
     let p = STATE.prods.find(x => x.id === currentId);
     if(!p) return '';
@@ -1103,7 +1129,8 @@ function renderQvRecommendations(currentId) {
          recs = [...recs, ...fallback];
     }
     
-    recs = [...new Set(recs)].slice(0, 6);
+    // Agora pegamos 12 produtos
+    recs = [...new Set(recs)].slice(0, 12);
     if(recs.length === 0) return '';
     
     let html = '<h3 style="font-size: 1.05rem; font-weight: 700; color: var(--c-p); margin-bottom: 12px; text-align: left;">Você também pode gostar</h3><div class="grid-micro-3">';
@@ -1112,7 +1139,6 @@ function renderQvRecommendations(currentId) {
     return html;
 }
 
-// MODIFICAÇÃO: Ofertas Especiais no Checkout
 function renderCheckoutOffers() {
     let topOffers = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0 && !p._isBasket && !p._isCombo && !p._isHomeSuperOffer)
         .sort((a,b) => ((b.oldPrice - b.price)/b.oldPrice) - ((a.oldPrice - a.price)/a.oldPrice))
@@ -1535,7 +1561,6 @@ window.applyDeptoFilters = function(preventScroll = false) {
         if (STATE.activeDeptoId === 'compre_junto') {
             html = filtered.map(cj => buildCompreJuntoCardHtml(cj)).join('');
         } else {
-            // MODIFICAÇÃO: Removidos parâmetros ociosos
             html = filtered.map(item => buildCardHtml(item, STATE.deptos[STATE.activeDeptoId].type)).join(''); 
         }
     }
@@ -1798,7 +1823,6 @@ window.openUpsellView = function() {
                 <div class="grid-ver-todos">
             `;
             
-            // MODIFICAÇÃO: Removidos parâmetros ociosos
             top4.forEach(item => {
                 itemsHtml += buildCardHtml(item, depto.type);
             });
@@ -1838,7 +1862,6 @@ window.openUpsellView = function() {
     `;
 };
 
-// MODIFICAÇÃO: Função limpada e com inserção de tag customizada e ícone de vídeo
 function buildCardHtml(item, type) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
@@ -1848,7 +1871,6 @@ function buildCardHtml(item, type) {
     let isEsgotado = (item.stock <= 0);
     let qty = STATE.cart[id] || 0;
     
-    // Regra do Ícone de Vídeo
     let videoIconHtml = (item.videosExtra && item.videosExtra.length > 0) ? `<div class="video-indicator"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></div>` : '';
 
     if (isKit || isBasket) {
@@ -1910,7 +1932,6 @@ function buildCardHtml(item, type) {
         addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
     }
 
-    // MODIFICAÇÃO: Tag customizada posicionada logo abaixo do canto curvado
     let customTagHtml = '';
     if (item.tagTexto) {
         customTagHtml = `<div style="position: absolute; top: 16px; left: 0; background-color: ${item.tagCor || '#000'}; color: ${item.tagCorTexto || '#fff'}; font-size: ${item.tagTamanho || 12}px; padding: 4px 8px; border-radius: 0 6px 6px 0; font-weight: 700; z-index: 5;">${item.tagTexto}</div>`;
@@ -2052,7 +2073,6 @@ window.openQuickView = function(id) {
         </div>
     `;
 
-    // MODIFICAÇÃO: Renderiza as recomendações
     $('qv-recommendations').innerHTML = renderQvRecommendations(id);
     
     $('generic-overlay').style.display = 'block';
@@ -2279,7 +2299,6 @@ function updateTotals() {
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
     let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - cupomDesconto - STATE.atacadoDiscount;
     
-    // MODIFICAÇÃO: Removido ID inexistente
     if ($('chk-total-fixed')) $('chk-total-fixed').innerText = fmt(final);
     
     let totalItems = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
@@ -2361,7 +2380,6 @@ function renderCheckoutItems() {
     if (final < MIN_ORDER && subtotal > 0) { btn.disabled = true; btn.innerText = `MÍNIMO DE ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--c-bd)'; btn.style.color = 'var(--c-s)'; btn.style.cursor = 'not-allowed'; btn.style.boxShadow = 'none';} 
     else { btn.disabled = false; btn.innerText = 'ENVIAR PEDIDO'; btn.style.background = 'var(--c-a)'; btn.style.color = '#fff'; btn.style.cursor = 'pointer'; }
 
-    // MODIFICAÇÃO: Renderiza as ofertas no carrinho
     if($('chk-offers')) $('chk-offers').innerHTML = renderCheckoutOffers();
 }
 
