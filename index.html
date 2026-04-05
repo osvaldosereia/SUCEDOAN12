@@ -79,7 +79,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .sub-btn:active { transform: scale(0.98); }
 
-/* AJUSTE: padding-top aumentado para 140px para descolar o título dos botões */
 .main-stage { 
     position: relative; height: 100dvh; padding-top: 140px; padding-bottom: 90px; 
     overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; 
@@ -104,14 +103,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .promo-whatsapp-banner { max-width: 970px; margin: 15px auto 20px auto; flex-direction: row; justify-content: space-between; padding: 20px 25px;}
 }
 
-/* NOVO: Estilos do Carrossel de Ofertas Relâmpago */
+/* CARROSSEL DE OFERTAS: Ajustado para 2,5 itens no Mobile (40% de largura) */
 .ho-wrapper { position: relative; width: 100%; max-width: 1000px; margin: 0 auto; padding-top: 5px; padding-bottom: 10px; }
 .ho-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 8px; scrollbar-width: none; padding-bottom: 10px; -webkit-overflow-scrolling: touch; padding-left: 15px; padding-right: 15px;}
 .ho-carousel::-webkit-scrollbar { display: none; }
-.ho-carousel-item { flex: 0 0 calc(28.5% - 6px); scroll-snap-align: start; }
+.ho-carousel-item { flex: 0 0 calc(40% - 8px); scroll-snap-align: start; }
 @media(min-width: 800px) {
     .ho-carousel { gap: 12px; }
-    .ho-carousel-item { flex: 0 0 calc(16.666% - 10px); }
+    .ho-carousel-item { flex: 0 0 calc(16.666% - 10px); } /* 6 colunas no desktop */
 }
 .ho-arrow { position: absolute; top: 60%; transform: translateY(-50%); z-index: 10; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 1rem; color: var(--c-p); display: flex; align-items: center; justify-content: center; }
 .ho-arrow:active { transform: translateY(-50%) scale(0.95); }
@@ -220,8 +219,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-card:active { transform: scale(0.98); }
 .u-card.disabled { opacity: 0.5; pointer-events: none; cursor: default; }
 
+/* FOTOS MENORES: Padding aumentado para afastar a imagem das bordas */
 .u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
-.u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; transition: 0.3s;}
+.u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 12%; transition: 0.3s;}
 .basket-img-area, .kit-img-area { background: transparent !important; aspect-ratio: 1/1 !important; }
 .basket-img-area img, .kit-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 8px; mix-blend-mode: normal !important;}
 
@@ -298,12 +298,13 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .u-card-minimal:active { transform: scale(0.98); }
 .u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
 
+/* FOTOS MENORES MINIMALISTAS: Padding aumentado para afastar a imagem das bordas */
 .u-img-minimal { 
     width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); 
     border-radius: 20px; display: flex; align-items: center; justify-content: center; 
     position: relative; border: none; overflow: hidden;
 }
-.u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 10%; }
+.u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 18%; }
 
 .u-bot-minimal { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; background: #ffffff; flex:1;}
 .u-price-minimal { font-size: 1.05rem; font-weight: 700; color: var(--c-p); line-height: 1; }
@@ -322,7 +323,7 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .qv-carousel-item { flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; border: 1px solid var(--c-bd); }
 .qv-carousel-item img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; }
 .qv-carousel-item iframe { width: 100%; height: 100%; border: none; }
-.qv-dots { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 12px; margin-bottom: 10px; }
+.qv-dots { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 8px; margin-bottom: 5px; }
 .qv-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-bd); transition: 0.3s; }
 .qv-dot.active { background: var(--c-a); width: 20px; border-radius: 4px; }
 
@@ -515,26 +516,26 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
         <h2 class="see-all-title">Detalhes</h2>
     </div>
     
-    <div class="see-all-content" style="padding: 20px 15px 120px;">
+    <div class="see-all-content" style="padding: 10px 15px 120px;">
         <div style="position: relative; width: 100%;">
             <button class="carousel-arrow left" onclick="scrollQvCarousel(-1)">❮</button>
             <div class="qv-carousel" id="qv-carousel"></div>
             <button class="carousel-arrow right" onclick="scrollQvCarousel(1)">❯</button>
         </div>
         <div class="qv-dots" id="qv-dots"></div>
-        <div id="qv-swipe-hint" style="text-align: center; font-size: 0.8rem; color: var(--c-s); margin-top: -5px; margin-bottom: 15px; display: none;">← Arraste para ver mais →</div>
+        <div id="qv-swipe-hint" style="text-align: center; font-size: 0.8rem; color: var(--c-s); margin-bottom: 5px; display: none;">← Arraste para ver mais →</div>
         
-        <h3 id="qv-name" style="font-size: 1.15rem; font-weight: 700; color: var(--c-p); margin-top: 5px; margin-bottom: 8px; line-height: 1.3; text-align: left;"></h3>
-        <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-err); margin-bottom: 12px; font-weight: 600; text-align: left; display: none;"></div>
+        <h3 id="qv-name" style="font-size: 0.95rem; font-weight: 700; color: var(--c-p); margin-top: 5px; margin-bottom: 4px; line-height: 1.2; text-align: left;"></h3>
+        <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-err); margin-bottom: 8px; font-weight: 600; text-align: left; display: none;"></div>
         
-        <div id="qv-price" style="font-size: 1.8rem; font-weight: 800; color: var(--c-a); margin-bottom: 15px; text-align: left;"></div>
+        <div id="qv-price" style="font-size: 1.35rem; font-weight: 800; color: var(--c-a); margin-bottom: 10px; text-align: left;"></div>
         
-        <div id="qv-desc" style="font-size: 0.9rem; color: var(--c-s); line-height: 1.5; margin-bottom: 25px; text-align: left; display: none;"></div>
+        <div id="qv-desc" style="font-size: 0.8rem; color: var(--c-s); line-height: 1.3; margin-bottom: 10px; text-align: left; display: none;"></div>
         
         <div id="qv-action-area" data-id=""></div>
         <div id="qv-bottom-buttons"></div> 
 
-        <div id="qv-recommendations" style="margin-top: 25px;"></div>
+        <div id="qv-recommendations" style="margin-top: 15px;"></div>
     </div>
 </div>
 
@@ -1065,7 +1066,6 @@ function applyHomeSuperOffers() {
         return true;
     });
     
-    // Shuffle
     for (let i = valid.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [valid[i], valid[j]] = [valid[j], valid[i]];
@@ -1083,7 +1083,6 @@ function applyHomeSuperOffers() {
     });
 }
 
-// MODIFICAÇÃO: Renderiza como Carrossel (com setas para desktop e mobile)
 function renderHomeSuperOffers() {
     if(!STATE.homeSuperOffers || STATE.homeSuperOffers.length === 0) return '';
     let html = `
@@ -1109,7 +1108,6 @@ window.scrollHoCarousel = function(dir) {
     }
 }
 
-// MODIFICAÇÃO: Exibindo até 12 produtos
 function renderQvRecommendations(currentId) {
     let p = STATE.prods.find(x => x.id === currentId);
     if(!p) return '';
@@ -1129,7 +1127,6 @@ function renderQvRecommendations(currentId) {
          recs = [...recs, ...fallback];
     }
     
-    // Agora pegamos 12 produtos
     recs = [...new Set(recs)].slice(0, 12);
     if(recs.length === 0) return '';
     
@@ -1169,6 +1166,7 @@ async function init() {
        if (r2 && r2.length > 0) {
             const TAXA_AUMENTO_GLOBAL = 1.03;
 
+            // MODIFICAÇÃO: Array.isArray(p.tags) garante a leitura correta das novas tags do JSON
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 const codigoOuId = p.codigo || p.id;
                 const precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
@@ -1196,10 +1194,7 @@ async function init() {
                     videosExtra: vids, 
                     descricao: p.descricao || "", 
                     categoria: p.categoria || "",
-                    tagTexto: p.tag_texto || "",
-                    tagCor: p.tag_cor || "",
-                    tagCorTexto: p.tag_cor_texto || "",
-                    tagTamanho: p.tag_tamanho || ""
+                    tagsList: Array.isArray(p.tags) ? p.tags : []
                 };
             });
             
@@ -1862,6 +1857,7 @@ window.openUpsellView = function() {
     `;
 };
 
+// MODIFICAÇÃO: Lógica para renderizar Múltiplas Tags do JSON
 function buildCardHtml(item, type) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
@@ -1932,9 +1928,13 @@ function buildCardHtml(item, type) {
         addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
     }
 
+    // Lógica para empilhar as tags recebidas via array
     let customTagHtml = '';
-    if (item.tagTexto) {
-        customTagHtml = `<div style="position: absolute; top: 16px; left: 0; background-color: ${item.tagCor || '#000'}; color: ${item.tagCorTexto || '#fff'}; font-size: ${item.tagTamanho || 12}px; padding: 4px 8px; border-radius: 0 6px 6px 0; font-weight: 700; z-index: 5;">${item.tagTexto}</div>`;
+    if (item.tagsList && item.tagsList.length > 0) {
+        let tagsContent = item.tagsList.map(t => 
+            `<div style="background-color: ${t.bg || '#000'}; color: ${t.txt || '#fff'}; font-size: ${t.tam || 10}px; padding: 2px 6px; border-radius: 0 6px 6px 0; font-weight: 700; margin-bottom: 4px; width: max-content; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">${t.texto}</div>`
+        ).join('');
+        customTagHtml = `<div style="position: absolute; top: 12px; left: 0; z-index: 5; display: flex; flex-direction: column;">${tagsContent}</div>`;
     }
 
     return `
@@ -2051,7 +2051,7 @@ window.openQuickView = function(id) {
     }
     
     $('qv-price').innerHTML = p.oldPrice && p.oldPrice > p.price 
-        ? `<span style="font-size:1.1rem;text-decoration:line-through;color:var(--c-s);margin-right:10px;font-weight:500;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
+        ? `<span style="font-size:0.95rem;text-decoration:line-through;color:var(--c-s);margin-right:8px;font-weight:500;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
         : fmt(p.price); 
     
     $('qv-action-area').dataset.id = id; 
@@ -2062,13 +2062,13 @@ window.openQuickView = function(id) {
         let currentIndex = STATE.currentFilteredList.findIndex(x => x.id === id);
         if (currentIndex !== -1 && currentIndex < STATE.currentFilteredList.length - 1) {
             let nextId = STATE.currentFilteredList[currentIndex + 1].id;
-            nextBtnHtml = `<button class="btn-modal primary" style="flex:1;" onclick="openQuickView('${nextId}')">Próximo ⏭️</button>`;
+            nextBtnHtml = `<button class="btn-modal primary" style="flex:1; padding: 10px;" onclick="openQuickView('${nextId}')">Próximo ⏭️</button>`;
         }
     }
 
     $('qv-bottom-buttons').innerHTML = `
-        <div style="display: flex; gap: 10px; margin-top: 15px; width: 100%;">
-            <button class="btn-modal secondary" style="flex:1;" onclick="closeQuickView()">Voltar para a lista</button>
+        <div style="display: flex; gap: 10px; margin-top: 10px; width: 100%;">
+            <button class="btn-modal secondary" style="flex:1; padding: 10px;" onclick="closeQuickView()">Voltar</button>
             ${nextBtnHtml}
         </div>
     `;
