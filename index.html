@@ -36,7 +36,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .layout-limit { width: 100%; max-width: 1000px; margin: 0 auto; position: relative; } 
 
-/* MODIFICAÇÃO: Header Wrapper agora engloba a Sub Header Bar */
 #header-wrapper { 
     position: fixed; top: 0; left: 0; right: 0; z-index: 80; 
     background: #f8fafc; 
@@ -68,7 +67,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .btn-top-help svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.2; }
 
-/* MODIFICAÇÃO: Sub Header Bar com os dois botões principais */
 .sub-header-bar {
     display: flex; gap: 10px; padding: 0 15px 12px; width: 100%; max-width: 1000px; margin: 0 auto;
 }
@@ -81,7 +79,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .sub-btn:active { transform: scale(0.98); }
 
-/* MODIFICAÇÃO: Aumentamos o padding-top para compensar o tamanho extra do header */
 .main-stage { 
     position: relative; height: 100dvh; padding-top: 125px; padding-bottom: 90px; 
     overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; 
@@ -153,7 +150,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .lateral-view.open { left: 0; }
 
-/* MODIFICAÇÃO: Classe Quick View agora afeta Buscar e Info no Desktop */
 .lateral-view.quick-view { width: 90%; left: 100%; border-radius: 20px 0 0 20px; z-index: 110; } 
 .lateral-view.quick-view.open { left: 10%; }
 @media(min-width: 800px) { .lateral-view.quick-view { width: 450px; } .lateral-view.quick-view.open { left: calc(100% - 450px); } }
@@ -192,17 +188,25 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .grid-cestas-kits { grid-template-columns: 1fr !important; }
 @media(min-width: 800px) { .grid-cestas-kits { grid-template-columns: repeat(3, 1fr) !important; } }
 
+/* GRADES MICRO (3 col mobile, 6 desktop) */
+.grid-micro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+@media(min-width: 800px) { .grid-micro { grid-template-columns: repeat(6, 1fr); gap: 12px; } }
+.grid-micro-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.grid-micro .u-price-minimal, .grid-micro-3 .u-price-minimal { font-size: 0.85rem; }
+.grid-micro .btn-add-minimal, .grid-micro-3 .btn-add-minimal { width: 28px; height: 28px; font-size: 1.2rem; }
+.grid-micro .u-tag-discount, .grid-micro-3 .u-tag-discount { padding: 2px 4px; font-size: 0.65rem; }
+
 .u-card { background: #fff; border: 1px solid var(--c-bd); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: transform 0.2s, box-shadow 0.2s;}
 .u-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 .u-card:active { transform: scale(0.98); }
 .u-card.disabled { opacity: 0.5; pointer-events: none; cursor: default; }
 
-.u-img-area { width: 100%; aspect-ratio: 3/4; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
+/* MODIFICAÇÃO: Fotos rigorosamente quadradas */
+.u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; transition: 0.3s;}
 .basket-img-area, .kit-img-area { background: transparent !important; aspect-ratio: 1/1 !important; }
 .basket-img-area img, .kit-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 8px; mix-blend-mode: normal !important;}
 
-.vencimento-tag { position: absolute; top: 8px; left: 8px; background: var(--c-err); color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 600; border-radius: 6px; z-index: 5; }
 .kit-tag { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 600; border-radius: 6px; position: absolute; top: 8px; left: 8px; z-index: 5;}
 .removido-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 6px 12px; border-radius: 6px; z-index: 10; backdrop-filter: blur(2px);}
 
@@ -276,8 +280,9 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .u-card-minimal:active { transform: scale(0.98); }
 .u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
 
+/* MODIFICAÇÃO: Fotos rigorosamente quadradas */
 .u-img-minimal { 
-    width: 100%; aspect-ratio: 3/4; background: var(--c-img-bg); 
+    width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); 
     border-radius: 20px; display: flex; align-items: center; justify-content: center; 
     position: relative; border: none; overflow: hidden;
 }
@@ -290,7 +295,10 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .btn-add-minimal { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-a); border: 1px solid var(--c-bd); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 500; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.08);}
 .btn-add-minimal.has-item { background: var(--c-a); color: #fff; border-color: var(--c-a); font-size: 1rem; font-weight: 600;}
 
-/* MODIFICAÇÃO: Overlay Genérico para todas as abas pequenas */
+/* MODIFICAÇÃO: Ícone indicador de Vídeo no produto */
+.video-indicator { position: absolute; bottom: 8px; right: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.95); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+.video-indicator svg { width: 12px; height: 12px; fill: var(--c-a); }
+
 #generic-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:rgba(15,23,42,0.4); z-index:100; backdrop-filter: blur(2px);}
 
 .qv-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch; border-radius: 12px; padding-bottom: 5px; }
@@ -365,10 +373,12 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 </div>
 
 <main class="main-stage" id="scroll-stage">
-<div id="promo-banner-btn" onclick="activateAutoCoupons()" class="promo-whatsapp-banner" style="cursor: pointer;">
-    <div style="font-size: 1.1rem;">🎁 Ganhe até R$ 25 de desconto na sua compra!</div>
-    <button class="btn-ativar-desconto">Ativar Desconto</button>
-</div>
+    <div id="home-super-offers" style="padding: 0 15px;"></div>
+
+    <div id="promo-banner-btn" onclick="activateAutoCoupons()" class="promo-whatsapp-banner" style="cursor: pointer;">
+        <div style="font-size: 1.1rem;">🎁 Ganhe até R$ 25 de desconto na sua compra!</div>
+        <button class="btn-ativar-desconto">Ativar Desconto</button>
+    </div>
     <div id="grid-home-sections" class="grid-home-sections"></div>
 </main>
 
@@ -506,6 +516,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
         
         <div id="qv-action-area" data-id=""></div>
         <div id="qv-bottom-buttons"></div> 
+
+        <div id="qv-recommendations" style="margin-top: 25px;"></div>
     </div>
 </div>
 
@@ -616,6 +628,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
             <h3 class="chk-section-title"><span>1.</span> Seus Produtos</h3>
             <div id="chk-list"></div>
             <button class="btn-modal secondary" style="border: 1px dashed var(--c-a); color: var(--c-a); background: transparent;" onclick="closeCheckout();">✚ Adicionar mais itens</button>        
+            
+            <div id="chk-offers" style="margin-top: 20px;"></div>
         </div>
         <div class="chk-section sec-2">
             <h3 class="chk-section-title"><span>2.</span> Entrega</h3>
@@ -679,7 +693,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 <div id="toast-container"></div>
 
 <script>
-const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0], feriados: [] };
+// MODIFICAÇÃO: Removido 'feriados: []' da CONFIG_ENTREGA
+const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
@@ -722,7 +737,7 @@ const MARCAS_DESTAQUE = [
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
     currentInstaTab: 'maiores_descontos', currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], coupons: [], combos: [], compreJuntoCombos: [],
-    returnToUpsell: false, autoCouponsActive: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
+    returnToUpsell: false, autoCouponsActive: false, allVideos: [], currentFilteredList: [], tvCategory: 'all', homeSuperOffers: [],
     
     deptos: {
         'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas', type: 'PROD', data: [] },
@@ -841,7 +856,6 @@ function compileVideos() {
 let feedScrollTimeout;
 let currentPlayingIndex = -1;
 
-/* MODIFICAÇÃO: Fechar genérico com a tela preta transparente */
 window.closeGenericOverlay = function() {
     if (document.getElementById('quick-view-lateral').classList.contains('open')) closeQuickView();
     if (document.getElementById('global-search-view').classList.contains('open')) closeGlobalSearch();
@@ -887,7 +901,7 @@ window.doGlobalSearch = function() {
         return;
     }
     
-    let results = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
+    let results = STATE.prods.filter(p => !p._isHomeSuperOffer && (norm(p.name).includes(q) || norm(p.categoria).includes(q)));
     results.sort((a, b) => norm(a.name).indexOf(q) - norm(b.name).indexOf(q));
     
     let top = results.slice(0, 15);
@@ -1026,6 +1040,92 @@ async function fetchWithCache(url, key, ttlMinutes) {
     }
 }
 
+// MODIFICAÇÃO: Lógica para Ofertas Relâmpago na Home
+function applyHomeSuperOffers() {
+    let exc = ["arroz", "feijao", "feijão", "oleo", "óleo", "acucar", "açúcar", "cafe", "café"];
+    let valid = STATE.prods.filter(p => {
+        if(p._isBasket || p._isCombo || p.stock <= 0 || p._isHomeSuperOffer) return false;
+        let n = norm(p.name);
+        for(let e of exc) if(n.includes(e)) return false;
+        return true;
+    });
+    
+    // Shuffle
+    for (let i = valid.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [valid[i], valid[j]] = [valid[j], valid[i]];
+    }
+    
+    let selected = valid.slice(0, 12);
+    selected.forEach(p => {
+        // Criar um clone do objeto para não bagunçar os valores globais na loja
+        let clone = { ...p, id: p.id + '_so' };
+        clone.oldPrice = p.price * 1.10;
+        clone.price = clone.oldPrice * 0.70;
+        clone.discountApplied = true;
+        clone._isHomeSuperOffer = true;
+        STATE.homeSuperOffers.push(clone);
+        STATE.prods.push(clone); // Registra globalmente para o carrinho funcionar
+    });
+}
+
+function renderHomeSuperOffers() {
+    if(!STATE.homeSuperOffers || STATE.homeSuperOffers.length === 0) return '';
+    let html = `
+    <div style="margin-bottom: 20px;">
+        <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.1rem; color: #ea1d2c;">🔥 Ofertas Relâmpago</div>
+        <div class="grid-micro">
+    `;
+    STATE.homeSuperOffers.forEach(p => {
+        html += buildCardHtml(p, 'PROD');
+    });
+    html += '</div></div>';
+    return html;
+}
+
+// MODIFICAÇÃO: Recomendações na Quick View
+function renderQvRecommendations(currentId) {
+    let p = STATE.prods.find(x => x.id === currentId);
+    if(!p) return '';
+    
+    let words = String(p.name).split(' ').filter(w => w.length > 2);
+    if(words.length < 2) words = String(p.name).split(' ');
+    let w1 = norm(words[0]); let w2 = words.length > 1 ? norm(words[1]) : '';
+    
+    let recs = STATE.prods.filter(x => {
+        if(x.id === currentId || x.stock <= 0 || x._isBasket || x._isCombo || x._isHomeSuperOffer) return false;
+        let n = norm(x.name);
+        return n.includes(w1) && (w2 ? n.includes(w2) : true);
+    });
+    
+    if(recs.length < 3) {
+         let fallback = STATE.prods.filter(x => x.categoria === p.categoria && x.id !== currentId && x.stock > 0 && !x._isBasket && !x._isCombo && !x._isHomeSuperOffer);
+         recs = [...recs, ...fallback];
+    }
+    
+    recs = [...new Set(recs)].slice(0, 6);
+    if(recs.length === 0) return '';
+    
+    let html = '<h3 style="font-size: 1.05rem; font-weight: 700; color: var(--c-p); margin-bottom: 12px; text-align: left;">Você também pode gostar</h3><div class="grid-micro-3">';
+    recs.forEach(r => { html += buildCardHtml(r, 'PROD'); });
+    html += '</div>';
+    return html;
+}
+
+// MODIFICAÇÃO: Ofertas Especiais no Checkout
+function renderCheckoutOffers() {
+    let topOffers = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0 && !p._isBasket && !p._isCombo && !p._isHomeSuperOffer)
+        .sort((a,b) => ((b.oldPrice - b.price)/b.oldPrice) - ((a.oldPrice - a.price)/a.oldPrice))
+        .slice(0, 3);
+        
+    if(topOffers.length === 0) return '';
+    
+    let html = '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--c-bd);"><h3 style="font-weight: 600; font-size: 0.95rem; color: var(--c-p); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">🔥 Aproveite essas ofertas</h3><div class="grid-micro-3">';
+    topOffers.forEach(p => { html += buildCardHtml(p, 'PROD'); });
+    html += '</div></div>';
+    return html;
+}
+
 async function init() {
     renderHomeCards(); updateTotals(); 
 
@@ -1073,9 +1173,7 @@ async function init() {
                     tagTexto: p.tag_texto || "",
                     tagCor: p.tag_cor || "",
                     tagCorTexto: p.tag_cor_texto || "",
-                    tagTamanho: p.tag_tamanho || "",
-                    campanhasInsta: [],
-                    discountApplied: false
+                    tagTamanho: p.tag_tamanho || ""
                 };
             });
             
@@ -1108,6 +1206,7 @@ async function init() {
                     if (campanha.palavrasChave && campanha.palavrasChave.length > 0) {
                         let match = campanha.palavrasChave.some(kw => nomeParaBusca.includes(" " + norm(kw) + " "));
                         if (match) {
+                            p.campanhasInsta = p.campanhasInsta || [];
                             p.campanhasInsta.push(campanha.id);
                             if (campanha.desconto > maxDescontoEncontrado) {
                                 maxDescontoEncontrado = campanha.desconto;
@@ -1190,13 +1289,17 @@ async function init() {
                 }
             });
 
-            let todasOfertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
+            let todasOfertas = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0 && !p._isHomeSuperOffer);
             todasOfertas.sort((a,b) => {
                 let descA = (a.oldPrice - a.price) / a.oldPrice;
                 let descB = (b.oldPrice - b.price) / b.oldPrice;
                 return descB - descA; 
             });
             STATE.deptos['ofertas_insta'].data = todasOfertas; 
+
+            applyHomeSuperOffers();
+            $('home-super-offers').innerHTML = renderHomeSuperOffers();
+
             compileVideos();
         }
         
@@ -1380,14 +1483,15 @@ window.applyDeptoFilters = function(preventScroll = false) {
     
     if (STATE.activeDeptoId === 'ofertas_insta') {
         if (STATE.currentInstaTab === 'maiores_descontos') {
-            filtered = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0);
+            filtered = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0 && !p._isHomeSuperOffer);
         } else {
-            filtered = STATE.prods.filter(p => p.campanhasInsta && p.campanhasInsta.includes(STATE.currentInstaTab));
+            filtered = STATE.prods.filter(p => p.campanhasInsta && p.campanhasInsta.includes(STATE.currentInstaTab) && !p._isHomeSuperOffer);
         }
     } else if (STATE.activeDeptoId === 'marcas') {
         let marcaAtual = MARCAS_DESTAQUE.find(m => m.id === STATE.currentMarcaTab);
         if (marcaAtual) {
             filtered = STATE.prods.filter(p => {
+                if(p._isHomeSuperOffer) return false;
                 let nomeParaBusca = " " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ";
                 return marcaAtual.palavrasChave.some(kw => nomeParaBusca.includes(" " + norm(kw) + " "));
             });
@@ -1396,7 +1500,7 @@ window.applyDeptoFilters = function(preventScroll = false) {
         let depto = STATE.deptos[STATE.activeDeptoId];
         let keyword = STATE.currentKeyword;
         filtered = depto.data.filter(p => {
-            return keyword === 'all' || norm(p.name || p.nome).includes(keyword);
+            return (keyword === 'all' || norm(p.name || p.nome).includes(keyword)) && !p._isHomeSuperOffer;
         });
     }
     
@@ -1431,7 +1535,8 @@ window.applyDeptoFilters = function(preventScroll = false) {
         if (STATE.activeDeptoId === 'compre_junto') {
             html = filtered.map(cj => buildCompreJuntoCardHtml(cj)).join('');
         } else {
-            html = filtered.map((item, idx) => buildCardHtml(item, STATE.deptos[STATE.activeDeptoId].type, false, idx)).join(''); 
+            // MODIFICAÇÃO: Removidos parâmetros ociosos
+            html = filtered.map(item => buildCardHtml(item, STATE.deptos[STATE.activeDeptoId].type)).join(''); 
         }
     }
     
@@ -1693,8 +1798,9 @@ window.openUpsellView = function() {
                 <div class="grid-ver-todos">
             `;
             
-            top4.forEach((item, idx) => {
-                itemsHtml += buildCardHtml(item, depto.type, false, idx);
+            // MODIFICAÇÃO: Removidos parâmetros ociosos
+            top4.forEach(item => {
+                itemsHtml += buildCardHtml(item, depto.type);
             });
             
             itemsHtml += `
@@ -1732,7 +1838,8 @@ window.openUpsellView = function() {
     `;
 };
 
-function buildCardHtml(item, type, isHidden = false, idx = 999) {
+// MODIFICAÇÃO: Função limpada e com inserção de tag customizada e ícone de vídeo
+function buildCardHtml(item, type) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
     let name = item.name || item.nome; 
@@ -1741,6 +1848,9 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
     let isEsgotado = (item.stock <= 0);
     let qty = STATE.cart[id] || 0;
     
+    // Regra do Ícone de Vídeo
+    let videoIconHtml = (item.videosExtra && item.videosExtra.length > 0) ? `<div class="video-indicator"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></div>` : '';
+
     if (isKit || isBasket) {
         let tagHtml = ''; let oldPriceHtml = ''; let onClick = ''; let addBtnHtml = '';
         let cardClass = isEsgotado ? 'u-card disabled' : 'u-card';
@@ -1766,7 +1876,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
 
         return `
         <div class="${cardClass}" data-id="${id}" onclick="${onClick}">
-            <div class="${imgAreaClass}">${tagHtml} <img src="${img}" loading="lazy" alt="Kit"></div>
+            <div class="${imgAreaClass}">${tagHtml} <img src="${img}" loading="lazy" alt="Kit"> ${videoIconHtml} </div>
             <div class="u-info">
                 <div class="u-name kit-name-large">${formatName(name)}</div>
                 <div style="display: flex; flex-direction: column; justify-content: flex-end;">
@@ -1800,9 +1910,10 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
         addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
     }
 
+    // MODIFICAÇÃO: Tag customizada posicionada logo abaixo do canto curvado
     let customTagHtml = '';
     if (item.tagTexto) {
-        customTagHtml = `<div style="position: absolute; top: 20px; left: 0; background-color: ${item.tagCor || '#000'}; color: ${item.tagCorTexto || '#fff'}; font-size: ${item.tagTamanho || 12}px; padding: 4px 8px; border-radius: 0 6px 6px 0; font-weight: 700; z-index: 5;">${item.tagTexto}</div>`;
+        customTagHtml = `<div style="position: absolute; top: 16px; left: 0; background-color: ${item.tagCor || '#000'}; color: ${item.tagCorTexto || '#fff'}; font-size: ${item.tagTamanho || 12}px; padding: 4px 8px; border-radius: 0 6px 6px 0; font-weight: 700; z-index: 5;">${item.tagTexto}</div>`;
     }
 
     return `
@@ -1810,6 +1921,7 @@ function buildCardHtml(item, type, isHidden = false, idx = 999) {
         <div class="u-img-minimal">
             ${customTagHtml}
             <img src="${img}" loading="lazy" alt="Produto">
+            ${videoIconHtml}
             ${addBtnHtml}
         </div>
         <div class="u-bot-minimal">
@@ -1939,6 +2051,9 @@ window.openQuickView = function(id) {
             ${nextBtnHtml}
         </div>
     `;
+
+    // MODIFICAÇÃO: Renderiza as recomendações
+    $('qv-recommendations').innerHTML = renderQvRecommendations(id);
     
     $('generic-overlay').style.display = 'block';
     document.getElementById('quick-view-lateral').classList.add('open');
@@ -2164,7 +2279,7 @@ function updateTotals() {
     let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
     let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - cupomDesconto - STATE.atacadoDiscount;
     
-    if ($('chk-total')) $('chk-total').innerText = fmt(final);
+    // MODIFICAÇÃO: Removido ID inexistente
     if ($('chk-total-fixed')) $('chk-total-fixed').innerText = fmt(final);
     
     let totalItems = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
@@ -2245,6 +2360,9 @@ function renderCheckoutItems() {
     let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - cupomDesconto - STATE.atacadoDiscount;
     if (final < MIN_ORDER && subtotal > 0) { btn.disabled = true; btn.innerText = `MÍNIMO DE ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--c-bd)'; btn.style.color = 'var(--c-s)'; btn.style.cursor = 'not-allowed'; btn.style.boxShadow = 'none';} 
     else { btn.disabled = false; btn.innerText = 'ENVIAR PEDIDO'; btn.style.background = 'var(--c-a)'; btn.style.color = '#fff'; btn.style.cursor = 'pointer'; }
+
+    // MODIFICAÇÃO: Renderiza as ofertas no carrinho
+    if($('chk-offers')) $('chk-offers').innerHTML = renderCheckoutOffers();
 }
 
 function openCheckout() { 
