@@ -140,7 +140,7 @@
         .cartao-acoes { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; width: 110px;}
         
         /* =========================================================
-           CSS DO SEPARADOR DE PEDIDOS (MODO FOCO INTEGRADO)
+           CSS DO SEPARADOR DE PEDIDOS E BALANÇO MODO FOCO
            ========================================================= */
         #separador-overlay { 
             position: fixed; inset: 0; background: var(--bg-body); z-index: 2000; display: none; flex-direction: column; 
@@ -687,7 +687,7 @@
                         filaDePedidos = parsedData; 
                         await localforage.setItem(PEDIDOS_KEY, filaDePedidos); 
                         renderizarCartoes(); // Atualiza sidebar
-                        renderizarPedidosScreen(); // Atualiza tela principal
+                        if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen(); // Atualiza tela principal
                         alert("Fila sincronizada com a nuvem com sucesso!"); return; 
                     }
                 }
@@ -734,6 +734,13 @@
             lucide.createIcons();
         }
 
+        // Função global para abrir qualquer foto em ecrã inteiro
+        function abrirModalFoto(src) {
+            if(!src || src.includes("SEM+FOTO") || src === 'caminho_invalido') return;
+            document.getElementById('img-full').src = src;
+            document.getElementById('modal-foto-full').classList.remove('hidden');
+        }
+
         // ==========================================================
         // MÓDULO: BALANÇO DE ESTOQUE
         // ==========================================================
@@ -770,46 +777,57 @@
             container.innerHTML = found.map(p => {
                 let img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/100x100/f4f4f5/a1a1aa?text=SEM+FOTO';
                 return `
-                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform 0.2s; margin-bottom: 5px; flex-shrink: 0; min-height: max-content;">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform 0.2s; margin-bottom: 10px; flex-shrink: 0; min-height: max-content;">
                     
                     <div style="display: flex; border-bottom: 1px solid var(--border); background: #fafafa;">
-                        <div style="width: 100px; height: 100px; background: #f4f4f5; display: flex; align-items: center; justify-content: center; padding: 10px; flex-shrink: 0; border-right: 1px solid var(--border);">
+                        <div style="width: 120px; height: 120px; background: #f4f4f5; display: flex; align-items: center; justify-content: center; padding: 10px; flex-shrink: 0; border-right: 1px solid var(--border); cursor: pointer; position: relative;" onclick="abrirModalFoto('${img}')">
                             <img src="${img}" style="max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply;">
+                            <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border-radius: 4px; padding: 4px; display: flex; align-items: center; justify-content: center;">
+                                <i data-lucide="zoom-in" size="14"></i>
+                            </div>
                         </div>
-                        <div style="padding: 12px; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center;">
-                            <label class="form-label">Nome do Produto</label>
-                            <input type="text" id="bal-nome-${p.codigo}" value="${p.nome}" class="form-input" style="padding: 8px; font-weight: 700; font-size: 13px;">
+                        <div style="padding: 15px; flex-grow: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center;">
+                            <label class="form-label" style="font-size: 11px;">Nome do Produto</label>
+                            <input type="text" id="bal-nome-${p.codigo}" value="${p.nome || ''}" class="form-input" style="padding: 10px; font-weight: 800; font-size: 15px;">
                         </div>
                     </div>
 
                     <div style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
                         
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                             <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <label class="form-label">SKU</label>
-                                <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="padding: 8px;">
+                                <label class="form-label" style="font-size: 11px;">SKU</label>
+                                <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="padding: 10px; font-size: 14px;">
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <label class="form-label">EAN</label>
-                                <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="padding: 8px;">
+                                <label class="form-label" style="font-size: 11px;">EAN</label>
+                                <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="padding: 10px; font-size: 14px;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <label class="form-label" style="font-size: 11px;">Gôndola</label>
+                                <input type="text" id="bal-gon-${p.codigo}" value="${p.gondola||''}" placeholder="Ex: A" class="form-input" style="padding: 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <label class="form-label" style="font-size: 11px;">Prateleira</label>
+                                <input type="text" id="bal-pra-${p.codigo}" value="${p.prateleira||''}" placeholder="Ex: 01" class="form-input" style="padding: 10px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 4px; grid-column: span 2;">
-                                <label class="form-label">Validade</label>
-                                <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding: 8px;">
+                                <label class="form-label" style="font-size: 11px;">Validade</label>
+                                <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding: 10px; font-size: 14px;">
                             </div>
                         </div>
 
-                        <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
-                            <label class="form-label" style="color: var(--sep-primary); font-size: 11px;">ESTOQUE REAL CONTADO</label>
-                            <input type="number" id="bal-est-${p.codigo}" value="${p.estoque||0}" class="form-input" style="padding: 10px; font-weight: 900; font-size: 22px; text-align: center; width: 100%; max-width: 250px; color: var(--sep-primary); border: 2px solid var(--sep-primary); background: #ffffff;">
+                        <div style="background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                            <label class="form-label" style="color: var(--sep-primary); font-size: 13px; font-weight: 900;">ESTOQUE REAL CONTADO</label>
+                            <input type="number" id="bal-est-${p.codigo}" value="${p.estoque||0}" class="form-input" style="padding: 15px; font-weight: 900; font-size: 28px; text-align: center; width: 100%; max-width: 250px; color: var(--sep-primary); border: 2px solid var(--sep-primary); background: #ffffff;">
                         </div>
 
                         <div style="display: flex; gap: 10px;">
-                            <button class="nav-btn primary" style="flex: 1; justify-content: center; height: 44px;" onclick="salvarBalanco('${p.codigo}', false, this)">
-                                <i data-lucide="save" size="14"></i> FILA
+                            <button class="nav-btn primary" style="flex: 1; justify-content: center; height: 48px; font-size: 13px;" onclick="salvarBalanco('${p.codigo}', false, this)">
+                                <i data-lucide="save" size="16"></i> FILA
                             </button>
-                            <button class="nav-btn success-btn" style="flex: 1; justify-content: center; height: 44px;" onclick="salvarBalanco('${p.codigo}', true, this)">
-                                <i data-lucide="cloud-upload" size="14"></i> ENVIAR
+                            <button class="nav-btn success-btn" style="flex: 1; justify-content: center; height: 48px; font-size: 13px;" onclick="salvarBalanco('${p.codigo}', true, this)">
+                                <i data-lucide="cloud-upload" size="16"></i> ENVIAR
                             </button>
                         </div>
                     </div>
@@ -825,6 +843,8 @@
             let newNome = document.getElementById(`bal-nome-${oldSku}`).value;
             let newSku = document.getElementById(`bal-sku-${oldSku}`).value.trim().toUpperCase();
             let newEan = document.getElementById(`bal-ean-${oldSku}`).value.trim();
+            let newGon = document.getElementById(`bal-gon-${oldSku}`).value.trim().toUpperCase();
+            let newPra = document.getElementById(`bal-pra-${oldSku}`).value.trim().toUpperCase();
             let newVal = document.getElementById(`bal-val-${oldSku}`).value;
             let newEst = parseFloat(document.getElementById(`bal-est-${oldSku}`).value) || 0;
 
@@ -837,6 +857,9 @@
             p.codigo = newSku;
             p['Código'] = newSku;
             p.gtin = newEan;
+            p.gondola = newGon;
+            p.prateleira = newPra;
+            p.localizacao = (newGon || newPra) ? `${newGon}-${newPra}` : "SEM LOC";
             p.validade = newVal;
             p.estoque = newEst;
             p.last_update = Date.now();
@@ -847,6 +870,8 @@
                 document.getElementById(`bal-nome-${oldSku}`).id = `bal-nome-${newSku}`;
                 document.getElementById(`bal-sku-${oldSku}`).id = `bal-sku-${newSku}`;
                 document.getElementById(`bal-ean-${oldSku}`).id = `bal-ean-${newSku}`;
+                document.getElementById(`bal-gon-${oldSku}`).id = `bal-gon-${newSku}`;
+                document.getElementById(`bal-pra-${oldSku}`).id = `bal-pra-${newSku}`;
                 document.getElementById(`bal-val-${oldSku}`).id = `bal-val-${newSku}`;
                 document.getElementById(`bal-est-${oldSku}`).id = `bal-est-${newSku}`;
             }
@@ -854,12 +879,14 @@
             if (forceSync) {
                 mostrarAlerta("Enviando diretamente...", "aviso");
                 uploadBancodedados(btnElement); 
+                uploadProdutosJson(document.createElement('button')); 
                 balancoEditsCount = 0;
             } else {
                 balancoEditsCount++;
                 if (balancoEditsCount >= 5) {
                     mostrarAlerta("Lote atingido. Enviando automaticamente...", "aviso");
                     uploadBancodedados(btnElement); 
+                    uploadProdutosJson(document.createElement('button')); 
                     balancoEditsCount = 0;
                 } else {
                     mostrarAlerta(`Salvo localmente! (Fila: ${balancoEditsCount}/5)`, "sucesso");
@@ -873,10 +900,9 @@
         // ==========================================================
 
         async function gerarPedidoWhatsapp() {
-            // Lê do novo campo se estiver preenchido, se não lê do antigo na sidebar
             const textAreaPrincipal = document.getElementById('textoPedidoWhatsappGeral');
             const textAreaSidebar = document.getElementById('textoPedidoWhatsapp');
-            const texto = textAreaPrincipal.value || textAreaSidebar.value;
+            const texto = textAreaPrincipal ? textAreaPrincipal.value : (textAreaSidebar ? textAreaSidebar.value : "");
             
             if (!texto) { alert("Por favor, cole o texto do pedido primeiro!"); return; }
 
@@ -892,37 +918,40 @@
                 } else if (textoLinha.includes('*ENTREGA:*')) { novoPedido.entrega = textoLinha.replace('*ENTREGA:*', '').trim();
                 } else if (textoLinha.includes('*TOTAL:')) { const match = textoLinha.match(/R\$\s?([\d.,]+)/); if (match) novoPedido.valorTotal = match[1];
                 } else if (textoLinha.includes('*ITENS:*')) { lendoItens = true;
-                } else if (lendoItens && textoLinha.match(/^\d+x/)) {
-                    const partes = textoLinha.split('x '); 
-                    const qtd = parseInt(partes[0].trim());
-                    const nomeProduto = partes.slice(1).join('x ').trim();
-                    let nomeZapLimpo = limparTexto(nomeProduto);
-                    
-                    let produtoEncontrado = products.find(p => { let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || ""); return nomeBancoLimpo === nomeZapLimpo; });
-                    if (!produtoEncontrado) {
-                        produtoEncontrado = products.find(p => {
-                            let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || "");
-                            if (nomeZapLimpo.length > 5 && nomeBancoLimpo.length > 5) { return nomeBancoLimpo.includes(nomeZapLimpo) || nomeZapLimpo.includes(nomeBancoLimpo); }
-                            return false;
+                
+                // NOVO LEITOR: Entende "11x", "11X", "11 x", "11xOleo" (Aceita maiúsculas e falta de espaços)
+                } else if (lendoItens && textoLinha.match(/^\d+\s*[xX]/)) {
+                    const matchItem = textoLinha.match(/^(\d+)\s*[xX]\s*(.+)$/);
+                    if (matchItem) {
+                        const qtd = parseInt(matchItem[1]);
+                        const nomeProduto = matchItem[2].trim();
+                        let nomeZapLimpo = limparTexto(nomeProduto);
+                        
+                        let produtoEncontrado = products.find(p => { let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || ""); return nomeBancoLimpo === nomeZapLimpo; });
+                        if (!produtoEncontrado) {
+                            produtoEncontrado = products.find(p => {
+                                let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || "");
+                                if (nomeZapLimpo.length > 5 && nomeBancoLimpo.length > 5) { return nomeBancoLimpo.includes(nomeZapLimpo) || nomeZapLimpo.includes(nomeBancoLimpo); }
+                                return false;
+                            });
+                        }
+                        
+                        novoPedido.itens.push({ 
+                            qtd: qtd, 
+                            nomeOriginal: nomeProduto,
+                            sku: produtoEncontrado ? produtoEncontrado.codigo : "---",           
+                            imagem: produtoEncontrado ? (produtoEncontrado.url_imagem || "") : ""      
                         });
                     }
-                    
-                    novoPedido.itens.push({ 
-                        qtd: qtd, 
-                        nomeOriginal: nomeProduto,
-                        sku: produtoEncontrado ? produtoEncontrado.codigo : "---",           
-                        imagem: produtoEncontrado ? (produtoEncontrado.url_imagem || "") : ""      
-                    });
                 } else if (textoLinha === '' || textoLinha.includes('------')) { lendoItens = false; }
             });
 
             filaDePedidos.push(novoPedido); 
-            textAreaPrincipal.value = "";
-            textAreaSidebar.value = "";
+            if(textAreaPrincipal) textAreaPrincipal.value = "";
+            if(textAreaSidebar) textAreaSidebar.value = "";
             
-            // Atualiza ambas as UIs
             renderizarCartoes(); 
-            renderizarPedidosScreen();
+            if(typeof renderizarPedidosScreen === "function") renderizarPedidosScreen();
 
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
             enqueueGitHubTask('Gravar Pedido Novo', async () => {
@@ -930,7 +959,7 @@
                 if (!filaRemota.find(p => p.id === novoPedido.id)) { filaRemota.push(novoPedido); }
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); 
-                renderizarCartoes(); renderizarPedidosScreen();
+                renderizarCartoes(); if(typeof renderizarPedidosScreen === "function") renderizarPedidosScreen();
             }, btn);
         }
 
@@ -945,7 +974,6 @@
                 return;
             }
 
-            // Ordena para que os pendentes fiquem no topo
             let filaOrdenada = [...filaDePedidos].sort((a,b) => (a.status === "PENDENTE" ? -1 : 1));
 
             filaOrdenada.forEach(pedido => {
@@ -1011,18 +1039,17 @@
         async function apagarPedido(pedidoId) {
             if(!confirm("Tem certeza que deseja apagar este pedido da fila?")) return;
             filaDePedidos = filaDePedidos.filter(p => p.id !== pedidoId); 
-            renderizarCartoes(); renderizarPedidosScreen();
+            renderizarCartoes(); if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
             const btn = document.getElementById('btnSyncFila') || document.createElement('button');
             enqueueGitHubTask('Apagar Pedido', async () => {
                 let filaRemota = await getFilaRemota();
                 filaRemota = filaRemota.filter(p => p.id !== pedidoId);
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
                 filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos); 
-                renderizarCartoes(); renderizarPedidosScreen();
+                renderizarCartoes(); if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
             }, btn);
         }
 
-        // Função de Baixa Automática Segura
         function processarBaixaEstoqueLocal(itensVendidosMap) {
             let mudouAlgo = false;
             for (const [idVendido, qtdVendida] of Object.entries(itensVendidosMap)) {
@@ -1034,6 +1061,44 @@
                 if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgo = true; }
             }
             return mudouAlgo;
+        }
+
+        // BAIXA GERAL DO ESTOQUE
+        async function darBaixaEstoqueMaster() {
+            if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) { return alert("Não há pedidos PENDENTES na fila."); }
+            if(!confirm("Atenção: Isto vai dar baixa em TODOS os pedidos pendentes sem separar. Continuar?")) return;
+            const btn = document.getElementById('btnSyncFila') || document.createElement('button');
+            enqueueGitHubTask('Baixa Geral e Limpar', async () => {
+                let filaRemota = await getFilaRemota();
+                let pendentes = filaRemota.filter(p => p.status === "PENDENTE");
+                if(pendentes.length === 0) throw new Error("A nuvem não tem pedidos PENDENTES.");
+
+                let itensVendidos = {}; let countBaixas = 0;
+                filaRemota.forEach(pedido => {
+                    if (pedido.status === "PENDENTE") {
+                        let listaItens = pedido.items || pedido.itens; 
+                        if (listaItens) {
+                            listaItens.forEach(item => { const skuOrNome = item.sku && item.sku !== "---" ? item.sku : item.nomeOriginal; itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + item.qtd; });
+                        }
+                        pedido.status = "CONCLUIDO"; countBaixas++;
+                    }
+                });
+
+                if(countBaixas === 0) throw new Error("Nenhum item processado.");
+                let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
+
+                filaRemota = filaRemota.filter(p => p.status !== "CONCLUIDO");
+                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
+                filaDePedidos = filaRemota; await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
+                
+                if(mudouAlgoLocalmente) { 
+                    await saveDataLocally(); 
+                    renderGrid(document.getElementById('search-input').value); 
+                    uploadBancodedados(document.getElementById('btnSyncBD') || document.createElement('button')); 
+                    uploadProdutosJson(document.createElement('button')); 
+                }
+                renderizarCartoes(); alert("Sucesso! Baixa geral no estoque efetuada.");
+            }, btn);
         }
 
         // ==========================================================
@@ -1056,13 +1121,8 @@
             } catch(e){} 
         }
 
-        function abrirFotoTelaCheia() {
-            let imgSrc = document.getElementById('foco-img').src;
-            if(imgSrc && !imgSrc.includes("Sem%20Foto") && imgSrc !== 'caminho_invalido') {
-                document.getElementById('img-full').src = imgSrc;
-                document.getElementById('modal-foto-full').classList.remove('hidden');
-            }
-        }
+        // Função de ampliação de imagem vinculada à imagem principal do modo separador
+        function abrirFotoTelaCheia() { abrirModalFoto(document.getElementById('foco-img').src); }
         function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
 
         function abrirSeparador(pedidoId) {
@@ -1231,7 +1291,6 @@
                 let filaRemota = await getFilaRemota();
                 let pedidoRemotoIndex = filaRemota.findIndex(p => p.id === pedidoAtualParaSeparacao.id);
                 
-                // Atualiza o status para SEPARADO (Não apaga mais da lista)
                 if(pedidoRemotoIndex !== -1) {
                     filaRemota[pedidoRemotoIndex].status = "SEPARADO";
                 }
@@ -1256,7 +1315,7 @@
                 }
 
                 renderizarCartoes();
-                renderizarPedidosScreen();
+                if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
                 fecharSeparador();
                 mostrarAlerta(`✅ Pedido ${pedidoAtualParaSeparacao.orderNum} concluído e estoque reduzido com sucesso!`);
             }, btnSyncFila);
@@ -1276,7 +1335,6 @@
                 let pedido = filaRemota[pedidoIndex];
                 let mudouAlgoLocalmente = false;
 
-                // Devolve os itens ao estoque local
                 if (pedido.itens) {
                     pedido.itens.forEach(item => {
                         let skuRecebido = item.sku || "---";
@@ -1293,7 +1351,6 @@
                     });
                 }
 
-                // Remove o pedido estornado da fila visual e do json para limpeza 
                 filaRemota = filaRemota.filter(p => p.id !== pedidoId);
 
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Estorno do Pedido ${pedido.orderNum}`);
@@ -1307,13 +1364,13 @@
                 }
 
                 renderizarCartoes();
-                renderizarPedidosScreen();
+                if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
                 alert(`🔄 Estorno concluído. Estoque devolvido!`);
             }, btn);
         }
 
         // ==========================================================
-        // PIM CORE (UI & EVENTOS GERAIS)
+        // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS GERAIS)
         // ==========================================================
         
         let isFilter24hActive = false;
@@ -1329,7 +1386,7 @@
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
             try { const savedPedidos = await localforage.getItem(PEDIDOS_KEY); if(savedPedidos && Array.isArray(savedPedidos)) filaDePedidos = savedPedidos; } catch (err) {}
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
-            renderGrid(); renderizarCartoes(); renderizarPedidosScreen();
+            renderGrid(); renderizarCartoes(); if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
         }
         
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
@@ -1354,6 +1411,14 @@
                 card.innerHTML = `<div class="card-img-wrapper">${htmlTag}<img src="${imgUrl}" class="card-img" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'"></div><div class="card-info"><div class="card-title">${p.nome || 'Produto Sem Nome'}</div><button class="card-btn">EDITAR</button></div>`;
                 gridContainer.appendChild(card);
             }); lucide.createIcons();
+        }
+
+        async function updateLocalizacao(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(p) {
+                p.localizacao = (p.gondola || p.prateleira) ? `${p.gondola || ''}-${p.prateleira || ''}` : "SEM LOC";
+                await saveDataLocally();
+            }
         }
 
         function openEditSidebar(sku) {
@@ -1392,6 +1457,10 @@
                     <div class="form-group"><label class="form-label">Descrição (Aceita Formatação/Rich Text)</label><div class="input-wrapper"><div contenteditable="true" class="form-input" placeholder="Cole aqui a descrição..." onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${p.descricao || ''}</div><button class="btn-smart" onclick="searchAIReview('${safeName}')" title="Gerar Review Inteligente (Google IA)"><i data-lucide="brain-circuit" size="16"></i></button></div></div>
                     <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;"><label class="form-label">Tags da Imagem (Independentes)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div>
                 </div>
+                <div class="form-section"><div class="section-title">Logística & Localização</div><div class="form-grid">
+                    <div class="form-group"><label class="form-label">Gôndola / Corredor</label><input type="text" class="form-input" value="${p.gondola || ''}" placeholder="Ex: A" onchange="updateField('${p.codigo}', 'gondola', this.value); updateLocalizacao('${p.codigo}')"></div>
+                    <div class="form-group"><label class="form-label">Prateleira / Nível</label><input type="text" class="form-input" value="${p.prateleira || ''}" placeholder="Ex: 01" onchange="updateField('${p.codigo}', 'prateleira', this.value); updateLocalizacao('${p.codigo}')"></div>
+                </div></div>
                 <div class="form-section"><div class="section-title">Média Rica (Vitrine)</div><div class="image-slots">${htmlImages}</div>
                     <div style="margin-top:15px; border:1px dashed var(--border); padding:12px; border-radius:8px; background:#fafafa; max-height:220px; overflow-y:auto;"><button class="nav-btn" style="width:100%; justify-content:center; color:#dc2626; border-color:#fecaca; background:#fef2f2; margin-bottom:12px;" onclick="searchYoutubeShorts('${safeName}')"><i data-lucide="youtube" size="16"></i> PESQUISAR SHORTS NO YOUTUBE</button>${htmlVideos}</div>
                 </div>
