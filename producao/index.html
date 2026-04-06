@@ -1622,46 +1622,85 @@
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
         // ==========================================================
-        // 1. IMPORTAR CSV: SUBSTITUIR TODA A BASE
+        // 1. IMPORTAR CSV: SUBSTITUIR BASE (PRESERVANDO MÍDIAS)
         // ==========================================================
         document.getElementById('csv-file-substituir').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
             
-            // Pergunta de segurança para evitar que o usuário apague tudo sem querer
-            if(!confirm("⚠️ CUIDADO: Isso vai APAGAR TODOS os produtos atuais do sistema e carregar apenas os do CSV. Deseja continuar?")) {
-                e.target.value = ''; // Limpa a seleção do arquivo
+            if(!confirm("⚠️ ATENÇÃO: Os produtos do CSV vão atualizar os preços e estoques atuais. Produtos que não estiverem no CSV serão apagados, mas IMAGENS e TAGS dos produtos existentes serão mantidas. Deseja continuar?")) {
+                e.target.value = ''; 
                 return;
             }
 
             Papa.parse(e.target.files[0], { 
                 header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: async (results) => {
-                    products = []; // ETAPA CRÍTICA: Esvazia a base de dados atual
+                    
+                    let novaBase = []; // Criamos uma base temporária em vez de apagar a original logo de cara
+                    let atualizados = 0;
+                    let novos = 0;
 
                     results.data.forEach(d => {
+                        const ean = d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '';
                         const fallbackSku = d['Código'] ? d['Código'].trim() : Date.now().toString().slice(-8) + Math.floor(Math.random() * 1000);
                         
-                        // Cria o novo produto do zero
-                        let novoProduto = { 
-                            id: Date.now() + Math.floor(Math.random() * 1000), // ID único
-                            codigo: fallbackSku, 
-                            nome: d['Descrição'] || '', 
-                            preco: parseFloat(d['Preço']?.replace(',','.')) || 0, 
-                            preco_custo: parseFloat(d['Preço de custo']?.replace(',','.')) || 0, 
-                            estoque: parseFloat(d['Estoque']?.replace(',','.')) || 0, 
-                            categoria: d['Categoria do produto'] || '', 
-                            gtin: d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '', 
-                            ncm: d['NCM'] || '', 
-                            validade: d['Data Validade'] || '',
-                            last_update: Date.now() 
-                        };
+                        // 1. Tenta encontrar o produto na base atual (para salvar as fotos e dados ricos)
+                        let produtoExistente = null;
+                        if (ean !== '') {
+                            produtoExistente = products.find(p => p.gtin === ean);
+                        }
+                        if (!produtoExistente && d['Código']) {
+                            produtoExistente = products.find(p => p.codigo === fallbackSku);
+                        }
+
+                        let produtoFinal = {};
+
+                        // 2. Se o produto já existe, copiamos TUDO o que ele tem (imagens, vídeos, tags, descrição rica)
+                        if (produtoExistente) {
+                            produtoFinal = { ...produtoExistente }; // O operador spread (...) copia todas as propriedades
+                            atualizados++;
+                        } else {
+                            // Se não existe, criamos a estrutura base com um ID novo
+                            produtoFinal = { 
+                                id: Date.now() + Math.floor(Math.random() * 1000),
+                                tags: [] // Garante que a matriz de tags existe para novos produtos
+                            };
+                            novos++;
+                        }
+
+                        // 3. Agora, substituímos APENAS os campos que o Bling "manda"
+                        // O que vier do Bling sobrescreve o que estava no produtoFinal
+                        produtoFinal.codigo = fallbackSku;
+                        produtoFinal['Código'] = fallbackSku; // Mantém a compatibilidade com a tua chave com acento
+                        produtoFinal.nome = d['Descrição'] || produtoFinal.nome || '';
+                        produtoFinal.preco = parseFloat(d['Preço']?.replace(',','.')) || 0;
+                        produtoFinal.preco_custo = parseFloat(d['Preço de custo']?.replace(',','.')) || 0;
+                        produtoFinal.estoque = parseFloat(d['Estoque']?.replace(',','.')) || 0;
+                        produtoFinal.categoria = d['Categoria do produto'] || produtoFinal.categoria || '';
+                        produtoFinal.gtin = ean;
+                        produtoFinal.ncm = d['NCM'] || produtoFinal.ncm || '';
+                        produtoFinal.validade = d['Data Validade'] || produtoFinal.validade || '';
                         
-                        products.push(novoProduto); // Adiciona na lista limpa
+                        // Lógica extra de segurança para a situação do produto
+                        if (d['Situação']) {
+                            produtoFinal.situacao = d['Situação'].trim().toUpperCase() === 'INATIVO' ? 'I' : 'A';
+                        } else if (!produtoFinal.situacao) {
+                            produtoFinal.situacao = 'A';
+                        }
+
+                        produtoFinal.last_update = Date.now();
+
+                        // 4. Adiciona à nossa nova base
+                        novaBase.push(produtoFinal);
                     });
+                    
+                    // 5. Agora sim, substituímos a base de dados principal pela nova base tratada
+                    products = novaBase;
                     
                     await saveDataLocally(); // Salva no LocalStorage
                     renderGrid(document.getElementById('search-input').value); // Atualiza a tela
-                    alert("✅ Base de dados substituída com sucesso!"); 
+                    
+                    alert(`✅ Base atualizada com sucesso!\n\n🔄 Produtos atualizados (fotos mantidas): ${atualizados}\n✨ Novos produtos criados: ${novos}`); 
                     closeSidebar('config-sidebar');
                     e.target.value = ''; // Limpa o input
                 }
