@@ -36,13 +36,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .layout-limit { width: 100%; max-width: 1000px; margin: 0 auto; position: relative; } 
 
-#header-wrapper { 
-    position: fixed; top: 0; left: 0; right: 0; z-index: 80; 
-    background: #f8fafc; 
-    box-shadow: 0 1px 4px rgba(0,0,0,0.05); 
-    width: 100%;
-}
-
 .header-row { 
     display: flex; align-items: center; justify-content: space-between; 
     padding: 12px 15px; width: 100%; max-width: 1000px; margin: 0 auto;
@@ -68,7 +61,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .btn-top-help svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2.2; }
 
 .sub-header-bar {
-    display: flex; gap: 10px; padding: 0 15px 12px; width: 100%; max-width: 1000px; margin: 0 auto;
+    display: flex; gap: 10px; padding: 12px 15px; width: 100%; max-width: 1000px; margin: 0 auto;
+    position: sticky; top: 0; z-index: 80; background: #ffffff; border-bottom: 1px solid var(--c-bd);
 }
 
 .sub-btn {
@@ -80,14 +74,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .sub-btn:active { transform: scale(0.98); }
 
 .main-stage { 
-    position: relative; height: 100dvh; padding-top: 140px; padding-bottom: 90px; 
-    overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; 
+    position: relative; height: 100dvh; padding-top: 0; padding-bottom: 90px; 
+    overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: #f8fafc;
 }
 
 .promo-whatsapp-banner {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
-    color: #ffffff; text-decoration: none; padding: 18px 15px; margin: 15px 15px 20px 15px;
+    color: #ffffff; text-decoration: none; padding: 18px 15px; margin: 10px 15px 20px 15px;
     border-radius: 12px; font-weight: 800; font-size: 1.05rem; text-align: center;
     box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3); transition: transform 0.2s; gap: 10px;
 }
@@ -103,28 +97,28 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .promo-whatsapp-banner { max-width: 970px; margin: 15px auto 20px auto; flex-direction: row; justify-content: space-between; padding: 20px 25px;}
 }
 
-/* CARROSSEL DE OFERTAS: Ajustado para 2,5 itens no Mobile (40% de largura) */
+/* CARROSSEL DE OFERTAS RELÂMPAGO */
 .ho-wrapper { position: relative; width: 100%; max-width: 1000px; margin: 0 auto; padding-top: 5px; padding-bottom: 10px; }
-.ho-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 8px; scrollbar-width: none; padding-bottom: 10px; -webkit-overflow-scrolling: touch; padding-left: 15px; padding-right: 15px;}
+.ho-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; scrollbar-width: none; padding-bottom: 10px; -webkit-overflow-scrolling: touch; padding-left: 45px; padding-right: 45px;}
 .ho-carousel::-webkit-scrollbar { display: none; }
-.ho-carousel-item { flex: 0 0 calc(40% - 8px); scroll-snap-align: start; }
+.ho-carousel-item { flex: 0 0 calc(50% - 12px); scroll-snap-align: start; }
 @media(min-width: 800px) {
-    .ho-carousel { gap: 12px; }
-    .ho-carousel-item { flex: 0 0 calc(16.666% - 10px); } /* 6 colunas no desktop */
+    .ho-carousel { gap: 16px; padding-left: 60px; padding-right: 60px;}
+    .ho-carousel-item { flex: 0 0 calc(20% - 16px); } 
 }
-.ho-arrow { position: absolute; top: 60%; transform: translateY(-50%); z-index: 10; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; width: 32px; height: 32px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-size: 1rem; color: var(--c-p); display: flex; align-items: center; justify-content: center; }
-.ho-arrow:active { transform: translateY(-50%) scale(0.95); }
-.ho-arrow.left { left: 5px; }
-.ho-arrow.right { right: 5px; }
+.ho-arrow { position: absolute; top: 55%; transform: translateY(-50%); z-index: 10; background: rgba(255,255,255,0.95); border: 1px solid var(--c-bd); border-radius: 8px; width: 35px; height: 80px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 1.5rem; color: var(--c-p); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); font-weight: bold;}
+.ho-arrow:active { transform: translateY(-50%) scale(0.95); background: #f1f5f9; }
+.ho-arrow.left { left: 0px; }
+.ho-arrow.right { right: 0px; }
 @media (min-width: 800px) {
-    .ho-arrow { width: 40px; height: 40px; }
-    .ho-arrow.left { left: -20px; }
-    .ho-arrow.right { right: -20px; }
+    .ho-arrow { width: 45px; height: 90px; }
+    .ho-arrow.left { left: 0px; }
+    .ho-arrow.right { right: 0px; }
 }
 
 .grid-home-sections { 
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; 
-    padding: 10px 15px 30px; max-width: 1000px; margin: 0 auto; 
+    padding: 20px 15px 30px; max-width: 1000px; margin: 0 auto; 
 }
 @media(min-width: 800px) { 
     .grid-home-sections { grid-template-columns: repeat(5, 1fr); gap: 16px; justify-content: center; } 
@@ -148,10 +142,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .cj-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-2px); }
 .cj-card:active { transform: scale(0.98); }
 .cj-images { display: flex; align-items: center; justify-content: center; gap: 10px; }
-.cj-img-box { width: 45%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; padding: 5px; position: relative; cursor: pointer; transition: 0.2s;}
+.cj-img-box { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; padding: 10px; position: relative; cursor: pointer; transition: 0.2s;}
 .cj-img-box:hover { box-shadow: 0 0 0 1px var(--c-a); }
 .cj-img-box img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-.cj-plus { font-size: 1.5rem; color: var(--c-t); font-weight: bold; }
 
 .floating-cart {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; 
@@ -219,7 +212,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .u-card:active { transform: scale(0.98); }
 .u-card.disabled { opacity: 0.5; pointer-events: none; cursor: default; }
 
-/* FOTOS MENORES: Padding aumentado para afastar a imagem das bordas */
 .u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; }
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 12%; transition: 0.3s;}
 .basket-img-area, .kit-img-area { background: transparent !important; aspect-ratio: 1/1 !important; }
@@ -298,7 +290,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .u-card-minimal:active { transform: scale(0.98); }
 .u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
 
-/* FOTOS MENORES MINIMALISTAS: Padding aumentado para afastar a imagem das bordas */
 .u-img-minimal { 
     width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); 
     border-radius: 20px; display: flex; align-items: center; justify-content: center; 
@@ -365,9 +356,10 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 </style>
 </head>
 <body>
+
+<main class="main-stage" id="scroll-stage">
     
-<div id="header-wrapper">
-    <div class="header-row">
+    <div class="header-row" style="background: #f8fafc; padding: 12px 15px; border-bottom: 1px solid rgba(0,0,0,0.05);">
         <div class="logo-area" onclick="goToHome()">
             <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-top" alt="Logo Dona Antônia">
             <span class="brand-name">Dona Antônia</span>
@@ -379,6 +371,14 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
             </button>
         </div>
     </div>
+
+    <div id="promo-banner-btn" onclick="activateAutoCoupons()" class="promo-whatsapp-banner" style="cursor: pointer;">
+        <div style="font-size: 1.1rem;">🎁 Ganhe até R$ 25 de desconto na sua compra!</div>
+        <button class="btn-ativar-desconto">Ativar Desconto</button>
+    </div>
+
+    <div id="home-super-offers"></div>
+
     <div class="sub-header-bar">
         <button class="sub-btn" onclick="openGlobalSearch()">
             <span class="sub-btn-icon">🔍</span> Encontre Produtos
@@ -387,16 +387,7 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
             <span class="sub-btn-icon">ℹ️</span> Informações
         </button>
     </div>
-</div>
 
-<main class="main-stage" id="scroll-stage">
-    
-    <div id="home-super-offers"></div>
-
-    <div id="promo-banner-btn" onclick="activateAutoCoupons()" class="promo-whatsapp-banner" style="cursor: pointer;">
-        <div style="font-size: 1.1rem;">🎁 Ganhe até R$ 25 de desconto na sua compra!</div>
-        <button class="btn-ativar-desconto">Ativar Desconto</button>
-    </div>
     <div id="grid-home-sections" class="grid-home-sections"></div>
 </main>
 
@@ -488,13 +479,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
                     <div class="custom-dropdown-item" onclick="selectSortOption('menor_preco', 'Menor Preço')">Menor Preço</div>
                     <div class="custom-dropdown-item" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
                 </div>
-            </div>
-            
-            <div class="custom-dropdown" id="dropdown-marcas" style="display:none;">
-                <div class="custom-dropdown-btn" onclick="toggleDropdown('marcas', event)">
-                    <span id="label-marcas">Marca</span> <span>▼</span>
-                </div>
-                <div class="custom-dropdown-list" id="list-marcas"></div>
             </div>
         </div>
     </div>
@@ -753,13 +737,13 @@ const MARCAS_DESTAQUE = [
 
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
-    currentInstaTab: 'maiores_descontos', currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], coupons: [], combos: [], compreJuntoCombos: [],
+    currentInstaTab: 'maiores_descontos', currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], coupons: [], combos: [], compre2Combos: [],
     returnToUpsell: false, autoCouponsActive: false, allVideos: [], currentFilteredList: [], tvCategory: 'all', homeSuperOffers: [],
     
     deptos: {
         'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas', type: 'PROD', data: [] },
         'marcas': { id: 'marcas', title: 'Encontre pela Marca', color: '#3b82f6', type: 'PROD', data: [] },
-        'compre_junto': { id: 'compre_junto', title: 'Compre Junto', color: '#0d9488', type: 'COMPRE_JUNTO', data: [] },
+        'compre_2': { id: 'compre_2', title: 'Compre 2 e Economize', color: '#0d9488', type: 'COMPRE_2', data: [] },
         'cestas': { id: 'cestas', title: 'Cestas Básicas', color: '#10b981', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', color: '#f59e0b', type: 'COMBO', data: [] },
         'alimentos': { id: 'alimentos', title: 'Alimentos', color: '#ea580c', type: 'PROD', data: [], tags: [] },
@@ -821,7 +805,7 @@ function renderHomeCards() {
     const cards = [
         { id: 'cestas', title: 'Cestas Básicas', action: "openDepto('cestas')", icon: '🧺', color: 'rgba(16,185,129,1)' },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: 'rgba(245,158,11,1)' },
-        { id: 'compre_junto', title: 'Compre Junto', action: "openDepto('compre_junto')", icon: '🤝', color: 'rgba(13,148,136,1)' },
+        { id: 'compre_2', title: 'Compre 2 e Economize', action: "openDepto('compre_2')", icon: '✌️', color: 'rgba(13,148,136,1)' },
         { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: 'rgba(236,72,153,1)' },
         { id: 'ofertas_insta', title: 'Ofertas', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', mobileOnly: true },
         { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: 'rgba(59,130,246,1)' },
@@ -1071,11 +1055,12 @@ function applyHomeSuperOffers() {
         [valid[i], valid[j]] = [valid[j], valid[i]];
     }
     
-    let selected = valid.slice(0, 12);
+    let selected = valid.slice(0, 30);
     selected.forEach(p => {
         let clone = { ...p, id: p.id + '_so' };
         clone.oldPrice = p.price * 1.10;
-        clone.price = clone.oldPrice * 0.70;
+        let randomDiscount = Math.floor(Math.random() * 11) + 12; // De 12 a 22
+        clone.price = clone.oldPrice * (1 - (randomDiscount / 100));
         clone.discountApplied = true;
         clone._isHomeSuperOffer = true;
         STATE.homeSuperOffers.push(clone);
@@ -1166,7 +1151,6 @@ async function init() {
        if (r2 && r2.length > 0) {
             const TAXA_AUMENTO_GLOBAL = 1.03;
 
-            // MODIFICAÇÃO: Array.isArray(p.tags) garante a leitura correta das novas tags do JSON
             STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
                 const codigoOuId = p.codigo || p.id;
                 const precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
@@ -1261,46 +1245,35 @@ async function init() {
                 }
             });
             
-            let elegiveisCJ = STATE.prods.filter(p => !p.discountApplied && !p._isBasket && !p._isCombo && p.stock > 0 && p.oldPrice <= 15.00);
+            // NOVO: Compre 2 e Economize (Substitui Compre Junto)
+            let elegiveisC2 = STATE.prods.filter(p => !p.discountApplied && !p._isBasket && !p._isCombo && p.stock >= 2);
+            for (let i = elegiveisC2.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [elegiveisC2[i], elegiveisC2[j]] = [elegiveisC2[j], elegiveisC2[i]];
+            }
             
-            let gruposCJ = {};
-            elegiveisCJ.forEach(p => {
-                let words = String(p.name).split(' ').filter(w => w.trim().length > 0);
-                if(words.length >= 2) {
-                    let key = norm(words[0] + ' ' + words[1]);
-                    if(!gruposCJ[key]) gruposCJ[key] = [];
-                    gruposCJ[key].push(p);
-                }
-            });
-
-            STATE.compreJuntoCombos = [];
-            Object.values(gruposCJ).forEach(grupo => {
-                if(grupo.length >= 2) {
-                    for(let i=0; i<grupo.length-1; i+=2) {
-                        if(grupo[i+1] && STATE.compreJuntoCombos.length < 50) {
-                            let p1 = grupo[i];
-                            let p2 = grupo[i+1];
-                            let precoDe = p1.oldPrice + p2.oldPrice;
-                            let precoPor = precoDe * 0.90;
-                            
-                            let cjId = 'cj_' + p1.id + '_' + p2.id;
-                            let cjCombo = {
-                                id: cjId,
-                                nome: `${String(p1.name).split(' ').slice(0,2).join(' ')}`,
-                                preco: precoPor,
-                                precoOriginal: precoDe,
-                                produtos: [`1x ${p1.id}`, `1x ${p2.id}`],
-                                _isCombo: true,
-                                _isCompreJunto: true,
-                                p1: p1,
-                                p2: p2
-                            };
-                            STATE.compreJuntoCombos.push(cjCombo);
-                            STATE.combos.push(cjCombo); 
-                            STATE.deptos.compre_junto.data.push(cjCombo); 
-                        }
-                    }
-                }
+            STATE.compre2Combos = [];
+            let selecionadosC2 = elegiveisC2.slice(0, 50);
+            
+            selecionadosC2.forEach(p => {
+                let precoBase = p.price * 1.10; // Aumenta 10%
+                let originalDuas = precoBase * 2;
+                let precoDuasDesc = precoBase + (precoBase * 0.60); // A 2ª unidade tem 40% de desconto
+                
+                let c2Id = 'c2_' + p.id;
+                let c2Combo = {
+                    id: c2Id,
+                    nome: `2x ${formatName(p.name)}`,
+                    preco: precoDuasDesc,
+                    precoOriginal: originalDuas,
+                    produtos: [`2x ${p.id}`],
+                    _isCombo: true,
+                    _isCompre2: true,
+                    p1: p
+                };
+                STATE.compre2Combos.push(c2Combo);
+                STATE.combos.push(c2Combo); 
+                STATE.deptos.compre_2.data.push(c2Combo); 
             });
 
             Object.values(STATE.deptos).forEach(d => { 
@@ -1410,7 +1383,6 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     document.getElementById('see-all-footer').style.display = 'none'; 
     
     document.getElementById('normal-filters').style.display = 'none';
-    if (document.getElementById('dropdown-marcas')) document.getElementById('dropdown-marcas').style.display = 'none';
     if (document.getElementById('dropdown-insta')) document.getElementById('dropdown-insta').style.display = 'none';
     if (document.getElementById('dropdown-keyword')) document.getElementById('dropdown-keyword').style.display = 'none';
     if (document.getElementById('dropdown-sort')) document.getElementById('dropdown-sort').style.display = 'none';
@@ -1426,14 +1398,49 @@ window.openDepto = function(deptoId, fromUpsell = false) {
         STATE.currentInstaTab = 'maiores_descontos';
 
     } else if (deptoId === 'marcas') {
-        document.getElementById('normal-filters').style.display = 'flex';
-        document.getElementById('dropdown-marcas').style.display = 'block';
+        document.getElementById('normal-filters').style.display = 'none';
         
-        let marcaHtml = MARCAS_DESTAQUE.map(m => `<div class="custom-dropdown-item" onclick="selectMarcaOption('${m.id}', '${m.nome}')">${m.nome}</div>`).join('');
-        document.getElementById('list-marcas').innerHTML = marcaHtml;
-        document.getElementById('label-marcas').innerText = MARCAS_DESTAQUE[0].nome;
-        STATE.currentMarcaTab = MARCAS_DESTAQUE[0].id; 
-    } else if (d.type === 'PROD') {
+        let itemsHtml = `<div class="upsell-section" style="padding-top: 0;">
+            <h3 class="upsell-header-title" style="padding-left:10px;">Encontre pelas Melhores Marcas 🏷️</h3>`;
+        
+        MARCAS_DESTAQUE.forEach(m => {
+            let brandProds = STATE.prods.filter(p => !p._isHomeSuperOffer && m.palavrasChave.some(kw => (" " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ").includes(" " + norm(kw) + " ")));
+            if(brandProds.length > 0) {
+                brandProds.sort((a,b) => String(a.name).localeCompare(String(b.name)));
+                let top4 = brandProds.slice(0, 4);
+                
+                itemsHtml += `
+                <div style="margin-bottom: 35px;">
+                    <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.1rem; padding-left: 10px;">${m.nome}</div>
+                    <div class="grid-ver-todos">
+                `;
+                
+                top4.forEach(item => {
+                    itemsHtml += buildCardHtml(item, 'PROD');
+                });
+                
+                itemsHtml += `
+                        <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-a); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDeptoSingleMarca('${m.id}')">
+                            <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
+                            <span style="color: var(--c-a); font-weight: 700; text-align:center;">Ver Todos<br><span style="font-size:0.8rem; font-weight:500;">${m.nome}</span></span>
+                        </div>
+                    </div>
+                </div>`;
+            }
+        });
+        
+        itemsHtml += `</div>`;
+        document.getElementById('see-all-grid').innerHTML = itemsHtml;
+        document.getElementById('see-all-controls').style.display = 'none';
+        document.getElementById('cesta-info-banner').innerHTML = '';
+        document.getElementById('see-all-grid').classList.remove('grid-cestas-kits');
+        
+        document.getElementById('see-all-view').classList.add('open');
+        document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
+        if (!history.state || !history.state.lateralOpen) history.pushState({ lateralOpen: true }, '');
+        return;
+
+    } else if (d && d.type === 'PROD') {
         document.getElementById('normal-filters').style.display = 'flex';
         document.getElementById('dropdown-keyword').style.display = 'block';
         document.getElementById('dropdown-sort').style.display = 'block';
@@ -1449,7 +1456,7 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     }
 
     const grid = document.getElementById('see-all-grid');
-    if (d.type === 'BASKET' || d.type === 'COMBO' || d.type === 'COMPRE_JUNTO') { 
+    if (d && (d.type === 'BASKET' || d.type === 'COMBO' || d.type === 'COMPRE_2')) { 
         grid.classList.add('grid-cestas-kits'); 
     } else { 
         grid.classList.remove('grid-cestas-kits'); 
@@ -1464,31 +1471,49 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     if (!history.state || !history.state.lateralOpen) history.pushState({ lateralOpen: true }, '');
 };
 
-function buildCompreJuntoCardHtml(cj) {
-    let economia = cj.precoOriginal - cj.preco;
-    let q = Math.min(STATE.cart[cj.p1.id] || 0, STATE.cart[cj.p2.id] || 0);
+window.openDeptoSingleMarca = function(marcaId) {
+    STATE.currentMarcaTab = marcaId;
+    STATE.activeDeptoId = 'marca_single'; 
+    let marcaAtual = MARCAS_DESTAQUE.find(m => m.id === marcaId);
+    document.getElementById('normal-filters').style.display = 'none'; 
+    
+    let filtered = STATE.prods.filter(p => !p._isHomeSuperOffer && marcaAtual.palavrasChave.some(kw => (" " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ").includes(" " + norm(kw) + " ")));
+    filtered.sort((a,b) => String(a.name).localeCompare(String(b.name)));
+    
+    let html = filtered.map(item => buildCardHtml(item, 'PROD')).join('');
+    
+    document.getElementById('see-all-grid').innerHTML = html;
+    document.getElementById('see-all-grid').classList.remove('grid-cestas-kits');
+    document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
+};
+
+function buildCompre2CardHtml(c2) {
+    let economia = c2.precoOriginal - c2.preco;
+    let qBase = STATE.cart[c2.p1.id] || 0;
+    let qCombos = Math.floor(qBase / 2);
     
     let btnHtml = '';
-    if (cj.p1.stock <= 0 || cj.p2.stock <= 0) {
+    if (c2.p1.stock < 2) {
         btnHtml = `<button class="btn-big-action" disabled style="background:var(--c-bd); color:var(--c-s); width:100%; margin-top: auto;">ESGOTADO</button>`;
-    } else if (q > 0) {
-        btnHtml = `<div class="card-qty-ctrl" onclick="event.stopPropagation()" style="margin-top: auto;"><button onclick="updCompreJunto('${cj.id}',-1)">-</button><span>${q}</span><button onclick="updCompreJunto('${cj.id}',1)">+</button></div>`;
+    } else if (qCombos > 0) {
+        btnHtml = `<div class="card-qty-ctrl" onclick="event.stopPropagation()" style="margin-top: auto;"><button onclick="updCompre2('${c2.id}',-1)">-</button><span>${qCombos} Kits</span><button onclick="updCompre2('${c2.id}',1)">+</button></div>`;
     } else {
-        btnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); updCompreJunto('${cj.id}', 1)" style="margin-top: auto;">Adicionar</button>`;
+        btnHtml = `<button class="card-add-btn-wide" onclick="event.stopPropagation(); updCompre2('${c2.id}', 1)" style="margin-top: auto;">Adicionar (2 un.)</button>`;
     }
 
     return `
     <div class="cj-card">
         <div class="cj-images">
-            <div class="cj-img-box" onclick="event.stopPropagation(); openQuickView('${cj.p1.id}')"><img src="${cj.p1.img}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'"></div>
-            <div class="cj-plus">+</div>
-            <div class="cj-img-box" onclick="event.stopPropagation(); openQuickView('${cj.p2.id}')"><img src="${cj.p2.img}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'"></div>
+            <div class="cj-img-box" onclick="event.stopPropagation(); openQuickView('${c2.p1.id}')" style="width: 100%;">
+                <div style="position:absolute; top:-5px; left:-5px; background:var(--c-a); color:#fff; font-size:0.9rem; font-weight:bold; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; z-index:2; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">2x</div>
+                <img src="${c2.p1.img}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">
+            </div>
         </div>
-        <div style="font-size: 0.9rem; font-weight: 600; text-align: center; color: var(--c-p); line-height: 1.2;">${cj.nome}</div>
+        <div style="font-size: 0.95rem; font-weight: 600; text-align: center; color: var(--c-p); line-height: 1.2;">${c2.nome}</div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
             <div style="display: flex; flex-direction: column;">
-                <span style="text-decoration: line-through; color: var(--c-t); font-size: 0.8rem;">De: ${fmt(cj.precoOriginal)}</span>
-                <span style="font-weight: 700; color: var(--c-p); font-size: 1.1rem;">Por: ${fmt(cj.preco)}</span>
+                <span style="text-decoration: line-through; color: var(--c-t); font-size: 0.8rem;">De: ${fmt(c2.precoOriginal)}</span>
+                <span style="font-weight: 700; color: var(--c-p); font-size: 1.1rem;">Por: ${fmt(c2.preco)}</span>
             </div>
             <div style="background: var(--c-ok); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Economize ${fmt(economia)}</div>
         </div>
@@ -1498,7 +1523,7 @@ function buildCompreJuntoCardHtml(cj) {
 }
 
 window.applyDeptoFilters = function(preventScroll = false) {
-    if(!STATE.activeDeptoId) return;
+    if(!STATE.activeDeptoId || STATE.activeDeptoId === 'marca_single' || STATE.activeDeptoId === 'marcas') return;
     let query = norm(document.getElementById('depto-search').value);
     let filtered = [];
     
@@ -1507,15 +1532,6 @@ window.applyDeptoFilters = function(preventScroll = false) {
             filtered = STATE.prods.filter(p => p.oldPrice && p.oldPrice > p.price && p.stock > 0 && !p._isHomeSuperOffer);
         } else {
             filtered = STATE.prods.filter(p => p.campanhasInsta && p.campanhasInsta.includes(STATE.currentInstaTab) && !p._isHomeSuperOffer);
-        }
-    } else if (STATE.activeDeptoId === 'marcas') {
-        let marcaAtual = MARCAS_DESTAQUE.find(m => m.id === STATE.currentMarcaTab);
-        if (marcaAtual) {
-            filtered = STATE.prods.filter(p => {
-                if(p._isHomeSuperOffer) return false;
-                let nomeParaBusca = " " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ";
-                return marcaAtual.palavrasChave.some(kw => nomeParaBusca.includes(" " + norm(kw) + " "));
-            });
         }
     } else {
         let depto = STATE.deptos[STATE.activeDeptoId];
@@ -1527,7 +1543,7 @@ window.applyDeptoFilters = function(preventScroll = false) {
     
     if(query) filtered = filtered.filter(p => norm(p.name || p.nome).includes(query));
 
-    if (STATE.activeDeptoId !== 'compre_junto' && STATE.activeDeptoId !== 'cestas' && STATE.activeDeptoId !== 'combos') {
+    if (STATE.activeDeptoId !== 'compre_2' && STATE.activeDeptoId !== 'cestas' && STATE.activeDeptoId !== 'combos') {
         
         let topExpiring = filtered.filter(p => p.isExpiringSoon);
         let normalProds = filtered.filter(p => !p.isExpiringSoon);
@@ -1553,8 +1569,8 @@ window.applyDeptoFilters = function(preventScroll = false) {
     if(filtered.length === 0) { 
         html = '<p style="grid-column: 1/-1; text-align:center; padding: 40px 15px; color: var(--c-s); font-weight: 500;">Nenhum produto encontrado.</p>'; 
     } else { 
-        if (STATE.activeDeptoId === 'compre_junto') {
-            html = filtered.map(cj => buildCompreJuntoCardHtml(cj)).join('');
+        if (STATE.activeDeptoId === 'compre_2') {
+            html = filtered.map(c2 => buildCompre2CardHtml(c2)).join('');
         } else {
             html = filtered.map(item => buildCardHtml(item, STATE.deptos[STATE.activeDeptoId].type)).join(''); 
         }
@@ -1566,8 +1582,13 @@ window.applyDeptoFilters = function(preventScroll = false) {
 
 window.handleLateralBack = function() {
     if (STATE.viewStack === 'KIT_DETAIL') { 
-        if(STATE.activeDeptoId) openDepto(STATE.activeDeptoId); else closeSeeAll();
+        if(STATE.activeDeptoId && STATE.activeDeptoId !== 'marca_single') openDepto(STATE.activeDeptoId); 
+        else if(STATE.activeDeptoId === 'marca_single') openDepto('marcas'); 
+        else closeSeeAll();
     } 
+    else if (STATE.activeDeptoId === 'marca_single') {
+        openDepto('marcas');
+    }
     else if (STATE.viewStack === 'DEPTO_LIST' && STATE.returnToUpsell) {
         openUpsellView();
     }
@@ -1857,7 +1878,6 @@ window.openUpsellView = function() {
     `;
 };
 
-// MODIFICAÇÃO: Lógica para renderizar Múltiplas Tags do JSON
 function buildCardHtml(item, type) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
@@ -1928,7 +1948,6 @@ function buildCardHtml(item, type) {
         addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
     }
 
-    // Lógica para empilhar as tags recebidas via array
     let customTagHtml = '';
     if (item.tagsList && item.tagsList.length > 0) {
         let tagsContent = item.tagsList.map(t => 
@@ -2092,30 +2111,28 @@ window.closeQuickView = function(isFromBrowser = false) {
     }, 300);
 };
 
-window.updCompreJunto = function(cjId, delta) {
-    let cj = STATE.compreJuntoCombos.find(x => x.id === cjId);
-    if (!cj) return;
+window.updCompre2 = function(c2Id, delta) {
+    let c2 = STATE.compre2Combos.find(x => x.id === c2Id);
+    if (!c2) return;
     
     if (delta > 0) {
-        let curP1 = STATE.cart[cj.p1.id] || 0;
-        let curP2 = STATE.cart[cj.p2.id] || 0;
-        if (curP1 + delta > cj.p1.stock || curP2 + delta > cj.p2.stock) {
+        let curBase = STATE.cart[c2.p1.id] || 0;
+        if (curBase + 2 > c2.p1.stock) {
             return showToast("Estoque insuficiente", "r");
         }
     }
     
-    upd(cj.p1.id, delta, true);
-    upd(cj.p2.id, delta, true);
+    upd(c2.p1.id, delta * 2, true);
     
-    let existing = STATE.appliedCombos.find(ac => ac.id === cjId);
+    let existing = STATE.appliedCombos.find(ac => ac.id === c2Id);
     if (delta > 0) {
         if (existing) existing.qty += delta;
-        else STATE.appliedCombos.push({ id: cjId, qty: delta, name: cj.nome });
+        else STATE.appliedCombos.push({ id: c2Id, qty: delta, name: c2.nome });
     } else {
         if (existing) {
             existing.qty += delta;
             if (existing.qty <= 0) {
-                STATE.appliedCombos = STATE.appliedCombos.filter(ac => ac.id !== cjId);
+                STATE.appliedCombos = STATE.appliedCombos.filter(ac => ac.id !== c2Id);
             }
         }
     }
@@ -2371,7 +2388,7 @@ function renderCheckoutItems() {
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between;"><span>Produtos:</span><span style="color:var(--c-p); font-weight:600;">${fmt(subtotal)}</span></div>` + 
         (STATE.atacadoDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Desconto Atacado (3+ un):</span><span>-${fmt(STATE.atacadoDiscount)}</span></div>` : '') +
-        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Kit Promo:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
+        (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Kit Promo / Compre 2:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
         (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '') +
         (cupomDesconto > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Cupom:</span><span>-${fmt(cupomDesconto)}</span></div>` : '');
         
