@@ -99,19 +99,20 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 /* CARROSSEL DE OFERTAS RELÂMPAGO */
 .ho-wrapper { position: relative; width: 100%; max-width: 1000px; margin: 0 auto; padding-top: 5px; padding-bottom: 10px; }
-.ho-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; scrollbar-width: none; padding-bottom: 10px; -webkit-overflow-scrolling: touch; padding-left: 45px; padding-right: 45px;}
+.ho-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; scrollbar-width: none; padding-bottom: 10px; -webkit-overflow-scrolling: touch; padding-left: 15px; padding-right: 15px;}
 .ho-carousel::-webkit-scrollbar { display: none; }
-.ho-carousel-item { flex: 0 0 calc(50% - 12px); scroll-snap-align: start; }
+.ho-carousel-item { flex: 0 0 calc(65% - 12px); scroll-snap-align: start; }
 @media(min-width: 800px) {
     .ho-carousel { gap: 16px; padding-left: 60px; padding-right: 60px;}
     .ho-carousel-item { flex: 0 0 calc(20% - 16px); } 
 }
-.ho-arrow { position: absolute; top: 55%; transform: translateY(-50%); z-index: 10; background: rgba(255,255,255,0.95); border: 1px solid var(--c-bd); border-radius: 8px; width: 35px; height: 80px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 1.5rem; color: var(--c-p); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); font-weight: bold;}
+/* Setas ocultas por padrão (Mobile) */
+.ho-arrow { display: none; position: absolute; top: 55%; transform: translateY(-50%); z-index: 10; background: rgba(255,255,255,0.95); border: 1px solid var(--c-bd); border-radius: 8px; width: 35px; height: 80px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 1.5rem; color: var(--c-p); align-items: center; justify-content: center; backdrop-filter: blur(4px); font-weight: bold;}
 .ho-arrow:active { transform: translateY(-50%) scale(0.95); background: #f1f5f9; }
-.ho-arrow.left { left: 0px; }
-.ho-arrow.right { right: 0px; }
+
 @media (min-width: 800px) {
-    .ho-arrow { width: 45px; height: 90px; }
+    /* Setas voltam a aparecer apenas no Desktop */
+    .ho-arrow { display: flex; width: 45px; height: 90px; }
     .ho-arrow.left { left: 0px; }
     .ho-arrow.right { right: 0px; }
 }
@@ -1059,7 +1060,7 @@ function applyHomeSuperOffers() {
     selected.forEach(p => {
         let clone = { ...p, id: p.id + '_so' };
         clone.oldPrice = p.price * 1.10;
-        let randomDiscount = Math.floor(Math.random() * 11) + 12; // De 12 a 22
+        let randomDiscount = Math.floor(Math.random() * 13) + 14; // De 12 a 22
         clone.price = clone.oldPrice * (1 - (randomDiscount / 100));
         clone.discountApplied = true;
         clone._isHomeSuperOffer = true;
@@ -1258,7 +1259,7 @@ async function init() {
             selecionadosC2.forEach(p => {
                 let precoBase = p.price * 1.10; // Aumenta 10%
                 let originalDuas = precoBase * 2;
-                let precoDuasDesc = precoBase + (precoBase * 0.60); // A 2ª unidade tem 40% de desconto
+                let precoDuasDesc = precoBase + (precoBase * 0.50); // A 2ª unidade tem 40% de desconto
                 
                 let c2Id = 'c2_' + p.id;
                 let c2Combo = {
