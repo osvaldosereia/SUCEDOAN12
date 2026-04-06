@@ -455,6 +455,13 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     <div id="home-super-offers"></div>
 
     <div id="grid-home-sections" class="grid-home-sections"></div>
+    
+    <div id="home-destaques-section" style="max-width: 1000px; margin: 0 auto; padding: 10px 15px 40px; display: none;">
+        <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.2rem; color: var(--c-p);">🔥 Destaques de Hoje</div>
+        <div class="grid-ver-todos" id="home-destaques-grid"></div>
+        <div id="home-destaques-sentinel" style="height: 20px; width: 100%;"></div>
+    </div>
+
 </main>
 
 <div id="floating-cart" class="floating-cart" onclick="openCheckout()" style="display: none;">
@@ -812,7 +819,7 @@ const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
     currentInstaTab: 'maiores_descontos', currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], coupons: [], combos: [], compreJuntoCombos: [],
     returnToUpsell: false, autoCouponsActive: false, allVideos: [], currentFilteredList: [], tvCategory: 'all', homeSuperOffers: [],
-    
+    homeDestaquesLoaded: 0, homeDestaquesTotal: [],
     deptos: {
         'ofertas_insta': { id: 'ofertas_insta', title: 'Ofertas', type: 'PROD', data: [] },
         'marcas': { id: 'marcas', title: 'Encontre pela Marca', color: '#3b82f6', type: 'PROD', data: [] },
@@ -927,6 +934,43 @@ function compileVideos() {
         [list[i], list[j]] = [list[j], list[i]];
     }
     STATE.allVideos = list;
+}
+
+// NOVA FUNÇÃO: Iniciar a sessão "Destaques de Hoje" com Lazy Loading
+function initHomeDestaques() {
+    let items = [...STATE.deptos['ofertas_insta'].data];
+    // Ordenar pelo maior desconto
+    items.sort((a,b) => ((b.oldPrice-b.price)/b.oldPrice) - ((a.oldPrice-a.price)/a.oldPrice));
+    
+    STATE.homeDestaquesTotal = items;
+    STATE.homeDestaquesLoaded = 0;
+    
+    if (items.length > 0) {
+        document.getElementById('home-destaques-section').style.display = 'block';
+        
+        // Criar o observador para Infinite Scroll
+        let sentinel = document.getElementById('home-destaques-sentinel');
+        let observer = new IntersectionObserver((entries) => {
+            if(entries[0].isIntersecting) {
+                loadMoreHomeDestaques();
+            }
+        }, { root: document.getElementById('scroll-stage'), rootMargin: '0px 0px 300px 0px' });
+        observer.observe(sentinel);
+        
+        // Carregar a primeira remessa de 10 produtos imediatamente
+        loadMoreHomeDestaques();
+    }
+}
+
+// NOVA FUNÇÃO: Carregar mais 10 produtos nos Destaques
+function loadMoreHomeDestaques() {
+    if(!STATE.homeDestaquesTotal || STATE.homeDestaquesLoaded >= STATE.homeDestaquesTotal.length) return;
+    
+    let nextBatch = STATE.homeDestaquesTotal.slice(STATE.homeDestaquesLoaded, STATE.homeDestaquesLoaded + 10);
+    let html = nextBatch.map(item => buildCardHtml(item, 'PROD')).join('');
+    
+    document.getElementById('home-destaques-grid').insertAdjacentHTML('beforeend', html);
+    STATE.homeDestaquesLoaded += 10;
 }
 
 let feedScrollTimeout;
@@ -1381,6 +1425,7 @@ async function init() {
             $('home-super-offers').innerHTML = renderHomeSuperOffers();
 
             compileVideos();
+            initHomeDestaques(); // Inicializa os "Destaques de Hoje"
         }
         
         STATE.dataLoaded = true;
@@ -1916,7 +1961,6 @@ window.openUpsellView = function() {
     `;
 };
 
-// MODIFICAÇÃO: Lógica para renderizar Múltiplas Tags do JSON
 function buildCardHtml(item, type) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
@@ -1987,7 +2031,6 @@ function buildCardHtml(item, type) {
         addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
     }
 
-    // Lógica para empilhar as tags recebidas via array
     let customTagHtml = '';
     if (item.tagsList && item.tagsList.length > 0) {
         let tagsContent = item.tagsList.map(t => 
@@ -2494,13 +2537,35 @@ function selectPayment(metodo, elemento) { document.getElementById('chk-pagament
 async function sendOrder() {
     const btnSubmit = $('btn-send-order'); if (btnSubmit.disabled) return;
     
-    const inpNome = document.getElementById('chk-nome'); const inpCpf = document.getElementById('chk-cpf'); const inpPagamento = document.getElementById('chk-pagamento'); const divPagamento = document.getElementById('payment-options');
-    const nomeCliente = inpNome.value.trim(); const cpfCliente = inpCpf.value.trim(); const formaPagamento = inpPagamento.value;
+    const inpNome = document.getElementById('chk-nome'); 
+    const inpCpf = document.getElementById('chk-cpf'); 
+    const inpPagamento = document.getElementById('chk-pagamento'); 
+    const divPagamento = document.getElementById('payment-options');
+    
+    const nomeCliente = inpNome.value.trim(); 
+    const cpfCliente = inpCpf.value.trim(); 
+    const formaPagamento = inpPagamento.value;
 
-    inpNome.classList.remove('input-error'); inpCpf.classList.remove('input-error'); divPagamento.classList.remove('input-error');
-    if (!nomeCliente) { inpNome.classList.add('input-error'); return showToast("Preencha seu nome.", "r"); }
-    if (!cpfCliente) { inpCpf.classList.add('input-error'); return showToast("Preencha seu CPF.", "r"); }
-    if (!formaPagamento) { divPagamento.classList.add('input-error'); return showToast("Escolha o pagamento.", "r"); }
+    inpNome.classList.remove('input-error'); 
+    inpCpf.classList.remove('input-error'); 
+    divPagamento.classList.remove('input-error');
+    
+    // VALIDAÇÃO E ROLAGEM DE TELA
+    if (!nomeCliente) { 
+        inpNome.classList.add('input-error'); 
+        inpNome.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+        return showToast("Preencha seu nome.", "r"); 
+    }
+    if (!cpfCliente) { 
+        inpCpf.classList.add('input-error'); 
+        inpCpf.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+        return showToast("Preencha seu CPF.", "r"); 
+    }
+    if (!formaPagamento) { 
+        divPagamento.classList.add('input-error'); 
+        divPagamento.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+        return showToast("Escolha o pagamento.", "r"); 
+    }
 
     btnSubmit.disabled = true; btnSubmit.innerHTML = "⏳ ENVIANDO...";
 
