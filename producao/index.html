@@ -1670,6 +1670,13 @@
 
                         // 3. Agora, substituímos APENAS os campos que o Bling "manda"
                         // O que vier do Bling sobrescreve o que estava no produtoFinal
+
+                        // PUXAR O ID DO BLING:
+                        if (d['ID']) {
+                            produtoFinal.id = d['ID'].trim();
+                            produtoFinal['ID'] = d['ID'].trim(); // Mantém a compatibilidade nos dois formatos
+                        }
+
                         produtoFinal.codigo = fallbackSku;
                         produtoFinal['Código'] = fallbackSku; // Mantém a compatibilidade com a tua chave com acento
                         produtoFinal.nome = d['Descrição'] || produtoFinal.nome || '';
