@@ -231,7 +231,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .grid-micro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 @media(min-width: 800px) { .grid-micro { grid-template-columns: repeat(6, 1fr); gap: 12px; } }
-.grid-micro-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.grid-micro-3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
 .grid-micro .u-price-minimal, .grid-micro-3 .u-price-minimal { font-size: 0.85rem; }
 .grid-micro .btn-add-minimal, .grid-micro-3 .btn-add-minimal { width: 28px; height: 28px; font-size: 1.2rem; }
 .grid-micro .u-tag-discount, .grid-micro-3 .u-tag-discount { padding: 2px 4px; font-size: 0.65rem; }
@@ -880,7 +880,7 @@ function renderHomeCards() {
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: 'rgba(245,158,11,1)' },
         { id: 'compre_junto', title: 'Compre Junto', action: "openDepto('compre_junto')", icon: '🤝', color: 'rgba(13,148,136,1)' },
         { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: 'rgba(236,72,153,1)' },
-        { id: 'ofertas_insta', title: 'Ofertas', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', mobileOnly: true },
+{ id: 'ofertas_insta', title: 'Ofertas', action: "openDepto('ofertas_insta')", icon: '🔥', color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' },
         { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: 'rgba(59,130,246,1)' },
         { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: 'rgba(234,88,12,1)' },
         { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: 'rgba(239,68,68,1)' },
