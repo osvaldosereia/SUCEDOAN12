@@ -178,7 +178,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .floating-cart {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; 
     background-color: var(--c-a); color: #fff; border-radius: 12px; padding: 14px 20px; display: flex; 
-    justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(234, 29, 44, 0.3); z-index: 95; cursor: pointer; transition: transform 0.2s, opacity 0.2s;
+    justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(234, 29, 44, 0.3); z-index: 95; cursor: pointer; transition: transform 0.2s, opacity 0.2s, bottom 0.3s;
 }
 .floating-cart:active { transform: translateX(-50%) scale(0.96); }
 .fc-left { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1rem; }
@@ -417,6 +417,62 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .info-box-item { display: flex; align-items: center; gap: 15px; padding: 15px; border: 1px solid var(--c-bd); border-radius: 12px; margin-bottom: 12px; text-decoration: none; color: var(--c-p); background: #fff; transition: 0.2s;}
 .info-box-item:active { transform: scale(0.98); }
 .info-icon-area { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: #fff; font-size: 1.5rem;}
+
+/* --- NOVO: Estilos do Banner de Primeiro Acesso --- */
+#banner-primeiro-acesso {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #25D366; 
+    color: #fff;
+    padding: 12px 15px;
+    display: none; 
+    justify-content: space-between;
+    align-items: center;
+    z-index: 9999; 
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+    font-size: 0.95rem;
+    animation: slideUpBanner 0.5s ease-out forwards;
+}
+@keyframes slideUpBanner {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+.bp-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    cursor: pointer;
+}
+.bp-text {
+    font-weight: 600;
+    line-height: 1.3;
+}
+.bp-close {
+    background: rgba(0,0,0,0.15);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: 0.2s;
+}
+.bp-close:active { transform: scale(0.9); }
+/* Ajuste para não sobrepor o carrinho flutuante original */
+body.has-bottom-banner .floating-cart {
+    bottom: 80px !important;
+}
+/* --- FIM DOS ESTILOS DO BANNER --- */
+
 </style>
 </head>
 <body>
@@ -774,10 +830,39 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 <div id="toast-container"></div>
 
+<div id="banner-primeiro-acesso">
+    <div class="bp-content" onclick="salvarContatoPrimeiroAcesso()">
+        <span style="font-size: 1.5rem;">💬</span>
+        <div class="bp-text">Olá! Clique aqui para salvar nosso WhatsApp e acompanhar ofertas exclusivas.</div>
+    </div>
+    <button class="bp-close" onclick="fecharBannerPrimeiroAcesso(event)">✕</button>
+</div>
 <script>
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
+
+// --- NOVO: Lógica do Banner de Primeiro Acesso ---
+function verificarPrimeiroAcesso() {
+    if (!localStorage.getItem('donaAntoniaContatoSalvo')) {
+        document.getElementById('banner-primeiro-acesso').style.display = 'flex';
+        document.body.classList.add('has-bottom-banner'); // Empurra o carrinho flutuante para cima
+    }
+}
+
+function fecharBannerPrimeiroAcesso(event) {
+    if (event) event.stopPropagation(); // Evita que o clique no X acione o botão principal
+    document.getElementById('banner-primeiro-acesso').style.display = 'none';
+    document.body.classList.remove('has-bottom-banner');
+    localStorage.setItem('donaAntoniaContatoSalvo', 'true');
+}
+
+function salvarContatoPrimeiroAcesso() {
+    fecharBannerPrimeiroAcesso();
+    let msg = encodeURIComponent("Olá, estou salvando seu contato.");
+    window.open(`https://wa.me/5565998150975?text=${msg}`, '_blank');
+}
+// --- FIM DA LÓGICA DO NOVO BANNER ---
 
 function getYouTubeVideoId(url) {
     if(!url) return '';
@@ -2627,6 +2712,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btnInstall.style.display = 'none'; localStorage.setItem('donaAntoniaAppDismissed', 'true');
         });
     }
+
+    // --- NOVO: Chama a verificação do banner 1.5s após carregar a página
+    setTimeout(verificarPrimeiroAcesso, 1500); 
+    // --- FIM DA CHAMADA ---
 });
 
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch((erro) => { console.error('Erro SW', erro); }); }); }
