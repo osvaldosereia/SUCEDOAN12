@@ -1263,7 +1263,7 @@ function applyHomeSuperOffers() {
     selected.forEach(p => {
         let clone = { ...p, id: p.id + '_so' };
         clone.oldPrice = p.price * 1.10;
-        let randomDiscount = Math.floor(Math.random() * 16) + 20; // De 20 a 35
+        let randomDiscount = Math.floor(Math.random() * 10) + 9; // De 20 a 35
         clone.price = clone.oldPrice * (1 - (randomDiscount / 100));
         clone.discountApplied = true;
         clone._isHomeSuperOffer = true;
