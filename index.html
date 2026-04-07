@@ -134,42 +134,69 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     grid-column: span 2; /* Ocupa 2 colunas no grid mobile */
     aspect-ratio: auto;  /* Altura flexível */
     min-height: 100px;
-    display: flex;       /* Garante o comportamento flex */
-    flex-direction: row; /* Ícone ao lado do texto */
+    display: flex;       
+    flex-direction: row; /* Ícone na esquerda, textos na direita */
     align-items: center;
-    justify-content: center;
-    gap: 20px;
-    padding: 20px;
+    justify-content: flex-start; /* Alinha o conteúdo ao início */
+    gap: 15px;
+    padding: 15px 25px;
 }
 
-/* Ajuste do Texto do Destaque para duas linhas */
-.home-card.highlighted .home-card-title,
-.home-card.highlighted .home-card-subtitle {
-    display: block;      /* Força a quebra de linha entre título e subtítulo */
-    color: #ffffff !important;
-    text-align: left;
-    width: 100%;
-}
-
+/* Força o Título e Subtítulo a ficarem em linhas diferentes */
 .home-card.highlighted .home-card-title {
-    font-size: 1.2rem !important; /* Título maior */
+    display: block;      /* Ocupa a linha toda, jogando o próximo item para baixo */
+    color: #ffffff !important;
+    font-size: 1.25rem !important; /* Título maior */
     font-weight: 700;
-    line-height: 1.1;
-    margin-bottom: 4px;   /* Espaço entre as linhas */
+    text-align: left;
+    margin-bottom: 2px;  /* Espaço entre o título e o subtítulo */
+    line-height: 1.2;
 }
 
 .home-card.highlighted .home-card-subtitle {
-    font-size: 0.8rem !important;  /* Subtítulo menor */
+    display: block;      /* Garante que comece em nova linha */
+    color: #ffffff !important;
+    font-size: 0.85rem !important; /* Subtítulo menor */
     font-weight: 400;
+    text-align: left;
     opacity: 0.9;
-    padding: 0;           /* Remove preenchimentos laterais no destaque */
+    padding: 0;
 }
 
 .home-card.highlighted .home-card-icon {
     color: #ffffff !important;
-    font-size: 2.8rem;    /* Ícone levemente maior para equilibrar com as duas linhas */
+    font-size: 3rem;    /* Ícone de destaque */
     margin-bottom: 0;
-    flex-shrink: 0;       /* Impede que o ícone amasse */
+    flex-shrink: 0;     /* Impede que o ícone diminua */
+}
+
+/* --- Estilos Gerais dos Cards (Padrão) --- */
+.home-card-icon { 
+    font-size: 2rem; 
+    z-index: 2; 
+    margin-bottom: 2px; 
+    line-height: 1; 
+    color: var(--card-color); 
+    font-weight: 800;
+}
+
+.home-card-title { 
+    color: var(--c-p); 
+    font-size: 0.9rem; 
+    font-weight: 600; 
+    line-height: 1.2; 
+    z-index: 2; 
+    letter-spacing: 0.2px;
+}
+
+.home-card-subtitle { 
+    font-size: 0.75rem; 
+    color: var(--c-s); 
+    font-weight: 500; 
+    margin-top: 2px; 
+    line-height: 1.2; 
+    z-index: 2; 
+    padding: 0 5px;
 }
 
 /* --- Estilos Gerais dos Cards (Padrão) --- */
