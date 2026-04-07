@@ -474,9 +474,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
 .btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
 
-/* Asymmetrical Grid Mobile (Grade com cards maiores e horizontais) */
+/* Asymmetrical Grid Mobile (Grade com cards maiores e horizontais) - SOBREPOSTO PELAS REGRAS ESPECÍFICAS DE SESSÃO ABAIXO */
 @media (max-width: 799px) {
-    /* A cada 7 itens (ou seja, após 6), o 7º item assume a largura de 2 colunas e layout horizontal */
     .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) {
         grid-column: span 2;
         display: flex;
@@ -625,6 +624,108 @@ body.has-bottom-banner .floating-cart {
     font-weight: 700;
     color: var(--c-ok);
     font-size: 1rem;
+}
+
+/* REGRAS DE LAYOUT ESPECÍFICAS PARA MOBILE SOLICITADAS */
+@media (max-width: 799px) {
+    .grid-home-sections {
+        grid-template-columns: repeat(6, 1fr);
+    }
+    
+    .home-card { grid-column: span 3; }
+    
+    .home-card.highlighted { grid-column: span 6; }
+    
+    .home-card[onclick*="'desc_20'"],
+    .home-card[onclick*="'desc_15'"],
+    .home-card[onclick*="'desc_10'"] {
+        grid-column: span 2;
+        padding: 8px 4px;
+    }
+    .home-card[onclick*="'desc_20'"] .home-card-title,
+    .home-card[onclick*="'desc_15'"] .home-card-title,
+    .home-card[onclick*="'desc_10'"] .home-card-title {
+        font-size: 0.75rem;
+    }
+    .home-card[onclick*="'desc_20'"] .home-card-icon,
+    .home-card[onclick*="'desc_15'"] .home-card-icon,
+    .home-card[onclick*="'desc_10'"] .home-card-icon {
+        font-size: 1.4rem;
+    }
+
+    .home-card-category {
+        padding: 6px;
+        gap: 6px;
+        background: transparent;
+        box-shadow: none;
+    }
+    .cat-mini-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4px;
+        width: 100%;
+    }
+    .cat-mini-img {
+        width: 100%;
+        aspect-ratio: 1;
+        background: var(--c-img-bg);
+        border-radius: 4px;
+        object-fit: contain;
+        padding: 2px;
+        mix-blend-mode: multiply;
+    }
+    .cat-btn-title {
+        width: 100%;
+        background: var(--c-p);
+        color: #fff;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 6px 0;
+        border-radius: 6px;
+        text-align: center;
+    }
+    .home-card-category .home-card-icon, 
+    .home-card-category .home-card-title, 
+    .home-card-category .home-card-subtitle { 
+        display: none; 
+    }
+
+    .grid-ver-todos-sessao {
+        grid-template-columns: repeat(5, 1fr) !important;
+        gap: 6px !important;
+    }
+    .grid-ver-todos-sessao .u-card-minimal {
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        aspect-ratio: 1/1;
+        margin-bottom: 0 !important;
+    }
+    .grid-ver-todos-sessao .u-card-minimal .u-img-minimal {
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: auto !important;
+        margin: 0 !important;
+        border-radius: 8px !important;
+    }
+    .grid-ver-todos-sessao .u-card-minimal .u-bot-minimal,
+    .grid-ver-todos-sessao .u-card-minimal .u-name-minimal,
+    .grid-ver-todos-sessao .u-card-minimal .video-indicator,
+    .grid-ver-todos-sessao .u-card-minimal .btn-add-minimal {
+        display: none !important;
+    }
+    
+    .grid-ver-todos-sessao.grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) {
+        grid-column: span 1 !important;
+        display: block !important;
+        flex-direction: unset !important;
+        background: transparent !important;
+        padding: 0 !important;
+        gap: 0 !important;
+        align-items: stretch !important;
+        box-shadow: none !important;
+    }
 }
 
 </style>
@@ -1073,30 +1174,45 @@ function agruparCategoria(produto) {
 
 function renderHomeCards() {
     const cards = [
-        { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', span2: true, highlighted: true },
+        { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', highlighted: true },
+        { id: 'desc_20', title: '20% OFF', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
+        { id: 'desc_15', title: '15% OFF', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
+        { id: 'desc_10', title: '10% OFF', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
-        { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: '#1e293b' },
-        { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
-        { id: 'desc_20', title: 'de Desconto', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
-        { id: 'desc_15', title: 'de Desconto', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
-        { id: 'desc_10', title: 'de Desconto', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
-        { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: '#1e293b' },
-        { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: '#1e293b' },
-        { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", icon: '🧼', color: '#1e293b' },
-        { id: 'beleza', title: 'Beleza', action: "openDepto('beleza')", icon: '💅', color: '#1e293b' },
-        { id: 'limpeza', title: 'Limpeza', action: "openDepto('limpeza')", icon: '🧹', color: '#1e293b' },
-        { id: 'lavanderia', title: 'Lavanderia', action: "openDepto('lavanderia')", icon: '🧺', color: '#1e293b' },
-        { id: 'casa', title: 'Casa', action: "openDepto('casa')", icon: '🏠', color: '#1e293b' },
-        { id: 'pet', title: 'Pet', action: "openDepto('pet')", icon: '🐶', color: '#1e293b' }
+        { id: 'marcas', title: 'Top Marcas', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
+        { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", isCat: true },
+        { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", isCat: true },
+        { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", isCat: true },
+        { id: 'beleza', title: 'Beleza', action: "openDepto('beleza')", isCat: true },
+        { id: 'limpeza', title: 'Limpeza', action: "openDepto('limpeza')", isCat: true },
+        { id: 'lavanderia', title: 'Lavanderia', action: "openDepto('lavanderia')", isCat: true },
+        { id: 'casa', title: 'Casa', action: "openDepto('casa')", isCat: true },
+        { id: 'pet', title: 'Pet', action: "openDepto('pet')", isCat: true }
     ];
+
     let html = '';
     cards.forEach(c => { 
-        let classes = c.mobileOnly ? 'home-card mobile-only-card' : 'home-card';
-        let highlightClass = c.highlighted ? ' highlighted' : '';
-        let sub = c.subtitle ? `<div class="home-card-subtitle">${c.subtitle}</div>` : '';
-        html += `<div class="${classes}${highlightClass}" onclick="${c.action}" style="--card-color: ${c.color || '#1e293b'};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div>${sub}</div>`; 
+        let classes = 'home-card';
+        if (c.highlighted) classes += ' highlighted';
+        if (c.isCat) classes += ' home-card-category';
         
-        if (c.id === 'desc_10') {
+        let innerHtml = '';
+        if (c.isCat && window.innerWidth <= 799 && STATE.dataLoaded && STATE.deptos[c.id] && STATE.deptos[c.id].data.length > 0) {
+            let imgs = STATE.deptos[c.id].data.slice(0, 12);
+            let gridHtml = imgs.map(p => `<img src="${p.img}" class="cat-mini-img" loading="lazy">`).join('');
+            for(let i = imgs.length; i < 12; i++) gridHtml += `<div class="cat-mini-img" style="background:var(--c-bd);"></div>`;
+            innerHtml = `
+                <div class="cat-mini-grid">${gridHtml}</div>
+                <div class="cat-btn-title">${c.title}</div>
+            `;
+        } else {
+            let sub = c.subtitle ? `<div class="home-card-subtitle">${c.subtitle}</div>` : '';
+            innerHtml = `<div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div>${sub}`;
+        }
+
+        html += `<div class="${classes}" onclick="${c.action}" style="--card-color: ${c.color || '#1e293b'};">${innerHtml}</div>`; 
+        
+        if (c.id === 'marcas') {
             html += `<div id="home-tv-carousel" class="home-tv-carousel-wrapper"></div>`;
         }
     });
@@ -1147,6 +1263,8 @@ function renderHomeCategories() {
     ];
 
     let itemsHtml = '';
+    let isMobile = window.innerWidth <= 799;
+
     sessoes.forEach(s => {
         let depto = STATE.deptos[s.id];
         if (!depto || !depto.data || depto.data.length === 0) return;
@@ -1154,25 +1272,35 @@ function renderHomeCategories() {
         let items = [...depto.data];
         items.sort((a,b) => String(a.name).localeCompare(String(b.name)));
         
-        let top4 = items.slice(0, 4);
-        if(top4.length > 0) {
+        let maxItems = isMobile ? 30 : 4;
+        let topItems = items.slice(0, maxItems);
+        
+        if(topItems.length > 0) {
+            let extraClass = isMobile ? ' grid-ver-todos-sessao' : '';
             itemsHtml += `
             <div style="margin-bottom: 35px;">
                 <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.15rem; color: var(--c-p);">${s.nome}</div>
-                <div class="grid-ver-todos">
+                <div class="grid-ver-todos${extraClass}">
             `;
             
-            top4.forEach(item => {
+            topItems.forEach(item => {
                 itemsHtml += buildCardHtml(item, depto.type);
             });
             
-            itemsHtml += `
+            if (isMobile) {
+                itemsHtml += `
+                </div>
+                <button class="btn-big-action" style="margin-top: 15px;" onclick="openDepto('${s.id}', false)">Ver Todos de ${s.nome}</button>
+                </div>`;
+            } else {
+                itemsHtml += `
                     <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${s.id}', false)">
                         <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
                         <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.85rem; font-weight:500;">${s.nome}</span></span>
                     </div>
                 </div>
             </div>`;
+            }
         }
     });
 
@@ -1533,11 +1661,11 @@ async function init() {
             });
 
             compileVideos();
-            renderHomeCategories(); 
+            STATE.dataLoaded = true;
+            renderHomeCards(); 
             renderHomeMobileTV();
+            renderHomeCategories(); 
         }
-        
-        STATE.dataLoaded = true;
 
     } catch (e) { console.error("Erro sincronização:", e); showToast("Erro ao conectar.", "r"); }
 }
