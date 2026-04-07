@@ -134,25 +134,45 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     grid-column: span 2; /* Ocupa 2 colunas no grid mobile */
     aspect-ratio: auto;  /* Altura flexível */
     min-height: 100px;
+    display: flex;       /* Garante o comportamento flex */
     flex-direction: row; /* Ícone ao lado do texto */
+    align-items: center;
     justify-content: center;
     gap: 20px;
     padding: 20px;
 }
 
+/* Ajuste do Texto do Destaque para duas linhas */
 .home-card.highlighted .home-card-title,
-.home-card.highlighted .home-card-subtitle,
-.home-card.highlighted .home-card-icon {
-    color: #ffffff !important; /* Texto branco para contraste */
+.home-card.highlighted .home-card-subtitle {
+    display: block;      /* Força a quebra de linha entre título e subtítulo */
+    color: #ffffff !important;
     text-align: left;
+    width: 100%;
+}
+
+.home-card.highlighted .home-card-title {
+    font-size: 1.2rem !important; /* Título maior */
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 4px;   /* Espaço entre as linhas */
+}
+
+.home-card.highlighted .home-card-subtitle {
+    font-size: 0.8rem !important;  /* Subtítulo menor */
+    font-weight: 400;
+    opacity: 0.9;
+    padding: 0;           /* Remove preenchimentos laterais no destaque */
 }
 
 .home-card.highlighted .home-card-icon {
-    font-size: 2.5rem;
+    color: #ffffff !important;
+    font-size: 2.8rem;    /* Ícone levemente maior para equilibrar com as duas linhas */
     margin-bottom: 0;
+    flex-shrink: 0;       /* Impede que o ícone amasse */
 }
 
-/* Estilos Gerais dos Cards */
+/* --- Estilos Gerais dos Cards (Padrão) --- */
 .home-card-icon { 
     font-size: 2rem; 
     z-index: 2; 
