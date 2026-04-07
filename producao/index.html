@@ -190,13 +190,6 @@
         .btn-acao-pular { background-color: #ff9800; color: #000; }
         .btn-acao-inicio { background-color: #d32f2f; }
 
-        .display-teclado { text-align: center; font-size: 28px; font-weight: 900; letter-spacing: 12px; color: var(--sep-secondary); height: 32px; margin-bottom: 4px; flex-shrink: 0; }
-        .display-teclado.erro { color: var(--sep-danger); }
-        
-        .grid-teclado { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); gap: 5px; flex: 1; min-height: 0; padding-bottom: 25px; }
-        .btn-num { background: #f0f0f0; border: 2px solid #ddd; color: #111; font-size: 22px; font-weight: 900; border-radius: 8px; margin: 0; box-shadow: 0 2px 0 #ccc; height: 100%; max-height: 55px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
-        .btn-num:active { background: #d0d0d0; box-shadow: none; transform: translateY(2px); }
-
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .alerta-erro { background-color: var(--sep-danger); } .alerta-sucesso { background-color: var(--sep-primary); } .alerta-aviso { background-color: var(--sep-warning); color: #000; }
 
@@ -461,7 +454,7 @@
                 <div class="foco-info-container">
                     <div class="foco-pedido-info" id="foco-pedido-info">Ped: 000</div>
                     <div class="foco-loc" id="foco-loc">A1</div>
-                    <div class="foco-qtd-box">Faltam <span id="span-faltam">0</span>/<span id="span-total">0</span></div>
+                    <div class="foco-qtd-box">Lidos <span id="span-lidos">0</span>/<span id="span-total">0</span></div>
                 </div>
             </div>
 
@@ -470,45 +463,29 @@
             <div class="ticks-container" id="foco-ticks"></div>
             
             <div class="area-interacao">
-                <div class="botoes-acao-foco">
-                    <button class="btn-acao btn-acao-voltar" onclick="voltarProdutoAnterior()">⬅️<br>Anterior</button>
-                    <button class="btn-acao btn-acao-pular" onclick="pularProduto()">⏭️<br>Pular</button>
-                    <button class="btn-acao btn-acao-inicio" onclick="fecharSeparador()">🏠<br>Sair</button>
-                </div>
-
-                <div id="bloco-teclado-foco">
-                    <div id="foco-teclado-titulo" style="text-align:center; font-size:13px; font-weight:bold; color:#555; margin-bottom: 4px;">Digite o ÚLTIMO dígito do EAN</div>
-                    <div id="display-foco" class="display-teclado"></div>
-                    <div class="grid-teclado">
-                        <div class="btn-num" onclick="addFoco(1)">1</div><div class="btn-num" onclick="addFoco(2)">2</div><div class="btn-num" onclick="addFoco(3)">3</div>
-                        <div class="btn-num" onclick="addFoco(4)">4</div><div class="btn-num" onclick="addFoco(5)">5</div><div class="btn-num" onclick="addFoco(6)">6</div>
-                        <div class="btn-num" onclick="addFoco(7)">7</div><div class="btn-num" onclick="addFoco(8)">8</div><div class="btn-num" onclick="addFoco(9)">9</div>
-                        <div style="visibility:hidden;"></div><div class="btn-num" onclick="addFoco(0)">0</div><div style="visibility:hidden;"></div> 
+                <div style="width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                    <button id="btn-marcar-separado" class="sep-btn sep-btn-primary" style="font-size: 22px; padding: 22px; border-radius: 16px; width: 100%; box-shadow: 0 6px 0 #388E3C; transition: 0.2s;" onclick="registrarUnidadeFocoSimples()">
+                        ✅ SEPARAR (1 UN)
+                    </button>
+                    
+                    <div style="display: flex; gap: 10px; width: 100%; margin-top: 8px;">
+                        <button class="btn-acao btn-acao-voltar" style="flex:1;" onclick="voltarProdutoAnterior()">⬅️ Anterior</button>
+                        <button class="btn-acao btn-acao-pular" style="flex:1;" onclick="avancarProduto()">Próximo ➡️</button>
                     </div>
-                </div>
-
-                <div id="bloco-add-foco" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; padding-bottom:20px;">
-                    <div style="color:green; font-weight:900; margin-bottom:15px; font-size:18px;">✅ PRODUTO CORRETO!</div>
-                    <button class="sep-btn sep-btn-secondary" style="width:100%; flex:1; font-size:26px; border-radius:16px; font-weight:900; box-shadow: 0 6px 0 #1976D2; margin-bottom: 10px; max-height:120px;" onclick="registrarUnidadeFoco()">➕ ADICIONAR</button>
-                </div>
-
-                <div id="bloco-confirmacao-item" class="hidden" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; background:#fff3e0; border:3px solid var(--warning); border-radius:12px; padding:15px; box-sizing:border-box; margin-bottom:20px;">
-                    <h2 style="color:var(--sep-warning); font-size:22px; margin-bottom:10px;">⚠️ ATENÇÃO</h2>
-                    <p style="text-align:center; font-size:16px; font-weight:bold; color:#333; margin-bottom: 15px;">Você separou realmente <br><span style="font-size:38px; color:var(--sep-primary); font-weight:900;" id="conf-qtd">0</span><br> unidades?</p>
-                    <button class="sep-btn sep-btn-primary" style="width:100%; flex:1; font-size:18px; box-shadow: 0 5px 0 #388E3C; max-height:80px;" onclick="confirmarFimItem()">✅ SIM, CONFERIDO</button>
+                    <button class="btn-acao btn-acao-inicio" style="width:100%; margin-top: 5px;" onclick="fecharSeparador()">🏠 Sair e Guardar Progresso</button>
                 </div>
             </div>
         </div>
 
         <div class="sep-container hidden" id="tela-conclusao">
-            <h2 style="color:var(--sep-primary); font-size: 28px;">🎉 Pedido Separado!</h2>
+            <h2 style="color:var(--sep-primary); font-size: 28px; text-align: center;">🎉 Pedido Separado!</h2>
             <p style="text-align:center; color:#666;">Confira a lista abaixo antes de imprimir.</p>
             
             <div class="checklist-box" id="area-checklist"></div>
 
             <button class="sep-btn sep-btn-print" style="padding: 20px; font-size: 16px; width:100%; margin-top:20px;" onclick="imprimirEtiquetaBluetooth()">🖨️ Imprimir Etiqueta (48mm)</button>
             <button class="nav-btn success-btn" style="padding: 20px; font-size: 16px; width:100%; margin-top:15px; justify-content:center;" onclick="finalizarEDarBaixaPedidoAtual()">📦 CONCLUIR E DAR BAIXA NO ESTOQUE</button>
-            <button class="sep-btn sep-btn-danger" style="padding: 15px; font-size: 14px; width:100%; margin-top:15px;" onclick="fecharSeparador()">Cancelar (Sair sem dar Baixa)</button>
+            <button class="sep-btn sep-btn-danger" style="padding: 15px; font-size: 14px; width:100%; margin-top:15px;" onclick="fecharSeparador()">Sair (Guardar na Fila)</button>
         </div>
     </div>
 
@@ -530,8 +507,6 @@
         let indexAtualPicking = 0; 
         let pedidoAtualParaSeparacao = null; 
         let audioCtx = null;
-        let focoDisplayStr = ""; 
-        let focoLimite = 1;
 
         // ==========================================================
         // FUNÇÃO GLOBAL DE LIMPEZA DE TEXTO E GERADORES DE OPÇÕES
@@ -820,6 +795,9 @@
             document.getElementById('img-full').src = src;
             document.getElementById('modal-foto-full').classList.remove('hidden');
         }
+
+        function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
+        function abrirFotoTelaCheia() { const tag = document.getElementById('foco-img'); if(tag) abrirModalFoto(tag.src); }
 
         // ==========================================================
         // MÓDULO: BALANÇO DE ESTOQUE
@@ -1272,8 +1250,8 @@
             document.getElementById('foco-nome').innerText = item.nomePedido; 
             document.getElementById('foco-sku').innerText = `SKU: ${skuItem}`;
             
-            let faltam = item.quantidadeTotal - item.unidadesLidas;
-            document.getElementById('span-faltam').innerText = faltam; document.getElementById('span-total').innerText = item.quantidadeTotal;
+            document.getElementById('span-lidos').innerText = item.unidadesLidas;
+            document.getElementById('span-total').innerText = item.quantidadeTotal;
             
             let cTicks = document.getElementById('foco-ticks'); cTicks.innerHTML = '';
             for(let i=0; i<item.quantidadeTotal; i++) { 
@@ -1282,64 +1260,74 @@
                 cTicks.appendChild(tick); 
             }
             
-            document.getElementById('bloco-teclado-foco').classList.add('hidden');
-            document.getElementById('bloco-add-foco').classList.add('hidden');
-            document.getElementById('bloco-confirmacao-item').classList.add('hidden');
-
-            if (item.unidadesLidas === 0) { document.getElementById('bloco-teclado-foco').classList.remove('hidden'); resetarTecladoFoco(); 
-            } else if (item.unidadesLidas < item.quantidadeTotal) { document.getElementById('bloco-add-foco').classList.remove('hidden'); 
-            } else { document.getElementById('conf-qtd').innerText = item.quantidadeTotal; document.getElementById('bloco-confirmacao-item').classList.remove('hidden'); tocarBipe('sucesso'); }
-        }
-
-        function voltarProdutoAnterior() { if (indexAtualPicking > 0) { indexAtualPicking--; listaDeSeparacao[indexAtualPicking].unidadesLidas = 0; listaDeSeparacao[indexAtualPicking].status = 'pendente'; renderizarItemFoco(); } else { mostrarAlerta("Este já é o primeiro produto!", "aviso"); } }
-        function pularProduto() { if (indexAtualPicking < listaDeSeparacao.length - 1) { let itemAtual = listaDeSeparacao.splice(indexAtualPicking, 1)[0]; itemAtual.unidadesLidas = 0; listaDeSeparacao.push(itemAtual); mostrarAlerta("Produto enviado para o final da lista.", "aviso"); renderizarItemFoco(); } else { mostrarAlerta("Este é o último produto restante!", "aviso"); } }
-
-        function resetarTecladoFoco() { focoDisplayStr = ""; document.getElementById('foco-teclado-titulo').innerText = "DIGITE O ÚLTIMO DÍGITO DO EAN"; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }
-        
-        function addFoco(num) { 
-            if(focoDisplayStr.length < focoLimite) { 
-                focoDisplayStr += num.toString(); 
-                atualizarDisplayFoco(); 
-                if(focoDisplayStr.length === focoLimite) { 
-                    setTimeout(avaliarFoco, 100); 
-                } 
-            } 
-        }
-        
-        function apagarFocoErro(msgAlerta) { tocarBipe('erro'); mostrarAlerta(msgAlerta, "erro"); document.getElementById('display-foco').classList.add('erro'); setTimeout(() => { focoDisplayStr = ""; document.getElementById('display-foco').classList.remove('erro'); atualizarDisplayFoco(); }, 600); }
-        function atualizarDisplayFoco() { document.getElementById('display-foco').innerText = focoDisplayStr + "-".repeat(focoLimite - focoDisplayStr.length); }
-
-        function avaliarFoco() {
-            let itemAtual = listaDeSeparacao[indexAtualPicking];
-            let skuCorreto = String(itemAtual.produtoDb.codigo || "").trim().toUpperCase();
-            
-            let eanCorreto = String(itemAtual.produtoDb.gtin || "").trim().replace(/\D/g, "");
-            
-            if (skuCorreto === "---") { registrarUnidadeFoco(); return; }
-            
-            if (eanCorreto.length > 0) {
-                if (eanCorreto.endsWith(focoDisplayStr)) { 
-                    registrarUnidadeFoco(); 
-                } else { 
-                    apagarFocoErro("❌ EAN Incorreto!"); 
-                }
+            const btnSeparar = document.getElementById('btn-marcar-separado');
+            if (item.unidadesLidas >= item.quantidadeTotal) {
+                btnSeparar.innerHTML = "✔️ CONCLUÍDO (Avançar)";
+                btnSeparar.className = "sep-btn sep-btn-secondary";
+                btnSeparar.style.boxShadow = "0 6px 0 #1976D2";
+                btnSeparar.onclick = avancarProduto;
             } else {
-                let skuNumeros = skuCorreto.replace(/\D/g, "");
-                if (skuNumeros.length > 0 && skuNumeros.endsWith(focoDisplayStr)) {
-                    registrarUnidadeFoco();
+                btnSeparar.innerHTML = `✅ SEPARAR (1 UN)`;
+                btnSeparar.className = "sep-btn sep-btn-primary";
+                btnSeparar.style.boxShadow = "0 6px 0 #388E3C";
+                btnSeparar.onclick = registrarUnidadeFocoSimples;
+            }
+        }
+
+        function registrarUnidadeFocoSimples() {
+            let item = listaDeSeparacao[indexAtualPicking];
+            if (item.unidadesLidas < item.quantidadeTotal) {
+                item.unidadesLidas++;
+                tocarBipe('sucesso');
+                
+                if (item.unidadesLidas >= item.quantidadeTotal) {
+                    item.status = 'concluido';
+                    renderizarItemFoco();
+                    setTimeout(() => { avancarProduto(); }, 400);
                 } else {
-                    apagarFocoErro("❌ Produto sem EAN! (Falha SKU)");
+                    renderizarItemFoco();
                 }
             }
         }
 
-        function registrarUnidadeFoco() { let item = listaDeSeparacao[indexAtualPicking]; item.unidadesLidas++; tocarBipe('sucesso'); renderizarItemFoco(); }
-        function confirmarFimItem() { let item = listaDeSeparacao[indexAtualPicking]; item.status = 'concluido'; indexAtualPicking++; renderizarItemFoco(); }
+        function voltarProdutoAnterior() { 
+            if (indexAtualPicking > 0) { 
+                indexAtualPicking--; 
+                renderizarItemFoco(); 
+            } else { 
+                mostrarAlerta("Este já é o primeiro produto!", "aviso"); 
+            } 
+        }
+
+        function avancarProduto() { 
+            if (indexAtualPicking < listaDeSeparacao.length - 1) { 
+                indexAtualPicking++; 
+                renderizarItemFoco(); 
+            } else { 
+                let pendentes = listaDeSeparacao.findIndex(i => i.unidadesLidas < i.quantidadeTotal);
+                if (pendentes === -1) {
+                    finalizarModoPicking(); 
+                } else {
+                    mostrarAlerta("Ainda há itens incompletos na lista!", "aviso");
+                    indexAtualPicking = pendentes; 
+                    renderizarItemFoco();
+                }
+            } 
+        }
 
         function finalizarModoPicking() {
             document.getElementById('tela-separacao-foco').classList.add('hidden');
             let areaCheck = document.getElementById('area-checklist'); areaCheck.innerHTML = '';
-            listaDeSeparacao.forEach(i => { areaCheck.innerHTML += `<div class="checklist-item"><span>${i.nomePedido.substring(0,25)}...</span> <span>${i.quantidadeTotal}x</span></div>`; });
+            
+            listaDeSeparacao.forEach(i => { 
+                let imgUrl = resolverImagemProdutoSep(i.produtoDb, i.imagemOriginalDoPedido) || 'https://placehold.co/100x100/f4f4f5/a1a1aa?text=SEM+FOTO';
+                areaCheck.innerHTML += `
+                <div class="checklist-item" style="display:flex; align-items:center; gap:10px; margin-bottom:10px; border-bottom:1px dashed #ccc; padding-bottom:10px;">
+                    <img src="${imgUrl}" style="width:60px; height:60px; object-fit:contain; background:#fff; border-radius:6px; border:1px solid #ddd; flex-shrink:0;">
+                    <div style="flex-grow:1; font-size:13px; line-height:1.2; font-weight:bold;">${i.nomePedido}</div>
+                    <div style="font-size:18px; font-weight:900; color:var(--sep-primary);">${i.quantidadeTotal}x</div>
+                </div>`; 
+            });
             document.getElementById('tela-conclusao').classList.remove('hidden');
         }
 
