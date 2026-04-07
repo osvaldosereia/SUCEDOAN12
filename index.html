@@ -126,35 +126,99 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-card:active { transform: scale(0.96); }
 .col-span-2 { grid-column: span 2; aspect-ratio: auto; min-height: 120px; justify-content: center; }
 
-/* Destaque visual da Cesta - Alterado para Azul Petróleo */
+/* Destaque visual da Cesta - Azul Petróleo e Layout Duplo */
 .home-card.highlighted {
     background: #075985 !important; /* Azul Petróleo Profundo */
     border-color: #075985 !important;
-    box-shadow: 0 8px 24px rgba(7, 89, 133, 0.25) !important; /* Sombra acompanhando a cor */
+    box-shadow: 0 8px 24px rgba(7, 89, 133, 0.25) !important;
+    grid-column: span 2; /* Ocupa 2 colunas no grid mobile */
+    aspect-ratio: auto;  /* Altura flexível */
+    min-height: 100px;
+    flex-direction: row; /* Ícone ao lado do texto */
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
 }
+
 .home-card.highlighted .home-card-title,
 .home-card.highlighted .home-card-subtitle,
 .home-card.highlighted .home-card-icon {
-    color: #ffffff !important; /* Mantém o texto branco para leitura */
+    color: #ffffff !important; /* Texto branco para contraste */
+    text-align: left;
 }
 
-.home-card-icon { font-size: 2rem; z-index: 2; margin-bottom: 2px; line-height: 1; color: var(--card-color); font-weight: 800;}
-.home-card-title { color: var(--c-p); font-size: 0.9rem; font-weight: 600; line-height: 1.2; z-index: 2; letter-spacing: 0.2px;}
-.home-card-subtitle { font-size: 0.75rem; color: var(--c-s); font-weight: 500; margin-top: 2px; line-height: 1.2; z-index: 2; padding: 0 5px;}
+.home-card.highlighted .home-card-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0;
+}
 
+/* Estilos Gerais dos Cards */
+.home-card-icon { 
+    font-size: 2rem; 
+    z-index: 2; 
+    margin-bottom: 2px; 
+    line-height: 1; 
+    color: var(--card-color); 
+    font-weight: 800;
+}
+
+.home-card-title { 
+    color: var(--c-p); 
+    font-size: 0.9rem; 
+    font-weight: 600; 
+    line-height: 1.2; 
+    z-index: 2; 
+    letter-spacing: 0.2px;
+}
+
+.home-card-subtitle { 
+    font-size: 0.75rem; 
+    color: var(--c-s); 
+    font-weight: 500; 
+    margin-top: 2px; 
+    line-height: 1.2; 
+    z-index: 2; 
+    padding: 0 5px;
+}
+
+/* Carrinho Flutuante */
 .floating-cart {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; 
-    background-color: var(--c-p); color: #fff; border-radius: 12px; padding: 14px 20px; display: flex; 
-    justify-content: space-between; align-items: center; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); z-index: 95; cursor: pointer; transition: transform 0.2s, opacity 0.2s, bottom 0.3s;
+    position: fixed; 
+    bottom: 20px; 
+    left: 50%; 
+    transform: translateX(-50%); 
+    width: 92%; 
+    max-width: 400px; 
+    background-color: var(--c-p); 
+    color: #fff; 
+    border-radius: 12px; 
+    padding: 14px 20px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); 
+    z-index: 95; 
+    cursor: pointer; 
+    transition: transform 0.2s, opacity 0.2s, bottom 0.3s;
 }
+
 .floating-cart:active { transform: translateX(-50%) scale(0.96); }
 .fc-left { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1rem; }
 .fc-badge { background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;}
 .fc-right { font-weight: 700; font-size: 1.1rem; }
 
+/* Visualização Lateral */
 .lateral-view {
-    position: fixed; top: 0; left: 100%; width: 100%; height: 100dvh; background: var(--c-bg);
-    z-index: 90; transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column;
+    position: fixed; 
+    top: 0; 
+    left: 100%; 
+    width: 100%; 
+    height: 100dvh; 
+    background: var(--c-bg);
+    z-index: 90; 
+    transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
+    display: flex; 
+    flex-direction: column;
 }
 .lateral-view.open { left: 0; }
 
