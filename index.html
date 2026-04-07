@@ -474,40 +474,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
 .btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
 
-/* Asymmetrical Grid Mobile (Grade com cards maiores e horizontais) - SOBREPOSTO PELAS REGRAS ESPECÍFICAS DE SESSÃO ABAIXO */
-@media (max-width: 799px) {
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) {
-        grid-column: span 2;
-        display: flex;
-        flex-direction: row;
-        background: var(--c-img-bg);
-        padding: 12px;
-        border-radius: 12px;
-        gap: 15px;
-        align-items: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-    }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-img-minimal {
-        width: 40%;
-        aspect-ratio: 1/1;
-        margin-bottom: 0;
-        background: #fff;
-        flex-shrink: 0;
-    }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-bot-minimal {
-        width: 100%;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        gap: 8px;
-    }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-name-minimal {
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        -webkit-line-clamp: 3 !important;
-    }
-}
-
 .video-indicator { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; }
 .video-indicator svg { width: 12px; height: 12px; fill: var(--c-p); }
 
@@ -654,35 +620,40 @@ body.has-bottom-banner .floating-cart {
     }
 
     .home-card-category {
-        padding: 6px;
-        gap: 6px;
+        grid-column: span 6; 
+        aspect-ratio: auto; 
+        padding: 10px;
+        gap: 8px;
         background: transparent;
         box-shadow: none;
     }
     .cat-mini-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(6, 1fr); 
         gap: 4px;
         width: 100%;
     }
     .cat-mini-img {
         width: 100%;
         aspect-ratio: 1;
-        background: var(--c-img-bg);
+        background: transparent;
         border-radius: 4px;
         object-fit: contain;
-        padding: 2px;
+        padding: 0px;
         mix-blend-mode: multiply;
+        opacity: 0.8;
+        filter: contrast(1.1);
     }
     .cat-btn-title {
         width: 100%;
         background: var(--c-p);
         color: #fff;
-        font-size: 0.8rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        padding: 6px 0;
+        padding: 8px 0;
         border-radius: 6px;
         text-align: center;
+        margin-top: 4px;
     }
     .home-card-category .home-card-icon, 
     .home-card-category .home-card-title, 
@@ -691,8 +662,8 @@ body.has-bottom-banner .floating-cart {
     }
 
     .grid-ver-todos-sessao {
-        grid-template-columns: repeat(5, 1fr) !important;
-        gap: 6px !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 8px !important;
     }
     .grid-ver-todos-sessao .u-card-minimal {
         padding: 0 !important;
@@ -708,6 +679,11 @@ body.has-bottom-banner .floating-cart {
         aspect-ratio: auto !important;
         margin: 0 !important;
         border-radius: 8px !important;
+    }
+    .grid-ver-todos-sessao .u-card-minimal .u-img-minimal img {
+        mix-blend-mode: multiply !important;
+        opacity: 0.8 !important;
+        filter: contrast(1.1) !important;
     }
     .grid-ver-todos-sessao .u-card-minimal .u-bot-minimal,
     .grid-ver-todos-sessao .u-card-minimal .u-name-minimal,
@@ -1200,7 +1176,7 @@ function renderHomeCards() {
         if (c.isCat && window.innerWidth <= 799 && STATE.dataLoaded && STATE.deptos[c.id] && STATE.deptos[c.id].data.length > 0) {
             let imgs = STATE.deptos[c.id].data.slice(0, 12);
             let gridHtml = imgs.map(p => `<img src="${p.img}" class="cat-mini-img" loading="lazy">`).join('');
-            for(let i = imgs.length; i < 12; i++) gridHtml += `<div class="cat-mini-img" style="background:var(--c-bd);"></div>`;
+            for(let i = imgs.length; i < 12; i++) gridHtml += `<div class="cat-mini-img" style="background:transparent;"></div>`;
             innerHtml = `
                 <div class="cat-mini-grid">${gridHtml}</div>
                 <div class="cat-btn-title">${c.title}</div>
@@ -1272,7 +1248,7 @@ function renderHomeCategories() {
         let items = [...depto.data];
         items.sort((a,b) => String(a.name).localeCompare(String(b.name)));
         
-        let maxItems = isMobile ? 30 : 4;
+        let maxItems = isMobile ? 32 : 4;
         let topItems = items.slice(0, maxItems);
         
         if(topItems.length > 0) {
