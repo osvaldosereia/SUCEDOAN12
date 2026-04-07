@@ -185,6 +185,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     padding: 0 15px;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 .home-tv-title {
@@ -195,7 +196,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-tv-track {
     display: flex; gap: 12px; overflow-x: auto; 
     scroll-snap-type: x mandatory; scrollbar-width: none;
-    padding-bottom: 5px;
+    padding-bottom: 5px; scroll-behavior: smooth;
 }
 .home-tv-track::-webkit-scrollbar { display: none; }
 
@@ -210,12 +211,20 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     display: flex; flex-direction: column;
 }
 
-.home-tv-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer; }
+.home-tv-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer; transition: 0.3s; }
 .home-tv-play { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(255,255,255,0.3); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; z-index: 2; backdrop-filter: blur(4px); padding-left: 3px; pointer-events: none; }
 .home-tv-prod { position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 6px; display: flex; align-items: center; gap: 6px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; }
 .home-tv-prod-img { width: 32px; height: 32px; border-radius: 6px; mix-blend-mode: multiply; object-fit: contain; }
 .home-tv-prod-btn { margin-left: auto; background: var(--c-p); color: #fff; border: none; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
-.home-tv-more { flex: 0 0 42%; aspect-ratio: 9 / 16; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--c-img-bg); border: 2px dashed var(--c-t); cursor: pointer; scroll-snap-align: center; }
+
+/* Setas Carrossel Desktop */
+.tv-carousel-arrow {
+    display: none; position: absolute; top: 55%; transform: translateY(-50%); width: 45px; height: 45px;
+    background: #fff; color: var(--c-p); border-radius: 50%; align-items: center; justify-content: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 20; border: 1px solid var(--c-bd); cursor: pointer;
+}
+.tv-carousel-arrow.left { left: 0px; }
+.tv-carousel-arrow.right { right: 0px; }
 
 /* Carrinho Flutuante */
 .floating-cart {
@@ -232,6 +241,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     position: fixed; top: 0; left: 100%; width: 100%; height: 100dvh; background: var(--c-bg); z-index: 90; transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column;
 }
 .lateral-view.open { left: 0; }
+
+/* Ajuste Z-index Busca */
+#global-search-view { z-index: 105; }
 
 /* GAVETA / BOTTOM SHEET (Nova Quick View) */
 .lateral-view.gaveta {
@@ -356,26 +368,23 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .u-card-minimal:active { transform: scale(0.98); }
 .u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
 
-.u-img-minimal { width: 100%; aspect-ratio: 1/1.2; background: var(--c-img-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; border: none; overflow: hidden; margin-bottom: 4px; }
-.u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 8%; }
-
-.u-bot-minimal { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: 0; padding-top: 2px;}
-.u-price-minimal { font-size: 1.05rem; font-weight: 700; color: var(--c-p); line-height: 1; }
-.u-tag-discount { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 6px; font-weight: 700; border-radius: 6px; }
-
-.btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
-.btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
-
-.video-indicator { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; }
+.video-indicator { position: absolute; top: 8px; left: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; }
 .video-indicator svg { width: 12px; height: 12px; fill: var(--c-p); }
 
 #generic-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:rgba(15,23,42,0.4); z-index:100; backdrop-filter: blur(2px);}
 
 .qv-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch; border-radius: 12px; padding-bottom: 5px; }
 .qv-carousel::-webkit-scrollbar { display: none; }
-.qv-carousel-item { flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+.qv-carousel-item { flex: 0 0 100%; scroll-snap-align: center; background: transparent; border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
 .qv-carousel-item img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 2%; }
-.qv-carousel-item iframe { width: 100%; height: 100%; border: none; }
+.qv-carousel-item iframe { width: 100%; height: 100%; border: none; border-radius: 12px; }
+
+/* Novo Design de Galeria (Gaveta Foto) */
+#fs-gallery-view { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background: rgba(15,23,42,0.8); z-index: 99999; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+.fs-gallery-content { position: relative; width: 90%; max-width: 450px; background: #fff; border-radius: 16px; padding: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+.fs-arrow { position: absolute; top: 50%; transform: translateY(-50%); background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; width: 40px; height: 40px; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--c-p); }
+.fs-arrow-left { left: -15px; }
+.fs-arrow-right { right: -15px; }
 
 #video-feed-view { background: #000; z-index: 95; } 
 #video-feed-view .see-all-header { background: #111; border-bottom: 1px solid #333; color: #fff; }
@@ -431,7 +440,8 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
     .home-card.highlighted .home-card-title { font-size: 0.9rem !important; text-align: center !important; }
     .home-card.highlighted .home-card-subtitle { display: none !important; }
     
-    .home-tv-item, .home-tv-more { flex: 0 0 18% !important; }
+    .home-tv-item, .home-tv-more { flex: 0 0 25% !important; }
+    .tv-carousel-arrow { display: flex; } /* Mostra setas no desktop */
     .grid-ver-todos-sessao { grid-template-columns: repeat(9, 1fr) !important; gap: 20px 10px !important; }
 }
 
@@ -453,15 +463,8 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
     .grid-ver-todos-sessao { grid-template-columns: repeat(3, 1fr) !important; gap: 12px 8px !important; }
     
-    .grid-ver-todos-sessao .u-card-minimal { padding: 0 !important; background: transparent !important; border: none !important; box-shadow: none !important; aspect-ratio: 1/1; margin-bottom: 0 !important; }
-    .grid-ver-todos-sessao .u-card-minimal .u-img-minimal { width: 100% !important; height: 100% !important; aspect-ratio: auto !important; margin: 0 !important; border-radius: 8px !important; }
-    .grid-ver-todos-sessao .u-card-minimal .u-img-minimal img { mix-blend-mode: multiply !important; opacity: 0.8 !important; filter: contrast(1.1) !important; }
-    .grid-ver-todos-sessao .u-card-minimal .u-bot-minimal,
-    .grid-ver-todos-sessao .u-card-minimal .u-name-minimal,
-    .grid-ver-todos-sessao .u-card-minimal .video-indicator,
-    .grid-ver-todos-sessao .u-card-minimal .btn-add-minimal { display: none !important; }
-    
-    .grid-ver-todos-sessao.grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) { grid-column: span 1 !important; display: block !important; flex-direction: unset !important; background: transparent !important; padding: 0 !important; gap: 0 !important; align-items: stretch !important; box-shadow: none !important; }
+    /* Regra para card Ver Todos Minimalista mobile (mantida do seu código) */
+    .grid-ver-todos-sessao.grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal.is-ver-todos-card { grid-column: span 1 !important; display: flex !important; flex-direction: column !important; background: transparent !important; padding: 0 !important; gap: 0 !important; align-items: stretch !important; box-shadow: none !important; }
 }
 
 </style>
@@ -616,9 +619,13 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
     </div>
 </div>
 
-<div id="fs-gallery-view" style="display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:#000; z-index:99999; flex-direction:column;">
-    <button onclick="closeFsGallery()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); color:#fff; border:none; width:40px; height:40px; border-radius:50%; font-size:1.2rem; z-index:10; display:flex; align-items:center; justify-content:center;">✕</button>
-    <div class="qv-carousel" id="fs-carousel" style="flex:1; height:100%; border-radius:0; padding:0; background:#000; overflow-y: hidden;"></div>
+<div id="fs-gallery-view">
+    <div class="fs-gallery-content">
+        <button onclick="closeFsGallery()" style="position:absolute; top:-15px; right:-15px; background:#1e293b; color:#fff; border:none; width:36px; height:36px; border-radius:50%; font-size:1rem; font-weight:bold; z-index:20; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">✕</button>
+        <button class="fs-arrow fs-arrow-left" onclick="scrollQvCarousel(-1)">❮</button>
+        <button class="fs-arrow fs-arrow-right" onclick="scrollQvCarousel(1)">❯</button>
+        <div class="qv-carousel" id="fs-carousel" style="flex:1; height:350px; background: transparent; overflow-y: hidden;"></div>
+    </div>
 </div>
 
 <div id="video-feed-view" class="lateral-view">
@@ -825,6 +832,7 @@ const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
     currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], combos: [],
     returnToUpsell: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
+    tvRenderedCount: 10,
     catVisible: {},
     deptos: {
         'desc_20': { id: 'desc_20', title: '20% de Desconto', type: 'PROD', data: [] },
@@ -889,7 +897,6 @@ function agruparCategoria(produto) {
 }
 
 function renderHomeCards() {
-    let isMobile = window.innerWidth <= 799;
     const cards = [
         { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', highlighted: true },
         { id: 'desc_20', title: '20% OFF', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
@@ -915,12 +922,18 @@ function renderHomeTV() {
     let container = $('tv-carousel-container');
     if (!container || STATE.allVideos.length === 0) return;
 
-    let videosToShow = STATE.allVideos.slice(0, 10);
+    // Embaralha para mostrar diferente todo load
+    for (let i = STATE.allVideos.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [STATE.allVideos[i], STATE.allVideos[j]] = [STATE.allVideos[j], STATE.allVideos[i]];
+    }
+
+    let videosToShow = STATE.allVideos.slice(0, STATE.tvRenderedCount);
     
-    let trackHtml = videosToShow.map(v => `
-        <div class="home-tv-item">
-            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="openVideoFeed('${v.videoId}')" alt="Thumbnail TV">
-                        <div class="home-tv-play">▶</div>
+    let trackHtml = videosToShow.map((v, index) => `
+        <div class="home-tv-item" id="home-tv-card-${index}">
+            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="handleHomeTvClick('${v.videoId}', ${index})" alt="Thumbnail TV">
+            <div class="home-tv-play" id="home-tv-play-${index}">▶</div>
             <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
                 <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                 <button class="home-tv-prod-btn">Ver</button>
@@ -928,19 +941,75 @@ function renderHomeTV() {
         </div>
     `).join('');
 
-    trackHtml += `
-        <div class="home-tv-more" onclick="openVideoFeed()">
-            <span style="font-size: 2rem; margin-bottom: 8px;">📺</span>
-            <span style="color: var(--c-p); font-weight: 600; text-align: center; font-size: 0.95rem;">Ver Mais<br>Vídeos</span>
-        </div>
-    `;
-
     container.innerHTML = `
         <div class="home-tv-carousel-wrapper">
             <div class="home-tv-title">TV Dona Antônia</div>
-            <div class="home-tv-track">${trackHtml}</div>
+            <button class="tv-carousel-arrow left" onclick="scrollTv(-1)">❮</button>
+            <div class="home-tv-track" id="home-tv-track-el" onscroll="handleTvScroll()">${trackHtml}</div>
+            <button class="tv-carousel-arrow right" onclick="scrollTv(1)">❯</button>
         </div>
     `;
+}
+
+window.handleHomeTvClick = function(videoId, index) {
+    if (window.innerWidth >= 800) {
+        // Desktop Play Inline
+        let card = document.getElementById(`home-tv-card-${index}`);
+        if(card) {
+            let playBtn = document.getElementById(`home-tv-play-${index}`);
+            if(playBtn) playBtn.style.display = 'none';
+            
+            let img = card.querySelector('.home-tv-thumb');
+            if(img) img.style.display = 'none';
+
+            let iframeContainer = document.createElement('div');
+            iframeContainer.style.position = 'absolute';
+            iframeContainer.style.top = '0'; iframeContainer.style.left = '0';
+            iframeContainer.style.width = '100%'; iframeContainer.style.height = '100%';
+            iframeContainer.style.zIndex = '1';
+
+            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&playsinline=1" style="width:100%; height:100%; border:none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            
+            card.appendChild(iframeContainer);
+        }
+    } else {
+        openVideoFeed(videoId);
+    }
+}
+
+window.scrollTv = function(dir) {
+    let track = document.getElementById('home-tv-track-el');
+    if(track) {
+        let cardWidth = track.querySelector('.home-tv-item').offsetWidth + 12;
+        track.scrollBy({ left: dir * cardWidth * 2, behavior: 'smooth' });
+    }
+}
+
+window.handleTvScroll = function() {
+    let track = document.getElementById('home-tv-track-el');
+    if(!track) return;
+
+    if (track.scrollLeft + track.clientWidth >= track.scrollWidth - 50) {
+        if (STATE.tvRenderedCount < STATE.allVideos.length) {
+            let nextLimit = Math.min(STATE.tvRenderedCount + 5, STATE.allVideos.length);
+            let newVideos = STATE.allVideos.slice(STATE.tvRenderedCount, nextLimit);
+            
+            newVideos.forEach((v, idx) => {
+                let actualIndex = STATE.tvRenderedCount + idx;
+                let html = `
+                    <div class="home-tv-item" id="home-tv-card-${actualIndex}">
+                        <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="handleHomeTvClick('${v.videoId}', ${actualIndex})" alt="Thumbnail TV">
+                        <div class="home-tv-play" id="home-tv-play-${actualIndex}">▶</div>
+                        <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
+                            <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+                            <button class="home-tv-prod-btn">Ver</button>
+                        </div>
+                    </div>`;
+                track.insertAdjacentHTML('beforeend', html);
+            });
+            STATE.tvRenderedCount = nextLimit;
+        }
+    }
 }
 
 function renderHomeCategories() {
@@ -956,7 +1025,6 @@ function renderHomeCategories() {
     ];
 
     let itemsHtml = '';
-    let isMobile = window.innerWidth <= 799;
     
     if(!STATE.catVisible) STATE.catVisible = {};
 
@@ -1786,7 +1854,7 @@ window.openUpsellView = function() {
             });
             
             itemsHtml += `
-                    <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 1px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${s.id}', true)">
+                    <div class="u-card-minimal is-ver-todos-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 1px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${s.id}', true)">
                         <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
                         <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.8rem; font-weight:400;">${s.nome}</span></span>
                     </div>
@@ -1876,38 +1944,31 @@ function buildCardHtml(item, type) {
         discountPercent = Math.round(((item.oldPrice - pPrice) / item.oldPrice) * 100);
     }
     
-    let tagHtml = '';
     let oldPriceHtmlMinimal = '';
-    if (item.isSoHoje) tagHtml = `<div class="u-tag-discount" style="background: #ef4444;">SÓ HOJE</div>`;
-    else if (discountPercent > 0) tagHtml = `<div class="u-tag-discount">-${discountPercent}%</div>`;
+    if (discountPercent > 0) {
+        oldPriceHtmlMinimal = `<span style="font-size: 0.85rem; color: var(--c-t); text-decoration: line-through;">${fmt(item.oldPrice)}</span>`;
+    }
 
-    if (discountPercent > 0) oldPriceHtmlMinimal = `<span class="old-price-subtle">${fmt(item.oldPrice)}</span>`;
-    
     let addBtnHtml = '';
     if (isEsgotado) {
-        addBtnHtml = `<div class="btn-add-minimal" style="background:var(--c-t); color:#fff; font-size:0.65rem; border-radius:6px; height:auto; padding:4px 8px; width:auto; right: 4px; bottom: 4px;">ESGOTADO</div>`;
+        addBtnHtml = `<div class="btn-add-minimal" style="position: absolute; top: 8px; right: 8px; background:var(--c-t); color:#fff; font-size:0.65rem; border-radius:6px; height:auto; padding:4px 8px; width:auto;">ESGOTADO</div>`;
     } else {
         let btnContent = qty > 0 ? qty : '+';
-        let btnClass = qty > 0 ? 'btn-add-minimal has-item add-btn-' + id : 'btn-add-minimal add-btn-' + id;
-        addBtnHtml = `<button class="${btnClass}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
+        let extraClass = qty > 0 ? 'has-item ' : '';
+        addBtnHtml = `<button class="${extraClass}btn-add-minimal add-btn-${id}" style="position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; background: #000; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 500; border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 10; transition: transform 0.2s;" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
     }
 
     return `
-    <div class="${cardClassMin}" data-id="${id}" onclick="${onClickMin}">
-        <div class="u-img-minimal">
-            <img src="${img}" loading="lazy" alt="${formatName(name)}">
+    <div class="${cardClassMin}" data-id="${id}" onclick="${onClickMin}" style="margin-bottom: 25px;">
+        <div class="u-img-minimal" style="background: var(--c-img-bg); border-radius: 12px; position: relative; padding: 10%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;">
+            <img src="${img}" loading="lazy" alt="${formatName(name)}" style="max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply;">
             ${videoIconHtml}
             ${addBtnHtml}
         </div>
-        <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between; width:100%;">
-            <div class="u-name-minimal" style="font-size: 0.8rem; font-weight: 500; color: var(--c-p); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 6px; margin-bottom: 4px; text-align: left;">${formatName(name)}</div>
-            <div class="u-bot-minimal">
-                <div style="display: flex; flex-direction: column; align-items: flex-start;">
-                    ${oldPriceHtmlMinimal}
-                    <div class="u-price-minimal">${fmt(pPrice)}</div>
-                </div>
-                ${tagHtml}
-            </div>
+        <div class="u-name-minimal" style="font-size: 0.85rem; font-weight: 500; color: var(--c-p); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 10px; margin-bottom: 6px; text-align: left;">${formatName(name)}</div>
+        <div class="u-bot-minimal" style="display: flex; flex-direction: row; align-items: baseline; gap: 8px; width: 100%;">
+            <div class="u-price-minimal" style="font-size: 1.1rem; font-weight: 600; color: var(--c-p);">${fmt(pPrice)}</div>
+            ${oldPriceHtmlMinimal}
         </div>
     </div>`;
 }
@@ -1922,7 +1983,10 @@ function getCardControls(id) {
 
 window.scrollQvCarousel = function(dir) {
     let c = document.getElementById('fs-carousel');
-    if(c) c.scrollBy({ left: dir * c.clientWidth, behavior: 'smooth' });
+    if(c) {
+        let itemWidth = c.clientWidth;
+        c.scrollBy({ left: dir * itemWidth, behavior: 'smooth' });
+    }
 }
 
 window.openFsGallery = function(index) {
@@ -1930,7 +1994,7 @@ window.openFsGallery = function(index) {
     fs.style.display = 'flex';
     let track = document.getElementById('fs-carousel');
     setTimeout(() => {
-        let itemWidth = track.offsetWidth;
+        let itemWidth = track.clientWidth;
         track.scrollTo({ left: index * itemWidth, behavior: 'instant' });
     }, 50);
 }
