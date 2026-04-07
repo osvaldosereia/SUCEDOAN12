@@ -831,7 +831,7 @@ const STATE = {
         'desc_15': { id: 'desc_15', title: '15% de Desconto', type: 'PROD', data: [] },
         'desc_10': { id: 'desc_10', title: '10% de Desconto', type: 'PROD', data: [] },
         'marcas': { id: 'marcas', title: 'Encontre pela Marca', type: 'PROD', data: [] },
-        'cestas': { id: 'cestas', title: 'Compras Prontas', type: 'BASKET', data: [] },
+        'cestas': { id: 'cestas', title: 'Cestas Prontas', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', type: 'COMBO', data: [] },
         'alimentos': { id: 'alimentos', title: 'Alimentos', type: 'PROD', data: [], tags: [] },
         'bebidas': { id: 'bebidas', title: 'Bebidas', type: 'PROD', data: [], tags: [] },
@@ -890,13 +890,13 @@ function agruparCategoria(produto) {
 
 function renderHomeCards() {
     const cards = [
-        { id: 'cestas', title: 'Compras Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', span2: true, highlighted: true },
+        { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', span2: true, highlighted: true },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
         { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: '#1e293b' },
         { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
-        { id: 'desc_20', title: '20% OFF', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
-        { id: 'desc_15', title: '15% OFF', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
-        { id: 'desc_10', title: '10% OFF', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
+        { id: 'desc_20', title: 'de Desconto', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
+        { id: 'desc_15', title: 'de Desconto', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
+        { id: 'desc_10', title: 'de Desconto', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
         { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: '#1e293b' },
         { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: '#1e293b' },
         { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", icon: '🧼', color: '#1e293b' },
