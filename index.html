@@ -1111,8 +1111,9 @@ function renderHomeMobileTV() {
     
     let trackHtml = videosToShow.map(v => `
         <div class="home-tv-item">
-            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="openVideoFeed()" alt="Thumbnail TV">
-            <div class="home-tv-play">▶</div>
+
+            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="openVideoFeed('${v.videoId}')" alt="Thumbnail TV">
+                        <div class="home-tv-play">▶</div>
             <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
                 <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                 <button class="home-tv-prod-btn">Ver</button>
@@ -1282,7 +1283,7 @@ window.selectTvCategory = function(cat, nome, e) {
     renderVideoFeedTrack();
 }
 
-window.openVideoFeed = function() {
+window.openVideoFeed = function(targetVideoId = null) {
     if(!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     compileVideos(); 
     if(STATE.allVideos.length === 0) return showToast("Nenhum vídeo disponível no momento.", "r");
@@ -1293,7 +1294,8 @@ window.openVideoFeed = function() {
     STATE.tvCategory = 'all';
     document.getElementById('label-tv').innerText = 'Todos';
     
-    renderVideoFeedTrack();
+    // Passamos o ID alvo adiante para a renderização
+    renderVideoFeedTrack(targetVideoId);
     
     $('v-feed-track').onscroll = function() {
         clearTimeout(feedScrollTimeout);
@@ -1309,7 +1311,7 @@ window.openVideoFeed = function() {
     if (!history.state || !history.state.videoOpen) history.pushState({ videoOpen: true }, '');
 }
 
-function renderVideoFeedTrack() {
+function renderVideoFeedTrack(targetVideoId = null) {
     let filteredVideos = STATE.allVideos;
     if (STATE.tvCategory !== 'all') {
         filteredVideos = STATE.allVideos.filter(v => agruparCategoria(v.product) === STATE.tvCategory || v.product.categoria === STATE.tvCategory || (STATE.tvCategory === 'higiene' && agruparCategoria(v.product) === 'beleza'));
@@ -1322,7 +1324,7 @@ function renderVideoFeedTrack() {
 
     let html = filteredVideos.map((v, index) => {
         return `
-        <div class="v-feed-item">
+        <div class="v-feed-item" id="feed-item-${index}">
             <div class="v-player" id="v-player-${index}" onclick="playFeedVideo(${index}, '${v.videoId}')">
                 <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" class="v-thumb">
                 <div class="v-play-btn">▶</div>
@@ -1338,9 +1340,27 @@ function renderVideoFeedTrack() {
         </div>`;
     }).join('');
     
-    $('v-feed-track').innerHTML = html;
-    $('v-feed-track').scrollTo(0,0);
+    let track = $('v-feed-track');
+    track.innerHTML = html;
     currentPlayingIndex = -1;
+
+    // Lógica nova: Rola até o vídeo clicado e dá o play
+    if (targetVideoId) {
+        let targetIndex = filteredVideos.findIndex(v => v.videoId === targetVideoId);
+        if (targetIndex !== -1) {
+            setTimeout(() => {
+                let item = $('feed-item-' + targetIndex);
+                if (item) {
+                    track.scrollTo({ top: item.offsetTop, behavior: 'instant' });
+                    playFeedVideo(targetIndex, targetVideoId);
+                }
+            }, 50); // Um pequeno atraso para dar tempo da tela desenhar os elementos
+            return;
+        }
+    }
+    
+    // Se não houver vídeo específico, vai para o topo normalmente
+    track.scrollTo(0,0);
 }
 
 window.playFeedVideo = function(index, videoId) {
