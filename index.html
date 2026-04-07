@@ -142,21 +142,20 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     padding: 15px 25px;
 }
 
-/* Força o Título e Subtítulo a ficarem em linhas diferentes */
 .home-card.highlighted .home-card-title {
-    display: block;      /* Ocupa a linha toda, jogando o próximo item para baixo */
+    display: block;      
     color: #ffffff !important;
-    font-size: 1.25rem !important; /* Título maior */
+    font-size: 1.25rem !important; 
     font-weight: 700;
     text-align: left;
-    margin-bottom: 2px;  /* Espaço entre o título e o subtítulo */
+    margin-bottom: 2px;  
     line-height: 1.2;
 }
 
 .home-card.highlighted .home-card-subtitle {
-    display: block;      /* Garante que comece em nova linha */
+    display: block;      
     color: #ffffff !important;
-    font-size: 0.85rem !important; /* Subtítulo menor */
+    font-size: 0.85rem !important; 
     font-weight: 400;
     text-align: left;
     opacity: 0.9;
@@ -165,12 +164,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .home-card.highlighted .home-card-icon {
     color: #ffffff !important;
-    font-size: 3rem;    /* Ícone de destaque */
+    font-size: 3rem;    
     margin-bottom: 0;
-    flex-shrink: 0;     /* Impede que o ícone diminua */
+    flex-shrink: 0;     
 }
 
-/* --- Estilos Gerais dos Cards (Padrão) --- */
 .home-card-icon { 
     font-size: 2rem; 
     z-index: 2; 
@@ -199,33 +197,69 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     padding: 0 5px;
 }
 
-/* --- Estilos Gerais dos Cards (Padrão) --- */
-.home-card-icon { 
-    font-size: 2rem; 
-    z-index: 2; 
-    margin-bottom: 2px; 
-    line-height: 1; 
-    color: var(--card-color); 
-    font-weight: 800;
+/* --- CARROSSEL TV MOBILE --- */
+.home-tv-carousel-wrapper {
+    grid-column: 1 / -1; 
+    width: 100%;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
 }
 
-.home-card-title { 
-    color: var(--c-p); 
-    font-size: 0.9rem; 
-    font-weight: 600; 
-    line-height: 1.2; 
-    z-index: 2; 
-    letter-spacing: 0.2px;
+@media (min-width: 800px) {
+    .home-tv-carousel-wrapper { display: none !important; }
 }
 
-.home-card-subtitle { 
-    font-size: 0.75rem; 
-    color: var(--c-s); 
-    font-weight: 500; 
-    margin-top: 2px; 
-    line-height: 1.2; 
-    z-index: 2; 
-    padding: 0 5px;
+.home-tv-title {
+    font-size: 1.1rem; font-weight: 600; color: var(--c-p); 
+    margin-bottom: 12px; text-transform: uppercase;
+}
+
+.home-tv-track {
+    display: flex; gap: 12px; overflow-x: auto; 
+    scroll-snap-type: x mandatory; scrollbar-width: none;
+    padding-bottom: 5px;
+}
+.home-tv-track::-webkit-scrollbar { display: none; }
+
+.home-tv-item {
+    flex: 0 0 42%; 
+    aspect-ratio: 9 / 16; 
+    background: #000;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    scroll-snap-align: center;
+    display: flex; flex-direction: column;
+}
+
+.home-tv-thumb {
+    width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer;
+}
+
+.home-tv-play {
+    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    width: 40px; height: 40px; background: rgba(255,255,255,0.3); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; z-index: 2; backdrop-filter: blur(4px); padding-left: 3px; 
+    pointer-events: none;
+}
+
+.home-tv-prod {
+    position: absolute; bottom: 8px; left: 8px; right: 8px;
+    background: rgba(255,255,255,0.95); border-radius: 8px; padding: 6px;
+    display: flex; align-items: center; gap: 6px; z-index: 10;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer;
+}
+
+.home-tv-prod-img { width: 32px; height: 32px; border-radius: 6px; mix-blend-mode: multiply; object-fit: contain; }
+.home-tv-prod-btn { margin-left: auto; background: var(--c-p); color: #fff; border: none; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+
+.home-tv-more {
+    flex: 0 0 42%; aspect-ratio: 9 / 16; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: var(--c-img-bg); border: 2px dashed var(--c-t); cursor: pointer; scroll-snap-align: center;
 }
 
 /* Carrinho Flutuante */
@@ -439,6 +473,41 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 .btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
 .btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
+
+/* Asymmetrical Grid Mobile (Grade com cards maiores e horizontais) */
+@media (max-width: 799px) {
+    /* A cada 7 itens (ou seja, após 6), o 7º item assume a largura de 2 colunas e layout horizontal */
+    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) {
+        grid-column: span 2;
+        display: flex;
+        flex-direction: row;
+        background: var(--c-img-bg);
+        padding: 12px;
+        border-radius: 12px;
+        gap: 15px;
+        align-items: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-img-minimal {
+        width: 40%;
+        aspect-ratio: 1/1;
+        margin-bottom: 0;
+        background: #fff;
+        flex-shrink: 0;
+    }
+    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-bot-minimal {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 8px;
+    }
+    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-name-minimal {
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+        -webkit-line-clamp: 3 !important;
+    }
+}
 
 .video-indicator { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; }
 .video-indicator svg { width: 12px; height: 12px; fill: var(--c-p); }
@@ -1026,8 +1095,42 @@ function renderHomeCards() {
         let highlightClass = c.highlighted ? ' highlighted' : '';
         let sub = c.subtitle ? `<div class="home-card-subtitle">${c.subtitle}</div>` : '';
         html += `<div class="${classes}${highlightClass}" onclick="${c.action}" style="--card-color: ${c.color || '#1e293b'};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div>${sub}</div>`; 
+        
+        if (c.id === 'desc_10') {
+            html += `<div id="home-tv-carousel" class="home-tv-carousel-wrapper"></div>`;
+        }
     });
     $('grid-home-sections').innerHTML = html;
+}
+
+function renderHomeMobileTV() {
+    let container = $('home-tv-carousel');
+    if (!container || STATE.allVideos.length === 0) return;
+
+    let videosToShow = STATE.allVideos.slice(0, 10);
+    
+    let trackHtml = videosToShow.map(v => `
+        <div class="home-tv-item">
+            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="openVideoFeed()" alt="Thumbnail TV">
+            <div class="home-tv-play">▶</div>
+            <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
+                <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+                <button class="home-tv-prod-btn">Ver</button>
+            </div>
+        </div>
+    `).join('');
+
+    trackHtml += `
+        <div class="home-tv-more" onclick="openVideoFeed()">
+            <span style="font-size: 2rem; margin-bottom: 8px;">📺</span>
+            <span style="color: var(--c-p); font-weight: 600; text-align: center; font-size: 0.95rem;">Ver Mais<br>Vídeos</span>
+        </div>
+    `;
+
+    container.innerHTML = `
+        <div class="home-tv-title">TV Dona Antônia</div>
+        <div class="home-tv-track">${trackHtml}</div>
+    `;
 }
 
 function renderHomeCategories() {
@@ -1247,7 +1350,8 @@ window.playFeedVideo = function(index, videoId) {
     currentPlayingIndex = index;
     let container = $('v-player-' + index);
     if(!container) return;
-    container.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; z-index:1;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    
+    container.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; z-index:10; position:relative;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 }
 
 window.stopFeedVideo = function(index) {
@@ -1363,7 +1467,6 @@ async function init() {
 
             let hojeTime = new Date().getTime();
             
-            // 1. Só Hoje (Vencimento Próximo) - Limite 20% desconto para os 20 produtos
             let comValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
             comValidade.forEach(p => {
                 p._valTime = converterDataValidade(p.validade);
@@ -1373,13 +1476,12 @@ async function init() {
             
             let top20Vencimento = comValidade.slice(0, 20);
             top20Vencimento.forEach(p => {
-                p.price = p.oldPrice * 0.80; // 20% desconto máximo
+                p.price = p.oldPrice * 0.80; 
                 p.discountApplied = true;
                 p.isExpiringSoon = true;
                 p.isSoHoje = true;
             });
 
-            // 2. Descontos Isca (Restritos a 10 e 15%)
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
                 
@@ -1401,7 +1503,6 @@ async function init() {
                 }
             });
 
-            // Agrupar produtos com desconto nos departamentos corretos (10, 15, 20)
             STATE.prods.forEach(p => {
                  if (p.oldPrice > p.price && p.stock > 0 && !p._isBasket && !p._isCombo) {
                       let pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
@@ -1413,6 +1514,7 @@ async function init() {
 
             compileVideos();
             renderHomeCategories(); 
+            renderHomeMobileTV();
         }
         
         STATE.dataLoaded = true;
@@ -1960,16 +2062,19 @@ function buildCardHtml(item, type) {
     return `
     <div class="${cardClassMin}" data-id="${id}" onclick="${onClickMin}">
         <div class="u-img-minimal">
-            <img src="${img}" loading="lazy" alt="Produto">
+            <img src="${img}" loading="lazy" alt="${formatName(name)}">
             ${videoIconHtml}
             ${addBtnHtml}
         </div>
-        <div class="u-bot-minimal">
-            <div style="display: flex; flex-direction: column;">
-                ${oldPriceHtmlMinimal}
-                <div class="u-price-minimal">${fmt(pPrice)}</div>
+        <div style="display:flex; flex-direction:column; flex:1; justify-content:space-between; width:100%;">
+            <div class="u-name-minimal" style="font-size: 0.8rem; font-weight: 500; color: var(--c-p); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 6px; margin-bottom: 4px; text-align: left;">${formatName(name)}</div>
+            <div class="u-bot-minimal">
+                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                    ${oldPriceHtmlMinimal}
+                    <div class="u-price-minimal">${fmt(pPrice)}</div>
+                </div>
+                ${tagHtml}
             </div>
-            ${tagHtml}
         </div>
     </div>`;
 }
@@ -2077,7 +2182,7 @@ window.openQuickView = function(id) {
         : fmt(p.price); 
     
     let qvWholesale = $('qv-wholesale');
-    let precoAtacado = p.price * 0.90; // 10% de desconto no atacado
+    let precoAtacado = p.price * 0.90; 
     qvWholesale.innerHTML = `
         <div class="wholesale-badge">
             <span style="font-size: 1.2rem;">📦</span>
