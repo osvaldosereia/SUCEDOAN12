@@ -255,20 +255,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .gaveta-name { font-size: 0.95rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .media-badge { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.6); color: #fff; font-size: 0.7rem; padding: 3px 6px; border-radius: 6px; font-weight: 600; }
 
-/* SEGUNDA GAVETA / SLIDE IMAGENS */
-.lateral-view.gaveta-secundaria {
-    left: 0; top: auto; bottom: -100%; width: 100%; height: 85dvh; 
-    border-radius: 24px 24px 0 0; box-shadow: 0 -4px 24px rgba(0,0,0,0.15); z-index: 120; 
-    transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); background: #ffffff; padding: 20px 0 0 0;
-    display: flex; flex-direction: column;
-}
-.lateral-view.gaveta-secundaria.open { left: 0; bottom: 0; }
-@media(min-width: 800px) { 
-    .lateral-view.gaveta-secundaria { width: 450px; left: 50%; transform: translateX(-50%); border-radius: 24px 24px 0 0; } 
-    .lateral-view.gaveta-secundaria.open { left: 50%; bottom: 0; } 
-}
-
-
 .see-all-header { display: flex; align-items: center; justify-content: space-between; padding: 15px; background: #ffffff; border-bottom: 1px solid var(--c-bd); flex-shrink: 0; position: relative; z-index: 2; }
 .see-all-back { color: var(--c-p); background: transparent; border: none; cursor: pointer; display: flex; align-items: center; padding: 0; font-weight: 600; font-size: 1rem; transition: 0.2s; flex-shrink: 0; margin-right: 15px;}
 .see-all-back:active { opacity: 0.7; }
@@ -365,6 +351,21 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .upsell-header-sub { font-size: 0.9rem; color: var(--c-s); margin-bottom: 25px; text-align: left; font-weight: 400; }
 .carousel-title { font-size: 1.05rem; font-weight: 600; color: var(--c-p); text-align: left; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase;}
 
+.u-card-minimal { background: transparent; border: none; border-radius: 0; display: flex; flex-direction: column; position: relative; cursor: pointer; transition: transform 0.2s; height: 100%; margin-bottom: 12px; }
+.u-card-minimal:hover { transform: translateY(-2px); }
+.u-card-minimal:active { transform: scale(0.98); }
+.u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
+
+.u-img-minimal { width: 100%; aspect-ratio: 1/1.2; background: var(--c-img-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; border: none; overflow: hidden; margin-bottom: 4px; }
+.u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 8%; }
+
+.u-bot-minimal { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: 0; padding-top: 2px;}
+.u-price-minimal { font-size: 1.05rem; font-weight: 700; color: var(--c-p); line-height: 1; }
+.u-tag-discount { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 6px; font-weight: 700; border-radius: 6px; }
+
+.btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
+.btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
+
 .video-indicator { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; }
 .video-indicator svg { width: 12px; height: 12px; fill: var(--c-p); }
 
@@ -372,11 +373,9 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 .qv-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; scrollbar-width: none; -webkit-overflow-scrolling: touch; border-radius: 12px; padding-bottom: 5px; }
 .qv-carousel::-webkit-scrollbar { display: none; }
-.qv-carousel-item { flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1/1; background: transparent; border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
-.qv-carousel-item img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: normal; padding: 2%; }
+.qv-carousel-item { flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 12px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; }
+.qv-carousel-item img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 2%; }
 .qv-carousel-item iframe { width: 100%; height: 100%; border: none; }
-
-#dropdown-tv { display: none !important; }
 
 #video-feed-view { background: #000; z-index: 95; } 
 #video-feed-view .see-all-header { background: #111; border-bottom: 1px solid #333; color: #fff; }
@@ -397,10 +396,11 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .v-prod-btn { background: var(--c-p); color: #fff; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; border: none; }
 
 @media(min-width: 800px) {
-    #video-feed-view { background: rgba(0, 0, 0, 0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    #video-feed-view .see-all-header { max-width: 400px; width: 100%; margin-top: 0; border-radius: 16px 16px 0 0; border: 1px solid #333; border-bottom: none; }
-    #video-feed-view .video-feed-container { max-width: 400px; width: 100%; height: 80vh; border-radius: 0 0 16px 16px; border: 1px solid #333; border-top: none; }
-    .v-feed-item { height: 80vh; }
+    #video-feed-view { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); }
+    #video-feed-view .see-all-header, #video-feed-view .video-feed-container { max-width: 420px; margin: 0 auto; box-shadow: 0 10px 50px rgba(0,0,0,0.6); }
+    #video-feed-view .see-all-header { margin-top: 3vh; border-radius: 16px 16px 0 0; border: 1px solid #333; border-bottom: none; }
+    #video-feed-view .video-feed-container { height: calc(94vh - 54px); border-radius: 0 0 16px 16px; border: 1px solid #333; border-top: none; }
+    #video-feed-view .v-feed-item { height: calc(94vh - 54px); }
 }
 
 .info-box-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px; margin-bottom: 12px; text-decoration: none; color: var(--c-p); background: var(--c-img-bg); transition: 0.2s;}
@@ -417,40 +417,16 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .bp-close:active { transform: scale(0.9); }
 body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
-.wholesale-badge { background: var(--c-img-bg); padding: 10px 12px; border-radius: 8px; margin-top: 12px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--c-p); }
-.wholesale-badge span.price { font-weight: 700; color: var(--c-ok); font-size: 1rem; }
-
-/* REGRAS MINIMALISTAS DAS GRADES (Desktop e Mobile Unificados) */
-.grid-ver-todos-sessao .u-card-minimal {
-    padding: 0 !important; background: transparent !important; border: none !important; box-shadow: none !important; aspect-ratio: auto !important; margin-bottom: 16px !important;
-}
-.grid-ver-todos-sessao .u-card-minimal .u-img-minimal {
-    width: 100% !important; aspect-ratio: 1/1 !important; margin: 0 !important; border-radius: 8px !important; background: transparent !important;
-}
-.grid-ver-todos-sessao .u-card-minimal .u-img-minimal img {
-    mix-blend-mode: multiply !important; opacity: 0.8 !important; filter: contrast(1.1) !important; padding: 0 !important;
-}
-.grid-ver-todos-sessao .u-card-minimal .u-bot-minimal {
-    display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; margin-top: 8px !important; padding: 0 !important;
-}
-.grid-ver-todos-sessao .u-card-minimal .u-price-minimal {
-    font-size: 0.95rem !important; font-weight: 500 !important; color: var(--c-p) !important; line-height: 1 !important;
-}
-.grid-ver-todos-sessao .u-card-minimal .old-price-subtle {
-    font-size: 0.75rem !important; font-weight: 400 !important; color: var(--c-s) !important; text-decoration: line-through !important; margin-bottom: 2px !important;
-}
-.grid-ver-todos-sessao .u-card-minimal .u-name-minimal,
-.grid-ver-todos-sessao .u-card-minimal .btn-add-minimal,
-.grid-ver-todos-sessao .u-card-minimal .video-indicator,
-.grid-ver-todos-sessao .u-card-minimal .u-tag-discount {
-    display: none !important;
-}
-
 /* LAYOUT ESPECÍFICO (Desktop / Mobile unificados e alinhados) */
 @media (min-width: 800px) {
-    .grid-home-sections { grid-template-columns: repeat(6, 1fr); padding: 30px 15px 15px; }
-    .home-card { grid-column: span 1 !important; aspect-ratio: auto; min-height: 80px; padding: 12px 8px; }
-    .home-card.highlighted { flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 6px !important; }
+    .grid-home-sections {
+        grid-template-columns: repeat(6, 1fr);
+        padding: 30px 15px 15px;
+    }
+    .home-card { grid-column: span 1 !important; aspect-ratio: 1/0.8; padding: 12px 8px; }
+    .home-card.highlighted { 
+        flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 6px !important;
+    }
     .home-card.highlighted .home-card-icon { font-size: 2.2rem !important; margin-bottom: 2px !important; }
     .home-card.highlighted .home-card-title { font-size: 0.9rem !important; text-align: center !important; }
     .home-card.highlighted .home-card-subtitle { display: none !important; }
@@ -461,19 +437,12 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
 @media (max-width: 799px) {
     .home-card { grid-column: span 3; }
-    .home-card.highlighted { 
-        grid-column: span 6; 
-        min-height: 70px; /* Menor verticalmente */
-        padding: 8px 15px;
-    }
+    .home-card.highlighted { grid-column: span 6; }
     
     .home-card[onclick*="'desc_20'"],
     .home-card[onclick*="'desc_15'"],
     .home-card[onclick*="'desc_10'"] {
-        grid-column: span 2; 
-        min-height: 105px; /* Mais altos */
-        padding: 15px 4px;
-        justify-content: center;
+        grid-column: span 2; padding: 8px 4px;
     }
     .home-card[onclick*="'desc_20'"] .home-card-title,
     .home-card[onclick*="'desc_15'"] .home-card-title,
@@ -482,8 +451,17 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
     .home-card[onclick*="'desc_15'"] .home-card-icon,
     .home-card[onclick*="'desc_10'"] .home-card-icon { font-size: 1.4rem; }
 
-    /* 3 Colunas no mobile */
     .grid-ver-todos-sessao { grid-template-columns: repeat(3, 1fr) !important; gap: 12px 8px !important; }
+    
+    .grid-ver-todos-sessao .u-card-minimal { padding: 0 !important; background: transparent !important; border: none !important; box-shadow: none !important; aspect-ratio: 1/1; margin-bottom: 0 !important; }
+    .grid-ver-todos-sessao .u-card-minimal .u-img-minimal { width: 100% !important; height: 100% !important; aspect-ratio: auto !important; margin: 0 !important; border-radius: 8px !important; }
+    .grid-ver-todos-sessao .u-card-minimal .u-img-minimal img { mix-blend-mode: multiply !important; opacity: 0.8 !important; filter: contrast(1.1) !important; }
+    .grid-ver-todos-sessao .u-card-minimal .u-bot-minimal,
+    .grid-ver-todos-sessao .u-card-minimal .u-name-minimal,
+    .grid-ver-todos-sessao .u-card-minimal .video-indicator,
+    .grid-ver-todos-sessao .u-card-minimal .btn-add-minimal { display: none !important; }
+    
+    .grid-ver-todos-sessao.grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) { grid-column: span 1 !important; display: block !important; flex-direction: unset !important; background: transparent !important; padding: 0 !important; gap: 0 !important; align-items: stretch !important; box-shadow: none !important; }
 }
 
 </style>
@@ -491,6 +469,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 <body>
 
 <main class="main-stage" id="scroll-stage">
+    
     <img src="/site/img/produtos/capatopo.webp" class="mobile-capa-topo" alt="Capa da Loja">
 
     <div class="header-row">
@@ -507,8 +486,12 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
     </div>
     
     <div class="sub-header-bar">
-        <button class="sub-btn" onclick="openGlobalSearch()"><span class="sub-btn-icon">🔍</span> Produtos</button>
-        <button class="sub-btn" onclick="openStoreRules()"><span class="sub-btn-icon">ℹ️</span> Vantagens</button>
+        <button class="sub-btn" onclick="openGlobalSearch()">
+            <span class="sub-btn-icon">🔍</span> Produtos
+        </button>
+        <button class="sub-btn" onclick="openStoreRules()">
+            <span class="sub-btn-icon">ℹ️</span> Vantagens
+        </button>
     </div>
 
     <div id="grid-home-sections" class="grid-home-sections"></div>
@@ -516,6 +499,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
     <div id="tv-carousel-container"></div>
     
     <div id="home-destaques-section" style="max-width: 1000px; margin: 0 auto; padding: 10px 15px 40px; display: none;"></div>
+
 </main>
 
 <div id="floating-cart" class="floating-cart" onclick="openCheckout()" style="display: none;">
@@ -539,7 +523,9 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         </div>
     </div>
     <div class="see-all-content" id="global-search-results" style="padding: 15px; display: flex; flex-direction: column; gap: 10px; padding-bottom: 120px;">
-        <div style="text-align:center; color:var(--c-s); margin-top:40px; font-size:0.9rem;">🔍 Digite o nome do produto ou marca acima...</div>
+        <div style="text-align:center; color:var(--c-s); margin-top:40px; font-size:0.9rem;">
+            🔍 Digite o nome do produto ou marca acima...
+        </div>
     </div>
 </div>
 
@@ -552,10 +538,18 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         <h2 class="see-all-title">Vantagens</h2>
     </div>
     <div class="see-all-content" style="padding: 20px 15px;">
-        <div style="background: var(--c-img-bg); color: var(--c-p); padding: 18px; border-radius: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;"><span style="font-size:1.8rem;">🚚</span> Entrega grátis (Cuiabá e VG)</div>
-        <div style="background: var(--c-img-bg); color: var(--c-p); padding: 18px; border-radius: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;"><span style="font-size:1.8rem;">📦</span> Pedidos a partir de R$ 75</div>
-        <div style="background: var(--c-img-bg); color: var(--c-p); padding: 18px; border-radius: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;"><span style="font-size:1.8rem;">💳</span> Parcele em até 3x sem juros</div>
-        <div style="background: var(--c-img-bg); color: var(--c-p); padding: 18px; border-radius: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;"><span style="font-size:1.8rem;">🍽️</span> Aceitamos Alimentação</div>
+        <div style="background: var(--c-img-bg); color: var(--c-p); padding: 18px; border-radius: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size:1.8rem;">🚚</span> Entrega grátis (Cuiabá e VG)
+        </div>
+        <div style="background: var(--c-img-bg); color: var(--c-p); padding: 18px; border-radius: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size:1.8rem;">📦</span> Pedidos a partir de R$ 75
+        </div>
+        <div style="background: var(--c-img-bg); color: var(--c-p); padding: 18px; border-radius: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size:1.8rem;">💳</span> Parcele em até 3x sem juros
+        </div>
+        <div style="background: var(--c-img-bg); color: var(--c-p); padding: 18px; border-radius: 12px; font-weight: 500; margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size:1.8rem;">🍽️</span> Aceitamos Alimentação
+        </div>
     </div>
 </div>
 
@@ -570,6 +564,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             <input type="text" class="depto-search" id="depto-search" placeholder="Buscar aqui..." oninput="applyDeptoFilters()">
         </div>
     </div>
+    
     <div class="see-all-controls" id="see-all-controls" style="display:none;">
         <div class="filters-row" id="normal-filters">
             <div class="custom-dropdown" id="dropdown-keyword">
@@ -580,12 +575,12 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             </div>
             <div class="custom-dropdown" id="dropdown-sort">
                 <div class="custom-dropdown-btn" onclick="toggleDropdown('sort', event)">
-                    <span id="label-sort">A - Z</span> <span>▼</span>
+                    <span id="label-sort">Relevância</span> <span>▼</span>
                 </div>
                 <div class="custom-dropdown-list" id="list-sort">
-                    <div class="custom-dropdown-item active" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
-                    <div class="custom-dropdown-item" onclick="selectSortOption('maior_desconto', 'Relevância')">Relevância</div>
+                    <div class="custom-dropdown-item active" onclick="selectSortOption('maior_desconto', 'Relevância')">Relevância</div>
                     <div class="custom-dropdown-item" onclick="selectSortOption('menor_preco', 'Menor Preço')">Menor Preço</div>
+                    <div class="custom-dropdown-item" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
                 </div>
             </div>
             <div class="custom-dropdown" id="dropdown-marcas" style="display:none;">
@@ -596,6 +591,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             </div>
         </div>
     </div>
+
     <div class="see-all-content" id="see-all-content">
         <div id="cesta-info-banner"></div>
         <div class="grid-ver-todos" id="see-all-grid"></div>
@@ -618,12 +614,11 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             <div id="qv-action-area" style="margin-top: auto;"></div>
         </div>
     </div>
-    <div id="qv-bottom-buttons" style="margin-top: 10px; width: 100%;"></div>
 </div>
 
-<div id="fs-gallery-view" class="lateral-view gaveta-secundaria">
-    <button class="gaveta-close" onclick="closeFsGallery()" style="z-index: 130;">✕</button>
-    <div class="qv-carousel" id="fs-carousel" style="flex:1; height:100%; padding:0; background: var(--c-bg); border-radius: 24px 24px 0 0;"></div>
+<div id="fs-gallery-view" style="display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:#000; z-index:99999; flex-direction:column;">
+    <button onclick="closeFsGallery()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); color:#fff; border:none; width:40px; height:40px; border-radius:50%; font-size:1.2rem; z-index:10; display:flex; align-items:center; justify-content:center;">✕</button>
+    <div class="qv-carousel" id="fs-carousel" style="flex:1; height:100%; border-radius:0; padding:0; background:#000; overflow-y: hidden;"></div>
 </div>
 
 <div id="video-feed-view" class="lateral-view">
@@ -632,6 +627,18 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Início
         </button>
+        <div class="custom-dropdown" id="dropdown-tv" style="min-width: 140px; margin-left: auto;">
+            <div class="custom-dropdown-btn" onclick="toggleDropdown('tv', event)" style="background:transparent; color:#fff; border:none; padding:0; display:flex; gap:5px; justify-content:flex-end;">
+                <span id="label-tv">Todos</span> <span style="font-size:0.8rem; margin-top:2px;">▼</span>
+            </div>
+            <div class="custom-dropdown-list" id="list-tv" style="top:35px; right:0; left:auto; background:#111; border-color:#333; color:#fff;">
+                <div class="custom-dropdown-item active" onclick="selectTvCategory('all', 'Todos', event)" style="color:#fff; border-bottom-color: #222;">Todos</div>
+                <div class="custom-dropdown-item" onclick="selectTvCategory('alimentos', 'Alimentos', event)" style="color:#fff; border-bottom-color: #222;">Alimentos</div>
+                <div class="custom-dropdown-item" onclick="selectTvCategory('bebidas', 'Bebidas', event)" style="color:#fff; border-bottom-color: #222;">Bebidas</div>
+                <div class="custom-dropdown-item" onclick="selectTvCategory('limpeza', 'Limpeza', event)" style="color:#fff; border-bottom-color: #222;">Limpeza</div>
+                <div class="custom-dropdown-item" onclick="selectTvCategory('higiene', 'Higiene e Beleza', event)" style="color:#fff; border-bottom-color: transparent;">Higiene e Beleza</div>
+            </div>
+        </div>
     </div>
     <div class="video-feed-container" id="v-feed-track"></div>
 </div>
@@ -815,7 +822,7 @@ const MARCAS_DESTAQUE = [
 ].sort((a, b) => a.nome.localeCompare(b.nome));
 
 const STATE = {
-    dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'az', currentKeyword: 'all',
+    dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
     currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], combos: [],
     returnToUpsell: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
     catVisible: {},
@@ -882,6 +889,7 @@ function agruparCategoria(produto) {
 }
 
 function renderHomeCards() {
+    let isMobile = window.innerWidth <= 799;
     const cards = [
         { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', highlighted: true },
         { id: 'desc_20', title: '20% OFF', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
@@ -948,6 +956,7 @@ function renderHomeCategories() {
     ];
 
     let itemsHtml = '';
+    let isMobile = window.innerWidth <= 799;
     
     if(!STATE.catVisible) STATE.catVisible = {};
 
@@ -1410,7 +1419,7 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     STATE.viewStack = 'DEPTO_LIST';
     STATE.returnToUpsell = fromUpsell; 
 
-    STATE.currentSort = 'az';
+    STATE.currentSort = 'maior_desconto';
     STATE.currentKeyword = 'all';
 
     let d = STATE.deptos[deptoId];
@@ -1442,7 +1451,7 @@ window.openDepto = function(deptoId, fromUpsell = false) {
         document.getElementById('dropdown-keyword').style.display = 'block';
         document.getElementById('dropdown-sort').style.display = 'block';
         
-        document.getElementById('label-sort').innerText = 'A - Z';
+        document.getElementById('label-sort').innerText = 'Relevância';
         document.getElementById('label-keyword').innerText = 'Todos';
         
         let tagHtml = `<div class="custom-dropdown-item active" onclick="selectKeywordOption('all', 'Todos', this)">Todos</div>`;
@@ -1496,7 +1505,7 @@ window.applyDeptoFilters = function(preventScroll = false) {
         let topExpiring = filtered.filter(p => p.isExpiringSoon);
         let normalProds = filtered.filter(p => !p.isExpiringSoon);
 
-        let sortType = STATE.currentSort || 'az';
+        let sortType = STATE.currentSort || 'maior_desconto';
 
         if(sortType === 'az') { normalProds.sort((a,b) => String(a.name).localeCompare(String(b.name))); } 
         else if(sortType === 'menor_preco') { normalProds.sort((a,b) => a.price - b.price); } 
@@ -1552,7 +1561,7 @@ window.addEventListener('popstate', function(event) {
     let storeRulesView = document.getElementById('store-rules-view');
     let fsView = document.getElementById('fs-gallery-view');
 
-    if (fsView && fsView.classList.contains('open')) closeFsGallery();
+    if (fsView && fsView.style.display !== 'none') closeFsGallery();
     else if (qvView && qvView.classList.contains('open')) closeQuickView(true);
     else if (infoView && infoView.classList.contains('open')) closeInfoView();
     else if (videoFeedView && videoFeedView.classList.contains('open')) closeVideoFeed();
@@ -1918,7 +1927,7 @@ window.scrollQvCarousel = function(dir) {
 
 window.openFsGallery = function(index) {
     let fs = document.getElementById('fs-gallery-view');
-    fs.classList.add('open');
+    fs.style.display = 'flex';
     let track = document.getElementById('fs-carousel');
     setTimeout(() => {
         let itemWidth = track.offsetWidth;
@@ -1927,8 +1936,7 @@ window.openFsGallery = function(index) {
 }
 
 window.closeFsGallery = function() {
-    let fs = document.getElementById('fs-gallery-view');
-    fs.classList.remove('open');
+    document.getElementById('fs-gallery-view').style.display = 'none';
     let iframes = document.querySelectorAll('#fs-carousel iframe');
     iframes.forEach(ifr => {
         ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
