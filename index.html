@@ -20,7 +20,10 @@
     --c-err: #ef4444;     
     --c-bg: #ffffff;      
     --c-bd: #f1f5f9;      
-    --c-img-bg: #e2e8f0;  /* Fundo cinza escurecido conforme solicitado */
+    
+    /* Alteração aqui: De #e2e8f0 para #f8fafc (mais claro) */
+    --c-img-bg: #f8fafc;  
+    
     --font: 'Inter', system-ui, sans-serif;
 }
 
@@ -123,16 +126,16 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-card:active { transform: scale(0.96); }
 .col-span-2 { grid-column: span 2; aspect-ratio: auto; min-height: 120px; justify-content: center; }
 
-/* Destaque visual da Cesta */
+/* Destaque visual da Cesta - Alterado para Azul Petróleo */
 .home-card.highlighted {
-    background: var(--c-a) !important;
-    border-color: var(--c-a) !important;
-    box-shadow: 0 8px 24px rgba(234, 29, 44, 0.25) !important;
+    background: #075985 !important; /* Azul Petróleo Profundo */
+    border-color: #075985 !important;
+    box-shadow: 0 8px 24px rgba(7, 89, 133, 0.25) !important; /* Sombra acompanhando a cor */
 }
 .home-card.highlighted .home-card-title,
 .home-card.highlighted .home-card-subtitle,
 .home-card.highlighted .home-card-icon {
-    color: #ffffff !important;
+    color: #ffffff !important; /* Mantém o texto branco para leitura */
 }
 
 .home-card-icon { font-size: 2rem; z-index: 2; margin-bottom: 2px; line-height: 1; color: var(--card-color); font-weight: 800;}
