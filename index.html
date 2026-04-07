@@ -288,7 +288,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .fc-badge { background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;}
 .fc-right { font-weight: 700; font-size: 1.1rem; }
 
-/* Visualização Lateral */
+/* Visualização Lateral Genérica */
 .lateral-view {
     position: fixed; 
     top: 0; 
@@ -303,9 +303,32 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .lateral-view.open { left: 0; }
 
-.lateral-view.quick-view { width: 90%; left: 100%; border-radius: 20px 0 0 20px; z-index: 110; box-shadow: -4px 0 24px rgba(0,0,0,0.05);} 
-.lateral-view.quick-view.open { left: 10%; }
-@media(min-width: 800px) { .lateral-view.quick-view { width: 450px; } .lateral-view.quick-view.open { left: calc(100% - 450px); } }
+/* GAVETA / BOTTOM SHEET (Quick View) */
+.lateral-view.quick-view {
+    left: 0;
+    top: auto;
+    bottom: -100%;
+    width: 100%;
+    height: auto;
+    max-height: 90dvh;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+    z-index: 110;
+    transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.lateral-view.quick-view.open { left: 0; bottom: 0; }
+
+@media(min-width: 800px) { 
+    .lateral-view.quick-view { 
+        width: 450px; 
+        left: 50%; 
+        transform: translateX(-50%); 
+    } 
+    .lateral-view.quick-view.open { 
+        left: 50%; 
+        bottom: 0; 
+    } 
+}
 
 .see-all-header { 
     display: flex; align-items: center; justify-content: space-between; padding: 15px; 
@@ -710,7 +733,7 @@ body.has-bottom-banner .floating-cart {
 
 <div id="generic-overlay" onclick="closeGenericOverlay()"></div>
 
-<div id="global-search-view" class="lateral-view quick-view">
+<div id="global-search-view" class="lateral-view quick-view" style="max-height: 100dvh; border-radius: 0;">
     <div class="see-all-header" style="gap: 10px;">
         <button class="see-all-back" onclick="closeGlobalSearch()" style="margin-right: 0;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -727,7 +750,7 @@ body.has-bottom-banner .floating-cart {
     </div>
 </div>
 
-<div id="store-rules-view" class="lateral-view quick-view">
+<div id="store-rules-view" class="lateral-view quick-view" style="max-height: 100dvh; border-radius: 0;">
     <div class="see-all-header">
         <button class="see-all-back" onclick="closeStoreRules()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
@@ -802,12 +825,11 @@ body.has-bottom-banner .floating-cart {
 </div>
 
 <div id="quick-view-lateral" class="lateral-view quick-view">
-    <div class="see-all-header">
-        <button class="see-all-back" onclick="closeQuickView()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            Voltar
+    <div class="see-all-header" style="border-radius: 20px 20px 0 0;">
+        <h2 class="see-all-title" style="text-align: left;">Detalhes</h2>
+        <button class="see-all-back" onclick="closeQuickView()" style="margin-right: 0; margin-left: 15px;">
+            ✕
         </button>
-        <h2 class="see-all-title">Detalhes</h2>
     </div>
     
     <div class="see-all-content" style="padding: 10px 15px 120px;">
@@ -825,14 +847,17 @@ body.has-bottom-banner .floating-cart {
         <div id="qv-price" style="font-size: 1.35rem; font-weight: 700; color: var(--c-p); margin-bottom: 10px; text-align: left;"></div>
         
         <div id="qv-wholesale" style="display: none;"></div>
-
-        <div id="qv-desc" style="font-size: 0.85rem; color: var(--c-s); line-height: 1.4; margin-bottom: 15px; margin-top: 15px; text-align: left; display: none;"></div>
         
         <div id="qv-action-area" data-id=""></div>
         <div id="qv-bottom-buttons"></div> 
 
         <div id="qv-recommendations" style="margin-top: 25px;"></div>
     </div>
+</div>
+
+<div id="fs-gallery-view" style="display:none; position:fixed; top:0; left:0; width:100%; height:100dvh; background:#000; z-index:99999; flex-direction:column;">
+    <button onclick="closeFsGallery()" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); color:#fff; border:none; width:40px; height:40px; border-radius:50%; font-size:1.2rem; z-index:10; display:flex; align-items:center; justify-content:center;">✕</button>
+    <div class="qv-carousel" id="fs-carousel" style="flex:1; height:100%; border-radius:0; padding:0; background:#000; overflow-y: hidden;"></div>
 </div>
 
 <div id="video-feed-view" class="lateral-view">
@@ -1117,7 +1142,6 @@ function renderHomeCards() {
         { id: 'desc_10', title: '10% OFF', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
         { id: 'marcas', title: 'Top Marcas', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
-        // Icones devolvidos ao desktop
         { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", isCat: true, icon: '🥫' },
         { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", isCat: true, icon: '🥤' },
         { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", isCat: true, icon: '🧼' },
@@ -1130,7 +1154,7 @@ function renderHomeCards() {
 
     let html = '';
     cards.forEach(c => { 
-        if (isMobile && c.isCat) return; // Exclui botões das categorias no mobile, aparecem direto na grade!
+        if (isMobile && c.isCat) return; 
 
         let classes = 'home-card';
         if (c.highlighted) classes += ' highlighted';
@@ -1221,11 +1245,11 @@ function renderHomeCategories() {
             });
             
             if (isMobile) {
-                itemsHtml += `</div>`; // fecha grid
+                itemsHtml += `</div>`; 
                 if (items.length > limit) {
                     itemsHtml += `<button id="btn-more-${s.id}" class="btn-modal secondary" style="width: 100%; margin-top: 15px; font-size: 0.95rem; font-weight: 600;" onclick="loadMoreHomeCat('${s.id}', '${s.nome}')">Ver mais de ${s.nome}</button>`;
                 }
-                itemsHtml += `</div>`; // fecha wrapper
+                itemsHtml += `</div>`; 
             } else {
                 itemsHtml += `
                     <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${s.id}', false)">
@@ -1382,7 +1406,6 @@ window.openVideoFeed = function(targetVideoId = null) {
     STATE.tvCategory = 'all';
     document.getElementById('label-tv').innerText = 'Todos';
     
-    // Passamos o ID alvo adiante para a renderização
     renderVideoFeedTrack(targetVideoId);
     
     $('v-feed-track').onscroll = function() {
@@ -1834,8 +1857,10 @@ window.addEventListener('popstate', function(event) {
     let infoView = document.getElementById('info-view');
     let searchView = document.getElementById('global-search-view');
     let storeRulesView = document.getElementById('store-rules-view');
+    let fsView = document.getElementById('fs-gallery-view');
 
-    if (qvView && qvView.classList.contains('open')) closeQuickView(true);
+    if (fsView && fsView.style.display !== 'none') closeFsGallery();
+    else if (qvView && qvView.classList.contains('open')) closeQuickView(true);
     else if (infoView && infoView.classList.contains('open')) closeInfoView();
     else if (videoFeedView && videoFeedView.classList.contains('open')) closeVideoFeed();
     else if (searchView && searchView.classList.contains('open')) closeGlobalSearch();
@@ -2198,23 +2223,47 @@ window.scrollQvCarousel = function(dir) {
     if(c) c.scrollBy({ left: dir * c.clientWidth, behavior: 'smooth' });
 }
 
+window.openFsGallery = function(index) {
+    let fs = document.getElementById('fs-gallery-view');
+    fs.style.display = 'flex';
+    let track = document.getElementById('fs-carousel');
+    setTimeout(() => {
+        let itemWidth = track.offsetWidth;
+        track.scrollTo({ left: index * itemWidth, behavior: 'instant' });
+    }, 50);
+}
+
+window.closeFsGallery = function() {
+    document.getElementById('fs-gallery-view').style.display = 'none';
+    let iframes = document.querySelectorAll('#fs-carousel iframe');
+    iframes.forEach(ifr => {
+        ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+    });
+}
+
 window.openQuickView = function(id) { 
     let p = STATE.prods.find(x => x.id === id); 
     if (!p || p.stock <= 0) return; 
     
     let carrosselHtml = '';
+    let fsCarrosselHtml = '';
     let totalItems = 0;
     
     if (p.imagensExtras && p.imagensExtras.length > 0) {
         p.imagensExtras.forEach(urlImg => {
             carrosselHtml += `
-            <div class="qv-carousel-item" id="slide-img-${totalItems}">
+            <div class="qv-carousel-item" id="slide-img-${totalItems}" onclick="openFsGallery(${totalItems})" style="cursor:zoom-in;">
                 <img src="${urlImg}" onerror="this.parentElement.style.display='none'; document.getElementById('dot-${totalItems}')?.remove();">
+            </div>`;
+            fsCarrosselHtml += `
+            <div class="qv-carousel-item">
+                <img src="${urlImg}" style="object-fit:contain; width:100%; height:100%;">
             </div>`;
             totalItems++;
         });
     } else {
-        carrosselHtml = `<div class="qv-carousel-item"><img src="${p.img}"></div>`;
+        carrosselHtml = `<div class="qv-carousel-item" onclick="openFsGallery(0)" style="cursor:zoom-in;"><img src="${p.img}"></div>`;
+        fsCarrosselHtml = `<div class="qv-carousel-item"><img src="${p.img}" style="object-fit:contain; width:100%; height:100%;"></div>`;
         totalItems++;
     }
     
@@ -2226,12 +2275,17 @@ window.openQuickView = function(id) {
                 <div class="qv-carousel-item video-slide">
                     <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>`;
+                fsCarrosselHtml += `
+                <div class="qv-carousel-item video-slide">
+                    <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>`;
                 totalItems++;
             }
         });
     }
     
     $('qv-carousel').innerHTML = carrosselHtml;
+    $('fs-carousel').innerHTML = fsCarrosselHtml;
     
     let dotsHtml = '';
     if (totalItems > 1) {
@@ -2268,14 +2322,6 @@ window.openQuickView = function(id) {
 
     $('qv-name').innerText = p.name; 
     
-    if (p.descricao) {
-        let formattedDesc = p.descricao.replace(/\n/g, '<br>');
-        $('qv-desc').innerHTML = formattedDesc;
-        $('qv-desc').style.display = 'block';
-    } else {
-        $('qv-desc').style.display = 'none';
-    }
-
     if (p.validade) { 
         $('qv-validade').innerText = "Vencimento: " + p.validade; 
         $('qv-validade').style.display = 'block'; 
@@ -2331,7 +2377,7 @@ window.openQuickView = function(id) {
     }
 
     $('qv-bottom-buttons').innerHTML = `
-        <div style="display: flex; gap: 8px; margin-top: 12px; width: 100%;">
+        <div style="display: flex; gap: 8px; margin-top: 10px; width: 100%;">
             ${prevBtnHtml}
             ${nextBtnHtml}
         </div>
@@ -2351,6 +2397,7 @@ window.openQuickView = function(id) {
 
 window.closeQuickView = function(isFromBrowser = false) {
     document.getElementById('quick-view-lateral').classList.remove('open');
+    closeFsGallery();
     setTimeout(() => { 
         if(!document.querySelector('.quick-view.open')) $('generic-overlay').style.display = 'none';
         $('qv-carousel').innerHTML = ''; 
