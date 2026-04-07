@@ -442,7 +442,15 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
     
     .home-tv-item, .home-tv-more { flex: 0 0 25% !important; }
     .tv-carousel-arrow { display: flex; } /* Mostra setas no desktop */
-    .grid-ver-todos-sessao { grid-template-columns: repeat(9, 1fr) !important; gap: 20px 10px !important; }
+.grid-ver-todos-sessao { 
+        grid-template-columns: repeat(3, 1fr) !important; 
+        gap: 15px 8px !important; 
+        width: 100%; 
+        box-sizing: border-box; 
+    }
+    .grid-ver-todos-sessao > * { 
+        min-width: 0; /* Isso é o segredo que impede a coluna de empurrar a tela para a direita */
+    }
 }
 
 @media (max-width: 799px) {
@@ -1936,7 +1944,7 @@ function buildCardHtml(item, type) {
         </div>`;
     }
 
-    let cardClassMin = isEsgotado ? 'u-card-minimal disabled' : 'u-card-minimal';
+   let cardClassMin = isEsgotado ? 'u-card-minimal disabled' : 'u-card-minimal';
     let onClickMin = isEsgotado ? '' : `openQuickView('${id}')`;
     
     let discountPercent = 0;
@@ -1946,28 +1954,28 @@ function buildCardHtml(item, type) {
     
     let oldPriceHtmlMinimal = '';
     if (discountPercent > 0) {
-        oldPriceHtmlMinimal = `<span style="font-size: 0.85rem; color: var(--c-t); text-decoration: line-through;">${fmt(item.oldPrice)}</span>`;
+        oldPriceHtmlMinimal = `<span style="font-size: 0.65rem; color: var(--c-t); text-decoration: line-through; white-space: nowrap;">${fmt(item.oldPrice)}</span>`;
     }
 
     let addBtnHtml = '';
     if (isEsgotado) {
-        addBtnHtml = `<div class="btn-add-minimal" style="position: absolute; top: 8px; right: 8px; background:var(--c-t); color:#fff; font-size:0.65rem; border-radius:6px; height:auto; padding:4px 8px; width:auto;">ESGOTADO</div>`;
+        addBtnHtml = `<div class="btn-add-minimal" style="position: absolute; top: 6px; right: 6px; background:var(--c-t); color:#fff; font-size:0.55rem; border-radius:4px; height:auto; padding:3px 5px; width:auto;">ESG</div>`;
     } else {
         let btnContent = qty > 0 ? qty : '+';
         let extraClass = qty > 0 ? 'has-item ' : '';
-        addBtnHtml = `<button class="${extraClass}btn-add-minimal add-btn-${id}" style="position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; background: #000; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 500; border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 10; transition: transform 0.2s;" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
+        addBtnHtml = `<button class="${extraClass}btn-add-minimal add-btn-${id}" style="position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: var(--c-p); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 500; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.15); z-index: 10; transition: transform 0.2s;" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">${btnContent}</button>`;
     }
 
     return `
-    <div class="${cardClassMin}" data-id="${id}" onclick="${onClickMin}" style="margin-bottom: 25px;">
-        <div class="u-img-minimal" style="background: var(--c-img-bg); border-radius: 12px; position: relative; padding: 10%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;">
+    <div class="${cardClassMin}" data-id="${id}" onclick="${onClickMin}" style="margin-bottom: 15px;">
+        <div class="u-img-minimal" style="background: var(--c-img-bg); border-radius: 12px; position: relative; padding: 8%; width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; overflow: hidden; box-sizing: border-box;">
             <img src="${img}" loading="lazy" alt="${formatName(name)}" style="max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply;">
             ${videoIconHtml}
             ${addBtnHtml}
         </div>
-        <div class="u-name-minimal" style="font-size: 0.85rem; font-weight: 500; color: var(--c-p); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 10px; margin-bottom: 6px; text-align: left;">${formatName(name)}</div>
-        <div class="u-bot-minimal" style="display: flex; flex-direction: row; align-items: baseline; gap: 8px; width: 100%;">
-            <div class="u-price-minimal" style="font-size: 1.1rem; font-weight: 600; color: var(--c-p);">${fmt(pPrice)}</div>
+        <div class="u-name-minimal" style="font-size: 0.75rem; font-weight: 400; color: var(--c-s); line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 6px; margin-bottom: 2px; text-align: left; word-break: break-word;">${formatName(name)}</div>
+        <div class="u-bot-minimal" style="display: flex; flex-direction: row; align-items: center; gap: 4px; width: 100%; flex-wrap: wrap;">
+            <div class="u-price-minimal" style="font-size: 0.85rem; font-weight: 600; color: var(--c-p);">${fmt(pPrice)}</div>
             ${oldPriceHtmlMinimal}
         </div>
     </div>`;
