@@ -20,7 +20,7 @@
     --c-err: #ef4444;     
     --c-bg: #ffffff;      
     --c-bd: #f1f5f9;      
-    --c-img-bg: #f8fafc;  
+    --c-img-bg: #e2e8f0;  /* Fundo cinza escurecido conforme solicitado */
     --font: 'Inter', system-ui, sans-serif;
 }
 
@@ -68,11 +68,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .sub-btn {
     flex: 1; padding: 10px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
-    background: #f8fafc; color: var(--c-p);
+    background: var(--c-img-bg); color: var(--c-p);
     display: flex; align-items: center; justify-content: center; gap: 6px; 
     transition: 0.2s; cursor: pointer;
 }
-.sub-btn:active { transform: scale(0.98); background: #f1f5f9; }
+.sub-btn:active { transform: scale(0.98); opacity: 0.9; }
 
 .mobile-capa-topo {
     width: 100%;
@@ -104,25 +104,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: #ffffff;
 }
 
-.promo-whatsapp-banner {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: #ffffff; text-decoration: none; padding: 18px 15px; margin: 10px 15px 20px 15px;
-    border-radius: 12px; font-weight: 700; font-size: 1.05rem; text-align: center;
-    transition: transform 0.2s; gap: 10px;
-}
-.promo-whatsapp-banner:active { transform: scale(0.97); }
-
-.btn-ativar-desconto {
-    background: #fff; color: #059669; border-radius: 20px; padding: 6px 16px;
-    font-weight: 800; font-size: 0.85rem; text-transform: uppercase;
-    pointer-events: none;
-}
-
-@media (min-width: 800px) {
-    .promo-whatsapp-banner { max-width: 970px; margin: 15px auto 20px auto; flex-direction: row; justify-content: space-between; padding: 20px 25px;}
-}
-
 .grid-home-sections { 
     display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; 
     padding: 20px 15px 30px; max-width: 1000px; margin: 0 auto; 
@@ -136,11 +117,23 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     border-radius: 16px; padding: 12px 10px; display: flex; flex-direction: column; 
     align-items: center; justify-content: center; gap: 8px; text-align: center;
     cursor: pointer; transition: transform 0.2s, background 0.2s;
-    aspect-ratio: 1 / 0.8; position: relative; overflow: hidden; background: #f8fafc; 
+    aspect-ratio: 1 / 0.8; position: relative; overflow: hidden; background: var(--c-img-bg); 
 }
-.home-card:hover { background: #f1f5f9; transform: translateY(-2px); }
+.home-card:hover { filter: brightness(0.95); transform: translateY(-2px); }
 .home-card:active { transform: scale(0.96); }
 .col-span-2 { grid-column: span 2; aspect-ratio: auto; min-height: 120px; justify-content: center; }
+
+/* Destaque visual da Cesta */
+.home-card.highlighted {
+    background: var(--c-a) !important;
+    border-color: var(--c-a) !important;
+    box-shadow: 0 8px 24px rgba(234, 29, 44, 0.25) !important;
+}
+.home-card.highlighted .home-card-title,
+.home-card.highlighted .home-card-subtitle,
+.home-card.highlighted .home-card-icon {
+    color: #ffffff !important;
+}
 
 .home-card-icon { font-size: 2rem; z-index: 2; margin-bottom: 2px; line-height: 1; color: var(--card-color); font-weight: 800;}
 .home-card-title { color: var(--c-p); font-size: 0.9rem; font-weight: 600; line-height: 1.2; z-index: 2; letter-spacing: 0.2px;}
@@ -182,7 +175,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .search-wrapper-aba { position: relative; flex: 1; min-width: 140px; }
 .depto-search { width: 100%; padding: 10px 10px 10px 32px; border-radius: 8px; border: none; background: var(--c-img-bg); font-size: 0.9rem; font-weight: 400; color: var(--c-p); transition: 0.2s;}
-.depto-search:focus { background: #f1f5f9; }
+.depto-search:focus { filter: brightness(0.95); }
 .search-icon-aba { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--c-s); width: 16px; }
 
 .filters-row { display: flex; gap: 8px; flex-shrink: 0; }
@@ -203,7 +196,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .grid-micro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px 12px; }
 @media(min-width: 800px) { .grid-micro { grid-template-columns: repeat(6, 1fr); gap: 24px 16px; } }
 .grid-micro-3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 12px; }
-.grid-micro .u-price-minimal, .grid-micro-3 .u-price-minimal { font-size: 0.85rem; }
 .grid-micro .btn-add-minimal, .grid-micro-3 .btn-add-minimal { width: 28px; height: 28px; font-size: 1.2rem; }
 
 .u-card { background: #fff; border: 1px solid var(--c-bd); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: transform 0.2s;}
@@ -228,7 +220,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .old-price-subtle { font-size: 0.75rem; color: var(--c-t); text-decoration: line-through; display: block; margin-bottom: 2px; font-weight: 400; }
 
-.card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border-radius: 8px; height: 38px; margin-top: 12px; width: 100%; overflow: hidden;}
+.card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: var(--c-img-bg); border-radius: 8px; height: 38px; margin-top: 12px; width: 100%; overflow: hidden;}
 .card-qty-ctrl button { font-size: 1.2rem; background: transparent; color: var(--c-p); border: none; width: 38px; height: 100%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;}
 .card-qty-ctrl span { font-weight: 600; font-size: 0.95rem; color: var(--c-p); flex: 1; text-align: center;}
 .see-all-footer { position: absolute; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 80; display: flex; flex-direction: column; gap: 10px; }
@@ -240,7 +232,7 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .btn-close-modal { position: absolute; top: 15px; right: 15px; width: 32px; height: 32px; background: var(--c-img-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; cursor: pointer; color: var(--c-p); border: none; z-index: 50; transition: 0.2s;}
 .btn-modal { width: 100%; padding: 12px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;}
 .btn-modal.primary { background: var(--c-p); color: #fff; }
-.btn-modal.secondary { background: #f8fafc; color: var(--c-p); }
+.btn-modal.secondary { background: var(--c-img-bg); color: var(--c-p); }
 
 #toast-container { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 999999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
 .toast { padding: 12px 20px; color: #fff; border-radius: 8px; font-weight: 500; font-size: 0.9rem; text-align: center; animation: toastPop 0.3s ease-out; z-index: 999999; }
@@ -292,12 +284,12 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 }
 
 .del-option { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid var(--c-bd); border-radius: 8px; cursor: pointer; background: #fff; margin-bottom: 8px; transition: 0.2s;}
-.del-option.selected { border-color: var(--c-p); background: #f8fafc;}
+.del-option.selected { border-color: var(--c-p); background: var(--c-img-bg);}
 .del-opt-title { font-weight: 600; font-size: 0.95rem; color: var(--c-p); }
 .del-opt-date { font-size: 0.8rem; color: var(--c-s); }
 
 .input-chk { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--c-bd); background: var(--c-img-bg); font-family: inherit; font-size: 0.95rem; transition: 0.2s; }
-.input-chk:focus { background: #f1f5f9; outline: none; }
+.input-chk:focus { filter: brightness(0.95); outline: none; }
 .pay-opt { padding: 12px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: var(--c-p); background: var(--c-img-bg); user-select: none; flex: 1; min-width: 45%; text-align: center; transition: 0.2s;}
 .pay-opt.selected { background: var(--c-p); color: #fff; font-weight: 600;}
 .input-error { border: 1px solid var(--c-err) !important; background-color: #fef2f2 !important; }
@@ -327,9 +319,9 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 }
 .u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 20%; }
 
-.u-bot-minimal { display: flex; flex-direction: column; flex:1;}
-.u-price-minimal { font-size: 1.05rem; font-weight: 600; color: var(--c-p); line-height: 1; }
-.u-tag-discount { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 3px 6px; font-weight: 600; border-radius: 6px; align-self: flex-start; margin-top: 4px;}
+.u-bot-minimal { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: auto; padding-top: 8px;}
+.u-price-minimal { font-size: 1.05rem; font-weight: 700; color: var(--c-p); line-height: 1; }
+.u-tag-discount { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 6px; font-weight: 700; border-radius: 6px; }
 
 .btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
 .btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
@@ -436,8 +428,7 @@ body.has-bottom-banner .floating-cart {
 }
 
 .wholesale-badge {
-    background: #f8fafc;
-    border: 1px solid var(--c-bd);
+    background: var(--c-img-bg);
     padding: 10px 12px;
     border-radius: 8px;
     margin-top: 12px;
@@ -483,18 +474,10 @@ body.has-bottom-banner .floating-cart {
         </button>
     </div>
 
-    <div id="promo-banner-btn" onclick="activateAutoCoupons()" class="promo-whatsapp-banner" style="cursor: pointer;">
-        <div style="font-size: 1.05rem;">Ative descontos de até R$ 25 na sua cesta!</div>
-        <button class="btn-ativar-desconto">Ativar Desconto</button>
-    </div>
-
     <div id="grid-home-sections" class="grid-home-sections"></div>
     
     <div id="home-destaques-section" style="max-width: 1000px; margin: 0 auto; padding: 10px 15px 40px; display: none;">
-        <div class="carousel-title" style="margin-bottom: 20px; font-size: 1.1rem; color: var(--c-p);">Destaques</div>
-        <div class="grid-ver-todos" id="home-destaques-grid"></div>
-        <div id="home-destaques-sentinel" style="height: 20px; width: 100%;"></div>
-    </div>
+        </div>
 
 </main>
 
@@ -734,14 +717,6 @@ body.has-bottom-banner .floating-cart {
             <div id="chk-summary-lines" style="font-size: 0.9rem; font-weight: 400; color: var(--c-s); line-height: 1.8;"></div>
         </div>
         <div class="chk-section">
-            <h3 class="chk-section-title">Cupom</h3>
-            <div style="display: flex; gap: 8px;">
-                <input type="text" id="chk-cupom" class="input-chk" placeholder="Ex: CODIGO" style="text-transform: uppercase;">
-                <button onclick="applyCoupon()" class="btn-modal secondary" style="width: auto; padding: 0 20px;">Aplicar</button>
-            </div>
-            <div id="cupom-msg" style="font-size: 0.85rem; margin-top: 8px; display: none; font-weight: 500;"></div>
-        </div>
-        <div class="chk-section">
             <h3 class="chk-section-title">Dados Pessoais</h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <input type="text" id="chk-nome" class="input-chk" placeholder="Nome Completo">
@@ -849,17 +824,14 @@ const MARCAS_DESTAQUE = [
 
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
-    currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], coupons: [], combos: [],
-    returnToUpsell: false, autoCouponsActive: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
-    homeDestaquesLoaded: 0, homeDestaquesTotal: [],
+    currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], combos: [],
+    returnToUpsell: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
     deptos: {
-        'desc_30': { id: 'desc_30', title: '30% de Desconto', type: 'PROD', data: [] },
-        'desc_25': { id: 'desc_25', title: '25% de Desconto', type: 'PROD', data: [] },
         'desc_20': { id: 'desc_20', title: '20% de Desconto', type: 'PROD', data: [] },
         'desc_15': { id: 'desc_15', title: '15% de Desconto', type: 'PROD', data: [] },
         'desc_10': { id: 'desc_10', title: '10% de Desconto', type: 'PROD', data: [] },
         'marcas': { id: 'marcas', title: 'Encontre pela Marca', type: 'PROD', data: [] },
-        'cestas': { id: 'cestas', title: 'Cestas Básicas', type: 'BASKET', data: [] },
+        'cestas': { id: 'cestas', title: 'Compras Prontas', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', type: 'COMBO', data: [] },
         'alimentos': { id: 'alimentos', title: 'Alimentos', type: 'PROD', data: [], tags: [] },
         'bebidas': { id: 'bebidas', title: 'Bebidas', type: 'PROD', data: [], tags: [] },
@@ -871,7 +843,7 @@ const STATE = {
         'pet': { id: 'pet', title: 'Pet', type: 'PROD', data: [], tags: [] }
     },
     cart: {}, cartOrder: [], appliedCombos: [], baseBasket: null, basketExtraFee: 0, comboDiscount: 0, atacadoDiscount: 0,
-    coupon: null, deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
+    deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
 };
 
 const TERMOS_CATEGORIAS = {
@@ -918,12 +890,10 @@ function agruparCategoria(produto) {
 
 function renderHomeCards() {
     const cards = [
-        { id: 'cestas', title: 'Cestas Básicas', subtitle: 'Escolha e personalize.', action: "openDepto('cestas')", icon: '🧺', color: '#1e293b', span2: true },
+        { id: 'cestas', title: 'Compras Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', span2: true, highlighted: true },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
         { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: '#1e293b' },
         { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
-        { id: 'desc_30', title: '30% OFF', action: "openDepto('desc_30')", icon: '30%', color: '#10b981' },
-        { id: 'desc_25', title: '25% OFF', action: "openDepto('desc_25')", icon: '25%', color: '#10b981' },
         { id: 'desc_20', title: '20% OFF', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
         { id: 'desc_15', title: '15% OFF', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
         { id: 'desc_10', title: '10% OFF', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
@@ -939,11 +909,58 @@ function renderHomeCards() {
     let html = '';
     cards.forEach(c => { 
         let classes = c.mobileOnly ? 'home-card mobile-only-card' : 'home-card';
-        if (c.span2) classes += ' col-span-2';
+        let highlightClass = c.highlighted ? ' highlighted' : '';
         let sub = c.subtitle ? `<div class="home-card-subtitle">${c.subtitle}</div>` : '';
-        html += `<div class="${classes}" onclick="${c.action}" style="--card-color: ${c.color};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div>${sub}</div>`; 
+        html += `<div class="${classes}${highlightClass}" onclick="${c.action}" style="--card-color: ${c.color || '#1e293b'};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div>${sub}</div>`; 
     });
     $('grid-home-sections').innerHTML = html;
+}
+
+function renderHomeCategories() {
+    const sessoes = [
+        { id: 'alimentos', nome: 'Alimentos' },
+        { id: 'bebidas', nome: 'Bebidas' },
+        { id: 'higiene', nome: 'Higiene' },
+        { id: 'beleza', nome: 'Beleza' },
+        { id: 'limpeza', nome: 'Limpeza' },
+        { id: 'lavanderia', nome: 'Lavanderia' },
+        { id: 'casa', nome: 'Casa' },
+        { id: 'pet', nome: 'Pet' }
+    ];
+
+    let itemsHtml = '';
+    sessoes.forEach(s => {
+        let depto = STATE.deptos[s.id];
+        if (!depto || !depto.data || depto.data.length === 0) return;
+        
+        let items = [...depto.data];
+        items.sort((a,b) => String(a.name).localeCompare(String(b.name)));
+        
+        let top4 = items.slice(0, 4);
+        if(top4.length > 0) {
+            itemsHtml += `
+            <div style="margin-bottom: 35px;">
+                <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.15rem; color: var(--c-p);">${s.nome}</div>
+                <div class="grid-ver-todos">
+            `;
+            
+            top4.forEach(item => {
+                itemsHtml += buildCardHtml(item, depto.type);
+            });
+            
+            itemsHtml += `
+                    <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${s.id}', false)">
+                        <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
+                        <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.85rem; font-weight:500;">${s.nome}</span></span>
+                    </div>
+                </div>
+            </div>`;
+        }
+    });
+
+    let container = document.getElementById('home-destaques-section');
+    container.innerHTML = itemsHtml;
+    container.style.display = 'block';
 }
 
 function compileVideos() {
@@ -961,40 +978,6 @@ function compileVideos() {
         [list[i], list[j]] = [list[j], list[i]];
     }
     STATE.allVideos = list;
-}
-
-function initHomeDestaques() {
-    let items = [];
-    // Juntar itens que têm desconto para os destaques
-    let allDisc = [...STATE.deptos.desc_30.data, ...STATE.deptos.desc_25.data, ...STATE.deptos.desc_20.data, ...STATE.deptos.desc_15.data, ...STATE.deptos.desc_10.data];
-    allDisc.sort((a,b) => ((b.oldPrice-b.price)/b.oldPrice) - ((a.oldPrice-a.price)/a.oldPrice));
-    
-    STATE.homeDestaquesTotal = allDisc;
-    STATE.homeDestaquesLoaded = 0;
-    
-    if (allDisc.length > 0) {
-        document.getElementById('home-destaques-section').style.display = 'block';
-        
-        let sentinel = document.getElementById('home-destaques-sentinel');
-        let observer = new IntersectionObserver((entries) => {
-            if(entries[0].isIntersecting) {
-                loadMoreHomeDestaques();
-            }
-        }, { root: document.getElementById('scroll-stage'), rootMargin: '0px 0px 300px 0px' });
-        observer.observe(sentinel);
-        
-        loadMoreHomeDestaques();
-    }
-}
-
-function loadMoreHomeDestaques() {
-    if(!STATE.homeDestaquesTotal || STATE.homeDestaquesLoaded >= STATE.homeDestaquesTotal.length) return;
-    
-    let nextBatch = STATE.homeDestaquesTotal.slice(STATE.homeDestaquesLoaded, STATE.homeDestaquesLoaded + 10);
-    let html = nextBatch.map(item => buildCardHtml(item, 'PROD')).join('');
-    
-    document.getElementById('home-destaques-grid').insertAdjacentHTML('beforeend', html);
-    STATE.homeDestaquesLoaded += 10;
 }
 
 let feedScrollTimeout;
@@ -1216,14 +1199,13 @@ async function init() {
     renderHomeCards(); updateTotals(); 
 
     try {
-        const [r1, r2, r3, r4] = await Promise.all([
+        const [r1, r2, r3] = await Promise.all([
             fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets', 30),
             fetchWithCache('/site/produtos.json', 'cache_prods', 30),
-            fetchWithCache('/site/combos.json', 'cache_combos', 30),
-            fetchWithCache('/site/cupons.json', 'cache_coupons', 30)
+            fetchWithCache('/site/combos.json', 'cache_combos', 30)
         ]);
         
-        STATE.baskets = r1 || []; STATE.combos = r3 || []; STATE.coupons = r4 || [];
+        STATE.baskets = r1 || []; STATE.combos = r3 || []; 
         STATE.deptos.cestas.data = STATE.baskets; STATE.deptos.combos.data = STATE.combos;
 
        if (r2 && r2.length > 0) {
@@ -1267,21 +1249,23 @@ async function init() {
 
             let hojeTime = new Date().getTime();
             
-            // 1. Validade (30%)
-            STATE.prods.forEach(p => {
-                if(!p.validade || p.stock <= 0) return;
-                let dataVal = converterDataValidade(p.validade);
-                let diasParaVencer = (dataVal - hojeTime) / (1000 * 60 * 60 * 24);
-
-                if (diasParaVencer >= 0 && diasParaVencer <= 30) {
-                    p.price = p.oldPrice * 0.70; 
-                    p.discountApplied = true;
-                    p.isExpiringSoon = true;
-                    p.isSoHoje = true;
-                }
+            // 1. Só Hoje (Vencimento Próximo) - Limite 20% desconto para os 20 produtos
+            let comValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
+            comValidade.forEach(p => {
+                p._valTime = converterDataValidade(p.validade);
+            });
+            comValidade = comValidade.filter(p => p._valTime >= hojeTime);
+            comValidade.sort((a,b) => a._valTime - b._valTime);
+            
+            let top20Vencimento = comValidade.slice(0, 20);
+            top20Vencimento.forEach(p => {
+                p.price = p.oldPrice * 0.80; // 20% desconto máximo
+                p.discountApplied = true;
+                p.isExpiringSoon = true;
+                p.isSoHoje = true;
             });
 
-            // 2. Descontos de Isca ou Categorias (Exatos: 10, 15, 20, 25, 30%)
+            // 2. Descontos Isca (Restritos a 10 e 15%)
             STATE.prods.forEach(p => {
                 if(p.discountApplied || p._isBasket || p._isCombo) return;
                 
@@ -1289,11 +1273,7 @@ async function init() {
                 
                 if (hashDaIsca === 0) {
                     let base = p.oldPrice;
-                    let desc = 0.10;
-                    if (base > 50) desc = 0.30;
-                    else if (base > 30) desc = 0.25;
-                    else if (base > 20) desc = 0.20;
-                    else if (base > 10) desc = 0.15;
+                    let desc = (base > 20) ? 0.15 : 0.10; 
                     
                     p.price = base * (1 - desc);
                     p.discountApplied = true;
@@ -1307,20 +1287,18 @@ async function init() {
                 }
             });
 
-            // Agrupar produtos com desconto nos departamentos corretos (10, 15, 20, 25, 30)
+            // Agrupar produtos com desconto nos departamentos corretos (10, 15, 20)
             STATE.prods.forEach(p => {
                  if (p.oldPrice > p.price && p.stock > 0 && !p._isBasket && !p._isCombo) {
                       let pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
-                      if (pct >= 30) STATE.deptos.desc_30.data.push(p);
-                      else if (pct >= 25) STATE.deptos.desc_25.data.push(p);
-                      else if (pct >= 20) STATE.deptos.desc_20.data.push(p);
+                      if (pct >= 20) STATE.deptos.desc_20.data.push(p);
                       else if (pct >= 15) STATE.deptos.desc_15.data.push(p);
                       else if (pct >= 10) STATE.deptos.desc_10.data.push(p);
                  }
             });
 
             compileVideos();
-            initHomeDestaques(); 
+            renderHomeCategories(); 
         }
         
         STATE.dataLoaded = true;
@@ -1728,7 +1706,7 @@ window.openUpsellView = function() {
     `;
 
     const sessoes = [
-        { id: 'desc_30', nome: 'Super Descontos' },
+        { id: 'desc_20', nome: 'Super Descontos' },
         { id: 'alimentos', nome: 'Alimentos' },
         { id: 'bebidas', nome: 'Bebidas' },
         { id: 'higiene', nome: 'Higiene' },
@@ -1873,8 +1851,10 @@ function buildCardHtml(item, type) {
             ${addBtnHtml}
         </div>
         <div class="u-bot-minimal">
-            ${oldPriceHtmlMinimal}
-            <div class="u-price-minimal">${fmt(pPrice)}</div>
+            <div style="display: flex; flex-direction: column;">
+                ${oldPriceHtmlMinimal}
+                <div class="u-price-minimal">${fmt(pPrice)}</div>
+            </div>
             ${tagHtml}
         </div>
     </div>`;
@@ -2078,16 +2058,7 @@ window.handleAddClick = function(e, id) {
 
 window.clearCart = function() {
     if (confirm("Tem certeza que deseja esvaziar a sacola?")) { 
-        STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.atacadoDiscount = 0; STATE.appliedCombos = []; STATE.coupon = null; 
-        STATE.autoCouponsActive = false; 
-        
-        let banner = document.getElementById('promo-banner-btn');
-        if (banner) {
-            banner.innerHTML = '<div style="font-size: 1.05rem;">Ative descontos de até R$ 25 na sua cesta!</div><button class="btn-ativar-desconto">Ativar Desconto</button>';
-            banner.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-            banner.onclick = activateAutoCoupons;
-        }
-
+        STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.atacadoDiscount = 0; STATE.appliedCombos = []; 
         document.querySelectorAll('[data-id]').forEach(el => { let id = el.dataset.id; if (id) { let addBtn = el.querySelector(`.add-btn-${id}`); if (addBtn) { addBtn.innerHTML = '+'; addBtn.classList.remove('has-item'); } } });
         updateTotals(); closeCheckout(); goToHome(); 
     }
@@ -2124,19 +2095,6 @@ window.loadSavedCart = function() {
     showToast("Carrinho recuperado com sucesso!", "s");
 };
 
-window.activateAutoCoupons = function() {
-    STATE.autoCouponsActive = true;
-    let banner = document.getElementById('promo-banner-btn');
-    if (banner) {
-        banner.innerHTML = '✅ Cupons Automáticos Ativados!';
-        banner.style.background = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'; 
-        banner.style.flexDirection = 'row';
-        banner.onclick = null; 
-    }
-    showToast("Cupons ativados! O melhor desconto será aplicado no carrinho.", "s");
-    updateTotals(); 
-};
-
 function updateTotals() {
     let sum = 0;
     let atacadoDiscount = 0;
@@ -2146,45 +2104,13 @@ function updateTotals() {
         if (p) { 
             sum += p.price * q; 
             if (q >= 3) {
-                atacadoDiscount += (p.price * 0.10) * q; // Alterado para 10%
+                atacadoDiscount += (p.price * 0.10) * q; 
             }
         }
     });
     STATE.atacadoDiscount = atacadoDiscount;
 
     let subtotal = sum + STATE.basketExtraFee; 
-    
-    if (STATE.autoCouponsActive && STATE.coupons && STATE.coupons.length > 0) {
-        let bestCoupon = null;
-        let maxDiscount = 0;
-        
-        STATE.coupons.forEach(c => {
-            let vMin = c.valorMinimo || 0;
-            if (subtotal >= vMin && c.desconto > maxDiscount) {
-                bestCoupon = c;
-                maxDiscount = c.desconto;
-            }
-        });
-        
-        STATE.coupon = bestCoupon;
-        
-        if (bestCoupon && $('chk-cupom')) {
-            $('chk-cupom').value = bestCoupon.codigo;
-            if ($('cupom-msg')) {
-                $('cupom-msg').innerText = "Cupom automático aplicado!";
-                $('cupom-msg').style.color = "var(--c-ok)";
-                $('cupom-msg').style.display = "block";
-            }
-        } else if (!bestCoupon && $('chk-cupom') && !$('chk-cupom').value.trim()) {
-            $('chk-cupom').value = '';
-            if ($('cupom-msg')) $('cupom-msg').style.display = 'none';
-        }
-    } else {
-        if (STATE.coupon && STATE.coupon.valorMinimo && subtotal < STATE.coupon.valorMinimo) {
-            STATE.coupon = null; if ($('chk-cupom')) $('chk-cupom').value = ''; 
-            if ($('cupom-msg')) { $('cupom-msg').innerText = "Cupom removido: valor mínimo não atingido."; $('cupom-msg').style.color = "var(--c-err)"; $('cupom-msg').style.display = "block"; }
-        }
-    }
 
     let totalDescontosKits = 0;
     STATE.appliedCombos.forEach(ac => {
@@ -2203,8 +2129,7 @@ function updateTotals() {
     });
     STATE.comboDiscount = totalDescontosKits;
 
-    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
-    let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - cupomDesconto - STATE.atacadoDiscount;
+    let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - STATE.atacadoDiscount;
     
     if ($('chk-total-fixed')) $('chk-total-fixed').innerText = fmt(final);
     
@@ -2221,26 +2146,6 @@ function updateTotals() {
         }
     }
 }
-
-window.applyCoupon = function() {
-    let val = $('chk-cupom').value.trim().toUpperCase(); let msgEl = $('cupom-msg');
-    if (!val) { STATE.coupon = null; msgEl.style.display = 'none'; updateTotals(); renderCheckoutItems(); return; }
-    
-    let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => x.id === id); if (p) sum += p.price * q; });
-    let subtotal = sum + STATE.basketExtraFee;
-    
-    let found = STATE.coupons.find(c => c.codigo.toUpperCase() === val);
-    if (found) {
-        if (found.valorMinimo && subtotal < found.valorMinimo) {
-            STATE.coupon = null; msgEl.innerText = `Exige compra mínima de ${fmt(found.valorMinimo)}.`; msgEl.style.color = "var(--c-err)"; msgEl.style.display = "block";
-        } else {
-            STATE.coupon = found; msgEl.innerText = "Cupom aplicado!"; msgEl.style.color = "var(--c-ok)"; msgEl.style.display = "block";
-        }
-    } else {
-        STATE.coupon = null; msgEl.innerText = "Cupom inválido."; msgEl.style.color = "var(--c-err)"; msgEl.style.display = "block";
-    }
-    updateTotals(); renderCheckoutItems(); 
-};
 
 window.selectDelivery = function(index) {
     STATE.selectedDeliveryIndex = index; 
@@ -2273,17 +2178,16 @@ function renderCheckoutItems() {
     
     let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => x.id === id); if (p) { sum += p.price * q; } });
     
-    let subtotal = sum + STATE.basketExtraFee; let totalDescontosKits = STATE.comboDiscount || 0; let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0;
+    let subtotal = sum + STATE.basketExtraFee; let totalDescontosKits = STATE.comboDiscount || 0; 
     
     $('chk-summary-lines').innerHTML = 
         `<div style="display:flex;justify-content:space-between; margin-bottom: 4px;"><span>Produtos:</span><span style="color:var(--c-p); font-weight:600;">${fmt(subtotal)}</span></div>` + 
         (STATE.atacadoDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between; margin-bottom: 4px;"><span>Desconto Volume (3+):</span><span>-${fmt(STATE.atacadoDiscount)}</span></div>` : '') +
         (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between; margin-bottom: 4px;"><span>Kit Promo:</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + 
-        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between; margin-bottom: 4px;"><span>Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '') +
-        (cupomDesconto > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Cupom:</span><span>-${fmt(cupomDesconto)}</span></div>` : '');
+        (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between; margin-bottom: 4px;"><span>Agendamento:</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
         
     let btn = $('btn-send-order');
-    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - cupomDesconto - STATE.atacadoDiscount;
+    let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.atacadoDiscount;
     if (final < MIN_ORDER && subtotal > 0) { btn.disabled = true; btn.innerText = `MÍNIMO DE ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--c-bd)'; btn.style.color = 'var(--c-s)'; btn.style.cursor = 'not-allowed'; btn.style.boxShadow = 'none';} 
     else { btn.disabled = false; btn.innerText = 'ENVIAR PEDIDO'; btn.style.background = 'var(--c-p)'; btn.style.color = '#fff'; btn.style.cursor = 'pointer'; }
 }
@@ -2324,7 +2228,7 @@ function reorder(orderId) {
     if(!STATE.dataLoaded) return showToast("Sincronizando loja, aguarde...", "s");
     let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); let order = history.find(o => o.id === orderId); if(!order) return;
 
-    STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.atacadoDiscount = 0; STATE.appliedCombos = []; STATE.coupon = null; STATE.autoCouponsActive = false; 
+    STATE.cart = {}; STATE.cartOrder = []; STATE.baseBasket = null; STATE.basketExtraFee = 0; STATE.comboDiscount = 0; STATE.atacadoDiscount = 0; STATE.appliedCombos = [];
     let missing = false;
     order.items.forEach(item => { let p = STATE.prods.find(x => x.id === item.id); if (p && p.stock > 0) { let addQty = Math.min(item.qty, p.stock); STATE.cart[p.id] = addQty; STATE.cartOrder.push(p.id); } else { missing = true; } });
 
@@ -2375,9 +2279,8 @@ async function sendOrder() {
     
     Object.entries(STATE.cart).forEach(([id, q]) => { const p = STATE.prods.find(x => x.id === id); if (p) { let unitPrice = p.price; totalBruto += unitPrice * q; let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice}); } });
 
-    let cupomDesconto = STATE.coupon ? STATE.coupon.desconto : 0; 
-    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.deliveryDiscount - cupomDesconto - STATE.atacadoDiscount;
-    let outras_despesas = STATE.basketExtraFee || 0; let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + cupomDesconto + STATE.atacadoDiscount;
+    let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.deliveryDiscount - STATE.atacadoDiscount;
+    let outras_despesas = STATE.basketExtraFee || 0; let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.atacadoDiscount;
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; let tipoCestaTexto = "Cestas Personalizada"; 
     
     if (STATE.baseBasket) {
@@ -2393,7 +2296,6 @@ async function sendOrder() {
     if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO VOLUME (3+ UN): -${fmt(STATE.atacadoDiscount)}`;
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if (STATE.comboDiscount > 0) itemsTxt += `\n🎁 DESCONTO KITS: -${fmt(STATE.comboDiscount)}`;
-    if (STATE.coupon) itemsTxt += `\n🎟️ CUPOM (${STATE.coupon.codigo}): -${fmt(STATE.coupon.desconto)}`;
     
     const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nomeCliente}\n*CPF:* ${cpfCliente || 'Não informado'}\n*PAGAMENTO:* ${formaPagamento}\n\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*\n\n------\n${tipoCestaTexto}`;
 
