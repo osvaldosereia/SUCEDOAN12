@@ -48,10 +48,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .header-actions { display: flex; align-items: center; gap: 12px; z-index: 10; position: relative;}
 
-#btn-install { 
-    color: var(--c-a); font-weight: 600; font-size: 0.95rem; 
-    display: none; transition: 0.2s; padding: 6px 12px;
-}
+#btn-install { color: var(--c-a); font-weight: 600; font-size: 0.95rem; display: none; transition: 0.2s; padding: 6px 12px; }
 #btn-install:active { opacity: 0.7; }
 
 .btn-top-help { 
@@ -65,12 +62,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     display: flex; gap: 10px; padding: 12px 15px; width: 100%; max-width: 1000px; margin: 0 auto;
     position: sticky; top: 0; z-index: 80; background: #ffffff; border-bottom: 1px solid var(--c-bd);
 }
-
 .sub-btn {
     flex: 1; padding: 10px; border-radius: 8px; font-size: 0.9rem; font-weight: 600;
-    background: var(--c-img-bg); color: var(--c-p);
-    display: flex; align-items: center; justify-content: center; gap: 6px; 
-    transition: 0.2s; cursor: pointer;
+    background: var(--c-img-bg); color: var(--c-p); display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; cursor: pointer;
 }
 .sub-btn:active { transform: scale(0.98); opacity: 0.9; }
 
@@ -81,7 +75,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .main-stage { position: relative; height: 100dvh; padding-top: 0; padding-bottom: 90px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: #ffffff; }
 
 .grid-home-sections { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px 15px 15px; max-width: 1000px; margin: 0 auto; }
-@media(min-width: 800px) { .grid-home-sections { grid-template-columns: repeat(4, 1fr); gap: 16px; justify-content: center; padding-bottom: 30px;} .mobile-only-card { display: none !important; } }
+@media(min-width: 800px) { .grid-home-sections { grid-template-columns: repeat(4, 1fr); gap: 16px; justify-content: center; padding-bottom: 30px;} }
 
 .home-card { border-radius: 16px; padding: 12px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; cursor: pointer; transition: transform 0.2s, background 0.2s; aspect-ratio: 1 / 0.8; position: relative; overflow: hidden; background: var(--c-img-bg); }
 .home-card:hover { filter: brightness(0.95); transform: translateY(-2px); }
@@ -95,7 +89,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .home-card-icon { font-size: 2rem; z-index: 2; margin-bottom: 2px; line-height: 1; color: var(--card-color); font-weight: 800; }
 .home-card-title { color: var(--c-p); font-size: 0.9rem; font-weight: 600; line-height: 1.2; z-index: 2; letter-spacing: 0.2px; }
-.home-card-subtitle { font-size: 0.75rem; color: var(--c-s); font-weight: 500; margin-top: 2px; line-height: 1.2; z-index: 2; padding: 0 5px; }
 
 /* --- CARROSSEL TV 50% MAIOR (MOBILE & DESKTOP) --- */
 .home-tv-carousel-wrapper { grid-column: 1 / -1; width: 100%; margin: 10px 0 30px; position: relative; padding: 0 15px; max-width: 1000px; margin-left: auto; margin-right: auto;}
@@ -103,21 +96,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-tv-track { display: flex; gap: 15px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 10px; scroll-behavior: smooth; }
 .home-tv-track::-webkit-scrollbar { display: none; }
 
-.home-tv-item { 
-    flex: 0 0 45%; /* No mobile, cada vídeo ocupa 45% da largura da tela */
-    aspect-ratio: 9 / 16; /* Formato vertical (Shorts/Reels) */
-    background: #000; 
-    border-radius: 12px; 
-    position: relative; 
-    overflow: hidden; 
-    scroll-snap-align: center; 
-    display: flex; 
-    flex-direction: column; 
-}
-@media(min-width: 800px) { 
-    .home-tv-item { flex: 0 0 22%; } /* No desktop, cada vídeo ocupa 22% (cabem 4 na tela) */
-    .home-tv-carousel-wrapper { margin-top: 25px; } 
-}
+.home-tv-item { flex: 0 0 85%; aspect-ratio: 16 / 9; background: #000; border-radius: 12px; position: relative; overflow: hidden; scroll-snap-align: center; display: flex; flex-direction: column; }
+@media(min-width: 800px) { .home-tv-item { flex: 0 0 45%; } .home-tv-carousel-wrapper { margin-top: 25px; } }
 
 .home-tv-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer; transition: opacity 0.3s; }
 .home-tv-item:hover .home-tv-thumb { opacity: 0.7; }
@@ -127,7 +107,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-tv-prod-img { width: 36px; height: 36px; border-radius: 6px; mix-blend-mode: multiply; object-fit: contain; background: var(--c-img-bg);}
 .home-tv-prod-btn { margin-left: auto; background: var(--c-p); color: #fff; border: none; font-size: 0.8rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
 
-/* Setas Carrossel TV Desktop */
 .tv-arrow { display: none; position: absolute; top: 55%; transform: translateY(-50%); width: 45px; height: 45px; background: #fff; color: var(--c-p); border-radius: 50%; align-items: center; justify-content: center; z-index: 40; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); font-size: 1.5rem; font-weight: bold; border: 1px solid var(--c-bd); transition: 0.2s; }
 .tv-arrow:active { transform: translateY(-50%) scale(0.9); }
 .tv-arrow.left { left: 0px; }
@@ -169,91 +148,45 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .see-all-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 180px; position: relative; background: var(--c-bg);}
 
+/* COMPRA DO MÊS - ESTILO LISTA CHECKBOX */
+.cm-check-item { display: flex; align-items: center; padding: 16px 15px; background: var(--c-img-bg); border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+.cm-check-item:active { transform: scale(0.98); }
+.cm-check-item.selected { border-color: var(--c-p); background: #e2e8f0; }
+.cm-checkbox { width: 24px; height: 24px; margin-right: 15px; accent-color: var(--c-p); pointer-events: none;}
+.cm-btn-generate { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: var(--c-p); color: #fff; padding: 16px; border-radius: 12px; font-size: 1.05rem; font-weight: 700; border: none; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 80; cursor: pointer;}
+.cm-section-title { font-size: 1.25rem; font-weight: 700; color: var(--c-p); padding-bottom: 8px; margin-bottom: 15px; margin-top: 30px; border-bottom: 2px solid var(--c-bd); text-transform: uppercase;}
 
-/* --- NOVO VISUAL COMPRA DO MÊS --- */
-.compra-mes-grid { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 15px; max-width: 1000px; margin: 0 auto; width: 100%; }
-@media(min-width: 800px) { .compra-mes-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
-
-.card-compra-mes {
-    display: flex; flex-direction: row; background: #fff; border: 1px solid var(--c-bd); 
-    border-radius: 16px; overflow: hidden; align-items: stretch; border-bottom: 3px solid var(--c-bd); 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.03); min-height: 280px;
-}
-
-.compra-mes-nav {
-    width: 45px; background: var(--c-img-bg); color: var(--c-p); display: flex; 
-    align-items: center; justify-content: center; font-size: 2rem; font-weight: 300; border: none; 
-    cursor: pointer; transition: background 0.2s; flex-shrink: 0;
-}
-.compra-mes-nav:active { background: #cbd5e1; }
-.compra-mes-nav.disabled { visibility: hidden; pointer-events: none; }
-
-.compra-mes-miolo {
-    flex: 1; padding: 20px 15px; display: flex; flex-direction: column; align-items: center; 
-    justify-content: flex-start; overflow: hidden; text-align: center;
-}
-
-.compra-mes-img {
-    width: 100%; max-width: 220px; aspect-ratio: 1/1; object-fit: contain; 
-    margin-bottom: 15px; mix-blend-mode: multiply; cursor: pointer;
-}
-
-.compra-mes-prod-name {
-    width: 100%; font-size: 0.9rem; font-weight: 500; color: var(--c-s); line-height: 1.3; 
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; 
-    min-height: 2.6em; margin-bottom: 15px; cursor: pointer; padding: 0 5px;
-}
-
-.compra-mes-bot-row {
-    width: 100%; display: flex; flex-direction: row; align-items: center; 
-    justify-content: space-between; margin-top: auto; padding: 0 5px;
-}
-
-.compra-mes-prices { display: flex; flex-direction: column; align-items: flex-start; text-align: left; }
-.compra-mes-old-price { font-size: 0.85rem; color: var(--c-t); text-decoration: line-through; margin-bottom: 2px; }
-.compra-mes-new-price { font-size: 1.45rem; font-weight: 800; color: var(--c-p); line-height: 1; letter-spacing: -0.5px;}
-
-.compra-mes-btn-add {
-    width: 44px; height: 44px; border-radius: 50%; background: var(--c-ok); color: #fff; 
-    font-size: 1.8rem; font-weight: 400; border: none; display: flex; align-items: center; 
-    justify-content: center; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); transition: transform 0.2s; 
-    cursor: pointer; flex-shrink: 0; line-height: 0; padding-bottom: 3px;
-}
-.compra-mes-btn-add:active { transform: scale(0.9); }
-
-.compra-mes-qty {
-    display: flex; align-items: center; justify-content: space-between; background: var(--c-img-bg); 
-    border-radius: 22px; height: 44px; min-width: 105px; padding: 0 5px;
-}
-.compra-mes-qty button {
-    width: 34px; height: 100%; border: none; background: transparent; color: var(--c-p); 
-    font-size: 1.6rem; display: flex; align-items: center; justify-content: center; cursor: pointer;
-}
-.compra-mes-qty span { font-weight: 700; font-size: 1.1rem; color: var(--c-p); flex: 1; text-align: center; }
-
-
-.grid-ver-todos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px 16px; max-width: 1000px; margin: 0 auto;}
+/* GRID PADRÃO DO SITE - CARDS SEM BORDA (MINIMAL) */
+.grid-ver-todos { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 15px; max-width: 1000px; margin: 0 auto;}
 @media(min-width: 800px) { .grid-ver-todos { grid-template-columns: repeat(5, 1fr); gap: 32px 24px; } }
 .grid-cestas-kits { grid-template-columns: 1fr !important; }
 @media(min-width: 800px) { .grid-cestas-kits { grid-template-columns: repeat(3, 1fr) !important; } }
-.grid-micro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px 12px; }
-@media(min-width: 800px) { .grid-micro { grid-template-columns: repeat(6, 1fr); gap: 24px 16px; } }
 .grid-micro-3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 12px; }
-.grid-micro .btn-add-minimal, .grid-micro-3 .btn-add-minimal { width: 28px; height: 28px; font-size: 1.2rem; }
 
+/* ESTILO ÚNICO PARA TODOS OS CARDS DE PRODUTOS */
+.u-card-minimal { background: transparent; border: none; border-radius: 0; display: flex; flex-direction: column; position: relative; cursor: pointer; transition: transform 0.2s; height: 100%; margin-bottom: 12px;}
+.u-card-minimal:hover { transform: translateY(-2px); }
+.u-card-minimal:active { transform: scale(0.98); }
+.u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
+.u-img-minimal { width: 100%; aspect-ratio: 1/1.2; background: var(--c-img-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; border: none; overflow: hidden; margin-bottom: 8px;}
+.u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 8%; }
+.u-bot-minimal { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: auto; padding-top: 2px;}
+.u-price-minimal { font-size: 1.1rem; font-weight: 700; color: var(--c-p); line-height: 1; }
+.u-tag-discount { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 6px; font-weight: 700; border-radius: 6px; }
+.btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 36px; height: 36px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.15);}
+.btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1.1rem; font-weight: 600;}
+
+/* ESTILO DOS KITS E CESTAS (MANTIDO PORQUE SÃO ESPECIAIS) */
 .u-card { background: #fff; border: 1px solid var(--c-bd); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: transform 0.2s;}
 .u-card:hover { transform: translateY(-2px); }
 .u-card:active { transform: scale(0.98); }
 .u-card.disabled { opacity: 0.5; pointer-events: none; cursor: default; }
-
 .u-img-area { width: 100%; aspect-ratio: 1/1.2; background: var(--c-img-bg); border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; }
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; transition: 0.3s;}
 .basket-img-area, .kit-img-area { background: transparent !important; aspect-ratio: 1/1.2 !important; }
 .basket-img-area img, .kit-img-area img { object-fit: cover !important; padding: 0 !important; border-radius: 12px; mix-blend-mode: normal !important;}
-
 .kit-tag { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 600; border-radius: 6px; position: absolute; top: 8px; left: 8px; z-index: 5;}
 .removido-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 6px 12px; border-radius: 6px; z-index: 10; backdrop-filter: blur(2px);}
-
 .card-add-btn-wide { background: var(--c-p); color: #fff; border-radius: 8px; padding: 10px; font-weight: 600; font-size: 0.9rem; border: none; transition: 0.15s; white-space: nowrap; width: 100%; margin-top: 12px; }
 .u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between;}
 .u-name { font-size: 0.9rem; font-weight: 500; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
@@ -302,25 +235,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .upsell-header-title { font-size: 1.2rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; text-align: left; }
 .upsell-header-sub { font-size: 0.9rem; color: var(--c-s); margin-bottom: 25px; text-align: left; font-weight: 400; }
 .carousel-title { font-size: 1.05rem; font-weight: 600; color: var(--c-p); text-align: left; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase;}
-
-.u-card-minimal { background: transparent; border: none; border-radius: 0; display: flex; flex-direction: column; position: relative; cursor: pointer; transition: transform 0.2s; height: 100%; margin-bottom: 12px;}
-.u-card-minimal:hover { transform: translateY(-2px); }
-.u-card-minimal:active { transform: scale(0.98); }
-.u-card-minimal.disabled { opacity: 0.5; pointer-events: none; }
-.u-img-minimal { width: 100%; aspect-ratio: 1/1.2; background: var(--c-img-bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; position: relative; border: none; overflow: hidden; margin-bottom: 4px;}
-.u-img-minimal img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 8%; }
-.u-bot-minimal { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: 0; padding-top: 2px;}
-.u-price-minimal { font-size: 1.05rem; font-weight: 700; color: var(--c-p); line-height: 1; }
-.u-tag-discount { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 6px; font-weight: 700; border-radius: 6px; }
-.btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
-.btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
-
-@media (max-width: 799px) {
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) { grid-column: span 2; display: flex; flex-direction: row; background: var(--c-img-bg); padding: 12px; border-radius: 12px; gap: 15px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-img-minimal { width: 40%; aspect-ratio: 1/1; margin-bottom: 0; background: #fff; flex-shrink: 0; }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-bot-minimal { width: 100%; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-name-minimal { font-size: 1rem !important; font-weight: 700 !important; -webkit-line-clamp: 3 !important; }
-}
 
 .video-indicator { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; }
 .video-indicator svg { width: 12px; height: 12px; fill: var(--c-p); }
@@ -427,8 +341,22 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         <h2 class="see-all-title">Compra do Mês</h2>
     </div>
     
-    <div class="see-all-content" id="compra-mes-content" style="padding: 0; padding-bottom: 120px; background: var(--c-bg); width: 100%;">
+    <div id="compra-mes-step-1" class="see-all-content" style="padding: 0; padding-bottom: 100px; background: var(--c-bg); width: 100%; display: none;">
+        <div style="padding: 15px;">
+            <div style="background: #e0f2fe; color: #0369a1; padding: 18px 15px; border-radius: 12px; border: 1px solid #bae6fd; text-align: left; line-height: 1.5; margin-bottom: 20px;">
+                <strong style="display:block; font-size:1.1rem; margin-bottom:6px;">🛒 Monte a sua lista:</strong>
+                Marque abaixo os produtos que faltam na sua casa. Nós vamos buscar as melhores opções para si!
+            </div>
+            <div id="compra-mes-checkbox-list" style="display: flex; flex-direction: column; max-width: 800px; margin: 0 auto;">
+                </div>
         </div>
+        <button class="cm-btn-generate" onclick="generateCompraMesList()">Procurar Produtos Selecionados</button>
+    </div>
+
+    <div id="compra-mes-step-2" class="see-all-content" style="padding: 15px; padding-bottom: 120px; background: var(--c-bg); width: 100%; display: none;">
+        <div id="compra-mes-results-list" style="max-width: 1000px; margin: 0 auto;">
+            </div>
+    </div>
 </div>
 
 <div id="store-rules-view" class="lateral-view quick-view">
@@ -660,132 +588,34 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 <script>
 // CONFIGURAÇÃO DA COMPRA DO MÊS
 const LISTA_DA_COMPRA_DO_MES = [
-    
-    // ==========================================
-    // 1. DESPENSA BÁSICA (A fundação da alimentação)
-    // ==========================================
-    { id: "arroz", titulo: "Arroz", termos: ["arroz branco", "arroz parboilizado", "arroz integral", "arroz agulhinha", "arroz arbório"] },
-    { id: "feijao", titulo: "Feijão", termos: ["feijao carioca", "feijao preto", "feijao fradinho", "feijao de corda", "feijao vermelho"] },
-    { id: "oleos_azeites", titulo: "Óleos e Azeites", termos: ["oleo de soja", "oleo de girassol", "oleo de milho", "azeite extra virgem", "azeite de oliva"] },
-    { id: "acucar_adocantes", titulo: "Açúcar e Adoçantes", termos: ["acucar cristal", "acucar refinado", "acucar mascavo", "acucar demerara", "adocante", "sucralose"] },
-    { id: "farinhas_graos", titulo: "Farinhas e Grãos", termos: ["farinha de trigo", "farinha de mandioca", "fuba", "amido de milho", "canjica", "milho para pipoca", "tapioca", "flocao", "farinha de rosca"] },
-
-    // ==========================================
-    // 2. TEMPEROS E COMPLEMENTOS (O toque de sabor)
-    // ==========================================
-    { id: "molhos_tomate", titulo: "Molhos de Tomate", termos: ["extrato de tomate", "molho de tomate", "polpa de tomate", "tomate pelado", "passata"] },
-    { id: "condimentos", titulo: "Condimentos", termos: ["maionese", "catchup", "ketchup", "mostarda", "molho shoyu", "molho ingles", "molho de pimenta", "molho para salada"] },
-    { id: "temperos_secos", titulo: "Caldos e Especiarias", termos: ["caldo em cubo", "caldo em po", "creme de cebola", "acafrao", "pimenta do reino", "oregano", "bicarbonato", "sal refinado", "sal grosso", "queijo ralado", "colorau", "alho triturado"] },
-    { id: "enlatados_conservas", titulo: "Conservas e Enlatados", termos: ["milho verde", "ervilha em conserva", "atum ralado", "atum solido", "sardinha", "azeitona", "cogumelo", "palmito", "seleta de legumes"] },
-
-    // ==========================================
-    // 3. O BOM DIA (Café da Manhã e Padaria)
-    // ==========================================
-    { id: "cafe_acessorios", titulo: "Café e Coadores", termos: ["cafe em po", "cafe torrado", "cafe soluvel", "capsula de cafe", "filtro de papel", "coador de pano"] },
-    { id: "leites_achocolatados", titulo: "Leites e Achocolatados", termos: ["leite integral", "leite desnatado", "leite em po", "achocolatado em po", "bebida lactea", "achocolatado liquido"] },
-    { id: "cereais", titulo: "Cereais e Matinais", termos: ["cereal matinal", "aveia em flocos", "farelo de aveia", "granola", "flocos de milho", "mingau", "massa para tapioca"] },
-    { id: "chas", titulo: "Chás", termos: ["cha de camomila", "cha mate", "cha verde", "cha de hortela", "cha de erva doce"] },
-    { id: "paes_torradas", titulo: "Pães e Torradas", termos: ["pao de forma", "torrada", "biscoito agua e sal", "biscoito cream cracker"] },
-
-    // ==========================================
-    // 4. MOMENTOS DE LAZER (Snacks, Doces e Bebidas)
-    // ==========================================
-    { id: "salgadinhos", titulo: "Salgadinhos e Aperitivos", termos: ["batata frita", "batata palha", "salgadinho de milho", "amendoim", "castanha"] },
-    { id: "biscoitos_doces", titulo: "Biscoitos Doces", termos: ["biscoito recheado", "biscoito wafer", "biscoito de maisena", "cookies", "rosquinha"] },
-    { id: "chocolates_sobremesas", titulo: "Doces e Sobremesas", termos: ["chocolate em barra", "caixa de bombom", "bala", "chiclete", "leite condensado", "creme de leite", "gelatina", "mistura para bolo", "fermento em po", "coco ralado", "chantilly"] },
-    { id: "bebidas", titulo: "Bebidas", termos: ["refrigerante", "suco em po", "suco concentrado", "suco de caixinha", "isotonico", "agua mineral"] },
-
-    // ==========================================
-    // 5. CUIDADO PESSOAL E BELEZA
-    // ==========================================
-    { id: "cabelos", titulo: "Cabelos", termos: ["shampoo", "condicionador", "creme de pentear", "mascara capilar", "tintura de cabelo", "coloracao", "gel fixador"] },
-    { id: "corpo_banho", titulo: "Corpo e Banho", termos: ["sabonete em barra", "sabonete liquido", "hidratante corporal", "hidratante facial", "oleo corporal", "esponja de banho"] },
-    { id: "desodorantes", titulo: "Desodorantes", termos: ["desodorante aerosol", "desodorante roll-on", "desodorante creme"] },
-    { id: "higiene_bucal", titulo: "Higiene Bucal", termos: ["creme dental", "pasta de dente", "fio dental", "escova de dentes", "enxaguante bucal"] },
-    { id: "higiene_intima", titulo: "Higiene Íntima", termos: ["absorvente", "protetor diario", "absorvente interno", "sabonete intimo"] },
-    { id: "barbear_manicure", titulo: "Barbear e Manicure", termos: ["aparelho de barbear", "lamina de barbear", "creme de barbear", "acetona", "removedor de esmalte", "algodao", "hastes flexiveis", "cortador de unha", "pinca"] },
-
-    // ==========================================
-    // 6. LIMPEZA E LAVANDERIA
-    // ==========================================
-    { id: "lavar_roupas", titulo: "Lavar Roupas", termos: ["sabao em po", "sabao liquido", "sabao em barra", "sabao de coco", "amaciante", "tira manchas", "alvejante"] },
-    { id: "limpeza_geral", titulo: "Limpeza Geral", termos: ["agua sanitaria", "cloro", "desinfetante", "limpador multiuso", "alcool liquido", "alcool em gel", "limpa vidros", "limpa aluminio", "cif", "sapolio"] },
-    { id: "acessorios_limpeza", titulo: "Acessórios de Limpeza", termos: ["esponja multiuso", "esponja de aco", "pano de chao", "pano multiuso", "flanela", "rodo", "vassoura", "pa de lixo", "saco para lixo"] },
-    { id: "aromatizadores", titulo: "Aromatizadores", termos: ["purificador de ar", "bom ar", "pedra sanitaria", "pastilha adesiva"] },
-
-    // ==========================================
-    // 7. LAR DOCE LAR (Utilidades, Papelaria e Bazar)
-    // ==========================================
-    { id: "utilidades_cozinha", titulo: "Utilidades de Cozinha", termos: ["copo de vidro", "copo de plastico", "caneca", "prato", "talheres", "faca", "peneira", "forma de gelo", "abridor", "fosforo", "papel aluminio", "filme pvc", "pano de prato", "guardanapo"] },
-    { id: "manutencao_eletrica", titulo: "Manutenção e Reparos", termos: ["lampada led", "pilha alcalina", "pilha comum", "extensao eletrica", "adaptador de tomada", "benjamim", "fita isolante", "fita adesiva", "abracadeira"] },
-    { id: "organizacao_banheiro", titulo: "Organização e Banheiro", termos: ["cabide", "ralo", "protetor de ralo", "prendedor de roupa", "corda para varal", "papel higienico", "papel toalha"] },
-    { id: "papelaria_pessoal", titulo: "Papelaria e Pessoal", termos: ["caneta", "lapis", "caderno", "tesoura", "estilete", "chinelo", "necessaire", "fita metrica", "agulha", "alfinete"] },
-
-    // ==========================================
-    // 8. CUIDADO INFANTIL E PETS
-    // ==========================================
-    { id: "infantil", titulo: "Bebês e Infantil", termos: ["fralda descartavel", "lenco umedecido", "pomada para assadura", "shampoo infantil"] },
-    { id: "pets", titulo: "Linha Pet", termos: ["racao para cachorro", "racao para gato", "petisco pet", "areia para gato", "shampoo pet"] }
+    { id: "arroz", titulo: "Arroz", termos: ["arroz branco", "arroz parboilizado", "arroz integral", "arroz agulhinha"] },
+    { id: "feijao", titulo: "Feijão", termos: ["feijao carioca", "feijao preto", "feijao de corda", "feijao vermelho"] },
+    { id: "oleo", titulo: "Óleo", termos: ["oleo de soja", "oleo concórdia", "oleo liza"] },
+    { id: "acucar", titulo: "Açúcar", termos: ["acucar cristal", "acucar refinado", "acucar mascavo", "acucar demerara"] },
+    { id: "cafe", titulo: "Café", termos: ["cafe torrado", "cafe moido", "cafe em po", "cafe soluvel"] },
+    { id: "macarrao", titulo: "Macarrão", termos: ["macarrao", "espaguete", "parafuso", "penne"] },
+    { id: "extrato", titulo: "Extrato de Tomate", termos: ["extrato de tomate", "molho de tomate", "polpa de tomate"] },
+    { id: "sal", titulo: "Sal", termos: ["sal refinado", "sal grosso", "sal rosa"] },
+    { id: "farinha_trigo", titulo: "Farinha de Trigo", termos: ["farinha de trigo", "trigo"] },
+    { id: "leite", titulo: "Leite", termos: ["leite integral", "leite desnatado", "leite semidesnatado"] },
+    { id: "biscoito", titulo: "Biscoitos", termos: ["biscoito recheado", "biscoito agua e sal", "bolacha", "biscoito maizena"] },
+    { id: "sabao_po", titulo: "Sabão em Pó", termos: ["sabao em po", "tixan", "omo", "brilhante"] },
+    { id: "amaciante", titulo: "Amaciante", termos: ["amaciante", "downy", "comfort", "ype", "fofo"] },
+    { id: "detergente", titulo: "Detergente Líquido", termos: ["detergente liquido", "detergente ype", "detergente limpol"] },
+    { id: "esponja", titulo: "Esponja", termos: ["esponja multiuso", "bucha de lavar", "esponja de aco"] },
+    { id: "agua_sanitaria", titulo: "Água Sanitária", termos: ["agua sanitaria", "qboa", "candida"] },
+    { id: "papel_higienico", titulo: "Papel Higiênico", termos: ["papel higienico", "neve", "personal"] },
+    { id: "creme_dental", titulo: "Creme Dental", termos: ["creme dental", "pasta de dente", "colgate", "sorriso", "close up"] },
+    { id: "sabonete", titulo: "Sabonete", termos: ["sabonete em barra", "sabonete liquido", "dove", "lux", "rexona", "albany"] }
 ];
-
-let stateCompraMes = {}; 
 
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-function verificarPrimeiroAcesso() {
-    if (!localStorage.getItem('donaAntoniaContatoSalvo')) {
-        document.getElementById('banner-primeiro-acesso').style.display = 'flex';
-        document.body.classList.add('has-bottom-banner'); 
-    }
-}
-
-function fecharBannerPrimeiroAcesso(event) {
-    if (event) event.stopPropagation(); 
-    document.getElementById('banner-primeiro-acesso').style.display = 'none';
-    document.body.classList.remove('has-bottom-banner');
-    localStorage.setItem('donaAntoniaContatoSalvo', 'true');
-}
-
-function salvarContatoPrimeiroAcesso() {
-    fecharBannerPrimeiroAcesso();
-    let msg = encodeURIComponent("Olá, estou a salvar o seu contacto.");
-    window.open(`https://wa.me/5565998150975?text=${msg}`, '_blank');
-}
-
-function getYouTubeVideoId(url) {
-    if(!url) return '';
-    let videoId = '';
-    if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1].split('?')[0];
-    else if (url.includes('shorts/')) videoId = url.split('shorts/')[1].split('?')[0];
-    else if (url.includes('watch?v=')) videoId = url.split('watch?v=')[1].split('&')[0];
-    return videoId;
-}
-
-function getYouTubeEmbedUrl(url) {
-    let videoId = getYouTubeVideoId(url);
-    return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&enablejsapi=1` : '';
-}
-
-const MARCAS_DESTAQUE = [
-    { id: "Skala", nome: "Skala", palavrasChave: ["skala"] }, { id: "Monange", nome: "Monange", palavrasChave: ["monange"] },
-    { id: "Phebo", nome: "Phebo", palavrasChave: ["phebo"] }, { id: "Albany", nome: "Albany", palavrasChave: ["albany"] },
-    { id: "Novex", nome: "Novex", palavrasChave: ["novex"] }, { id: "Seda", nome: "Seda", palavrasChave: ["seda"] },
-    { id: "Dove", nome: "Dove", palavrasChave: ["dove"] }, { id: "Nivea", nome: "Nivea", palavrasChave: ["nivea"] },
-    { id: "tresemme", nome: "Tresemme", palavrasChave: ["tresemme"] }, { id: "Palmolive", nome: "Palmolive", palavrasChave: ["palmolive"] },
-    { id: "Rexona", nome: "Rexona", palavrasChave: ["rexona"] }, { id: "Colgate", nome: "Colgate", palavrasChave: ["colgate"] },
-    { id: "Ypê", nome: "Ypê", palavrasChave: ["ype"] }, { id: "Minuano", nome: "Minuano", palavrasChave: ["minuano"] },
-    { id: "Omo", nome: "Omo", palavrasChave: ["omo"] }, { id: "Downy", nome: "Downy", palavrasChave: ["Downy"] },
-    { id: "Confort", nome: "Confort", palavrasChave: ["confort"] }, { id: "Remus", nome: "Remmus", palavrasChave: ["Remmus"] },
-    { id: "Lacta", nome: "Lacta", palavrasChave: ["lacta"] }, { id: "Mabel", nome: "Mabel", palavrasChave: ["mabel"] },
-    { id: "Sinhá", nome: "Sinhá", palavrasChave: ["sinha"] }, { id: "Apti", nome: "Apti", palavrasChave: ["apti"] },
-    { id: "Fugini", nome: "Fugini", palavrasChave: ["fugini"] }, { id: "Frisco", nome: "Frisco", palavrasChave: ["frisco"] }
-].sort((a, b) => a.nome.localeCompare(b.nome));
-
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
-    currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], combos: [],
+    currentMarcaTab: null, baskets: [], prods: [], combos: [],
     returnToUpsell: false, allVideos: [], tvRenderedCount: 10, currentFilteredList: [],
     deptos: {
         'desc_20': { id: 'desc_20', title: '20% de Desconto', type: 'PROD', data: [] },
@@ -806,6 +636,23 @@ const STATE = {
     cart: {}, cartOrder: [], appliedCombos: [], baseBasket: null, basketExtraFee: 0, comboDiscount: 0, atacadoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
 };
+
+const MARCAS_DESTAQUE = [
+    { id: "Skala", nome: "Skala", palavrasChave: ["skala"] }, { id: "Monange", nome: "Monange", palavrasChave: ["monange"] },
+    { id: "Phebo", nome: "Phebo", palavrasChave: ["phebo"] }, { id: "Albany", nome: "Albany", palavrasChave: ["albany"] },
+    { id: "Novex", nome: "Novex", palavrasChave: ["novex"] }, { id: "Seda", nome: "Seda", palavrasChave: ["seda"] },
+    { id: "Dove", nome: "Dove", palavrasChave: ["dove"] }, { id: "Nivea", nome: "Nivea", palavrasChave: ["nivea"] },
+    { id: "tresemme", nome: "Tresemme", palavrasChave: ["tresemme"] }, { id: "Palmolive", nome: "Palmolive", palavrasChave: ["palmolive"] },
+    { id: "Rexona", nome: "Rexona", palavrasChave: ["rexona"] }, { id: "Colgate", nome: "Colgate", palavrasChave: ["colgate"] },
+    { id: "Ypê", nome: "Ypê", palavrasChave: ["ype"] }, { id: "Minuano", nome: "Minuano", palavrasChave: ["minuano"] },
+    { id: "Omo", nome: "Omo", palavrasChave: ["omo"] }, { id: "Downy", nome: "Downy", palavrasChave: ["Downy"] },
+    { id: "Confort", nome: "Confort", palavrasChave: ["confort"] }, { id: "Remus", nome: "Remmus", palavrasChave: ["Remmus"] },
+    { id: "Lacta", nome: "Lacta", palavrasChave: ["lacta"] }, { id: "Mabel", nome: "Mabel", palavrasChave: ["mabel"] },
+    { id: "Sinhá", nome: "Sinhá", palavrasChave: ["sinha"] }, { id: "Apti", nome: "Apti", palavrasChave: ["apti"] },
+    { id: "Fugini", nome: "Fugini", palavrasChave: ["fugini"] }, { id: "Frisco", nome: "Frisco", palavrasChave: ["frisco"] }
+].sort((a, b) => a.nome.localeCompare(b.nome));
+
+STATE.currentMarcaTab = MARCAS_DESTAQUE[0].id;
 
 const TERMOS_CATEGORIAS = {
     alimentos: [ "arroz", "sinha", "fugini", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", "atum", "achocolatado", "amendoim", "aveia", "bala", "batata", "bombom", "caldo", "canjica", "catchup", "chantilly", "chiclete", "chocolate", "coco", "louro", "creme de leite", "drops", "fermento", "gelatina", "goiabada", "granola", "maionese", "mistura para bolo", "mostarda", "ovo", "pimenta", "pipoca", "queijo", "rosquinha", "salgadinho", "salsicha", "shoyu", "tapioca", "tempero", "wafer", "acafrao", "azeitona", "bicarbonato", "bis", "cereal", "chicle", "cogumelo", "colorifico", "erva", "mucilon", "oregano", "seleta", "toddy", "barra cereais", "barra de cereais", "milharina", "mistura pra bolo", "doce" ],
@@ -851,18 +698,15 @@ function agruparCategoria(produto) {
 
 function renderHomeCards() {
     const cards = [
-        // Destaques Principais
         { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', highlighted: true },
         { id: 'compra_mes', title: 'Compra do Mês', subtitle: 'Lista Inteligente', action: "openCompraMes()", icon: '📝', highlighted: true },
         
-        // Promoções e Marcas
         { id: 'combos', title: 'Kits Promo', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
         { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
         { id: 'desc_20', title: '20% OFF', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
         { id: 'desc_15', title: '15% OFF', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
         { id: 'desc_10', title: '10% OFF', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
         
-        // Todos os Departamentos
         { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: '#1e293b' },
         { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: '#1e293b' },
         { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", icon: '🧼', color: '#1e293b' },
@@ -886,119 +730,74 @@ function renderHomeCards() {
     document.getElementById('grid-home-sections').innerHTML = html;
 }
 
-// FUNÇÕES DA COMPRA DO MÊS
+// LOGICA COMPRA DO MES - FORMATO LISTA
 window.openCompraMes = function() {
     if (!STATE.dataLoaded) return showToast("A Sincronizar...", "s");
     STATE.viewStack = 'COMPRA_MES';
-
+    
+    $('compra-mes-step-1').style.display = 'block';
+    $('compra-mes-step-2').style.display = 'none';
+    
+    let html = '';
     LISTA_DA_COMPRA_DO_MES.forEach(cat => {
+        html += `
+        <label class="cm-check-item" onclick="toggleCmItem(this)">
+            <input type="checkbox" value="${cat.id}" class="cm-checkbox">
+            <span style="font-size:1.1rem; font-weight:500; color:var(--c-p);">${cat.titulo}</span>
+        </label>`;
+    });
+    $('compra-mes-checkbox-list').innerHTML = html;
+    
+    $('compra-mes-view').classList.add('open');
+    if (!history.state || !history.state.compraMesOpen) history.pushState({ compraMesOpen: true }, '');
+}
+
+window.toggleCmItem = function(element) {
+    let cb = element.querySelector('.cm-checkbox');
+    cb.checked = !cb.checked;
+    if(cb.checked) element.classList.add('selected');
+    else element.classList.remove('selected');
+}
+
+window.generateCompraMesList = function() {
+    let selectedBoxes = document.querySelectorAll('.cm-checkbox:checked');
+    if(selectedBoxes.length === 0) return showToast('Selecione pelo menos um item!', 'r');
+    
+    let html = '';
+    
+    selectedBoxes.forEach(cb => {
+        let catId = cb.value;
+        let cat = LISTA_DA_COMPRA_DO_MES.find(c => c.id === catId);
+        
         let matches = STATE.prods.filter(p => {
             if(p.stock <= 0) return false;
             let nomeNorm = " " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ";
             return cat.termos.some(t => nomeNorm.includes(" " + norm(t) + " "));
         });
-        matches.sort((a,b) => a.price - b.price);
-        stateCompraMes[cat.id] = { produtos: matches, currentIndex: 0 };
+        
+        if(matches.length > 0) {
+            matches.sort((a,b) => a.price - b.price);
+            html += `<h3 class="cm-section-title">${cat.titulo}</h3>`;
+            html += `<div class="grid-ver-todos">`;
+            matches.forEach(p => { html += buildCardHtml(p, 'PROD'); });
+            html += `</div>`;
+        }
     });
-
-    renderCompraMesView();
-    document.getElementById('compra-mes-view').classList.add('open');
-    updateTotals();
     
-    if (!history.state || !history.state.compraMesOpen) history.pushState({ compraMesOpen: true }, '');
+    if(html === '') {
+        html = '<p style="text-align:center; color:var(--c-s); padding: 40px;">Nenhum produto encontrado para as seleções.</p>';
+    }
+    
+    $('compra-mes-results-list').innerHTML = html;
+    $('compra-mes-step-1').style.display = 'none';
+    $('compra-mes-step-2').style.display = 'block';
+    $('compra-mes-step-2').scrollTo(0,0);
 }
 
 window.closeCompraMes = function() {
     document.getElementById('compra-mes-view').classList.remove('open');
     STATE.viewStack = 'HOME';
     updateTotals();
-}
-
-window.renderCompraMesView = function() {
-    let html = `
-    <div style="padding: 15px 15px 0px;">
-        <div style="background: #e0f2fe; color: #0369a1; padding: 18px 15px; border-radius: 12px; border: 1px solid #bae6fd; text-align: left; line-height: 1.5;">
-            <strong style="display:block; font-size:1.1rem; margin-bottom:6px;">🛒 Como montar a sua compra:</strong>
-            Use as barras laterais com setas para trocar a marca do produto.<br>Depois, toque no botão <strong>+</strong> para colocar na sacola.
-        </div>
-    </div>
-    
-    <div class="compra-mes-grid">`;
-    
-    LISTA_DA_COMPRA_DO_MES.forEach(cat => {
-        let data = stateCompraMes[cat.id];
-        if(!data || data.produtos.length === 0) return; 
-        
-        let prod = data.produtos[data.currentIndex];
-        let totalVariacoes = data.produtos.length;
-        let cartQty = STATE.cart[prod.id] || 0;
-        
-        let oldPriceHtml = (prod.oldPrice && prod.oldPrice > prod.price) ? `<div class="compra-mes-old-price">${fmt(prod.oldPrice)}</div>` : '';
-        
-        let btnEsq = totalVariacoes > 1 ? `<button onclick="changeCompraMesItem('${cat.id}', -1)" class="compra-mes-nav left">❮</button>` : `<div class="compra-mes-nav disabled"></div>`;
-        let btnDir = totalVariacoes > 1 ? `<button onclick="changeCompraMesItem('${cat.id}', 1)" class="compra-mes-nav right">❯</button>` : `<div class="compra-mes-nav disabled"></div>`;
-
-        let controlArea = '';
-        if (cartQty > 0) {
-            controlArea = `
-                <div class="compra-mes-qty">
-                    <button onclick="updCompraMes('${prod.id}', -1, '${cat.id}'); event.stopPropagation();">-</button>
-                    <span>${cartQty}</span>
-                    <button onclick="updCompraMes('${prod.id}', 1, '${cat.id}'); event.stopPropagation();">+</button>
-                </div>
-            `;
-        } else {
-            controlArea = `<button class="compra-mes-btn-add" onclick="updCompraMes('${prod.id}', 1, '${cat.id}'); event.stopPropagation();">+</button>`;
-        }
-
-        // AQUI FOI FEITO O AJUSTE: Envolvemos o título e o card na mesma div
-        html += `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--c-p); margin: 0; padding-left: 5px;">${cat.titulo}</h3>
-            
-            <div class="card-compra-mes">
-                ${btnEsq}
-                
-                <div class="compra-mes-miolo" onclick="openQuickView('${prod.id}')">
-                    <img src="${prod.img}" class="compra-mes-img" onerror="this.src='/site/img/produtos/cesta.webp'">
-                    <div class="compra-mes-prod-name">${formatName(prod.name)}</div>
-                    
-                    <div class="compra-mes-bot-row" onclick="event.stopPropagation();">
-                        <div class="compra-mes-prices">
-                            ${oldPriceHtml}
-                            <div class="compra-mes-new-price">${fmt(prod.price)}</div>
-                        </div>
-                        ${controlArea}
-                    </div>
-                </div>
-
-                ${btnDir}
-            </div>
-        </div>
-        `;
-    });
-    
-    html += '</div>';
-    document.getElementById('compra-mes-content').innerHTML = html;
-}
-
-window.changeCompraMesItem = function(catId, dir) {
-    let data = stateCompraMes[catId];
-    if(!data) return;
-    data.currentIndex += dir;
-    if(data.currentIndex < 0) data.currentIndex = data.produtos.length - 1;
-    if(data.currentIndex >= data.produtos.length) data.currentIndex = 0;
-    renderCompraMesView();
-}
-
-window.updCompraMes = function(prodId, delta, catId) {
-    upd(prodId, delta);
-    renderCompraMesView(); 
-    const cartBtn = document.getElementById('floating-cart'); 
-    if (delta > 0 && cartBtn) { 
-        cartBtn.style.transform = 'translateX(-50%) scale(1.05)'; 
-        setTimeout(() => cartBtn.style.transform = 'translateX(-50%) scale(1)', 150); 
-    }
 }
 
 // TV CAROUSEL
@@ -1010,10 +809,10 @@ function renderHomeTV() {
     
     let trackHtml = videosToShow.map((v, index) => `
         <div class="home-tv-item" id="home-tv-item-${index}">
-            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="playInlineVideo('${v.videoId}', ${index})" alt="Miniatura Vídeo">
+            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" decoding="async" class="home-tv-thumb" onclick="playInlineVideo('${v.videoId}', ${index})" alt="Miniatura Vídeo">
             <div class="home-tv-play" onclick="playInlineVideo('${v.videoId}', ${index})">▶</div>
             <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
-                <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+                <img src="${v.product.img}" loading="lazy" decoding="async" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                 <button class="home-tv-prod-btn">Ver</button>
             </div>
         </div>
@@ -1054,10 +853,10 @@ window.handleTvScroll = function() {
                 let actualIndex = STATE.tvRenderedCount + idx;
                 let html = `
                     <div class="home-tv-item" id="home-tv-item-${actualIndex}">
-                        <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="playInlineVideo('${v.videoId}', ${actualIndex})">
+                        <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" decoding="async" class="home-tv-thumb" onclick="playInlineVideo('${v.videoId}', ${actualIndex})">
                         <div class="home-tv-play" onclick="playInlineVideo('${v.videoId}', ${actualIndex})">▶</div>
                         <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
-                            <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+                            <img src="${v.product.img}" loading="lazy" decoding="async" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                             <button class="home-tv-prod-btn">Ver</button>
                         </div>
                     </div>`;
@@ -1142,7 +941,7 @@ window.doGlobalSearch = function() {
     
     resContainer.innerHTML = top.map(p => `
         <div class="chk-item-card" onclick="openQuickView('${p.id}')" style="cursor: pointer; flex-direction:row;">
-            <img src="${p.img}" loading="lazy" alt="${formatName(p.name)}" onerror="this.src='/site/img/produtos/cesta.webp'" style="width:50px; height:50px; padding:4px;">
+            <img src="${p.img}" loading="lazy" decoding="async" alt="${formatName(p.name)}" onerror="this.src='/site/img/produtos/cesta.webp'" style="width:50px; height:50px; padding:4px;">
             <div class="name" style="font-weight: 500; font-size: 0.95rem; text-align:left;">${formatName(p.name)}</div>
             <div style="font-weight: 700; color: var(--c-p); font-size: 1.1rem; white-space: nowrap;">${fmt(p.price)}</div>
         </div>
@@ -1158,6 +957,26 @@ window.openInfoView = function() {
 window.closeInfoView = function() {
     document.getElementById('info-view').classList.remove('open');
     STATE.viewStack = 'HOME';
+}
+
+function verificarPrimeiroAcesso() {
+    if (!localStorage.getItem('donaAntoniaContatoSalvo')) {
+        document.getElementById('banner-primeiro-acesso').style.display = 'flex';
+        document.body.classList.add('has-bottom-banner'); 
+    }
+}
+
+function fecharBannerPrimeiroAcesso(event) {
+    if (event) event.stopPropagation(); 
+    document.getElementById('banner-primeiro-acesso').style.display = 'none';
+    document.body.classList.remove('has-bottom-banner');
+    localStorage.setItem('donaAntoniaContatoSalvo', 'true');
+}
+
+function salvarContatoPrimeiroAcesso() {
+    fecharBannerPrimeiroAcesso();
+    let msg = encodeURIComponent("Olá, estou a salvar o seu contacto.");
+    window.open(`https://wa.me/5565998150975?text=${msg}`, '_blank');
 }
 
 async function fetchWithCache(url, key, ttlMinutes) {
@@ -1582,7 +1401,7 @@ window.openKitLateralView = function(id, type) {
         let removedTagHtml = (qty === 0) ? `<div class="removido-overlay" id="rem-tag-${pId}">REMOVIDO</div>` : `<div class="removido-overlay" id="rem-tag-${pId}" style="display:none;">REMOVIDO</div>`;
         
         let controlArea = '';
-        let priceHtml = `<div class="u-price" style="font-size:1.1rem;">${fmt(p.price)}</div>`;
+        let priceHtml = `<div class="u-price-minimal">${fmt(p.price)}</div>`;
         
         if (type === 'BASKET') {
             controlArea = `<div class="card-qty-ctrl"><button onclick="changeExpanderQty('${pId}', -1)">-</button><span id="exp-qty-${pId}">${qty}</span><button onclick="changeExpanderQty('${pId}', 1)">+</button></div>`;
@@ -1592,10 +1411,10 @@ window.openKitLateralView = function(id, type) {
         }
 
         return `
-        <div class="u-card" id="exp-card-${pId}" style="opacity: ${qty===0 ? '0.5' : '1'};">
+        <div class="u-card" id="exp-card-${pId}" style="opacity: ${qty===0 ? '0.5' : '1'}; border-radius:12px; padding:10px;">
             <div class="u-img-area">
                 ${removedTagHtml}
-                <img src="${p.img}" loading="lazy" alt="${formatName(p.name)}">
+                <img src="${p.img}" loading="lazy" decoding="async" alt="${formatName(p.name)}">
             </div>
             <div class="u-info">
                 <div class="u-name">${formatName(p.name)}</div>
@@ -1779,6 +1598,7 @@ window.openUpsellView = function() {
     `;
 };
 
+// ATUALIZAÇÃO GLOBAL PARA USAR O CARD MINIMALISTA EM TODOS OS PRODUTOS (EXCETO KITS/CESTAS)
 function buildCardHtml(item, type) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
@@ -1815,7 +1635,7 @@ function buildCardHtml(item, type) {
 
         return `
         <div class="${cardClass}" data-id="${id}" onclick="${onClick}">
-            <div class="${imgAreaClass}">${tagHtml} <img src="${img}" loading="lazy" alt="Kit"> ${videoIconHtml} </div>
+            <div class="${imgAreaClass}">${tagHtml} <img src="${img}" loading="lazy" decoding="async" alt="Kit"> ${videoIconHtml} </div>
             <div class="u-info">
                 <div class="u-name kit-name-large">${formatName(name)}</div>
                 <div style="display: flex; flex-direction: column; justify-content: flex-end;">
@@ -1827,6 +1647,7 @@ function buildCardHtml(item, type) {
         </div>`;
     }
 
+    // Estilo Universal para Todos os Produtos
     let cardClassMin = isEsgotado ? 'u-card-minimal disabled' : 'u-card-minimal';
     let onClickMin = isEsgotado ? '' : `openQuickView('${id}')`;
     
@@ -1854,7 +1675,7 @@ function buildCardHtml(item, type) {
     return `
     <div class="${cardClassMin}" data-id="${id}" onclick="${onClickMin}">
         <div class="u-img-minimal">
-            <img src="${img}" loading="lazy" alt="${formatName(name)}">
+            <img src="${img}" loading="lazy" decoding="async" alt="${formatName(name)}">
             ${videoIconHtml}
             ${addBtnHtml}
         </div>
@@ -2177,7 +1998,7 @@ function renderCheckoutItems() {
         let p = STATE.prods.find(x => x.id === id); let qty = STATE.cart[id];
         return `
         <div class="chk-item-card">
-            <img src="${p.img}" loading="lazy" alt="${formatName(p.name)}">
+            <img src="${p.img}" loading="lazy" decoding="async" alt="${formatName(p.name)}">
             <div class="name">${formatName(p.name)}</div>
             <div class="card-qty-ctrl" style="margin-top: auto; border-radius: 8px;">
                 <button onclick="upd('${id}',-1); event.stopPropagation();">-</button>
