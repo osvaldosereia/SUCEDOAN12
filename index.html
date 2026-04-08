@@ -103,8 +103,21 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-tv-track { display: flex; gap: 15px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 10px; scroll-behavior: smooth; }
 .home-tv-track::-webkit-scrollbar { display: none; }
 
-.home-tv-item { flex: 0 0 85%; aspect-ratio: 16 / 9; background: #000; border-radius: 12px; position: relative; overflow: hidden; scroll-snap-align: center; display: flex; flex-direction: column; }
-@media(min-width: 800px) { .home-tv-item { flex: 0 0 45%; } .home-tv-carousel-wrapper { margin-top: 25px; } }
+.home-tv-item { 
+    flex: 0 0 45%; /* No mobile, cada vídeo ocupa 45% da largura da tela */
+    aspect-ratio: 9 / 16; /* Formato vertical (Shorts/Reels) */
+    background: #000; 
+    border-radius: 12px; 
+    position: relative; 
+    overflow: hidden; 
+    scroll-snap-align: center; 
+    display: flex; 
+    flex-direction: column; 
+}
+@media(min-width: 800px) { 
+    .home-tv-item { flex: 0 0 22%; } /* No desktop, cada vídeo ocupa 22% (cabem 4 na tela) */
+    .home-tv-carousel-wrapper { margin-top: 25px; } 
+}
 
 .home-tv-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer; transition: opacity 0.3s; }
 .home-tv-item:hover .home-tv-thumb { opacity: 0.7; }
@@ -157,9 +170,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .see-all-content { flex: 1; overflow-y: auto; padding: 15px; padding-bottom: 180px; position: relative; background: var(--c-bg);}
 
 
-/* --- NOVO VISUAL COMPRA DO MÊS (MUITO MAIS ACESSÍVEL E LIMPO) --- */
+/* --- NOVO VISUAL COMPRA DO MÊS --- */
 .compra-mes-grid { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 15px; max-width: 1000px; margin: 0 auto; width: 100%; }
-@media(min-width: 800px) { .compra-mes-grid { grid-template-columns: repeat(2, 1fr); gap: 25px; } }
+@media(min-width: 800px) { .compra-mes-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; } }
 
 .card-compra-mes {
     display: flex; flex-direction: row; background: #fff; border: 1px solid var(--c-bd); 
@@ -647,25 +660,51 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 <script>
 // CONFIGURAÇÃO DA COMPRA DO MÊS
 const LISTA_DA_COMPRA_DO_MES = [
-    { id: "arroz", titulo: "Arroz", termos: ["arroz branco", "arroz parboilizado", "arroz integral", "arroz agulhinha"] },
-    { id: "feijao", titulo: "Feijão", termos: ["feijao carioca", "feijao preto", "feijao de corda", "feijao vermelho"] },
-    { id: "oleo", titulo: "Óleo", termos: ["oleo de soja", "oleo concórdia", "oleo liza"] },
-    { id: "acucar", titulo: "Açúcar", termos: ["acucar cristal", "acucar refinado", "acucar mascavo", "acucar demerara"] },
-    { id: "cafe", titulo: "Café", termos: ["cafe torrado", "cafe moido", "cafe em po", "cafe soluvel"] },
-    { id: "macarrao", titulo: "Macarrão", termos: ["macarrao", "espaguete", "parafuso", "penne"] },
-    { id: "extrato", titulo: "Extrato de Tomate", termos: ["extrato de tomate", "molho de tomate", "polpa de tomate"] },
-    { id: "sal", titulo: "Sal", termos: ["sal refinado", "sal grosso", "sal rosa"] },
-    { id: "farinha_trigo", titulo: "Farinha de Trigo", termos: ["farinha de trigo", "trigo"] },
-    { id: "leite", titulo: "Leite", termos: ["leite integral", "leite desnatado", "leite semidesnatado"] },
-    { id: "biscoito", titulo: "Biscoitos", termos: ["biscoito recheado", "biscoito agua e sal", "bolacha", "biscoito maizena"] },
-    { id: "sabao_po", titulo: "Sabão em Pó", termos: ["sabao em po", "tixan", "omo", "brilhante"] },
-    { id: "amaciante", titulo: "Amaciante", termos: ["amaciante", "downy", "comfort", "ype", "fofo"] },
-    { id: "detergente", titulo: "Detergente Líquido", termos: ["detergente liquido", "detergente ype", "detergente limpol"] },
-    { id: "esponja", titulo: "Esponja", termos: ["esponja multiuso", "bucha de lavar", "esponja de aco"] },
-    { id: "agua_sanitaria", titulo: "Água Sanitária", termos: ["agua sanitaria", "qboa", "candida"] },
-    { id: "papel_higienico", titulo: "Papel Higiênico", termos: ["papel higienico", "neve", "personal"] },
-    { id: "creme_dental", titulo: "Creme Dental", termos: ["creme dental", "pasta de dente", "colgate", "sorriso", "close up"] },
-    { id: "sabonete", titulo: "Sabonete", termos: ["sabonete em barra", "sabonete liquido", "dove", "lux", "rexona", "albany"] }
+    // --- SEGMENTO 1: FUNDAÇÃO (MERCEARIA & ESSENCIAIS) ---
+    { id: "arroz", titulo: "Arroz", termos: ["arroz koblenz", "arroz tio alvino", "arroz tio bonini", "agulhinha"] },
+    { id: "feijao", titulo: "Feijão", termos: ["feijao carioca da casa", "feijão preto dona dê", "feijão corda"] },
+    { id: "acucar", titulo: "Açúcar", termos: ["açúcar cristal doce dia", "açúcar refinado", "mascavo"] },
+    { id: "farinha", titulo: "Farinhas Diversas", termos: ["farinha de trigo vitoriosa", "farinha de mandioca pantanal", "farinha milho sinha", "fubá", "flocão"] },
+    { id: "oleo_azeite", titulo: "Óleos e Azeites", termos: ["óleo de soja", "azeite andorinha extra virgem", "azeite o-live chileno"] },
+    { id: "macarrao", titulo: "Macarrão e Massas", termos: ["espaguete", "parafuso", "penne", "miojo"] },
+
+    // --- SEGMENTO 2: CAFÉ DA MANHÃ & BEBIDAS ---
+    { id: "cafe_filtro", titulo: "Café e Filtros", termos: ["café caboclo", "café gaklik", "café premiado", "filtro de papel 102", "filtro 103"] },
+    { id: "leite_achocolatado", titulo: "Leites e Achocolatados", termos: ["leite integral tirol", "leite em pó ninho", "nescau em pó", "nesquik morango", "toddy", "pirakids"] },
+    { id: "cereais_granola", titulo: "Cereais e Matinais", termos: ["cereal nescau", "snow flakes", "neston 3 cereais", "granola jasmine", "aveia em flocos naturale"] },
+    { id: "cha_sucos", titulo: "Chás e Sucos", termos: ["chá matte leão", "chá hortelã", "suco concentrado maguary", "suco tang", "suco frisco", "gatorade"] },
+
+    // --- SEGMENTO 3: SABOR & PREPARO (TEMPEROS E CONDIMENTOS) ---
+    { id: "maionese_catchup", titulo: "Maionese e Catchup", termos: ["maionese hellmanns", "maionese heinz", "catchup heinz tradicional", "catchup fugini", "catchup bacon"] },
+    { id: "molho_extrato", titulo: "Molhos de Tomate", termos: ["molho tomate vale fertil", "extrato de tomate fugini", "extrato de tomate olé"] },
+    { id: "caldos_temperos", titulo: "Caldos e Temperos", termos: ["caldo maggi carne", "caldo knorr costela", "caldo arisco galinha", "açafrão", "bicarbonato", "vinagre"] },
+
+    // --- SEGMENTO 4: CUIDADO PESSOAL (HIGIENE E BELEZA) ---
+    { id: "shampoo_condicionador", titulo: "Shampoo e Condicionador", termos: ["shampoo dove", "shampoo tresemme", "shampoo seda", "shampoo neutrox", "kit salon line hidra", "kit inoar bambu"] },
+    { id: "tratamento_capilar", titulo: "Tratamentos e Máscaras", termos: ["creme elseve glycolic gloss", "elseve hialuronico", "novex tudo de bom", "pantene miracles", "máscara inoar argan"] },
+    { id: "sabonete_corpo", titulo: "Sabonetes e Banho", termos: ["sabonete dove original", "sabonete farnese", "sabonete protex", "sabonete phebo", "sabonete palmolive", "bucha vegetal"] },
+    { id: "desodorante", titulo: "Desodorantes", termos: ["rexona bamboo", "nivea black & white", "herbissimo creme", "leite de rosas", "monange detox", "giovanna baby roll-on"] },
+    { id: "higiene_bucal", titulo: "Saúde Bucal", termos: ["creme dental colgate tripla ação", "fio dental colgate", "fio dental hillo"] },
+    { id: "cuidados_rosto_corpo", titulo: "Hidratação e Estética", termos: ["hidratante monange q10", "hidratante facial garnier", "creme nivea lata", "hidratante paixão", "acetona", "água oxigenada", "tintura cor e tom"] },
+    { id: "cuidados_bebe_fem", titulo: "Cuidados Específicos", termos: ["absorvente sempre livre", "absorvente intimus", "absorvente interno ob", "fralda cremer jumbo", "fralda personal mega", "lenço umedecido piquitucho"] },
+
+    // --- SEGMENTO 5: CUIDADOS COM A CASA (LIMPEZA E LAVANDERIA) ---
+    { id: "lavar_roupas", titulo: "Lavar Roupas", termos: ["sabão liquido omo", "sabão liquido brilhante", "sabão em pó ace", "sabão em pó minuano", "sabão surf coco"] },
+    { id: "amaciante", titulo: "Amaciantes", termos: ["amaciante downy concentrado", "amaciante comfort brisa", "amaciante ype aconchego", "amaciante monbijou"] },
+    { id: "limpeza_pesada", titulo: "Limpeza Geral", termos: ["água sanitária qboa", "álcool anhanguera 70", "limpa alumínio estrela", "inseticida sbp", "lava louça ype", "bucha de lavar"] },
+    { id: "organizacao_lixo", titulo: "Descartáveis e Panos", termos: ["saco para lixo 100l", "saco para lixo 30l", "saco pano pratic", "papel higiênico"] },
+
+    // --- SEGMENTO 6: MOMENTO DE PRAZER (SNACKS E DOCES) ---
+    { id: "biscoitos_salgados", titulo: "Biscoitos Salgados", termos: ["biscoito pit stop", "biscoito mabel água e sal", "biscoito liane salgado", "biscoito tucs pizza"] },
+    { id: "biscoitos_doces", titulo: "Biscoitos Doces e Recheados", termos: ["biscoito oreo", "biscoito negresco", "biscoito recheado nestlé", "biscoito maizena mabel", "wafer hersheys"] },
+    { id: "chocolates_balas", titulo: "Doces e Chocolates", termos: ["kitkat 41g", "chocolate bis", "bombom lacta oreo", "bala fini gelatina", "goiabada val", "leite condensado piracanjuba"] },
+    { id: "petiscos", titulo: "Petiscos e Salgadinhos", termos: ["amendoim mendorato", "amendoim pettiz", "amendoim dori japonês", "batata pringles", "batata ruffles", "batata palha favorita"] },
+
+    // --- SEGMENTO 7: SOLUÇÕES PRÁTICAS (UTILIDADES, PAPELARIA E PETS) ---
+    { id: "utilidades_cozinha", titulo: "Utensílios de Cozinha", termos: ["abridor de garrafa", "jarra de plastico", "forma para gelo silicone", "balde de pipoca", "lacre para embalagem", "cesta de bambu"] },
+    { id: "casa_reparos", titulo: "Manutenção e Casa", termos: ["lâmpada led foxlux", "extensão 5 metros", "benjamim adaptador", "fita adesiva", "abraçadeira nylon", "isqueiro bic", "fita métrica", "agulha fogão"] },
+    { id: "papelaria_escolar", titulo: "Papelaria", termos: ["caneta bic cristal", "lápis grafite hb", "lápis de cor 12 cores", "grafite para lapiseira", "estilete", "livro de colorir"] },
+    { id: "pets", titulo: "Linha Pet", termos: ["ração pedigree cães adultos", "ração gato", "petiscos pet"] }
 ];
 
 let stateCompraMes = {}; 
