@@ -149,7 +149,24 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25) !important;
 }
 
-.qr-section { margin-bottom: 25px; position: relative; }
+/* Novo título principal das sessões (Alimentos, Bebidas...) */
+.qr-main-title {
+    max-width: 1000px;
+    margin: 30px auto 15px; /* Centraliza no desktop e dá margem no topo */
+    padding: 0 15px 5px;    /* Alinha o texto com o início do carrossel */
+    font-size: 1.3rem; 
+    font-weight: 800; 
+    color: var(--c-p); 
+    border-bottom: 2px solid var(--c-bd); 
+}
+
+/* A sessão inteira agora tem um limite máximo de largura */
+.qr-section { 
+    margin: 0 auto 25px; /* Centraliza a sessão na tela e dá margem inferior */
+    max-width: 1000px;   /* Limite idêntico à grade do site */
+    position: relative; 
+}
+
 .qr-title { font-size: 1.05rem; font-weight: 600; color: var(--c-p); margin: 0 15px 12px; text-transform: uppercase; }
 .qr-carousel-wrapper { position: relative; }
 .qr-track { 
@@ -166,9 +183,13 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .qr-arrow:active { transform: translateY(-50%) scale(0.95); }
 .qr-arrow.left { left: 5px; } 
 .qr-arrow.right { right: 5px; }
+
 @media (min-width: 800px) { 
     .qr-item { flex: 0 0 18%; } 
     .qr-arrow { display: flex; align-items: center; justify-content: center; } 
+    /* No computador, puxamos a seta um pouco para fora para não tampar a foto */
+    .qr-arrow.left { left: -15px; } 
+    .qr-arrow.right { right: -15px; }
 }
 
 .home-card.highlighted .home-card-title {
@@ -1269,8 +1290,8 @@ function renderCompraRapidaContent() {
 
         let itemsOrdenados = [...depto.data].sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
-        html += `<div style="font-size: 1.3rem; font-weight: 800; color: var(--c-p); margin: 30px 15px 15px; border-bottom: 2px solid var(--c-bd); padding-bottom: 5px;">${sessao.nome}</div>`;
-
+html += `<div class="qr-main-title">${sessao.nome}</div>`;
+        
         sessao.subsessoes.forEach((sub, subIndex) => {
             let itensDaSub = itemsOrdenados.filter(p => {
                 if (!sub.termos || sub.termos.length === 0) return false;
