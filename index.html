@@ -8,7 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <title>Super Cestas Básicas Dona Antônia</title>
 
-<link rel="preload" as="image" href="site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif">
+<link rel="preload" as="image" href="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif">
 
 <style>
 :root {
@@ -275,11 +275,11 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
 <main class="main-stage" id="scroll-stage">
     
-    <img src="site/img/produtos/capatopo.webp" class="mobile-capa-topo" alt="Capa da Loja">
+    <img src="/site/img/produtos/capatopo.webp" class="mobile-capa-topo" alt="Capa da Loja">
 
     <div class="header-row">
         <div class="logo-area" onclick="goToHome()">
-            <img src="site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-top" alt="Logo Dona Antónia">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-top" alt="Logo Dona Antónia">
             <span class="brand-name">Dona Antônia</span>
         </div>
         <div class="header-actions">
@@ -473,7 +473,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             <button class="btn-modal secondary" style="flex: 1; padding: 12px 8px; font-size: 0.85rem;" onclick="loadSavedCart();">💾 Ver Carrinho Salvo</button>
         </div>
         <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 25px;">
-            <img src="site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 80px; height: 80px; border-radius: 50%; border:1px solid var(--c-bd);">
             <h3 style="font-weight:600; color:var(--c-p); margin:0; font-size: 1.2rem;">Dona Antónia</h3>
             <div style="font-size: 0.9rem; color: var(--c-s); text-align:center;">Cestas Básicas e Supermercado Online.</div>
         </div>
@@ -812,7 +812,7 @@ function renderHomeTV() {
             <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" decoding="async" class="home-tv-thumb" onclick="playInlineVideo('${v.videoId}', ${index})" alt="Miniatura Vídeo">
             <div class="home-tv-play" onclick="playInlineVideo('${v.videoId}', ${index})">▶</div>
             <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
-                <img src="${v.product.img}" loading="lazy" decoding="async" class="home-tv-prod-img" onerror="this.src='site/img/produtos/cesta.webp'">
+                <img src="${v.product.img}" loading="lazy" decoding="async" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                 <button class="home-tv-prod-btn">Ver</button>
             </div>
         </div>
@@ -856,7 +856,7 @@ window.handleTvScroll = function() {
                         <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" decoding="async" class="home-tv-thumb" onclick="playInlineVideo('${v.videoId}', ${actualIndex})">
                         <div class="home-tv-play" onclick="playInlineVideo('${v.videoId}', ${actualIndex})">▶</div>
                         <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
-                            <img src="${v.product.img}" loading="lazy" decoding="async" class="home-tv-prod-img" onerror="this.src='site/img/produtos/cesta.webp'">
+                            <img src="${v.product.img}" loading="lazy" decoding="async" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                             <button class="home-tv-prod-btn">Ver</button>
                         </div>
                     </div>`;
@@ -941,7 +941,7 @@ window.doGlobalSearch = function() {
     
     resContainer.innerHTML = top.map(p => `
         <div class="chk-item-card" onclick="openQuickView('${p.id}')" style="cursor: pointer; flex-direction:row;">
-            <img src="${p.img}" loading="lazy" decoding="async" alt="${formatName(p.name)}" onerror="this.src='site/img/produtos/cesta.webp'" style="width:50px; height:50px; padding:4px;">
+            <img src="${p.img}" loading="lazy" decoding="async" alt="${formatName(p.name)}" onerror="this.src='/site/img/produtos/cesta.webp'" style="width:50px; height:50px; padding:4px;">
             <div class="name" style="font-weight: 500; font-size: 0.95rem; text-align:left;">${formatName(p.name)}</div>
             <div style="font-weight: 700; color: var(--c-p); font-size: 1.1rem; white-space: nowrap;">${fmt(p.price)}</div>
         </div>
@@ -1030,9 +1030,9 @@ async function init() {
 
     try {
         const [r1, r2, r3] = await Promise.all([
-            fetchWithCache('site/produtos-cesta-basica.json', 'cache_baskets', 30),
-            fetchWithCache('site/produtos.json', 'cache_prods', 30),
-            fetchWithCache('site/combos.json', 'cache_combos', 30)
+            fetchWithCache('./site/produtos-cesta-basica.json', 'cache_baskets', 30),
+            fetchWithCache('./site/produtos.json', 'cache_prods', 30),
+            fetchWithCache('./site/combos.json', 'cache_combos', 30)
         ]);
         
         STATE.baskets = r1 || []; STATE.combos = r3 || []; 
@@ -1046,9 +1046,9 @@ async function init() {
                 const precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
                 
                 let imgs = [];
-                imgs.push(p.url_imagem || `site/img/produtos/${codigoOuId}.webp`);
+                imgs.push(p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`);
                 for(let i=2; i<=5; i++) {
-                    let extra = p[`url_imagem_${i}`] || `site/img/produtos/${codigoOuId}_${i}.webp`;
+                    let extra = p[`url_imagem_${i}`] || `/site/img/produtos/${codigoOuId}_${i}.webp`;
                     imgs.push(extra);
                 }
                 
@@ -1601,7 +1601,7 @@ window.openUpsellView = function() {
 // ATUALIZAÇÃO GLOBAL PARA USAR O CARD MINIMALISTA EM TODOS OS PRODUTOS (EXCETO KITS/CESTAS)
 function buildCardHtml(item, type) {
     let id = item.id; 
-    let img = item.img || item.imagem || 'site/img/produtos/cesta.webp';
+    let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
     let name = item.name || item.nome; 
     let pPrice = item.price || item.preco;
     let isKit = type === 'COMBO'; let isBasket = type === 'BASKET';
