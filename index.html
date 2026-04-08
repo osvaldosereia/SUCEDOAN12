@@ -1348,22 +1348,33 @@ window.scrollQrCarousel = function(catId, direction) {
     }
 }
 
+// Monta os carrosséis baseados nas sessões ativas
 function renderCompraRapidaContent() {
     let html = '';
     
     CONFIG_COMPRA_RAPIDA.forEach(sessao => {
         let depto = STATE.deptos[sessao.id];
+        // Pula a sessão se ela não existir ou estiver vazia
         if (!depto || !depto.data || depto.data.length === 0) return;
 
+        // Cria uma cópia dos dados e ordena por ordem alfabética de A a Z
         let itemsOrdenados = [...depto.data].sort((a, b) => String(a.name).localeCompare(String(b.name)));
 
-html += `<div class="qr-main-title">${sessao.nome}</div>`;
+        // Imprime o título principal da sessão (Ex: "Alimentos")
+        html += `<div class="qr-main-title">${sessao.nome}</div>`;
         
         sessao.subsessoes.forEach((sub, subIndex) => {
             let itensDaSub = itemsOrdenados.filter(p => {
                 if (!sub.termos || sub.termos.length === 0) return false;
-                let nomeNorm = norm(p.name);
-                return sub.termos.some(termo => nomeNorm.includes(norm(termo)));
+                
+                // 1. Limpa o nome (remove acentos e deixa minúsculo) e divide em palavras
+                let palavrasNome = norm(p.name).split(' ').filter(w => w.trim() !== '');
+                
+                // 2. Pega APENAS as duas primeiras palavras do nome e junta com espaço
+                let duasPrimeirasPalavras = palavrasNome.slice(0, 2).join(' ');
+                
+                // 3. Verifica se o termo procurado está contido nessas duas primeiras palavras
+                return sub.termos.some(termo => duasPrimeirasPalavras.includes(norm(termo)));
             });
 
             if (itensDaSub.length > 0) {
