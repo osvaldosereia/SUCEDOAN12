@@ -951,24 +951,29 @@ window.renderCompraMesView = function() {
             controlArea = `<button class="compra-mes-btn-add" onclick="updCompraMes('${prod.id}', 1, '${cat.id}'); event.stopPropagation();">+</button>`;
         }
 
+        // AQUI FOI FEITO O AJUSTE: Envolvemos o título e o card na mesma div
         html += `
-        <div class="card-compra-mes">
-            ${btnEsq}
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--c-p); margin: 0; padding-left: 5px;">${cat.titulo}</h3>
             
-            <div class="compra-mes-miolo" onclick="openQuickView('${prod.id}')">
-                <img src="${prod.img}" class="compra-mes-img" onerror="this.src='/site/img/produtos/cesta.webp'">
-                <div class="compra-mes-prod-name">${formatName(prod.name)}</div>
+            <div class="card-compra-mes">
+                ${btnEsq}
                 
-                <div class="compra-mes-bot-row" onclick="event.stopPropagation();">
-                    <div class="compra-mes-prices">
-                        ${oldPriceHtml}
-                        <div class="compra-mes-new-price">${fmt(prod.price)}</div>
+                <div class="compra-mes-miolo" onclick="openQuickView('${prod.id}')">
+                    <img src="${prod.img}" class="compra-mes-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+                    <div class="compra-mes-prod-name">${formatName(prod.name)}</div>
+                    
+                    <div class="compra-mes-bot-row" onclick="event.stopPropagation();">
+                        <div class="compra-mes-prices">
+                            ${oldPriceHtml}
+                            <div class="compra-mes-new-price">${fmt(prod.price)}</div>
+                        </div>
+                        ${controlArea}
                     </div>
-                    ${controlArea}
                 </div>
-            </div>
 
-            ${btnDir}
+                ${btnDir}
+            </div>
         </div>
         `;
     });
