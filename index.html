@@ -660,51 +660,91 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 <script>
 // CONFIGURAÇÃO DA COMPRA DO MÊS
 const LISTA_DA_COMPRA_DO_MES = [
-    // --- SEGMENTO 1: FUNDAÇÃO (MERCEARIA & ESSENCIAIS) ---
-    { id: "arroz", titulo: "Arroz", termos: ["arroz koblenz", "arroz tio alvino", "arroz tio bonini", "agulhinha"] },
-    { id: "feijao", titulo: "Feijão", termos: ["feijao carioca da casa", "feijão preto dona dê", "feijão corda"] },
-    { id: "acucar", titulo: "Açúcar", termos: ["açúcar cristal doce dia", "açúcar refinado", "mascavo"] },
-    { id: "farinha", titulo: "Farinhas Diversas", termos: ["farinha de trigo vitoriosa", "farinha de mandioca pantanal", "farinha milho sinha", "fubá", "flocão"] },
-    { id: "oleo_azeite", titulo: "Óleos e Azeites", termos: ["óleo de soja", "azeite andorinha extra virgem", "azeite o-live chileno"] },
-    { id: "macarrao", titulo: "Macarrão e Massas", termos: ["espaguete", "parafuso", "penne", "miojo"] },
+    
+    // ==========================================
+    // 1. DESPENSA BÁSICA (A fundação da casa)
+    // Foco: Itens de alto volume e sobrevivência
+    // ==========================================
+    { id: "arroz", titulo: "Arroz", termos: ["arroz koblenz", "arroz tio alvino", "arroz tio bonini"] },
+    { id: "feijao", titulo: "Feijão", termos: ["feijão carioca da casa", "feijão preto dona dê"] },
+    { id: "oleos_azeites", titulo: "Óleos e Azeites", termos: ["óleo de soja liza", "azeite andorinha extra virgem", "azeite de oliva o-live"] },
+    { id: "acucar", titulo: "Açúcar", termos: ["açúcar cristal doce dia"] },
+    { id: "farinhas_graos", titulo: "Farinhas e Grãos", termos: ["farinha trigo vitoriosa", "farinha de mandioca pantanal", "fubá milho sinhá", "amido milho sinhá", "canjica branca amafil", "milho pipoca amafil"] },
 
-    // --- SEGMENTO 2: CAFÉ DA MANHÃ & BEBIDAS ---
-    { id: "cafe_filtro", titulo: "Café e Filtros", termos: ["café caboclo", "café gaklik", "café premiado", "filtro de papel 102", "filtro 103"] },
-    { id: "leite_achocolatado", titulo: "Leites e Achocolatados", termos: ["leite integral tirol", "leite em pó ninho", "nescau em pó", "nesquik morango", "toddy", "pirakids"] },
-    { id: "cereais_granola", titulo: "Cereais e Matinais", termos: ["cereal nescau", "snow flakes", "neston 3 cereais", "granola jasmine", "aveia em flocos naturale"] },
-    { id: "cha_sucos", titulo: "Chás e Sucos", termos: ["chá matte leão", "chá hortelã", "suco concentrado maguary", "suco tang", "suco frisco", "gatorade"] },
+    // ==========================================
+    // 2. SABOR E TOQUE DO CHEF (Incremento de Ticket Médio)
+    // Foco: Complementos que o cliente decide por impulso ou receita
+    // ==========================================
+    { id: "molhos_tomate", titulo: "Molhos e Extratos", termos: ["extrato de tomate fugini", "extrato de tomate olé", "molho de tomate triturado vale fertil", "molho heinz rústico"] },
+    { id: "maionese_catchup", titulo: "Maionese, Catchup e Mostarda", termos: ["maionese hellmanns", "catchup heinz", "catchup fugini", "mostarda fugini", "mostarda com mel cepera"] },
+    { id: "molhos_especiais", titulo: "Molhos Especiais", termos: ["molho shoyu castelo", "molho alho marata", "molho salada oruam", "molho de pimenta gota"] },
+    { id: "caldos_temperos", titulo: "Caldos e Sopas", termos: ["caldo maggi carne", "caldo maggi galinha", "caldo knorr costela", "caldo arisco", "creme de cebola sinha"] },
+    { id: "especiarias", titulo: "Especiarias e Condimentos", termos: ["açafrão diodoro", "pimenta calabresa", "pimenta do reino", "orégano diodoro", "colorífico", "bicarbonato de sódio", "queijo ralado italac"] },
+    { id: "enlatados", titulo: "Conservas e Enlatados", termos: ["milho verde fugini", "atum 88 ralado", "azeitona vale fertil", "cogumelo castelo"] },
 
-    // --- SEGMENTO 3: SABOR & PREPARO (TEMPEROS E CONDIMENTOS) ---
-    { id: "maionese_catchup", titulo: "Maionese e Catchup", termos: ["maionese hellmanns", "maionese heinz", "catchup heinz tradicional", "catchup fugini", "catchup bacon"] },
-    { id: "molho_extrato", titulo: "Molhos de Tomate", termos: ["molho tomate vale fertil", "extrato de tomate fugini", "extrato de tomate olé"] },
-    { id: "caldos_temperos", titulo: "Caldos e Temperos", termos: ["caldo maggi carne", "caldo knorr costela", "caldo arisco galinha", "açafrão", "bicarbonato", "vinagre"] },
+    // ==========================================
+    // 3. O BOM DIA (Rotina Matinal)
+    // Foco: Recorrência diária e fidelização de marca
+    // ==========================================
+    { id: "cafe_coadores", titulo: "Café e Coadores", termos: ["café caboclo", "cafe gaklik", "cafe premiado", "filtro de papel 102", "filtro 103 brigitta", "coador de cafe pano"] },
+    { id: "achocolatados", titulo: "Achocolatados", termos: ["achocolatado nescau", "toddy em po", "nesquik morango", "achocolatado 3 corações", "achocolatado liquido pirakids"] },
+    { id: "cereais_aveias", titulo: "Cereais e Aveias", termos: ["cereal matinal nescau duo", "snow flakes", "neston 3 cereais", "mucilon", "sucrilhos", "aveia em flocos naturale"] },
+    { id: "chas", titulo: "Chás", termos: ["chá matte leão", "chá de camomila leão fuze", "chá de hortelã", "chá mate rico"] },
+    { id: "barras_cereais", titulo: "Barras de Cereais", termos: ["barra de cereais trio", "barra de cereais natural castanha"] },
 
-    // --- SEGMENTO 4: CUIDADO PESSOAL (HIGIENE E BELEZA) ---
-    { id: "shampoo_condicionador", titulo: "Shampoo e Condicionador", termos: ["shampoo dove", "shampoo tresemme", "shampoo seda", "shampoo neutrox", "kit salon line hidra", "kit inoar bambu"] },
-    { id: "tratamento_capilar", titulo: "Tratamentos e Máscaras", termos: ["creme elseve glycolic gloss", "elseve hialuronico", "novex tudo de bom", "pantene miracles", "máscara inoar argan"] },
-    { id: "sabonete_corpo", titulo: "Sabonetes e Banho", termos: ["sabonete dove original", "sabonete farnese", "sabonete protex", "sabonete phebo", "sabonete palmolive", "bucha vegetal"] },
-    { id: "desodorante", titulo: "Desodorantes", termos: ["rexona bamboo", "nivea black & white", "herbissimo creme", "leite de rosas", "monange detox", "giovanna baby roll-on"] },
-    { id: "higiene_bucal", titulo: "Saúde Bucal", termos: ["creme dental colgate tripla ação", "fio dental colgate", "fio dental hillo"] },
-    { id: "cuidados_rosto_corpo", titulo: "Hidratação e Estética", termos: ["hidratante monange q10", "hidratante facial garnier", "creme nivea lata", "hidratante paixão", "acetona", "água oxigenada", "tintura cor e tom"] },
-    { id: "cuidados_bebe_fem", titulo: "Cuidados Específicos", termos: ["absorvente sempre livre", "absorvente intimus", "absorvente interno ob", "fralda cremer jumbo", "fralda personal mega", "lenço umedecido piquitucho"] },
+    // ==========================================
+    // 4. MOMENTOS DE LAZER & DOCES (Indulgência)
+    // Foco: Compra por desejo, alto apelo visual
+    // ==========================================
+    { id: "salgadinhos", titulo: "Salgadinhos e Batatas", termos: ["batata pringles cheddar bacon", "batata pringles original", "batata ruffles", "batata palha favorita"] },
+    { id: "amendoins", titulo: "Amendoins e Petiscos", termos: ["amendoim dori japones", "amendoim mendorato", "amendoim pettiz"] },
+    { id: "biscoitos_salgados", titulo: "Biscoitos Salgados", termos: ["biscoito pit stop", "biscoito liane agua e sal", "biscoito liane cream cracker", "biscoito tucs", "biscoito mabel"] },
+    { id: "biscoitos_doces", titulo: "Biscoitos Doces e Wafers", termos: ["biscoito oreo", "biscoito negresco", "bolacha wafer my bit", "bolacha hersheys wafer", "bolacha show gol", "biscoito liane maizena"] },
+    { id: "chocolates_balas", titulo: "Chocolates e Balas", termos: ["chocolate kitkat", "bis original ao leite", "bombom ouro branco", "bombom lacta", "chocolate suflair", "tortuguita", "bala fini gelatina", "chicle trident"] },
+    { id: "confeitaria", titulo: "Confeitaria Caseira", termos: ["mistura para bolo apti chocolate", "gelatina apti", "creme de leite piracanjuba", "creme de leite mococa", "fermento fleishman", "chantilly amélia", "coco ralado adelcoco"] },
+    { id: "bebidas", titulo: "Bebidas Frias", termos: ["gatorade laranja", "gatorade limão", "refrigerante coca-cola", "refrigerante fanta"] },
 
-    // --- SEGMENTO 5: CUIDADOS COM A CASA (LIMPEZA E LAVANDERIA) ---
-    { id: "lavar_roupas", titulo: "Lavar Roupas", termos: ["sabão liquido omo", "sabão liquido brilhante", "sabão em pó ace", "sabão em pó minuano", "sabão surf coco"] },
-    { id: "amaciante", titulo: "Amaciantes", termos: ["amaciante downy concentrado", "amaciante comfort brisa", "amaciante ype aconchego", "amaciante monbijou"] },
-    { id: "limpeza_pesada", titulo: "Limpeza Geral", termos: ["água sanitária qboa", "álcool anhanguera 70", "limpa alumínio estrela", "inseticida sbp", "lava louça ype", "bucha de lavar"] },
-    { id: "organizacao_lixo", titulo: "Descartáveis e Panos", termos: ["saco para lixo 100l", "saco para lixo 30l", "saco pano pratic", "papel higiênico"] },
+    // ==========================================
+    // 5. CUIDADO PESSOAL E BELEZA PREMIUM
+    // Foco: Margem de lucro alta e diversidade de público
+    // ==========================================
+    { id: "tratamento_capilar", titulo: "Tratamento Capilar", termos: ["shampoo dove uv repair", "kit salon line hidra", "kit inoar bambu", "condicionador tresemme", "máscara capilar inoar", "creme para pentear seda", "creme para pentear kolene"] },
+    { id: "coloracao", titulo: "Tinturas e Coloração", termos: ["tintura cor&tom", "tintura maxton"] },
+    { id: "sabonete_corpo", titulo: "Corpo e Banho", termos: ["sabonete dove", "hidratante monange firmador", "hidratante facial garnier", "óleo corporal paixão", "esponja de banho"] },
+    { id: "saude_bucal", titulo: "Saúde Bucal", termos: ["creme dental colgate luminous white", "creme dental close-up", "creme dental colgate infantil tandy", "fio dental hillo", "fio dental colgate", "escova de dente kess", "escova colgate classic"] },
+    { id: "cuidado_feminino", titulo: "Cuidado Feminino", termos: ["absorvente intimus", "absorvente sempre livre", "absorvente interno ob", "absorvente cotton line"] },
+    { id: "manicure", titulo: "Manicure", termos: ["acetona farmax", "água oxigenada farmax", "removedor esmalte farmax", "cortador de unha", "pinça para sobrancelha"] },
+    { id: "barba_algodao", titulo: "Barbear e Higiene Básica", termos: ["barbeador bic sensitive", "barbeador gillette prestobarba", "algodão topz"] },
 
-    // --- SEGMENTO 6: MOMENTO DE PRAZER (SNACKS E DOCES) ---
-    { id: "biscoitos_salgados", titulo: "Biscoitos Salgados", termos: ["biscoito pit stop", "biscoito mabel água e sal", "biscoito liane salgado", "biscoito tucs pizza"] },
-    { id: "biscoitos_doces", titulo: "Biscoitos Doces e Recheados", termos: ["biscoito oreo", "biscoito negresco", "biscoito recheado nestlé", "biscoito maizena mabel", "wafer hersheys"] },
-    { id: "chocolates_balas", titulo: "Doces e Chocolates", termos: ["kitkat 41g", "chocolate bis", "bombom lacta oreo", "bala fini gelatina", "goiabada val", "leite condensado piracanjuba"] },
-    { id: "petiscos", titulo: "Petiscos e Salgadinhos", termos: ["amendoim mendorato", "amendoim pettiz", "amendoim dori japonês", "batata pringles", "batata ruffles", "batata palha favorita"] },
+    // ==========================================
+    // 6. LAVANDERIA E LIMPEZA PROFUNDA
+    // Foco: Soluções práticas para o dia a dia
+    // ==========================================
+    { id: "lavar_roupas", titulo: "Lavar Roupas", termos: ["sabão líquido brilhante", "sabão lava-roupas liquido omo"] },
+    { id: "amaciantes", titulo: "Amaciantes e Perfumes", termos: ["amaciante comfort concentrado", "amaciante downy concentrado", "amaciante ype", "amaciante monbijou", "perfume em cristais comfort"] },
+    { id: "acessorios_varal", titulo: "Acessórios de Lavanderia", termos: ["corda para varal", "prendedor roupa aguia branca"] },
+    { id: "limpeza_pesada", titulo: "Limpeza Geral e Superfícies", termos: ["agua sanitaria qboa", "alcool anhanguera 70", "cif cremoso original", "pinho sol desinfetante"] },
+    { id: "acessorios_limpeza", titulo: "Acessórios de Limpeza", termos: ["bucha de lavar louça", "esponja brilhex", "esponja de aço assolan", "esponja mágica", "pano microfibra copalimpa", "pano multiuso", "pá de lixo guirado"] },
+    { id: "desodorizantes", titulo: "Aromatizadores", termos: ["purificador aero glade", "pedra sanitária genial", "pedra sanitária servlar"] },
 
-    // --- SEGMENTO 7: SOLUÇÕES PRÁTICAS (UTILIDADES, PAPELARIA E PETS) ---
-    { id: "utilidades_cozinha", titulo: "Utensílios de Cozinha", termos: ["abridor de garrafa", "jarra de plastico", "forma para gelo silicone", "balde de pipoca", "lacre para embalagem", "cesta de bambu"] },
-    { id: "casa_reparos", titulo: "Manutenção e Casa", termos: ["lâmpada led foxlux", "extensão 5 metros", "benjamim adaptador", "fita adesiva", "abraçadeira nylon", "isqueiro bic", "fita métrica", "agulha fogão"] },
-    { id: "papelaria_escolar", titulo: "Papelaria", termos: ["caneta bic cristal", "lápis grafite hb", "lápis de cor 12 cores", "grafite para lapiseira", "estilete", "livro de colorir"] },
-    { id: "pets", titulo: "Linha Pet", termos: ["ração pedigree cães adultos", "ração gato", "petiscos pet"] }
+    // ==========================================
+    // 7. LAR DOCE LAR (Cozinha, Utilidades e Reparos)
+    // Foco: Cross-sell de oportunidade (o cliente não vai ao site para comprar um "adaptador", mas compra se ver na lista)
+    // ==========================================
+    { id: "utilidades_cozinha", titulo: "Utensílios de Cozinha", termos: ["copo americano", "copo duralex", "caneca de plastico", "prato nadir duralex", "petisqueira", "balde de pipoca", "peneira", "forma para gelo silicone", "colher de bambu", "faca para pão", "pilão com socador"] },
+    { id: "descartaveis_embalagens", titulo: "Embalagens e Descartáveis", termos: ["papel alumínio super"] },
+    { id: "manutencao_casa", titulo: "Reparos e Elétrica", termos: ["extensão 5 metros", "adaptador de tomada benjamim", "pilha elgin alcalina", "pilha rayovac", "pilha power up", "fita adesiva", "abraçadeira de nylon", "cantoneira de metal"] },
+    { id: "organizacao_banheiro", titulo: "Organização e Banheiro", termos: ["cabide infantil", "cabide pequeno", "protetor de ralo pvc", "ralo de aluminio", "porta comprimido"] },
+    { id: "papelaria_costura", titulo: "Papelaria e Costura", termos: ["caneta bic", "estilete", "alfinete disco", "agulheiro de cestinha", "fita métrica"] },
+    { id: "uso_pessoal", titulo: "Acessórios Pessoais", termos: ["chinelo havaiana", "necessaire pvc", "relógio de mesa despertador"] },
+
+    // ==========================================
+    // 8. OS AMORES DA CASA (Bebês e Pets)
+    // Foco: Clientes de alto ticket e recorrência severa
+    // ==========================================
+    { id: "fraldas", titulo: "Fraldas e Cuidado Infantil", termos: ["fralda cremer jumbo", "fralda cremer hiper", "fralda personal mega"] },
+    { id: "racoes_pets", titulo: "Rações para Pets", termos: ["ração pedigree", "ração umida whiskas", "ração umida friskies"] },
+    { id: "petiscos_pets", titulo: "Petiscos para Pets", termos: ["ração petisco pedigree biscrok"] }
 ];
 
 let stateCompraMes = {}; 
