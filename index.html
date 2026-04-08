@@ -1030,9 +1030,9 @@ async function init() {
 
     try {
         const [r1, r2, r3] = await Promise.all([
-            fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets', 30),
-            fetchWithCache('/site/produtos.json', 'cache_prods', 30),
-            fetchWithCache('/site/combos.json', 'cache_combos', 30)
+            fetchWithCache('./site/produtos-cesta-basica.json', 'cache_baskets', 30),
+            fetchWithCache('./site/produtos.json', 'cache_prods', 30),
+            fetchWithCache('./site/combos.json', 'cache_combos', 30)
         ]);
         
         STATE.baskets = r1 || []; STATE.combos = r3 || []; 
