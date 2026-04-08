@@ -706,11 +706,11 @@
                 await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM Sync: Vitrine Atualizada`);
             }, true);
 
-            // Manda a Base Completa PARA A FILA DOS 60 SEGUNDOS
+            // AGORA IMEDIATO: Manda a Base Completa
             enqueueTask("Base Interna (bancodedados.json)", async () => {
                 const produtosLimpos = sanitizeProductsForExport(products);
                 await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`);
-            }, false); 
+            }, true); // <-- ALTERADO PARA TRUE PARA GARANTIR SINCRONIZAÇÃO INSTANTÂNEA
         }
 
         function uploadImagens() {
@@ -1771,7 +1771,8 @@
                 const cfg = GitHubAPI.getConfig();
                 if (!cfg) return;
 
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json`;
+                // ALTERADO: Adicionado parâmetro timestamp na URL para "furar" o cache do navegador e da rede
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json?t=${Date.now()}`;
                 
                 const response = await fetch(url, {
                     headers: { 
