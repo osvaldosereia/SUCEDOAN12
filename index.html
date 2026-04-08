@@ -152,18 +152,17 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* Novo título principal das sessões (Alimentos, Bebidas...) */
 .qr-main-title {
     max-width: 1000px;
-    margin: 30px auto 15px; /* Centraliza no desktop e dá margem no topo */
-    padding: 0 15px 5px;    /* Alinha o texto com o início do carrossel */
+    margin: 30px auto 15px; 
+    padding: 0 15px 5px;    
     font-size: 1.3rem; 
     font-weight: 800; 
     color: var(--c-p); 
     border-bottom: 2px solid var(--c-bd); 
 }
 
-/* A sessão inteira agora tem um limite máximo de largura */
 .qr-section { 
-    margin: 0 auto 25px; /* Centraliza a sessão na tela e dá margem inferior */
-    max-width: 1000px;   /* Limite idêntico à grade do site */
+    margin: 0 auto 25px; 
+    max-width: 1000px;   
     position: relative; 
 }
 
@@ -174,7 +173,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
 .qr-track::-webkit-scrollbar { display: none; }
-.qr-item { flex: 0 0 42%; scroll-snap-align: start; }
+
+/* AJUSTE AQUI: Reduzido de 42% para 32% no celular */
+.qr-item { flex: 0 0 32%; scroll-snap-align: start; }
+
 .qr-arrow { 
     display: none; position: absolute; top: 40%; transform: translateY(-50%); z-index: 10; 
     background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; width: 38px; height: 38px; 
@@ -185,13 +187,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .qr-arrow.right { right: 5px; }
 
 @media (min-width: 800px) { 
-    .qr-item { flex: 0 0 18%; } 
+    /* AJUSTE AQUI: Reduzido de 18% para 14% no computador */
+    .qr-item { flex: 0 0 14%; } 
     .qr-arrow { display: flex; align-items: center; justify-content: center; } 
-    /* No computador, puxamos a seta um pouco para fora para não tampar a foto */
     .qr-arrow.left { left: -15px; } 
     .qr-arrow.right { right: -15px; }
 }
 
+/* O resto do CSS para manter as fontes e cores dos cards originais */
 .home-card.highlighted .home-card-title {
     display: block;      
     color: #ffffff !important;
