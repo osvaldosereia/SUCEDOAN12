@@ -1048,128 +1048,66 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 /* Aqui você pode mudar os nomes das subsessões e quais      */
 /* palavras do nome do produto devem cair em cada categoria. */
 /* ========================================================= */
-const CONFIG_COMPRA_RAPIDA = [
-    {
-        id: 'alimentos',
-        nome: 'Alimentos e Mercearia',
-        subsessoes: [
-            // Corredor Básicos e Grãos
-            { nome: 'Arroz', termos: ['arroz'] },
-            { nome: 'Feijão', termos: ['feijao'] },
-            { nome: 'Farinhas e Culinária', termos: ['farinha', 'amido', 'tapioca', 'fuba', 'flocos de milho', 'fermento', 'canjica'] },
-            { nome: 'Massas', termos: ['macarrao', 'espaguete', 'parafuso', 'ave maria'] },
-            
-            // Corredor de Temperos e Condimentos
-            { nome: 'Molhos de Tomate', termos: ['molho', 'extrato', 'tomate', 'vale fertil'] },
-            { nome: 'Maionese e Catchup', termos: ['maionese', 'catchup', 'ketchup', 'mostarda', 'hellmanns', 'heinz', 'fugini'] },
-            { nome: 'Temperos e Caldos', termos: ['sal', 'caldo', 'maggi', 'knorr', 'arisco', 'azeite', 'acafrao', 'bicarbonato', 'louro', 'queijo ralado'] },
-            { nome: 'Enlatados e Conservas', termos: ['milho', 'ervilha', 'sardinha', 'atum', 'azeitona'] },
-            
-            // Corredor de Café da Manhã
-            { nome: 'Café e Filtros', termos: ['cafe', 'filtro', 'caboclo', 'brasileiro'] },
-            { nome: 'Chás', termos: ['cha', 'matte', 'leao', 'camomila', 'hortela', 'erva doce'] },
-            { nome: 'Achocolatados', termos: ['achocolatado', 'nescau', 'toddy', 'nesquik', 'apti'] },
-            { nome: 'Cereais e Matinais', termos: ['cereal', 'aveia', 'granola', 'sucrilhos', 'neston', 'snow flakes'] },
-            { nome: 'Açúcar', termos: ['acucar', 'adocante'] },
-            
-            // Corredor de Doces e Lanches
-            { nome: 'Biscoitos e Bolachas', termos: ['biscoito', 'bolacha', 'wafer', 'oreo', 'cream cracker', 'rosquinha', 'liane', 'mabel', 'adoralle'] },
-            { nome: 'Chocolates e Sobremesas', termos: ['chocolate', 'bombom', 'bis', 'kitkat', 'leite condensado', 'gelatina', 'doce', 'chantilly'] },
-            { nome: 'Balas e Chicletes', termos: ['fini', 'bala', 'chicle', 'chiclete', 'trident'] },
-            { nome: 'Salgadinhos e Aperitivos', termos: ['batata', 'pringles', 'ruffles', 'amendoim', 'salgadinho', 'mendorato', 'pettiz', 'tucs', 'pit stop'] }
-        ]
-    },
-    {
-        id: 'bebidas',
-        nome: 'Bebidas',
-        subsessoes: [
-            { nome: 'Sucos e Refrescos', termos: ['suco', 'frisco', 'tang', 'maguary', 'dafruta'] },
-            { nome: 'Águas e Refrigerantes', termos: ['agua', 'refrigerante', 'coca', 'guarana'] },
-            { nome: 'Leites', termos: ['leite', 'pirakids', 'ninho'] },
-            { nome: 'Isotônicos e Energéticos', termos: ['gatorade', 'isotonico', 'energetico'] }
-        ]
-    },
-    {
-        id: 'limpeza',
-        nome: 'Limpeza da Casa',
-        subsessoes: [
-            { nome: 'Limpeza Geral', termos: ['desinfetante', 'multiuso', 'alcool', 'limpador', 'purificador', 'glade'] },
-            { nome: 'Água Sanitária e Cloro', termos: ['agua sanitaria', 'qboa', 'cloro'] },
-            { nome: 'Lavagem de Louças', termos: ['detergente', 'lava louca', 'bucha', 'esponja', 'limpa aluminio'] },
-            { nome: 'Inseticidas', termos: ['inseticida', 'sbp', 'aerosol'] },
-            { nome: 'Acessórios de Limpeza', termos: ['saco', 'lixo', 'pano', 'vassoura', 'balde', 'rodo'] }
-        ]
-    },
-    {
-        id: 'lavanderia',
-        nome: 'Lavanderia',
-        subsessoes: [
-            { nome: 'Sabão em Pó e Líquido', termos: ['sabao em po', 'lava-roupas', 'omo', 'brilhante'] },
-            { nome: 'Amaciantes e Perfumes', termos: ['amaciante', 'downy', 'comfort', 'monbijou', 'ype', 'perfume em cristais'] },
-            { nome: 'Sabão em Barra', termos: ['sabao em barra'] },
-            { nome: 'Acessórios de Lavanderia', termos: ['prendedor', 'varal'] }
-        ]
-    },
-    {
-        id: 'higiene',
-        nome: 'Higiene Pessoal',
-        subsessoes: [
-            { nome: 'Sabonetes e Banho', termos: ['sabonete', 'dove', 'protex', 'palmolive', 'phebo', 'farnese', 'bucha vegetal'] },
-            { nome: 'Higiene Bucal', termos: ['creme dental', 'colgate', 'fio dental', 'escova de dente'] },
-            { nome: 'Desodorantes', termos: ['desodorante', 'aerosol', 'roll-on', 'rexona', 'above', 'herbissimo', 'nivea', 'leite de rosas'] },
-            { nome: 'Papel e Algodão', termos: ['papel higienico', 'lenco', 'algodao', 'cotonete'] },
-            { nome: 'Absorventes e Íntimo', termos: ['absorvente', 'intimus', 'sempre livre', 'sym', 'ob', 'cotton line'] },
-            { nome: 'Barbearia e Lâminas', termos: ['barbeador', 'gillette', 'prestobarba', 'bic', 'lamina', 'probak'] }
-        ]
-    },
-    {
-        id: 'beleza',
-        nome: 'Beleza e Cuidados',
-        subsessoes: [
-            { nome: 'Shampoos e Condicionadores', termos: ['shampoo', 'condicionador', 'dove', 'elseve', 'tresemme', 'salon line', 'pantene', 'seda', 'inoar', 'neutrox'] },
-            { nome: 'Tratamentos Capilares', termos: ['creme de tratamento', 'mascara', 'ampola', 'leave-in', 'oleo', 'pentear', 'novex'] },
-            { nome: 'Cuidado com a Pele', termos: ['hidratante', 'creme facial', 'antissinais', 'monange', 'nivea', 'garnier', 'locao', 'skala'] },
-            { nome: 'Cuidados com os Pés', termos: ['talco', 'barla', 'tenys pe'] },
-            { nome: 'Manicure', termos: ['acetona', 'agua oxigenada', 'esmalte', 'farmax', 'lixa'] },
-            { nome: 'Acessórios de Cabelo', termos: ['presilha', 'prendedor', 'xuxinha'] }
-        ]
-    },
-    {
-        id: 'bebes',
-        nome: 'Bebês e Crianças',
-        subsessoes: [
-            { nome: 'Fraldas', termos: ['fralda', 'cremer', 'pampers', 'personal'] },
-            { nome: 'Higiene Infantil', termos: ['shampoo bebe', 'pompom', 'skalinha', 'toalha umedecida', 'lenco umedecido', 'huggies', 'piquitucho'] }
-        ]
-    },
-    {
-        id: 'utilidades',
-        nome: 'Bazar e Utilidades',
-        subsessoes: [
-            { nome: 'Cozinha e Servir', termos: ['copo', 'prato', 'caneca', 'jarra', 'abridor', 'faca', 'petisqueira', 'forma', 'supla', 'tabua', 'pilao', 'processador'] },
-            { nome: 'Casa e Manutenção', termos: ['cabide', 'adaptador', 'extensao', 'fita adesiva', 'cantoneira', 'isqueiro', 'fosforo', 'chaveiro', 'aparador', 'ralo', 'veda porta', 'botijao', 'abracadeira'] },
-            { nome: 'Festas', termos: ['balao', 'vela', 'descartavel'] },
-            { nome: 'Vestuário', termos: ['chinelo', 'havaiana'] }
-        ]
-    },
-    {
-        id: 'papelaria_costura',
-        nome: 'Papelaria e Costura',
-        subsessoes: [
-            { nome: 'Papelaria', termos: ['caneta', 'grafite', 'estilete', 'livro de colorir'] },
-            { nome: 'Artigos de Costura', termos: ['agulha', 'alfinete', 'fita metrica', 'agulheiro', 'linha de costura', 'linha magna'] }
-        ]
-    },
-    {
-        id: 'pets',
-        nome: 'Pet Shop',
-        subsessoes: [
-            { nome: 'Para Cães', termos: ['racao', 'pedigree', 'cachorro', 'caes', 'biscrok'] },
-            { nome: 'Para Gatos', termos: ['racao gato', 'friskies', 'whiskas', 'gato'] },
-            { nome: 'Higiene Pet', termos: ['tapete higienico', 'shampoo pet', 'areia'] }
-        ]
-    }
-];
+const TERMOS_CATEGORIAS = {
+    alimentos: [
+        "arroz", "feijao", "farinha", "amido", "tapioca", "fuba", "flocos de milho", "fermento", "canjica", 
+        "macarrao", "espaguete", "parafuso", "ave maria", "molho", "extrato", "tomate", "vale fertil", 
+        "maionese", "catchup", "ketchup", "mostarda", "hellmanns", "heinz", "fugini", "sal", "caldo", 
+        "maggi", "knorr", "arisco", "azeite", "acafrao", "bicarbonato", "louro", "queijo ralado", "milho", 
+        "ervilha", "sardinha", "atum", "azeitona", "cafe", "filtro", "caboclo", "brasileiro", "cha", 
+        "matte", "leao", "camomila", "hortela", "erva doce", "achocolatado", "nescau", "toddy", "nesquik", 
+        "apti", "cereal", "aveia", "granola", "sucrilhos", "neston", "snow flakes", "acucar", "adocante", 
+        "biscoito", "bolacha", "wafer", "oreo", "cream cracker", "rosquinha", "liane", "mabel", "adoralle", 
+        "chocolate", "bombom", "bis", "kitkat", "leite condensado", "gelatina", "doce", "chantilly", "fini", 
+        "bala", "chicle", "chiclete", "trident", "batata", "pringles", "ruffles", "amendoim", "salgadinho", 
+        "mendorato", "pettiz", "tucs", "pit stop"
+    ],
+    bebidas: [
+        "suco", "frisco", "tang", "maguary", "dafruta", "agua", "refrigerante", "coca", "guarana", "leite", 
+        "pirakids", "ninho", "gatorade", "isotonico", "energetico"
+    ],
+    limpeza: [
+        "desinfetante", "multiuso", "alcool", "limpador", "purificador", "glade", "agua sanitaria", "qboa", 
+        "cloro", "detergente", "lava louca", "bucha", "esponja", "limpa aluminio", "inseticida", "sbp", 
+        "aerosol", "saco", "lixo", "pano", "vassoura", "balde", "rodo"
+    ],
+    lavanderia: [
+        "sabao em po", "lava-roupas", "omo", "brilhante", "amaciante", "downy", "comfort", "monbijou", "ype", 
+        "perfume em cristais", "sabao em barra", "prendedor", "varal"
+    ],
+    higiene: [
+        "sabonete", "dove", "protex", "palmolive", "phebo", "farnese", "bucha vegetal", "creme dental", 
+        "colgate", "fio dental", "escova de dente", "desodorante", "aerosol", "roll-on", "rexona", "above", 
+        "herbissimo", "nivea", "leite de rosas", "papel higienico", "lenco", "algodao", "cotonete", 
+        "absorvente", "intimus", "sempre livre", "sym", "ob", "cotton line", "barbeador", "gillette", 
+        "prestobarba", "bic", "lamina", "probak"
+    ],
+    beleza: [
+        "shampoo", "condicionador", "dove", "elseve", "tresemme", "salon line", "pantene", "seda", "inoar", 
+        "neutrox", "creme de tratamento", "mascara", "ampola", "leave-in", "oleo", "pentear", "novex", 
+        "hidratante", "creme facial", "antissinais", "monange", "nivea", "garnier", "locao", "skala", "talco", 
+        "barla", "tenys pe", "acetona", "agua oxigenada", "esmalte", "farmax", "lixa", "presilha", "prendedor", 
+        "xuxinha"
+    ],
+    bebes: [
+        "fralda", "cremer", "pampers", "personal", "shampoo bebe", "pompom", "skalinha", "toalha umedecida", 
+        "lenco umedecido", "huggies", "piquitucho"
+    ],
+    utilidades: [
+        "copo", "prato", "caneca", "jarra", "abridor", "faca", "petisqueira", "forma", "supla", "tabua", 
+        "pilao", "processador", "cabide", "adaptador", "extensao", "fita adesiva", "cantoneira", "isqueiro", 
+        "fosforo", "chaveiro", "aparador", "ralo", "veda porta", "botijao", "abracadeira", "balao", "vela", 
+        "descartavel", "chinelo", "havaiana"
+    ],
+    papelaria_costura: [
+        "caneta", "grafite", "estilete", "livro de colorir", "agulha", "alfinete", "fita metrica", "agulheiro", 
+        "linha de costura", "linha magna"
+    ],
+    pets: [
+        "racao", "pedigree", "cachorro", "caes", "biscrok", "racao gato", "friskies", "whiskas", "gato", 
+        "tapete higienico", "shampoo pet", "areia"
+    ]
+};
 /* ========================================================= */
 
 const MIN_ORDER = 75.00; 
