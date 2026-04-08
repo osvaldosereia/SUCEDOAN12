@@ -142,6 +142,35 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     padding: 15px 25px;
 }
 
+/* --- COMPRA RÁPIDA: Estilo do Botão e Carrossel --- */
+.home-card.highlighted-green {
+    background: #0f766e !important; /* Verde Esmeralda escuro */
+    border-color: #0f766e !important;
+    box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25) !important;
+}
+
+.qr-section { margin-bottom: 25px; position: relative; }
+.qr-title { font-size: 1.05rem; font-weight: 600; color: var(--c-p); margin: 0 15px 12px; text-transform: uppercase; }
+.qr-carousel-wrapper { position: relative; }
+.qr-track { 
+    display: flex; gap: 12px; padding: 0 15px 15px; overflow-x: auto; 
+    scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.qr-track::-webkit-scrollbar { display: none; }
+.qr-item { flex: 0 0 42%; scroll-snap-align: start; }
+.qr-arrow { 
+    display: none; position: absolute; top: 40%; transform: translateY(-50%); z-index: 10; 
+    background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; width: 38px; height: 38px; 
+    cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: var(--c-p); font-size: 1.2rem;
+}
+.qr-arrow:active { transform: translateY(-50%) scale(0.95); }
+.qr-arrow.left { left: 5px; } 
+.qr-arrow.right { right: 5px; }
+@media (min-width: 800px) { 
+    .qr-item { flex: 0 0 18%; } 
+    .qr-arrow { display: flex; align-items: center; justify-content: center; } 
+}
+
 .home-card.highlighted .home-card-title {
     display: block;      
     color: #ffffff !important;
@@ -674,6 +703,18 @@ body.has-bottom-banner .floating-cart {
 
 <div id="generic-overlay" onclick="closeGenericOverlay()"></div>
 
+<div id="compra-rapida-view" class="lateral-view">
+    <div class="see-all-header">
+        <button class="see-all-back" onclick="closeCompraRapida()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            Voltar
+        </button>
+        <h2 class="see-all-title">Compra Rápida</h2>
+    </div>
+    <div class="see-all-content" id="compra-rapida-content" style="padding: 0 0 120px; overflow-x: hidden;">
+    </div>
+</div>
+
 <div id="global-search-view" class="lateral-view quick-view">
     <div class="see-all-header" style="gap: 10px;">
         <button class="see-all-back" onclick="closeGlobalSearch()" style="margin-right: 0;">
@@ -953,6 +994,76 @@ body.has-bottom-banner .floating-cart {
 </div>
 <script>
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
+
+/* ========================================================= */
+/* CONFIGURAÇÃO EDITÁVEL DA SESSÃO "COMPRA RÁPIDA"           */
+/* Aqui você pode mudar os nomes das subsessões e quais      */
+/* palavras do nome do produto devem cair em cada categoria. */
+/* ========================================================= */
+const CONFIG_COMPRA_RAPIDA = [
+    {
+        id: 'alimentos',
+        nome: 'Alimentos',
+        subsessoes: [
+            { nome: 'Arroz e Feijão', termos: ['arroz', 'feijao'] },
+            { nome: 'Óleo e Azeite', termos: ['oleo', 'azeite'] },
+            { nome: 'Café e Açúcar', termos: ['cafe', 'acucar'] },
+            { nome: 'Massas e Molhos', termos: ['macarrao', 'molho', 'extrato'] },
+            { nome: 'Biscoitos e Doces', termos: ['biscoito', 'bolacha', 'doce', 'chocolate', 'gelatina', 'bombom'] },
+            { nome: 'Enlatados e Conservas', termos: ['milho', 'ervilha', 'sardinha', 'atum', 'azeitona'] },
+            { nome: 'Farinhas e Grãos', termos: ['farinha', 'fuba', 'aveia', 'milharina', 'tapioca'] }
+        ]
+    },
+    {
+        id: 'bebidas',
+        nome: 'Bebidas',
+        subsessoes: [
+            { nome: 'Leite', termos: ['leite'] },
+            { nome: 'Sucos', termos: ['suco', 'frisco', 'tang'] },
+            { nome: 'Refrigerantes', termos: ['refrigerante', 'coca', 'guarana'] },
+            { nome: 'Água e Chá', termos: ['agua', 'cha'] }
+        ]
+    },
+    {
+        id: 'limpeza',
+        nome: 'Limpeza',
+        subsessoes: [
+            { nome: 'Detergente e Sabão', termos: ['detergente', 'sabao', 'lava louca'] },
+            { nome: 'Desinfetante e Multiuso', termos: ['desinfetante', 'multiuso', 'veja', 'cif'] },
+            { nome: 'Água Sanitária', termos: ['agua sanitaria', 'qboa'] },
+            { nome: 'Acessórios', termos: ['esponja', 'vassoura', 'rodo', 'pano', 'saco'] }
+        ]
+    },
+    {
+        id: 'lavanderia',
+        nome: 'Lavanderia',
+        subsessoes: [
+            { nome: 'Sabão em Pó e Líquido', termos: ['sabao', 'lava-roupas', 'tixan', 'omo'] },
+            { nome: 'Amaciantes', termos: ['amaciante', 'downy', 'confort'] },
+            { nome: 'Acessórios', termos: ['prendedor', 'varal', 'escova'] }
+        ]
+    },
+    {
+        id: 'higiene',
+        nome: 'Higiene',
+        subsessoes: [
+            { nome: 'Sabonetes', termos: ['sabonete'] },
+            { nome: 'Higiene Oral', termos: ['creme dental', 'escova de dente', 'fio dental', 'enxaguante', 'colgate'] },
+            { nome: 'Papel e Lenços', termos: ['papel higienico', 'lenco', 'algodao'] },
+            { nome: 'Desodorantes', termos: ['desodorante', 'aerosol', 'roll-on'] }
+        ]
+    },
+    {
+        id: 'beleza',
+        nome: 'Beleza',
+        subsessoes: [
+            { nome: 'Shampoo e Condicionador', termos: ['shampoo', 'condicionador'] },
+            { nome: 'Tratamento', termos: ['creme', 'mascara', 'tintura'] }
+        ]
+    }
+];
+/* ========================================================= */
+
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
@@ -1074,6 +1185,7 @@ function agruparCategoria(produto) {
 function renderHomeCards() {
     const cards = [
         { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', span2: true, highlighted: true },
+        { id: 'compra_rapida', title: 'Compra Rápida', subtitle: 'Tudo em um só lugar.', action: "openCompraRapida()", icon: '⚡', span2: true, highlighted: true, customClass: 'highlighted-green' },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
         { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: '#1e293b' },
         { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
@@ -1092,7 +1204,7 @@ function renderHomeCards() {
     let html = '';
     cards.forEach(c => { 
         let classes = c.mobileOnly ? 'home-card mobile-only-card' : 'home-card';
-        let highlightClass = c.highlighted ? ' highlighted' : '';
+        let highlightClass = c.highlighted ? (c.customClass ? ` highlighted ${c.customClass}` : ' highlighted') : '';
         let sub = c.subtitle ? `<div class="home-card-subtitle">${c.subtitle}</div>` : '';
         html += `<div class="${classes}${highlightClass}" onclick="${c.action}" style="--card-color: ${c.color || '#1e293b'};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div>${sub}</div>`; 
         
@@ -1102,6 +1214,84 @@ function renderHomeCards() {
     });
     $('grid-home-sections').innerHTML = html;
 }
+
+// --- FUNÇÕES DA COMPRA RÁPIDA ---
+window.openCompraRapida = function() {
+    if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
+    STATE.viewStack = 'COMPRA_RAPIDA';
+    
+    renderCompraRapidaContent();
+    
+    document.getElementById('compra-rapida-view').classList.add('open');
+    if (!history.state || !history.state.crOpen) history.pushState({ crOpen: true }, '');
+}
+
+window.closeCompraRapida = function() {
+    document.getElementById('compra-rapida-view').classList.remove('open');
+    STATE.viewStack = 'HOME';
+    setTimeout(() => { document.getElementById('compra-rapida-content').innerHTML = ''; }, 300);
+}
+
+window.scrollQrCarousel = function(catId, direction) {
+    let track = document.getElementById(`qr-track-${catId}`);
+    if (track) {
+        let scrollAmount = track.clientWidth * 0.8;
+        track.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
+    }
+}
+
+function renderCompraRapidaContent() {
+    let html = '';
+    
+    CONFIG_COMPRA_RAPIDA.forEach(sessao => {
+        let depto = STATE.deptos[sessao.id];
+        if (!depto || !depto.data || depto.data.length === 0) return;
+
+        let itemsOrdenados = [...depto.data].sort((a, b) => String(a.name).localeCompare(String(b.name)));
+
+        html += `<div style="font-size: 1.3rem; font-weight: 800; color: var(--c-p); margin: 30px 15px 15px; border-bottom: 2px solid var(--c-bd); padding-bottom: 5px;">${sessao.nome}</div>`;
+
+        sessao.subsessoes.forEach((sub, subIndex) => {
+            let itensDaSub = itemsOrdenados.filter(p => {
+                if (!sub.termos || sub.termos.length === 0) return false;
+                let nomeNorm = norm(p.name);
+                return sub.termos.some(termo => nomeNorm.includes(norm(termo)));
+            });
+
+            if (itensDaSub.length > 0) {
+                html += buildQrCarouselHtml(sessao.id + '-' + subIndex, sub.nome, itensDaSub);
+                itemsOrdenados = itemsOrdenados.filter(p => !itensDaSub.includes(p));
+            }
+        });
+
+        if (itemsOrdenados.length > 0) {
+            html += buildQrCarouselHtml(sessao.id + '-outros', 'Outros', itemsOrdenados);
+        }
+    });
+
+    document.getElementById('compra-rapida-content').innerHTML = html;
+}
+
+function buildQrCarouselHtml(carouselId, title, items) {
+    let html = `
+    <div class="qr-section">
+        <div class="qr-title">${title}</div>
+        <div class="qr-carousel-wrapper">
+            <button class="qr-arrow left" onclick="scrollQrCarousel('${carouselId}', -1)">❮</button>
+            <div class="qr-track" id="qr-track-${carouselId}">
+    `;
+    items.forEach(item => {
+        html += `<div class="qr-item">${buildCardHtml(item, 'PROD')}</div>`;
+    });
+    html += `
+            </div>
+            <button class="qr-arrow right" onclick="scrollQrCarousel('${carouselId}', 1)">❯</button>
+        </div>
+    </div>`;
+    return html;
+}
+// --- FIM DA COMPRA RÁPIDA ---
+
 
 function renderHomeMobileTV() {
     let container = $('home-tv-carousel');
@@ -1205,6 +1395,7 @@ window.closeGenericOverlay = function() {
     if (document.getElementById('quick-view-lateral').classList.contains('open')) closeQuickView();
     if (document.getElementById('global-search-view').classList.contains('open')) closeGlobalSearch();
     if (document.getElementById('store-rules-view').classList.contains('open')) closeStoreRules();
+    if (document.getElementById('compra-rapida-view').classList.contains('open')) closeCompraRapida();
 };
 
 window.openGlobalSearch = function() {
@@ -1294,7 +1485,6 @@ window.openVideoFeed = function(targetVideoId = null) {
     STATE.tvCategory = 'all';
     document.getElementById('label-tv').innerText = 'Todos';
     
-    // Passamos o ID alvo adiante para a renderização
     renderVideoFeedTrack(targetVideoId);
     
     $('v-feed-track').onscroll = function() {
@@ -1344,7 +1534,6 @@ function renderVideoFeedTrack(targetVideoId = null) {
     track.innerHTML = html;
     currentPlayingIndex = -1;
 
-    // Lógica nova: Rola até o vídeo clicado e dá o play
     if (targetVideoId) {
         let targetIndex = filteredVideos.findIndex(v => v.videoId === targetVideoId);
         if (targetIndex !== -1) {
@@ -1354,12 +1543,11 @@ function renderVideoFeedTrack(targetVideoId = null) {
                     track.scrollTo({ top: item.offsetTop, behavior: 'instant' });
                     playFeedVideo(targetIndex, targetVideoId);
                 }
-            }, 50); // Um pequeno atraso para dar tempo da tela desenhar os elementos
+            }, 50); 
             return;
         }
     }
     
-    // Se não houver vídeo específico, vai para o topo normalmente
     track.scrollTo(0,0);
 }
 
@@ -1597,6 +1785,7 @@ window.goToHome = function() {
     if(document.getElementById('video-feed-view').classList.contains('open')) closeVideoFeed();
     if(document.getElementById('global-search-view').classList.contains('open')) closeGlobalSearch();
     if(document.getElementById('store-rules-view').classList.contains('open')) closeStoreRules();
+    if(document.getElementById('compra-rapida-view').classList.contains('open')) closeCompraRapida();
     STATE.viewStack = 'HOME'; document.getElementById('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
     updateTotals();
 };
@@ -1748,12 +1937,14 @@ window.addEventListener('popstate', function(event) {
     let infoView = document.getElementById('info-view');
     let searchView = document.getElementById('global-search-view');
     let storeRulesView = document.getElementById('store-rules-view');
+    let crView = document.getElementById('compra-rapida-view');
 
     if (qvView && qvView.classList.contains('open')) closeQuickView(true);
     else if (infoView && infoView.classList.contains('open')) closeInfoView();
     else if (videoFeedView && videoFeedView.classList.contains('open')) closeVideoFeed();
     else if (searchView && searchView.classList.contains('open')) closeGlobalSearch();
     else if (storeRulesView && storeRulesView.classList.contains('open')) closeStoreRules();
+    else if (crView && crView.classList.contains('open')) closeCompraRapida();
     else if (checkoutView && STATE.checkoutOpen) closeCheckout();
     else if (lateralView && lateralView.classList.contains('open')) {
         if (STATE.viewStack === 'DEPTO_LIST' && STATE.returnToUpsell) {
