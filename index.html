@@ -870,26 +870,39 @@ function agruparCategoria(produto) {
 
 function renderHomeCards() {
     const cards = [
-        { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', span2: true, highlighted: true },
+        // Destaques Principais
+        { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', highlighted: true },
         { id: 'compra_mes', title: 'Compra do Mês', subtitle: 'Lista Inteligente', action: "openCompraMes()", icon: '📝', highlighted: true },
-        { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
+        
+        // Promoções e Marcas
+        { id: 'combos', title: 'Kits Promo', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
         { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
-        { id: 'desc_20', title: 'de Desconto', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
-        { id: 'desc_15', title: 'de Desconto', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
-        { id: 'desc_10', title: 'de Desconto', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
-        { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: '#1e293b', mobileOnly: true },
-        { id: 'limpeza', title: 'Limpeza', action: "openDepto('limpeza')", icon: '🧹', color: '#1e293b', mobileOnly: true }
+        { id: 'desc_20', title: '20% OFF', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
+        { id: 'desc_15', title: '15% OFF', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
+        { id: 'desc_10', title: '10% OFF', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
+        
+        // Todos os Departamentos
+        { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: '#1e293b' },
+        { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: '#1e293b' },
+        { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", icon: '🧼', color: '#1e293b' },
+        { id: 'beleza', title: 'Beleza', action: "openDepto('beleza')", icon: '💅', color: '#1e293b' },
+        { id: 'limpeza', title: 'Limpeza', action: "openDepto('limpeza')", icon: '🧹', color: '#1e293b' },
+        { id: 'lavanderia', title: 'Lavanderia', action: "openDepto('lavanderia')", icon: '🧺', color: '#1e293b' },
+        { id: 'casa', title: 'Casa', action: "openDepto('casa')", icon: '🏠', color: '#1e293b' },
+        { id: 'pet', title: 'Pet', action: "openDepto('pet')", icon: '🐶', color: '#1e293b' }
     ];
+
     let html = '';
     cards.forEach(c => { 
-        let classes = c.mobileOnly ? 'home-card mobile-only-card' : 'home-card';
+        let classes = 'home-card';
         let highlightClass = c.highlighted ? ' highlighted' : '';
         let onClickAction = c.id === 'compra_mes' ? `onclick="openCompraMes()"` : `onclick="${c.action}"`;
         
         let sub = c.subtitle ? `<div class="home-card-subtitle">${c.subtitle}</div>` : '';
         html += `<div class="${classes}${highlightClass}" ${onClickAction} style="--card-color: ${c.color || '#1e293b'};"><div class="home-card-icon">${c.icon}</div><div class="home-card-title">${c.title}</div>${sub}</div>`; 
     });
-    $('grid-home-sections').innerHTML = html;
+    
+    document.getElementById('grid-home-sections').innerHTML = html;
 }
 
 // FUNÇÕES DA COMPRA DO MÊS
