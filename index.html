@@ -149,33 +149,57 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25) !important;
 }
 
-/* Novo título principal das sessões (Alimentos, Bebidas...) */
+/* Título principal reduzido (1.2rem) e alinhado */
 .qr-main-title {
     max-width: 1000px;
     margin: 30px auto 15px; 
     padding: 0 15px 5px;    
-    font-size: 1.3rem; 
+    font-size: 1.2rem; 
     font-weight: 800; 
     color: var(--c-p); 
     border-bottom: 2px solid var(--c-bd); 
 }
 
+/* Aumentado o respiro e adicionada a linha separadora entre os carrosséis */
 .qr-section { 
-    margin: 0 auto 25px; 
+    margin: 0 auto 35px; /* Margem inferior maior (35px) */
+    padding-bottom: 25px; /* Espaço antes da linha */
+    border-bottom: 1px dashed var(--c-t); /* Linha separadora sutil */
     max-width: 1000px;   
     position: relative; 
 }
 
-.qr-title { font-size: 1.05rem; font-weight: 600; color: var(--c-p); margin: 0 15px 12px; text-transform: uppercase; }
+/* Remove a linha separadora do último carrossel para ficar limpo */
+.qr-section:last-child {
+    border-bottom: none;
+}
+
+/* Subtítulos menores (0.95rem) */
+.qr-title { 
+    font-size: 0.95rem; 
+    font-weight: 600; 
+    color: var(--c-p); 
+    margin: 0 15px 12px; 
+    text-transform: uppercase; 
+}
+
 .qr-carousel-wrapper { position: relative; }
+
+/* Correção da margem esquerda no scroll do celular */
 .qr-track { 
-    display: flex; gap: 12px; padding: 0 15px 15px; overflow-x: auto; 
-    scroll-snap-type: x mandatory; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    display: flex; 
+    gap: 12px; 
+    padding: 5px 15px 15px 15px; /* Espaçamento real nas bordas */
+    scroll-padding-left: 15px;   /* Garante que o scroll pare preservando a margem */
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory; 
+    scrollbar-width: none; 
+    -webkit-overflow-scrolling: touch;
 }
 .qr-track::-webkit-scrollbar { display: none; }
 
-/* AJUSTE AQUI: Reduzido de 42% para 32% no celular */
-.qr-item { flex: 0 0 32%; scroll-snap-align: start; }
+/* Tamanho do card ajustado para um meio-termo (38% no celular) */
+.qr-item { flex: 0 0 38%; scroll-snap-align: start; }
 
 .qr-arrow { 
     display: none; position: absolute; top: 40%; transform: translateY(-50%); z-index: 10; 
@@ -187,14 +211,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .qr-arrow.right { right: 5px; }
 
 @media (min-width: 800px) { 
-    /* AJUSTE AQUI: Reduzido de 18% para 14% no computador */
-    .qr-item { flex: 0 0 14%; } 
+    /* Ajuste para telas maiores (16% no PC) */
+    .qr-item { flex: 0 0 16%; } 
     .qr-arrow { display: flex; align-items: center; justify-content: center; } 
     .qr-arrow.left { left: -15px; } 
     .qr-arrow.right { right: -15px; }
 }
 
-/* O resto do CSS para manter as fontes e cores dos cards originais */
+/* O restante mantém a cor e o tamanho das letras do Card Destaque */
 .home-card.highlighted .home-card-title {
     display: block;      
     color: #ffffff !important;
