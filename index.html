@@ -1437,7 +1437,8 @@ window.playFeedVideo = function(index, videoId) {
     let container = $('v-player-' + index);
     if(!container) return;
     
-    container.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; z-index:10; position:relative;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    // O segredo está aqui na URL do iframe: trocamos mute=1 por mute=0
+    container.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; z-index:10; position:relative;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
 }
 
 window.stopFeedVideo = function(index) {
