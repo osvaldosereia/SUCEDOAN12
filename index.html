@@ -1475,21 +1475,31 @@ function renderQvRecommendations(currentId) {
     let p = STATE.prods.find(x => x.id === currentId);
     if(!p) return '';
     
-    // Mostra produtos da mesma categoria agora que a categoria é fiel
-    let recs = STATE.prods.filter(x => x.categoria === p.categoria && x.id !== currentId && x.stock > 0 && !x._isBasket && !x._isCombo);
+    // Filtra estritamente pela mesma categoria do produto aberto
+    let recs = STATE.prods.filter(x => 
+        x.categoria === p.categoria && 
+        x.id !== currentId && 
+        x.stock > 0 && 
+        !x._isBasket && 
+        !x._isCombo
+    );
     
-    // Se tiver menos de 3, complementa com outros
-    if(recs.length < 3) {
-         let fallback = STATE.prods.filter(x => x.id !== currentId && x.stock > 0 && !x._isBasket && !x._isCombo);
-         recs = [...recs, ...fallback];
-    }
+    // Embaralha a lista para sempre mostrar produtos diferentes da categoria
+    recs = recs.sort(() => 0.5 - Math.random());
     
-    recs = [...new Set(recs)].slice(0, 12);
+    // Pega as primeiras 6 sugestões
+    recs = recs.slice(0, 6);
+    
+    // Se não tiver nenhum outro produto na mesma categoria, não mostra a sessão
     if(recs.length === 0) return '';
     
-    let html = '<h3 style="font-size: 1rem; font-weight: 600; color: var(--c-p); margin-bottom: 12px; text-align: left;">Sugestões para você</h3><div class="grid-micro-3">';
-    recs.forEach(r => { html += buildCardHtml(r, 'PROD'); });
+    // Monta o HTML das sugestões
+    let html = '<h3 style="font-size: 1rem; font-weight: 600; color: var(--c-p); margin-bottom: 12px; text-align: left;">Sugestões da mesma categoria</h3><div class="grid-micro-3">';
+    recs.forEach(r => { 
+        html += buildCardHtml(r, 'PROD'); 
+    });
     html += '</div>';
+    
     return html;
 }
 
