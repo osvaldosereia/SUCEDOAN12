@@ -277,7 +277,7 @@
             </div>
         </div>
         
-        <div class="main-content">
+        <div class="main-content" id="main-content-pim">
             <div class="card-grid" id="product-grid"></div>
         </div>
     </div>
@@ -515,6 +515,11 @@
         let imageQueue = [];
         let filaDePedidos = []; 
 
+        // Variáveis do Lazy Loading
+        let produtosFiltrados = [];
+        let itemsCarregados = 0;
+        const ITENS_POR_PAGINA = 9;
+
         // ==========================================================
         // VARIÁVEIS DO SEPARADOR DE PEDIDOS
         // ==========================================================
@@ -628,7 +633,7 @@
                 lucide.createIcons();
             } else if (syncQueue.length > 0) {
                 el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="list" size="14"></i> <span>Fila: ${syncQueue.length} itens</span>`;
+                el.innerHTML = `<i data-lucide="list" size="14"></i> <span>Fila: ${syncQueue.length} items</span>`;
                 lucide.createIcons();
             } else {
                 el.style.display = 'none';
@@ -672,7 +677,7 @@
             }
             
             if (syncQueue.length > 0) {
-                startQueueCountdown(); // Aguarda 60s antes de processar o próximo da fila
+                startQueueCountdown();
             } else {
                 isSyncing = false;
                 renderQueueStatus();
@@ -680,19 +685,17 @@
         }
 
         async function enqueueTask(taskName, taskFn, immediate = false) {
-            // SALVA LOGO TUDO LOCALMENTE NA HORA DO CLIQUE
             await saveDataLocally(); 
-            
             syncQueue.push({ name: taskName, fn: taskFn });
             
             if (!isSyncing) {
                 if (immediate) {
-                    processNextInQueue(); // Dispara o primeiro imediatamente
+                    processNextInQueue(); 
                 } else {
-                    startQueueCountdown(); // Inicia o contador de 60s
+                    startQueueCountdown(); 
                 }
             } else {
-                renderQueueStatus(); // Apenas atualiza a UI pois já está a rodar
+                renderQueueStatus(); 
             }
         }
 
@@ -708,14 +711,12 @@
                         const sufix = i === 1 ? '' : `_${i}`; cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
                     }
                 });
-                // Remove a descrição caso exista lixo local
-                delete cleanP.descricao;
+                delete cleanP.descricao; // Remove descrição suja caso exista
                 return cleanP;
             });
         }
 
         function sincronizarBancos() {
-            // Manda a vitrine PRIMEIRO E IMEDIATAMENTE 
             enqueueTask("Vitrine Site (produtos.json)", async () => {
                 const vitrine = sanitizeProductsForExport(products).map(p => ({
                     id: p.id || p['ID'] || Date.now(), 
@@ -736,7 +737,6 @@
                 await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM Sync: Vitrine Atualizada`);
             }, true);
 
-            // AGORA IMEDIATO: Manda a Base Completa
             enqueueTask("Base Interna (bancodedados.json)", async () => {
                 const produtosLimpos = sanitizeProductsForExport(products);
                 await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`);
@@ -1045,7 +1045,7 @@
                 let filaRemota = await getFilaRemota();
                 if (!filaRemota.find(p => p.id === novoPedido.id)) { filaRemota.push(novoPedido); }
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
-            }, true); // Pedidos novos vão imediatamente
+            }, true);
         }
 
         function renderizarPedidosScreen() {
@@ -1381,7 +1381,6 @@
 
             let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
 
-            // SALVA LOCALMENTE E IMEDIATAMENTE
             localforage.setItem(PEDIDOS_KEY, filaDePedidos);
 
             enqueueTask("Fila Pedidos (Nuvem)", async () => {
@@ -1389,10 +1388,10 @@
                 let idx = filaRemota.findIndex(p => p.id === pedidoAtualParaSeparacao.id);
                 if(idx !== -1) filaRemota[idx].status = "SEPARADO";
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Separado`);
-            }, true); // Vai IMEDIATAMENTE
+            }, true);
 
             if(mudouAlgoLocalmente) {
-                sincronizarBancos(); // Põe a Vitrine e a Base de Dados na Fila
+                sincronizarBancos(); 
             }
 
             renderizarCartoes();
@@ -1440,7 +1439,7 @@
             }
 
             renderizarCartoes();
-            renderGrid(document.getElementById('search-input').value);
+            renderGrid(document.getElementById('search-input').value, true);
             if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
             mostrarAlerta(`🔄 Estorno concluído. A enviar atualizações...`, "sucesso");
         }
@@ -1452,10 +1451,48 @@
         let isFilter24hActive = false;
         function toggleFilter24h() { isFilter24hActive = !isFilter24hActive; const btn = document.getElementById('btn-24h'); const btnMobile = document.getElementById('btn-24h-mobile'); if(isFilter24hActive) { btn.classList.add('primary'); btnMobile.classList.add('primary'); } else { btn.classList.remove('primary'); btnMobile.classList.remove('primary'); } renderGrid(document.getElementById('search-input').value); }
         function openSidebar(id) { document.getElementById('sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); }
-        function closeSidebar(id) { document.getElementById(id).classList.remove('open'); setTimeout(() => { const openSidebars = document.querySelectorAll('.sidebar.open'); if(openSidebars.length === 0) { document.getElementById('sidebar-overlay').style.opacity = '0'; setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); if(id === 'edit-sidebar') { currentEditingSku = null; renderGrid(document.getElementById('search-input').value); } } }, 50); }
-        function closeAllSidebars() { document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open')); document.getElementById('sidebar-overlay').style.opacity = '0'; setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); currentEditingSku = null; renderGrid(document.getElementById('search-input').value); }
+        
+        function closeSidebar(id) { 
+            document.getElementById(id).classList.remove('open'); 
+            setTimeout(() => { 
+                const openSidebars = document.querySelectorAll('.sidebar.open'); 
+                if(openSidebars.length === 0) { 
+                    document.getElementById('sidebar-overlay').style.opacity = '0'; 
+                    setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
+                    if(id === 'edit-sidebar') { 
+                        currentEditingSku = null; 
+                        renderGrid(document.getElementById('search-input').value, true); 
+                    } 
+                } 
+            }, 50); 
+        }
+        
+        function closeAllSidebars() { 
+            document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open')); 
+            document.getElementById('sidebar-overlay').style.opacity = '0'; 
+            setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
+            currentEditingSku = null; 
+            renderGrid(document.getElementById('search-input').value, true); 
+        }
 
-        window.onload = async function() { lucide.createIcons(); await loadData(); document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value), 300)); setupEditorEvents(); };
+        window.onload = async function() { 
+            lucide.createIcons(); 
+            await loadData(); 
+            document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value), 300)); 
+            setupEditorEvents(); 
+            
+            // LAZY LOADING EVENT LISTENER
+            const mainContent = document.getElementById('main-content-pim');
+            if (mainContent) {
+                mainContent.addEventListener('scroll', () => {
+                    // Quando a rolagem chega a 200px do fundo, carrega mais cards
+                    if (mainContent.scrollTop + mainContent.clientHeight >= mainContent.scrollHeight - 200) {
+                        carregarMaisCards();
+                    }
+                });
+            }
+        };
+        
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
         async function loadData() {
@@ -1469,17 +1506,54 @@
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
         async function saveDataLocally() { try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} }
 
-        window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); renderGrid(document.getElementById('search-input').value); }
-        window.addTag = async function(sku) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); }
-        window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); }
+        window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); renderGrid(document.getElementById('search-input').value, true); }
+        window.addTag = async function(sku) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
+        window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
 
-        function renderGrid(filter = "") {
-            const gridContainer = document.getElementById('product-grid'); gridContainer.innerHTML = ""; let filtered = products;
-            if(filter) { const term = filter.toLowerCase(); filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term)); }
-            if(isFilter24hActive) { const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); }
-            if (filtered.length === 0) { gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto</h3></div>`; lucide.createIcons(); return; }
+        // ==========================================================
+        // LAZY LOADING (CARREGAMENTO DINÂMICO DOS CARTOES)
+        // ==========================================================
+        function renderGrid(filter = "", keepLoaded = false) {
+            const gridContainer = document.getElementById('product-grid');
+            const mainContent = document.getElementById('main-content-pim');
+            const currentScroll = mainContent ? mainContent.scrollTop : 0;
+            
+            gridContainer.innerHTML = "";
+            const oldItemsCarregados = keepLoaded ? Math.max(itemsCarregados, ITENS_POR_PAGINA) : ITENS_POR_PAGINA;
+            itemsCarregados = 0; // Reset na contagem real
 
-            filtered.forEach(p => {
+            let filtered = products;
+            if(filter) { 
+                const term = filter.toLowerCase(); 
+                filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term)); 
+            }
+            if(isFilter24hActive) { 
+                const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); 
+                filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); 
+            }
+            
+            produtosFiltrados = filtered;
+
+            if (produtosFiltrados.length === 0) { 
+                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto</h3></div>`; 
+                lucide.createIcons(); 
+                return; 
+            }
+
+            carregarMaisCards(oldItemsCarregados);
+
+            if (keepLoaded && mainContent) {
+                setTimeout(() => { mainContent.scrollTop = currentScroll; }, 10);
+            }
+        }
+
+        function carregarMaisCards(quantidade = ITENS_POR_PAGINA) {
+            const gridContainer = document.getElementById('product-grid');
+            if (itemsCarregados >= produtosFiltrados.length) return; // Chegou ao fim da lista
+
+            const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
+            
+            nextBatch.forEach(p => {
                 const card = document.createElement('div'); 
                 card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
                 
@@ -1488,7 +1562,6 @@
                 if (p.tag_texto && tagsToRender.length === 0) { p.tag_texto.split('\n').filter(l => l.trim() !== '').forEach(l => { tagsToRender.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); }
                 if (tagsToRender.length > 0) { const tagsGeradas = tagsToRender.map(t => `<div class="product-tag" style="background-color: ${t.bg}; color: ${t.txt}; font-size: ${Math.max(t.tam-2, 8)}px;">${t.texto}</div>`).join(''); htmlTag = `<div class="tags-container">${tagsGeradas}</div>`; }
                 
-                // Tratar escape de aspas duplas no nome para o Input não quebrar
                 const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
 
                 card.innerHTML = `
@@ -1553,7 +1626,9 @@
                     </div>
                 `;
                 gridContainer.appendChild(card);
-            }); lucide.createIcons();
+                itemsCarregados++;
+            }); 
+            lucide.createIcons();
         }
 
         async function updateLocalizacao(sku) {
@@ -1614,9 +1689,13 @@
         }
 
         async function updateField(sku, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0; p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); }
-        async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p['Código'] = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); } }
-        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value); }
-        async function deleteCurrentProduct() { if(!currentEditingSku) return; if(!confirm(`ATENÇÃO: Deseja apagar este produto permanentemente?`)) return; products = products.filter(p => p.codigo !== currentEditingSku); await saveDataLocally(); closeSidebar('edit-sidebar'); renderGrid(document.getElementById('search-input').value); }
+        
+        async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p['Código'] = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(document.getElementById('search-input').value, true); } }
+        
+        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
+        
+        async function deleteCurrentProduct() { if(!currentEditingSku) return; if(!confirm(`ATENÇÃO: Deseja apagar este produto permanentemente?`)) return; products = products.filter(p => p.codigo !== currentEditingSku); await saveDataLocally(); closeSidebar('edit-sidebar'); renderGrid(document.getElementById('search-input').value, true); }
+        
         async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); await saveDataLocally(); renderGrid(document.getElementById('search-input').value); openEditSidebar(sku); }
 
         function searchGoogleHD(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); }
@@ -1659,7 +1738,6 @@
             canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
         }
 
-        // LÓGICA DE FOTOS ATUALIZADA: FICA NA FILA (MANUAL) ATÉ CLICARES EM "ENVIAR IMAGENS"
         async function saveImageToQueue() {
             if(!currentEditingSku) return; 
             
@@ -1672,18 +1750,16 @@
             const p = products.find(x => x.codigo === sku); 
             const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`; 
             
-            // Grava Localmente
             p[prop] = base64full; 
             p.last_update = Date.now();
             await saveDataLocally(); 
             
-            // Adiciona à fila de espera de imagens
             imageQueue.push({ sku: sku, slot: slot, prop: prop, base64data: base64data }); 
             updateImageBadge(); 
             
             openEditSidebar(sku); 
             closeSidebar('editor-sidebar');
-            renderGrid(document.getElementById('search-input').value);
+            renderGrid(document.getElementById('search-input').value, true);
         }
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
@@ -1955,7 +2031,7 @@
             categoriasDoSistema[index].nome = novoNome.trim();
             await salvarCategoriasLocalmente();
             renderizarSidebarCategorias();
-            renderGrid(document.getElementById('search-input').value);
+            renderGrid(document.getElementById('search-input').value, true);
         }
 
         async function removerCategoria(index) {
@@ -1963,7 +2039,7 @@
             categoriasDoSistema.splice(index, 1);
             await salvarCategoriasLocalmente();
             renderizarSidebarCategorias();
-            renderGrid(document.getElementById('search-input').value);
+            renderGrid(document.getElementById('search-input').value, true);
         }
 
         async function criarNovaSubcategoria(indexCat) {
@@ -1986,7 +2062,7 @@
             categoriasDoSistema[indexCat].subcategorias.splice(indexSub, 1);
             await salvarCategoriasLocalmente();
             renderizarSidebarCategorias();
-            renderGrid(document.getElementById('search-input').value);
+            renderGrid(document.getElementById('search-input').value, true);
         }
 
         function getOpcoesCategoria(categoriaSelecionada) {
