@@ -1233,9 +1233,11 @@ function renderSingleCarousel(catId, catName, element) {
     let items = [...depto.data].sort((a,b) => String(a.name).localeCompare(String(b.name)));
     let top4 = items.slice(0, 4);
 
+    // CORREÇÃO: A classe "grid-ver-todos" voltou para cá!
     let itemsHtml = `
         <div class="home-grid-section">
             <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.15rem; color: var(--c-p);">${catName}</div>
+            <div class="grid-ver-todos">
     `;
     
     top4.forEach(item => {
