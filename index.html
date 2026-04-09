@@ -640,6 +640,20 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 .lazy-carousel-wrapper { opacity: 0; transition: opacity 0.5s; }
 .lazy-carousel-wrapper.loaded { opacity: 1; }
 
+    /* --- SEPARADOR DAS GRADES --- */
+.home-grid-section {
+    margin-bottom: 45px;      /* Espaço DEPOIS da linha (respiro maior) */
+    padding-bottom: 40px;     /* Espaço ANTES da linha (respiro maior) */
+    border-bottom: 2px dotted #cbd5e1; /* Linha pontilhada elegante e suave */
+}
+
+/* Remove a linha da última sessão para o design ficar limpo no rodapé */
+.home-grid-section:last-child {
+    border-bottom: none;
+    margin-bottom: 20px;
+    padding-bottom: 0;
+}
+
 </style>
 </head>
 <body>
@@ -1219,9 +1233,8 @@ function renderSingleCarousel(catId, catName, element) {
     let top4 = items.slice(0, 4);
 
     let itemsHtml = `
-        <div style="margin-bottom: 35px;">
+        <div class="home-grid-section">
             <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.15rem; color: var(--c-p);">${catName}</div>
-            <div class="grid-ver-todos">
     `;
     
     top4.forEach(item => {
@@ -2017,7 +2030,7 @@ window.openUpsellView = function() {
         let top4 = items.slice(0, 4);
         if(top4.length > 0) {
             itemsHtml += `
-            <div style="margin-bottom: 35px;">
+            <div class="home-grid-section">
                 <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.1rem;">${d.title}</div>
                 <div class="grid-ver-todos">
             `;
