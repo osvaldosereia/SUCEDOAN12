@@ -160,18 +160,19 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     border-bottom: 2px solid var(--c-bd); 
 }
 
-/* Aumentado o respiro e adicionada a linha separadora entre os carrosséis */
+/* --- COMPRA RÁPIDA: Respiro e linha padronizados --- */
 .qr-section { 
-    margin: 0 auto 35px; /* Margem inferior maior (35px) */
-    padding-bottom: 25px; /* Espaço antes da linha */
-    border-bottom: 1px dashed var(--c-t); /* Linha separadora sutil */
+    margin: 0 auto 45px; 
+    padding-bottom: 40px; 
+    border-bottom: 2px dotted #cbd5e1; /* Linha pontilhada padronizada */
     max-width: 1000px;   
     position: relative; 
 }
 
-/* Remove a linha separadora do último carrossel para ficar limpo */
 .qr-section:last-child {
     border-bottom: none;
+    margin-bottom: 20px;
+    padding-bottom: 0;
 }
 
 /* Subtítulos menores (0.95rem) */
