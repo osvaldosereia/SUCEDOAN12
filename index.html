@@ -551,39 +551,14 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
 .btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
 
-/* Asymmetrical Grid Mobile (Grade com cards maiores e horizontais) */
+/* Asymmetrical Grid Mobile */
 @media (max-width: 799px) {
-    /* A cada 7 itens (ou seja, após 6), o 7º item assume a largura de 2 colunas e layout horizontal */
     .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) {
-        grid-column: span 2;
-        display: flex;
-        flex-direction: row;
-        background: var(--c-img-bg);
-        padding: 12px;
-        border-radius: 12px;
-        gap: 15px;
-        align-items: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        grid-column: span 2; display: flex; flex-direction: row; background: var(--c-img-bg); padding: 12px; border-radius: 12px; gap: 15px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-img-minimal {
-        width: 40%;
-        aspect-ratio: 1/1;
-        margin-bottom: 0;
-        background: #fff;
-        flex-shrink: 0;
-    }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-bot-minimal {
-        width: 100%;
-        flex-direction: column;
-        align-items: flex-start;
-        justify-content: center;
-        gap: 8px;
-    }
-    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-name-minimal {
-        font-size: 1rem !important;
-        font-weight: 700 !important;
-        -webkit-line-clamp: 3 !important;
-    }
+    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-img-minimal { width: 40%; aspect-ratio: 1/1; margin-bottom: 0; background: #fff; flex-shrink: 0; }
+    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-bot-minimal { width: 100%; flex-direction: column; align-items: flex-start; justify-content: center; gap: 8px; }
+    .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) .u-name-minimal { font-size: 1rem !important; font-weight: 700 !important; -webkit-line-clamp: 3 !important; }
 }
 
 .video-indicator { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 5; }
@@ -651,58 +626,19 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
     font-size: 0.95rem;
     animation: slideUpBanner 0.5s ease-out forwards;
 }
-@keyframes slideUpBanner {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
-}
-.bp-content {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 1;
-    cursor: pointer;
-}
-.bp-text {
-    font-weight: 500;
-    line-height: 1.3;
-}
-.bp-close {
-    background: rgba(0,0,0,0.1);
-    border: none;
-    color: #fff;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
-    flex-shrink: 0;
-    transition: 0.2s;
-}
+@keyframes slideUpBanner { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.bp-content { display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer; }
+.bp-text { font-weight: 500; line-height: 1.3; }
+.bp-close { background: rgba(0,0,0,0.1); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
 .bp-close:active { transform: scale(0.9); }
-body.has-bottom-banner .floating-cart {
-    bottom: 80px !important;
-}
+body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
-.wholesale-badge {
-    background: var(--c-img-bg);
-    padding: 10px 12px;
-    border-radius: 8px;
-    margin-top: 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 0.85rem;
-    color: var(--c-p);
-}
-.wholesale-badge span.price {
-    font-weight: 700;
-    color: var(--c-ok);
-    font-size: 1rem;
-}
+.wholesale-badge { background: var(--c-img-bg); padding: 10px 12px; border-radius: 8px; margin-top: 12px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--c-p); }
+.wholesale-badge span.price { font-weight: 700; color: var(--c-ok); font-size: 1rem; }
+
+/* Para esconder e mostrar via Lazy Load */
+.lazy-carousel-wrapper { opacity: 0; transition: opacity 0.5s; }
+.lazy-carousel-wrapper.loaded { opacity: 1; }
 
 </style>
 </head>
@@ -737,7 +673,7 @@ body.has-bottom-banner .floating-cart {
     <div id="grid-home-sections" class="grid-home-sections"></div>
     
     <div id="home-destaques-section" style="max-width: 1000px; margin: 0 auto; padding: 10px 15px 40px; display: none;">
-        </div>
+    </div>
 
 </main>
 
@@ -900,10 +836,6 @@ body.has-bottom-banner .floating-cart {
             </div>
             <div class="custom-dropdown-list" id="list-tv" style="top:35px; right:0; left:auto; background:#111; border-color:#333; color:#fff;">
                 <div class="custom-dropdown-item active" onclick="selectTvCategory('all', 'Todos', event)" style="color:#fff; border-bottom-color: #222;">Todos</div>
-                <div class="custom-dropdown-item" onclick="selectTvCategory('alimentos', 'Alimentos', event)" style="color:#fff; border-bottom-color: #222;">Alimentos</div>
-                <div class="custom-dropdown-item" onclick="selectTvCategory('bebidas', 'Bebidas', event)" style="color:#fff; border-bottom-color: #222;">Bebidas</div>
-                <div class="custom-dropdown-item" onclick="selectTvCategory('limpeza', 'Limpeza', event)" style="color:#fff; border-bottom-color: #222;">Limpeza</div>
-                <div class="custom-dropdown-item" onclick="selectTvCategory('higiene', 'Higiene e Beleza', event)" style="color:#fff; border-bottom-color: transparent;">Higiene e Beleza</div>
             </div>
         </div>
     </div>
@@ -1040,97 +972,18 @@ body.has-bottom-banner .floating-cart {
     </div>
     <button class="bp-close" onclick="fecharBannerPrimeiroAcesso(event)">✕</button>
 </div>
+
 <script>
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
-
-/* ========================================================= */
-/* CONFIGURAÇÃO EDITÁVEL DA SESSÃO "COMPRA RÁPIDA"           */
-/* Aqui você pode mudar os nomes das subsessões e quais      */
-/* palavras do nome do produto devem cair em cada categoria. */
-/* ========================================================= */
-const CONFIG_COMPRA_RAPIDA = [
-    {
-        id: 'alimentos',
-        nome: 'Alimentos',
-        subsessoes: [
-            { nome: 'Arroz, Feijão, Açúcar, Óleo e Sal', termos: ['arroz', 'feijao', 'Óleo', 'Açúcar', 'Sal'] },
-             { nome: 'Vinagre, Azeite', termos: ['azeite', 'Leite', 'vinagre'] },
-            { nome: 'Farinhas e Grãos', termos: ['farinha', 'fuba', 'aveia', 'milharina', 'tapioca'] },
-            { nome: 'Massas e Molhos', termos: ['macarrao', 'molho', 'extrato'] },        
-            { nome: 'Café e Chá', termos: ['cafe', 'chá', 'coador de cafe', "Erva"] },
-            { nome: 'Achocolatados e Cereais', termos: ['achocolatado', 'cereal'] },
-            { nome: 'Leite, Suco e Refrigerante', termos: ['leite', 'refrigerante', 'suco'] },
-            { nome: 'Biscoitos e Bolachas', termos: ['biscoito', 'bolacha'] },
-           { nome: 'Salgadinhos', termos: ['Skiny', 'bebela', 'salgadinho'] },          
-            { nome: 'Chocolates e Doces', termos: ['Chocolate', 'Doce'] },
-            { nome: 'Petiscos', termos: ['Amendoin'] },
-            { nome: 'Enlatados e Conservas', termos: ['milho lata', "dueto", 'almondega', 'salsicha', 'ervilha', 'sardinha', 'atum', 'azeitona'] },
-            
-        ]
-    },
-    {
-        id: 'bebidas',
-        nome: 'Bebidas',
-        subsessoes: [
-            { nome: 'Leite', termos: ['leite'] },
-            { nome: 'Sucos', termos: ['suco', 'frisco', 'tang'] },
-            { nome: 'Refrigerantes', termos: ['refrigerante', 'coca', 'guarana'] },
-            { nome: 'Água e Chá', termos: ['agua', 'cha'] }
-        ]
-    },
-    {
-        id: 'limpeza',
-        nome: 'Limpeza',
-        subsessoes: [
-            { nome: 'Detergente e Sabão', termos: ['detergente', 'sabao', 'lava louca'] },
-            { nome: 'Desinfetante e Multiuso', termos: ['desinfetante', 'multiuso', 'veja', 'cif'] },
-            { nome: 'Água Sanitária', termos: ['agua sanitaria', 'qboa'] },
-            { nome: 'Acessórios', termos: ['esponja', 'vassoura', 'rodo', 'pano', 'saco'] }
-        ]
-    },
-    {
-        id: 'lavanderia',
-        nome: 'Lavanderia',
-        subsessoes: [
-            { nome: 'Sabão em Pó e Líquido', termos: ['sabao', 'lava-roupas', 'tixan', 'omo'] },
-            { nome: 'Amaciantes', termos: ['amaciante', 'downy', 'confort'] },
-            { nome: 'Acessórios', termos: ['prendedor', 'varal', 'escova'] }
-        ]
-    },
-    {
-        id: 'higiene',
-        nome: 'Higiene',
-        subsessoes: [
-            { nome: 'Sabonetes', termos: ['sabonete'] },
-            { nome: 'Higiene Oral', termos: ['creme dental', 'escova de dente', 'fio dental', 'enxaguante', 'colgate'] },
-            { nome: 'Papel e Lenços', termos: ['papel higienico', 'lenco', 'algodao'] },
-            { nome: 'Desodorantes', termos: ['desodorante', 'aerosol', 'roll-on'] }
-        ]
-    },
-    {
-        id: 'beleza',
-        nome: 'Beleza',
-        subsessoes: [
-            { nome: 'Shampoo e Condicionador', termos: ['shampoo', 'condicionador'] },
-            { nome: 'Tratamento', termos: ['creme', 'mascara', 'tintura'] }
-        ]
-    }
-];
-
-const TERMOS_CATEGORIAS = {
-    alimentos: [ "arroz", "sinha", "fugini", "feijao", "macarrao", "oleo", "sal", "acucar", "cafe", "leite", "farinha", "fuba", "biscoito", "bolacha", "extrato", "molho", "azeite", "vinagre", "milho", "ervilha", "sardinha", "atum", "achocolatado", "amendoim", "aveia", "bala", "batata", "bombom", "caldo", "canjica", "catchup", "chantilly", "chiclete", "chocolate", "coco", "louro", "creme de leite", "drops", "fermento", "gelatina", "goiabada", "granola", "maionese", "mistura para bolo", "mostarda", "ovo", "pimenta", "pipoca", "queijo", "rosquinha", "salgadinho", "salsicha", "shoyu", "tapioca", "tempero", "wafer", "acafrao", "azeitona", "bicarbonato", "bis", "cereal", "chicle", "cogumelo", "colorifico", "erva", "mucilon", "oregano", "seleta", "toddy", "barra cereais", "barra de cereais", "milharina", "mistura pra bolo", "doce" ],
-    bebidas: [ "leite integral", "suco", "cha", "refrigerante", "agua", "bebida", "energetico", "cerveja", "gatorade" ],
-    higiene: [ "esponja de banho", "sabonete", "escova de banho", "creme dental", "escova de dente", "fio dental", "enxaguante", "papel higienico", "absorvente", "fralda", "lenco", "algodao", "desodorante", "talco", "curativo", "cotonete", "aparelho de barbear", "barbeador", "lamina", "gillette", "roll-on", "aerosol", "infantil", "shampoo", "enxague", "elastico", "palito dental", "laminas", "bucha vegetal" ],
-    beleza: [ "maquiagem", "tratamento", "farmax", "condicionador", "mascara", "tintura", "creme", "hidratante", "locao", "acetona", "farmax", "paris", "esmalte", "pinca", "lixa", "escova de cabelo", "pente", "presilha", "água oxigenada crem", "tratamento capilar", "cor&tom", "elseve", "removedor", "cortador de unha" ],
-    limpeza: [ "desinfetante", "multiuso", "qboa", "limpa aluminio", "agua sanitaria", "detergente", "inseticida", "esponja", "vassoura", "pano", "rodo", "pa de lixo", "saco", "balde 7", "purificador", "pedra sanitaria", "alcool", "veja", "cif", "glade", "escova sanitaria", "lava louca", "bucha de lavar" ],
-    lavanderia: [ "sabao", "lava-roupas", "amaciante", "prendedor", "varal", "corda", "escova lavanderia", "tixan", "lav perfeita", "perfume para roupa", "perfume em cristais" ],
-    casa: [ "balde de pipoca", "copo", "chaveiro", "coador", "prato", "jarra", "caneca", "talher", "lampada", "pilha", "panela", "fosforo", "isqueiro", "relogio", "livro", "caneta", "caderno", "agulha", "linha", "adaptador", "extensao", "abracadeira", "cabide", "cesto", "faca", "colher", "espatula", "descascador", "ralo", "peneira", "necessaire", "clips", "cola", "chinelo", "havaiana", "abridor", "agulheiro", "alfinete", "aparador", "cantoneira", "capa", "cesta", "cortina", "estilete", "fita", "forma", "grafite", "lapis", "papel aluminio", "pegador", "petisqueiras", "pilao", "porta comprimido", "porta objetos", "pote", "pratinho", "protetor", "supla", "tabua", "tigela", "lacre" ],
-    pet: [ "racao", "petisco", "tapete higienico", "coleira", "areia" ]
-};
-/* ========================================================= */
-
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
+
+// Nova função para criar um ID seguro a partir do nome da categoria do JSON
+function catToId(name) {
+    if (!name) return 'cat_outros';
+    let clean = norm(name).replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+    return 'cat_' + clean.substring(0, 25);
+}
 
 function verificarPrimeiroAcesso() {
     if (!localStorage.getItem('donaAntoniaContatoSalvo')) {
@@ -1166,40 +1019,16 @@ function getYouTubeEmbedUrl(url) {
     return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&enablejsapi=1` : '';
 }
 
-const MARCAS_DESTAQUE = [
-    { id: "Skala", nome: "Skala", palavrasChave: ["skala"] }, { id: "Monange", nome: "Monange", palavrasChave: ["monange"] },
-    { id: "Phebo", nome: "Phebo", palavrasChave: ["phebo"] }, { id: "Albany", nome: "Albany", palavrasChave: ["albany"] },
-    { id: "Novex", nome: "Novex", palavrasChave: ["novex"] }, { id: "Seda", nome: "Seda", palavrasChave: ["seda"] },
-    { id: "Dove", nome: "Dove", palavrasChave: ["dove"] }, { id: "Nivea", nome: "Nivea", palavrasChave: ["nivea"] },
-    { id: "tresemme", nome: "Tresemme", palavrasChave: ["tresemme"] }, { id: "Palmolive", nome: "Palmolive", palavrasChave: ["palmolive"] },
-    { id: "Rexona", nome: "Rexona", palavrasChave: ["rexona"] }, { id: "Colgate", nome: "Colgate", palavrasChave: ["colgate"] },
-    { id: "Ypê", nome: "Ypê", palavrasChave: ["ype"] }, { id: "Minuano", nome: "Minuano", palavrasChave: ["minuano"] },
-    { id: "Omo", nome: "Omo", palavrasChave: ["omo"] }, { id: "Downy", nome: "Downy", palavrasChave: ["Downy"] },
-    { id: "Confort", nome: "Confort", palavrasChave: ["confort"] }, { id: "Remus", nome: "Remmus", palavrasChave: ["Remmus"] },
-    { id: "Lacta", nome: "Lacta", palavrasChave: ["lacta"] }, { id: "Mabel", nome: "Mabel", palavrasChave: ["mabel"] },
-    { id: "Sinhá", nome: "Sinhá", palavrasChave: ["sinha"] }, { id: "Apti", nome: "Apti", palavrasChave: ["apti"] },
-    { id: "Fugini", nome: "Fugini", palavrasChave: ["fugini"] }, { id: "Frisco", nome: "Frisco", palavrasChave: ["frisco"] }
-].sort((a, b) => a.nome.localeCompare(b.nome));
-
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
-    currentMarcaTab: MARCAS_DESTAQUE[0].id, baskets: [], prods: [], combos: [],
-    returnToUpsell: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
+    currentMarcaTab: '', baskets: [], prods: [], combos: [], returnToUpsell: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
+    // Agora mantemos apenas os departamentos estáticos. Os dinâmicos serão populados na leitura do JSON.
     deptos: {
         'desc_20': { id: 'desc_20', title: '20% de Desconto', type: 'PROD', data: [] },
         'desc_15': { id: 'desc_15', title: '15% de Desconto', type: 'PROD', data: [] },
         'desc_10': { id: 'desc_10', title: '10% de Desconto', type: 'PROD', data: [] },
-        'marcas': { id: 'marcas', title: 'Encontre pela Marca', type: 'PROD', data: [] },
         'cestas': { id: 'cestas', title: 'Cestas Prontas', type: 'BASKET', data: [] },
-        'combos': { id: 'combos', title: 'Kits Promo', type: 'COMBO', data: [] },
-        'alimentos': { id: 'alimentos', title: 'Alimentos', type: 'PROD', data: [], tags: [] },
-        'bebidas': { id: 'bebidas', title: 'Bebidas', type: 'PROD', data: [], tags: [] },
-        'higiene': { id: 'higiene', title: 'Higiene', type: 'PROD', data: [], tags: [] },
-        'beleza': { id: 'beleza', title: 'Beleza', type: 'PROD', data: [], tags: [] },
-        'limpeza': { id: 'limpeza', title: 'Limpeza', type: 'PROD', data: [], tags: [] },
-        'lavanderia': { id: 'lavanderia', title: 'Lavanderia', type: 'PROD', data: [], tags: [] },
-        'casa': { id: 'casa', title: 'Casa', type: 'PROD', data: [], tags: [] },
-        'pet': { id: 'pet', title: 'Pet', type: 'PROD', data: [], tags: [] }
+        'combos': { id: 'combos', title: 'Kits Promo', type: 'COMBO', data: [] }
     },
     cart: {}, cartOrder: [], appliedCombos: [], baseBasket: null, basketExtraFee: 0, comboDiscount: 0, atacadoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
@@ -1215,45 +1044,15 @@ function converterDataValidade(dataStr) {
     return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
 }
 
-function agruparCategoria(produto) {
-    let nomeProd = " " + norm(produto.name || "").replace(/[^a-z0-9 ]/g, ' ') + " ";
-    let melhorCategoria = 'alimentos';
-    let menorIndice = Infinity;
-    const grupos = [
-        { id: 'alimentos', termos: TERMOS_CATEGORIAS.alimentos }, { id: 'bebidas', termos: TERMOS_CATEGORIAS.bebidas },
-        { id: 'higiene', termos: TERMOS_CATEGORIAS.higiene }, { id: 'beleza', termos: TERMOS_CATEGORIAS.beleza },
-        { id: 'limpeza', termos: TERMOS_CATEGORIAS.limpeza }, { id: 'lavanderia', termos: TERMOS_CATEGORIAS.lavanderia },
-        { id: 'casa', termos: TERMOS_CATEGORIAS.casa }, { id: 'pet', termos: TERMOS_CATEGORIAS.pet }
-    ];
-    for (let grupo of grupos) {
-        for (let termo of grupo.termos) {
-            let posicaoAchada = nomeProd.indexOf(" " + norm(termo) + " ");
-            if (posicaoAchada !== -1 && posicaoAchada < menorIndice) { menorIndice = posicaoAchada; melhorCategoria = grupo.id; }
-        }
-    }
-    let tag = String(produto.name).split(' ')[0];
-    if (tag && tag.length > 3 && !STATE.deptos[melhorCategoria].tags.includes(formatName(tag))) { STATE.deptos[melhorCategoria].tags.push(formatName(tag)); }
-    return melhorCategoria; 
-}
-
+// Atualizado para atender aos requisitos de layout limpo da Home
 function renderHomeCards() {
     const cards = [
         { id: 'cestas', title: 'Cestas Prontas', subtitle: 'Escolha e Personalize.', action: "openDepto('cestas')", icon: '🛒', span2: true, highlighted: true },
         { id: 'compra_rapida', title: 'Compra Rápida', subtitle: 'Tudo em um só lugar.', action: "openCompraRapida()", icon: '⚡', span2: true, highlighted: true, customClass: 'highlighted-green' },
         { id: 'combos', title: 'Kits Promocionais', action: "openDepto('combos')", icon: '🎁', color: '#1e293b' },
-        { id: 'videos', title: 'TV Dona Antônia', action: "openVideoFeed()", icon: '📺', color: '#1e293b' },
-        { id: 'marcas', title: 'Por Marca', action: "openDepto('marcas')", icon: '🏷️', color: '#1e293b' },
-        { id: 'desc_20', title: 'de Desconto', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
-        { id: 'desc_15', title: 'de Desconto', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
-        { id: 'desc_10', title: 'de Desconto', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' },
-        { id: 'alimentos', title: 'Alimentos', action: "openDepto('alimentos')", icon: '🍔', color: '#1e293b' },
-        { id: 'bebidas', title: 'Bebidas', action: "openDepto('bebidas')", icon: '🧃', color: '#1e293b' },
-        { id: 'higiene', title: 'Higiene', action: "openDepto('higiene')", icon: '🧼', color: '#1e293b' },
-        { id: 'beleza', title: 'Beleza', action: "openDepto('beleza')", icon: '💅', color: '#1e293b' },
-        { id: 'limpeza', title: 'Limpeza', action: "openDepto('limpeza')", icon: '🧹', color: '#1e293b' },
-        { id: 'lavanderia', title: 'Lavanderia', action: "openDepto('lavanderia')", icon: '🧺', color: '#1e293b' },
-        { id: 'casa', title: 'Casa', action: "openDepto('casa')", icon: '🏠', color: '#1e293b' },
-        { id: 'pet', title: 'Pet', action: "openDepto('pet')", icon: '🐶', color: '#1e293b' }
+        { id: 'desc_20', title: '20% Off', action: "openDepto('desc_20')", icon: '20%', color: '#10b981' },
+        { id: 'desc_15', title: '15% Off', action: "openDepto('desc_15')", icon: '15%', color: '#10b981' },
+        { id: 'desc_10', title: '10% Off', action: "openDepto('desc_10')", icon: '10%', color: '#10b981' }
     ];
     let html = '';
     cards.forEach(c => { 
@@ -1269,7 +1068,7 @@ function renderHomeCards() {
     $('grid-home-sections').innerHTML = html;
 }
 
-// --- FUNÇÕES DA COMPRA RÁPIDA ---
+// --- FUNÇÕES DA COMPRA RÁPIDA TOTALMENTE DINÂMICA ---
 window.openCompraRapida = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'COMPRA_RAPIDA';
@@ -1294,45 +1093,21 @@ window.scrollQrCarousel = function(catId, direction) {
     }
 }
 
-// Monta os carrosséis baseados nas sessões ativas
 function renderCompraRapidaContent() {
     let html = '';
     
-    CONFIG_COMPRA_RAPIDA.forEach(sessao => {
-        let depto = STATE.deptos[sessao.id];
-        // Pula a sessão se ela não existir ou estiver vazia
-        if (!depto || !depto.data || depto.data.length === 0) return;
+    // Pega todas as categorias dinâmicas que foram extraídas do JSON
+    let categoriasDinamicas = Object.values(STATE.deptos)
+        .filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0)
+        .sort((a,b) => String(a.title).localeCompare(String(b.title))); // Ordena de A-Z
 
-        // Cria uma cópia dos dados e ordena por ordem alfabética de A a Z
-        let itemsOrdenados = [...depto.data].sort((a, b) => String(a.name).localeCompare(String(b.name)));
-
-        // Imprime o título principal da sessão (Ex: "Alimentos")
-        html += `<div class="qr-main-title">${sessao.nome}</div>`;
+    categoriasDinamicas.forEach(cat => {
+        let itemsOrdenados = [...cat.data].sort((a, b) => String(a.name).localeCompare(String(b.name)));
         
-        sessao.subsessoes.forEach((sub, subIndex) => {
-            let itensDaSub = itemsOrdenados.filter(p => {
-                if (!sub.termos || sub.termos.length === 0) return false;
-                
-                // 1. Limpa o nome (remove acentos e deixa minúsculo) e divide em palavras
-                let palavrasNome = norm(p.name).split(' ').filter(w => w.trim() !== '');
-                
-                // 2. Pega APENAS as duas primeiras palavras do nome e junta com espaço
-                let duasPrimeirasPalavras = palavrasNome.slice(0, 2).join(' ');
-                
-                // 3. Verifica se o termo procurado está contido nessas duas primeiras palavras
-                return sub.termos.some(termo => duasPrimeirasPalavras.includes(norm(termo)));
-            });
-
-            if (itensDaSub.length > 0) {
-                html += buildQrCarouselHtml(sessao.id + '-' + subIndex, sub.nome, itensDaSub);
-                itemsOrdenados = itemsOrdenados.filter(p => !itensDaSub.includes(p));
-            }
-        });
-
-        if (itemsOrdenados.length > 0) {
-            html += buildQrCarouselHtml(sessao.id + '-outros', 'Outros', itemsOrdenados);
-        }
+        html += buildQrCarouselHtml(cat.id, cat.title, itemsOrdenados);
     });
+
+    if(html === '') html = '<p style="text-align:center; padding: 40px; color: var(--c-s);">Nenhum produto categorizado encontrado.</p>';
 
     document.getElementById('compra-rapida-content').innerHTML = html;
 }
@@ -1345,9 +1120,16 @@ function buildQrCarouselHtml(carouselId, title, items) {
             <button class="qr-arrow left" onclick="scrollQrCarousel('${carouselId}', -1)">❮</button>
             <div class="qr-track" id="qr-track-${carouselId}">
     `;
-    items.forEach(item => {
+    // Exibe os primeiros 25 itens no carrossel rápido para não ficar gigante
+    items.slice(0, 25).forEach(item => {
         html += `<div class="qr-item">${buildCardHtml(item, 'PROD')}</div>`;
     });
+    if(items.length > 25) {
+        html += `<div class="qr-item" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${carouselId}', false)">
+            <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
+            <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos</span>
+        </div>`;
+    }
     html += `
             </div>
             <button class="qr-arrow right" onclick="scrollQrCarousel('${carouselId}', 1)">❯</button>
@@ -1366,9 +1148,8 @@ function renderHomeMobileTV() {
     
     let trackHtml = videosToShow.map(v => `
         <div class="home-tv-item">
-
             <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="openVideoFeed('${v.videoId}')" alt="Thumbnail TV">
-                        <div class="home-tv-play">▶</div>
+            <div class="home-tv-play">▶</div>
             <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
                 <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                 <button class="home-tv-prod-btn">Ver</button>
@@ -1389,51 +1170,73 @@ function renderHomeMobileTV() {
     `;
 }
 
+// Implementação do sistema de carregamento preguiçoso (Lazy Load) para categorias na Home
 function renderHomeCategories() {
-    const sessoes = [
-        { id: 'alimentos', nome: 'Alimentos' },
-        { id: 'bebidas', nome: 'Bebidas' },
-        { id: 'higiene', nome: 'Higiene' },
-        { id: 'beleza', nome: 'Beleza' },
-        { id: 'limpeza', nome: 'Limpeza' },
-        { id: 'lavanderia', nome: 'Lavanderia' },
-        { id: 'casa', nome: 'Casa' },
-        { id: 'pet', nome: 'Pet' }
-    ];
+    let container = document.getElementById('home-destaques-section');
+    container.style.display = 'block';
+    container.innerHTML = '';
 
-    let itemsHtml = '';
-    sessoes.forEach(s => {
-        let depto = STATE.deptos[s.id];
-        if (!depto || !depto.data || depto.data.length === 0) return;
-        
-        let items = [...depto.data];
-        items.sort((a,b) => String(a.name).localeCompare(String(b.name)));
-        
-        let top4 = items.slice(0, 4);
-        if(top4.length > 0) {
-            itemsHtml += `
-            <div style="margin-bottom: 35px;">
-                <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.15rem; color: var(--c-p);">${s.nome}</div>
-                <div class="grid-ver-todos">
-            `;
-            
-            top4.forEach(item => {
-                itemsHtml += buildCardHtml(item, depto.type);
-            });
-            
-            itemsHtml += `
-                    <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${s.id}', false)">
-                        <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
-                        <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.85rem; font-weight:500;">${s.nome}</span></span>
-                    </div>
-                </div>
-            </div>`;
-        }
+    // Pega as categorias dinâmicas ordenadas
+    let categoriasDinamicas = Object.values(STATE.deptos)
+        .filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0)
+        .sort((a,b) => String(a.title).localeCompare(String(b.title)));
+
+    if(categoriasDinamicas.length === 0) return;
+
+    // Criar os placeholders para o Lazy Load
+    categoriasDinamicas.forEach(cat => {
+        let wrapper = document.createElement('div');
+        wrapper.className = 'lazy-carousel-wrapper';
+        wrapper.dataset.catId = cat.id;
+        wrapper.dataset.catName = cat.title;
+        wrapper.style.minHeight = '300px'; 
+        container.appendChild(wrapper);
     });
 
-    let container = document.getElementById('home-destaques-section');
-    container.innerHTML = itemsHtml;
-    container.style.display = 'block';
+    // Observer para renderizar apenas quando rolar perto da seção
+    let observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                let el = entry.target;
+                renderSingleCarousel(el.dataset.catId, el.dataset.catName, el);
+                el.classList.add('loaded');
+                obs.unobserve(el);
+            }
+        });
+    }, { 
+        root: document.getElementById('scroll-stage'), // Observa baseando na área de rolagem
+        rootMargin: '400px 0px' // Começa a carregar um pouco antes de entrar na tela
+    });
+
+    document.querySelectorAll('.lazy-carousel-wrapper').forEach(el => observer.observe(el));
+}
+
+function renderSingleCarousel(catId, catName, element) {
+    let depto = STATE.deptos[catId];
+    if(!depto || depto.data.length === 0) return;
+
+    let items = [...depto.data].sort((a,b) => String(a.name).localeCompare(String(b.name)));
+    let top4 = items.slice(0, 4);
+
+    let itemsHtml = `
+        <div style="margin-bottom: 35px;">
+            <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.15rem; color: var(--c-p);">${catName}</div>
+            <div class="grid-ver-todos">
+    `;
+    
+    top4.forEach(item => {
+        itemsHtml += buildCardHtml(item, 'PROD');
+    });
+    
+    itemsHtml += `
+                <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${catId}', false)">
+                    <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
+                    <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.85rem; font-weight:500;">${catName}</span></span>
+                </div>
+            </div>
+        </div>`;
+
+    element.innerHTML = itemsHtml;
 }
 
 function compileVideos() {
@@ -1550,6 +1353,16 @@ window.openVideoFeed = function(targetVideoId = null) {
     STATE.tvCategory = 'all';
     document.getElementById('label-tv').innerText = 'Todos';
     
+    // Filtro do TV adaptado com base nas novas categorias
+    let htmlCatsTV = `<div class="custom-dropdown-item active" onclick="selectTvCategory('all', 'Todos', event)" style="color:#fff; border-bottom-color: #222;">Todos</div>`;
+    let catNoVideo = [...new Set(STATE.allVideos.map(v => catToId(v.product.categoria || "Outros")))];
+    catNoVideo.forEach(idCat => {
+        if(STATE.deptos[idCat]) {
+            htmlCatsTV += `<div class="custom-dropdown-item" onclick="selectTvCategory('${idCat}', '${STATE.deptos[idCat].title}', event)" style="color:#fff; border-bottom-color: #222;">${STATE.deptos[idCat].title}</div>`;
+        }
+    });
+    document.getElementById('list-tv').innerHTML = htmlCatsTV;
+    
     renderVideoFeedTrack(targetVideoId);
     
     $('v-feed-track').onscroll = function() {
@@ -1569,7 +1382,7 @@ window.openVideoFeed = function(targetVideoId = null) {
 function renderVideoFeedTrack(targetVideoId = null) {
     let filteredVideos = STATE.allVideos;
     if (STATE.tvCategory !== 'all') {
-        filteredVideos = STATE.allVideos.filter(v => agruparCategoria(v.product) === STATE.tvCategory || v.product.categoria === STATE.tvCategory || (STATE.tvCategory === 'higiene' && agruparCategoria(v.product) === 'beleza'));
+        filteredVideos = STATE.allVideos.filter(v => catToId(v.product.categoria || "Outros") === STATE.tvCategory);
     }
     
     if(filteredVideos.length === 0) {
@@ -1662,18 +1475,12 @@ function renderQvRecommendations(currentId) {
     let p = STATE.prods.find(x => x.id === currentId);
     if(!p) return '';
     
-    let words = String(p.name).split(' ').filter(w => w.length > 2);
-    if(words.length < 2) words = String(p.name).split(' ');
-    let w1 = norm(words[0]); let w2 = words.length > 1 ? norm(words[1]) : '';
+    // Mostra produtos da mesma categoria agora que a categoria é fiel
+    let recs = STATE.prods.filter(x => x.categoria === p.categoria && x.id !== currentId && x.stock > 0 && !x._isBasket && !x._isCombo);
     
-    let recs = STATE.prods.filter(x => {
-        if(x.id === currentId || x.stock <= 0 || x._isBasket || x._isCombo) return false;
-        let n = norm(x.name);
-        return n.includes(w1) && (w2 ? n.includes(w2) : true);
-    });
-    
+    // Se tiver menos de 3, complementa com outros
     if(recs.length < 3) {
-         let fallback = STATE.prods.filter(x => x.categoria === p.categoria && x.id !== currentId && x.stock > 0 && !x._isBasket && !x._isCombo);
+         let fallback = STATE.prods.filter(x => x.id !== currentId && x.stock > 0 && !x._isBasket && !x._isCombo);
          recs = [...recs, ...fallback];
     }
     
@@ -1728,14 +1535,26 @@ async function init() {
                     imagensExtras: imgs, 
                     videosExtra: vids, 
                     descricao: p.descricao || "", 
-                    categoria: p.categoria || "",
+                    categoria: p.categoria || "Outros", // Usa a categoria real que vem do JSON
                     tagsList: Array.isArray(p.tags) ? p.tags : []
                 };
             });
             
+            // Popula os departamentos dinâmicos lendo a categoria de cada produto
             STATE.prods.forEach(p => { 
-                let grupo = agruparCategoria(p); 
-                STATE.deptos[grupo].data.push(p); 
+                let catNome = p.categoria && p.categoria.trim() !== "" ? p.categoria : "Outros";
+                let catId = catToId(catNome);
+                
+                if (!STATE.deptos[catId]) {
+                    STATE.deptos[catId] = { id: catId, title: catNome, type: 'PROD', data: [], tags: [] };
+                }
+                STATE.deptos[catId].data.push(p); 
+                
+                // Pega a primeira palavra para a lista de tags interna
+                let tag = String(p.name).split(' ')[0];
+                if (tag && tag.length > 3 && !STATE.deptos[catId].tags.includes(formatName(tag))) { 
+                    STATE.deptos[catId].tags.push(formatName(tag)); 
+                }
             });
 
             let hojeTime = new Date().getTime();
@@ -1786,7 +1605,7 @@ async function init() {
             });
 
             compileVideos();
-            renderHomeCategories(); 
+            renderHomeCategories(); // Chama a nova função com IntersectionObserver
             renderHomeMobileTV();
         }
         
@@ -1831,17 +1650,6 @@ function selectKeywordOption(value, label, el) {
     applyDeptoFilters();
 }
 
-window.selectMarcaOption = function(tabId, nome) {
-    STATE.currentMarcaTab = tabId;
-    let labelMarcas = document.getElementById('label-marcas');
-    if(labelMarcas) labelMarcas.innerText = nome;
-    
-    let listMarcas = document.getElementById('list-marcas');
-    if(listMarcas) listMarcas.classList.remove('show');
-    
-    applyDeptoFilters();
-};
-
 window.goToHome = function() { 
     document.getElementById('see-all-view').classList.remove('open');
     if(STATE.checkoutOpen) closeCheckout();
@@ -1866,6 +1674,7 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     STATE.currentKeyword = 'all';
 
     let d = STATE.deptos[deptoId];
+    if(!d) return;
     
     let searchInput = document.getElementById('depto-search');
     if (searchInput) {
@@ -1881,15 +1690,7 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     if (document.getElementById('dropdown-keyword')) document.getElementById('dropdown-keyword').style.display = 'none';
     if (document.getElementById('dropdown-sort')) document.getElementById('dropdown-sort').style.display = 'none';
 
-    if (deptoId === 'marcas') {
-        document.getElementById('normal-filters').style.display = 'flex';
-        document.getElementById('dropdown-marcas').style.display = 'block';
-        
-        let marcaHtml = MARCAS_DESTAQUE.map(m => `<div class="custom-dropdown-item" onclick="selectMarcaOption('${m.id}', '${m.nome}')">${m.nome}</div>`).join('');
-        document.getElementById('list-marcas').innerHTML = marcaHtml;
-        document.getElementById('label-marcas').innerText = MARCAS_DESTAQUE[0].nome;
-        STATE.currentMarcaTab = MARCAS_DESTAQUE[0].id; 
-    } else if (d.type === 'PROD') {
+    if (d.type === 'PROD') {
         document.getElementById('normal-filters').style.display = 'flex';
         document.getElementById('dropdown-keyword').style.display = 'block';
         document.getElementById('dropdown-sort').style.display = 'block';
@@ -1925,21 +1726,13 @@ window.applyDeptoFilters = function(preventScroll = false) {
     let query = norm(document.getElementById('depto-search').value);
     let filtered = [];
     
-    if (STATE.activeDeptoId === 'marcas') {
-        let marcaAtual = MARCAS_DESTAQUE.find(m => m.id === STATE.currentMarcaTab);
-        if (marcaAtual) {
-            filtered = STATE.prods.filter(p => {
-                let nomeParaBusca = " " + norm(p.name).replace(/[^a-z0-9 ]/g, ' ') + " ";
-                return marcaAtual.palavrasChave.some(kw => nomeParaBusca.includes(" " + norm(kw) + " "));
-            });
-        }
-    } else {
-        let depto = STATE.deptos[STATE.activeDeptoId];
-        let keyword = STATE.currentKeyword;
-        filtered = depto.data.filter(p => {
-            return (keyword === 'all' || norm(p.name || p.nome).includes(keyword));
-        });
-    }
+    let depto = STATE.deptos[STATE.activeDeptoId];
+    if(!depto) return;
+
+    let keyword = STATE.currentKeyword;
+    filtered = depto.data.filter(p => {
+        return (keyword === 'all' || norm(p.name || p.nome).includes(keyword));
+    });
     
     if(query) filtered = filtered.filter(p => norm(p.name || p.nome).includes(query));
 
@@ -2197,41 +1990,33 @@ window.openUpsellView = function() {
         <h3 class="upsell-header-title">Adicione mais itens</h3>
     `;
 
-    const sessoes = [
-        { id: 'desc_20', nome: 'Super Descontos' },
-        { id: 'alimentos', nome: 'Alimentos' },
-        { id: 'bebidas', nome: 'Bebidas' },
-        { id: 'higiene', nome: 'Higiene' },
-        { id: 'beleza', nome: 'Beleza' },
-        { id: 'limpeza', nome: 'Limpeza' },
-        { id: 'lavanderia', nome: 'Lavanderia' },
-        { id: 'casa', nome: 'Casa' },
-        { id: 'pet', nome: 'Pet' }
-    ];
+    // Utiliza as categorias dinâmicas para oferecer o Upsell
+    let sessoesDinamicas = Object.values(STATE.deptos)
+        .filter(d => d.type === 'PROD' && d.id !== 'desc_10' && d.id !== 'desc_15' && d.data.length > 0)
+        .sort((a,b) => String(a.title).localeCompare(String(b.title)))
+        .slice(0, 10); // Mostra as 10 primeiras para não sobrecarregar
+        
+    // Coloca a de maior desconto primeiro no Upsell se existir
+    if (STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) {
+        sessoesDinamicas.unshift(STATE.deptos['desc_20']);
+    }
 
-    sessoes.forEach(s => {
-        let depto = STATE.deptos[s.id];
-        if (!depto || !depto.data || depto.data.length === 0) return;
-        
-        let items = [...depto.data];
-        items.sort((a,b) => String(a.name).localeCompare(String(b.name)));
-        
+    sessoesDinamicas.forEach(d => {
+        let items = [...d.data].sort((a,b) => String(a.name).localeCompare(String(b.name)));
         let top4 = items.slice(0, 4);
         if(top4.length > 0) {
             itemsHtml += `
             <div style="margin-bottom: 35px;">
-                <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.1rem;">${s.nome}</div>
+                <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.1rem;">${d.title}</div>
                 <div class="grid-ver-todos">
             `;
             
-            top4.forEach(item => {
-                itemsHtml += buildCardHtml(item, depto.type);
-            });
+            top4.forEach(item => { itemsHtml += buildCardHtml(item, d.type); });
             
             itemsHtml += `
-                    <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 1px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${s.id}', true)">
+                    <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 1px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${d.id}', true)">
                         <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
-                        <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.8rem; font-weight:400;">${s.nome}</span></span>
+                        <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.8rem; font-weight:400;">${d.title}</span></span>
                     </div>
                 </div>
             </div>`;
