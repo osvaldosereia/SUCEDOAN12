@@ -251,7 +251,7 @@
             
             <button class="nav-btn desktop-only" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias();"><i data-lucide="tags" size="14"></i> CATEGORIAS</button>
             
-            <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES</button>
+            <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES & DADOS</button>
             <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
         </header>
 
@@ -267,13 +267,10 @@
             </div>
             
             <div class="toolbar-group desktop-only">
-                <button class="nav-btn sync-btn" onclick="sincronizarBancos()" title="Sincronizar Vitrine e Base de Dados">
-                    <i data-lucide="refresh-cw" size="14"></i> SINCRONIZAR ESTOQUES
+                <button class="nav-btn sync-btn" onclick="openSidebar('config-sidebar')" title="Painel de Sincronização">
+                    <i data-lucide="cloud" size="14"></i> OPÇÕES DE SINCRONIZAÇÃO
                 </button>
-                <button class="nav-btn sync-btn" onclick="uploadImagens()" title="Processar Fila de Imagens">
-                    <i data-lucide="image-up" size="14"></i> ENVIAR IMAGENS <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px;">(0)</span>
-                </button>
-                <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO</button>
+                <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
             </div>
         </div>
         
@@ -287,7 +284,7 @@
             <button class="btn-icon" onclick="goToLanding()" title="Voltar ao Início"><i data-lucide="home" size="18"></i></button>
             <div class="brand">BALANÇO</div>
             <div style="font-size:11px; font-weight:900; background:#fffbeb; color:#b45309; padding:6px 12px; border-radius:20px; border:1px solid #fde68a;">
-                FILA DE ENVIO: <span id="balanco-fila-count" style="font-size:14px;">0</span>/5
+                FILA DE EDIÇÕES: <span id="balanco-fila-count" style="font-size:14px;">0</span>
             </div>
         </header>
 
@@ -340,14 +337,9 @@
                 <div class="section-title">Navegação Principal</div>
                 <button class="nav-btn primary menu-sidebar-btn" onclick="startSeparador();"><i data-lucide="shopping-cart" size="14"></i> FILA DE SEPARAÇÃO</button>
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="settings" size="14"></i> DEFINIÇÕES</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="settings" size="14"></i> DEFINIÇÕES E DADOS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias(); closeSidebar('menu-sidebar');"><i data-lucide="tags" size="14"></i> GERIR CATEGORIAS</button>
                 <button class="nav-btn menu-sidebar-btn" id="btn-24h-mobile" onclick="toggleFilter24h(); closeSidebar('menu-sidebar');"><i data-lucide="clock" size="14"></i> FILTRAR ÚLTIMAS 24H</button>
-            </div>
-            <div class="form-section" style="border-top: 1px solid var(--border); padding-top: 15px;">
-                <div class="section-title">Sincronização Nuvem</div>
-                <button class="nav-btn sync-btn menu-sidebar-btn" onclick="sincronizarBancos(); closeSidebar('menu-sidebar');"><i data-lucide="refresh-cw" size="14"></i> SINCRONIZAR ESTOQUES</button>
-                <button class="nav-btn sync-btn menu-sidebar-btn" onclick="uploadImagens(); closeSidebar('menu-sidebar');"><i data-lucide="image-up" size="14"></i> ENVIAR IMAGENS</button>
             </div>
         </div>
     </div>
@@ -418,28 +410,48 @@
         </div>
         <div class="sidebar-body" style="gap:16px;">
             <div class="form-section">
+                <div class="section-title">Salvar e Sincronizar</div>
+                <button class="nav-btn primary" style="height:40px; justify-content:center;" onclick="salvarBancoDeDadosJSON()">
+                    <i data-lucide="database" size="14"></i> 1. SALVAR BANCODEDADOS.JSON
+                </button>
+                <button class="nav-btn sync-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarProdutosJSON()">
+                    <i data-lucide="layout" size="14"></i> 2. SALVAR PRODUTOS.JSON (SITE)
+                </button>
+                <button class="nav-btn" style="height:40px; justify-content:center;" onclick="uploadImagens()">
+                    <i data-lucide="image-up" size="14"></i> 3. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
+                </button>
+                <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
+                    <i data-lucide="cloud-download" size="14"></i> 4. ATUALIZAR LOCAL DA NUVEM
+                </button>
+            </div>
+
+            <div class="form-section" style="margin-top:10px;">
+                <div class="section-title">Integração CSV (Padrão Bling)</div>
+                <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
+                <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">
+                    <i data-lucide="file-warning" size="14"></i> 5. IMPORTAR (SUBSTITUIR TUDO)
+                </button>
+
+                <input type="file" id="csv-file-adicionar" accept=".csv" style="display:none">
+                <button class="nav-btn success-btn" style="height:40px; justify-content:center;" onclick="document.getElementById('csv-file-adicionar').click()">
+                    <i data-lucide="file-plus" size="14"></i> 6. IMPORTAR (CADASTRAR NOVOS)
+                </button>
+                
+                <button class="nav-btn" style="height:40px; justify-content:center;" onclick="exportarCSVCompleto()">
+                    <i data-lucide="file-down" size="14"></i> 7. EXPORTAR CSV BLING
+                </button>
+            </div>
+
+            <div class="form-section" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 15px;">
                 <div class="section-title">Credenciais GitHub</div>
                 <div class="form-group"><label class="form-label">Token</label><input type="password" id="cfg-token" class="form-input"></div>
                 <div class="form-group"><label class="form-label">Utilizador</label><input type="text" id="cfg-user" class="form-input"></div>
                 <div class="form-group"><label class="form-label">Repositório</label><input type="text" id="cfg-repo" class="form-input"></div>
                 <button class="nav-btn primary" style="height:44px; justify-content:center; margin-top:5px;" onclick="saveConfig()">GUARDAR CREDENCIAIS</button>
             </div>
-            <div class="form-section" style="margin-top:10px;">
-                <div class="section-title">Manutenção do Sistema</div>
-                <button class="nav-btn" style="height:44px; justify-content:center;" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="14"></i> DESCARREGAR DA NUVEM</button>
-                <button class="nav-btn" style="height:44px; justify-content:center;" onclick="exportarCSVCompleto()"><i data-lucide="file-down" size="14"></i> EXPORTAR CSV BLING</button>
-                
-                <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
-                <button class="nav-btn" style="height:44px; justify-content:center; color: var(--danger); border-color: #fecaca; margin-bottom: 8px;" onclick="document.getElementById('csv-file-substituir').click()">
-                    <i data-lucide="file-warning" size="14"></i> IMPORTAR CSV (SUBSTITUIR TUDO)
-                </button>
 
-                <input type="file" id="csv-file-somar" accept=".csv" style="display:none">
-                <button class="nav-btn primary" style="height:44px; justify-content:center;" onclick="document.getElementById('csv-file-somar').click()">
-                    <i data-lucide="file-plus" size="14"></i> IMPORTAR CSV (SOMAR ESTOQUE)
-                </button>
-                
-                <div class="section-title" style="margin-top:15px;">Ações Manuais GitHub</div>
+            <div class="form-section" style="margin-top:15px;">
+                <div class="section-title">Ações Manuais GitHub</div>
                 <button id="btnSyncFila" class="nav-btn sync-btn" style="height:44px; justify-content:center;" onclick="uploadFilaPedidosGithub(this)"><i data-lucide="upload-cloud" size="14"></i> FORÇAR PEDIDOS_FILA</button>
             </div>
         </div>
@@ -629,7 +641,7 @@
                 lucide.createIcons();
             } else if (isSyncing && countdownTimer === 0) {
                 el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>A sincronizar na nuvem...</span>`;
+                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>A processar na nuvem...</span>`;
                 lucide.createIcons();
             } else if (syncQueue.length > 0) {
                 el.style.display = 'flex';
@@ -670,10 +682,10 @@
             const task = syncQueue.shift();
             try {
                 await task.fn();
-                mostrarAlerta(`✅ ${task.name} salvo na nuvem!`, 'sucesso');
+                mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso');
             } catch (e) {
                 console.error(e);
-                mostrarAlerta(`❌ Erro ao enviar ${task.name}`, 'erro');
+                mostrarAlerta(`❌ Erro em ${task.name}`, 'erro');
             }
             
             if (syncQueue.length > 0) {
@@ -700,7 +712,7 @@
         }
 
         // ==========================================================
-        // FUNÇÕES GERAIS DE SINCRONIZAÇÃO
+        // FUNÇÕES ESPECÍFICAS DE SALVAMENTO (BOTÕES 1 AO 4)
         // ==========================================================
         function sanitizeProductsForExport(prods) {
             return prods.map(p => {
@@ -716,8 +728,17 @@
             });
         }
 
-        function sincronizarBancos() {
-            enqueueTask("Vitrine Site (produtos.json)", async () => {
+        // Botão 1: Salvar Banco de Dados Completo
+        function salvarBancoDeDadosJSON() {
+            enqueueTask("Banco de Dados Completo", async () => {
+                const produtosLimpos = sanitizeProductsForExport(products);
+                await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM: Atualização Banco de Dados via Botão 1`);
+            }, true); 
+        }
+
+        // Botão 2: Salvar Produtos JSON (Vitrine)
+        function salvarProdutosJSON() {
+            enqueueTask("Produtos.json (Site)", async () => {
                 const vitrine = sanitizeProductsForExport(products).map(p => ({
                     id: p.id || p['ID'] || Date.now(), 
                     nome: p.nome || "", 
@@ -734,15 +755,11 @@
                     url_imagem_3: p.url_imagem_3 || "", 
                     link_video: p.link_video || "", link_video_2: p.link_video_2 || "", link_video_3: p.link_video_3 || "", link_video_4: p.link_video_4 || "", link_video_5: p.link_video_5 || "", link_video_6: p.link_video_6 || "", link_video_7: p.link_video_7 || "", link_video_8: p.link_video_8 || "", link_video_9: p.link_video_9 || "", link_video_10: p.link_video_10 || ""
                 }));
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM Sync: Vitrine Atualizada`);
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Vitrine Site via Botão 2`);
             }, true);
-
-            enqueueTask("Base Interna (bancodedados.json)", async () => {
-                const produtosLimpos = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM Sync: Banco de Dados`);
-            }, true); 
         }
 
+        // Botão 3: Enviar Imagens na Fila
         function uploadImagens() {
             if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
             
@@ -768,6 +785,7 @@
             });
         }
 
+        // Botão Auxiliar Nuvem
         function uploadFilaPedidosGithub(btn = null) {
             enqueueTask('Forçar Fila de Pedidos', async () => { 
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); 
@@ -917,9 +935,6 @@
                             <button class="nav-btn primary" style="flex: 1; justify-content: center; height: 48px; font-size: 13px;" onclick="salvarBalanco('${p.codigo}', false, this)">
                                 <i data-lucide="save" size="16"></i> FILA
                             </button>
-                            <button class="nav-btn success-btn" style="flex: 1; justify-content: center; height: 48px; font-size: 13px;" onclick="salvarBalanco('${p.codigo}', true, this)">
-                                <i data-lucide="cloud-upload" size="16"></i> ENVIAR
-                            </button>
                         </div>
                     </div>
                 </div>`;
@@ -967,20 +982,8 @@
                 document.getElementById(`bal-est-${oldSku}`).id = `bal-est-${newSku}`;
             }
 
-            if (forceSync) {
-                mostrarAlerta("Enviando para a fila de sincronização...", "aviso");
-                sincronizarBancos(); 
-                balancoEditsCount = 0;
-            } else {
-                balancoEditsCount++;
-                if (balancoEditsCount >= 5) {
-                    mostrarAlerta("Lote atingido. Na fila de sincronização...", "aviso");
-                    sincronizarBancos(); 
-                    balancoEditsCount = 0;
-                } else {
-                    mostrarAlerta(`Salvo localmente! (Fila: ${balancoEditsCount}/5)`, "sucesso");
-                }
-            }
+            balancoEditsCount++;
+            mostrarAlerta(`Salvo localmente! (Alterações não enviadas: ${balancoEditsCount})`, "sucesso");
             document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
         }
 
@@ -1173,12 +1176,9 @@
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
             }, true);
 
-            if(mudouAlgoLocalmente) { 
-                sincronizarBancos(); 
-            }
             renderGrid(document.getElementById('search-input').value);
             renderizarCartoes(); 
-            mostrarAlerta("Sucesso! Baixa geral efetuada. A sincronizar estoques...");
+            mostrarAlerta("Sucesso! Baixa geral efetuada. Não se esqueça de salvar o banco.");
         }
 
         // ==========================================================
@@ -1390,14 +1390,10 @@
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Separado`);
             }, true);
 
-            if(mudouAlgoLocalmente) {
-                sincronizarBancos(); 
-            }
-
             renderizarCartoes();
             if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
             fecharSeparador();
-            mostrarAlerta(`✅ Pedido ${pedidoAtualParaSeparacao.orderNum} concluído! Estoques na fila de sincronização.`, "sucesso");
+            mostrarAlerta(`✅ Pedido ${pedidoAtualParaSeparacao.orderNum} concluído! Estoque baixado no sistema. Clique em "SALVAR BANC DE DADOS" depois.`, "sucesso");
         }
 
         async function estornarPedido(pedidoId) {
@@ -1433,15 +1429,11 @@
                 filaRemota = filaRemota.filter(p => p.id !== pedidoId);
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Estorno do Pedido ${pedido.orderNum}`);
             }, true);
-            
-            if(mudouAlgoLocalmente) {
-                sincronizarBancos(); 
-            }
 
             renderizarCartoes();
             renderGrid(document.getElementById('search-input').value, true);
             if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
-            mostrarAlerta(`🔄 Estorno concluído. A enviar atualizações...`, "sucesso");
+            mostrarAlerta(`🔄 Estorno concluído. Clique em "SALVAR BANC DE DADOS" para confirmar os estoques.`, "sucesso");
         }
 
         // ==========================================================
@@ -1564,6 +1556,7 @@
                 
                 const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
 
+                // Inserido o campo "Estoque" (value="${p.estoque || 0}")
                 card.innerHTML = `
                     <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
                         <div class="card-img-wrapper" style="width:100px; height:100px; padding:5px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border);" onclick="openEditSidebar('${p.codigo}')" title="Editar Imagens e Tags">
@@ -1596,7 +1589,7 @@
                                 <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Venda (R$)</label>
                                 <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); border-color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)">
                             </div>
-                            
+
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Gôndola</label>
                                 <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'gondola', this.value); updateLocalizacao('${p.codigo}')">
@@ -1611,15 +1604,13 @@
                             </div>
                             
                             <div style="display:flex; flex-direction:column; gap:2px;">
+                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Estoque Qtde</label>
+                                <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
                                 <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Categoria</label>
                                 <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">
                                     ${getOpcoesCategoria(p.categoria)}
-                                </select>
-                            </div>
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Subcategoria</label>
-                                <select id="sel-subcat-grid-${p.codigo}" class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'subcategoria', this.value)">
-                                    ${getOpcoesSubcategoria(p.categoria, p.subcategoria)}
                                 </select>
                             </div>
                         </div>
@@ -1688,7 +1679,15 @@
             lucide.createIcons(); openSidebar('edit-sidebar');
         }
 
-        async function updateField(sku, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; let finalVal = value; if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0; p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); }
+        async function updateField(sku, field, value) { 
+            const p = products.find(x => x.codigo === sku); 
+            if(!p) return; 
+            let finalVal = value; 
+            if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
+            p[field] = finalVal; 
+            p.last_update = Date.now(); 
+            await saveDataLocally(); 
+        }
         
         async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p['Código'] = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(document.getElementById('search-input').value, true); } }
         
@@ -1765,7 +1764,7 @@
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
         // ==========================================================
-        // 1. IMPORTAR CSV: SUBSTITUIR BASE (PRESERVANDO MÍDIAS)
+        // 5. IMPORTAR CSV: SUBSTITUIR BASE (PRESERVANDO MÍDIAS)
         // ==========================================================
         document.getElementById('csv-file-substituir').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -1782,6 +1781,7 @@
                     let novaBase = []; 
                     let atualizados = 0;
                     let novos = 0;
+                    const timestamp = Date.now();
 
                     results.data.forEach(d => {
                         const ean = d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '';
@@ -1795,15 +1795,11 @@
 
                         if (produtoExistente) {
                             produtoFinal = { ...produtoExistente }; 
+                            produtoFinal.id = produtoExistente.id || d['ID'] || timestamp + atualizados;
                             atualizados++;
                         } else {
-                            produtoFinal = { id: Date.now() + Math.floor(Math.random() * 1000), tags: [] };
+                            produtoFinal = { id: d['ID'] || timestamp + novos, tags: [] };
                             novos++;
-                        }
-
-                        if (d['ID']) {
-                            produtoFinal.id = d['ID'].trim();
-                            produtoFinal['ID'] = d['ID'].trim(); 
                         }
 
                         produtoFinal.codigo = fallbackSku;
@@ -1840,41 +1836,38 @@
         });
 
         // ==========================================================
-        // 2. IMPORTAR CSV: SOMAR ESTOQUE OU CADASTRAR NOVO
+        // 6. IMPORTAR CSV: CADASTRAR APENAS NOVOS PRODUTOS (SEM SUBSTITUIR/SOMAR)
         // ==========================================================
-        document.getElementById('csv-file-somar').addEventListener('change', function(e) {
+        document.getElementById('csv-file-adicionar').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
 
             Papa.parse(e.target.files[0], { 
                 header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: async (results) => {
                     let produtosCriados = 0;
-                    let estoquesSomados = 0;
+                    let ignorados = 0;
+                    const timestamp = Date.now();
 
                     results.data.forEach(d => {
-                        const ean = d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : ''; 
-                        const fallbackSku = d['Código'] ? d['Código'].trim() : Date.now().toString().slice(-8) + Math.floor(Math.random() * 1000);
-                        const estoqueImportado = parseFloat(d['Estoque']?.replace(',','.')) || 0;
-
-                        let pIdx = -1; 
-                        if(ean !== '') { pIdx = products.findIndex(p => p.gtin === ean); } 
-                        if(pIdx === -1 && d['Código']) { pIdx = products.findIndex(p => p.codigo === fallbackSku); }
+                        const fallbackSku = d['Código'] ? d['Código'].trim() : timestamp.toString().slice(-8) + Math.floor(Math.random() * 1000);
+                        
+                        // Verifica se já existe produto com esse código
+                        let pIdx = products.findIndex(p => p.codigo === fallbackSku);
 
                         if(pIdx !== -1) {
-                            let estoqueAtual = parseFloat(products[pIdx].estoque) || 0;
-                            products[pIdx].estoque = estoqueAtual + estoqueImportado;
-                            products[pIdx].last_update = Date.now();
-                            estoquesSomados++;
+                            // Produto já existe, ignora para não substituir nada
+                            ignorados++;
                         } else {
+                            // Produto Novo
                             let novoProduto = { 
-                                id: Date.now() + Math.floor(Math.random() * 1000),
+                                id: d['ID'] || timestamp + produtosCriados,
                                 codigo: fallbackSku, 
                                 nome: d['Descrição'] || '', 
                                 preco: parseFloat(d['Preço']?.replace(',','.')) || 0, 
                                 preco_custo: parseFloat(d['Preço de custo']?.replace(',','.')) || 0, 
-                                estoque: estoqueImportado, 
+                                estoque: parseFloat(d['Estoque']?.replace(',','.')) || 0, 
                                 categoria: d['Categoria do produto'] || '', 
-                                gtin: ean, 
+                                gtin: d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '', 
                                 ncm: d['NCM'] || '', 
                                 validade: d['Data Validade'] || '',
                                 last_update: Date.now() 
@@ -1887,13 +1880,16 @@
                     await saveDataLocally(); 
                     renderGrid(document.getElementById('search-input').value); 
                     
-                    alert(`✅ Importação concluída!\n\n📦 Produtos atualizados (estoque somado): ${estoquesSomados}\n✨ Novos produtos cadastrados: ${produtosCriados}`); 
+                    alert(`✅ Importação de Adição Concluída!\n\n✨ Novos produtos cadastrados: ${produtosCriados}\n⏭️ Produtos já existentes ignorados: ${ignorados}`); 
                     closeSidebar('config-sidebar');
                     e.target.value = ''; 
                 }
             });
         });
 
+        // ==========================================================
+        // 4. ATUALIZAR LOCAL STORAGE DA NUVEM (Bancodedados.json)
+        // ==========================================================
         async function fetchFromGithub() {
             try {
                 const cfg = GitHubAPI.getConfig();
@@ -1911,7 +1907,7 @@
                 });
 
                 if (response.status === 404) {
-                    return alert("O ficheiro 'site/bancodedados.json' não foi encontrado. Tente clicar em 'ENVIAR BASE' primeiro.");
+                    return alert("O ficheiro 'site/bancodedados.json' não foi encontrado. Tente clicar em 'SALVAR BANC DE DADOS' primeiro.");
                 }
 
                 if (!response.ok) throw new Error("Falha na comunicação com o GitHub.");
@@ -1925,7 +1921,7 @@
                     await saveDataLocally();
                     renderGrid(document.getElementById('search-input').value);
                     
-                    alert("Sincronização da Base concluída com sucesso!");
+                    alert("Atualização Local concluída com sucesso!");
                     closeSidebar('config-sidebar');
                 } else {
                     alert("O ficheiro transferido não tem o formato esperado.");
@@ -1942,21 +1938,60 @@
             } 
         }
 
+        // ==========================================================
+        // 7. EXPORTAR CSV PADRÃO EXATO BLING
+        // ==========================================================
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Não há produtos para exportar.");
-            const colunasModelo = [ "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da Embalagem", "Largura do produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código na Lista de Serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do Produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de Medida", "Preço de Compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Subcategoria", "Informações Adicionais" ];
+            
+            // As 59 colunas Exatas do modelo Bling
+            const colunasModelo = [
+                "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
+                "Observações", "Situação", "Estoque", "Preço de custo", "Cód no fornecedor", 
+                "Fornecedor", "Localização", "Estoque maximo", "Estoque minimo", "Peso líquido (Kg)", 
+                "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da embalagem", "Largura do Produto", 
+                "Altura do Produto", "Profundidade do produto", "Data Validade", 
+                "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", 
+                "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", 
+                "Código da lista de serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", 
+                "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", 
+                "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", 
+                "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do produto", 
+                "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de medida", 
+                "Preço de compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", 
+                "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"
+            ];
+
             const dadosParaExportar = products.map(p => {
                 const linha = {}; 
                 const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
-                p['Descrição'] = p.nome; p['Preço'] = fmt(p.preco); p['Preço de custo'] = fmt(p.preco_custo); p['Estoque'] = fmt(p.estoque); p['Situação'] = p.situacao === 'I' ? 'INATIVO' : 'ATIVO'; p['Origem'] = '0'; p['Unidade'] = 'un'; p['Data Validade'] = p.validade || ""; p['Subcategoria'] = p.subcategoria || "";
-                colunasModelo.forEach(col => { linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; }); 
-                linha['URL Imagens Externas'] = ""; linha['Link Externo'] = ""; linha['Vídeo'] = ""; linha['Descrição Curta'] = ""; 
+                
+                // Mapeamentos Padrões
+                linha['ID'] = p.id || "";
+                linha['Código'] = p.codigo || "";
+                linha['Descrição'] = p.nome || "";
+                linha['Unidade'] = "UN";
+                linha['Origem'] = "0";
+                linha['Situação'] = p.situacao === 'I' ? 'Inativo' : 'Ativo';
+                linha['Preço'] = fmt(p.preco);
+                linha['Preço de custo'] = fmt(p.preco_custo);
+                linha['Estoque'] = p.estoque || "0";
+                linha['Data Validade'] = p.validade || "";
+                
+                // Preencher com os dados restantes, caso existam no produto, garantindo que colunas obrigatórias existem vazias se necessário
+                colunasModelo.forEach(col => { 
+                    if(linha[col] === undefined) {
+                        linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; 
+                    }
+                }); 
+                
                 return linha;
             });
+
             const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" }); 
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
-            l.download = `bling_export_pim_${new Date().getTime()}.csv`; 
+            l.download = `produtos_bling_${new Date().getTime()}.csv`; 
             l.click(); 
             closeSidebar('config-sidebar');
         }
