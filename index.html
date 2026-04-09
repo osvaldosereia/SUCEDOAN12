@@ -638,17 +638,29 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 .wholesale-badge span.price { font-weight: 700; color: var(--c-ok); font-size: 1rem; }
 
 /* Para esconder e mostrar via Lazy Load */
-.lazy-carousel-wrapper { opacity: 0; transition: opacity 0.5s; }
+.lazy-carousel-wrapper { 
+    opacity: 0; transition: opacity 0.5s; 
+    
+    /* Novo respiro e linha separadora aplicados diretamente na caixa */
+    margin-bottom: 45px;
+    padding-bottom: 40px;
+    border-bottom: 2px dotted #cbd5e1;
+}
 .lazy-carousel-wrapper.loaded { opacity: 1; }
 
-    /* --- SEPARADOR DAS GRADES --- */
-.home-grid-section {
-    margin-bottom: 45px;      /* Espaço DEPOIS da linha (respiro maior) */
-    padding-bottom: 40px;     /* Espaço ANTES da linha (respiro maior) */
-    border-bottom: 2px dotted #cbd5e1; /* Linha pontilhada elegante e suave */
+/* Remove a linha da última sessão da Home */
+.lazy-carousel-wrapper:last-child {
+    border-bottom: none;
+    margin-bottom: 20px;
+    padding-bottom: 0;
 }
 
-/* Remove a linha da última sessão para o design ficar limpo no rodapé */
+/* Mantém o separador funcionando para a tela de Sacola (Upsell) */
+.home-grid-section {
+    margin-bottom: 45px;      
+    padding-bottom: 40px;     
+    border-bottom: 2px dotted #cbd5e1; 
+}
 .home-grid-section:last-child {
     border-bottom: none;
     margin-bottom: 20px;
@@ -1233,9 +1245,9 @@ function renderSingleCarousel(catId, catName, element) {
     let items = [...depto.data].sort((a,b) => String(a.name).localeCompare(String(b.name)));
     let top4 = items.slice(0, 4);
 
-    // CORREÇÃO: A classe "grid-ver-todos" voltou para cá!
+    // Adicionado a div class="grid-ver-todos" para as colunas voltarem ao normal!
     let itemsHtml = `
-        <div class="home-grid-section">
+        <div>
             <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.15rem; color: var(--c-p);">${catName}</div>
             <div class="grid-ver-todos">
     `;
