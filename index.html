@@ -1502,18 +1502,34 @@ window.applyDeptoFilters = function(preventScroll = false) {
 };
 
 window.handleLateralBack = function() {
-    if (STATE.viewStack === 'KIT_DETAIL') { 
-        closeSeeAll(true);
+    // O segredo aqui: usamos o histórico do navegador para voltar de forma nativa. 
+    // Isso evita que a tela do menu de baixo feche junto por acidente.
+    if (history.state && history.state.lateralOpen) {
+        history.back(); 
     } else {
-        closeSeeAll();
+        closeSeeAll(true);
     }
 };
 
 window.closeSeeAll = function(isFromBrowser = false) {
     document.getElementById('see-all-view').classList.remove('open');
-    STATE.viewStack = 'MENU_GRID'; setTimeout(() => { document.getElementById('see-all-grid').innerHTML = ''; }, 300);
+    document.getElementById('see-all-footer').style.display = 'none'; 
+    
+    // Garante que o sistema entenda que o Menu (Supermercado/Cestas) 
+    // continua aberto atrás da tela de produtos
+    if (document.getElementById('menu-grid-view').classList.contains('open')) {
+        STATE.viewStack = 'MENU_GRID'; 
+    } else {
+        STATE.viewStack = 'HOME'; 
+    }
+    
+    setTimeout(() => { document.getElementById('see-all-grid').innerHTML = ''; }, 300);
     updateTotals();
-    if (!isFromBrowser && history.state && history.state.lateralOpen) history.back();
+    
+    // Evita voltar o histórico duas vezes seguidas
+    if (!isFromBrowser && history.state && history.state.lateralOpen) {
+        history.back();
+    }
 }
 
 window.addEventListener('popstate', function(event) {
