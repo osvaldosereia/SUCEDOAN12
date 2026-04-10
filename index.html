@@ -129,63 +129,74 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     }
 }
     
+/* === NOVO LAYOUT: BOTÕES COM GRID 2x2 === */
 .category-card {
-    background: #ffffff !important; /* Fundo totalmente branco e limpo */
+    background: #f1f5f9 !important; /* Devolve a cor cinza clara */
+    border: none !important; /* Remove a borda antiga */
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.06); /* Sombra bem suave para dar relevo */
-    padding: 10px 8px; /* Espaço interno reajustado */
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+    padding: 12px; /* Deixa o grid amplo dentro do botão */
     height: 100%;
-    align-items: flex-start;
-    justify-content: flex-start;
-    border: 2px solid transparent; /* Cria o espaço da borda que será colorida pelo JS */
 }
-.category-card:hover { 
-    transform: translateY(-2px); 
-    box-shadow: 0 6px 16px rgba(0,0,0,0.12); 
+.category-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
+.category-card:active { transform: scale(0.96); }
+
+/* Cria a grade 2x2 para as imagens */
+.category-img-grid {
+    width: 100%;
+    aspect-ratio: 1/1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 8px; /* Espaço entre as miniaturas */
+    margin-bottom: 12px;
 }
 
-.category-img-wrapper {
+/* Aplica o estilo, cantos arredondados e lente nas miniaturas */
+.category-img-grid img {
     width: 100%;
-    aspect-ratio: 1 / 0.75; /* Deixa a área da foto mais curta na vertical */
-    background: transparent; 
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px; /* Cantinhos arredondados nas pequenas fotos */
+    mix-blend-mode: multiply; /* A lente que some com o fundo branco */
+    background: transparent;
+}
+
+/* Área de texto que alinha tudo ao centro (Vertical e Horizontal) */
+.category-text-area {
+    flex: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px; 
-    padding: 0; 
+    width: 100%;
 }
-.category-img-wrapper img {
-    width: 85%; /* Imagem um pouco menor dentro da área */
-    height: 85%;
-    object-fit: contain;
-    mix-blend-mode: multiply; 
-}
-  .category-title {
-    font-size: 0.9rem; /* Fonte um pouquinho maior */
-    font-weight: 500; 
-    color: #1e293b !important; 
-    text-align: left;
+
+.category-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #1e293b !important;
+    text-align: center; /* Texto centralizado */
     display: -webkit-box;
-    -webkit-line-clamp: 4; /* Permite até 4 linhas */
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.3; 
+    line-height: 1.2;
     width: 100%;
-    margin-bottom: 4px;
-    min-height: 64px; /* Mais espaço garantido para o texto não empurrar a grade */
 }
 
 .category-price {
     font-size: 0.85rem;
     font-weight: 800;
-    color: #0f766e !important; /* Verde escuro elegante */
-    text-align: left;
+    color: #0f766e !important;
+    text-align: center; /* Preço centralizado */
     width: 100%;
+    margin-top: 4px;
 }
 .qr-main-title {
     max-width: 1000px; margin: 25px auto 15px; padding: 0 15px 5px;    
@@ -880,17 +891,30 @@ window.openCestasMenu = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
     let html = '<div class="grid-categorias-cards">';
-    STATE.baskets.forEach((b, idx) => {
-        let color = SOBER_COLORS[idx % SOBER_COLORS.length];
-        let imgCesta = b.imagem ? b.imagem : '/site/img/produtos/cesta.webp'; 
-        
+    STATE.baskets.forEach((b) => {
+        let imgs = [];
+        if(b.produtos && b.produtos.length > 0) {
+            b.produtos.forEach(prodString => {
+                let partes = String(prodString).split('x');
+                if(partes.length > 1) {
+                    let p = STATE.prods.find(x => String(x.id) === partes[1].trim());
+                    if(p && p.img) imgs.push(p.img);
+                }
+            });
+        }
+        if(imgs.length === 0) imgs.push(b.imagem || '/site/img/produtos/cesta.webp');
+        // Completa as 4 fotos se a cesta tiver menos de 4 itens diferentes
+        while(imgs.length < 4) { imgs.push(imgs[0]); } 
+
+        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
+
         html += `
-        <div class="category-card" style="border-color: ${color};" onclick="openKitLateralView('${b.id}', 'BASKET')">
-            <div class="category-img-wrapper">
-                <img src="${imgCesta}" loading="lazy" alt="${b.nome}" onerror="this.src='/site/img/produtos/cesta.webp'">
+        <div class="category-card" onclick="openKitLateralView('${b.id}', 'BASKET')">
+            <div class="category-img-grid">${imgsHtml}</div>
+            <div class="category-text-area">
+                <div class="category-title">${b.nome}</div>
+                <div class="category-price">${fmt(b.preco)}</div>
             </div>
-            <div class="category-title">${b.nome}</div>
-            <div class="category-price">${fmt(b.preco)}</div>
         </div>`;
     });
     html += '</div>';
@@ -901,22 +925,28 @@ window.openKitsMenu = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
     let html = '<div class="grid-categorias-cards">';
-    STATE.combos.forEach((b, idx) => {
-        let color = SOBER_COLORS[idx % SOBER_COLORS.length];
-        let imgKit = b.imagem ? b.imagem : '/site/img/produtos/cesta.webp';
-        if(b.produtos && b.produtos.length > 0 && !b.imagem) {
-            let partes = String(b.produtos[0]).split('x');
-            if (partes.length > 1) {
-                let p = STATE.prods.find(x => String(x.id) === partes[1].trim()); 
-                if (p && p.img) imgKit = p.img;
-            }
+    STATE.combos.forEach((b) => {
+        let imgs = [];
+        if(b.produtos && b.produtos.length > 0) {
+            b.produtos.forEach(prodString => {
+                let partes = String(prodString).split('x');
+                if(partes.length > 1) {
+                    let p = STATE.prods.find(x => String(x.id) === partes[1].trim());
+                    if(p && p.img) imgs.push(p.img);
+                }
+            });
         }
+        if(imgs.length === 0) imgs.push(b.imagem || '/site/img/produtos/cesta.webp');
+        while(imgs.length < 4) { imgs.push(imgs[0]); } 
+
+        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
+
         html += `
-        <div class="category-card" style="border-color: ${color};" onclick="openKitLateralView('${b.id}', 'COMBO')">
-            <div class="category-img-wrapper">
-                <img src="${imgKit}" loading="lazy" alt="${b.nome}" onerror="this.src='/site/img/produtos/cesta.webp'">
+        <div class="category-card" onclick="openKitLateralView('${b.id}', 'COMBO')">
+            <div class="category-img-grid">${imgsHtml}</div>
+            <div class="category-text-area">
+                <div class="category-title">${b.nome}</div>
             </div>
-            <div class="category-title">${b.nome}</div>
         </div>`;
     });
     html += '</div>';
@@ -929,21 +959,26 @@ window.openSupermercadoMenu = function(customBanner = '') {
     let html = '<div class="grid-categorias-cards">';
     
     let cats = [];
-    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', img: STATE.deptos['desc_20'].data[0].img });
-    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', img: STATE.deptos['desc_15'].data[0].img });
-    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', img: STATE.deptos['desc_10'].data[0].img });
+    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', data: STATE.deptos['desc_20'].data });
+    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', data: STATE.deptos['desc_15'].data });
+    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', data: STATE.deptos['desc_10'].data });
 
     let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
-    dynamic.forEach(d => cats.push({ id: d.id, title: d.title, img: d.data[0].img }));
+    dynamic.forEach(d => cats.push({ id: d.id, title: d.title, data: d.data }));
 
-    cats.forEach((c, idx) => {
-        let color = SOBER_COLORS[idx % SOBER_COLORS.length];
+    cats.forEach((c) => {
+        let imgs = c.data.map(p => p.img).filter(src => src);
+        if(imgs.length === 0) imgs.push('/site/img/produtos/cesta.webp');
+        while(imgs.length < 4) { imgs.push(imgs[0]); } // Repete se tiver menos que 4 produtos
+
+        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
+
         html += `
-        <div class="category-card" style="border-color: ${color};" onclick="openDepto('${c.id}')">
-            <div class="category-img-wrapper">
-                <img src="${c.img}" loading="lazy" alt="${c.title}" onerror="this.src='/site/img/produtos/cesta.webp'">
+        <div class="category-card" onclick="openDepto('${c.id}')">
+            <div class="category-img-grid">${imgsHtml}</div>
+            <div class="category-text-area">
+                <div class="category-title">${c.title}</div>
             </div>
-            <div class="category-title">${c.title}</div>
         </div>`;
     });
     html += '</div>';
