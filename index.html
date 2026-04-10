@@ -789,10 +789,10 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-// Paleta de tons sóbrios, modernos e fechados para as categorias
-const SOBER_COLORS = [
-    '#334155', '#1e3a8a', '#0f766e', '#065f46', '#701a75', '#9f1239', 
-    '#9a3412', '#3f6212', '#115e59', '#312e81', '#4c1d95', '#86198f'
+// Paleta de cores mais claras e suaves para a borda superior
+const LIGHT_ACCENT_COLORS = [
+    '#93c5fd', '#86efac', '#fca5a5', '#fdba74', '#d8b4fe', '#f9a8d4', 
+    '#6ee7b7', '#c4b5fd', '#fcd34d', '#7dd3fc', '#f87171', '#a7f3d0'
 ];
 
 function catToId(name) {
@@ -897,7 +897,7 @@ window.openCestasMenu = function() {
     STATE.viewStack = 'MENU_GRID';
     let html = '<div class="grid-categorias-cards">';
     STATE.baskets.forEach((b, idx) => {
-        let color = SOBER_COLORS[idx % SOBER_COLORS.length]; // Sorteia a cor
+        let color = LIGHT_ACCENT_COLORS[idx % LIGHT_ACCENT_COLORS.length]; // Puxa a cor clarinha
         let imgs = [];
         if(b.produtos && b.produtos.length > 0) {
             b.produtos.forEach(prodString => {
@@ -931,7 +931,7 @@ window.openKitsMenu = function() {
     STATE.viewStack = 'MENU_GRID';
     let html = '<div class="grid-categorias-cards">';
     STATE.combos.forEach((b, idx) => {
-        let color = SOBER_COLORS[idx % SOBER_COLORS.length]; // Sorteia a cor
+        let color = LIGHT_ACCENT_COLORS[idx % LIGHT_ACCENT_COLORS.length]; // Puxa a cor clarinha
         let imgs = [];
         if(b.produtos && b.produtos.length > 0) {
             b.produtos.forEach(prodString => {
@@ -973,7 +973,7 @@ window.openSupermercadoMenu = function(customBanner = '') {
     dynamic.forEach(d => cats.push({ id: d.id, title: d.title, data: d.data }));
 
     cats.forEach((c, idx) => {
-        let color = SOBER_COLORS[idx % SOBER_COLORS.length]; // Sorteia a cor
+        let color = LIGHT_ACCENT_COLORS[idx % LIGHT_ACCENT_COLORS.length]; // Puxa a cor clarinha
         let imgs = c.data.map(p => p.img).filter(src => src);
         if(imgs.length === 0) imgs.push('/site/img/produtos/cesta.webp');
         while(imgs.length < 4) { imgs.push(imgs[0]); }
