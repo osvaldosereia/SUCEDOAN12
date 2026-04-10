@@ -20,9 +20,7 @@
     --c-err: #ef4444;     
     --c-bg: #ffffff;      
     --c-bd: #f1f5f9;      
-    
     --c-img-bg: #f1f5f9;  
-    
     --font: 'Inter', system-ui, sans-serif;
 }
 
@@ -37,6 +35,7 @@ img { user-select: none; }
 button { cursor: pointer; border: none; background: 0 0; font-family: inherit; font-weight: 500; }
 
 .layout-limit { width: 100%; max-width: 1000px; margin: 0 auto; position: relative; } 
+.content-limit { width: 100%; max-width: 1000px; margin: 0 auto; }
 
 .header-row { 
     display: flex; align-items: center; justify-content: space-between; 
@@ -76,17 +75,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .sub-btn:active { transform: scale(0.98); opacity: 0.9; }
 
-.mobile-capa-topo {
-    width: 100%; height: 130px; max-height: 150px; object-fit: cover; display: block;
-}
-
-@media (min-width: 800px) {
-    .mobile-capa-topo { display: none; }
-}
+.mobile-capa-topo { width: 100%; height: 130px; max-height: 150px; object-fit: cover; display: block; }
+@media (min-width: 800px) { .mobile-capa-topo { display: none; } }
 @media (max-width: 799px) {
-    .logo-top {
-        width: 65px; height: 65px; margin-top: -35px; border: 3px solid #fff; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
+    .logo-top { width: 65px; height: 65px; margin-top: -35px; border: 3px solid #fff; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     .header-row { padding-top: 8px; }
 }
 
@@ -95,69 +87,106 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: #ffffff;
 }
 
-/* Grids Unificados e Padronizados */
 .grid-home-sections { 
-    display: grid; grid-template-columns: 1fr; gap: 12px; 
-    padding: 20px 15px 10px; max-width: 1000px; margin: 0 auto; 
+    display: grid; grid-template-columns: 1fr; gap: 10px; 
+    padding: 15px 15px 25px; max-width: 1000px; margin: 0 auto; 
 }
-@media(min-width: 800px) { 
-    .grid-home-sections { grid-template-columns: repeat(3, 1fr); gap: 16px; } 
-}
-
-.grid-categorias {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
-}
-@media(min-width: 800px) { 
-    .grid-categorias { grid-template-columns: repeat(5, 1fr); gap: 16px; } 
-}
+@media(min-width: 800px) { .grid-home-sections { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
 
 .home-card { 
-    border-radius: 16px; padding: 12px 10px; display: flex; flex-direction: column; 
+    border-radius: 12px; padding: 12px 10px; display: flex; flex-direction: column; 
     align-items: center; justify-content: center; gap: 8px; text-align: center;
     cursor: pointer; transition: transform 0.2s, background 0.2s;
-    aspect-ratio: 1 / 0.8; position: relative; overflow: hidden; background: var(--c-img-bg); 
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    position: relative; overflow: hidden; background: var(--c-img-bg); 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 .home-card:hover { filter: brightness(0.95); transform: translateY(-2px); }
 .home-card:active { transform: scale(0.96); }
 
-.home-card-icon { font-size: 2.5rem; z-index: 2; margin-bottom: 2px; line-height: 1; color: #fff; font-weight: 800; }
-.home-card-title { color: #fff; font-size: 1rem; font-weight: 700; line-height: 1.2; z-index: 2; }
-.home-card-subtitle { display: block; color: #ffffff; font-size: 0.85rem; font-weight: 400; opacity: 0.9; margin-top: 4px;}
+.home-card.highlighted.short-btn {
+    min-height: 48px;
+    padding: 10px 15px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 15px;
+    align-items: center;
+}
+.home-card.highlighted.short-btn .home-card-icon { font-size: 1.6rem; margin-bottom: 0; color: #fff; font-weight: 800; }
+.home-card.highlighted.short-btn .home-card-title { font-size: 1.05rem !important; color: #fff; font-weight: 700; text-align: left; line-height: 1.2; z-index: 2; }
+
+/* === NOVO LAYOUT DE BOTÕES PASTEL === */
+.grid-pastel {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+@media(min-width: 800px) {
+    .grid-pastel { grid-template-columns: repeat(8, 1fr); gap: 14px; }
+}
+
+.pastel-card {
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 12px 6px;
+    height: 100%;
+    align-items: center;
+}
+.pastel-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.pastel-card:active { transform: scale(0.96); }
+
+.pastel-img-wrapper {
+    width: 100%;
+    aspect-ratio: 1/1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+.pastel-img-wrapper img {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    mix-blend-mode: multiply; /* A mágica que remove o fundo branco */
+}
+.pastel-title {
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: var(--c-p);
+    text-align: center;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.15;
+    margin-top: 2px;
+}
+.pastel-price {
+    font-size: 0.80rem;
+    font-weight: 800;
+    color: #0f766e;
+    text-align: center;
+    margin-top: 4px;
+}
 
 .qr-main-title {
     max-width: 1000px; margin: 25px auto 15px; padding: 0 15px 5px;    
     font-size: 1.2rem; font-weight: 800; color: var(--c-p); border-bottom: 2px solid var(--c-bd); 
 }
 
-/* TV Antonia - Agora é GRID nativo sem carrossel */
-.home-tv-grid {
-    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
-}
-@media (min-width: 800px) {
-    .home-tv-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; }
-}
+.home-tv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+@media (min-width: 800px) { .home-tv-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; } }
 
-.home-tv-item {
-    aspect-ratio: 9 / 16; background: #000; border-radius: 12px; position: relative; overflow: hidden; display: flex; flex-direction: column;
-}
-.home-tv-thumb {
-    width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer;
-}
-.home-tv-play {
-    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-    width: 40px; height: 40px; background: rgba(255,255,255,0.3); color: #fff;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; z-index: 2; backdrop-filter: blur(4px); padding-left: 3px; pointer-events: none;
-}
-
-.home-tv-prod {
-    position: absolute; bottom: 8px; left: 8px; right: 8px;
-    background: rgba(255,255,255,0.95); border-radius: 8px; padding: 6px;
-    display: flex; align-items: center; gap: 6px; z-index: 10;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer;
-}
-
+.home-tv-item { aspect-ratio: 9 / 16; background: #000; border-radius: 12px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.home-tv-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer; }
+.home-tv-play { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(255,255,255,0.3); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; z-index: 2; backdrop-filter: blur(4px); padding-left: 3px; pointer-events: none; }
+.home-tv-prod { position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 6px; display: flex; align-items: center; gap: 6px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; }
 .home-tv-prod-img { width: 32px; height: 32px; border-radius: 6px; mix-blend-mode: multiply; object-fit: contain; }
 .home-tv-prod-btn { margin-left: auto; background: var(--c-p); color: #fff; border: none; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
 
@@ -168,13 +197,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); 
     z-index: 95; cursor: pointer; transition: transform 0.2s, opacity 0.2s, bottom 0.3s;
 }
-
 .floating-cart:active { transform: translateX(-50%) scale(0.96); }
 .fc-left { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 1rem; }
 .fc-badge { background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;}
 .fc-right { font-weight: 700; font-size: 1.1rem; }
 
-/* Visualização Lateral */
+/* Visualização Lateral e Topo/Rodapé Centralizados */
 .lateral-view {
     position: fixed; top: 0; left: 100%; width: 100%; height: 100dvh; background: var(--c-bg);
     z-index: 90; transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column;
@@ -197,6 +225,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     padding: 12px 15px; background: #ffffff; border-bottom: 1px solid var(--c-bd); 
     display: flex; flex-direction: row; gap: 10px; position: sticky; top: 0; z-index: 50; 
     align-items: center; flex-wrap: wrap; 
+}
+.see-all-footer { 
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; 
+    background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 80; display: flex; flex-direction: column; gap: 10px; 
+}
+.checkout-footer { 
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; 
+    background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 10; 
 }
 
 .search-wrapper-aba { position: relative; flex: 1; min-width: 140px; }
@@ -248,7 +284,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: var(--c-img-bg); border-radius: 8px; height: 38px; margin-top: 12px; width: 100%; overflow: hidden;}
 .card-qty-ctrl button { font-size: 1.2rem; background: transparent; color: var(--c-p); border: none; width: 38px; height: 100%; display: flex; align-items: center; justify-content: center; transition: background 0.2s;}
 .card-qty-ctrl span { font-weight: 600; font-size: 0.95rem; color: var(--c-p); flex: 1; text-align: center;}
-.see-all-footer { position: absolute; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 80; display: flex; flex-direction: column; gap: 10px; }
 .expander-total { font-size: 1rem; font-weight: 600; color: var(--c-p); text-align: center; }
 
 dialog { border: none; border-radius: 16px; width: 92%; max-width: 450px; padding: 0; box-shadow: 0 10px 40px rgba(0,0,0,0.15); background: #fff; }
@@ -269,44 +304,10 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .chk-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--c-bd); }
 .chk-section-title { font-weight: 600; font-size: 1.05rem; color: var(--c-p); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
 
-#chk-list { 
-    display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 16px; 
-    margin-bottom: 15px; 
-}
-.chk-item-card { 
-    border: none; 
-    border-radius: 12px; 
-    padding: 10px 8px; 
-    background: var(--c-img-bg); 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    gap: 8px; 
-    text-align: center;
-}
-.chk-item-card img { 
-    width: 100%; 
-    aspect-ratio: 1/1.2; 
-    object-fit: contain; 
-    background: transparent; 
-    border-radius: 0; 
-    padding: 10%;
-    mix-blend-mode: multiply;
-}
-.chk-item-card .name { 
-    font-size: 0.8rem; 
-    font-weight: 500; 
-    color: var(--c-p); 
-    line-height: 1.2; 
-    flex: 1; 
-    display: -webkit-box; 
-    -webkit-line-clamp: 2; 
-    -webkit-box-orient: vertical; 
-    overflow: hidden;
-    width: 100%;
-}
+#chk-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 15px; }
+.chk-item-card { border: none; border-radius: 12px; padding: 10px 8px; background: var(--c-img-bg); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.chk-item-card img { width: 100%; aspect-ratio: 1/1.2; object-fit: contain; background: transparent; border-radius: 0; padding: 10%; mix-blend-mode: multiply; }
+.chk-item-card .name { font-size: 0.8rem; font-weight: 500; color: var(--c-p); line-height: 1.2; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; }
 
 .del-option { display: flex; justify-content: space-between; align-items: center; padding: 14px; border: 1px solid var(--c-bd); border-radius: 8px; cursor: pointer; background: #fff; margin-bottom: 8px; transition: 0.2s;}
 .del-option.selected { border-color: var(--c-p); background: var(--c-img-bg);}
@@ -318,8 +319,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .pay-opt { padding: 12px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: var(--c-p); background: var(--c-img-bg); user-select: none; flex: 1; min-width: 45%; text-align: center; transition: 0.2s;}
 .pay-opt.selected { background: var(--c-p); color: #fff; font-weight: 600;}
 .input-error { border: 1px solid var(--c-err) !important; background-color: #fef2f2 !important; }
-
-.checkout-footer { position: absolute; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 10; }
 .btn-big-action { width: 100%; background: var(--c-p); color: #fff; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: flex; justify-content: center; align-items: center; border: none; transition: 0.2s;}
 
 .u-card-minimal { 
@@ -343,7 +342,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .u-price-minimal { font-size: 1.05rem; font-weight: 700; color: var(--c-p); line-height: 1; }
 .u-tag-discount { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 6px; font-weight: 700; border-radius: 6px; }
 
-/* Asymmetrical Grid Mobile */
 @media (max-width: 799px) {
     .grid-ver-todos:not(.grid-cestas-kits) > .u-card-minimal:nth-child(7n) {
         grid-column: span 2; display: flex; flex-direction: row; background: var(--c-img-bg); padding: 12px; border-radius: 12px; gap: 15px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.03);
@@ -458,7 +456,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
 </main>
 
-<div id="floating-cart" class="floating-cart" onclick="openCheckout()" style="display: none;">
+<div id="floating-cart" class="floating-cart content-limit" onclick="openCheckout()" style="display: none;">
     <div class="fc-left">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
         <span class="fc-badge" id="fc-count">0 itens</span>
@@ -469,7 +467,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 <div id="generic-overlay" onclick="closeGenericOverlay()"></div>
 
 <div id="menu-grid-view" class="lateral-view">
-    <div class="see-all-header">
+    <div class="see-all-header content-limit">
         <button class="see-all-back" onclick="closeMenuGrid()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
@@ -483,7 +481,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 </div>
 
 <div id="global-search-view" class="lateral-view quick-view">
-    <div class="see-all-header" style="gap: 10px;">
+    <div class="see-all-header content-limit" style="gap: 10px;">
         <button class="see-all-back" onclick="closeGlobalSearch()" style="margin-right: 0;">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
         </button>
@@ -500,7 +498,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 </div>
 
 <div id="store-rules-view" class="lateral-view quick-view">
-    <div class="see-all-header">
+    <div class="see-all-header content-limit">
         <button class="see-all-back" onclick="closeStoreRules()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
@@ -524,7 +522,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 </div>
 
 <div id="see-all-view" class="lateral-view">
-    <div class="see-all-header">
+    <div class="see-all-header content-limit">
         <button class="see-all-back" onclick="handleLateralBack()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
@@ -535,7 +533,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         </div>
     </div>
     
-    <div class="see-all-controls" id="see-all-controls" style="display:none;">
+    <div class="see-all-controls content-limit" id="see-all-controls" style="display:none;">
         <div class="filters-row" id="normal-filters">
             <div class="custom-dropdown" id="dropdown-keyword">
                 <div class="custom-dropdown-btn" onclick="toggleDropdown('keyword', event)">
@@ -553,12 +551,6 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
                     <div class="custom-dropdown-item" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
                 </div>
             </div>
-            <div class="custom-dropdown" id="dropdown-marcas" style="display:none;">
-                <div class="custom-dropdown-btn" onclick="toggleDropdown('marcas', event)">
-                    <span id="label-marcas">Marca</span> <span>▼</span>
-                </div>
-                <div class="custom-dropdown-list" id="list-marcas"></div>
-            </div>
         </div>
     </div>
 
@@ -567,11 +559,11 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         <div class="grid-ver-todos" id="see-all-grid"></div>
     </div>
     
-    <div id="see-all-footer" class="see-all-footer" style="display:none;"></div>
+    <div id="see-all-footer" class="see-all-footer content-limit" style="display:none;"></div>
 </div>
 
 <div id="quick-view-lateral" class="lateral-view quick-view">
-    <div class="see-all-header">
+    <div class="see-all-header content-limit">
         <button class="see-all-back" onclick="closeQuickView()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
@@ -601,7 +593,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 </div>
 
 <div id="video-feed-view" class="lateral-view">
-    <div class="see-all-header">
+    <div class="see-all-header content-limit">
         <button class="see-all-back" onclick="closeVideoFeed()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Início
@@ -619,7 +611,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 </div>
 
 <div id="info-view" class="lateral-view">
-    <div class="see-all-header">
+    <div class="see-all-header content-limit">
         <button class="see-all-back" onclick="closeInfoView()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
@@ -654,15 +646,6 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             </div>
         </a>
 
-        <h4 style="margin-bottom: 10px; margin-top: 25px; color: var(--c-p); font-size: 1rem;">Onde Estamos</h4>
-        <a href="https://www.google.com/maps/search/?api=1&query=Super+Cestas+Básicas+Dona+Antônia+Cuiabá+R.+Trinta,+105" target="_blank" class="info-box-item">
-            <div class="info-icon-area">📍</div>
-            <div>
-                <div style="font-weight: 500;">Abrir no Maps</div>
-                <div style="font-size: 0.85rem; color: var(--c-s);">R. Trinta, 105 - Jd N. Sra. Aparecida<br>Cuiabá - MT, 78090-660</div>
-            </div>
-        </a>
-
         <div style="background: var(--c-img-bg); border: 1px solid var(--c-bd); padding: 20px; border-radius: 12px; text-align: center; margin-top: 25px;">
             <div style="font-size: 2.5rem; font-weight: 700; color: var(--c-p); line-height: 1;">5,0</div>
             <div style="color: #f59e0b; font-size: 1.5rem; margin-bottom: 5px;">★★★★★</div>
@@ -674,7 +657,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 </div>
 
 <div id="checkout-view" class="lateral-view">
-    <div class="see-all-header">
+    <div class="see-all-header content-limit">
         <button class="see-all-back" onclick="closeCheckout()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
             Voltar
@@ -682,27 +665,27 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         <h2 class="see-all-title">Finalizar Pedido</h2>
     </div>
     <div class="see-all-content" style="text-align: left; padding: 15px 15px 220px;">
-        <div class="chk-section">
+        <div class="chk-section content-limit">
             <h3 class="chk-section-title">Seus Produtos</h3>
             <div id="chk-list"></div>
             <button class="btn-modal secondary" style="border: 1px dashed var(--c-s); background: transparent;" onclick="closeCheckout();">Adicionar mais itens</button>        
         </div>
-        <div class="chk-section">
+        <div class="chk-section content-limit">
             <h3 class="chk-section-title">Entrega</h3>
             <p style="font-size: 0.85rem; color: var(--c-s); margin-top: -6px; margin-bottom: 12px;">Planeje e ganhe desconto.</p>
             <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
         </div>
-        <div class="chk-section" style="background: transparent; border: none; padding: 0 10px;">
+        <div class="chk-section content-limit" style="background: transparent; border: none; padding: 0 10px;">
             <div id="chk-summary-lines" style="font-size: 0.9rem; font-weight: 400; color: var(--c-s); line-height: 1.8;"></div>
         </div>
-        <div class="chk-section">
+        <div class="chk-section content-limit">
             <h3 class="chk-section-title">Dados Pessoais</h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <input type="text" id="chk-nome" class="input-chk" placeholder="Nome Completo">
                 <input type="text" id="chk-cpf" class="input-chk" placeholder="CPF">
             </div>
         </div>
-        <div class="chk-section" style="margin-bottom: 25px;">
+        <div class="chk-section content-limit" style="margin-bottom: 25px;">
             <h3 class="chk-section-title">Pagamento</h3>
             <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 10px;">
                 <div class="pay-opt" onclick="selectPayment('Dinheiro', this)">💵 Dinheiro</div>
@@ -714,12 +697,12 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             <input type="hidden" id="chk-pagamento" value="">
         </div>
         
-        <div style="margin-bottom: 15px; display: flex; gap: 10px; justify-content: center;">
+        <div class="content-limit" style="margin-bottom: 15px; display: flex; gap: 10px; justify-content: center;">
             <button class="btn-modal secondary" style="color: var(--c-err); padding: 12px; flex: 1;" onclick="clearCart()">Esvaziar</button>
             <button class="btn-modal secondary" style="padding: 12px; flex: 1;" onclick="saveCart()">Salvar</button>
         </div>
     </div>
-    <div class="checkout-footer">
+    <div class="checkout-footer content-limit">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span style="font-weight: 500; color: var(--c-s); font-size: 0.9rem;">Total a pagar</span>
             <span style="font-weight: 700; font-size: 1.3rem; color: var(--c-p); line-height: 1;" id="chk-total-fixed">R$ 0,00</span>
@@ -752,6 +735,13 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
+
+// Paleta de tons pastéis elegantes e suaves para os botões das categorias
+const PASTEL_COLORS = [
+    '#fef08a', '#bbf7d0', '#bfdbfe', '#ddd6fe', '#fbcfe8', '#fed7aa', 
+    '#d9f99d', '#a5f3fc', '#e9d5ff', '#fecdd3', '#fef9c3', '#cffafe',
+    '#ffedd5', '#ecbcc4', '#bbf7d0', '#fbcfe8'
+];
 
 function catToId(name) {
     if (!name) return 'cat_outros';
@@ -822,10 +812,10 @@ function renderHomeCards() {
     const cards = [
         { title: 'Cestas Básicas', action: "openCestasMenu()", icon: '🛒', color: '#075985' },
         { title: 'Supermercado', action: "openSupermercadoMenu()", icon: '🛍️', color: '#0f766e' },
-        { title: 'Kits Promocionais', action: "openKitsMenu()", icon: '🎁', color: '#b45309' }
+        { title: 'Kits Promo', action: "openKitsMenu()", icon: '🎁', color: '#b45309' }
     ];
     let html = cards.map(c => `
-        <div class="home-card highlighted" onclick="${c.action}" style="background: ${c.color} !important; border-color: ${c.color} !important;">
+        <div class="home-card highlighted short-btn" onclick="${c.action}" style="background: ${c.color} !important; border-color: ${c.color} !important;">
             <div class="home-card-icon">${c.icon}</div>
             <div class="home-card-title">${c.title}</div>
         </div>
@@ -853,12 +843,24 @@ function renderHomeOfertas() {
 window.openCestasMenu = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
-    let html = '<div class="grid-categorias">';
-    STATE.baskets.forEach(b => {
+    let html = '<div class="grid-pastel">';
+    STATE.baskets.forEach((b, idx) => {
+        let color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
+        let imgCesta = '/site/img/produtos/cesta.webp'; 
+        if(b.produtos && b.produtos.length > 0) {
+            let partes = String(b.produtos[0]).split('x');
+            if (partes.length > 1) {
+                let p = STATE.prods.find(x => String(x.id) === partes[1].trim()); 
+                if (p && p.img) imgCesta = p.img;
+            }
+        }
         html += `
-        <div class="home-card highlighted" onclick="openKitLateralView('${b.id}', 'BASKET')" style="background: #075985 !important; border-color: #075985 !important;">
-            <div class="home-card-icon">🧺</div>
-            <div class="home-card-title">${b.nome}</div>
+        <div class="pastel-card" style="background: ${color};" onclick="openKitLateralView('${b.id}', 'BASKET')">
+            <div class="pastel-img-wrapper">
+                <img src="${imgCesta}" loading="lazy" alt="${b.nome}" onerror="this.src='/site/img/produtos/cesta.webp'">
+            </div>
+            <div class="pastel-title">${b.nome}</div>
+            <div class="pastel-price">${fmt(b.preco)}</div>
         </div>`;
     });
     html += '</div>';
@@ -868,12 +870,23 @@ window.openCestasMenu = function() {
 window.openKitsMenu = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
-    let html = '<div class="grid-categorias">';
-    STATE.combos.forEach(b => {
+    let html = '<div class="grid-pastel">';
+    STATE.combos.forEach((b, idx) => {
+        let color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
+        let imgKit = '/site/img/produtos/cesta.webp';
+        if(b.produtos && b.produtos.length > 0) {
+            let partes = String(b.produtos[0]).split('x');
+            if (partes.length > 1) {
+                let p = STATE.prods.find(x => String(x.id) === partes[1].trim()); 
+                if (p && p.img) imgKit = p.img;
+            }
+        }
         html += `
-        <div class="home-card highlighted" onclick="openKitLateralView('${b.id}', 'COMBO')" style="background: #b45309 !important; border-color: #b45309 !important;">
-            <div class="home-card-icon">🎁</div>
-            <div class="home-card-title">${b.nome}</div>
+        <div class="pastel-card" style="background: ${color};" onclick="openKitLateralView('${b.id}', 'COMBO')">
+            <div class="pastel-img-wrapper">
+                <img src="${imgKit}" loading="lazy" alt="${b.nome}" onerror="this.src='/site/img/produtos/cesta.webp'">
+            </div>
+            <div class="pastel-title">${b.nome}</div>
         </div>`;
     });
     html += '</div>';
@@ -883,26 +896,29 @@ window.openKitsMenu = function() {
 window.openSupermercadoMenu = function(customBanner = '') {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
-    let html = '<div class="grid-categorias">';
+    let html = '<div class="grid-pastel">';
     
     let cats = [];
-    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', icon: '🏷️', color: '#10b981' });
-    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', icon: '🏷️', color: '#10b981' });
-    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', icon: '🏷️', color: '#10b981' });
+    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', img: STATE.deptos['desc_20'].data[0].img });
+    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', img: STATE.deptos['desc_15'].data[0].img });
+    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', img: STATE.deptos['desc_10'].data[0].img });
 
     let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
-    dynamic.forEach(d => cats.push({ id: d.id, title: d.title, icon: '🛒', color: '#0f766e' }));
+    dynamic.forEach(d => cats.push({ id: d.id, title: d.title, img: d.data[0].img }));
 
-    cats.forEach(c => {
+    cats.forEach((c, idx) => {
+        let color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
         html += `
-        <div class="home-card highlighted" onclick="openDepto('${c.id}')" style="background: ${c.color} !important; border-color: ${c.color} !important;">
-            <div class="home-card-icon">${c.icon}</div>
-            <div class="home-card-title">${c.title}</div>
+        <div class="pastel-card" style="background: ${color};" onclick="openDepto('${c.id}')">
+            <div class="pastel-img-wrapper">
+                <img src="${c.img}" loading="lazy" alt="${c.title}" onerror="this.src='/site/img/produtos/cesta.webp'">
+            </div>
+            <div class="pastel-title">${c.title}</div>
         </div>`;
     });
     html += '</div>';
     
-    let bannerHtml = customBanner ? `<div style="background: var(--c-ok); color: #fff; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 20px;">${customBanner}</div>` : '';
+    let bannerHtml = customBanner ? `<div class="content-limit" style="background: var(--c-ok); color: #fff; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 20px;">${customBanner}</div>` : '';
     showGenericGrid('Supermercado', bannerHtml + html);
 };
 
@@ -1393,7 +1409,6 @@ window.openDepto = function(deptoId) {
     }
     
     document.getElementById('see-all-controls').style.display = 'flex'; 
-    document.getElementById('see-all-footer').style.display = 'none'; 
     
     document.getElementById('normal-filters').style.display = 'none';
     if (document.getElementById('dropdown-marcas')) document.getElementById('dropdown-marcas').style.display = 'none';
@@ -1420,7 +1435,6 @@ window.openDepto = function(deptoId) {
     if (d.type === 'BASKET' || d.type === 'COMBO') { 
         grid.classList.add('grid-cestas-kits'); 
     }
-    document.getElementById('cesta-info-banner').innerHTML = '';
 
     document.getElementById('see-all-view').classList.add('open');
     
@@ -1488,7 +1502,6 @@ window.handleLateralBack = function() {
 
 window.closeSeeAll = function(isFromBrowser = false) {
     document.getElementById('see-all-view').classList.remove('open');
-    document.getElementById('see-all-footer').style.display = 'none'; 
     STATE.viewStack = 'MENU_GRID'; setTimeout(() => { document.getElementById('see-all-grid').innerHTML = ''; }, 300);
     updateTotals();
     if (!isFromBrowser && history.state && history.state.lateralOpen) history.back();
@@ -1510,12 +1523,8 @@ window.addEventListener('popstate', function(event) {
     else if (searchView && searchView.classList.contains('open')) closeGlobalSearch();
     else if (storeRulesView && storeRulesView.classList.contains('open')) closeStoreRules();
     else if (checkoutView && STATE.checkoutOpen) closeCheckout();
-    else if (lateralView && lateralView.classList.contains('open')) {
-        closeSeeAll(true);
-    } 
-    else if (menuGridView && menuGridView.classList.contains('open')) {
-        closeMenuGrid();
-    }
+    else if (lateralView && lateralView.classList.contains('open')) { closeSeeAll(true); } 
+    else if (menuGridView && menuGridView.classList.contains('open')) { closeMenuGrid(); }
 });
 
 let expanderState = { id: null, type: null, basePrice: 0, originalSum: 0, priceOffset: 0, items: {}, originalItems: {}, discountLost: false, orderedIds: [], sourceObj: null, currentDisplayPrice: 0 };
@@ -1545,17 +1554,6 @@ window.openKitLateralView = function(id, type) {
     });
 
     expanderState.priceOffset = type === 'BASKET' ? Math.max(0, sourceObj.preco - expanderState.originalSum) : 0;
-
-    if(type === 'BASKET') {
-        document.getElementById('cesta-info-banner').innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
-            <div style="background: var(--c-img-bg); border: 1px solid var(--c-bd); color: var(--c-p); padding: 12px; border-radius: 8px; font-weight: 500; font-size: 0.9rem; text-align: center; line-height: 1.4;">
-                🧺 Estes são os produtos desta cesta. Você pode alterar as quantidades.
-            </div>
-        </div>`;
-    } else {
-        document.getElementById('cesta-info-banner').innerHTML = '';
-    }
 
     let currentSum = 0;
     let itemsHtml = expanderState.orderedIds.map(pId => { 
@@ -1690,7 +1688,6 @@ function buildCardHtml(item, type) {
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
     let name = item.name || item.nome; 
     let pPrice = item.price || item.preco;
-    let isKit = type === 'COMBO'; let isBasket = type === 'BASKET';
     let isEsgotado = (item.stock <= 0);
     let qty = STATE.cart[id] || 0;
     
