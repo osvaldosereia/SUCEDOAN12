@@ -130,7 +130,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
     
 .category-card {
-    background: #f1f5f9 !important; /* Fundo cinza claro padronizado */
+    background: #f1f5f9 !important; 
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -138,44 +138,45 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    padding: 10px 8px;
+    padding: 12px 10px; /* Mais espaço para respirar */
     height: 100%;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start; /* Faz o texto ficar mais bem posicionado logo abaixo da foto */
 }
 .category-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
 .category-card:active { transform: scale(0.96); }
 
 .category-img-wrapper {
     width: 100%;
-    aspect-ratio: 1/1;
-    background: transparent; /* Deixa o fundo transparente para aparecer a cor do botão */
+    aspect-ratio: 1 / 0.85; /* Deixa a área da foto um pouco mais curta, dando o formato vertical ao botão */
+    background: transparent; 
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 8px;
-    padding: 0; /* Removido o espaço interno para a imagem crescer ao máximo */
+    margin-bottom: 12px; /* Mais espaço entre a foto e o nome */
+    padding: 0; 
 }
 .category-img-wrapper img {
-    width: 100%; /* Aumentado para 100% para a foto ficar maior */
+    width: 100%; 
     height: 100%;
     object-fit: contain;
-    mix-blend-mode: multiply; /* A lente que faz o fundo branco da foto sumir no botão colorido */
-    /* Dica: se a foto ficar muito escura, troque "multiply" por "darken" */
+    mix-blend-mode: multiply; 
 }
    .category-title {
-    font-size: 0.75rem;
-    font-weight: 700; /* Letra um pouco mais grossa para destacar */
-    color: #1e293b !important; /* Texto escuro/preto */
+    font-size: 0.85rem; /* Fonte um pouco maior */
+    font-weight: 500; /* Fonte mais leve/fina */
+    color: #1e293b !important; /* Texto escuro */
     text-align: left;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3; /* Agora permite até 3 linhas antes de colocar os "..." */
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.2;
+    line-height: 1.3; /* Espaçamento melhor para leitura */
     width: 100%;
     margin-bottom: 4px;
+    min-height: 48px; /* Garante um espaço fixo para o texto não empurrar os botões */
 }
+
 .category-price {
     font-size: 0.85rem;
     font-weight: 800;
@@ -183,7 +184,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     text-align: left;
     width: 100%;
 }
-
 .qr-main-title {
     max-width: 1000px; margin: 25px auto 15px; padding: 0 15px 5px;    
     font-size: 1.2rem; font-weight: 800; color: var(--c-p); border-bottom: 2px solid var(--c-bd); 
