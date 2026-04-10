@@ -153,7 +153,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     width: 90%;
     height: 90%;
     object-fit: contain;
-    mix-blend-mode: multiply; /* A mágica que remove o fundo branco */
+    /* Troca o 'multiply' pelo 'darken' para manter a cor original do produto mais forte */
+    mix-blend-mode: darken; 
 }
 .pastel-title {
     font-size: 0.70rem;
@@ -736,11 +737,11 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-// Paleta de tons pastéis elegantes e suaves para os botões das categorias
+// Paleta de tons pastéis 30% mais claros (suaves)
 const PASTEL_COLORS = [
-    '#fef08a', '#bbf7d0', '#bfdbfe', '#ddd6fe', '#fbcfe8', '#fed7aa', 
-    '#d9f99d', '#a5f3fc', '#e9d5ff', '#fecdd3', '#fef9c3', '#cffafe',
-    '#ffedd5', '#ecbcc4', '#bbf7d0', '#fbcfe8'
+    '#fefce8', '#dcfce7', '#eff6ff', '#f5f3ff', '#fdf2f8', '#fff7ed', 
+    '#f7fee7', '#ecfeff', '#faf5ff', '#fff1f2', '#fefce8', '#ecfeff',
+    '#fff7ed', '#fce7f3', '#dcfce7', '#fdf2f8'
 ];
 
 function catToId(name) {
