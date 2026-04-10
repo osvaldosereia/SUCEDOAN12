@@ -1015,25 +1015,40 @@ window.openVideoFeed = function(targetVideoId = null) {
             htmlCatsTV += `<div class="custom-dropdown-item" onclick="selectTvCategory('${idCat}', '${STATE.deptos[idCat].title}', event)" style="color:#fff; border-bottom-color: #222;">${STATE.deptos[idCat].title}</div>`;
         }
     });
-    document.getElementById('list-tv').innerHTML = htmlCatsTV;
+   document.getElementById('list-tv').innerHTML = htmlCatsTV;
     
     renderVideoFeedTrack(targetVideoId);
     
     if (!history.state || !history.state.videoOpen) history.pushState({ videoOpen: true }, '');
 }
 
-function renderVideoFeedTrack(targetVideoId = null) {
+// Variável global para controlar a quantidade de vídeos carregados por vez
+window.videoRenderLimit = 12; 
+
+function renderVideoFeedTrack(targetVideoId = null, append = false) {
     let filteredVideos = STATE.allVideos;
+    
+    // Aplica o filtro de categoria, se existir
     if (STATE.tvCategory !== 'all') {
         filteredVideos = STATE.allVideos.filter(v => catToId(v.product.categoria || "Outros") === STATE.tvCategory);
     }
     
+    // Se não houver vídeos, mostra a mensagem
     if(filteredVideos.length === 0) {
         $('v-feed-track').innerHTML = `<p style="color:#fff; text-align:center; padding:40px;">Nenhum vídeo nesta sessão.</p>`;
         return;
     }
 
-    let html = filteredVideos.map((v, index) => {
+    // Se for um novo carregamento (e não um clique no botão "Carregar Mais"), volta o limite para 12
+    if (!append) {
+        window.videoRenderLimit = 12;
+    }
+
+    // Corta a lista para mostrar apenas a quantidade definida no limite
+    let videosToShow = filteredVideos.slice(0, window.videoRenderLimit);
+
+    // Gera o HTML apenas dos vídeos permitidos (super leve para a memória)
+    let html = videosToShow.map((v, index) => {
         let videoElId = `feed-vid-${index}`;
         return `
         <div class="v-feed-item">
@@ -1052,13 +1067,31 @@ function renderVideoFeedTrack(targetVideoId = null) {
         </div>`;
     }).join('');
     
+    // Se ainda houver vídeos escondidos, adiciona o botão "Carregar Mais Vídeos" no final
+    if (filteredVideos.length > window.videoRenderLimit) {
+        html += `
+        <div style="grid-column: 1 / -1; display: flex; justify-content: center; padding: 20px 0;">
+            <button onclick="window.videoRenderLimit += 12; renderVideoFeedTrack(null, true)" style="background: var(--c-ok); color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; transition: 0.2s;">
+                Carregar Mais Vídeos
+            </button>
+        </div>`;
+    }
+    
     let track = $('v-feed-track');
     track.innerHTML = html;
     currentPlayingIndex = -1;
 
-    if (targetVideoId) {
+    // Lógica para quando um vídeo específico é clicado lá na tela inicial
+    if (targetVideoId && !append) {
         let targetIndex = filteredVideos.findIndex(v => v.videoId === targetVideoId);
         if (targetIndex !== -1) {
+            // Se o vídeo alvo estiver além do limite inicial de 12, aumentamos o limite para chegar até ele
+            if (targetIndex >= window.videoRenderLimit) {
+                window.videoRenderLimit = targetIndex + 12;
+                renderVideoFeedTrack(targetVideoId, true);
+                return;
+            }
+            
             setTimeout(() => {
                 let items = document.querySelectorAll('.v-feed-item');
                 if (items[targetIndex]) {
@@ -1069,6 +1102,12 @@ function renderVideoFeedTrack(targetVideoId = null) {
             return;
         }
     }
+    
+    // Volta a rolagem para o topo apenas se for uma nova categoria (para não atrapalhar o "Carregar Mais")
+    if(!append) {
+        track.scrollTo(0,0);
+    }
+}
     
     track.scrollTo(0,0);
 }
