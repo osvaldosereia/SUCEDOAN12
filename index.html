@@ -129,10 +129,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     }
 }
     
-/* === NOVO LAYOUT: BOTÕES COM GRID 2x2 === */
+/* === NOVO LAYOUT: TEXTO ACIMA E GRID 2x2 ABAIXO === */
 .category-card {
-    background: #f1f5f9 !important; /* Devolve a cor cinza clara */
-    border: none !important; /* Remove a borda antiga */
+    background: #f1f5f9 !important; /* Fundo cinza claro */
+    border: none !important; 
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -140,64 +140,67 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-    padding: 12px; /* Deixa o grid amplo dentro do botão */
+    padding: 16px 12px; /* Botão um pouco mais alto verticalmente */
     height: 100%;
 }
 .category-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
 .category-card:active { transform: scale(0.96); }
 
-/* Cria a grade 2x2 para as imagens */
-.category-img-grid {
-    width: 100%;
-    aspect-ratio: 1/1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 8px; /* Espaço entre as miniaturas */
-    margin-bottom: 12px;
-}
-
-/* Aplica o estilo, cantos arredondados e lente nas miniaturas */
-.category-img-grid img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 8px; /* Cantinhos arredondados nas pequenas fotos */
-    mix-blend-mode: multiply; /* A lente que some com o fundo branco */
-    background: transparent;
-}
-
-/* Área de texto que alinha tudo ao centro (Vertical e Horizontal) */
+/* Área de texto no topo, alinhada à esquerda */
 .category-text-area {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start; /* Alinha tudo à esquerda */
+    justify-content: flex-start;
     width: 100%;
+    margin-bottom: 16px; /* Empurra as fotos lá para baixo */
 }
 
 .category-title {
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 1.05rem; /* Fonte maior, com peso de título */
+    font-weight: 700; /* Letra mais grossa/pesada */
     color: #1e293b !important;
-    text-align: center; /* Texto centralizado */
+    text-align: left; /* Texto à esquerda */
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.2;
     width: 100%;
+    min-height: 38px; /* Mantém a altura organizada */
 }
 
 .category-price {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 800;
     color: #0f766e !important;
-    text-align: center; /* Preço centralizado */
+    text-align: left; /* Preço à esquerda */
     width: 100%;
     margin-top: 4px;
 }
+
+/* Cria a grade 2x2 para as imagens na base do botão */
+.category-img-grid {
+    width: 100%;
+    aspect-ratio: 1/1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 12px; /* Gap maior deixa as fotinhas um pouco menores e mais separadas */
+    padding: 0 8px; /* Afasta um pouco as fotos das bordas do botão */
+    margin-top: auto; /* Garante que a grade fique sempre no fundo do botão */
+}
+
+/* Aplica o estilo, cantos arredondados e lente mais clara */
+.category-img-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    mix-blend-mode: darken; /* Troquei para 'darken' para deixar a foto mais clara e viva */
+    background: transparent;
+}
+    
 .qr-main-title {
     max-width: 1000px; margin: 25px auto 15px; padding: 0 15px 5px;    
     font-size: 1.2rem; font-weight: 800; color: var(--c-p); border-bottom: 2px solid var(--c-bd); 
@@ -903,18 +906,17 @@ window.openCestasMenu = function() {
             });
         }
         if(imgs.length === 0) imgs.push(b.imagem || '/site/img/produtos/cesta.webp');
-        // Completa as 4 fotos se a cesta tiver menos de 4 itens diferentes
         while(imgs.length < 4) { imgs.push(imgs[0]); } 
 
         let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
 
         html += `
         <div class="category-card" onclick="openKitLateralView('${b.id}', 'BASKET')">
-            <div class="category-img-grid">${imgsHtml}</div>
             <div class="category-text-area">
                 <div class="category-title">${b.nome}</div>
                 <div class="category-price">${fmt(b.preco)}</div>
             </div>
+            <div class="category-img-grid">${imgsHtml}</div>
         </div>`;
     });
     html += '</div>';
@@ -943,10 +945,10 @@ window.openKitsMenu = function() {
 
         html += `
         <div class="category-card" onclick="openKitLateralView('${b.id}', 'COMBO')">
-            <div class="category-img-grid">${imgsHtml}</div>
             <div class="category-text-area">
                 <div class="category-title">${b.nome}</div>
             </div>
+            <div class="category-img-grid">${imgsHtml}</div>
         </div>`;
     });
     html += '</div>';
@@ -969,16 +971,16 @@ window.openSupermercadoMenu = function(customBanner = '') {
     cats.forEach((c) => {
         let imgs = c.data.map(p => p.img).filter(src => src);
         if(imgs.length === 0) imgs.push('/site/img/produtos/cesta.webp');
-        while(imgs.length < 4) { imgs.push(imgs[0]); } // Repete se tiver menos que 4 produtos
+        while(imgs.length < 4) { imgs.push(imgs[0]); }
 
         let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
 
         html += `
         <div class="category-card" onclick="openDepto('${c.id}')">
-            <div class="category-img-grid">${imgsHtml}</div>
             <div class="category-text-area">
                 <div class="category-title">${c.title}</div>
             </div>
+            <div class="category-img-grid">${imgsHtml}</div>
         </div>`;
     });
     html += '</div>';
