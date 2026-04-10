@@ -1213,19 +1213,24 @@ async function init() {
                     }
                 }
 
-                // 2. ROLETA DIÁRIA PARA OS PRODUTOS RESTANTES
+               // 2. ROLETA DIÁRIA PARA OS PRODUTOS RESTANTES
                 if (!p.discountApplied && p.stock > 0) {
-                    // Hash seguro somando códigos do ID com o dia do ano, para rodar 1x ao dia
-                    let idNum = String(p.id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                    let hashDaIsca = (idNum + diaDoAno) % 100; 
+                    // Hash verdadeiro para espalhar bem os resultados independentemente do formato do ID
+                    let strHash = String(p.id) + "-" + String(diaDoAno);
+                    let hashCalc = 0;
+                    for (let i = 0; i < strHash.length; i++) {
+                        hashCalc = ((hashCalc << 5) - hashCalc) + strHash.charCodeAt(i);
+                        hashCalc |= 0; // Converte para inteiro de 32 bits
+                    }
+                    let hashDaIsca = Math.abs(hashCalc) % 100; 
                     
-                    if (hashDaIsca < 5) { // 5% do catálogo
+                    if (hashDaIsca < 5) { // 5% dos produtos
                         p.price = p.oldPrice * 0.89; // 11% desconto
                         p.discountApplied = true;
-                    } else if (hashDaIsca < 15) { // 10% do catálogo (5 até 14)
+                    } else if (hashDaIsca < 15) { // 10% dos produtos (do 5 ao 14)
                         p.price = p.oldPrice * 0.91; // 9% desconto
                         p.discountApplied = true;
-                    } else if (hashDaIsca < 35) { // 20% do catálogo (15 até 34)
+                    } else if (hashDaIsca < 35) { // 20% dos produtos (do 15 ao 34)
                         p.price = p.oldPrice * 0.93; // 7% desconto
                         p.discountApplied = true;
                     }
