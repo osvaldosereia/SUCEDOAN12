@@ -114,68 +114,74 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-card.highlighted.short-btn .home-card-icon { font-size: 1.6rem; margin-bottom: 0; color: #fff; font-weight: 800; }
 .home-card.highlighted.short-btn .home-card-title { font-size: 1.05rem !important; color: #fff; font-weight: 700; text-align: left; line-height: 1.2; z-index: 2; }
 
-/* === NOVO LAYOUT DE BOTÕES PASTEL === */
-.grid-pastel {
+/* === NOVO LAYOUT SÓBRIO & PREMIUM (Botões de Categorias/Cestas) === */
+.grid-categorias-cards {
     display: grid;
-    grid-template-columns: repeat(2, 1fr); /* 2 colunas no mobile */
+    grid-template-columns: repeat(3, 1fr); /* Mobile: 3 Colunas */
     gap: 10px;
     max-width: 1000px;
     margin: 0 auto;
 }
 @media(min-width: 800px) {
-    .grid-pastel { 
-        grid-template-columns: repeat(5, 1fr); /* 5 colunas no desktop */
+    .grid-categorias-cards { 
+        grid-template-columns: repeat(8, 1fr); /* Desktop: 8 Colunas */
         gap: 14px; 
     }
 }
-.pastel-card {
+
+.category-card {
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    padding: 12px 6px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    padding: 10px 8px;
     height: 100%;
-    align-items: center;
+    align-items: flex-start;
+    justify-content: space-between;
 }
-.pastel-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
-.pastel-card:active { transform: scale(0.96); }
+.category-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+.category-card:active { transform: scale(0.96); }
 
-.pastel-img-wrapper {
+.category-img-wrapper {
     width: 100%;
     aspect-ratio: 1/1;
+    background: #ffffff; /* Fundo branco pra destacar o produto */
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    padding: 6px;
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
 }
-.pastel-img-wrapper img {
+.category-img-wrapper img {
     width: 90%;
     height: 90%;
     object-fit: contain;
-    /* Troca o 'multiply' pelo 'darken' para manter a cor original do produto mais forte */
-    mix-blend-mode: darken; 
+    mix-blend-mode: multiply; /* Remove o fundo branco da foto original se fundindo ao branco da caixa */
 }
-.pastel-title {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--c-p);
-    text-align: center;
+.category-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff; /* Fonte Branca */
+    text-align: left; /* Alinhado à esquerda */
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.15;
-    margin-top: 2px;
+    line-height: 1.2;
+    width: 100%;
+    margin-bottom: 4px;
 }
-.pastel-price {
-    font-size: 0.80rem;
-    font-weight: 800;
-    color: #0f766e;
-    text-align: center;
-    margin-top: 4px;
+.category-price {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #cbd5e1; /* Um cinza claro/azulado que contrasta bem com fundos escuros */
+    text-align: left;
+    width: 100%;
 }
 
 .qr-main-title {
@@ -184,7 +190,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 
 .home-tv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-@media (min-width: 800px) { .home-tv-grid { grid-template-columns: repeat(5, 1fr); gap: 16px; } }
+@media (min-width: 800px) { .home-tv-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
 
 .home-tv-item { aspect-ratio: 9 / 16; background: #000; border-radius: 12px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
 .home-tv-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer; }
@@ -307,7 +313,10 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .chk-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--c-bd); }
 .chk-section-title { font-weight: 600; font-size: 1.05rem; color: var(--c-p); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
 
-#chk-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 15px; }
+/* Grid do Checkout (2 colunas mobile, 3 PC) */
+#chk-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px; }
+@media(min-width: 800px) { #chk-list { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+
 .chk-item-card { border: none; border-radius: 12px; padding: 10px 8px; background: var(--c-img-bg); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
 .chk-item-card img { width: 100%; aspect-ratio: 1/1.2; object-fit: contain; background: transparent; border-radius: 0; padding: 10%; mix-blend-mode: multiply; }
 .chk-item-card .name { font-size: 0.8rem; font-weight: 500; color: var(--c-p); line-height: 1.2; flex: 1; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; width: 100%; }
@@ -378,10 +387,24 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 #video-feed-view .see-all-header { background: #111; border-bottom: 1px solid #333; color: #fff; }
 #video-feed-view .see-all-title { color: #fff; }
 #video-feed-view .see-all-back { color: #fff; }
-.video-feed-container { height: calc(100dvh - 54px); overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; background: #000; }
-.video-feed-container::-webkit-scrollbar { display: none; }
 
-.v-feed-item { width: 100%; height: calc(100dvh - 54px); scroll-snap-align: start; display: flex; flex-direction: column; position: relative; background: #111; border-bottom: 1px solid #222; }
+/* Grid do Video Feed 1 mobile, 4 Desktop */
+.video-feed-container { 
+    height: calc(100dvh - 54px); 
+    overflow-y: auto; 
+    background: #000; 
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    padding: 15px;
+    padding-bottom: 80px;
+    align-content: start;
+}
+@media(min-width: 800px) {
+    .video-feed-container { grid-template-columns: repeat(4, 1fr); }
+}
+
+.v-feed-item { width: 100%; aspect-ratio: 9/16; height: auto; display: flex; flex-direction: column; position: relative; background: #111; border: 1px solid #333; border-radius: 12px; overflow: hidden; }
 .v-player { width: 100%; height: 100%; position: absolute; top:0; left:0; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; cursor: pointer; z-index: 1;}
 .v-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
 .v-play-btn { position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.2); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; z-index: 5; backdrop-filter: blur(4px); padding-left: 5px; }
@@ -394,10 +417,9 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 @media(min-width: 800px) {
     #video-feed-view { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); }
-    #video-feed-view .see-all-header, #video-feed-view .video-feed-container { max-width: 420px; margin: 0 auto; box-shadow: 0 10px 50px rgba(0,0,0,0.6); }
+    #video-feed-view .see-all-header, #video-feed-view .video-feed-container { max-width: 1000px; margin: 0 auto; box-shadow: 0 10px 50px rgba(0,0,0,0.6); }
     #video-feed-view .see-all-header { margin-top: 3vh; border-radius: 16px 16px 0 0; border: 1px solid #333; border-bottom: none; }
     #video-feed-view .video-feed-container { height: calc(94vh - 54px); border-radius: 0 0 16px 16px; border: 1px solid #333; border-top: none; }
-    #video-feed-view .v-feed-item { height: calc(94vh - 54px); }
 }
 
 .info-box-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px; margin-bottom: 12px; text-decoration: none; color: var(--c-p); background: var(--c-img-bg); transition: 0.2s;}
@@ -418,6 +440,15 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
 .wholesale-badge { background: var(--c-img-bg); padding: 10px 12px; border-radius: 8px; margin-top: 12px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--c-p); }
 .wholesale-badge span.price { font-weight: 700; color: var(--c-ok); font-size: 1rem; }
+
+.lazy-carousel-wrapper { 
+    opacity: 0; transition: opacity 0.5s; 
+    margin-bottom: 45px;
+    padding-bottom: 40px;
+    border-bottom: 2px dotted #cbd5e1;
+}
+.lazy-carousel-wrapper.loaded { opacity: 1; }
+.lazy-carousel-wrapper:last-child { border-bottom: none; margin-bottom: 20px; padding-bottom: 0; }
 </style>
 </head>
 <body>
@@ -739,11 +770,10 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-// Paleta de tons pastéis 30% mais claros (suaves)
-const PASTEL_COLORS = [
-    '#fefce8', '#dcfce7', '#eff6ff', '#f5f3ff', '#fdf2f8', '#fff7ed', 
-    '#f7fee7', '#ecfeff', '#faf5ff', '#fff1f2', '#fefce8', '#ecfeff',
-    '#fff7ed', '#fce7f3', '#dcfce7', '#fdf2f8'
+// Paleta de tons sóbrios, modernos e fechados para as categorias
+const SOBER_COLORS = [
+    '#334155', '#1e3a8a', '#0f766e', '#065f46', '#701a75', '#9f1239', 
+    '#9a3412', '#3f6212', '#115e59', '#312e81', '#4c1d95', '#86198f'
 ];
 
 function catToId(name) {
@@ -846,24 +876,18 @@ function renderHomeOfertas() {
 window.openCestasMenu = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
-    let html = '<div class="grid-pastel">';
+    let html = '<div class="grid-categorias-cards">';
     STATE.baskets.forEach((b, idx) => {
-        let color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
-        let imgCesta = '/site/img/produtos/cesta.webp'; 
-        if(b.produtos && b.produtos.length > 0) {
-            let partes = String(b.produtos[0]).split('x');
-            if (partes.length > 1) {
-                let p = STATE.prods.find(x => String(x.id) === partes[1].trim()); 
-                if (p && p.img) imgCesta = p.img;
-            }
-        }
+        let color = SOBER_COLORS[idx % SOBER_COLORS.length];
+        let imgCesta = b.imagem ? b.imagem : '/site/img/produtos/cesta.webp'; 
+        
         html += `
-        <div class="pastel-card" style="background: ${color};" onclick="openKitLateralView('${b.id}', 'BASKET')">
-            <div class="pastel-img-wrapper">
+        <div class="category-card" style="background: ${color};" onclick="openKitLateralView('${b.id}', 'BASKET')">
+            <div class="category-img-wrapper">
                 <img src="${imgCesta}" loading="lazy" alt="${b.nome}" onerror="this.src='/site/img/produtos/cesta.webp'">
             </div>
-            <div class="pastel-title">${b.nome}</div>
-            <div class="pastel-price">${fmt(b.preco)}</div>
+            <div class="category-title">${b.nome}</div>
+            <div class="category-price">${fmt(b.preco)}</div>
         </div>`;
     });
     html += '</div>';
@@ -873,11 +897,11 @@ window.openCestasMenu = function() {
 window.openKitsMenu = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
-    let html = '<div class="grid-pastel">';
+    let html = '<div class="grid-categorias-cards">';
     STATE.combos.forEach((b, idx) => {
-        let color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
-        let imgKit = '/site/img/produtos/cesta.webp';
-        if(b.produtos && b.produtos.length > 0) {
+        let color = SOBER_COLORS[idx % SOBER_COLORS.length];
+        let imgKit = b.imagem ? b.imagem : '/site/img/produtos/cesta.webp';
+        if(b.produtos && b.produtos.length > 0 && !b.imagem) {
             let partes = String(b.produtos[0]).split('x');
             if (partes.length > 1) {
                 let p = STATE.prods.find(x => String(x.id) === partes[1].trim()); 
@@ -885,11 +909,11 @@ window.openKitsMenu = function() {
             }
         }
         html += `
-        <div class="pastel-card" style="background: ${color};" onclick="openKitLateralView('${b.id}', 'COMBO')">
-            <div class="pastel-img-wrapper">
+        <div class="category-card" style="background: ${color};" onclick="openKitLateralView('${b.id}', 'COMBO')">
+            <div class="category-img-wrapper">
                 <img src="${imgKit}" loading="lazy" alt="${b.nome}" onerror="this.src='/site/img/produtos/cesta.webp'">
             </div>
-            <div class="pastel-title">${b.nome}</div>
+            <div class="category-title">${b.nome}</div>
         </div>`;
     });
     html += '</div>';
@@ -899,24 +923,24 @@ window.openKitsMenu = function() {
 window.openSupermercadoMenu = function(customBanner = '') {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
-    let html = '<div class="grid-pastel">';
+    let html = '<div class="grid-categorias-cards">';
     
     let cats = [];
-    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: 'Produtos com 20% de Desconto', img: STATE.deptos['desc_20'].data[0].img });
-    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: 'Produtos com 15% de Desconto', img: STATE.deptos['desc_15'].data[0].img });
-    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: 'Produtos com 10% de Desconto', img: STATE.deptos['desc_10'].data[0].img });
+    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', img: STATE.deptos['desc_20'].data[0].img });
+    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', img: STATE.deptos['desc_15'].data[0].img });
+    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', img: STATE.deptos['desc_10'].data[0].img });
 
     let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
     dynamic.forEach(d => cats.push({ id: d.id, title: d.title, img: d.data[0].img }));
 
     cats.forEach((c, idx) => {
-        let color = PASTEL_COLORS[idx % PASTEL_COLORS.length];
+        let color = SOBER_COLORS[idx % SOBER_COLORS.length];
         html += `
-        <div class="pastel-card" style="background: ${color};" onclick="openDepto('${c.id}')">
-            <div class="pastel-img-wrapper">
+        <div class="category-card" style="background: ${color};" onclick="openDepto('${c.id}')">
+            <div class="category-img-wrapper">
                 <img src="${c.img}" loading="lazy" alt="${c.title}" onerror="this.src='/site/img/produtos/cesta.webp'">
             </div>
-            <div class="pastel-title">${c.title}</div>
+            <div class="category-title">${c.title}</div>
         </div>`;
     });
     html += '</div>';
@@ -950,18 +974,27 @@ function renderHomeMobileTV() {
     let container = $('home-tv-container');
     if (!container || STATE.allVideos.length === 0) return;
 
-    let videosToShow = STATE.allVideos.slice(0, 10);
+    let videosToShow = STATE.allVideos.slice(0, 3); // Apenas 3 vídeos no início
     
     let trackHtml = videosToShow.map((v, idx) => `
         <div class="home-tv-item" id="inline-vid-${idx}">
-            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="playInlineVideo('inline-vid-${idx}', '${v.videoId}')" alt="Thumbnail TV">
+            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" class="home-tv-thumb" onclick="playInlineVideo('inline-vid-${idx}', '${v.videoId}')" alt="Thumbnail TV">
             <div class="home-tv-play" onclick="playInlineVideo('inline-vid-${idx}', '${v.videoId}')">▶</div>
             <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
-                <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+                <img src="${v.product.img}" loading="lazy" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                 <button class="home-tv-prod-btn">Ver</button>
             </div>
         </div>
     `).join('');
+
+    trackHtml += `
+        <div class="home-tv-item" style="background: var(--c-img-bg); border: 2px dashed var(--c-t); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="openVideoFeed()">
+            <div style="display:flex; flex-direction:column; align-items:center;">
+                <span style="font-size: 2.5rem; margin-bottom: 8px;">📺</span>
+                <span style="color: var(--c-p); font-weight: 700; text-align: center; font-size: 1.1rem;">Ver Mais<br>Vídeos</span>
+            </div>
+        </div>
+    `;
 
     container.innerHTML = `
         <div class="qr-main-title">📺 TV Dona Antônia</div>
@@ -1093,17 +1126,6 @@ window.openVideoFeed = function(targetVideoId = null) {
     
     renderVideoFeedTrack(targetVideoId);
     
-    $('v-feed-track').onscroll = function() {
-        clearTimeout(feedScrollTimeout);
-        feedScrollTimeout = setTimeout(() => {
-            let track = $('v-feed-track');
-            let activeIndex = Math.round(track.scrollTop / track.clientHeight);
-            if (currentPlayingIndex !== -1 && currentPlayingIndex !== activeIndex) {
-                stopFeedVideo(currentPlayingIndex);
-            }
-        }, 150); 
-    };
-    
     if (!history.state || !history.state.videoOpen) history.pushState({ videoOpen: true }, '');
 }
 
@@ -1118,10 +1140,12 @@ function renderVideoFeedTrack(targetVideoId = null) {
         return;
     }
 
+    // Lazy load real dos iframes via thumbnail + clique (só renderiza iframe quando clica)
     let html = filteredVideos.map((v, index) => {
+        let videoElId = `feed-vid-${index}`;
         return `
-        <div class="v-feed-item" id="feed-item-${index}">
-            <div class="v-player" id="v-player-${index}" onclick="playFeedVideo(${index}, '${v.videoId}')">
+        <div class="v-feed-item">
+            <div class="v-player" id="${videoElId}" onclick="playInlineVideo('${videoElId}', '${v.videoId}')">
                 <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" class="v-thumb">
                 <div class="v-play-btn">▶</div>
             </div>
@@ -1144,12 +1168,12 @@ function renderVideoFeedTrack(targetVideoId = null) {
         let targetIndex = filteredVideos.findIndex(v => v.videoId === targetVideoId);
         if (targetIndex !== -1) {
             setTimeout(() => {
-                let item = $('feed-item-' + targetIndex);
-                if (item) {
-                    track.scrollTo({ top: item.offsetTop, behavior: 'instant' });
-                    playFeedVideo(targetIndex, targetVideoId);
+                let items = document.querySelectorAll('.v-feed-item');
+                if (items[targetIndex]) {
+                    items[targetIndex].scrollIntoView({ behavior: 'instant', block: 'start' });
+                    playInlineVideo(`feed-vid-${targetIndex}`, targetVideoId);
                 }
-            }, 50); 
+            }, 100); 
             return;
         }
     }
@@ -1157,26 +1181,8 @@ function renderVideoFeedTrack(targetVideoId = null) {
     track.scrollTo(0,0);
 }
 
-window.playFeedVideo = function(index, videoId) {
-    if (currentPlayingIndex !== -1 && currentPlayingIndex !== index) {
-        stopFeedVideo(currentPlayingIndex);
-    }
-    currentPlayingIndex = index;
-    let container = $('v-player-' + index);
-    if(!container) return;
-    
-    container.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; z-index:10; position:relative;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-}
-
-window.stopFeedVideo = function(index) {
-    let container = $('v-player-' + index);
-    if(container) container.innerHTML = `<div class="v-play-btn" style="z-index: 5;">▶</div>`; 
-    if (currentPlayingIndex === index) { currentPlayingIndex = -1; }
-}
-
 window.closeVideoFeed = function() {
     document.getElementById('video-feed-view').classList.remove('open');
-    if (currentPlayingIndex !== -1) { stopFeedVideo(currentPlayingIndex); }
     setTimeout(() => { $('v-feed-track').innerHTML = ''; }, 300);
     STATE.viewStack = 'HOME';
 }
@@ -1657,17 +1663,14 @@ window.changeExpanderQty = function(pId, delta) {
 };
 
 window.commitExpander = function() {
-    let addedAny = false; 
-    let normalPriceSum = 0;
-
+    let addedAny = false; let normalPriceSum = 0;
     Object.entries(expanderState.items).forEach(([pId, qty]) => {
         if (qty > 0) {
             let p = STATE.prods.find(x => x.id === pId);
             if(p) {
                 if (!STATE.cart[pId]) STATE.cartOrder.push(pId);
                 STATE.cart[pId] = (STATE.cart[pId] || 0) + qty;
-                normalPriceSum += p.price * qty; 
-                addedAny = true;
+                normalPriceSum += p.price * qty; addedAny = true;
             }
         }
     });
@@ -1675,21 +1678,16 @@ window.commitExpander = function() {
     if (!addedAny) return showToast("Nenhum produto selecionado", "r");
 
     if (expanderState.type === 'BASKET') { 
-        STATE.baseBasket = expanderState.sourceObj; 
-        STATE.basketExtraFee += expanderState.priceOffset; 
+        STATE.baseBasket = expanderState.sourceObj; STATE.basketExtraFee += expanderState.priceOffset; 
     } else {
         let existing = STATE.appliedCombos.find(ac => ac.id === expanderState.id);
-        if (existing) {
-            existing.qty += 1;
-        } else {
-            STATE.appliedCombos.push({ id: expanderState.id, qty: 1, name: expanderState.sourceObj.nome });
-        }
+        if (existing) existing.qty += 1;
+        else STATE.appliedCombos.push({ id: expanderState.id, qty: 1, name: expanderState.sourceObj.nome });
     }
 
     updateTotals(); 
     showToast("Adicionado à sacola com sucesso!", "s");
     
-    // Fecha os detalhes do kit/cesta e direciona para a tela do Supermercado
     closeSeeAll(true);
     openSupermercadoMenu('✅ Adicionado! Continue comprando em nosso supermercado.');
 };
