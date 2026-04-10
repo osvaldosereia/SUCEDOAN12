@@ -130,6 +130,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
     
 .category-card {
+    background: #f1f5f9 !important; /* Fundo cinza claro padronizado */
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -162,10 +163,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     mix-blend-mode: multiply; /* A lente que faz o fundo branco da foto sumir no botão colorido */
     /* Dica: se a foto ficar muito escura, troque "multiply" por "darken" */
 }
-    .category-title {
-    font-size: 0.75rem; /* Fonte menor e elegante */
-    font-weight: 600;
-    color: #ffffff;
+   .category-title {
+    font-size: 0.75rem;
+    font-weight: 700; /* Letra um pouco mais grossa para destacar */
+    color: #1e293b !important; /* Texto escuro/preto */
     text-align: left;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -177,8 +178,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .category-price {
     font-size: 0.85rem;
-    font-weight: 700;
-    color: #cbd5e1; /* Um cinza claro/azulado que contrasta bem com fundos escuros */
+    font-weight: 800;
+    color: #0f766e !important; /* Verde escuro elegante */
     text-align: left;
     width: 100%;
 }
