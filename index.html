@@ -114,7 +114,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-card.highlighted.short-btn .home-card-icon { font-size: 1.6rem; margin-bottom: 0; color: #fff; font-weight: 800; }
 .home-card.highlighted.short-btn .home-card-title { font-size: 1.05rem !important; color: #fff; font-weight: 700; text-align: left; line-height: 1.2; z-index: 2; }
 
-/* Mantido para histórico, mas o menu grid tradicional será contornado pelo layout dual-pane */
 .grid-categorias-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 1000px; margin: 0 auto; }
 @media(min-width: 800px) { .grid-categorias-cards { grid-template-columns: repeat(5, 1fr); gap: 14px; } }
 .category-card { background: #f1f5f9 !important; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.06); padding: 16px 12px; height: 100%; }
@@ -345,20 +344,56 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 #video-feed-view .see-all-title { color: #fff; }
 #video-feed-view .see-all-back { color: #fff; }
 
-.video-feed-container { height: calc(100dvh - 54px); overflow-y: auto; background: #000; display: grid; grid-template-columns: 1fr; gap: 25px; padding: 15px; padding-bottom: 80px; align-content: start;}
-@media(min-width: 800px) { .video-feed-container { grid-template-columns: repeat(4, 1fr); gap: 20px;} }
+/* Container TikTok: 1 coluna, sem barras de rolagem, com scroll-snap */
+.video-feed-container { 
+    height: calc(100dvh - 54px); 
+    overflow-y: auto; 
+    background: #000; 
+    display: flex; 
+    flex-direction: column; 
+    scroll-snap-type: y mandatory; /* O efeito que "cola" a tela no próximo vídeo */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; 
+}
+.video-feed-container::-webkit-scrollbar { display: none; }
 
-/* Ajuste principal: removido o display: flex e adicionado um min-height para NUNCA encavalar */
-.v-feed-item { width: 100%; position: relative; background: #111; border: 1px solid #333; border-radius: 12px; overflow: hidden; aspect-ratio: 9/16; display: block; min-height: 400px; }
+/* Desktop: 1 coluna centralizada imitando um telemóvel */
+@media(min-width: 800px) { 
+    #video-feed-view { background: #111; }
+    .video-feed-container { max-width: 450px; margin: 0 auto; border-left: 1px solid #333; border-right: 1px solid #333; } 
+}
+
+/* O Vídeo: Ocupa exatos 100% da altura da tela de deslize */
+.v-feed-item { 
+    width: 100%; 
+    flex: 0 0 100%; 
+    height: calc(100dvh - 54px); 
+    position: relative; 
+    background: #000; 
+    display: block; 
+    scroll-snap-align: start; 
+    scroll-snap-stop: always; 
+    overflow: hidden; 
+}
 .v-player { width: 100%; height: 100%; position: absolute; top:0; left:0; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #000; cursor: pointer; z-index: 1;}
 .v-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.6; }
-.v-play-btn { position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.2); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; z-index: 5; backdrop-filter: blur(4px); padding-left: 5px; }
-.v-prod-card { position: absolute; bottom: 20px; left: 15px; right: 15px; z-index: 10; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-radius: 12px; }
+.v-play-btn { position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.2); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; z-index: 5; backdrop-filter: blur(4px); padding-left: 5px; pointer-events: none;}
+.v-prod-card { position: absolute; bottom: 20px; left: 15px; right: 15px; z-index: 10; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);}
 .v-prod-img { width: 70px; height: 70px; object-fit: contain; background: var(--c-img-bg); border-radius: 8px; padding: 4px; mix-blend-mode: multiply; }
 .v-prod-info { flex: 1; }
 .v-prod-name { font-size: 0.9rem; font-weight: 500; color: var(--c-p); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2; margin-bottom: 6px; }
 .v-prod-price { font-size: 1.1rem; font-weight: 700; color: var(--c-p); }
 .v-prod-btn { background: var(--c-p); color: #fff; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.85rem; border: none; }
+
+/* Setas para o PC e a Tela do Botão Carregar Mais */
+.tiktok-arrow { display: none; position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: #fff; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; z-index: 100; backdrop-filter: blur(4px); transition: 0.2s; }
+.tiktok-arrow:hover { background: rgba(255,255,255,0.3); }
+@media(min-width: 800px) {
+    .tiktok-arrow { display: flex; align-items: center; justify-content: center; }
+    .tiktok-arrow.up { left: calc(50% + 240px); margin-top: -35px; }
+    .tiktok-arrow.down { left: calc(50% + 240px); margin-top: 35px; }
+}
+.v-load-more-wrap { flex: 0 0 100%; height: calc(100dvh - 54px); display: flex; align-items: center; justify-content: center; scroll-snap-align: start; background: #111; }
 
 .info-box-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px; margin-bottom: 12px; text-decoration: none; color: var(--c-p); background: var(--c-img-bg); transition: 0.2s;}
 .info-box-item:active { transform: scale(0.98); }
@@ -552,6 +587,10 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             </div>
         </div>
     </div>
+    
+    <button class="tiktok-arrow up" onclick="scrollTikTok(-1)">▲</button>
+    <button class="tiktok-arrow down" onclick="scrollTikTok(1)">▼</button>
+
     <div class="video-feed-container" id="v-feed-track"></div>
 </div>
 
@@ -1024,7 +1063,7 @@ window.openVideoFeed = function(targetVideoId = null) {
 }
 
 window.videoRenderLimit = 12; 
-window.currentVideoOffset = 0;
+window.currentVideoOffset = 0; // Ajuda a saber de onde continuar
 
 function renderVideoFeedTrack(targetVideoId = null, append = false) {
     let filteredVideos = STATE.allVideos;
@@ -1040,12 +1079,14 @@ function renderVideoFeedTrack(targetVideoId = null, append = false) {
         return;
     }
 
+    // Se for uma busca nova (não um carregar mais), limpa a tela
     if (!append) {
         window.videoRenderLimit = 12;
         window.currentVideoOffset = 0;
         track.innerHTML = ''; 
     }
 
+    // Corta exatamente os vídeos que precisamos mostrar AGORA
     let videosToRender = filteredVideos.slice(window.currentVideoOffset, window.videoRenderLimit);
 
     let html = videosToRender.map((v, index) => {
@@ -1068,18 +1109,22 @@ function renderVideoFeedTrack(targetVideoId = null, append = false) {
         </div>`;
     }).join('');
     
+    // Remove o botão antigo de carregar mais, se existir
     let oldBtn = document.getElementById('load-more-videos-btn');
     if (oldBtn) oldBtn.remove();
 
+    // Insere os vídeos novos no fim da lista de forma segura (não apaga os antigos)
     track.insertAdjacentHTML('beforeend', html);
     
+    // Atualiza a posição para o próximo "Carregar Mais"
     window.currentVideoOffset = window.videoRenderLimit;
 
+    // Coloca o botão "Carregar Mais" no fundo, se ainda houver vídeos na fila
     if (filteredVideos.length > window.videoRenderLimit) {
         let btnHtml = `
-        <div id="load-more-videos-btn" style="grid-column: 1 / -1; display: flex; justify-content: center; padding: 20px 0;">
-            <button onclick="window.videoRenderLimit += 12; renderVideoFeedTrack(null, true)" style="background: var(--c-ok); color: #fff; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 1rem; border: none; cursor: pointer; transition: 0.2s;">
-                Carregar Mais Vídeos
+        <div id="load-more-videos-btn" class="v-load-more-wrap">
+            <button onclick="window.videoRenderLimit += 12; renderVideoFeedTrack(null, true)" style="background: var(--c-ok); color: #fff; padding: 15px 30px; border-radius: 8px; font-weight: 600; font-size: 1.1rem; border: none; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                ⬇️ Carregar Mais Vídeos
             </button>
         </div>`;
         track.insertAdjacentHTML('beforeend', btnHtml);
@@ -1087,6 +1132,7 @@ function renderVideoFeedTrack(targetVideoId = null, append = false) {
 
     currentPlayingIndex = -1;
 
+    // Lógica para deslizar automaticamente para o vídeo que o cliente clicou na tela inicial
     if (targetVideoId && !append) {
         let targetIndex = filteredVideos.findIndex(v => v.videoId === targetVideoId);
         if (targetIndex !== -1) {
@@ -1106,9 +1152,16 @@ function renderVideoFeedTrack(targetVideoId = null, append = false) {
         }
     }
     
+    // Volta para o topo da lista apenas se não for um carregamento adicional
     if(!append) {
         track.scrollTo(0,0);
     }
+}
+
+window.scrollTikTok = function(dir) {
+    let track = document.getElementById('v-feed-track');
+    let itemHeight = track.clientHeight; // Pega exatamente a altura de 1 tela
+    track.scrollBy({ top: dir * itemHeight, behavior: 'smooth' });
 }
 
 window.closeVideoFeed = function() {
