@@ -114,21 +114,21 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-card.highlighted.short-btn .home-card-icon { font-size: 1.6rem; margin-bottom: 0; color: #fff; font-weight: 800; }
 .home-card.highlighted.short-btn .home-card-title { font-size: 1.05rem !important; color: #fff; font-weight: 700; text-align: left; line-height: 1.2; z-index: 2; }
 
-/* === NOVO LAYOUT SÓBRIO & PREMIUM (Botões de Categorias/Cestas) === */
+/* Grade de botões do Supermercado / Cestas */
 .grid-categorias-cards {
     display: grid;
-    grid-template-columns: repeat(3, 1fr); /* Mobile: 3 Colunas */
+    grid-template-columns: repeat(2, 1fr); /* 2 Colunas no Mobile */
     gap: 10px;
     max-width: 1000px;
     margin: 0 auto;
 }
 @media(min-width: 800px) {
     .grid-categorias-cards { 
-        grid-template-columns: repeat(8, 1fr); /* Desktop: 8 Colunas */
+        grid-template-columns: repeat(5, 1fr); /* 5 Colunas no Desktop */
         gap: 14px; 
     }
 }
-
+    
 .category-card {
     border-radius: 12px;
     display: flex;
@@ -148,7 +148,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .category-img-wrapper {
     width: 100%;
     aspect-ratio: 1/1;
-    background: #ffffff; /* Fundo branco pra destacar o produto */
+    background: #ffffff; /* Fundo da caixinha branco */
     border-radius: 8px;
     display: flex;
     align-items: center;
@@ -161,13 +161,13 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     width: 90%;
     height: 90%;
     object-fit: contain;
-    mix-blend-mode: multiply; /* Remove o fundo branco da foto original se fundindo ao branco da caixa */
+    mix-blend-mode: multiply; /* Lente que apaga o fundo branco da foto do produto */
 }
 .category-title {
-    font-size: 0.95rem;
+    font-size: 0.75rem; /* Fonte menor e elegante */
     font-weight: 600;
-    color: #ffffff; /* Fonte Branca */
-    text-align: left; /* Alinhado à esquerda */
+    color: #ffffff;
+    text-align: left;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
