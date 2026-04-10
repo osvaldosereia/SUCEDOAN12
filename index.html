@@ -1559,7 +1559,9 @@ window.commitExpander = function() {
     updateTotals(); 
     showToast("Adicionado à sacola com sucesso!", "s");
     
-    closeSeeAll(true);
+    // CORREÇÃO AQUI: Apenas esconde o rodapé em vez de fechar toda a tela (o que apagava o grid após 300ms)
+    document.getElementById('see-all-footer').style.display = 'none';
+    
     // Redireciona de volta focando e ativando os 20%
     openSupermercadoMenu('✅ Adicionado! Continue comprando em nosso supermercado.', 'desc_20');
 };
