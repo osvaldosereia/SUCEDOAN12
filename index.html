@@ -909,10 +909,10 @@ window.openCestasMenu = function() {
             });
         }
         if(imgs.length === 0) imgs.push(b.imagem || '/site/img/produtos/cesta.webp');
-        while(imgs.length < 4) { imgs.push(imgs[0]); } 
+         
 
-        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
 
+        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.onerror=null; this.src='/site/img/produtos/cesta.webp'">`).join('');
         html += `
         <div class="category-card" style="border-top: 5px solid ${color};" onclick="openKitLateralView('${b.id}', 'BASKET')">
             <div class="category-text-area">
@@ -943,10 +943,11 @@ window.openKitsMenu = function() {
             });
         }
         if(imgs.length === 0) imgs.push(b.imagem || '/site/img/produtos/cesta.webp');
-        while(imgs.length < 4) { imgs.push(imgs[0]); } 
+         
 
-        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
 
+        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.onerror=null; this.src='/site/img/produtos/cesta.webp'">`).join('');
+        
         html += `
         <div class="category-card" style="border-top: 5px solid ${color};" onclick="openKitLateralView('${b.id}', 'COMBO')">
             <div class="category-text-area">
@@ -976,10 +977,10 @@ window.openSupermercadoMenu = function(customBanner = '') {
         let color = LIGHT_ACCENT_COLORS[idx % LIGHT_ACCENT_COLORS.length]; // Puxa a cor clarinha
         let imgs = c.data.map(p => p.img).filter(src => src);
         if(imgs.length === 0) imgs.push('/site/img/produtos/cesta.webp');
-        while(imgs.length < 4) { imgs.push(imgs[0]); }
+        
 
-        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
-
+let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.onerror=null; this.src='/site/img/produtos/cesta.webp'">`).join('');
+        
         html += `
         <div class="category-card" style="border-top: 5px solid ${color} !important;" onclick="openDepto('${c.id}')">
             <div class="category-text-area">
