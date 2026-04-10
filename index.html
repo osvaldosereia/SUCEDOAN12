@@ -731,8 +731,8 @@ const STATE = {
     currentMarcaTab: '', baskets: [], prods: [], combos: [], allVideos: [], currentFilteredList: [], tvCategory: 'all',
     editingBaskets: {},
     deptos: {
+        'desc_30': { id: 'desc_30', title: '30% de Desconto', type: 'PROD', data: [] },
         'desc_20': { id: 'desc_20', title: '20% de Desconto', type: 'PROD', data: [] },
-        'desc_15': { id: 'desc_15', title: '15% de Desconto', type: 'PROD', data: [] },
         'desc_10': { id: 'desc_10', title: '10% de Desconto', type: 'PROD', data: [] },
         'cestas': { id: 'cestas', title: 'Cestas Prontas', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', type: 'COMBO', data: [] }
@@ -770,6 +770,15 @@ function renderHomeOfertas() {
     let descProds = STATE.prods.filter(p => p.oldPrice > p.price && p.stock > 0 && !p._isBasket && !p._isCombo);
     
     descProds.sort((a,b) => {
+        let valA = (a.isExpiringSoon && a._valTime) ? a._valTime : Infinity;
+        let valB = (b.isExpiringSoon && b._valTime) ? b._valTime : Infinity;
+        
+        // Ordenar primeiro pelo vencimento mais próximo
+        if (valA !== valB) {
+            return valA - valB;
+        }
+        
+        // Em caso de empate ou sem vencimento, ordena pelo maior desconto
         let pctA = (a.oldPrice - a.price) / a.oldPrice;
         let pctB = (b.oldPrice - b.price) / b.oldPrice;
         return pctB - pctA;
@@ -826,8 +835,8 @@ window.openSupermercadoMenu = function(customBanner = '', forceOpenId = null) {
     STATE.viewStack = 'SEE_ALL';
     
     let cats = [];
+    if(STATE.deptos['desc_30'] && STATE.deptos['desc_30'].data.length > 0) cats.push({ id: 'desc_30', title: '30% de Desconto' });
     if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% de Desconto' });
-    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% de Desconto' });
     if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% de Desconto' });
 
     let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
@@ -1161,6 +1170,10 @@ async function init() {
                 };
             });
             
+            let hojeTime = new Date().getTime();
+            // Calcular dia do ano para a roleta diária de ofertas
+            let diaDoAno = Math.floor(hojeTime / (1000 * 60 * 60 * 24)); 
+
             STATE.prods.forEach(p => { 
                 let catNome = p.categoria && p.categoria.trim() !== "" ? p.categoria : "Outros";
                 let catId = catToId(catNome);
@@ -1174,36 +1187,48 @@ async function init() {
                 if (tag && tag.length > 3 && !STATE.deptos[catId].tags.includes(formatName(tag))) { 
                     STATE.deptos[catId].tags.push(formatName(tag)); 
                 }
-            });
-
-            let hojeTime = new Date().getTime();
-            
-            let comValidade = STATE.prods.filter(p => p.validade && p.stock > 0);
-            comValidade.forEach(p => {
+                
+                // Converter e guardar validade
                 p._valTime = converterDataValidade(p.validade);
             });
-            comValidade = comValidade.filter(p => p._valTime >= hojeTime);
-            comValidade.sort((a,b) => a._valTime - b._valTime);
-            
-            let top20Vencimento = comValidade.slice(0, 20);
-            top20Vencimento.forEach(p => {
-                p.price = p.oldPrice * 0.80; 
-                p.discountApplied = true;
-                p.isExpiringSoon = true;
-                p.isSoHoje = true;
-            });
 
+            // Aplicação da Nova Lógica de Descontos (Validade e Roleta)
             STATE.prods.forEach(p => {
-                if(p.discountApplied || p._isBasket || p._isCombo) return;
+                if(p._isBasket || p._isCombo) return;
+
+                let diasParaVencer = (p._valTime - hojeTime) / (1000 * 3600 * 24);
                 
-                let hashDaIsca = (String(p.name).length + String(p.id).charCodeAt(0)) % 5;
-                
-                if (hashDaIsca === 0) {
-                    let base = p.oldPrice;
-                    let desc = (base > 20) ? 0.15 : 0.10; 
+                // 1. REGRA DA DATA DE VALIDADE
+                if (p.validade && p.stock > 0 && diasParaVencer <= 60) {
+                    p.isExpiringSoon = true;
+                    if (diasParaVencer < 30) {
+                        p.price = p.oldPrice * 0.70; // 30% desconto
+                        p.discountApplied = true;
+                    } else if (diasParaVencer <= 40) {
+                        p.price = p.oldPrice * 0.80; // 20% desconto
+                        p.discountApplied = true;
+                    } else if (diasParaVencer <= 60) {
+                        p.price = p.oldPrice * 0.90; // 10% desconto
+                        p.discountApplied = true;
+                    }
+                }
+
+                // 2. ROLETA DIÁRIA PARA OS PRODUTOS RESTANTES
+                if (!p.discountApplied && p.stock > 0) {
+                    // Hash seguro somando códigos do ID com o dia do ano, para rodar 1x ao dia
+                    let idNum = String(p.id).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                    let hashDaIsca = (idNum + diaDoAno) % 100; 
                     
-                    p.price = base * (1 - desc);
-                    p.discountApplied = true;
+                    if (hashDaIsca < 5) { // 5% do catálogo
+                        p.price = p.oldPrice * 0.89; // 11% desconto
+                        p.discountApplied = true;
+                    } else if (hashDaIsca < 15) { // 10% do catálogo (5 até 14)
+                        p.price = p.oldPrice * 0.91; // 9% desconto
+                        p.discountApplied = true;
+                    } else if (hashDaIsca < 35) { // 20% do catálogo (15 até 34)
+                        p.price = p.oldPrice * 0.93; // 7% desconto
+                        p.discountApplied = true;
+                    }
                 }
             });
             
@@ -1214,11 +1239,12 @@ async function init() {
                 }
             });
 
+            // Popula os departamentos de 10, 20 e 30% conforme o desconto real gerado
             STATE.prods.forEach(p => {
                  if (p.oldPrice > p.price && p.stock > 0 && !p._isBasket && !p._isCombo) {
                       let pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
-                      if (pct >= 20) STATE.deptos.desc_20.data.push(p);
-                      else if (pct >= 15) STATE.deptos.desc_15.data.push(p);
+                      if (pct >= 30) STATE.deptos.desc_30.data.push(p);
+                      else if (pct >= 20) STATE.deptos.desc_20.data.push(p);
                       else if (pct >= 10) STATE.deptos.desc_10.data.push(p);
                  }
             });
@@ -1328,9 +1354,18 @@ window.applyDeptoFilters = function(preventScroll = false) {
 
         let sortType = STATE.currentSort || 'maior_desconto';
 
-        if(sortType === 'az') { normalProds.sort((a,b) => String(a.name).localeCompare(String(b.name))); } 
-        else if(sortType === 'menor_preco') { normalProds.sort((a,b) => a.price - b.price); } 
+        if(sortType === 'az') { 
+            normalProds.sort((a,b) => String(a.name).localeCompare(String(b.name))); 
+            topExpiring.sort((a,b) => String(a.name).localeCompare(String(b.name))); 
+        } 
+        else if(sortType === 'menor_preco') { 
+            normalProds.sort((a,b) => a.price - b.price); 
+            topExpiring.sort((a,b) => a.price - b.price); 
+        } 
         else { 
+            // Relevância: Coloca sempre o que vence mais rápido no topo da secção
+            topExpiring.sort((a,b) => a._valTime - b._valTime);
+            
             normalProds.sort((a,b) => {
                 let descA = (a.oldPrice && a.oldPrice > a.price) ? (a.oldPrice - a.price) : 0;
                 let descB = (b.oldPrice && b.oldPrice > b.price) ? (b.oldPrice - b.price) : 0;
@@ -1559,11 +1594,16 @@ window.commitExpander = function() {
     updateTotals(); 
     showToast("Adicionado à sacola com sucesso!", "s");
     
-    // CORREÇÃO AQUI: Apenas esconde o rodapé em vez de fechar toda a tela (o que apagava o grid após 300ms)
+    // CORREÇÃO PISCADA: Escondemos apenas o rodapé (para não fechar a tela toda abruptamente)
     document.getElementById('see-all-footer').style.display = 'none';
     
-    // Redireciona de volta focando e ativando os 20%
-    openSupermercadoMenu('✅ Adicionado! Continue comprando em nosso supermercado.', 'desc_20');
+    // Determina a aba com desconto mais alto disponível para focar
+    let targetId = null;
+    if(STATE.deptos['desc_30'] && STATE.deptos['desc_30'].data.length > 0) targetId = 'desc_30';
+    else if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) targetId = 'desc_20';
+    else if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) targetId = 'desc_10';
+
+    openSupermercadoMenu('✅ Adicionado! Continue a comprar no nosso supermercado.', targetId);
 };
 
 // === INÍCIO FUNÇÃO DE CARD ELEGANTE ===
