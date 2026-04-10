@@ -129,10 +129,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     }
 }
     
-/* === VISUAL ATUALIZADO: FUNDO BRANCO ATRÁS DAS MINI FOTOS === */
+/* === VISUAL ATUALIZADO: PREPARADO PARA A BARRA COLORIDA NO TOPO === */
 .category-card {
     background: #f1f5f9 !important; /* Fundo cinza claro */
-    border: none !important; 
+    /* Removido o 'border: none' para permitir a barra superior */
     border-radius: 12px;
     display: flex;
     flex-direction: column;
@@ -896,7 +896,8 @@ window.openCestasMenu = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
     let html = '<div class="grid-categorias-cards">';
-    STATE.baskets.forEach((b) => {
+    STATE.baskets.forEach((b, idx) => {
+        let color = SOBER_COLORS[idx % SOBER_COLORS.length]; // Sorteia a cor
         let imgs = [];
         if(b.produtos && b.produtos.length > 0) {
             b.produtos.forEach(prodString => {
@@ -913,7 +914,7 @@ window.openCestasMenu = function() {
         let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
 
         html += `
-        <div class="category-card" onclick="openKitLateralView('${b.id}', 'BASKET')">
+        <div class="category-card" style="border-top: 5px solid ${color};" onclick="openKitLateralView('${b.id}', 'BASKET')">
             <div class="category-text-area">
                 <div class="category-title">${b.nome}</div>
                 <div class="category-price">${fmt(b.preco)}</div>
@@ -929,7 +930,8 @@ window.openKitsMenu = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'MENU_GRID';
     let html = '<div class="grid-categorias-cards">';
-    STATE.combos.forEach((b) => {
+    STATE.combos.forEach((b, idx) => {
+        let color = SOBER_COLORS[idx % SOBER_COLORS.length]; // Sorteia a cor
         let imgs = [];
         if(b.produtos && b.produtos.length > 0) {
             b.produtos.forEach(prodString => {
@@ -946,7 +948,7 @@ window.openKitsMenu = function() {
         let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
 
         html += `
-        <div class="category-card" onclick="openKitLateralView('${b.id}', 'COMBO')">
+        <div class="category-card" style="border-top: 5px solid ${color};" onclick="openKitLateralView('${b.id}', 'COMBO')">
             <div class="category-text-area">
                 <div class="category-title">${b.nome}</div>
             </div>
@@ -955,6 +957,41 @@ window.openKitsMenu = function() {
     });
     html += '</div>';
     showGenericGrid('Kits Promocionais', html);
+};
+
+window.openSupermercadoMenu = function(customBanner = '') {
+    if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
+    STATE.viewStack = 'MENU_GRID';
+    let html = '<div class="grid-categorias-cards">';
+    
+    let cats = [];
+    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', data: STATE.deptos['desc_20'].data });
+    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', data: STATE.deptos['desc_15'].data });
+    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', data: STATE.deptos['desc_10'].data });
+
+    let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
+    dynamic.forEach(d => cats.push({ id: d.id, title: d.title, data: d.data }));
+
+    cats.forEach((c, idx) => {
+        let color = SOBER_COLORS[idx % SOBER_COLORS.length]; // Sorteia a cor
+        let imgs = c.data.map(p => p.img).filter(src => src);
+        if(imgs.length === 0) imgs.push('/site/img/produtos/cesta.webp');
+        while(imgs.length < 4) { imgs.push(imgs[0]); }
+
+        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
+
+        html += `
+        <div class="category-card" style="border-top: 5px solid ${color};" onclick="openDepto('${c.id}')">
+            <div class="category-text-area">
+                <div class="category-title">${c.title}</div>
+            </div>
+            <div class="category-img-grid">${imgsHtml}</div>
+        </div>`;
+    });
+    html += '</div>';
+    
+    let bannerHtml = customBanner ? `<div class="content-limit" style="background: var(--c-ok); color: #fff; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 20px;">${customBanner}</div>` : '';
+    showGenericGrid('Supermercado', bannerHtml + html);
 };
 
 window.openSupermercadoMenu = function(customBanner = '') {
