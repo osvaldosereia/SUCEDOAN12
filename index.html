@@ -2300,38 +2300,7 @@ function buildCardHtml(item, type) {
         </div>`;
     }
 
-    let cardClassMin = isEsgotado ? 'u-card-minimal disabled' : 'u-card-minimal';
-    let onClickMin = isEsgotado ? '' : `openQuickView('${id}')`;
-    
-    let discountPercent = 0;
-    if (item.oldPrice && item.oldPrice > pPrice) { discountPercent = Math.round(((item.oldPrice - pPrice) / item.oldPrice) * 100); }
-    
-    let tagHtml = ''; let oldPriceHtmlMinimal = '';
-    if (item.isSoHoje) tagHtml = `<div class="u-tag-discount" style="background: #ef4444;">SÓ HOJE</div>`;
-    else if (discountPercent > 0) tagHtml = `<div class="u-tag-discount">-${discountPercent}%</div>`;
-
-    if (discountPercent > 0) oldPriceHtmlMinimal = `<span class="old-price-subtle">${fmt(item.oldPrice)}</span>`;
-    
-    // Controle de botão dinâmico na base
-    let btnAddStyle = qty > 0 ? 'display: none;' : '';
-    let ctrlStyle = qty > 0 ? 'display: flex;' : 'display: none;';
-
-    let cardControlsHtml = '';
-    if (isEsgotado) {
-        cardControlsHtml = `<button class="card-add-btn-wide" disabled style="background:var(--c-bd); color:var(--c-s); margin-top: 10px; cursor: not-allowed; width: 100%;">ESGOTADO</button>`;
-    } else {
-        cardControlsHtml = `
-        <div style="margin-top: auto; padding-top: 10px; width: 100%;">
-            <button class="card-add-btn-wide btn-add-${id}" style="${btnAddStyle} width: 100%; margin-top: 0; padding: 8px;" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">Adicionar</button>
-            <div class="card-qty-ctrl ctrl-${id}" style="${ctrlStyle} margin-top: 0; width: 100%; background: var(--c-img-bg); border-radius: 8px; border: 1px solid var(--c-bd);">
-                <button onclick="event.stopPropagation(); upd('${id}', -1)" style="font-size: 1.2rem; width: 34px; background: transparent;">-</button>
-                <span class="qty-span-${id}" style="font-size: 0.95rem;">${qty}</span>
-                <button onclick="event.stopPropagation(); handleAddClick(event, '${id}')" style="font-size: 1.2rem; width: 34px; background: transparent;">+</button>
-            </div>
-        </div>
-        `;
-    }
-
+   
     return `
     <div class="${cardClassMin}" data-id="${id}" onclick="${onClickMin}">
         <div class="u-img-minimal">
