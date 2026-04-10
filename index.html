@@ -965,9 +965,9 @@ window.openSupermercadoMenu = function(customBanner = '') {
     let html = '<div class="grid-categorias-cards">';
     
     let cats = [];
-    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', data: STATE.deptos['desc_20'].data });
-    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', data: STATE.deptos['desc_15'].data });
-    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', data: STATE.deptos['desc_10'].data });
+    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: 'Produtos com 20% de Desconto', data: STATE.deptos['desc_20'].data });
+    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: 'Produtos com 15% de Desconto', data: STATE.deptos['desc_15'].data });
+    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: 'Produtos com 10% de Desconto', data: STATE.deptos['desc_10'].data });
 
     let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
     dynamic.forEach(d => cats.push({ id: d.id, title: d.title, data: d.data }));
@@ -981,41 +981,7 @@ window.openSupermercadoMenu = function(customBanner = '') {
         let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
 
         html += `
-        <div class="category-card" style="border-top: 5px solid ${color};" onclick="openDepto('${c.id}')">
-            <div class="category-text-area">
-                <div class="category-title">${c.title}</div>
-            </div>
-            <div class="category-img-grid">${imgsHtml}</div>
-        </div>`;
-    });
-    html += '</div>';
-    
-    let bannerHtml = customBanner ? `<div class="content-limit" style="background: var(--c-ok); color: #fff; padding: 12px; border-radius: 8px; text-align: center; font-weight: 600; margin-bottom: 20px;">${customBanner}</div>` : '';
-    showGenericGrid('Supermercado', bannerHtml + html);
-};
-
-window.openSupermercadoMenu = function(customBanner = '') {
-    if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
-    STATE.viewStack = 'MENU_GRID';
-    let html = '<div class="grid-categorias-cards">';
-    
-    let cats = [];
-    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: 'Produtos com 20% de Desconto', data: STATE.deptos['desc_20'].data });
-    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: 'Produtos com 15% de Desconto', data: STATE.deptos['desc_15'].data });
-    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: 'Produtos com 10% de Desconto', data: STATE.deptos['desc_10'].data });
-
-    let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
-    dynamic.forEach(d => cats.push({ id: d.id, title: d.title, data: d.data }));
-
-    cats.forEach((c) => {
-        let imgs = c.data.map(p => p.img).filter(src => src);
-        if(imgs.length === 0) imgs.push('/site/img/produtos/cesta.webp');
-        while(imgs.length < 4) { imgs.push(imgs[0]); }
-
-        let imgsHtml = imgs.slice(0,4).map(src => `<img src="${src}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">`).join('');
-
-        html += `
-        <div class="category-card" onclick="openDepto('${c.id}')">
+        <div class="category-card" style="border-top: 5px solid ${color} !important;" onclick="openDepto('${c.id}')">
             <div class="category-text-area">
                 <div class="category-title">${c.title}</div>
             </div>
