@@ -148,22 +148,21 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .category-img-wrapper {
     width: 100%;
     aspect-ratio: 1/1;
-    background: #ffffff; /* Fundo da caixinha branco */
-    border-radius: 8px;
+    background: transparent; /* Deixa o fundo transparente para aparecer a cor do botão */
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 8px;
-    padding: 6px;
-    box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
+    padding: 0; /* Removido o espaço interno para a imagem crescer ao máximo */
 }
 .category-img-wrapper img {
-    width: 90%;
-    height: 90%;
+    width: 100%; /* Aumentado para 100% para a foto ficar maior */
+    height: 100%;
     object-fit: contain;
-    mix-blend-mode: multiply; /* Lente que apaga o fundo branco da foto do produto */
+    mix-blend-mode: multiply; /* A lente que faz o fundo branco da foto sumir no botão colorido */
+    /* Dica: se a foto ficar muito escura, troque "multiply" por "darken" */
 }
-.category-title {
+    .category-title {
     font-size: 0.75rem; /* Fonte menor e elegante */
     font-weight: 600;
     color: #ffffff;
