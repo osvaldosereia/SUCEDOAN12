@@ -1049,6 +1049,7 @@ function getYouTubeEmbedUrl(url) {
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
     currentMarcaTab: '', baskets: [], prods: [], combos: [], returnToUpsell: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
+    editingBaskets: {}, // <-- ADICIONE ESTA LINHA
     // Agora mantemos apenas os departamentos estáticos. Os dinâmicos serão populados na leitura do JSON.
     deptos: {
         'desc_20': { id: 'desc_20', title: '20% de Desconto', type: 'PROD', data: [] },
@@ -1709,6 +1710,26 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     STATE.viewStack = 'DEPTO_LIST';
     STATE.returnToUpsell = fromUpsell; 
 
+    // NOVO: Desvio específico para as Cestas Prontas (Layout de Carrosseis)
+    if (deptoId === 'cestas') {
+        document.getElementById('see-all-controls').style.display = 'none';
+        document.getElementById('see-all-footer').style.display = 'none';
+        document.getElementById('cesta-info-banner').innerHTML = `
+            <div style="padding: 15px; background: var(--c-img-bg); border-bottom: 1px solid var(--c-bd); color: var(--c-p); font-weight: 500; font-size: 0.9rem; text-align: center; line-height: 1.4;">
+                🧺 Deslize para o lado para ver os itens. Você pode alterar as quantidades antes de adicionar a cesta na sacola.
+            </div>`;
+        
+        let grid = document.getElementById('see-all-grid');
+        grid.className = ''; // Remove as classes de grid para usar block
+        document.getElementById('see-all-view').classList.add('open');
+        
+        renderCestasCarousels(); // Chama a nova função
+        
+        if (!history.state || !history.state.lateralOpen) history.pushState({ lateralOpen: true }, '');
+        return;
+    }
+
+    // Comportamento normal para os outros departamentos
     STATE.currentSort = 'maior_desconto';
     STATE.currentKeyword = 'all';
 
@@ -1745,10 +1766,9 @@ window.openDepto = function(deptoId, fromUpsell = false) {
     }
 
     const grid = document.getElementById('see-all-grid');
+    grid.className = 'grid-ver-todos'; // Restaura classe padrão
     if (d.type === 'BASKET' || d.type === 'COMBO') { 
         grid.classList.add('grid-cestas-kits'); 
-    } else { 
-        grid.classList.remove('grid-cestas-kits'); 
     }
     document.getElementById('cesta-info-banner').innerHTML = '';
 
@@ -2086,7 +2106,143 @@ window.openUpsellView = function() {
         </div>
     `;
 };
+// RENDERIZA A LISTA DE CARROSSEIS DE CESTAS
+function renderCestasCarousels() {
+    STATE.editingBaskets = {};
+    let html = '<div style="padding-bottom: 80px; max-width: 1000px; margin: 0 auto;">';
 
+    STATE.baskets.forEach(basket => {
+        let bState = { originalSum: 0, currentSum: 0, priceOffset: 0, items: {} };
+        let itemsHtml = '';
+
+        basket.produtos.forEach(s => {
+            let partes = String(s).split('x');
+            if (partes.length > 1) {
+                let qty = parseInt(partes[0]);
+                let pId = partes[1].trim();
+                let p = STATE.prods.find(x => x.id === pId);
+
+                if (p) {
+                    bState.items[pId] = qty;
+                    bState.originalSum += p.price * qty;
+
+                    itemsHtml += `
+                    <div class="qr-item" style="width: 150px; flex: 0 0 auto;">
+                        <div class="u-card" id="cesta-item-${basket.id}-${pId}" style="height: 100%; opacity: ${qty===0?'0.5':'1'}; transition: 0.2s;">
+                            <div class="u-img-area" style="aspect-ratio: 1/1;">
+                                <div class="removido-overlay" id="rem-tag-${basket.id}-${pId}" style="display:${qty===0?'block':'none'}; font-size: 0.75rem;">REMOVIDO</div>
+                                <img src="${p.img}">
+                            </div>
+                            <div class="u-info" style="padding-bottom: 8px;">
+                                <div class="u-name" style="font-size: 0.85rem; -webkit-line-clamp: 2;">${formatName(p.name)}</div>
+                                <div class="u-price" style="font-size: 0.95rem; margin-top: 4px;">${fmt(p.price)}</div>
+                            </div>
+                            <div class="card-qty-ctrl" style="height: 34px; margin-top: 0; background: var(--c-bd);">
+                                <button onclick="changeCestaItemQty('${basket.id}', '${pId}', -1)" style="font-size: 1.2rem; width: 34px;">-</button>
+                                <span id="cesta-qty-${basket.id}-${pId}" style="font-size: 0.9rem;">${qty}</span>
+                                <button onclick="changeCestaItemQty('${basket.id}', '${pId}', 1)" style="font-size: 1.2rem; width: 34px;">+</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+            }
+        });
+
+        bState.priceOffset = Math.max(0, basket.preco - bState.originalSum);
+        bState.currentSum = bState.originalSum;
+        STATE.editingBaskets[basket.id] = bState;
+
+        html += `
+        <div class="qr-section" style="margin-bottom: 35px; padding-bottom: 25px; border-bottom: 2px dashed var(--c-bd);">
+            <div class="qr-title" style="font-size: 1.2rem; margin-bottom: 10px;">${basket.nome}</div>
+            
+            <div class="qr-carousel-wrapper" style="margin-bottom: 15px;">
+                <div class="qr-track" style="padding: 5px 15px 15px 15px; gap: 12px;">
+                    ${itemsHtml}
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: flex-start; padding: 0 15px; gap: 20px;">
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 0.85rem; color: var(--c-s); font-weight: 500;">Valor da Cesta</span>
+                    <span id="cesta-total-${basket.id}" style="font-size: 1.4rem; font-weight: 800; color: var(--c-p); line-height: 1;">${fmt(basket.preco)}</span>
+                </div>
+                <button onclick="addCestaToCart('${basket.id}')" style="background: var(--c-p); color: #fff; padding: 12px 20px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; border: none; flex: 1; max-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: 0.2s;">
+                    Adicionar Cesta
+                </button>
+            </div>
+        </div>`;
+    });
+
+    html += '</div>';
+    document.getElementById('see-all-grid').innerHTML = html;
+    document.getElementById('see-all-content').scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// CONTROLE DE QUANTIDADE INDIVIDUAL NA CESTA
+window.changeCestaItemQty = function(basketId, pId, delta) {
+    let bState = STATE.editingBaskets[basketId];
+    let p = STATE.prods.find(x => x.id === pId);
+    if (!bState || !p) return;
+
+    let current = bState.items[pId] || 0;
+    let next = Math.max(0, current + delta);
+    if (next > p.stock) return showToast("Estoque insuficiente", "r");
+
+    bState.items[pId] = next;
+
+    let qtyEl = document.getElementById(`cesta-qty-${basketId}-${pId}`);
+    if (qtyEl) qtyEl.innerText = next;
+
+    let itemCard = document.getElementById(`cesta-item-${basketId}-${pId}`);
+    let remTag = document.getElementById(`rem-tag-${basketId}-${pId}`);
+
+    if (next === 0) {
+        if(itemCard) itemCard.style.opacity = '0.5';
+        if(remTag) remTag.style.display = 'block';
+    } else {
+        if(itemCard) itemCard.style.opacity = '1';
+        if(remTag) remTag.style.display = 'none';
+    }
+
+    let currentSum = 0;
+    Object.keys(bState.items).forEach(id => {
+        let prod = STATE.prods.find(x => x.id === id);
+        if (prod) currentSum += prod.price * bState.items[id];
+    });
+    bState.currentSum = currentSum;
+
+    let displayPrice = currentSum + bState.priceOffset;
+    let totalEl = document.getElementById(`cesta-total-${basketId}`);
+    if (totalEl) totalEl.innerText = fmt(displayPrice);
+};
+
+// ADICIONA A CESTA ESCOLHIDA À SACOLA E ABRE O UPSELL
+window.addCestaToCart = function(basketId) {
+    let bState = STATE.editingBaskets[basketId];
+    let basketObj = STATE.baskets.find(x => String(x.id) === String(basketId));
+    if (!bState || !basketObj) return;
+
+    let addedAny = false;
+    Object.entries(bState.items).forEach(([pId, qty]) => {
+        if (qty > 0) {
+            if (!STATE.cart[pId]) STATE.cartOrder.push(pId);
+            STATE.cart[pId] = (STATE.cart[pId] || 0) + qty;
+            addedAny = true;
+        }
+    });
+
+    if (!addedAny) return showToast("A cesta está vazia. Adicione itens.", "r");
+
+    STATE.baseBasket = basketObj;
+    STATE.basketExtraFee += bState.priceOffset;
+
+    updateTotals();
+    showToast(`Cesta ${basketObj.nome} adicionada com sucesso!`, "s");
+    
+    // Direciona para a tela de Upsell padrão
+    openUpsellView();
+};
 function buildCardHtml(item, type) {
     let id = item.id; 
     let img = item.img || item.imagem || '/site/img/produtos/cesta.webp';
