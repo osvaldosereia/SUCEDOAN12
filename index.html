@@ -129,7 +129,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     }
 }
     
-/* === NOVO LAYOUT: TEXTO ACIMA E GRID 2x2 ABAIXO === */
+/* === VISUAL ATUALIZADO: FUNDO BRANCO ATRÁS DAS MINI FOTOS === */
 .category-card {
     background: #f1f5f9 !important; /* Fundo cinza claro */
     border: none !important; 
@@ -140,7 +140,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 4px 10px rgba(0,0,0,0.06);
-    padding: 16px 12px; /* Botão um pouco mais alto verticalmente */
+    padding: 16px 12px; 
     height: 100%;
 }
 .category-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
@@ -150,62 +150,64 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .category-text-area {
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Alinha tudo à esquerda */
+    align-items: flex-start;
     justify-content: flex-start;
     width: 100%;
-    margin-bottom: 16px; /* Empurra as fotos lá para baixo */
+    margin-bottom: 16px;
 }
 
 .category-title {
-    font-size: 1.05rem; /* Fonte maior, com peso de título */
-    font-weight: 700; /* Letra mais grossa/pesada */
+    font-size: 1.05rem;
+    font-weight: 700;
     color: #1e293b !important;
-    text-align: left; /* Texto à esquerda */
+    text-align: left;
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.2;
     width: 100%;
-    min-height: 38px; /* Mantém a altura organizada */
+    min-height: 38px;
 }
 
 .category-price {
     font-size: 0.95rem;
     font-weight: 800;
     color: #0f766e !important;
-    text-align: left; /* Preço à esquerda */
+    text-align: left;
     width: 100%;
     margin-top: 4px;
 }
 
-/* Cria a grade 2x2 para as imagens na base do botão */
+/* Grade 2x2 para as imagens na base do botão */
 .category-img-grid {
     width: 100%;
     aspect-ratio: 1/1;
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
-    gap: 12px; /* Gap maior deixa as fotinhas um pouco menores e mais separadas */
-    padding: 0 8px; /* Afasta um pouco as fotos das bordas do botão */
-    margin-top: auto; /* Garante que a grade fique sempre no fundo do botão */
+    gap: 10px; /* Um pouco mais de espaço entre os cards brancos */
+    padding: 0 8px;
+    margin-top: auto;
 }
 
-/* Aplica o estilo, cantos arredondados e lente mais clara */
+/* Novo estilo para cada mini foto: FUNDO BRANCO E ARREDONDADO */
 .category-img-grid img {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    border-radius: 8px;
-    mix-blend-mode: darken; /* Troquei para 'darken' para deixar a foto mais clara e viva */
-    background: transparent;
-}
     
-.qr-main-title {
-    max-width: 1000px; margin: 25px auto 15px; padding: 0 15px 5px;    
-    font-size: 1.2rem; font-weight: 800; color: var(--c-p); border-bottom: 2px solid var(--c-bd); 
+    /* Mágica aqui: Remove a lente, adiciona fundo branco e borda redonda */
+    mix-blend-mode: normal !important; /* Garante que a lente antiga sumiu */
+    background-color: #ffffff; /* Fundo branco atrás da imagem */
+    border-radius: 8px; /* Cantos arredondados do fundo branco */
+    
+    /* Opcional: Uma sombra super leve para dar relevo ao card branco */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+    
+    /* Espaçamento interno para o produto não encostar na borda branca */
+    padding: 5px; 
 }
-
 .home-tv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 @media (min-width: 800px) { .home-tv-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
 
