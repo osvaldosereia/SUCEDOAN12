@@ -21,7 +21,6 @@
     --c-bg: #ffffff;      
     --c-bd: #f1f5f9;      
     
-    /* Ajuste: Um cinza visível, mas suave */
     --c-img-bg: #f1f5f9;  
     
     --font: 'Inter', system-ui, sans-serif;
@@ -126,30 +125,27 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-card:active { transform: scale(0.96); }
 .col-span-2 { grid-column: span 2; aspect-ratio: auto; min-height: 120px; justify-content: center; }
 
-/* Destaque visual da Cesta - Azul Petróleo e Layout Duplo */
 .home-card.highlighted {
-    background: #075985 !important; /* Azul Petróleo Profundo */
+    background: #075985 !important;
     border-color: #075985 !important;
     box-shadow: 0 8px 24px rgba(7, 89, 133, 0.25) !important;
-    grid-column: span 2; /* Ocupa 2 colunas no grid mobile */
-    aspect-ratio: auto;  /* Altura flexível */
+    grid-column: span 2;
+    aspect-ratio: auto;  
     min-height: 100px;
     display: flex;       
-    flex-direction: row; /* Ícone na esquerda, textos na direita */
+    flex-direction: row;
     align-items: center;
-    justify-content: flex-start; /* Alinha o conteúdo ao início */
+    justify-content: flex-start;
     gap: 15px;
     padding: 15px 25px;
 }
 
-/* --- COMPRA RÁPIDA: Estilo do Botão e Carrossel --- */
 .home-card.highlighted-green {
-    background: #0f766e !important; /* Verde Esmeralda escuro */
+    background: #0f766e !important;
     border-color: #0f766e !important;
     box-shadow: 0 8px 24px rgba(15, 118, 110, 0.25) !important;
 }
 
-/* Título principal reduzido (1.2rem) e alinhado */
 .qr-main-title {
     max-width: 1000px;
     margin: 30px auto 15px; 
@@ -160,11 +156,10 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     border-bottom: 2px solid var(--c-bd); 
 }
 
-/* --- COMPRA RÁPIDA: Respiro e linha padronizados --- */
 .qr-section { 
     margin: 0 auto 45px; 
     padding-bottom: 40px; 
-    border-bottom: 2px dotted #cbd5e1; /* Linha pontilhada padronizada */
+    border-bottom: 2px dotted #cbd5e1;
     max-width: 1000px;   
     position: relative; 
 }
@@ -175,9 +170,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     padding-bottom: 0;
 }
 
-/* Subtítulos menores (0.95rem) */
 .qr-title { 
-    font-size: 0.95rem; 
+    font-size: 1.15rem; 
     font-weight: 600; 
     color: var(--c-p); 
     margin: 0 15px 12px; 
@@ -186,12 +180,11 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
 .qr-carousel-wrapper { position: relative; }
 
-/* Correção da margem esquerda no scroll do celular */
 .qr-track { 
     display: flex; 
     gap: 12px; 
-    padding: 5px 15px 15px 15px; /* Espaçamento real nas bordas */
-    scroll-padding-left: 15px;   /* Garante que o scroll pare preservando a margem */
+    padding: 5px 15px 15px 15px;
+    scroll-padding-left: 15px;
     overflow-x: auto; 
     scroll-snap-type: x mandatory; 
     scrollbar-width: none; 
@@ -199,7 +192,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .qr-track::-webkit-scrollbar { display: none; }
 
-/* Tamanho do card ajustado para um meio-termo (38% no celular) */
 .qr-item { flex: 0 0 38%; scroll-snap-align: start; }
 
 .qr-arrow { 
@@ -212,14 +204,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .qr-arrow.right { right: 5px; }
 
 @media (min-width: 800px) { 
-    /* Ajuste para telas maiores (16% no PC) */
     .qr-item { flex: 0 0 16%; } 
     .qr-arrow { display: flex; align-items: center; justify-content: center; } 
     .qr-arrow.left { left: -15px; } 
     .qr-arrow.right { right: -15px; }
 }
 
-/* O restante mantém a cor e o tamanho das letras do Card Destaque */
 .home-card.highlighted .home-card-title {
     display: block;      
     color: #ffffff !important;
@@ -275,7 +265,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     padding: 0 5px;
 }
 
-/* --- CARROSSEL TV MOBILE --- */
 .home-tv-carousel-wrapper {
     grid-column: 1 / -1; 
     width: 100%;
@@ -285,19 +274,16 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     flex-direction: column;
 }
 
-@media (min-width: 800px) {
-    .home-tv-carousel-wrapper { display: none !important; }
-}
-
 .home-tv-title {
-    font-size: 1.1rem; font-weight: 600; color: var(--c-p); 
+    font-size: 1.15rem; font-weight: 600; color: var(--c-p); 
     margin-bottom: 12px; text-transform: uppercase;
 }
 
 .home-tv-track {
     display: flex; gap: 12px; overflow-x: auto; 
     scroll-snap-type: x mandatory; scrollbar-width: none;
-    padding-bottom: 5px;
+    padding-bottom: 15px; padding-left: 15px; padding-right: 15px;
+    scroll-padding-left: 15px;
 }
 .home-tv-track::-webkit-scrollbar { display: none; }
 
@@ -308,7 +294,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     border-radius: 12px;
     position: relative;
     overflow: hidden;
-    scroll-snap-align: center;
+    scroll-snap-align: start;
     display: flex; flex-direction: column;
 }
 
@@ -337,28 +323,19 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .home-tv-more {
     flex: 0 0 42%; aspect-ratio: 9 / 16; border-radius: 12px;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    background: var(--c-img-bg); border: 2px dashed var(--c-t); cursor: pointer; scroll-snap-align: center;
+    background: var(--c-img-bg); border: 2px dashed var(--c-t); cursor: pointer; scroll-snap-align: start;
 }
 
-/* Carrinho Flutuante */
+@media (min-width: 800px) {
+    .home-tv-item { flex: 0 0 250px; }
+    .home-tv-more { flex: 0 0 250px; }
+}
+
 .floating-cart {
-    position: fixed; 
-    bottom: 20px; 
-    left: 50%; 
-    transform: translateX(-50%); 
-    width: 92%; 
-    max-width: 400px; 
-    background-color: var(--c-p); 
-    color: #fff; 
-    border-radius: 12px; 
-    padding: 14px 20px; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); 
-    z-index: 95; 
-    cursor: pointer; 
-    transition: transform 0.2s, opacity 0.2s, bottom 0.3s;
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 400px; 
+    background-color: var(--c-p); color: #fff; border-radius: 12px; padding: 14px 20px; 
+    display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15); 
+    z-index: 95; cursor: pointer; transition: transform 0.2s, opacity 0.2s, bottom 0.3s;
 }
 
 .floating-cart:active { transform: translateX(-50%) scale(0.96); }
@@ -366,18 +343,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .fc-badge { background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;}
 .fc-right { font-weight: 700; font-size: 1.1rem; }
 
-/* Visualização Lateral */
 .lateral-view {
-    position: fixed; 
-    top: 0; 
-    left: 100%; 
-    width: 100%; 
-    height: 100dvh; 
-    background: var(--c-bg);
-    z-index: 90; 
-    transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); 
-    display: flex; 
-    flex-direction: column;
+    position: fixed; top: 0; left: 100%; width: 100%; height: 100dvh; background: var(--c-bg);
+    z-index: 90; transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column;
 }
 .lateral-view.open { left: 0; }
 
@@ -422,7 +390,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .grid-micro { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px 12px; }
 @media(min-width: 800px) { .grid-micro { grid-template-columns: repeat(6, 1fr); gap: 24px 16px; } }
 .grid-micro-3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 12px; }
-.grid-micro .btn-add-minimal, .grid-micro-3 .btn-add-minimal { width: 28px; height: 28px; font-size: 1.2rem; }
 
 .u-card { background: #fff; border: 1px solid var(--c-bd); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: transform 0.2s;}
 .u-card:hover { transform: translateY(-2px); }
@@ -523,11 +490,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .checkout-footer { position: absolute; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px; border-top: 1px solid var(--c-bd); z-index: 10; }
 .btn-big-action { width: 100%; background: var(--c-p); color: #fff; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: flex; justify-content: center; align-items: center; border: none; transition: 0.2s;}
 
-.upsell-section { grid-column: 1 / -1; margin-top: 0px; padding-top: 10px; }
-.upsell-header-title { font-size: 1.2rem; font-weight: 600; color: var(--c-p); margin-bottom: 4px; text-align: left; }
-.upsell-header-sub { font-size: 0.9rem; color: var(--c-s); margin-bottom: 25px; text-align: left; font-weight: 400; }
-.carousel-title { font-size: 1.05rem; font-weight: 600; color: var(--c-p); text-align: left; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase;}
-
 .u-card-minimal { 
     background: transparent; border: none; border-radius: 0; 
     display: flex; flex-direction: column; position: relative; 
@@ -548,9 +510,6 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .u-bot-minimal { display: flex; flex-direction: row; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: 0; padding-top: 2px;}
 .u-price-minimal { font-size: 1.05rem; font-weight: 700; color: var(--c-p); line-height: 1; }
 .u-tag-discount { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 6px; font-weight: 700; border-radius: 6px; }
-
-.btn-add-minimal { position: absolute; bottom: 8px; right: 8px; width: 34px; height: 34px; background: #fff; color: var(--c-p); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 400; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
-.btn-add-minimal.has-item { background: var(--c-p); color: #fff; font-size: 1rem; font-weight: 600;}
 
 /* Asymmetrical Grid Mobile */
 @media (max-width: 799px) {
@@ -637,36 +596,14 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 .wholesale-badge { background: var(--c-img-bg); padding: 10px 12px; border-radius: 8px; margin-top: 12px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--c-p); }
 .wholesale-badge span.price { font-weight: 700; color: var(--c-ok); font-size: 1rem; }
 
-/* Para esconder e mostrar via Lazy Load */
 .lazy-carousel-wrapper { 
     opacity: 0; transition: opacity 0.5s; 
-    
-    /* Novo respiro e linha separadora aplicados diretamente na caixa */
     margin-bottom: 45px;
     padding-bottom: 40px;
     border-bottom: 2px dotted #cbd5e1;
 }
 .lazy-carousel-wrapper.loaded { opacity: 1; }
-
-/* Remove a linha da última sessão da Home */
-.lazy-carousel-wrapper:last-child {
-    border-bottom: none;
-    margin-bottom: 20px;
-    padding-bottom: 0;
-}
-
-/* Mantém o separador funcionando para a tela de Sacola (Upsell) */
-.home-grid-section {
-    margin-bottom: 45px;      
-    padding-bottom: 40px;     
-    border-bottom: 2px dotted #cbd5e1; 
-}
-.home-grid-section:last-child {
-    border-bottom: none;
-    margin-bottom: 20px;
-    padding-bottom: 0;
-}
-
+.lazy-carousel-wrapper:last-child { border-bottom: none; margin-bottom: 20px; padding-bottom: 0; }
 </style>
 </head>
 <body>
@@ -699,8 +636,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
     <div id="grid-home-sections" class="grid-home-sections"></div>
     
-    <div id="home-destaques-section" style="max-width: 1000px; margin: 0 auto; padding: 10px 15px 40px; display: none;">
-    </div>
+    <div id="home-destaques-section" style="max-width: 1000px; margin: 0 auto; padding: 10px 15px 40px; display: none;"></div>
 
 </main>
 
@@ -722,8 +658,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         </button>
         <h2 class="see-all-title">Compra Rápida</h2>
     </div>
-    <div class="see-all-content" id="compra-rapida-content" style="padding: 0 0 120px; overflow-x: hidden;">
-    </div>
+    <div class="see-all-content" id="compra-rapida-content" style="padding: 0 0 120px; overflow-x: hidden;"></div>
 </div>
 
 <div id="global-search-view" class="lateral-view quick-view">
@@ -781,14 +716,12 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
     
     <div class="see-all-controls" id="see-all-controls" style="display:none;">
         <div class="filters-row" id="normal-filters">
-
             <div class="custom-dropdown" id="dropdown-keyword">
                 <div class="custom-dropdown-btn" onclick="toggleDropdown('keyword', event)">
                     <span id="label-keyword">Todos</span> <span>▼</span>
                 </div>
                 <div class="custom-dropdown-list" id="list-keyword"></div>
             </div>
-
             <div class="custom-dropdown" id="dropdown-sort">
                 <div class="custom-dropdown-btn" onclick="toggleDropdown('sort', event)">
                     <span id="label-sort">Relevância</span> <span>▼</span>
@@ -799,7 +732,6 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
                     <div class="custom-dropdown-item" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
                 </div>
             </div>
-            
             <div class="custom-dropdown" id="dropdown-marcas" style="display:none;">
                 <div class="custom-dropdown-btn" onclick="toggleDropdown('marcas', event)">
                     <span id="label-marcas">Marca</span> <span>▼</span>
@@ -837,16 +769,12 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         
         <h3 id="qv-name" style="font-size: 1rem; font-weight: 600; color: var(--c-p); margin-top: 5px; margin-bottom: 4px; line-height: 1.3; text-align: left;"></h3>
         <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-err); margin-bottom: 8px; font-weight: 500; text-align: left; display: none;"></div>
-        
         <div id="qv-price" style="font-size: 1.35rem; font-weight: 700; color: var(--c-p); margin-bottom: 10px; text-align: left;"></div>
-        
         <div id="qv-wholesale" style="display: none;"></div>
-
         <div id="qv-desc" style="font-size: 0.85rem; color: var(--c-s); line-height: 1.4; margin-bottom: 15px; margin-top: 15px; text-align: left; display: none;"></div>
         
         <div id="qv-action-area" data-id=""></div>
         <div id="qv-bottom-buttons"></div> 
-
         <div id="qv-recommendations" style="margin-top: 25px;"></div>
     </div>
 </div>
@@ -866,8 +794,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
             </div>
         </div>
     </div>
-    <div class="video-feed-container" id="v-feed-track">
-    </div>
+    <div class="video-feed-container" id="v-feed-track"></div>
 </div>
 
 <div id="info-view" class="lateral-view">
@@ -937,7 +864,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         <div class="chk-section">
             <h3 class="chk-section-title">Seus Produtos</h3>
             <div id="chk-list"></div>
-            <button class="btn-modal secondary" style="border: 1px dashed var(--c-s); background: transparent;" onclick="closeCheckout();">Adicionar mais items</button>        
+            <button class="btn-modal secondary" style="border: 1px dashed var(--c-s); background: transparent;" onclick="closeCheckout();">Adicionar mais itens</button>        
         </div>
         <div class="chk-section">
             <h3 class="chk-section-title">Entrega</h3>
@@ -1005,7 +932,6 @@ const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3
 const MIN_ORDER = 75.00; 
 const $ = id => document.getElementById(id);
 
-// Nova função para criar um ID seguro a partir do nome da categoria do JSON
 function catToId(name) {
     if (!name) return 'cat_outros';
     let clean = norm(name).replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
@@ -1048,7 +974,7 @@ function getYouTubeEmbedUrl(url) {
 
 const STATE = {
     dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
-    currentMarcaTab: '', baskets: [], prods: [], combos: [], returnToUpsell: false, allVideos: [], currentFilteredList: [], tvCategory: 'all',
+    currentMarcaTab: '', baskets: [], prods: [], combos: [], allVideos: [], currentFilteredList: [], tvCategory: 'all',
     editingBaskets: {},
     deptos: {
         'desc_20': { id: 'desc_20', title: '20% de Desconto', type: 'PROD', data: [] },
@@ -1097,9 +1023,7 @@ function renderHomeCards() {
 window.openCompraRapida = function() {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     STATE.viewStack = 'COMPRA_RAPIDA';
-    
     renderCompraRapidaContent();
-    
     document.getElementById('compra-rapida-view').classList.add('open');
     if (!history.state || !history.state.crOpen) history.pushState({ crOpen: true }, '');
 }
@@ -1118,38 +1042,27 @@ window.scrollQrCarousel = function(catId, direction) {
     }
 }
 
-function renderCompraRapidaContent() {
-    let html = '';
-    let categoriasDinamicas = Object.values(STATE.deptos)
-        .filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0)
-        .sort((a,b) => String(a.title).localeCompare(String(b.title)));
-
-    categoriasDinamicas.forEach(cat => {
-        let itemsOrdenados = [...cat.data].sort((a, b) => String(a.name).localeCompare(String(b.name)));
-        html += buildQrCarouselHtml(cat.id, cat.title, itemsOrdenados);
-    });
-
-    if(html === '') html = '<p style="text-align:center; padding: 40px; color: var(--c-s);">Nenhum produto categorizado encontrado.</p>';
-    document.getElementById('compra-rapida-content').innerHTML = html;
-}
-
-function buildQrCarouselHtml(carouselId, title, items) {
+// NOVO: Função Global unificada para construir TODOS os carrosseis (Home e Compra Rápida)
+function buildStandardCarouselHtml(carouselId, title, items, viewAllAction) {
     let html = `
     <div class="qr-section">
-        <div class="qr-title">${title}</div>
+        <div class="qr-title" style="font-size: 1.15rem; margin-bottom: 15px;">${title}</div>
         <div class="qr-carousel-wrapper">
             <button class="qr-arrow left" onclick="scrollQrCarousel('${carouselId}', -1)">❮</button>
             <div class="qr-track" id="qr-track-${carouselId}">
     `;
+    
     items.slice(0, 25).forEach(item => {
         html += `<div class="qr-item">${buildCardHtml(item, 'PROD')}</div>`;
     });
-    if(items.length > 25) {
-        html += `<div class="qr-item" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${carouselId}', false)">
+    
+    if(items.length > 25 && viewAllAction) {
+        html += `<div class="qr-item" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="${viewAllAction}">
             <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
-            <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos</span>
+            <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.85rem; font-weight:500;">${title}</span></span>
         </div>`;
     }
+    
     html += `
             </div>
             <button class="qr-arrow right" onclick="scrollQrCarousel('${carouselId}', 1)">❯</button>
@@ -1158,23 +1071,50 @@ function buildQrCarouselHtml(carouselId, title, items) {
     return html;
 }
 
+function renderCompraRapidaContent() {
+    let html = '';
+    let categoriasDinamicas = Object.values(STATE.deptos)
+        .filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0)
+        .sort((a,b) => String(a.title).localeCompare(String(b.title)));
+
+    categoriasDinamicas.forEach(cat => {
+        let itemsOrdenados = [...cat.data].sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        html += buildStandardCarouselHtml(cat.id, cat.title, itemsOrdenados, `openDepto('${cat.id}')`);
+    });
+
+    if(html === '') html = '<p style="text-align:center; padding: 40px; color: var(--c-s);">Nenhum produto categorizado encontrado.</p>';
+    document.getElementById('compra-rapida-content').innerHTML = html;
+}
+
+window.playInlineVideo = function(elId, videoId) {
+    let el = document.getElementById(elId);
+    if(el) {
+        el.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; border-radius:12px; position:relative; z-index:10;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    }
+}
 
 function renderHomeMobileTV() {
     let container = $('home-tv-carousel');
     if (!container || STATE.allVideos.length === 0) return;
 
     let videosToShow = STATE.allVideos.slice(0, 10);
+    let isDesktop = window.innerWidth >= 800;
     
-    let trackHtml = videosToShow.map(v => `
-        <div class="home-tv-item">
-            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="openVideoFeed('${v.videoId}')" alt="Thumbnail TV">
-            <div class="home-tv-play">▶</div>
+    let trackHtml = videosToShow.map((v, idx) => {
+        let videoElId = `inline-vid-${idx}`;
+        let onClickAction = isDesktop ? `playInlineVideo('${videoElId}', '${v.videoId}')` : `openVideoFeed('${v.videoId}')`;
+        
+        return `
+        <div class="home-tv-item" id="${videoElId}">
+            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" class="home-tv-thumb" onclick="${onClickAction}" alt="Thumbnail TV">
+            <div class="home-tv-play" onclick="${onClickAction}">▶</div>
             <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
                 <img src="${v.product.img}" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                 <button class="home-tv-prod-btn">Ver</button>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     trackHtml += `
         <div class="home-tv-more" onclick="openVideoFeed()">
@@ -1185,7 +1125,11 @@ function renderHomeMobileTV() {
 
     container.innerHTML = `
         <div class="home-tv-title">TV Dona Antônia</div>
-        <div class="home-tv-track">${trackHtml}</div>
+        <div class="qr-carousel-wrapper">
+            <button class="qr-arrow left" onclick="scrollQrCarousel('tv-track', -1)">❮</button>
+            <div class="home-tv-track" id="qr-track-tv-track">${trackHtml}</div>
+            <button class="qr-arrow right" onclick="scrollQrCarousel('tv-track', 1)">❯</button>
+        </div>
     `;
 }
 
@@ -1229,29 +1173,10 @@ function renderHomeCategories() {
 function renderSingleCarousel(catId, catName, element) {
     let depto = STATE.deptos[catId];
     if(!depto || depto.data.length === 0) return;
-
     let items = [...depto.data].sort((a,b) => String(a.name).localeCompare(String(b.name)));
-    let top4 = items.slice(0, 4);
-
-    let itemsHtml = `
-        <div>
-            <div class="carousel-title" style="margin-bottom: 15px; font-size: 1.15rem; color: var(--c-p);">${catName}</div>
-            <div class="grid-ver-todos">
-    `;
     
-    top4.forEach(item => {
-        itemsHtml += buildCardHtml(item, 'PROD');
-    });
-    
-    itemsHtml += `
-                <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 2px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${catId}', false)">
-                    <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
-                    <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.85rem; font-weight:500;">${catName}</span></span>
-                </div>
-            </div>
-        </div>`;
-
-    element.innerHTML = itemsHtml;
+    // Usa a mesma função inteligente que já temos para padronizar os carrosseis!
+    element.innerHTML = buildStandardCarouselHtml(catId + '_home', catName, items, `openDepto('${catId}')`);
 }
 
 function compileVideos() {
@@ -1679,12 +1604,11 @@ window.goToHome = function() {
     updateTotals();
 };
 
-window.openDepto = function(deptoId, fromUpsell = false) {
+window.openDepto = function(deptoId) {
     if (!STATE.dataLoaded) return showToast("Sincronizando...", "s");
     
     STATE.activeDeptoId = deptoId; 
     STATE.viewStack = 'DEPTO_LIST';
-    STATE.returnToUpsell = fromUpsell; 
 
     if (deptoId === 'cestas') {
         document.getElementById('see-all-controls').style.display = 'none';
@@ -1806,9 +1730,6 @@ window.handleLateralBack = function() {
     if (STATE.viewStack === 'KIT_DETAIL') { 
         if(STATE.activeDeptoId) openDepto(STATE.activeDeptoId); else closeSeeAll();
     } 
-    else if (STATE.viewStack === 'DEPTO_LIST' && STATE.returnToUpsell) {
-        openUpsellView();
-    }
     else { closeSeeAll(); }
 };
 
@@ -1838,10 +1759,7 @@ window.addEventListener('popstate', function(event) {
     else if (crView && crView.classList.contains('open')) closeCompraRapida();
     else if (checkoutView && STATE.checkoutOpen) closeCheckout();
     else if (lateralView && lateralView.classList.contains('open')) {
-        if (STATE.viewStack === 'DEPTO_LIST' && STATE.returnToUpsell) {
-            history.pushState({ lateralOpen: true }, ''); 
-            openUpsellView();
-        } else { closeSeeAll(true); }
+        closeSeeAll(true);
     } 
 });
 
@@ -2005,78 +1923,7 @@ window.commitExpander = function() {
     updateTotals(); 
     showToast("Adicionado à sacola com sucesso!", "s");
     
-    openUpsellView();
-};
-
-window.openUpsellView = function() {
-    STATE.viewStack = 'UPSELL_VIEW';
-    STATE.currentFilteredList = []; 
-    
-    let searchInput = document.getElementById('depto-search');
-    if (searchInput) searchInput.placeholder = "Complete seu Pedido";
-
-    let itemsHtml = `
-    <div class="upsell-section">
-        <div style="background: var(--c-img-bg); border: 1px solid var(--c-bd); color: var(--c-p); padding: 12px; border-radius: 8px; font-weight: 500; font-size: 0.95rem; text-align: center; line-height: 1.4; margin-bottom: 20px;">
-            ✅ Adicionado à sacola com sucesso!
-        </div>
-        <h3 class="upsell-header-title">Adicione mais itens</h3>
-    `;
-
-    let sessoesDinamicas = Object.values(STATE.deptos)
-        .filter(d => d.type === 'PROD' && d.id !== 'desc_10' && d.id !== 'desc_15' && d.data.length > 0)
-        .sort((a,b) => String(a.title).localeCompare(String(b.title)))
-        .slice(0, 10); 
-        
-    if (STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) {
-        sessoesDinamicas.unshift(STATE.deptos['desc_20']);
-    }
-
-    sessoesDinamicas.forEach(d => {
-        let items = [...d.data].sort((a,b) => String(a.name).localeCompare(String(b.name)));
-        let top4 = items.slice(0, 4);
-        if(top4.length > 0) {
-            itemsHtml += `
-            <div class="home-grid-section">
-                <div class="carousel-title" style="margin-bottom: 12px; font-size: 1.1rem;">${d.title}</div>
-                <div class="grid-ver-todos">
-            `;
-            
-            top4.forEach(item => { itemsHtml += buildCardHtml(item, d.type); });
-            
-            itemsHtml += `
-                    <div class="u-card-minimal" style="display:flex; flex-direction:column; align-items:center; justify-content:center; background:transparent; border: 1px dashed var(--c-t); cursor:pointer; min-height: 180px; border-radius: 12px;" onclick="openDepto('${d.id}', true)">
-                        <span style="font-size: 2rem; margin-bottom:8px;">➕</span>
-                        <span style="color: var(--c-p); font-weight: 600; text-align:center;">Ver Todos<br><span style="font-size:0.8rem; font-weight:400;">${d.title}</span></span>
-                    </div>
-                </div>
-            </div>`;
-        }
-    });
-
-    itemsHtml += `</div>`;
-
-    document.getElementById('see-all-controls').style.display = 'none';
-    document.getElementById('cesta-info-banner').innerHTML = '';
-    document.getElementById('see-all-grid').innerHTML = itemsHtml;
-    document.getElementById('see-all-grid').classList.remove('grid-cestas-kits');
-
-    let contentDiv = document.getElementById('see-all-content');
-    contentDiv.style.paddingBottom = '100px';
-    contentDiv.scrollTo({ top: 0, behavior: 'instant' });
-
-    let footerObj = document.getElementById('see-all-footer');
-    footerObj.style.display = 'flex';
-    footerObj.innerHTML = `
-        <div style="display: flex; gap: 10px; width: 100%;">
-            <button class="btn-modal secondary" style="flex: 1;" onclick="goToHome()">
-                Início
-            </button>
-            <button class="btn-modal primary" style="flex: 1;" onclick="openCheckout()">
-                Finalizar Pedido
-            </button>
-        </div>
-    `;
+    openCompraRapida(); // <-- Movido direto pra compra rapida
 };
 
 function renderCestasCarousels() {
@@ -2134,11 +1981,9 @@ function renderCestasCarousels() {
             
             <div class="qr-carousel-wrapper" style="margin-bottom: 12px;">
                 <button class="qr-arrow left" onclick="scrollQrCarousel('basket-${basket.id}', -1)">❮</button>
-                
                 <div class="qr-track" id="qr-track-basket-${basket.id}">
                     ${itemsHtml}
                 </div>
-                
                 <button class="qr-arrow right" onclick="scrollQrCarousel('basket-${basket.id}', 1)">❯</button>
             </div>
 
@@ -2218,7 +2063,7 @@ window.addCestaToCart = function(basketId) {
     updateTotals();
     showToast(`Cesta ${basketObj.nome} adicionada com sucesso!`, "s");
     
-    openUpsellView();
+    openCompraRapida(); // <-- Movido direto pra compra rapida
 };
 
 function buildCardHtml(item, type) {
