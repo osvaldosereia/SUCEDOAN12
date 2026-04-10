@@ -1655,14 +1655,17 @@ window.changeExpanderQty = function(pId, delta) {
 };
 
 window.commitExpander = function() {
-    let addedAny = false; let normalPriceSum = 0;
+    let addedAny = false; 
+    let normalPriceSum = 0;
+
     Object.entries(expanderState.items).forEach(([pId, qty]) => {
         if (qty > 0) {
             let p = STATE.prods.find(x => x.id === pId);
             if(p) {
                 if (!STATE.cart[pId]) STATE.cartOrder.push(pId);
                 STATE.cart[pId] = (STATE.cart[pId] || 0) + qty;
-                normalPriceSum += p.price * qty; addedAny = true;
+                normalPriceSum += p.price * qty; 
+                addedAny = true;
             }
         }
     });
@@ -1670,16 +1673,21 @@ window.commitExpander = function() {
     if (!addedAny) return showToast("Nenhum produto selecionado", "r");
 
     if (expanderState.type === 'BASKET') { 
-        STATE.baseBasket = expanderState.sourceObj; STATE.basketExtraFee += expanderState.priceOffset; 
+        STATE.baseBasket = expanderState.sourceObj; 
+        STATE.basketExtraFee += expanderState.priceOffset; 
     } else {
         let existing = STATE.appliedCombos.find(ac => ac.id === expanderState.id);
-        if (existing) existing.qty += 1;
-        else STATE.appliedCombos.push({ id: expanderState.id, qty: 1, name: expanderState.sourceObj.nome });
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            STATE.appliedCombos.push({ id: expanderState.id, qty: 1, name: expanderState.sourceObj.nome });
+        }
     }
 
     updateTotals(); 
     showToast("Adicionado à sacola com sucesso!", "s");
     
+    // Fecha os detalhes do kit/cesta e direciona para a tela do Supermercado
     closeSeeAll(true);
     openSupermercadoMenu('✅ Adicionado! Continue comprando em nosso supermercado.');
 };
