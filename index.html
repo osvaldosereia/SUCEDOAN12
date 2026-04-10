@@ -902,9 +902,9 @@ window.openSupermercadoMenu = function(customBanner = '') {
     let html = '<div class="grid-pastel">';
     
     let cats = [];
-    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', img: STATE.deptos['desc_20'].data[0].img });
-    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', img: STATE.deptos['desc_15'].data[0].img });
-    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', img: STATE.deptos['desc_10'].data[0].img });
+    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: 'Produtos com 20% de Desconto', img: STATE.deptos['desc_20'].data[0].img });
+    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: 'Produtos com 15% de Desconto', img: STATE.deptos['desc_15'].data[0].img });
+    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: 'Produtos com 10% de Desconto', img: STATE.deptos['desc_10'].data[0].img });
 
     let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
     dynamic.forEach(d => cats.push({ id: d.id, title: d.title, img: d.data[0].img }));
