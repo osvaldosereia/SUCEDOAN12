@@ -130,21 +130,24 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
     
 .category-card {
-    background: #f1f5f9 !important; 
+    background: #ffffff !important; /* Fundo totalmente branco e limpo */
     border-radius: 12px;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    padding: 12px 10px; /* Mais espaço para respirar */
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06); /* Sombra bem suave para dar relevo */
+    padding: 10px 8px; /* Espaço interno reajustado */
     height: 100%;
     align-items: flex-start;
-    justify-content: flex-start; /* Faz o texto ficar mais bem posicionado logo abaixo da foto */
+    justify-content: flex-start;
+    border: 2px solid transparent; /* Cria o espaço da borda que será colorida pelo JS */
 }
-.category-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
-.category-card:active { transform: scale(0.96); }
+.category-card:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12); 
+}
 
 .category-img-wrapper {
     width: 100%;
@@ -882,7 +885,7 @@ window.openCestasMenu = function() {
         let imgCesta = b.imagem ? b.imagem : '/site/img/produtos/cesta.webp'; 
         
         html += `
-        <div class="category-card" style="background: ${color};" onclick="openKitLateralView('${b.id}', 'BASKET')">
+        <div class="category-card" style="border-color: ${color};" onclick="openKitLateralView('${b.id}', 'BASKET')">
             <div class="category-img-wrapper">
                 <img src="${imgCesta}" loading="lazy" alt="${b.nome}" onerror="this.src='/site/img/produtos/cesta.webp'">
             </div>
@@ -909,7 +912,7 @@ window.openKitsMenu = function() {
             }
         }
         html += `
-        <div class="category-card" style="background: ${color};" onclick="openKitLateralView('${b.id}', 'COMBO')">
+        <div class="category-card" style="border-color: ${color};" onclick="openKitLateralView('${b.id}', 'COMBO')">
             <div class="category-img-wrapper">
                 <img src="${imgKit}" loading="lazy" alt="${b.nome}" onerror="this.src='/site/img/produtos/cesta.webp'">
             </div>
@@ -926,9 +929,9 @@ window.openSupermercadoMenu = function(customBanner = '') {
     let html = '<div class="grid-categorias-cards">';
     
     let cats = [];
-    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: 'Produtos com 20% de Desconto', img: STATE.deptos['desc_20'].data[0].img });
-    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: 'Produtos com 15% de Desconto', img: STATE.deptos['desc_15'].data[0].img });
-    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: 'Produtos com 10% de Desconto', img: STATE.deptos['desc_10'].data[0].img });
+    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% Off', img: STATE.deptos['desc_20'].data[0].img });
+    if(STATE.deptos['desc_15'] && STATE.deptos['desc_15'].data.length > 0) cats.push({ id: 'desc_15', title: '15% Off', img: STATE.deptos['desc_15'].data[0].img });
+    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% Off', img: STATE.deptos['desc_10'].data[0].img });
 
     let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
     dynamic.forEach(d => cats.push({ id: d.id, title: d.title, img: d.data[0].img }));
@@ -936,7 +939,7 @@ window.openSupermercadoMenu = function(customBanner = '') {
     cats.forEach((c, idx) => {
         let color = SOBER_COLORS[idx % SOBER_COLORS.length];
         html += `
-        <div class="category-card" style="background: ${color};" onclick="openDepto('${c.id}')">
+        <div class="category-card" style="border-color: ${color};" onclick="openDepto('${c.id}')">
             <div class="category-img-wrapper">
                 <img src="${c.img}" loading="lazy" alt="${c.title}" onerror="this.src='/site/img/produtos/cesta.webp'">
             </div>
