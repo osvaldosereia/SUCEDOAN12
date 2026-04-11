@@ -773,8 +773,11 @@
 
         // ==========================================================
         // FUNÇÕES ESPECÍFICAS DE SALVAMENTO
-     function sanitizeProductsForExport(prods) {
-    // Lista de campos permitidos no produtos.json
+   /**
+ * Sanitiza os produtos para o produtos.json
+ * Força o formato DD/MM/AAAA na validade antes do envio.
+ */
+function sanitizeProductsForExport(prods) {
     const camposPermitidos = [
         'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
         'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
@@ -785,16 +788,15 @@
     return prods.map(p => {
         let cleanP = {};
         
-        // 1. Copia apenas os campos da Lista VIP
         camposPermitidos.forEach(campo => {
             if (p[campo] !== undefined && p[campo] !== null) {
                 let valor = p[campo];
 
-                // REGRA DE OURO: Formatar validade para DD/MM/AAAA antes de subir
+                // CORREÇÃO CRÍTICA: Se for validade e estiver no formato AAAA-MM-DD, converte para DD/MM/AAAA
                 if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) {
-                    // Se o valor estiver como AAAA-MM-DD (vindo do input date), inverte
                     const partes = valor.split('-');
-                    if (partes.length === 3 && partes[0].length === 4) {
+                    // Verifica se a primeira parte é o ano (4 dígitos)
+                    if (partes[0].length === 4) {
                         valor = `${partes[2]}/${partes[1]}/${partes[0]}`;
                     }
                 }
@@ -803,7 +805,7 @@
             }
         });
 
-        // 2. Copia as Imagens (até 3) e resolve o caminho
+        // Copia as Imagens (até 3)
         [1, 2, 3].forEach(i => {
             const prop = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
             if (p[prop]) {
@@ -816,7 +818,7 @@
             }
         });
 
-        // 3. Copia os Vídeos (até 10)
+        // Copia os Vídeos
         for (let i = 1; i <= 10; i++) {
             const prop = i === 1 ? 'link_video' : `link_video_${i}`;
             if (p[prop]) cleanP[prop] = p[prop];
