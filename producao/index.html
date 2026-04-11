@@ -1989,7 +1989,7 @@
             });
         });
 
-        // ==========================================================
+       // ==========================================================
         // 3. ATUALIZAR LOCAL STORAGE DA NUVEM (produtos.json)
         // ==========================================================
         async function fetchFromGithub() {
@@ -2009,7 +2009,7 @@
                 });
 
                 if (response.status === 404) {
-                    return alert("O ficheiro 'site/produtos.json' não foi encontrado. Tente clicar em 'SALVAR PRODUTOS.JSON' primeiro.");
+                    return alert("O ficheiro 'site/produtos.json' não foi encontrado.");
                 }
 
                 if (!response.ok) throw new Error("Falha na comunicação com o GitHub.");
@@ -2020,10 +2020,25 @@
                     if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
                     
                     products = parsedData;
-                    await saveDataLocally();
-                    renderGrid(document.getElementById('search-input').value);
+
+                    // --- NOVIDADE: Extrair categorias únicas dos produtos carregados ---
+                    const catsEncontradas = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))];
                     
-                    alert("Atualização Local concluída com sucesso!");
+                    // Atualiza categoriasDoSistema preservando as subcategorias se já existirem
+                    catsEncontradas.forEach(catNome => {
+                        const existe = categoriasDoSistema.find(c => c.nome.toLowerCase() === catNome.toLowerCase());
+                        if (!existe) {
+                            categoriasDoSistema.push({ nome: catNome, subcategorias: [] });
+                        }
+                    });
+
+                    await saveDataLocally();
+                    await salvarCategoriasLocalmente(); // Garante que a lista de categorias seja salva
+                    
+                    renderGrid(document.getElementById('search-input').value);
+                    renderizarSidebarCategorias();
+                    
+                    alert("Atualização concluída! Categorias sincronizadas da nuvem.");
                     closeSidebar('config-sidebar');
                 } else {
                     alert("O ficheiro transferido não tem o formato esperado.");
