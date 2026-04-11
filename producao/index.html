@@ -188,6 +188,32 @@
         .checklist-item:last-child { border-bottom: none; }
 
         /* =========================================================
+           BALANÇO DE ESTOQUE (NOVO LAYOUT MOBILE/TECLADO)
+           ========================================================= */
+        #balanco-screen { display: none; flex-direction: column; height: 100vh; overflow: hidden; background: #fff;}
+        #balanco-screen.active { display: flex; }
+        .balanco-view { flex: 1; display: flex; flex-direction: column; padding: 10px; min-height: 0; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box; }
+        .balanco-slider-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 0; margin-bottom: 15px; background: var(--bg-body); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+        .balanco-slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; width: 50px; height: 50px; border-radius: 25px; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10; transition: 0.2s;}
+        .balanco-slider-btn:active { transform: translateY(-50%) scale(0.9); }
+        .balanco-slider-btn.left { left: 10px; }
+        .balanco-slider-btn.right { right: 10px; }
+        .balanco-slide { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer; padding: 20px; text-align: center; }
+        .balanco-slide img { max-width: 100%; max-height: 200px; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 15px; }
+        .balanco-slide-title { font-weight: 900; font-size: 16px; color: var(--accent); margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .balanco-slide-sku { font-size: 12px; color: var(--text-secondary); background: #f4f4f5; padding: 4px 8px; border-radius: 6px; }
+
+        .balanco-display-area { text-align: center; margin-bottom: 15px; flex-shrink: 0; }
+        .balanco-display-input { width: 100%; max-width: 300px; font-size: 32px; font-weight: 900; text-align: center; letter-spacing: 5px; border: 2px solid var(--accent); border-radius: 12px; padding: 10px; outline: none; background: #fafafa; color: var(--accent); margin: 0 auto; display: block;}
+        .balanco-display-input::placeholder { color: #d4d4d8; letter-spacing: normal; font-size: 16px; font-weight: 600; }
+
+        .balanco-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; flex-shrink: 0; padding-bottom: 20px; }
+        .numpad-btn { background: var(--bg-card); border: 1px solid var(--border); font-size: 28px; font-weight: 900; color: var(--accent); height: 70px; border-radius: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: 0.1s; }
+        .numpad-btn:active { transform: scale(0.95); background: #f4f4f5; }
+        .numpad-btn.action { background: #f4f4f5; color: var(--text-secondary); }
+        .numpad-btn.action-clear { color: var(--danger); }
+
+        /* =========================================================
            ADAPTAÇÕES MOBILE PRODUTIVAS E MEDIA QUERIES
            ========================================================= */
         .mobile-only { display: none !important; }
@@ -208,6 +234,9 @@
             .card-grid { grid-template-columns: 1fr; gap: 10px; }
             .image-slots { grid-template-columns: repeat(3, 1fr); }
             .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
+            .balanco-numpad { gap: 8px; padding-bottom: 10px;}
+            .numpad-btn { height: 60px; font-size: 24px; }
+            .balanco-display-input { font-size: 28px; }
         }
     </style>
 </head>
@@ -288,15 +317,28 @@
             </div>
         </header>
 
-        <div class="toolbar" style="border-bottom: 1px solid var(--border);">
-            <div class="search-container" style="width: 100%;">
-                <i data-lucide="search" class="search-icon"></i>
-                <input type="text" class="search-input" id="search-balanco" placeholder="Busque por Nome, SKU ou os 4 últimos dígitos do EAN...">
+        <div class="balanco-view">
+            <div class="balanco-slider-area" id="balanco-slider-container">
+                </div>
+
+            <div class="balanco-display-area">
+                <input type="text" id="balanco-ean-input" class="balanco-display-input" placeholder="Digite 4 dígitos..." readonly>
             </div>
-        </div>
-        
-        <div class="main-content" id="balanco-results" style="padding: 15px; display: flex; flex-direction: column; gap: 15px; max-width: 800px; margin: 0 auto; width: 100%;">
-            <p style="text-align:center; color:var(--text-secondary); margin-top:30px;"><i data-lucide="scan-barcode" size="48" style="opacity:0.3; margin-bottom:15px;"></i><br>Digite para começar a contar...</p>
+
+            <div class="balanco-numpad">
+                <button class="numpad-btn" onclick="addNumpad('1')">1</button>
+                <button class="numpad-btn" onclick="addNumpad('2')">2</button>
+                <button class="numpad-btn" onclick="addNumpad('3')">3</button>
+                <button class="numpad-btn" onclick="addNumpad('4')">4</button>
+                <button class="numpad-btn" onclick="addNumpad('5')">5</button>
+                <button class="numpad-btn" onclick="addNumpad('6')">6</button>
+                <button class="numpad-btn" onclick="addNumpad('7')">7</button>
+                <button class="numpad-btn" onclick="addNumpad('8')">8</button>
+                <button class="numpad-btn" onclick="addNumpad('9')">9</button>
+                <button class="numpad-btn action action-clear" onclick="clearNumpad()">C</button>
+                <button class="numpad-btn" onclick="addNumpad('0')">0</button>
+                <button class="numpad-btn action" onclick="backspaceNumpad()"><i data-lucide="delete" size="24"></i></button>
+            </div>
         </div>
     </div>
 
@@ -326,6 +368,15 @@
     </div>
 
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAllSidebars()"></div>
+
+    <div class="sidebar" id="balanco-sidebar" style="z-index: 1016; width: 400px;">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Editar Balanço</div>
+            <button class="btn-icon" onclick="closeSidebar('balanco-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body" id="balanco-sidebar-body" style="gap: 15px;">
+        </div>
+    </div>
 
     <div class="sidebar" id="menu-sidebar">
         <div class="sidebar-header">
@@ -533,12 +584,17 @@
         const ITENS_POR_PAGINA = 9;
 
         // ==========================================================
-        // VARIÁVEIS DO SEPARADOR DE PEDIDOS
+        // VARIÁVEIS DO SEPARADOR DE PEDIDOS E BALANÇO
         // ==========================================================
         let listaDeSeparacao = []; 
         let indexAtualPicking = 0; 
         let pedidoAtualParaSeparacao = null; 
         let audioCtx = null;
+
+        let balancoEditsCount = 0;
+        let balancoSearchTerm = "";
+        let balancoResultados = [];
+        let balancoSlideIndex = 0;
 
         // ==========================================================
         // FUNÇÃO GLOBAL DE LIMPEZA DE TEXTO E GERADORES DE OPÇÕES
@@ -723,12 +779,10 @@
                         const sufix = i === 1 ? '' : `_${i}`; cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
                     }
                 });
-                // delete cleanP.descricao; // Comentado para garantir que absolutamente todos os campos sejam exportados
                 return cleanP;
             });
         }
 
-        // Botão 1: Salvar Banco de Dados Completo
         function salvarBancoDeDadosJSON() {
             enqueueTask("Banco de Dados Completo", async () => {
                 const produtosLimpos = sanitizeProductsForExport(products);
@@ -736,17 +790,13 @@
             }, true); 
         }
 
-        // Botão 2: Salvar Produtos JSON (Vitrine)
         function salvarProdutosJSON() {
             enqueueTask("Produtos.json (Site)", async () => {
-                // Agora pega o objeto completo sem filtrar os campos, 
-                // garantindo que tudo no LocalStorage vá para a nuvem.
                 const vitrine = sanitizeProductsForExport(products);
                 await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Vitrine Site via Botão 2 (Todos os Campos)`);
             }, true);
         }
 
-        // Botão 3: Enviar Imagens na Fila
         function uploadImagens() {
             if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
             
@@ -772,7 +822,6 @@
             });
         }
 
-        // Botão Auxiliar Nuvem
         function uploadFilaPedidosGithub(btn = null) {
             enqueueTask('Forçar Fila de Pedidos', async () => { 
                 await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); 
@@ -817,12 +866,6 @@
         function goToLanding() { showScreen('landing-screen'); }
         function startAdmin() { showScreen('pim-screen'); renderGrid(document.getElementById('search-input').value); }
         function startSeparador() { showScreen('pedidos-screen'); renderizarPedidosScreen(); }
-        function startBalanco() {
-            showScreen('balanco-screen');
-            document.getElementById('search-balanco').value = '';
-            document.getElementById('balanco-results').innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:30px;"><i data-lucide="scan-barcode" size="48" style="opacity:0.3; margin-bottom:15px;"></i><br>Digite para começar a contar...</p>';
-            lucide.createIcons();
-        }
 
         function abrirModalFoto(src) {
             if(!src || src.includes("SEM+FOTO") || src === 'caminho_invalido') return;
@@ -834,97 +877,150 @@
         function abrirFotoTelaCheia() { const tag = document.getElementById('foco-img'); if(tag) abrirModalFoto(tag.src); }
 
         // ==========================================================
-        // MÓDULO: BALANÇO DE ESTOQUE
+        // MÓDULO: BALANÇO DE ESTOQUE (NOVO LAYOUT)
         // ==========================================================
-        let balancoEditsCount = 0;
+        
+        function startBalanco() {
+            showScreen('balanco-screen');
+            clearNumpad();
+        }
 
-        document.getElementById('search-balanco').addEventListener('input', debounce((e) => {
-            let term = e.target.value.trim().toLowerCase();
-            let container = document.getElementById('balanco-results');
+        function addNumpad(num) {
+            if (balancoSearchTerm.length < 15) { 
+                balancoSearchTerm += num;
+                updateBalancoDisplay();
+                searchBalanco();
+            }
+        }
+
+        function clearNumpad() {
+            balancoSearchTerm = "";
+            updateBalancoDisplay();
+            searchBalanco();
+        }
+
+        function backspaceNumpad() {
+            balancoSearchTerm = balancoSearchTerm.slice(0, -1);
+            updateBalancoDisplay();
+            searchBalanco();
+        }
+
+        function updateBalancoDisplay() {
+            document.getElementById('balanco-ean-input').value = balancoSearchTerm;
+        }
+
+        function searchBalanco() {
+            let term = balancoSearchTerm.trim().toLowerCase();
+            let container = document.getElementById('balanco-slider-container');
             
-            if (term.length < 3) { 
-                container.innerHTML = '<p style="text-align:center; color:var(--text-secondary); margin-top:30px;"><i data-lucide="scan-barcode" size="48" style="opacity:0.3; margin-bottom:15px;"></i><br>Digite pelo menos 3 caracteres...</p>'; 
-                lucide.createIcons(); return; 
+            if (term.length < 3) {
+                balancoResultados = [];
+                container.innerHTML = '<div class="balanco-slide" style="cursor:default;"><i data-lucide="scan-barcode" size="64" style="opacity:0.2; margin-bottom:15px;"></i><p style="color:var(--text-secondary); font-weight:600;">Digite ao menos 3 números...</p></div>';
+                lucide.createIcons();
+                return;
             }
 
-            let isNumeric = /^\d+$/.test(term);
-
-            let found = products.filter(p => {
-                let n = (p.nome || "").toLowerCase();
-                let c = (p.codigo || "").toLowerCase();
+            balancoResultados = products.filter(p => {
                 let ean = String(p.gtin || "").replace(/\D/g, "");
-
-                if (isNumeric && term.length >= 4 && ean.length > 0 && ean.endsWith(term)) return true;
-                if (n.includes(term) || c.includes(term)) return true;
+                let sku = String(p.codigo || "").toLowerCase();
+                
+                if (ean.length > 0 && ean.endsWith(term)) return true;
+                if (sku.includes(term)) return true; 
                 return false;
-            }).slice(0, 15);
+            }).slice(0, 10); 
 
-            if(found.length === 0) { 
-                container.innerHTML = '<p style="text-align:center; color:#888;">Nenhum produto encontrado com estes dados.</p>'; 
-                return; 
+            balancoSlideIndex = 0;
+            renderBalancoSlider();
+        }
+
+        function renderBalancoSlider() {
+            let container = document.getElementById('balanco-slider-container');
+            if(balancoResultados.length === 0) {
+                container.innerHTML = '<div class="balanco-slide" style="cursor:default;"><i data-lucide="package-x" size="64" style="opacity:0.2; margin-bottom:15px;"></i><p style="color:var(--text-secondary); font-weight:600;">Nenhum produto encontrado.</p></div>';
+                lucide.createIcons();
+                return;
             }
 
-            container.innerHTML = found.map(p => {
-                let img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/100x100/f4f4f5/a1a1aa?text=SEM+FOTO';
-                return `
-                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform 0.2s; margin-bottom: 20px; flex-shrink: 0; min-height: max-content;">
-                    
-                    <div style="width: 100%; height: 280px; background: #f4f4f5; display: flex; align-items: center; justify-content: center; padding: 10px; cursor: pointer; position: relative; border-bottom: 1px solid var(--border);" onclick="abrirModalFoto('${img}')">
-                        <img src="${img}" style="max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply;">
-                        <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.6); color: white; border-radius: 4px; padding: 6px; display: flex; align-items: center; justify-content: center;">
-                            <i data-lucide="zoom-in" size="18"></i>
-                        </div>
+            let p = balancoResultados[balancoSlideIndex];
+            let img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
+            
+            let arrowsHtml = '';
+            if (balancoResultados.length > 1) {
+                arrowsHtml = `
+                    <button class="balanco-slider-btn left" onclick="mudarSlideBalanco(-1, event)"><i data-lucide="chevron-left" size="32"></i></button>
+                    <button class="balanco-slider-btn right" onclick="mudarSlideBalanco(1, event)"><i data-lucide="chevron-right" size="32"></i></button>
+                    <div style="position:absolute; bottom: 10px; font-size:12px; font-weight:900; background:rgba(0,0,0,0.5); color:white; padding: 4px 10px; border-radius:12px; z-index:5;">
+                        ${balancoSlideIndex + 1} / ${balancoResultados.length}
                     </div>
+                `;
+            }
 
-                    <div style="padding: 15px; display: flex; flex-direction: column; gap: 12px;">
-                        
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label class="form-label" style="font-size: 11px;">Nome do Produto</label>
-                            <input type="text" id="bal-nome-${p.codigo}" value="${(p.nome || '').replace(/"/g, '&quot;')}" class="form-input" style="padding: 12px; font-weight: 800; font-size: 14px;">
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label class="form-label" style="font-size: 11px;">SKU</label>
-                            <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px;">
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label class="form-label" style="font-size: 11px;">EAN</label>
-                            <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="padding: 12px; font-size: 14px;">
-                        </div>
-                        
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label class="form-label" style="font-size: 11px;">Gôndola</label>
-                            <select id="bal-gon-${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
-                                ${getGondolaOptions(p.gondola)}
-                            </select>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label class="form-label" style="font-size: 11px;">Prateleira</label>
-                            <select id="bal-pra-${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
-                                ${getPrateleiraOptions(p.prateleira)}
-                            </select>
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 4px;">
-                            <label class="form-label" style="font-size: 11px;">Validade</label>
-                            <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding: 12px; font-size: 14px;">
-                        </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 5px;">
-                            <label class="form-label" style="color: var(--sep-primary); font-size: 13px; font-weight: 900;">ESTOQUE REAL CONTADO</label>
-                            <input type="number" id="bal-est-${p.codigo}" value="${p.estoque||0}" class="form-input" style="padding: 15px; font-weight: 900; font-size: 28px; text-align: center; color: var(--sep-primary); border: 2px solid var(--sep-primary); background: #ffffff;">
-                        </div>
-
-                        <button class="nav-btn primary" style="width: 100%; justify-content: center; height: 50px; font-size: 14px; margin-top: 5px; font-weight: 900;" onclick="salvarBalanco('${p.codigo}', false, this)">
-                            <i data-lucide="save" size="18"></i> SALVAR
-                        </button>
+            container.innerHTML = `
+                ${arrowsHtml}
+                <div class="balanco-slide" onclick="abrirSidebarBalanco('${p.codigo}')">
+                    <img src="${img}" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'">
+                    <div class="balanco-slide-title">${p.nome || 'Produto sem nome'}</div>
+                    <div class="balanco-slide-sku">SKU: ${p.codigo} | EAN: ${p.gtin || '---'}</div>
+                    <div style="margin-top:10px; background:var(--success); color:white; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:900;">
+                        <i data-lucide="edit" size="12" style="margin-right:4px;"></i> CLIQUE PARA EDITAR
                     </div>
-                </div>`;
-            }).join('');
+                </div>
+            `;
             lucide.createIcons();
-        }), 400);
+        }
+
+        function mudarSlideBalanco(dir, event) {
+            if (event) event.stopPropagation(); 
+            balancoSlideIndex += dir;
+            if (balancoSlideIndex < 0) balancoSlideIndex = balancoResultados.length - 1;
+            if (balancoSlideIndex >= balancoResultados.length) balancoSlideIndex = 0;
+            renderBalancoSlider();
+        }
+
+        function abrirSidebarBalanco(sku) {
+            let p = products.find(x => x.codigo === sku);
+            if(!p) return;
+
+            let body = document.getElementById('balanco-sidebar-body');
+            body.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="form-label" style="font-size: 11px;">Nome do Produto</label>
+                    <input type="text" id="bal-nome-${p.codigo}" value="${(p.nome || '').replace(/"/g, '&quot;')}" class="form-input" style="padding: 12px; font-weight: 800; font-size: 14px;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="form-label" style="font-size: 11px;">SKU</label>
+                    <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="form-label" style="font-size: 11px;">EAN</label>
+                    <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="padding: 12px; font-size: 14px;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="form-label" style="font-size: 11px;">Gôndola</label>
+                    <select id="bal-gon-${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+                        ${getGondolaOptions(p.gondola)}
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="form-label" style="font-size: 11px;">Prateleira</label>
+                    <select id="bal-pra-${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
+                        ${getPrateleiraOptions(p.prateleira)}
+                    </select>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label class="form-label" style="font-size: 11px;">Validade</label>
+                    <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding: 12px; font-size: 14px;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+                    <label class="form-label" style="color: var(--sep-primary); font-size: 13px; font-weight: 900; text-align:center;">ESTOQUE REAL CONTADO</label>
+                    <input type="number" id="bal-est-${p.codigo}" value="${p.estoque||0}" class="form-input" style="padding: 15px; font-weight: 900; font-size: 32px; text-align: center; color: var(--sep-primary); border: 2px solid var(--sep-primary); background: #ffffff;">
+                </div>
+                <button class="nav-btn primary" style="width: 100%; justify-content: center; height: 50px; font-size: 14px; margin-top: 15px; font-weight: 900;" onclick="salvarBalanco('${p.codigo}', false, this)">
+                    <i data-lucide="save" size="18"></i> SALVAR
+                </button>
+            `;
+            openSidebar('balanco-sidebar');
+        }
 
         async function salvarBalanco(oldSku, forceSync, btnElement) {
             let p = products.find(x => x.codigo === oldSku);
@@ -956,19 +1052,12 @@
 
             await saveDataLocally();
             
-            if(newSku !== oldSku) {
-                document.getElementById(`bal-nome-${oldSku}`).id = `bal-nome-${newSku}`;
-                document.getElementById(`bal-sku-${oldSku}`).id = `bal-sku-${newSku}`;
-                document.getElementById(`bal-ean-${oldSku}`).id = `bal-ean-${newSku}`;
-                document.getElementById(`bal-gon-${oldSku}`).id = `bal-gon-${newSku}`;
-                document.getElementById(`bal-pra-${oldSku}`).id = `bal-pra-${newSku}`;
-                document.getElementById(`bal-val-${oldSku}`).id = `bal-val-${newSku}`;
-                document.getElementById(`bal-est-${oldSku}`).id = `bal-est-${newSku}`;
-            }
-
             balancoEditsCount++;
             mostrarAlerta(`Salvo localmente! (Alterações não enviadas: ${balancoEditsCount})`, "sucesso");
             document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
+
+            closeSidebar('balanco-sidebar');
+            clearNumpad(); 
         }
 
         // ==========================================================
@@ -1461,7 +1550,6 @@
             const mainContent = document.getElementById('main-content-pim');
             if (mainContent) {
                 mainContent.addEventListener('scroll', () => {
-                    // Quando a rolagem chega a 200px do fundo, carrega mais cards
                     if (mainContent.scrollTop + mainContent.clientHeight >= mainContent.scrollHeight - 200) {
                         carregarMaisCards();
                     }
@@ -1496,7 +1584,7 @@
             
             gridContainer.innerHTML = "";
             const oldItemsCarregados = keepLoaded ? Math.max(itemsCarregados, ITENS_POR_PAGINA) : ITENS_POR_PAGINA;
-            itemsCarregados = 0; // Reset na contagem real
+            itemsCarregados = 0; 
 
             let filtered = products;
             if(filter) { 
@@ -1525,7 +1613,7 @@
 
         function carregarMaisCards(quantidade = ITENS_POR_PAGINA) {
             const gridContainer = document.getElementById('product-grid');
-            if (itemsCarregados >= produtosFiltrados.length) return; // Chegou ao fim da lista
+            if (itemsCarregados >= produtosFiltrados.length) return;
 
             const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
             
@@ -1540,7 +1628,6 @@
                 
                 const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
 
-                // Inserido o campo "Estoque" (value="${p.estoque || 0}")
                 card.innerHTML = `
                     <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
                         <div class="card-img-wrapper" style="width:100px; height:100px; padding:5px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border);" onclick="openEditSidebar('${p.codigo}')" title="Editar Imagens e Tags">
@@ -1835,14 +1922,11 @@
                     results.data.forEach(d => {
                         const fallbackSku = d['Código'] ? d['Código'].trim() : timestamp.toString().slice(-8) + Math.floor(Math.random() * 1000);
                         
-                        // Verifica se já existe produto com esse código
                         let pIdx = products.findIndex(p => p.codigo === fallbackSku);
 
                         if(pIdx !== -1) {
-                            // Produto já existe, ignora para não substituir nada
                             ignorados++;
                         } else {
-                            // Produto Novo
                             let novoProduto = { 
                                 id: d['ID'] || timestamp + produtosCriados,
                                 codigo: fallbackSku, 
@@ -1928,7 +2012,6 @@
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Não há produtos para exportar.");
             
-            // As 59 colunas Exatas do modelo Bling
             const colunasModelo = [
                 "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
                 "Observações", "Situação", "Estoque", "Preço de custo", "Cód no fornecedor", 
@@ -1950,7 +2033,6 @@
                 const linha = {}; 
                 const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
                 
-                // Mapeamentos Padrões
                 linha['ID'] = p.id || "";
                 linha['Código'] = p.codigo || "";
                 linha['Descrição'] = p.nome || "";
@@ -1962,7 +2044,6 @@
                 linha['Estoque'] = p.estoque || "0";
                 linha['Data Validade'] = p.validade || "";
                 
-                // Preencher com os dados restantes, caso existam no produto, garantindo que colunas obrigatórias existem vazias se necessário
                 colunasModelo.forEach(col => { 
                     if(linha[col] === undefined) {
                         linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; 
@@ -2111,7 +2192,6 @@
             updateField(sku, 'categoria', novaCategoria);
             updateField(sku, 'subcategoria', ''); 
             
-            // Atualiza os seletores tanto na aba lateral (se aberta) como no cartão específico da grelha
             const subCatSelectSidebar = document.getElementById(`sel-subcat-${sku}`);
             if (subCatSelectSidebar) subCatSelectSidebar.innerHTML = getOpcoesSubcategoria(novaCategoria, '');
             
