@@ -1800,29 +1800,27 @@ function sanitizeProductsForExport(prods) {
             lucide.createIcons(); openSidebar('edit-sidebar');
         }
 
-        async function updateField(sku, field, value) { 
-            const p = products.find(x => x.codigo === sku); 
-            if(!p) return; 
-            
-            let finalVal = value; 
+     async function updateField(sku, field, value) { 
+    const p = products.find(x => x.codigo === sku); 
+    if(!p) return; 
+    
+    let finalVal = value; 
 
-            // Se for o campo de validade e contiver o formato do navegador (AAAA-MM-DD)
-            if(field === 'validade' && value.includes('-')) {
-                // Inverte de 2027-05-01 para 01/05/2027
-                const partes = value.split('-');
-                if(partes.length === 3) {
-                    finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                }
-            } 
-            // Tratamento normal para preços e estoque
-            else if(['preco','estoque','preco_custo'].includes(field)) {
-                finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
-            }
-
-            p[field] = finalVal; 
-            p.last_update = Date.now(); 
-            await saveDataLocally(); 
+    // Se estivermos editando a validade via input date (que retorna AAAA-MM-DD)
+    if(field === 'validade' && typeof value === 'string' && value.includes('-')) {
+        const partes = value.split('-');
+        if(partes[0].length === 4) {
+            finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`;
         }
+    } 
+    else if(['preco','estoque','preco_custo'].includes(field)) {
+        finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
+    }
+
+    p[field] = finalVal; 
+    p.last_update = Date.now(); 
+    await saveDataLocally(); 
+}
         
         async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(document.getElementById('search-input').value, true); } }
         
