@@ -1612,10 +1612,19 @@
             itemsCarregados = 0; 
 
             let filtered = products;
+            
+            // BUSCA MULTICAMPO: Nome, SKU e EAN
             if(filter) { 
-                const term = filter.toLowerCase(); 
-                filtered = filtered.filter(p => (p.nome||"").toLowerCase().includes(term) || (p.codigo||"").toLowerCase().includes(term)); 
+                const term = filter.toLowerCase().trim(); 
+                filtered = filtered.filter(p => {
+                    const nome = (p.nome || "").toLowerCase();
+                    const sku = (p.codigo || "").toLowerCase();
+                    const ean = (p.gtin || "").toLowerCase();
+                    
+                    return nome.includes(term) || sku.includes(term) || ean.includes(term);
+                }); 
             }
+
             if(isFilter24hActive) { 
                 const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); 
                 filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); 
@@ -1624,7 +1633,7 @@
             produtosFiltrados = filtered;
 
             if (produtosFiltrados.length === 0) { 
-                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto</h3></div>`; 
+                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto encontrado</h3><p>Tente outro termo de busca</p></div>`; 
                 lucide.createIcons(); 
                 return; 
             }
