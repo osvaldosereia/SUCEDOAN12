@@ -1003,7 +1003,7 @@ window.doGlobalSearch = function() {
     let results = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
     results.sort((a, b) => norm(a.name).indexOf(q) - norm(b.name).indexOf(q));
     
-    let top = results.slice(0, 15);
+    let top = results.slice(0, 100);
     if(top.length === 0) {
         resContainer.innerHTML = '<div style="text-align:center; color:var(--c-s); margin-top:40px; font-size:0.9rem;">Nenhum produto encontrado.</div>';
         return;
