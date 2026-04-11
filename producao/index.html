@@ -187,31 +187,60 @@
         .checklist-item { border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; color:var(--accent); }
         .checklist-item:last-child { border-bottom: none; }
 
-     /* =========================================================
+    /* =========================================================
            BALANÇO DE ESTOQUE (NOVO LAYOUT MOBILE/TECLADO)
            ========================================================= */
-        #balanco-screen { display: none; flex-direction: column; height: 100vh; overflow: hidden; background: #fff; position: fixed; top: 0; left: 0; width: 100%; z-index: 990; }
+        #balanco-screen { display: none; flex-direction: column; height: 100vh; overflow: hidden; background: #fff; }
         #balanco-screen.active { display: flex; }
-        .balanco-view { flex: 1; display: flex; flex-direction: column; padding: 10px; min-height: 0; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box; justify-content: center; }
-        .balanco-slider-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 0; margin-bottom: 8px; background: var(--bg-body); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
-        .balanco-slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; width: 36px; height: 36px; border-radius: 18px; font-size: 18px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10; transition: 0.2s;}
+        .balanco-view { flex: 1; display: flex; flex-direction: column; padding: 10px 10px 40px 10px; min-height: 0; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box; justify-content: flex-start; }
+        .balanco-slider-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 120px; max-height: 160px; margin-bottom: 15px; background: var(--bg-body); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; flex-shrink: 1; }
+        .balanco-slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 20px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10; transition: 0.2s;}
         .balanco-slider-btn:active { transform: translateY(-50%) scale(0.9); }
-        .balanco-slider-btn.left { left: 5px; }
-        .balanco-slider-btn.right { right: 5px; }
-        .balanco-slide { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer; padding: 5px; text-align: center; }
-        .balanco-slide img { max-width: 100%; max-height: 110px; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 5px; }
-        .balanco-slide-title { font-weight: 900; font-size: 14px; color: var(--accent); margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.1;}
-        .balanco-slide-sku { font-size: 11px; color: var(--text-secondary); background: #f4f4f5; padding: 2px 6px; border-radius: 6px; }
+        .balanco-slider-btn.left { left: 10px; }
+        .balanco-slider-btn.right { right: 10px; }
+        .balanco-slide { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer; padding: 10px; text-align: center; }
+        .balanco-slide img { max-width: 100%; max-height: 100px; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 10px; }
+        .balanco-slide-sku { font-size: 13px; font-weight: 900; color: var(--accent); background: #f4f4f5; padding: 6px 12px; border-radius: 6px; }
 
-        .balanco-display-area { text-align: center; margin-bottom: 8px; flex-shrink: 0; }
-        .balanco-display-input { width: 100%; max-width: 300px; font-size: 22px; font-weight: 900; text-align: center; letter-spacing: 4px; border: 2px solid var(--accent); border-radius: 10px; padding: 6px; outline: none; background: #fafafa; color: var(--accent); margin: 0 auto; display: block;}
-        .balanco-display-input::placeholder { color: #d4d4d8; letter-spacing: normal; font-size: 14px; font-weight: 600; }
+        .balanco-display-area { text-align: center; margin-bottom: 15px; flex-shrink: 0; }
+        .balanco-display-input { width: 100%; max-width: 300px; font-size: 28px; font-weight: 900; text-align: center; letter-spacing: 5px; border: 2px solid var(--accent); border-radius: 12px; padding: 8px; outline: none; background: #fafafa; color: var(--accent); margin: 0 auto; display: block;}
+        .balanco-display-input::placeholder { color: #d4d4d8; letter-spacing: normal; font-size: 16px; font-weight: 600; }
 
-        .balanco-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; width: 100%; flex-shrink: 0; padding-bottom: 5px; }
-        .numpad-btn { background: var(--bg-card); border: 1px solid var(--border); font-size: 20px; font-weight: 900; color: var(--accent); height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: 0.1s; }
+        .balanco-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; flex-shrink: 0; padding-bottom: 10px; }
+        .numpad-btn { background: var(--bg-card); border: 1px solid var(--border); font-size: 24px; font-weight: 900; color: var(--accent); height: 55px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: 0.1s; }
         .numpad-btn:active { transform: scale(0.95); background: #f4f4f5; }
         .numpad-btn.action { background: #f4f4f5; color: var(--text-secondary); }
         .numpad-btn.action-clear { color: var(--danger); }
+
+        /* =========================================================
+           ADAPTAÇÕES MOBILE PRODUTIVAS E MEDIA QUERIES
+           ========================================================= */
+        .mobile-only { display: none !important; }
+
+        @media (max-width: 1200px) {
+            .card-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { display: flex !important; }
+            header { padding: 10px 15px; flex-wrap: nowrap; justify-content: space-between; }
+            .toolbar { padding: 10px 15px; flex-wrap: nowrap; }
+            .toolbar-group { width: 100%; justify-content: space-between; }
+            .search-container { width: 100%; flex-grow: 1; }
+            .search-input { width: 100%; }
+            .main-content { padding: 10px; }
+            .card-grid { grid-template-columns: 1fr; gap: 10px; }
+            .image-slots { grid-template-columns: repeat(3, 1fr); }
+            .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
+            
+            /* Ajustes Mobile Balanço */
+            .balanco-view { padding: 10px 10px 50px 10px; } /* 50px de padding inferior para fugir da barra do sistema */
+            .balanco-slider-area { min-height: 110px; max-height: 140px; margin-bottom: 10px; }
+            .balanco-slide img { max-height: 85px; margin-bottom: 5px; }
+            .balanco-display-input { font-size: 24px; height: 45px; padding: 4px; }
+            .numpad-btn { height: 50px; font-size: 22px; } 
+        }
 
         /* =========================================================
            ADAPTAÇÕES MOBILE PRODUTIVAS E MEDIA QUERIES
@@ -951,7 +980,7 @@
                 arrowsHtml = `
                     <button class="balanco-slider-btn left" onclick="mudarSlideBalanco(-1, event)"><i data-lucide="chevron-left" size="32"></i></button>
                     <button class="balanco-slider-btn right" onclick="mudarSlideBalanco(1, event)"><i data-lucide="chevron-right" size="32"></i></button>
-                    <div style="position:absolute; bottom: 10px; font-size:12px; font-weight:900; background:rgba(0,0,0,0.5); color:white; padding: 4px 10px; border-radius:12px; z-index:5;">
+                    <div style="position:absolute; bottom: 5px; font-size:11px; font-weight:900; background:rgba(0,0,0,0.5); color:white; padding: 4px 10px; border-radius:12px; z-index:5;">
                         ${balancoSlideIndex + 1} / ${balancoResultados.length}
                     </div>
                 `;
@@ -961,11 +990,7 @@
                 ${arrowsHtml}
                 <div class="balanco-slide" onclick="abrirSidebarBalanco('${p.codigo}')">
                     <img src="${img}" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'">
-                    <div class="balanco-slide-title">${p.nome || 'Produto sem nome'}</div>
                     <div class="balanco-slide-sku">SKU: ${p.codigo} | EAN: ${p.gtin || '---'}</div>
-                    <div style="margin-top:10px; background:var(--success); color:white; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:900;">
-                        <i data-lucide="edit" size="12" style="margin-right:4px;"></i> CLIQUE PARA EDITAR
-                    </div>
                 </div>
             `;
             lucide.createIcons();
