@@ -222,10 +222,7 @@
         }
 
         @media (max-width: 768px) {
-            /* NOVA REGRA: Sobe o botão do balanço no mobile */
-            #balanco-sidebar-footer {
-                padding-bottom: 80px !important;
-            }
+            #balanco-sidebar-footer { padding-bottom: 80px !important; }
             .desktop-only { display: none !important; }
             .mobile-only { display: flex !important; }
             header { padding: 10px 15px; flex-wrap: nowrap; justify-content: space-between; }
@@ -238,37 +235,12 @@
             .image-slots { grid-template-columns: repeat(3, 1fr); }
             .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
             
-            /* Ajustes Mobile Balanço */
-            .balanco-view { padding: 10px 10px 50px 10px; } /* 50px de padding inferior para fugir da barra do sistema */
+            .balanco-view { padding: 10px 10px 50px 10px; } 
             .balanco-slider-area { min-height: 110px; max-height: 140px; margin-bottom: 10px; }
             .balanco-slide img { max-height: 85px; margin-bottom: 5px; }
             .balanco-display-input { font-size: 24px; height: 45px; padding: 4px; }
             .numpad-btn { height: 50px; font-size: 22px; } 
-        }
-
-        /* =========================================================
-           ADAPTAÇÕES MOBILE PRODUTIVAS E MEDIA QUERIES
-           ========================================================= */
-        .mobile-only { display: none !important; }
-
-        @media (max-width: 1200px) {
-            .card-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 768px) {
-            .desktop-only { display: none !important; }
-            .mobile-only { display: flex !important; }
-            header { padding: 10px 15px; flex-wrap: nowrap; justify-content: space-between; }
-            .toolbar { padding: 10px 15px; flex-wrap: nowrap; }
-            .toolbar-group { width: 100%; justify-content: space-between; }
-            .search-container { width: 100%; flex-grow: 1; }
-            .search-input { width: 100%; }
-            .main-content { padding: 10px; }
-            .card-grid { grid-template-columns: 1fr; gap: 10px; }
-            .image-slots { grid-template-columns: repeat(3, 1fr); }
-            .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
             .balanco-numpad { gap: 8px; padding-bottom: 10px;}
-            .numpad-btn { height: 60px; font-size: 24px; }
             .balanco-display-input { font-size: 28px; }
         }
     </style>
@@ -497,17 +469,14 @@
         <div class="sidebar-body" style="gap:16px;">
             <div class="form-section">
                 <div class="section-title">Salvar e Sincronizar</div>
-                <button class="nav-btn primary" style="height:40px; justify-content:center;" onclick="salvarBancoDeDadosJSON()">
-                    <i data-lucide="database" size="14"></i> 1. SALVAR BANCODEDADOS.JSON
-                </button>
                 <button class="nav-btn sync-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarProdutosJSON()">
-                    <i data-lucide="layout" size="14"></i> 2. SALVAR PRODUTOS.JSON (SITE)
+                    <i data-lucide="database" size="14"></i> 1. SALVAR PRODUTOS.JSON (BASE & SITE)
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="uploadImagens()">
-                    <i data-lucide="image-up" size="14"></i> 3. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
+                    <i data-lucide="image-up" size="14"></i> 2. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
-                    <i data-lucide="cloud-download" size="14"></i> 4. ATUALIZAR LOCAL DA NUVEM
+                    <i data-lucide="cloud-download" size="14"></i> 3. ATUALIZAR LOCAL DA NUVEM
                 </button>
             </div>
 
@@ -515,16 +484,16 @@
                 <div class="section-title">Integração CSV (Padrão Bling)</div>
                 <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
                 <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">
-                    <i data-lucide="file-warning" size="14"></i> 5. IMPORTAR (SUBSTITUIR TUDO)
+                    <i data-lucide="file-warning" size="14"></i> 4. IMPORTAR (SUBSTITUIR TUDO)
                 </button>
 
                 <input type="file" id="csv-file-adicionar" accept=".csv" style="display:none">
                 <button class="nav-btn success-btn" style="height:40px; justify-content:center;" onclick="document.getElementById('csv-file-adicionar').click()">
-                    <i data-lucide="file-plus" size="14"></i> 6. IMPORTAR (CADASTRAR NOVOS)
+                    <i data-lucide="file-plus" size="14"></i> 5. IMPORTAR (CADASTRAR NOVOS)
                 </button>
                 
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="exportarCSVCompleto()">
-                    <i data-lucide="file-down" size="14"></i> 7. EXPORTAR CSV BLING
+                    <i data-lucide="file-down" size="14"></i> 6. EXPORTAR CSV BLING
                 </button>
             </div>
 
@@ -803,7 +772,7 @@
         }
 
         // ==========================================================
-        // FUNÇÕES ESPECÍFICAS DE SALVAMENTO (BOTÕES 1 AO 4)
+        // FUNÇÕES ESPECÍFICAS DE SALVAMENTO
         // ==========================================================
        function sanitizeProductsForExport(prods) {
             return prods.map(p => {
@@ -818,17 +787,10 @@
             });
         }
 
-        function salvarBancoDeDadosJSON() {
-            enqueueTask("Banco de Dados Completo", async () => {
-                const produtosLimpos = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/bancodedados.json`, produtosLimpos, `PIM: Atualização Banco de Dados via Botão 1`);
-            }, true); 
-        }
-
         function salvarProdutosJSON() {
-            enqueueTask("Produtos.json (Site)", async () => {
+            enqueueTask("Produtos.json (Site & Base)", async () => {
                 const vitrine = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Vitrine Site via Botão 2 (Todos os Campos)`);
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos (Base Unificada)`);
             }, true);
         }
 
@@ -1016,7 +978,7 @@
             body.innerHTML = `
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label class="form-label" style="font-size: 11px;">Nome do Produto</label>
-                    <input type="text" id="bal-nome-${p.codigo}" value="${(p.nome || '').replace(/"/g, '&quot;')}" class="form-input" style="padding: 12px; font-weight: 800; font-size: 14px;">
+                    <input type="text" id="bal-nome-${p.codigo}" value="${(p.nome || '').replace(/"/g, '"')}" class="form-input" style="padding: 12px; font-weight: 800; font-size: 14px;">
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label class="form-label" style="font-size: 11px;">SKU</label>
@@ -1077,7 +1039,6 @@
 
             p.nome = newNome;
             p.codigo = newSku;
-            p['Código'] = newSku;
             p.gtin = newEan;
             p.gondola = newGon;
             p.prateleira = newPra;
@@ -1125,10 +1086,10 @@
                         const nomeProduto = matchItem[2].trim();
                         let nomeZapLimpo = limparTexto(nomeProduto);
                         
-                        let produtoEncontrado = products.find(p => { let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || ""); return nomeBancoLimpo === nomeZapLimpo; });
+                        let produtoEncontrado = products.find(p => { let nomeBancoLimpo = limparTexto(p.nome || ""); return nomeBancoLimpo === nomeZapLimpo; });
                         if (!produtoEncontrado) {
                             produtoEncontrado = products.find(p => {
-                                let nomeBancoLimpo = limparTexto(p.nome || p["Descrição"] || "");
+                                let nomeBancoLimpo = limparTexto(p.nome || "");
                                 if (nomeZapLimpo.length > 5 && nomeBancoLimpo.length > 5) { return nomeBancoLimpo.includes(nomeZapLimpo) || nomeZapLimpo.includes(nomeBancoLimpo); }
                                 return false;
                             });
@@ -1251,7 +1212,7 @@
                 let p = products.find(prod => prod.codigo === idVendido);
                 if (!p) {
                     let idLimpo = limparTexto(idVendido);
-                    p = products.find(prod => limparTexto(prod.nome || prod.descricao || "") === idLimpo);
+                    p = products.find(prod => limparTexto(prod.nome || "") === idLimpo);
                 }
                 if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgo = true; }
             }
@@ -1328,7 +1289,7 @@
                     if (!produtoDb && skuRecebido === "---") {
                         let nomeZapLimpo = limparTexto(item.nomeOriginal);
                         produtoDb = products.find(p => {
-                            let nBanco = limparTexto(p.nome || p["Descrição"] || "");
+                            let nBanco = limparTexto(p.nome || "");
                             return nBanco === nomeZapLimpo || (nomeZapLimpo.length > 5 && nBanco.includes(nomeZapLimpo));
                         });
                     }
@@ -1502,7 +1463,7 @@
             renderizarCartoes();
             if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
             fecharSeparador();
-            mostrarAlerta(`✅ Pedido ${pedidoAtualParaSeparacao.orderNum} concluído! Estoque baixado no sistema. Clique em "SALVAR BANC DE DADOS" depois.`, "sucesso");
+            mostrarAlerta(`✅ Pedido ${pedidoAtualParaSeparacao.orderNum} concluído! Estoque baixado no sistema. Clique em "SALVAR PRODUTOS.JSON" depois.`, "sucesso");
         }
 
         async function estornarPedido(pedidoId) {
@@ -1520,7 +1481,7 @@
                     let p = products.find(prod => prod.codigo === skuRecebido);
                     if (!p) {
                         let idLimpo = limparTexto(item.nomeOriginal);
-                        p = products.find(prod => limparTexto(prod.nome || prod.descricao || "") === idLimpo);
+                        p = products.find(prod => limparTexto(prod.nome || "") === idLimpo);
                     }
                     if (p) {
                         p.estoque = (parseFloat(p.estoque) || 0) + item.qtd; 
@@ -1542,7 +1503,7 @@
             renderizarCartoes();
             renderGrid(document.getElementById('search-input').value, true);
             if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
-            mostrarAlerta(`🔄 Estorno concluído. Clique em "SALVAR BANC DE DADOS" para confirmar os estoques.`, "sucesso");
+            mostrarAlerta(`🔄 Estorno concluído. Clique em "SALVAR PRODUTOS.JSON" para confirmar os estoques.`, "sucesso");
         }
 
         // ==========================================================
@@ -1662,7 +1623,7 @@
                 if (p.tag_texto && tagsToRender.length === 0) { p.tag_texto.split('\n').filter(l => l.trim() !== '').forEach(l => { tagsToRender.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); }
                 if (tagsToRender.length > 0) { const tagsGeradas = tagsToRender.map(t => `<div class="product-tag" style="background-color: ${t.bg}; color: ${t.txt}; font-size: ${Math.max(t.tam-2, 8)}px;">${t.texto}</div>`).join(''); htmlTag = `<div class="tags-container">${tagsGeradas}</div>`; }
                 
-                const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
+                const safeNameForInput = (p.nome || '').replace(/"/g, '"');
 
                 card.innerHTML = `
                     <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
@@ -1766,10 +1727,10 @@
             sidebarBody.innerHTML = `
                 <div class="form-section"><div class="section-title">Identificação</div><div class="form-grid">
                         <div class="form-group"><label class="form-label">SKU (Código)</label><input type="text" class="form-input" style="font-weight:900; color:var(--accent)" value="${p.codigo}" onchange="updateSku('${p.codigo}', this.value)"></div>
-                        <div class="form-group"><label class="form-label">ID (Sistema)</label><input type="text" class="form-input" value="${p.id || p['ID'] || ''}" onchange="updateField('${p.codigo}', 'id', this.value)"></div>
+                        <div class="form-group"><label class="form-label">ID (Sistema)</label><input type="text" class="form-input" value="${p.id || ''}" onchange="updateField('${p.codigo}', 'id', this.value)"></div>
                 </div></div>
                 <div class="form-section"><div class="section-title">Apresentação Principal</div>
-                    <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '&quot;')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
+                    <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '"')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
                     <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;"><label class="form-label">Tags da Imagem (Independentes)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div>
                 </div>
 
@@ -1796,7 +1757,7 @@
             await saveDataLocally(); 
         }
         
-        async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p['Código'] = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(document.getElementById('search-input').value, true); } }
+        async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(document.getElementById('search-input').value, true); } }
         
         async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
         
@@ -1871,7 +1832,7 @@
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
         // ==========================================================
-        // 5. IMPORTAR CSV: SUBSTITUIR BASE (PRESERVANDO MÍDIAS)
+        // 4. IMPORTAR CSV: SUBSTITUIR BASE (PRESERVANDO MÍDIAS)
         // ==========================================================
         document.getElementById('csv-file-substituir').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -1910,7 +1871,6 @@
                         }
 
                         produtoFinal.codigo = fallbackSku;
-                        produtoFinal['Código'] = fallbackSku; 
                         produtoFinal.nome = d['Descrição'] || produtoFinal.nome || '';
                         produtoFinal.preco = parseFloat(d['Preço']?.replace(',','.')) || 0;
                         produtoFinal.preco_custo = parseFloat(d['Preço de custo']?.replace(',','.')) || 0;
@@ -1943,7 +1903,7 @@
         });
 
         // ==========================================================
-        // 6. IMPORTAR CSV: CADASTRAR APENAS NOVOS PRODUTOS (SEM SUBSTITUIR/SOMAR)
+        // 5. IMPORTAR CSV: CADASTRAR APENAS NOVOS PRODUTOS
         // ==========================================================
         document.getElementById('csv-file-adicionar').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -1974,6 +1934,7 @@
                                 gtin: d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '', 
                                 ncm: d['NCM'] || '', 
                                 validade: d['Data Validade'] || '',
+                                situacao: d['Situação'] ? (d['Situação'].trim().toUpperCase() === 'INATIVO' ? 'I' : 'A') : 'A',
                                 last_update: Date.now() 
                             };
                             products.unshift(novoProduto);
@@ -1992,14 +1953,14 @@
         });
 
         // ==========================================================
-        // 4. ATUALIZAR LOCAL STORAGE DA NUVEM (Bancodedados.json)
+        // 3. ATUALIZAR LOCAL STORAGE DA NUVEM (produtos.json)
         // ==========================================================
         async function fetchFromGithub() {
             try {
                 const cfg = GitHubAPI.getConfig();
                 if (!cfg) return;
 
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/bancodedados.json?t=${Date.now()}`;
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
                 
                 const response = await fetch(url, {
                     headers: { 
@@ -2011,7 +1972,7 @@
                 });
 
                 if (response.status === 404) {
-                    return alert("O ficheiro 'site/bancodedados.json' não foi encontrado. Tente clicar em 'SALVAR BANC DE DADOS' primeiro.");
+                    return alert("O ficheiro 'site/produtos.json' não foi encontrado. Tente clicar em 'SALVAR PRODUTOS.JSON' primeiro.");
                 }
 
                 if (!response.ok) throw new Error("Falha na comunicação com o GitHub.");
@@ -2043,7 +2004,7 @@
         }
 
         // ==========================================================
-        // 7. EXPORTAR CSV PADRÃO EXATO BLING
+        // 6. EXPORTAR CSV PADRÃO EXATO BLING (ADAPTADOR DO JSON FIT)
         // ==========================================================
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Não há produtos para exportar.");
@@ -2069,22 +2030,22 @@
                 const linha = {}; 
                 const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
                 
+                colunasModelo.forEach(col => linha[col] = "");
+                
                 linha['ID'] = p.id || "";
                 linha['Código'] = p.codigo || "";
                 linha['Descrição'] = p.nome || "";
                 linha['Unidade'] = "UN";
+                linha['NCM'] = p.ncm || "";
                 linha['Origem'] = "0";
-                linha['Situação'] = p.situacao === 'I' ? 'Inativo' : 'Ativo';
                 linha['Preço'] = fmt(p.preco);
-                linha['Preço de custo'] = fmt(p.preco_custo);
+                linha['Situação'] = p.situacao === 'I' ? 'Inativo' : 'Ativo';
                 linha['Estoque'] = p.estoque || "0";
+                linha['Preço de custo'] = fmt(p.preco_custo);
+                linha['Localização'] = p.localizacao || "";
+                linha['GTIN/EAN'] = p.gtin || "";
                 linha['Data Validade'] = p.validade || "";
-                
-                colunasModelo.forEach(col => { 
-                    if(linha[col] === undefined) {
-                        linha[col] = (p[col] !== undefined && p[col] !== null) ? p[col] : ""; 
-                    }
-                }); 
+                linha['Categoria do produto'] = p.categoria || "";
                 
                 return linha;
             });
