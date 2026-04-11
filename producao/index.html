@@ -773,47 +773,58 @@
 
         // ==========================================================
         // FUNÇÕES ESPECÍFICAS DE SALVAMENTO
-      function sanitizeProductsForExport(prods) {
-            // A nossa "Lista VIP" - Só estes campos entram no produtos.json
-            const camposPermitidos = [
-                'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
-                'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
-                'subcategoria', 'gondola', 'prateleira', 'localizacao',
-                'tags', 'last_update'
-            ];
+     function sanitizeProductsForExport(prods) {
+    // Lista de campos permitidos no produtos.json
+    const camposPermitidos = [
+        'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
+        'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
+        'subcategoria', 'gondola', 'prateleira', 'localizacao',
+        'tags', 'last_update'
+    ];
 
-            return prods.map(p => {
-                let cleanP = {};
-                
-                // 1. Copia apenas os campos da Lista VIP
-                camposPermitidos.forEach(campo => {
-                    if (p[campo] !== undefined && p[campo] !== null) {
-                        cleanP[campo] = p[campo];
+    return prods.map(p => {
+        let cleanP = {};
+        
+        // 1. Copia apenas os campos da Lista VIP
+        camposPermitidos.forEach(campo => {
+            if (p[campo] !== undefined && p[campo] !== null) {
+                let valor = p[campo];
+
+                // REGRA DE OURO: Formatar validade para DD/MM/AAAA antes de subir
+                if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) {
+                    // Se o valor estiver como AAAA-MM-DD (vindo do input date), inverte
+                    const partes = valor.split('-');
+                    if (partes.length === 3 && partes[0].length === 4) {
+                        valor = `${partes[2]}/${partes[1]}/${partes[0]}`;
                     }
-                });
-
-                // 2. Copia as Imagens (até 3) e resolve o Base64
-                [1, 2, 3].forEach(i => {
-                    const prop = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
-                    if (p[prop]) {
-                        if (p[prop].startsWith('data:image')) {
-                            const sufix = i === 1 ? '' : `_${i}`; 
-                            cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
-                        } else {
-                            cleanP[prop] = p[prop];
-                        }
-                    }
-                });
-
-                // 3. Copia os Vídeos (até 10)
-                for (let i = 1; i <= 10; i++) {
-                    const prop = i === 1 ? 'link_video' : `link_video_${i}`;
-                    if (p[prop]) cleanP[prop] = p[prop];
                 }
 
-                return cleanP;
-            });
+                cleanP[campo] = valor;
+            }
+        });
+
+        // 2. Copia as Imagens (até 3) e resolve o caminho
+        [1, 2, 3].forEach(i => {
+            const prop = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
+            if (p[prop]) {
+                if (p[prop].startsWith('data:image')) {
+                    const sufix = i === 1 ? '' : `_${i}`; 
+                    cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
+                } else {
+                    cleanP[prop] = p[prop];
+                }
+            }
+        });
+
+        // 3. Copia os Vídeos (até 10)
+        for (let i = 1; i <= 10; i++) {
+            const prop = i === 1 ? 'link_video' : `link_video_${i}`;
+            if (p[prop]) cleanP[prop] = p[prop];
         }
+
+        return cleanP;
+    });
+}
 
         function salvarProdutosJSON() {
             enqueueTask("Produtos.json (Site & Base)", async () => {
