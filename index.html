@@ -1230,8 +1230,8 @@ async function init() {
        if (r2 && r2.length > 0) {
             const TAXA_AUMENTO_GLOBAL = 1.01;
 
-            STATE.prods = r2.filter(x => x.situacao === "A").map(p => {
-                const codigoOuId = p.codigo || p.id;
+       STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
+       const codigoOuId = p.codigo || p.id;
                 const precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
                 
                 let imgs = [];
