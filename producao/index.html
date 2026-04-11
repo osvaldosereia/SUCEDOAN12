@@ -1793,11 +1793,15 @@
             
             let finalVal = value; 
 
-            // Se for o campo de validade vindo do calendário (AAAA-MM-DD), inverte para DD/MM/AAAA
-            if(field === 'validade' && value.includes('-') && value.length === 10) {
-                finalVal = value.split('-').reverse().join('/');
+            // Se for o campo de validade e contiver o formato do navegador (AAAA-MM-DD)
+            if(field === 'validade' && value.includes('-')) {
+                // Inverte de 2027-05-01 para 01/05/2027
+                const partes = value.split('-');
+                if(partes.length === 3) {
+                    finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                }
             } 
-            // Tratamento de números (preços e estoque)
+            // Tratamento normal para preços e estoque
             else if(['preco','estoque','preco_custo'].includes(field)) {
                 finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
             }
