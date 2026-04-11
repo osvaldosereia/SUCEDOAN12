@@ -1790,8 +1790,18 @@
         async function updateField(sku, field, value) { 
             const p = products.find(x => x.codigo === sku); 
             if(!p) return; 
+            
             let finalVal = value; 
-            if(['preco','estoque','preco_custo'].includes(field)) finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
+
+            // Se for o campo de validade vindo do calendário (AAAA-MM-DD), inverte para DD/MM/AAAA
+            if(field === 'validade' && value.includes('-') && value.length === 10) {
+                finalVal = value.split('-').reverse().join('/');
+            } 
+            // Tratamento de números (preços e estoque)
+            else if(['preco','estoque','preco_custo'].includes(field)) {
+                finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
+            }
+
             p[field] = finalVal; 
             p.last_update = Date.now(); 
             await saveDataLocally(); 
