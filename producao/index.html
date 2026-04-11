@@ -714,7 +714,7 @@
         // ==========================================================
         // FUNÇÕES ESPECÍFICAS DE SALVAMENTO (BOTÕES 1 AO 4)
         // ==========================================================
-        function sanitizeProductsForExport(prods) {
+       function sanitizeProductsForExport(prods) {
             return prods.map(p => {
                 let cleanP = { ...p };
                 [1, 2, 3].forEach(i => {
@@ -723,7 +723,7 @@
                         const sufix = i === 1 ? '' : `_${i}`; cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
                     }
                 });
-                delete cleanP.descricao; // Remove descrição suja caso exista
+                // delete cleanP.descricao; // Comentado para garantir que absolutamente todos os campos sejam exportados
                 return cleanP;
             });
         }
@@ -739,23 +739,10 @@
         // Botão 2: Salvar Produtos JSON (Vitrine)
         function salvarProdutosJSON() {
             enqueueTask("Produtos.json (Site)", async () => {
-                const vitrine = sanitizeProductsForExport(products).map(p => ({
-                    id: p.id || p['ID'] || Date.now(), 
-                    nome: p.nome || "", 
-                    preco: p.preco || 0, 
-                    codigo: p.codigo || "", 
-                    situacao: p.situacao || "A", 
-                    categoria: p.categoria || "", 
-                    subcategoria: p.subcategoria || "",
-                    validade: p.validade || "", 
-                    estoque: p.estoque || 0, 
-                    tags: p.tags || [], 
-                    url_imagem: p.url_imagem || "", 
-                    url_imagem_2: p.url_imagem_2 || "", 
-                    url_imagem_3: p.url_imagem_3 || "", 
-                    link_video: p.link_video || "", link_video_2: p.link_video_2 || "", link_video_3: p.link_video_3 || "", link_video_4: p.link_video_4 || "", link_video_5: p.link_video_5 || "", link_video_6: p.link_video_6 || "", link_video_7: p.link_video_7 || "", link_video_8: p.link_video_8 || "", link_video_9: p.link_video_9 || "", link_video_10: p.link_video_10 || ""
-                }));
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Vitrine Site via Botão 2`);
+                // Agora pega o objeto completo sem filtrar os campos, 
+                // garantindo que tudo no LocalStorage vá para a nuvem.
+                const vitrine = sanitizeProductsForExport(products);
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização Vitrine Site via Botão 2 (Todos os Campos)`);
             }, true);
         }
 
