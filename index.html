@@ -717,6 +717,10 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
 <div id="toast-container"></div>
 
+<div id="video-loading" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px; font-weight: 600; font-size: 0.95rem; z-index: 99999; backdrop-filter: blur(4px); pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+    ⏳ Carregando...
+</div>
+
 <script>
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00; 
@@ -1020,7 +1024,6 @@ window.selectTvCategory = function(cat, nome, e) {
     renderVideoFeedTrack();
 }
 
-// Atualizada lógica de vídeo inline para ser usada apenas no Feed vertical, visto que o carrossel na Home agora não toca inline.
 window.playInlineVideo = function(elId, videoId) {
     let el = document.getElementById(elId);
     if(el) {
@@ -1030,27 +1033,40 @@ window.playInlineVideo = function(elId, videoId) {
 
 window.openVideoFeed = function(targetVideoId = null) {
     if(!STATE.dataLoaded) return showToast("Sincronizando...", "s");
-    compileVideos(); 
-    if(STATE.allVideos.length === 0) return showToast("Nenhum vídeo disponível no momento.", "r");
     
-    STATE.viewStack = 'VIDEO_FEED';
-    document.getElementById('video-feed-view').classList.add('open');
+    // Mostra o aviso de carregamento
+    document.getElementById('video-loading').style.display = 'block';
     
-    STATE.tvCategory = 'all';
-    document.getElementById('label-tv').innerText = 'Todos';
-    
-    let htmlCatsTV = `<div class="custom-dropdown-item active" onclick="selectTvCategory('all', 'Todos', event)" style="color:#fff; border-bottom-color: #222;">Todos</div>`;
-    let catNoVideo = [...new Set(STATE.allVideos.map(v => catToId(v.product.categoria || "Outros")))];
-    catNoVideo.forEach(idCat => {
-        if(STATE.deptos[idCat]) {
-            htmlCatsTV += `<div class="custom-dropdown-item" onclick="selectTvCategory('${idCat}', '${STATE.deptos[idCat].title}', event)" style="color:#fff; border-bottom-color: #222;">${STATE.deptos[idCat].title}</div>`;
+    // Usa setTimeout para dar tempo de o aviso renderizar na tela
+    setTimeout(() => {
+        compileVideos(); 
+        if(STATE.allVideos.length === 0) {
+            document.getElementById('video-loading').style.display = 'none';
+            return showToast("Nenhum vídeo disponível no momento.", "r");
         }
-    });
-    document.getElementById('list-tv').innerHTML = htmlCatsTV;
-    
-    renderVideoFeedTrack(targetVideoId);
-    
-    if (!history.state || !history.state.videoOpen) history.pushState({ videoOpen: true }, '');
+        
+        STATE.viewStack = 'VIDEO_FEED';
+        document.getElementById('video-feed-view').classList.add('open');
+        
+        STATE.tvCategory = 'all';
+        document.getElementById('label-tv').innerText = 'Todos';
+        
+        let htmlCatsTV = `<div class="custom-dropdown-item active" onclick="selectTvCategory('all', 'Todos', event)" style="color:#fff; border-bottom-color: #222;">Todos</div>`;
+        let catNoVideo = [...new Set(STATE.allVideos.map(v => catToId(v.product.categoria || "Outros")))];
+        catNoVideo.forEach(idCat => {
+            if(STATE.deptos[idCat]) {
+                htmlCatsTV += `<div class="custom-dropdown-item" onclick="selectTvCategory('${idCat}', '${STATE.deptos[idCat].title}', event)" style="color:#fff; border-bottom-color: #222;">${STATE.deptos[idCat].title}</div>`;
+            }
+        });
+        document.getElementById('list-tv').innerHTML = htmlCatsTV;
+        
+        renderVideoFeedTrack(targetVideoId);
+        
+        if (!history.state || !history.state.videoOpen) history.pushState({ videoOpen: true }, '');
+
+        // Esconde o aviso de carregamento
+        document.getElementById('video-loading').style.display = 'none';
+    }, 50);
 }
 
 window.videoRenderLimit = 12; 
@@ -1926,8 +1942,13 @@ window.openQuickView = function(id) {
     
     if (!history.state || !history.state.qvOpen) history.pushState({ qvOpen: true }, '');
     
-    $('qv-carousel').scrollTo({ left: 0 });
-    document.querySelector('.quick-view .see-all-content').scrollTo({ top: 0 });
+    // Força o carrossel e o container a iniciarem na posição 0 instantaneamente
+    $('qv-carousel').scrollTo({ left: 0, behavior: 'instant' });
+    let qvContent = document.querySelector('#quick-view-lateral .see-all-content');
+    if(qvContent) {
+        qvContent.scrollTo({ top: 0, behavior: 'instant' });
+        qvContent.scrollTop = 0; // Fallback de garantia
+    }
 }
 
 window.closeQuickView = function(isFromBrowser = false) {
