@@ -124,15 +124,29 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .category-img-grid { width: 100%; aspect-ratio: 1/1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; padding: 0 8px; margin-top: auto; }
 .category-img-grid img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: normal !important; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); padding: 5px; }
 
-.home-tv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-@media (min-width: 800px) { .home-tv-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
+/* Novos estilos para o Carrossel de Vídeos */
+.tv-carousel-wrap { position: relative; width: 100%; max-width: 1000px; margin: 0 auto; padding: 0 15px 25px; }
+.tv-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.tv-carousel::-webkit-scrollbar { display: none; }
+.tv-carousel-item { flex: 0 0 38%; scroll-snap-align: start; background: #000; border-radius: 12px; position: relative; display: flex; flex-direction: column; cursor: pointer; aspect-ratio: 9/16; overflow: hidden; }
 
-.home-tv-item { aspect-ratio: 9 / 16; background: #000; border-radius: 12px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-.home-tv-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; cursor: pointer; }
+@media (min-width: 800px) {
+    .tv-carousel-item { flex: 0 0 18%; max-height: 280px; }
+}
+
+.home-tv-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
 .home-tv-play { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; background: rgba(255,255,255,0.3); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; z-index: 2; backdrop-filter: blur(4px); padding-left: 3px; pointer-events: none; }
-.home-tv-prod { position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 6px; display: flex; align-items: center; gap: 6px; z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; }
-.home-tv-prod-img { width: 32px; height: 32px; border-radius: 6px; mix-blend-mode: multiply; object-fit: contain; }
-.home-tv-prod-btn { margin-left: auto; background: var(--c-p); color: #fff; border: none; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; }
+
+.tv-mini-banner { position: absolute; bottom: 8px; left: 8px; right: 8px; background: rgba(255,255,255,0.95); border-radius: 8px; padding: 6px; display: flex; align-items: center; gap: 6px; z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.tv-mini-img { width: 28px; height: 28px; border-radius: 6px; mix-blend-mode: multiply; object-fit: contain; }
+.tv-mini-info { flex: 1; overflow: hidden; }
+.tv-mini-name { font-size: 0.7rem; font-weight: 600; color: var(--c-p); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1; }
+.tv-mini-btn { background: var(--c-p); color: #fff; border: none; font-size: 0.65rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; cursor: pointer; flex-shrink: 0;}
+
+.tv-arrow { display: none; position: absolute; top: 40%; transform: translateY(-50%); z-index: 10; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1rem; color: var(--c-p); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+@media (min-width: 800px) { .tv-arrow { display: flex; align-items: center; justify-content: center; } }
+.tv-arrow.left { left: 0px; }
+.tv-arrow.right { right: 0px; }
 
 /* Carrinho Flutuante */
 .floating-cart {
@@ -357,10 +371,10 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 }
 .video-feed-container::-webkit-scrollbar { display: none; }
 
-/* Desktop: 1 coluna centralizada imitando um telemóvel */
+/* Desktop: 1 coluna centralizada imitando um telemóvel e com largura expandida */
 @media(min-width: 800px) { 
     #video-feed-view { background: #111; }
-    .video-feed-container { max-width: 450px; margin: 0 auto; border-left: 1px solid #333; border-right: 1px solid #333; } 
+    .video-feed-container { max-width: 500px; margin: 0 auto; border-left: 1px solid #333; border-right: 1px solid #333; } 
 }
 
 /* O Vídeo: Ocupa exatos 100% da altura da tela de deslize */
@@ -390,21 +404,14 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .tiktok-arrow:hover { background: rgba(255,255,255,0.3); }
 @media(min-width: 800px) {
     .tiktok-arrow { display: flex; align-items: center; justify-content: center; }
-    .tiktok-arrow.up { left: calc(50% + 240px); margin-top: -35px; }
-    .tiktok-arrow.down { left: calc(50% + 240px); margin-top: 35px; }
+    .tiktok-arrow.up { left: calc(50% + 265px); margin-top: -35px; } /* Ajustado para acompanhar a largura 500px */
+    .tiktok-arrow.down { left: calc(50% + 265px); margin-top: 35px; }
 }
 .v-load-more-wrap { flex: 0 0 100%; height: calc(100dvh - 54px); display: flex; align-items: center; justify-content: center; scroll-snap-align: start; background: #111; }
 
 .info-box-item { display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px; margin-bottom: 12px; text-decoration: none; color: var(--c-p); background: var(--c-img-bg); transition: 0.2s;}
 .info-box-item:active { transform: scale(0.98); }
 .info-icon-area { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: var(--c-p); font-size: 1.5rem; background: #fff;}
-
-#banner-primeiro-acesso { position: fixed; bottom: 0; left: 0; width: 100%; background: #10b981; color: #fff; padding: 12px 15px; display: none; justify-content: space-between; align-items: center; z-index: 9999; font-size: 0.95rem; animation: slideUpBanner 0.5s ease-out forwards;}
-@keyframes slideUpBanner { from { transform: translateY(100%); } to { transform: translateY(0); } }
-.bp-content { display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer; }
-.bp-text { font-weight: 500; line-height: 1.3; }
-.bp-close { background: rgba(0,0,0,0.1); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1rem; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
-body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
 .wholesale-badge { background: var(--c-img-bg); padding: 10px 12px; border-radius: 8px; margin-top: 12px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--c-p); }
 .wholesale-badge span.price { font-weight: 700; color: var(--c-ok); font-size: 1rem; }
@@ -436,17 +443,20 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         <button class="sub-btn" onclick="openStoreRules()">
             <span class="sub-btn-icon">ℹ️</span> Informações
         </button>
+        <a href="https://wa.me/5565998150975?text=Ol%C3%A1%2C%20estou%20salvando%20seu%20contato." target="_blank" class="sub-btn" style="flex: 0 0 auto; background: #25D366; color: white; border-radius: 50%; width: 40px; height: 40px; padding: 0; margin-left: auto;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+        </a>
     </div>
 
     <div id="grid-home-sections" class="grid-home-sections"></div>
     
-   <div id="home-ofertas-container" style="display: none;">
+    <div id="home-tv-container"></div>
+    
+    <div id="home-ofertas-container" style="display: none;">
         <div class="qr-main-title" style="padding: 15px; font-weight: 700; max-width: 1000px; margin: 0 auto;">🔥 Ofertas Especiais</div>
         <div id="home-ofertas-grid" class="grid-ver-todos" style="padding: 0 15px 40px;"></div>
     </div>
     
-    <div id="home-tv-container"></div>
-
 </main>
 
 <div id="floating-cart" class="floating-cart content-limit" onclick="openCheckout()" style="display: none;">
@@ -562,7 +572,7 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
         
         <h3 id="qv-name" style="font-size: 1rem; font-weight: 600; color: var(--c-p); margin-top: 5px; margin-bottom: 4px; line-height: 1.3; text-align: left;"></h3>
         <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-err); margin-bottom: 8px; font-weight: 500; text-align: left; display: none;"></div>
-        <div id="qv-price" style="font-size: 1.35rem; font-weight: 700; color: var(--c-p); margin-bottom: 10px; text-align: left;"></div>
+        <div id="qv-price" style="font-size: 1.35rem; font-weight: 700; color: var(--c-p); margin-bottom: 10px; text-align: left; display: flex; align-items: center;"></div>
         <div id="qv-wholesale" style="display: none;"></div>
         <div id="qv-desc" style="font-size: 0.85rem; color: var(--c-s); line-height: 1.4; margin-bottom: 15px; margin-top: 15px; text-align: left; display: none;"></div>
         
@@ -707,14 +717,6 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
 
 <div id="toast-container"></div>
 
-<div id="banner-primeiro-acesso">
-    <div class="bp-content" onclick="salvarContatoPrimeiroAcesso()">
-        <span style="font-size: 1.5rem;">💬</span>
-        <div class="bp-text">Salve nosso WhatsApp e acompanhe ofertas.</div>
-    </div>
-    <button class="bp-close" onclick="fecharBannerPrimeiroAcesso(event)">✕</button>
-</div>
-
 <script>
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00; 
@@ -730,26 +732,6 @@ function catToId(name) {
     if (!name) return 'cat_outros';
     let clean = norm(name).replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
     return 'cat_' + clean.substring(0, 25);
-}
-
-function verificarPrimeiroAcesso() {
-    if (!localStorage.getItem('donaAntoniaContatoSalvo')) {
-        document.getElementById('banner-primeiro-acesso').style.display = 'flex';
-        document.body.classList.add('has-bottom-banner'); 
-    }
-}
-
-function fecharBannerPrimeiroAcesso(event) {
-    if (event) event.stopPropagation(); 
-    document.getElementById('banner-primeiro-acesso').style.display = 'none';
-    document.body.classList.remove('has-bottom-banner');
-    localStorage.setItem('donaAntoniaContatoSalvo', 'true');
-}
-
-function salvarContatoPrimeiroAcesso() {
-    fecharBannerPrimeiroAcesso();
-    let msg = encodeURIComponent("Olá, estou salvando seu contato.");
-    window.open(`https://wa.me/5565998150975?text=${msg}`, '_blank');
 }
 
 function getYouTubeVideoId(url) {
@@ -898,43 +880,42 @@ window.openSupermercadoMenu = function(customBanner = '', forceOpenId = null) {
 };
 // === FIM DAS NOVAS FUNÇÕES DE NAVEGAÇÃO DUAL PANE ===
 
-window.playInlineVideo = function(elId, videoId) {
-    let el = document.getElementById(elId);
-    if(el) {
-        el.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; position:relative; z-index:10;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-    }
-}
-
 function renderHomeMobileTV() {
     let container = $('home-tv-container');
     if (!container || STATE.allVideos.length === 0) return;
 
-    let videosToShow = STATE.allVideos.slice(0, 3); 
-    
+    let videosToShow = STATE.allVideos.slice(0, 12); 
+
     let trackHtml = videosToShow.map((v, idx) => `
-        <div class="home-tv-item" id="inline-vid-${idx}">
-            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" class="home-tv-thumb" onclick="playInlineVideo('inline-vid-${idx}', '${v.videoId}')" alt="Thumbnail TV">
-            <div class="home-tv-play" onclick="playInlineVideo('inline-vid-${idx}', '${v.videoId}')">▶</div>
-            <div class="home-tv-prod" onclick="openQuickView('${v.product.id}')">
-                <img src="${v.product.img}" loading="lazy" class="home-tv-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
-                <button class="home-tv-prod-btn">Ver</button>
+        <div class="tv-carousel-item" onclick="openVideoFeed('${v.videoId}')">
+            <img src="https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg" loading="lazy" class="home-tv-thumb" alt="Thumbnail TV">
+            <div class="home-tv-play" style="pointer-events: none;">▶</div>
+            <div class="tv-mini-banner">
+                <img src="${v.product.img}" loading="lazy" class="tv-mini-img" onerror="this.src='/site/img/produtos/cesta.webp'">
+                <div class="tv-mini-info">
+                    <div class="tv-mini-name">${v.product.name}</div>
+                </div>
+                <button class="tv-mini-btn">Ver</button>
             </div>
         </div>
     `).join('');
 
-    trackHtml += `
-        <div class="home-tv-item" style="background: var(--c-img-bg); border: 2px dashed var(--c-t); display: flex; align-items: center; justify-content: center; cursor: pointer;" onclick="openVideoFeed()">
-            <div style="display:flex; flex-direction:column; align-items:center;">
-                <span style="font-size: 2.5rem; margin-bottom: 8px;">📺</span>
-                <span style="color: var(--c-p); font-weight: 700; text-align: center; font-size: 1.1rem;">Ver Mais<br>Vídeos</span>
-            </div>
+    container.innerHTML = `
+        <div class="qr-main-title" style="display:flex; justify-content:space-between; align-items:center; width: 100%; padding-left: 15px; padding-right: 15px; margin: 15px auto 10px; max-width: 1000px; box-sizing: border-box;">
+            <span style="font-weight:700; font-size:1.1rem;">📺 TV Dona Antônia</span>
+            <button onclick="openVideoFeed()" style="font-size:0.85rem; font-weight:600; color:var(--c-p); background:var(--c-img-bg); padding:6px 12px; border-radius:8px; border:none; cursor:pointer;">Ver Todos</button>
+        </div>
+        <div class="tv-carousel-wrap">
+            <button class="tv-arrow left" onclick="scrollTvCarousel(-1)">❮</button>
+            <div class="tv-carousel" id="tv-carousel-track">${trackHtml}</div>
+            <button class="tv-arrow right" onclick="scrollTvCarousel(1)">❯</button>
         </div>
     `;
+}
 
-   container.innerHTML = `
-        <div class="qr-main-title" style="width: 100%; padding-left: 15px; padding-right: 15px; margin: 25px auto 15px; max-width: 1000px; box-sizing: border-box; font-weight:700;">📺 TV Dona Antônia</div>
-        <div class="home-tv-grid" style="padding: 0 15px 40px; max-width: 1000px; margin: 0 auto;">${trackHtml}</div>
-    `;
+window.scrollTvCarousel = function(dir) {
+    let c = document.getElementById('tv-carousel-track');
+    if(c) c.scrollBy({ left: dir * c.clientWidth * 0.8, behavior: 'smooth' });
 }
 
 function compileVideos() {
@@ -1037,6 +1018,14 @@ window.selectTvCategory = function(cat, nome, e) {
     document.getElementById('label-tv').innerText = nome;
     document.getElementById('list-tv').classList.remove('show');
     renderVideoFeedTrack();
+}
+
+// Atualizada lógica de vídeo inline para ser usada apenas no Feed vertical, visto que o carrossel na Home agora não toca inline.
+window.playInlineVideo = function(elId, videoId) {
+    let el = document.getElementById(elId);
+    if(el) {
+        el.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; position:relative; z-index:10;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    }
 }
 
 window.openVideoFeed = function(targetVideoId = null) {
@@ -1895,7 +1884,7 @@ window.openQuickView = function(id) {
     }
     
     $('qv-price').innerHTML = p.oldPrice && p.oldPrice > p.price 
-        ? `<span class="old-price-subtle" style="font-size:0.9rem;">De: ${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
+        ? `<span class="old-price-subtle" style="font-size:0.9rem; text-decoration: line-through; margin-right: 10px; color: var(--c-s);">De: ${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
         : fmt(p.price); 
     
     let qvWholesale = $('qv-wholesale');
@@ -2273,8 +2262,6 @@ document.addEventListener('DOMContentLoaded', () => {
             btnInstall.style.display = 'none'; localStorage.setItem('donaAntoniaAppDismissed', 'true');
         });
     }
-
-    setTimeout(verificarPrimeiroAcesso, 1500); 
 });
 
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js').catch((erro) => { console.error('Erro SW', erro); }); }); }
