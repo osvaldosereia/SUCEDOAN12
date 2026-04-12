@@ -523,12 +523,12 @@ body.has-bottom-banner .floating-cart { bottom: 80px !important; }
                 <div class="filters-row" id="normal-filters">
                     <div class="custom-dropdown" id="dropdown-sort">
                         <div class="custom-dropdown-btn" onclick="toggleDropdown('sort', event)">
-                            <span id="label-sort">Relevância</span> <span>▼</span>
+                            <span id="label-sort">A - Z</span> <span>▼</span>
                         </div>
                         <div class="custom-dropdown-list" id="list-sort">
-                            <div class="custom-dropdown-item active" onclick="selectSortOption('maior_desconto', 'Relevância')">Relevância</div>
+                            <div class="custom-dropdown-item" onclick="selectSortOption('maior_desconto', 'Relevância')">Relevância</div>
                             <div class="custom-dropdown-item" onclick="selectSortOption('menor_preco', 'Menor Preço')">Menor Preço</div>
-                            <div class="custom-dropdown-item" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
+                            <div class="custom-dropdown-item active" onclick="selectSortOption('az', 'A - Z')">A - Z</div>
                         </div>
                     </div>
                 </div>
@@ -766,9 +766,11 @@ function getYouTubeEmbedUrl(url) {
     return videoId ? `https://www.youtube.com/embed/${videoId}?rel=0&enablejsapi=1` : '';
 }
 
+c// O currentSort inicial agora é 'az' (A - Z) em vez de 'maior_desconto'
 const STATE = {
-    dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'maior_desconto', currentKeyword: 'all',
+    dataLoaded: false, viewStack: 'HOME', checkoutOpen: false, currentSort: 'az', currentKeyword: 'all',
     currentMarcaTab: '', baskets: [], prods: [], combos: [], allVideos: [], currentFilteredList: [], tvCategory: 'all',
+    // ... o restante do objeto STATE continua igual ...
     editingBaskets: {},
     deptos: {
         'desc_30': { id: 'desc_30', title: '30% de Desconto', type: 'PROD', data: [] },
@@ -1399,7 +1401,8 @@ window.openDepto = function(deptoId) {
     STATE.activeDeptoId = deptoId; 
     STATE.viewStack = 'DEPTO_LIST';
 
-    STATE.currentSort = 'maior_desconto';
+    // 1. Força a ordenação alfabética sempre que abrir uma sessão
+    STATE.currentSort = 'az';
 
     let d = STATE.deptos[deptoId];
     if(!d) return;
@@ -1420,10 +1423,19 @@ window.openDepto = function(deptoId) {
     document.getElementById('normal-filters').style.display = 'none';
     if (document.getElementById('dropdown-sort')) document.getElementById('dropdown-sort').style.display = 'none';
 
+    // Se for uma sessão de produtos normais (não Cestas/Kits)
     if (d.type === 'PROD') {
         document.getElementById('normal-filters').style.display = 'flex';
         document.getElementById('dropdown-sort').style.display = 'block';
-        document.getElementById('label-sort').innerText = 'Relevância';
+        
+        // 2. Atualiza o texto do botão de filtro para 'A - Z'
+        document.getElementById('label-sort').innerText = 'A - Z';
+        
+        // 3. Destaca a opção 'A - Z' na lista suspensa
+        document.querySelectorAll('#list-sort .custom-dropdown-item').forEach(el => el.classList.remove('active'));
+        let azOption = Array.from(document.querySelectorAll('#list-sort .custom-dropdown-item')).find(el => el.innerText === 'A - Z');
+        if(azOption) azOption.classList.add('active');
+        
     } else {
         document.getElementById('see-all-controls').style.display = 'none'; 
     }
