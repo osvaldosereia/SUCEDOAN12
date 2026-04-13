@@ -1271,8 +1271,9 @@ async function init() {
             });
             
             let hojeTime = new Date().getTime();
-            // Calcular dia do ano para a roleta diária de ofertas
-            let diaDoAno = Math.floor(hojeTime / (1000 * 60 * 60 * 24)); 
+            // Calcular dias desde a epoch para definir a semana (virando à segunda-feira)
+            let diasDesdeEpoch = Math.floor(hojeTime / (1000 * 60 * 60 * 24));
+            let semanaDoAno = Math.floor((diasDesdeEpoch + 3) / 7);
 
             STATE.prods.forEach(p => { 
                 let catNome = p.categoria && p.categoria.trim() !== "" ? p.categoria : "Outros";
@@ -1313,7 +1314,7 @@ async function init() {
                     }
                 }
 
-               // 2. ROLETA DIÁRIA PARA OS PRODUTOS RESTANTES
+              // 2. ROLETA DIÁRIA PARA OS PRODUTOS RESTANTES
                 if (!p.discountApplied && p.stock > 0) {
                     // Hash verdadeiro para espalhar bem os resultados independentemente do formato do ID
                     let strHash = String(p.id) + "-" + String(diaDoAno);
