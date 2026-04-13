@@ -207,12 +207,47 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 
 /* Grid de Produtos no Mobile: 2 colunas */
-.grid-elegant { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+/* Container da Grade: O background formará a linha através do gap */
+.grid-elegant { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 1px; /* A espessura da linha divisória */
+    background-color: var(--c-bd); /* Cor da linha */
+    border: 1px solid var(--c-bd); /* Borda externa do quadro */
+    border-radius: 8px; /* Arredondamento do quadro externo */
+    overflow: hidden; /* Não deixa os filhos vazarem a borda */
+}
 
 /* Card Elegante Mobile - Otimizado para espaços pequenos */
-.card-elegant { display: flex; flex-direction: column; background: #fff; padding: 8px; border-radius: 10px; position: relative; margin-bottom: 0; border: 1px solid var(--c-bd); height: 100%; }
-.card-elegant .img-wrap { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.card-elegant .img-wrap img { width: 95%; height: 95%; object-fit: contain; mix-blend-mode: multiply; }
+.card-elegant { 
+    display: flex; 
+    flex-direction: column; 
+    background: #fff; /* Fundo do card, esconde o fundo da grid */
+    padding: 10px; 
+    border-radius: 0; /* Tiramos o arredondamento */
+    border: none; /* Tiramos a borda individual */
+    box-shadow: none; /* Tiramos a sombra */
+    position: relative; 
+    margin-bottom: 0; 
+    height: 100%; 
+}
+.card-elegant .img-wrap { 
+    width: 100%; 
+    aspect-ratio: 1/1; 
+    background: transparent; /* Remove o fundo cinza das imagens */
+    border-radius: 0; 
+    margin-bottom: 8px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    overflow: hidden; 
+}
+.card-elegant .img-wrap img { 
+    width: 100%; /* A imagem passa a usar 100% do espaço */
+    height: 100%; 
+    object-fit: contain; 
+    mix-blend-mode: multiply; 
+}
 .card-elegant .info-wrap { display: flex; flex-direction: column; flex: 1; padding: 0;}
 .card-elegant .title { font-size: 0.75rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
 .card-elegant .price { font-size: 0.95rem; font-weight: 800; color: var(--c-p); line-height: 1;}
@@ -226,13 +261,16 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button { font-size: 1.1rem; background: transparent; color: var(--c-p); border: none; width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; }
 .card-qty-ctrl span { font-weight: 700; font-size: 0.85rem; color: var(--c-p); flex: 1; text-align: center;}
 
+/* Unifiquei os dois blocos @media em um só para o Desktop */
 @media(min-width: 800px) {
     .dual-layout { max-width: 1000px; margin: 0 auto; padding: 25px 0; gap: 20px; }
+    
+    /* Menu lateral mais estreito no desktop (220px) */
     .side-menu { 
-        width: 280px; border: 1px solid var(--c-bd); border-radius: 12px; 
+        width: 220px; border: 1px solid var(--c-bd); border-radius: 12px; 
         box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: calc(100dvh - 120px); padding: 15px; 
     }
-    .main-pane { width: calc(100% - 300px); padding: 0; height: calc(100dvh - 120px); }
+    .main-pane { width: calc(100% - 240px); padding: 0; height: calc(100dvh - 120px); }
     
     /* Restaura o menu para horizontal no PC */
     .chip-cat { flex-direction: row; text-align: left; padding: 10px; margin-bottom: 10px; align-items: center; justify-content: flex-start; }
@@ -242,45 +280,23 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .chip-price { font-size: 0.85rem; margin-top: 4px; }
     
     .grid-ver-todos { grid-template-columns: repeat(5, 1fr) !important; }
-    .grid-elegant { grid-template-columns: repeat(3, 1fr); gap: 16px; }
     
-    .card-elegant { padding: 12px; border: 1px solid var(--c-bd); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+    /* Grade elegante no PC com a linha de 1px */
+    .grid-elegant { grid-template-columns: repeat(3, 1fr); gap: 1px; }
+    
+    /* Card elegante no PC sem bordas, alinhado à grade contínua */
+    .card-elegant { 
+        flex-direction: column; gap: 0; align-items: flex-start; padding: 12px; 
+        border: none; box-shadow: none; margin-bottom: 0; height: 100%;
+    }
+    .card-elegant .img-wrap { width: 100%; height: auto; margin-bottom: 8px; flex-shrink: 0; }
+    .card-elegant .info-wrap { width: 100%; padding: 0; justify-content: space-between;}
     .card-elegant .title { font-size: 0.9rem; }
     .card-elegant .price { font-size: 1.1rem; }
     .card-elegant .atacado { font-size: 0.75rem; }
     
-    .card-add-btn-wide { height: 32px; font-size: 0.8rem; border-radius: 8px; }
-    .card-qty-ctrl { height: 32px; border-radius: 8px; }
-    .card-qty-ctrl button { width: 28px; font-size: 1rem; }
-    .card-qty-ctrl span { font-size: 0.9rem; }
-}
-/* --- FIM: LAYOUT DUAL PANE --- */
-
-@media(min-width: 800px) {
-    .dual-layout { max-width: 1000px; margin: 0 auto; padding: 25px 0; gap: 20px; }
-    /* Menu lateral mais estreito no desktop (220px) */
-    .side-menu { 
-        width: 220px; border: 1px solid var(--c-bd); border-radius: 12px; 
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: calc(100dvh - 120px); padding: 15px; 
-    }
-    .main-pane { width: calc(100% - 240px); padding: 0; height: calc(100dvh - 120px); }
-    
-    .chip-cat { padding: 10px; margin-bottom: 10px; }
-    .chip-img { width: 45px; height: 45px; }
-    .chip-title { font-size: 0.85rem; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-    
-    .grid-ver-todos { grid-template-columns: repeat(5, 1fr) !important; }
-    .grid-elegant { grid-template-columns: repeat(3, 1fr); gap: 16px; }
-    
-    .card-elegant { 
-        flex-direction: column; gap: 0; align-items: flex-start; padding: 12px; 
-        border: 1px solid var(--c-bd); box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 0; height: 100%;
-    }
-    .card-elegant .img-wrap { width: 100%; height: auto; margin-bottom: 8px; flex-shrink: 0; }
-    .card-elegant .info-wrap { width: 100%; padding: 0; justify-content: space-between;}
-    
-    .card-elegant .card-add-btn-wide { width: 100%; min-width: 90px; padding: 6px 12px; height: 32px; font-size: 0.8rem; }
-    .card-elegant .card-qty-ctrl { width: 100%; height: 32px; }
+    .card-elegant .card-add-btn-wide { width: 100%; min-width: 90px; padding: 6px 12px; height: 32px; font-size: 0.8rem; border-radius: 8px;}
+    .card-elegant .card-qty-ctrl { width: 100%; height: 32px; border-radius: 8px;}
     .card-elegant .card-qty-ctrl button { width: 28px; font-size: 1rem; }
     .card-elegant .card-qty-ctrl span { font-size: 0.9rem; }
 }
@@ -362,8 +378,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 .chk-section { background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--c-bd); }
 .chk-section-title { font-weight: 600; font-size: 1.05rem; color: var(--c-p); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;}
 
-#chk-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 15px; }
-@media(min-width: 800px) { #chk-list { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+#chk-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 15px; }
+@media(min-width: 800px) { #chk-list { grid-template-columns: repeat(5, 1fr); gap: 16px; } }
 
 .chk-item-card { border: none; border-radius: 12px; padding: 10px 8px; background: var(--c-img-bg); display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
 .chk-item-card img { width: 100%; aspect-ratio: 1/1.2; object-fit: contain; background: transparent; border-radius: 0; padding: 10%; mix-blend-mode: multiply; }
@@ -1113,7 +1129,8 @@ window.selectTvCategory = function(cat, nome, e) {
 window.playInlineVideo = function(elId, videoId) {
     let el = document.getElementById(elId);
     if(el) {
-        el.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; position:relative; z-index:10;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        // Adicionado loading="lazy" para economizar banda do usuário
+        el.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=0&rel=0&playsinline=1&enablejsapi=1" style="width:100%; height:100%; border:none; position:relative; z-index:10;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
     }
 }
 
@@ -1158,6 +1175,27 @@ window.openVideoFeed = function(targetVideoId = null) {
 
 window.videoRenderLimit = 12; 
 window.currentVideoOffset = 0; 
+
+// NOVA FUNÇÃO: Monitora a rolagem para pausar os vídeos que saíram da tela
+window.handleVideoFeedScroll = function() {
+    let track = document.getElementById('v-feed-track');
+    if(!track) return;
+    
+    let scrollY = track.scrollTop;
+    let itemHeight = track.clientHeight;
+    let activeIndex = Math.round(scrollY / itemHeight); 
+    
+    let iframes = track.querySelectorAll('iframe');
+    iframes.forEach((ifr) => {
+        let parentItem = ifr.closest('.v-feed-item');
+        let itemsArray = Array.from(track.children);
+        let slideIndex = itemsArray.indexOf(parentItem);
+        
+        if (slideIndex !== activeIndex) {
+            ifr.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        }
+    });
+};
 
 function renderVideoFeedTrack(targetVideoId = null, append = false) {
     let filteredVideos = STATE.allVideos;
@@ -1242,6 +1280,10 @@ function renderVideoFeedTrack(targetVideoId = null, append = false) {
     if(!append) {
         track.scrollTo(0,0);
     }
+
+    // ADICIONADO: Liga o monitor de scroll toda vez que o feed de vídeos é renderizado/atualizado
+    track.removeEventListener('scroll', window.handleVideoFeedScroll);
+    track.addEventListener('scroll', window.handleVideoFeedScroll);
 }
 
 window.scrollTikTok = function(dir) {
@@ -1273,7 +1315,6 @@ async function fetchWithCache(url, key, ttlMinutes) {
         return fetch(url).then(r => r.json()).catch(() => []);
     }
 }
-
 function renderQvRecommendations(currentId) {
     let p = STATE.prods.find(x => x.id === currentId);
     if(!p) return '';
@@ -1905,7 +1946,7 @@ window.openQuickView = function(id) {
             if(embedUrl) {
                 carrosselHtml += `
                 <div class="qv-carousel-item video-slide">
-                    <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>
                 </div>`;
                 totalItems++;
             }
