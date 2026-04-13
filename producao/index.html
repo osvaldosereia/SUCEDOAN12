@@ -2226,7 +2226,7 @@ function sanitizeProductsForExport(prods) {
                 
                 // Regra de Ouro do Estoque
                 linha['availability'] = (parseFloat(p.estoque) > 0) ? 'in stock' : 'out of stock';
-                linha['condition'] = 'new'; // Todos os itens marcados como novos
+                linha['condition'] = 'new'; 
                 
                 // Formatar preço com ponto, e finalizando com BRL
                 let precoFmt = parseFloat(p.preco || 0).toFixed(2);
@@ -2237,44 +2237,30 @@ function sanitizeProductsForExport(prods) {
                 let codigo = p.codigo || '';
                 linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
                 
-              // ========================================================
-// REGRAS DE IMAGEM ESPELHADAS DO SITE PARA A META
-// ========================================================
+                // REGRAS DE IMAGEM ESPELHADAS DO SITE
+                let codigoOuId = p.codigo || p.id || "";
+                let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
 
-// 1. Identifica o código do produto (essencial para o link automático)
-let codigoOuId = p.codigo || p.id || "";
+                if (img.startsWith("../site/")) {
+                    img = img.replace("../site/", "https://donaantonia.com.br/site/");
+                } else if (img.startsWith("/site/")) {
+                    img = "https://donaantonia.com.br" + img;
+                } else if (!img.startsWith("http")) {
+                    img = `https://donaantonia.com.br/site/img/produtos/${img}`;
+                }
 
-// 2. Aplica a mesma regra inteligente do seu site: 
-// Se não houver URL no banco, ele tenta o padrão .webp baseado no código
-let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
+                if (img.includes("?")) {
+                    img = img.split("?")[0];
+                }
 
-// 3. Garante que o caminho seja um link absoluto e válido
-if (img.startsWith("../site/")) {
-    img = img.replace("../site/", "https://donaantonia.com.br/site/");
-} else if (img.startsWith("/site/")) {
-    img = "https://donaantonia.com.br" + img;
-} else if (!img.startsWith("http")) {
-    // Caso o campo tenha apenas o nome do arquivo, monta o caminho completo
-    img = `https://donaantonia.com.br/site/img/produtos/${img}`;
-}
+                linha['image_link'] = encodeURI(img);
+                linha['brand'] = "Dona Antonia";
+                linha['gtin'] = p.gtin || "";
+                
+                return linha;
+            });
 
-// 4. Limpeza de parâmetros de versão (?v=...) que a Meta rejeita
-if (img.includes("?")) {
-    img = img.split("?")[0];
-}
-
-// 5. CORREÇÃO DE ERRO: Garante a extensão .webp correta (evita o erro do .web)
-// e codifica espaços para o padrão da web (ex: transforma " " em "%20")
-linha['image_link'] = encodeURI(img);
-
-// 6. Preenchimento dos demais campos obrigatórios
-linha['brand'] = "Dona Antonia";
-linha['gtin'] = p.gtin || "";
-
-return linha;
-// ========================================================
-
-            // Gerar CSV com conversão Papa.unparse (Meta exige delimitador de vírgula)
+            // GERAÇÃO DO ARQUIVO (Agora fora do .map para pegar todos os itens)
             const csv = Papa.unparse({ fields: colunasMeta, data: dadosParaExportar }, { quotes: true, delimiter: "," }); 
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
