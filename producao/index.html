@@ -2237,20 +2237,42 @@ function sanitizeProductsForExport(prods) {
                 let codigo = p.codigo || '';
                 linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
                 
-                // Arrumar caminho da imagem garantindo que é um link válido na web
-let img = p.url_imagem || "";
-if(img.startsWith("../site/")) {
+              // ========================================================
+// REGRAS DE IMAGEM ESPELHADAS DO SITE PARA A META
+// ========================================================
+
+// 1. Identifica o código do produto (essencial para o link automático)
+let codigoOuId = p.codigo || p.id || "";
+
+// 2. Aplica a mesma regra inteligente do seu site: 
+// Se não houver URL no banco, ele tenta o padrão .webp baseado no código
+let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
+
+// 3. Garante que o caminho seja um link absoluto e válido
+if (img.startsWith("../site/")) {
     img = img.replace("../site/", "https://donaantonia.com.br/site/");
+} else if (img.startsWith("/site/")) {
+    img = "https://donaantonia.com.br" + img;
+} else if (!img.startsWith("http")) {
+    // Caso o campo tenha apenas o nome do arquivo, monta o caminho completo
+    img = `https://donaantonia.com.br/site/img/produtos/${img}`;
 }
-                // Limpeza preventiva de ?v= timestamps para evitar rejeição
-                if(img.includes("?v=")) img = img.split("?v=")[0];
-                linha['image_link'] = img;
-                
-                linha['brand'] = "Dona Antonia";
-                linha['gtin'] = p.gtin || "";
-                
-                return linha;
-            });
+
+// 4. Limpeza de parâmetros de versão (?v=...) que a Meta rejeita
+if (img.includes("?")) {
+    img = img.split("?")[0];
+}
+
+// 5. CORREÇÃO DE ERRO: Garante a extensão .webp correta (evita o erro do .web)
+// e codifica espaços para o padrão da web (ex: transforma " " em "%20")
+linha['image_link'] = encodeURI(img);
+
+// 6. Preenchimento dos demais campos obrigatórios
+linha['brand'] = "Dona Antonia";
+linha['gtin'] = p.gtin || "";
+
+return linha;
+// ========================================================
 
             // Gerar CSV com conversão Papa.unparse (Meta exige delimitador de vírgula)
             const csv = Papa.unparse({ fields: colunasMeta, data: dadosParaExportar }, { quotes: true, delimiter: "," }); 
