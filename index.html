@@ -758,13 +758,12 @@ const STATE = {
     currentMarcaTab: '', baskets: [], prods: [], combos: [], allVideos: [], currentFilteredList: [], tvCategory: 'all',
     // ... o restante do objeto STATE continua igual ...
     editingBaskets: {},
-    deptos: {
-        'desc_30': { id: 'desc_30', title: '30% de Desconto', type: 'PROD', data: [] },
-        'desc_20': { id: 'desc_20', title: '20% de Desconto', type: 'PROD', data: [] },
-        'desc_10': { id: 'desc_10', title: '10% de Desconto', type: 'PROD', data: [] },
+   deptos: {
+        'ofertas': { id: 'ofertas', title: '🔥 OFERTAS', type: 'PROD', data: [] },
         'cestas': { id: 'cestas', title: 'Cestas Prontas', type: 'BASKET', data: [] },
         'combos': { id: 'combos', title: 'Kits Promo', type: 'COMBO', data: [] }
     },
+    
     cart: {}, cartOrder: [], appliedCombos: [], baseBasket: null, basketExtraFee: 0, comboDiscount: 0, atacadoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '', activeDeptoId: null
 };
@@ -863,10 +862,8 @@ window.openSupermercadoMenu = function(customBanner = '', forceOpenId = null) {
     STATE.viewStack = 'SEE_ALL';
     
     let cats = [];
-    if(STATE.deptos['desc_30'] && STATE.deptos['desc_30'].data.length > 0) cats.push({ id: 'desc_30', title: '30% de Desconto' });
-    if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) cats.push({ id: 'desc_20', title: '20% de Desconto' });
-    if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) cats.push({ id: 'desc_10', title: '10% de Desconto' });
-
+    if(STATE.deptos['ofertas'] && STATE.deptos['ofertas'].data.length > 0) cats.push({ id: 'ofertas', title: '🔥 OFERTAS' });
+    
     let dynamic = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0).sort((a,b) => String(a.title).localeCompare(String(b.title)));
     dynamic.forEach(d => cats.push({ id: d.id, title: d.title }));
 
@@ -1347,15 +1344,22 @@ async function init() {
                 }
             });
 
-            // Popula os departamentos de 10, 20 e 30% conforme o desconto real gerado
+            // Popula a secção única de OFERTAS e ordena do maior desconto para o menor
             STATE.prods.forEach(p => {
                  if (p.oldPrice > p.price && p.stock > 0 && !p._isBasket && !p._isCombo) {
                       let pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
-                      if (pct >= 30) STATE.deptos.desc_30.data.push(p);
-                      else if (pct >= 20) STATE.deptos.desc_20.data.push(p);
-                      else if (pct >= 10) STATE.deptos.desc_10.data.push(p);
+                      // Adiciona qualquer produto com pelo menos 10% de desconto
+                      if (pct >= 10) STATE.deptos.ofertas.data.push(p);
                  }
             });
+            // Garante a ordenação do maior desconto (percentual) para o menor
+            if (STATE.deptos.ofertas) {
+                STATE.deptos.ofertas.data.sort((a, b) => {
+                    let pctA = (a.oldPrice - a.price) / a.oldPrice;
+                    let pctB = (b.oldPrice - b.price) / b.oldPrice;
+                    return pctB - pctA;
+                });
+            }
 
             compileVideos();
             renderHomeOfertas();
@@ -1716,11 +1720,10 @@ window.commitExpander = function() {
     document.getElementById('see-all-footer').style.display = 'none';
     
     // Determina a aba com desconto mais alto disponível para focar
+    // Foca na aba de Ofertas caso ela exista e tenha produtos
     let targetId = null;
-    if(STATE.deptos['desc_30'] && STATE.deptos['desc_30'].data.length > 0) targetId = 'desc_30';
-    else if(STATE.deptos['desc_20'] && STATE.deptos['desc_20'].data.length > 0) targetId = 'desc_20';
-    else if(STATE.deptos['desc_10'] && STATE.deptos['desc_10'].data.length > 0) targetId = 'desc_10';
-
+    if(STATE.deptos['ofertas'] && STATE.deptos['ofertas'].data.length > 0) targetId = 'ofertas';
+    
     openSupermercadoMenu('✅ Adicionado! Continue a comprar no nosso supermercado.', targetId);
 };
 
