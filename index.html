@@ -8,6 +8,21 @@
 <link rel="manifest" href="manifest.json">
 <title>Super Cestas Básicas Dona Antônia</title>
 
+<script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  
+  // SUBSTITUA O ID ABAIXO PELO SEU ID DO PIXEL DA META
+  fbq('init', 'SEU_ID_DO_PIXEL_AQUI'); 
+  fbq('track', 'PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=SEU_ID_DO_PIXEL_AQUI&ev=PageView&noscript=1"/></noscript>
 <link rel="preload" as="image" href="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif">
 
 <style>
@@ -791,6 +806,12 @@ const $ = id => document.getElementById(id);
 // Paleta em tons pasteis claros para os chips
 const PASTEL_COLORS = ['#fef0f0', '#f0fdf4', '#f0f9ff', '#fffbeb', '#f5f3ff', '#fff1f2', '#ecfdf5', '#fefce8'];
 
+// --- AUXILIAR DE URL PARA A META ---
+function createSlug(text) {
+    if(!text) return "";
+    return text.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
 function catToId(name) {
     if (!name) return 'cat_outros';
     let clean = norm(name).replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
@@ -1479,6 +1500,15 @@ async function init() {
         
         STATE.dataLoaded = true;
 
+        // --- FAREJADOR DE LINKS DA META ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const pParam = urlParams.get('p');
+        if (pParam) {
+            const parts = pParam.split('-');
+            const idFromUrl = parts[parts.length - 1];
+            setTimeout(() => { if (STATE.prods.find(x => x.id === idFromUrl)) openQuickView(idFromUrl); }, 500);
+        }
+
     } catch (e) { console.error("Erro sincronização:", e); showToast("Erro ao conectar.", "r"); }
 }
 
@@ -1819,6 +1849,17 @@ window.commitExpander = function() {
     updateTotals(); 
     showToast("Adicionado à sacola com sucesso!", "s");
     
+    // --- META PIXEL: ADDTOCART KIT ---
+    if (typeof fbq === 'function') {
+        fbq('track', 'AddToCart', {
+            content_ids: [expanderState.id],
+            content_name: expanderState.sourceObj.nome,
+            content_type: 'product',
+            value: expanderState.basePrice,
+            currency: 'BRL'
+        });
+    }
+
     document.getElementById('see-all-footer').style.display = 'none';
     
     let targetId = null;
@@ -1924,6 +1965,23 @@ window.openQuickView = function(id) {
     let p = STATE.prods.find(x => x.id === id); 
     if (!p || p.stock <= 0) return; 
     
+    // --- META PIXEL: VIEW CONTENT ---
+    if (typeof fbq === 'function') {
+        fbq('track', 'ViewContent', {
+            content_ids: [id],
+            content_name: p.name,
+            content_type: 'product',
+            value: p.price,
+            currency: 'BRL'
+        });
+    }
+
+    // --- NOVO: URL PARA A META ---
+    let slug = createSlug(p.name);
+    let newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?p=${slug}-${id}`;
+    window.history.pushState({ qvOpen: true, productId: id }, '', newUrl);
+    // ---------------------------------------
+
     let carrosselHtml = '';
     let totalItems = 0;
     
@@ -2058,6 +2116,14 @@ window.openQuickView = function(id) {
 
 window.closeQuickView = function(isFromBrowser = false) {
     document.getElementById('quick-view-lateral').classList.remove('open');
+    
+    // --- NOVO: Limpa a URL ao fechar ---
+    if (!isFromBrowser) {
+        let cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.pushState({ qvOpen: false }, '', cleanUrl);
+    }
+    // ----------------------------------
+    
     setTimeout(() => { 
         if(!document.querySelector('.quick-view.open')) $('generic-overlay').style.display = 'none';
         $('qv-carousel').innerHTML = ''; 
@@ -2095,9 +2161,22 @@ function upd(id, delta, skipKitCheck = false) {
 }
 
 window.handleAddClick = function(e, id) {
+    if(e) e.stopPropagation(); // Previne conflitos
     let p = STATE.prods.find(x => x.id === id);
     if (!p || p.stock <= (STATE.cart[id] || 0)) return showToast("Estoque insuficiente", "r");
     upd(id, 1); 
+    
+    // --- META PIXEL: ADDTOCART ---
+    if (typeof fbq === 'function') {
+        fbq('track', 'AddToCart', {
+            content_ids: [id],
+            content_name: p.name,
+            content_type: 'product',
+            value: p.price,
+            currency: 'BRL'
+        });
+    }
+
     if (STATE.viewStack !== 'KIT_DETAIL') {
         const cartBtn = document.getElementById('floating-cart'); 
         if (cartBtn) { cartBtn.style.transform = 'translateX(-50%) scale(1.05)'; setTimeout(() => cartBtn.style.transform = 'translateX(-50%) scale(1)', 150); }
@@ -2334,9 +2413,22 @@ async function sendOrder() {
 
     const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0;
     
-    Object.entries(STATE.cart).forEach(([id, q]) => { const p = STATE.prods.find(x => x.id === id); if (p) { let unitPrice = p.price; totalBruto += unitPrice * q; let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice}); } });
+    let idsForMeta = []; // Variável para o Pixel
+
+    Object.entries(STATE.cart).forEach(([id, q]) => { const p = STATE.prods.find(x => x.id === id); if (p) { let unitPrice = p.price; totalBruto += unitPrice * q; let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice}); idsForMeta.push(id); } });
 
     let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.deliveryDiscount - STATE.atacadoDiscount;
+    
+    // --- META PIXEL: PURCHASE ---
+    if (typeof fbq === 'function') {
+        fbq('track', 'Purchase', {
+            content_ids: idsForMeta,
+            content_type: 'product',
+            value: final,
+            currency: 'BRL'
+        });
+    }
+
     let outras_despesas = STATE.basketExtraFee || 0; let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.atacadoDiscount;
     let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; let tipoCestaTexto = "Cestas Personalizada"; 
     
