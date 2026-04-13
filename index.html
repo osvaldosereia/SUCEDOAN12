@@ -178,46 +178,83 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* --- INÍCIO: LAYOUT DUAL PANE AJUSTADO --- */
 .dual-layout { display: flex; width: 100%; height: calc(100dvh - 60px); background: #ffffff; }
 
-/* Menu lateral mais estreito no mobile (35%) */
-.side-menu { width: 50%; background: var(--c-bg); border-right: 1px solid var(--c-bd); overflow-y: auto; padding: 10px 5px; padding-bottom: 150px; }
-.main-pane { width: 50%; overflow-y: auto; padding: 10px 10px 150px 10px; position: relative; background: var(--c-bg); }
+/* Menu lateral super estreito no mobile (25%) e vitrine (75%) */
+.side-menu { width: 25%; background: var(--c-bg); border-right: 1px solid var(--c-bd); overflow-y: auto; padding: 10px 4px; padding-bottom: 150px; }
+.main-pane { width: 75%; overflow-y: auto; padding: 10px 8px 150px 8px; position: relative; background: var(--c-bg); overflow-x: hidden; }
 
-/* Chips com visual novo: flex, imagens, separador visível */
+/* Chips do Menu Mobile: Coluna (Foto > Título > Preço) */
 .chip-cat { 
-    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; 
-    padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; 
-    color: var(--c-p); border-bottom: 2px solid rgba(0,0,0,0.05); /* Separador visível */
-    margin-bottom: 8px; transition: 0.2s; line-height: 1.2; cursor: pointer;
-    border-top: 1px solid transparent; border-left: 1px solid transparent; border-right: 1px solid transparent;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; width: 100%; text-align: center; 
+    padding: 10px 4px; border-radius: 8px; font-weight: 500; color: var(--c-p); 
+    border-bottom: 2px solid rgba(0,0,0,0.05); transition: 0.2s; cursor: pointer;
+    border-top: 1px solid transparent; border-left: 1px solid transparent; border-right: 1px solid transparent; margin-bottom: 8px;
 }
 .chip-cat.active { 
     font-weight: 700; border-left: 4px solid var(--c-p); filter: brightness(0.95); border-bottom-color: transparent;
 }
 .chip-img {
-    width: 35px; height: 35px; border-radius: 6px; object-fit: contain;
-    background: #fff; flex-shrink: 0; mix-blend-mode: multiply; border: 1px solid rgba(0,0,0,0.05);
+    width: 42px; height: 42px; border-radius: 6px; object-fit: contain;
+    background: #fff; mix-blend-mode: multiply; border: 1px solid rgba(0,0,0,0.05); margin-bottom: 2px; flex-shrink: 0;
 }
 .chip-info {
-    display: flex; flex-direction: column; flex: 1; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; width: 100%; overflow: hidden;
 }
 .chip-title {
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.75rem;
+    font-size: 0.65rem; line-height: 1.15; white-space: normal; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; width: 100%; word-break: break-word;
 }
 .chip-price {
-    font-weight: 700; font-size: 0.85rem; color: var(--c-ok); margin-top: 2px;
+    font-weight: 800; font-size: 0.70rem; color: var(--c-ok); margin-top: 2px;
 }
 
-.grid-elegant { display: grid; grid-template-columns: 1fr; gap: 16px; }
+/* Grid de Produtos no Mobile: 2 colunas */
+.grid-elegant { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 
-/* Card Elegante (Vertical Sempre) */
-.card-elegant { display: flex; flex-direction: column; background: #fff; padding: 0; border-radius: 12px; position: relative; margin-bottom: 10px;}
-.card-elegant .img-wrap { width: 100%; aspect-ratio: 1/1; background: #fff; border-radius: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+/* Card Elegante Mobile - Otimizado para espaços pequenos */
+.card-elegant { display: flex; flex-direction: column; background: #fff; padding: 8px; border-radius: 10px; position: relative; margin-bottom: 0; border: 1px solid var(--c-bd); height: 100%; }
+.card-elegant .img-wrap { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .card-elegant .img-wrap img { width: 95%; height: 95%; object-fit: contain; mix-blend-mode: multiply; }
-.card-elegant .info-wrap { display: flex; flex-direction: column; flex: 1; padding: 0 5px;}
-.card-elegant .title { font-size: 0.9rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
-.card-elegant .price { font-size: 1.1rem; font-weight: 700; color: var(--c-p); line-height: 1;}
-.card-elegant .atacado { font-size: 0.75rem; color: var(--c-ok); font-weight: 600; margin-top: 4px;}
-.card-elegant .old-price { font-size: 0.75rem; color: var(--c-t); text-decoration: line-through; display: block; margin-bottom: 2px;}
+.card-elegant .info-wrap { display: flex; flex-direction: column; flex: 1; padding: 0;}
+.card-elegant .title { font-size: 0.75rem; font-weight: 500; color: var(--c-p); margin-bottom: 4px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
+.card-elegant .price { font-size: 0.95rem; font-weight: 800; color: var(--c-p); line-height: 1;}
+.card-elegant .atacado { font-size: 0.60rem; color: var(--c-ok); font-weight: 600; margin-top: 2px; line-height: 1.1;}
+.card-elegant .old-price { font-size: 0.65rem; color: var(--c-t); text-decoration: line-through; display: block; margin-bottom: 2px;}
+
+/* Botões do Card Mobile */
+.card-add-btn-wide { background: var(--c-p); color: #fff; border-radius: 6px; padding: 6px; font-weight: 600; font-size: 0.75rem; border: none; transition: 0.15s; width: 100%; margin-top: 8px; cursor: pointer; height: 30px;}
+.card-add-btn-wide:active { transform: scale(0.98); }
+.card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: var(--c-img-bg); border-radius: 6px; height: 30px; margin-top: 8px; width: 100%; overflow: hidden;}
+.card-qty-ctrl button { font-size: 1.1rem; background: transparent; color: var(--c-p); border: none; width: 28px; height: 100%; display: flex; align-items: center; justify-content: center; }
+.card-qty-ctrl span { font-weight: 700; font-size: 0.85rem; color: var(--c-p); flex: 1; text-align: center;}
+
+@media(min-width: 800px) {
+    .dual-layout { max-width: 1000px; margin: 0 auto; padding: 25px 0; gap: 20px; }
+    .side-menu { 
+        width: 280px; border: 1px solid var(--c-bd); border-radius: 12px; 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03); height: calc(100dvh - 120px); padding: 15px; 
+    }
+    .main-pane { width: calc(100% - 300px); padding: 0; height: calc(100dvh - 120px); }
+    
+    /* Restaura o menu para horizontal no PC */
+    .chip-cat { flex-direction: row; text-align: left; padding: 10px; margin-bottom: 10px; align-items: center; justify-content: flex-start; }
+    .chip-img { width: 45px; height: 45px; margin-bottom: 0; margin-right: 8px; }
+    .chip-info { align-items: flex-start; }
+    .chip-title { font-size: 0.85rem; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-align: left;}
+    .chip-price { font-size: 0.85rem; margin-top: 4px; }
+    
+    .grid-ver-todos { grid-template-columns: repeat(5, 1fr) !important; }
+    .grid-elegant { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    
+    .card-elegant { padding: 12px; border: 1px solid var(--c-bd); box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+    .card-elegant .title { font-size: 0.9rem; }
+    .card-elegant .price { font-size: 1.1rem; }
+    .card-elegant .atacado { font-size: 0.75rem; }
+    
+    .card-add-btn-wide { height: 32px; font-size: 0.8rem; border-radius: 8px; }
+    .card-qty-ctrl { height: 32px; border-radius: 8px; }
+    .card-qty-ctrl button { width: 28px; font-size: 1rem; }
+    .card-qty-ctrl span { font-size: 0.9rem; }
+}
+/* --- FIM: LAYOUT DUAL PANE --- */
 
 @media(min-width: 800px) {
     .dual-layout { max-width: 1000px; margin: 0 auto; padding: 25px 0; gap: 20px; }
@@ -285,13 +322,13 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 @media(min-width: 800px) { .grid-micro { grid-template-columns: repeat(6, 1fr); gap: 24px 16px; } }
 .grid-micro-3 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px 12px; }
 
-/* Preservando estilo para a tela de Detalhes do Kit (Expander) */
-.u-card { background: #fff; border: 1px solid var(--c-bd); padding: 10px; border-radius: 12px; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: transform 0.2s;}
-.u-img-area { width: 100%; aspect-ratio: 1/1.2; background: var(--c-img-bg); border-radius: 12px; position: relative; overflow: hidden; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; }
+/* Preservando estilo para a tela de Detalhes do Kit (Expander) em 2 Colunas */
+.u-card { background: #fff; border: 1px solid var(--c-bd); padding: 8px; border-radius: 10px; display: flex; flex-direction: column; position: relative; cursor: pointer; height: 100%; transition: transform 0.2s;}
+.u-img-area { width: 100%; aspect-ratio: 1/1; background: var(--c-img-bg); border-radius: 8px; position: relative; overflow: hidden; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; }
 .u-img-area img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; padding: 5%; transition: 0.3s;}
 .u-info { display: flex; flex-direction: column; flex: 1; justify-content: space-between;}
-.u-name { font-size: 0.9rem; font-weight: 500; color: var(--c-p); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
-.u-price { font-size: 1.05rem; font-weight: 600; color: var(--c-p); line-height: 1; }
+.u-name { font-size: 0.75rem; font-weight: 500; color: var(--c-p); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px; }
+.u-price { font-size: 0.95rem !important; font-weight: 800; color: var(--c-p); line-height: 1; }
 
 .kit-tag { background: var(--c-p); color: #fff; font-size: 0.70rem; padding: 4px 8px; font-weight: 600; border-radius: 6px; position: absolute; top: 8px; left: 8px; z-index: 5;}
 .removido-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(220, 38, 38, 0.9); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 6px 12px; border-radius: 6px; z-index: 10; backdrop-filter: blur(2px);}
