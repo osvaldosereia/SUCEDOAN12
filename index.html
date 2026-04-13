@@ -1239,8 +1239,8 @@ async function init() {
        if (r2 && r2.length > 0) {
             const TAXA_AUMENTO_GLOBAL = 1.01;
 
-       STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
-       const codigoOuId = p.codigo || p.id;
+           STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
+                const codigoOuId = p.codigo || p.id;
                 const precoBase = parseFloat(p.preco) * TAXA_AUMENTO_GLOBAL;
                 
                 let imgs = [];
@@ -1314,10 +1314,10 @@ async function init() {
                     }
                 }
 
-              // 2. ROLETA DIÁRIA PARA OS PRODUTOS RESTANTES
+                // 2. ROLETA SEMANAL PARA OS PRODUTOS RESTANTES
                 if (!p.discountApplied && p.stock > 0) {
-                    // Hash verdadeiro para espalhar bem os resultados independentemente do formato do ID
-                    let strHash = String(p.id) + "-" + String(diaDoAno);
+                    // Hash verdadeiro usando a 'semanaDoAno' para que o desconto dure de segunda a domingo
+                    let strHash = String(p.id) + "-semana-" + String(semanaDoAno);
                     let hashCalc = 0;
                     for (let i = 0; i < strHash.length; i++) {
                         hashCalc = ((hashCalc << 5) - hashCalc) + strHash.charCodeAt(i);
@@ -1325,14 +1325,14 @@ async function init() {
                     }
                     let hashDaIsca = Math.abs(hashCalc) % 100; 
                     
-                    if (hashDaIsca < 5) { // 5% dos produtos
-                        p.price = p.oldPrice * 0.89; // 11% desconto
+                    if (hashDaIsca < 10) { // 10% dos produtos
+                        p.price = p.oldPrice * 0.92; // 8% de desconto
                         p.discountApplied = true;
-                    } else if (hashDaIsca < 15) { // 10% dos produtos (do 5 ao 14)
-                        p.price = p.oldPrice * 0.91; // 9% desconto
+                    } else if (hashDaIsca < 30) { // 20% dos produtos (do número 10 ao 29)
+                        p.price = p.oldPrice * 0.94; // 6% de desconto
                         p.discountApplied = true;
-                    } else if (hashDaIsca < 35) { // 20% dos produtos (do 15 ao 34)
-                        p.price = p.oldPrice * 0.93; // 7% desconto
+                    } else if (hashDaIsca < 80) { // 50% dos produtos (do número 30 ao 79)
+                        p.price = p.oldPrice * 0.96; // 4% de desconto
                         p.discountApplied = true;
                     }
                 }
@@ -1349,8 +1349,8 @@ async function init() {
             STATE.prods.forEach(p => {
                  if (p.oldPrice > p.price && p.stock > 0 && !p._isBasket && !p._isCombo) {
                       let pct = Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100);
-                      // Adiciona qualquer produto com pelo menos 10% de desconto
-                      if (pct >= 10) STATE.deptos.ofertas.data.push(p);
+                      // Adiciona qualquer produto com desconto na aba Ofertas
+                      if (pct > 0) STATE.deptos.ofertas.data.push(p);
                  }
             });
             // Garante a ordenação do maior desconto (percentual) para o menor
