@@ -2238,10 +2238,10 @@ function sanitizeProductsForExport(prods) {
                 linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
                 
                 // Arrumar caminho da imagem garantindo que é um link válido na web
-                let img = p.url_imagem || "";
-                if(img.startsWith("../site/")) {
-                    img = img.replace("../site/", "https://donaantonia.com.br/");
-                }
+let img = p.url_imagem || "";
+if(img.startsWith("../site/")) {
+    img = img.replace("../site/", "https://donaantonia.com.br/site/");
+}
                 // Limpeza preventiva de ?v= timestamps para evitar rejeição
                 if(img.includes("?v=")) img = img.split("?v=")[0];
                 linha['image_link'] = img;
