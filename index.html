@@ -1039,7 +1039,12 @@ window.openVideoFeed = function(targetVideoId = null) {
     
     // Usa setTimeout para dar tempo de o aviso renderizar na tela
     setTimeout(() => {
-        compileVideos(); 
+        
+        // CORREÇÃO: Só compila/embaralha os vídeos se a lista ainda estiver vazia
+        if(STATE.allVideos.length === 0) {
+            compileVideos(); 
+        }
+        
         if(STATE.allVideos.length === 0) {
             document.getElementById('video-loading').style.display = 'none';
             return showToast("Nenhum vídeo disponível no momento.", "r");
@@ -1060,15 +1065,15 @@ window.openVideoFeed = function(targetVideoId = null) {
         });
         document.getElementById('list-tv').innerHTML = htmlCatsTV;
         
+        // Rendeiza o trilho de vídeos focando no ID do vídeo clicado
         renderVideoFeedTrack(targetVideoId);
         
         if (!history.state || !history.state.videoOpen) history.pushState({ videoOpen: true }, '');
 
-        // Esconde o aviso de carregamento
+        // Esconde o aviso de carregamento após terminar de processar
         document.getElementById('video-loading').style.display = 'none';
     }, 50);
 }
-
 window.videoRenderLimit = 12; 
 window.currentVideoOffset = 0; // Ajuda a saber de onde continuar
 
