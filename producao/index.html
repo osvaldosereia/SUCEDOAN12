@@ -374,6 +374,19 @@
 
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAllSidebars()"></div>
 
+    <div id="modal-meta-export" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index: 10000; opacity:1;">
+        <div style="background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <h3 style="margin: 0; font-size: 16px; color: var(--accent);">Exportar Catálogo Meta</h3>
+            <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Selecione as categorias que deseja incluir no arquivo CSV para o Facebook/Instagram. Deixe vazio para exportar TODAS.</p>
+            <div id="meta-cat-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+                </div>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button class="nav-btn" style="flex:1; justify-content:center; height:40px;" onclick="fecharModalExportacaoMeta()">CANCELAR</button>
+                <button class="nav-btn success-btn" style="flex:1; justify-content:center; height:40px;" onclick="gerarCSVMeta()"><i data-lucide="download" size="14"></i> EXPORTAR</button>
+            </div>
+        </div>
+    </div>
+
     <div class="sidebar" id="balanco-sidebar" style="z-index: 1016; width: 400px;">
         <div class="sidebar-header">
             <div class="sidebar-title">Editar Balanço</div>
@@ -494,6 +507,10 @@
                 
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="exportarCSVCompleto()">
                     <i data-lucide="file-down" size="14"></i> 6. EXPORTAR CSV BLING
+                </button>
+                
+                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">
+                    <i data-lucide="share-2" size="14"></i> 7. EXPORTAR CATÁLOGO META
                 </button>
             </div>
 
@@ -1769,7 +1786,7 @@ function sanitizeProductsForExport(prods) {
             tags.forEach((t, idx) => {
                 htmlEditorTags += `<div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
                     <input type="text" class="form-input" style="flex-grow:1; padding:6px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)">
-                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" title="Fundo" onchange="updateTag('${p.codigo}', ${idx}, 'bg', this.value)">
+                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" title="Fundo" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
                     <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.txt}" title="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
                     <input type="number" class="form-input" style="width: 50px; height:24px; padding: 4px; font-size:11px;" value="${t.tam}" title="Tam." onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)">
                     <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button></div>`;
@@ -2084,7 +2101,7 @@ function sanitizeProductsForExport(prods) {
         }
 
         // ==========================================================
-        // 6. EXPORTAR CSV PADRÃO EXATO BLING (ADAPTADOR DO JSON FIT)
+        // 6. EXPORTAR CSV PADRÃO EXATO BLING E NOVO META (FACEBOOK)
         // ==========================================================
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Não há produtos para exportar.");
@@ -2136,6 +2153,113 @@ function sanitizeProductsForExport(prods) {
             l.download = `produtos_bling_${new Date().getTime()}.csv`; 
             l.click(); 
             closeSidebar('config-sidebar');
+        }
+
+        // --- FUNÇÕES EXCLUSIVAS PARA A META (FACEBOOK / INSTAGRAM) ---
+
+        function limparTextoParaURL(texto) {
+            if (!texto) return "";
+            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        }
+
+        function abrirModalExportacaoMeta() {
+            const container = document.getElementById('meta-cat-list');
+            container.innerHTML = "";
+            const catsEncontradas = [...new Set(products.map(p => p.categoria || "Sem Categoria"))];
+            
+            if(catsEncontradas.length === 0) {
+                container.innerHTML = "<div style='font-size:12px; color:#666;'>Nenhuma categoria encontrada nos produtos. O catálogo será exportado completo.</div>";
+            } else {
+                catsEncontradas.forEach(cat => {
+                    container.innerHTML += `
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary);">
+                            <input type="checkbox" class="meta-cat-checkbox" value="${cat}" checked>
+                            ${cat}
+                        </label>
+                    `;
+                });
+            }
+            
+            document.getElementById('modal-meta-export').style.display = 'flex';
+            closeSidebar('config-sidebar'); 
+        }
+
+        function fecharModalExportacaoMeta() {
+            document.getElementById('modal-meta-export').style.display = 'none';
+        }
+
+        function gerarCSVMeta() {
+            const checkboxes = document.querySelectorAll('.meta-cat-checkbox');
+            let categoriasSelecionadas = [];
+            checkboxes.forEach(cb => {
+                if(cb.checked) categoriasSelecionadas.push(cb.value);
+            });
+
+            // Filtra apenas produtos ativos
+            let produtosExportar = products.filter(p => p.situacao !== 'I'); 
+            
+            // Aplica o filtro de categorias se houver checkboxes listados
+            if(checkboxes.length > 0) {
+                produtosExportar = produtosExportar.filter(p => {
+                    let catDoProduto = p.categoria || "Sem Categoria";
+                    return categoriasSelecionadas.includes(catDoProduto);
+                });
+            }
+
+            if (produtosExportar.length === 0) {
+                alert("Nenhum produto ativo encontrado para as categorias selecionadas.");
+                return;
+            }
+
+            // Cabeçalhos que a Meta espera e valida
+            const colunasMeta = [
+                "id", "title", "description", "availability", "condition", "price", 
+                "link", "image_link", "brand", "gtin"
+            ];
+
+            const dadosParaExportar = produtosExportar.map(p => {
+                const linha = {};
+                
+                linha['id'] = p.codigo || p.id || "";
+                linha['title'] = (p.nome || "").substring(0, 150); 
+                linha['description'] = (p.nome || "Produto de alta qualidade").substring(0, 5000);
+                
+                // Regra de Ouro do Estoque
+                linha['availability'] = (parseFloat(p.estoque) > 0) ? 'in stock' : 'out of stock';
+                linha['condition'] = 'new'; // Todos os itens marcados como novos
+                
+                // Formatar preço com ponto, e finalizando com BRL
+                let precoFmt = parseFloat(p.preco || 0).toFixed(2);
+                linha['price'] = `${precoFmt} BRL`;
+                
+                // Criar Link Personalizado
+                let slug = limparTextoParaURL(p.nome);
+                let codigo = p.codigo || '';
+                linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
+                
+                // Arrumar caminho da imagem garantindo que é um link válido na web
+                let img = p.url_imagem || "";
+                if(img.startsWith("../site/")) {
+                    img = img.replace("../site/", "https://donaantonia.com.br/");
+                }
+                // Limpeza preventiva de ?v= timestamps para evitar rejeição
+                if(img.includes("?v=")) img = img.split("?v=")[0];
+                linha['image_link'] = img;
+                
+                linha['brand'] = "Dona Antonia";
+                linha['gtin'] = p.gtin || "";
+                
+                return linha;
+            });
+
+            // Gerar CSV com conversão Papa.unparse (Meta exige delimitador de vírgula)
+            const csv = Papa.unparse({ fields: colunasMeta, data: dadosParaExportar }, { quotes: true, delimiter: "," }); 
+            const l = document.createElement("a"); 
+            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
+            l.download = `catalogo_meta_facebook_${new Date().getTime()}.csv`; 
+            l.click(); 
+            
+            fecharModalExportacaoMeta();
         }
 
         // ==========================================================
