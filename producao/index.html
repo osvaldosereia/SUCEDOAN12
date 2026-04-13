@@ -2219,17 +2219,15 @@ function sanitizeProductsForExport(prods) {
             document.getElementById('modal-meta-export').style.display = 'none';
         }
 
-        function gerarCSVMeta() {
+       function gerarCSVMeta() {
             const checkboxes = document.querySelectorAll('.meta-cat-checkbox');
             let categoriasSelecionadas = [];
             checkboxes.forEach(cb => {
                 if(cb.checked) categoriasSelecionadas.push(cb.value);
             });
 
-            // Filtra apenas produtos ativos
             let produtosExportar = products.filter(p => p.situacao !== 'I'); 
             
-            // Aplica o filtro de categorias se houver checkboxes listados
             if(checkboxes.length > 0) {
                 produtosExportar = produtosExportar.filter(p => {
                     let catDoProduto = p.categoria || "Sem Categoria";
@@ -2242,7 +2240,6 @@ function sanitizeProductsForExport(prods) {
                 return;
             }
 
-            // Cabeçalhos que a Meta espera e valida
             const colunasMeta = [
                 "id", "title", "description", "availability", "condition", "price", 
                 "link", "image_link", "brand", "gtin"
@@ -2251,19 +2248,27 @@ function sanitizeProductsForExport(prods) {
             const dadosParaExportar = produtosExportar.map(p => {
                 const linha = {};
                 
-                linha['id'] = p.codigo || p.id || "";
-                linha['title'] = (p.nome || "").substring(0, 150); 
-                linha['description'] = (p.nome || "Produto de alta qualidade").substring(0, 5000);
+                // Função para cumprir as regras de texto da Meta (Sentence case)
+                const formatarTextoMeta = (texto) => {
+                    if (!texto) return "";
+                    let minusculo = texto.toLowerCase().trim();
+                    return minusculo.charAt(0).toUpperCase() + minusculo.slice(1);
+                };
+
+                linha['id'] = p.id || p.codigo || "";
                 
-                // Regra de Ouro do Estoque
+                // AJUSTE: Título com no máximo 60 caracteres (margem de segurança) e sem CAIXA ALTA
+                linha['title'] = formatarTextoMeta(p.nome).substring(0, 60); 
+                
+                // AJUSTE: Descrição sem CAIXA ALTA
+                linha['description'] = formatarTextoMeta(p.nome || "Produto de alta qualidade").substring(0, 5000);
+                
                 linha['availability'] = (parseFloat(p.estoque) > 0) ? 'in stock' : 'out of stock';
                 linha['condition'] = 'new'; 
                 
-                // Formatar preço com ponto, e finalizando com BRL
                 let precoFmt = parseFloat(p.preco || 0).toFixed(2);
                 linha['price'] = `${precoFmt} BRL`;
                 
-                // Criar Link Personalizado
                 let slug = limparTextoParaURL(p.nome);
                 let codigo = p.codigo || '';
                 linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
@@ -2280,22 +2285,22 @@ function sanitizeProductsForExport(prods) {
                     img = `https://donaantonia.com.br/site/img/produtos/${img}`;
                 }
 
-                if (img.includes("?")) {
-                    img = img.split("?")[0];
-                }
-
+                if (img.includes("?")) img = img.split("?")[0];
                 linha['image_link'] = encodeURI(img);
+
                 linha['brand'] = "Dona Antonia";
-                linha['gtin'] = p.gtin || "";
+                
+                // AJUSTE: Limpa espaços e tabs do GTIN para evitar erro de formato
+                linha['gtin'] = (p.gtin || "").toString().replace(/\s/g, "").trim();
                 
                 return linha;
             });
 
-            // GERAÇÃO DO ARQUIVO (Agora fora do .map para pegar todos os itens)
+            // GERAÇÃO E DOWNLOAD DO ARQUIVO
             const csv = Papa.unparse({ fields: colunasMeta, data: dadosParaExportar }, { quotes: true, delimiter: "," }); 
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
-            l.download = `catalogo_meta_facebook_${new Date().getTime()}.csv`; 
+            l.download = `catalogo_meta_limpo_${new Date().getTime()}.csv`; 
             l.click(); 
             
             fecharModalExportacaoMeta();
