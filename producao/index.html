@@ -2123,26 +2123,57 @@ function sanitizeProductsForExport(prods) {
                 "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"
             ];
 
-            const dadosParaExportar = products.map(p => {
-                const linha = {}; 
-                const fmt = (n) => (n !== undefined && n !== null && n !== "") ? parseFloat(n).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : "";
+           const dadosParaExportar = produtosExportar.map(p => {
+                const linha = {};
                 
-                colunasModelo.forEach(col => linha[col] = "");
+                // Função interna para cumprir a regra da Meta: 
+                // Transforma em minúsculas e coloca a primeira em Maiúscula (Sentence Case)
+                const formatarTextoMeta = (texto) => {
+                    if (!texto) return "";
+                    let minusculo = texto.toLowerCase();
+                    return minusculo.charAt(0).toUpperCase() + minusculo.slice(1);
+                };
+
+                linha['id'] = p.codigo || p.id || "";
                 
-                linha['ID'] = p.id || "";
-                linha['Código'] = p.codigo || "";
-                linha['Descrição'] = p.nome || "";
-                linha['Unidade'] = "UN";
-                linha['NCM'] = p.ncm || "";
-                linha['Origem'] = "0";
-                linha['Preço'] = fmt(p.preco);
-                linha['Situação'] = p.situacao === 'I' ? 'Inativo' : 'Ativo';
-                linha['Estoque'] = p.estoque || "0";
-                linha['Preço de custo'] = fmt(p.preco_custo);
-                linha['Localização'] = p.localizacao || "";
-                linha['GTIN/EAN'] = p.gtin || "";
-                linha['Data Validade'] = p.validade || "";
-                linha['Categoria do produto'] = p.categoria || "";
+                // REQUISITO: Título com menos de 65 caracteres e sem CAIXA ALTA
+                linha['title'] = formatarTextoMeta(p.nome).substring(0, 64); 
+                
+                // REQUISITO: Descrição sem CAIXA ALTA
+                linha['description'] = formatarTextoMeta(p.nome || "Produto de alta qualidade").substring(0, 5000);
+                
+                // Regra de Ouro do Estoque
+                linha['availability'] = (parseFloat(p.estoque) > 0) ? 'in stock' : 'out of stock';
+                linha['condition'] = 'new'; 
+                
+                // Formatar preço com ponto e moeda BRL
+                let precoFmt = parseFloat(p.preco || 0).toFixed(2);
+                linha['price'] = `${precoFmt} BRL`;
+                
+                // Link do Produto
+                let slug = limparTextoParaURL(p.nome);
+                let codigo = p.codigo || '';
+                linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
+                
+                // REGRAS DE IMAGEM ESPELHADAS DO SITE (Mantendo sua correção anterior)
+                let codigoOuId = p.codigo || p.id || "";
+                let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
+
+                if (img.startsWith("../site/")) {
+                    img = img.replace("../site/", "https://donaantonia.com.br/site/");
+                } else if (img.startsWith("/site/")) {
+                    img = "https://donaantonia.com.br" + img;
+                } else if (!img.startsWith("http")) {
+                    img = `https://donaantonia.com.br/site/img/produtos/${img}`;
+                }
+
+                if (img.includes("?")) {
+                    img = img.split("?")[0];
+                }
+
+                linha['image_link'] = encodeURI(img);
+                linha['brand'] = "Dona Antonia";
+                linha['gtin'] = p.gtin || "";
                 
                 return linha;
             });
