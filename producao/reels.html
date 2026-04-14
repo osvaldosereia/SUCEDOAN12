@@ -3,72 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Reels Studio PRO v3</title>
+    <title>Sucedoan Reels Studio PRO v4</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg: #f9f9fb; --accent: #000000; --card-bg: #ffffff;
+            --bg: #f5f5f7; --accent: #000000; --card-bg: #ffffff;
             --text-main: #1d1d1f; --text-dim: #86868b;
-            --trans-speed: 0.6s;
+            --trans-speed: 0.5s;
         }
 
         * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); overflow: hidden; }
 
         /* --- ADMIN PANEL --- */
-        #admin-panel { position: fixed; left: 0; top: 0; bottom: 0; width: 420px; background: white; border-right: 1px solid #e5e5e7; padding: 25px; z-index: 100; overflow-y: auto; transition: transform 0.4s ease; }
+        #admin-panel { position: fixed; left: 0; top: 0; bottom: 0; width: 420px; background: white; border-right: 1px solid #e5e5e7; padding: 30px; z-index: 100; overflow-y: auto; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
         #admin-panel.hidden { transform: translateX(-100%); }
-        h1 { font-weight: 900; font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .section { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
-        .label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; display: block; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; margin-bottom: 8px; outline: none; background: #fafafa; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
+        h1 { font-weight: 900; font-size: 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; color: var(--accent); letter-spacing: -0.5px;}
+        
+        .section { margin-bottom: 25px; }
+        .label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 14px; margin-bottom: 12px; outline: none; background: #fafafa; font-family: 'Inter'; transition: 0.2s;}
+        input:focus, select:focus { border-color: var(--accent); background: #fff; }
+        
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
         .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { transform: scale(0.98); }
         .btn-record { background: #ff3b30; color: white; }
+        .btn-record:hover { background: #d32f2f; }
 
-        /* --- REELS VIEWPORT --- */
-        #viewport { margin-left: 420px; height: 100vh; display: flex; align-items: center; justify-content: center; background: #111; transition: margin 0.4s; position: relative;}
+        /* --- REELS VIEWPORT (A tela do vídeo) --- */
+        #viewport { margin-left: 420px; height: 100vh; display: flex; align-items: center; justify-content: center; background: #000; transition: margin 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative;}
         #viewport.full { margin-left: 0; }
         
         #reels-container {
-            width: auto; height: 90vh; aspect-ratio: 9/16; background: #fff;
-            position: relative; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            /* Força a proporção 9:16 vertical absoluta */
+            height: 90vh;
+            aspect-ratio: 9/16;
+            background: #e5e5e7; /* Cor das bordas da grelha */
+            position: relative; 
+            overflow: hidden; 
+            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+            border-radius: 4px;
         }
 
         .scene {
-            position: absolute; inset: 0; display: none; flex-direction: column; 
-            background: #fff; width: 100%; height: 100%;
+            position: absolute; inset: 0; display: none; 
+            width: 100%; height: 100%;
             animation-duration: var(--trans-speed);
             animation-fill-mode: both;
         }
-        .scene.active { display: flex; }
+        .scene.active { display: grid; } /* A cena ativa é a grelha */
 
-        /* Cena de Grelha de Produtos Rígida 2x3 */
-        .grid-scene { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 1px; background: #f0f0f0; }
-        .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; text-align: center; }
-        .product-card.empty { background: #fafafa; } /* Diferencia slots vazios se quiseres */
-        .product-card img { max-width: 90%; max-height: 60%; object-fit: contain; margin-bottom: 8px; }
-        .product-card .price { font-size: 18px; font-weight: 900; color: #000; letter-spacing: -1px; }
-        .product-card .name { font-size: 10px; color: var(--text-dim); font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-
-        /* Controles e Indicadores */
-        #rec-status { position: absolute; top: 20px; right: 20px; background: rgba(255,0,0,0.8); color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 900; display: none; z-index: 1000; }
-        #float-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 1000; width: 50px; height: 50px; border-radius: 25px; padding: 0; display: none;}
-        #viewport.full ~ #float-toggle { display: block; } /* Só mostra o botão flutuante quando em tela cheia */
-
-        /* Overlay da Contagem Decrescente */
-        #countdown-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999;
-            display: none; align-items: center; justify-content: center;
-            color: white; font-size: 120px; font-weight: 900;
+        /* A Grelha 2x3 Perfeita */
+        .grid-scene { 
+            grid-template-columns: repeat(2, 1fr); 
+            grid-template-rows: repeat(3, 1fr); 
+            gap: 2px; /* Espessura da borda entre produtos */
+            background: #e5e5e7; 
         }
 
+        .product-card { 
+            background: #fff; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            padding: 5%; text-align: center; 
+            width: 100%; height: 100%;
+            overflow: hidden;
+        }
+        
+        /* Ajuste fino das proporções dentro do card */
+        .product-card img { 
+            width: 100%; height: 55%; 
+            object-fit: contain; 
+            margin-bottom: 5%; 
+            mix-blend-mode: multiply;
+        }
+        .product-card .price { 
+            font-size: clamp(16px, 2.8vh, 32px); 
+            font-weight: 900; color: #000; 
+            letter-spacing: -1px; 
+            line-height: 1;
+            margin-bottom: 2%;
+        }
+        .product-card .name { 
+            font-size: clamp(9px, 1.2vh, 16px); 
+            color: var(--text-dim); font-weight: 700; 
+            line-height: 1.2; 
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; 
+        }
+
+        /* Loaders e Contadores */
+        #loader-overlay, #countdown-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999;
+            display: none; align-items: center; justify-content: center; flex-direction: column;
+            color: white; 
+        }
+        #countdown-overlay { font-size: 120px; font-weight: 900; }
+        .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;}
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #rec-status { position: absolute; top: 20px; right: 20px; background: rgba(255,0,0,0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 900; display: none; z-index: 1000; letter-spacing: 1px;}
+        #float-toggle { position: fixed; bottom: 30px; right: 30px; z-index: 1000; width: 50px; height: 50px; border-radius: 25px; padding: 0; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3);}
+        #viewport.full ~ #float-toggle { display: block; }
+
         /* =========================================
-           5 ANIMAÇÕES DE TRANSIÇÃO (IN e OUT)
+           5 ANIMAÇÕES DE TRANSIÇÃO LIMPAS E PROFISSIONAIS
            ========================================= */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -76,70 +118,72 @@
         @keyframes slideUpIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes slideUpOut { from { transform: translateY(0); } to { transform: translateY(-100%); } }
         
-        @keyframes slideDownIn { from { transform: translateY(-100%); } to { transform: translateY(0); } }
-        @keyframes slideDownOut { from { transform: translateY(0); } to { transform: translateY(100%); } }
-
         @keyframes slideLeftIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @keyframes slideLeftOut { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
-        @keyframes zoomInIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
-        @keyframes zoomInOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.5); } }
+        @keyframes zoomIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes zoomOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.2); } }
 
         .anim-in-fade { animation-name: fadeIn; } .anim-out-fade { animation-name: fadeOut; }
         .anim-in-slideUp { animation-name: slideUpIn; } .anim-out-slideUp { animation-name: slideUpOut; }
-        .anim-in-slideDown { animation-name: slideDownIn; } .anim-out-slideDown { animation-name: slideDownOut; }
         .anim-in-slideLeft { animation-name: slideLeftIn; } .anim-out-slideLeft { animation-name: slideLeftOut; }
-        .anim-in-zoom { animation-name: zoomInIn; } .anim-out-zoom { animation-name: zoomInOut; }
+        .anim-in-zoom { animation-name: zoomIn; } .anim-out-zoom { animation-name: zoomOut; }
     </style>
 </head>
 <body>
 
     <div id="admin-panel">
-        <h1><i data-lucide="film"></i> REELS STUDIO</h1>
+        <h1><i data-lucide="video"></i> SUCEDOAN REELS</h1>
         
         <div class="section">
-            <span class="label">1. Buscar Produtos (Vírgula = várias palavras)</span>
-            <input type="text" id="cfg-keywords" placeholder="Ex: fone, teclado, sony" onchange="buildScenes()">
+            <span class="label">1. Filtrar Produtos (Usa vírgulas para vários)</span>
+            <input type="text" id="cfg-keywords" placeholder="Ex: teclado, mouse, sony" onchange="buildScenes()">
             <select id="cfg-cat" onchange="buildScenes()">
                 <option value="">Todas as Categorias</option>
             </select>
         </div>
 
         <div class="section">
-            <span class="label">2. Transições e Velocidade</span>
+            <span class="label">2. Configuração do Slide</span>
             <select id="cfg-trans-type">
-                <option value="none">Sem Transição (Corte Rápido)</option>
+                <option value="none">Corte Seco (Sem Efeito)</option>
                 <option value="fade">Suave (Fade)</option>
                 <option value="slideLeft">Deslizar para a Esquerda</option>
                 <option value="slideUp">Deslizar para Cima</option>
-                <option value="slideDown">Deslizar para Baixo</option>
-                <option value="zoom">Efeito Zoom</option>
+                <option value="zoom">Efeito Zoom-In</option>
             </select>
             
-            <div style="display: flex; align-items: center; gap: 10px; margin-top:10px;">
-                <input type="number" id="cfg-speed" value="3.0" step="0.5" min="1" style="width: 80px; margin:0;">
-                <span style="font-size: 11px; font-weight:bold;">Segundos por Tela</span>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top:15px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #d2d2d7;">
+                <i data-lucide="clock" size="16" style="color:var(--text-dim)"></i>
+                <input type="number" id="cfg-speed" value="3.0" step="0.5" min="1" style="width: 70px; margin:0; padding: 6px; text-align:center;">
+                <span style="font-size: 12px; font-weight:800; color:var(--text-main);">Segundos de Exibição</span>
             </div>
         </div>
 
         <div class="section" style="border:none;">
-            <button class="btn btn-primary" onclick="initiatePlayback(false)"><i data-lucide="play"></i> REPRODUZIR</button>
-            <button id="btn-start-record" class="btn btn-record" onclick="initiatePlayback(true)"><i data-lucide="video"></i> GRAVAR (.WEBM)</button>
+            <button class="btn btn-primary" onclick="initiatePlayback(false)"><i data-lucide="play-circle"></i> VER ECRÃ INTEIRO</button>
+            <button id="btn-start-record" class="btn btn-record" onclick="initiatePlayback(true)"><i data-lucide="video-recording"></i> GRAVAR REELS (.WEBM)</button>
         </div>
         
-        <div style="font-size: 10px; color: var(--text-dim); text-align:center;">
-            Produtos disponíveis: <span id="db-count">0</span> | Slides a gerar: <span id="scene-count">0</span>
+        <div style="font-size: 11px; color: var(--text-dim); text-align:center; font-weight: 600; padding-top: 10px; border-top: 1px solid #eee;">
+            Grelhas (Cenas) geradas: <span id="scene-count" style="color:var(--accent)">0</span>
         </div>
     </div>
 
     <div id="viewport">
         <div id="reels-container">
             <div id="rec-status">🔴 GRAVANDO</div>
+            
+            <div id="loader-overlay">
+                <div class="spinner"></div>
+                <div style="font-size: 14px; font-weight: bold; letter-spacing: 1px;">A CARREGAR IMAGENS...</div>
+            </div>
+            
             <div id="countdown-overlay">3</div>
             </div>
     </div>
 
-    <button id="float-toggle" class="btn btn-primary" onclick="stopAndExitFullscreen()"><i data-lucide="x"></i></button>
+    <button id="float-toggle" class="btn btn-primary" onclick="stopAndExitFullscreen()" title="Parar e Sair"><i data-lucide="x"></i></button>
 
     <script>
         const STORAGE_KEY = 'sucedoan_pim_v37';
@@ -147,6 +191,7 @@
         
         let allProducts = [];
         let scenesData = []; 
+        let imageUrlsToPreload = [];
         let currentSceneIndex = 0;
         let slideTimer = null;
         let isPlaying = false;
@@ -166,32 +211,30 @@
                 const cats = await localforage.getItem(CAT_KEY);
                 
                 if(data) {
+                    // Filtra produtos inativos ou sem preço
                     allProducts = data.filter(p => p.situacao !== 'I');
-                    document.getElementById('db-count').innerText = allProducts.length;
                 }
 
                 if(cats) {
                     const select = document.getElementById('cfg-cat');
-                    cats.forEach(c => {
-                        select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
-                    });
+                    cats.forEach(c => { select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`; });
                 }
                 buildScenes(); 
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Erro ao carregar dados locais", e); }
         }
 
         // ==========================================
-        // CONSTRUÇÃO DOS SLIDES (Sempre 2x3)
+        // CONSTRUÇÃO MATEMÁTICA DOS SLIDES (Looping Contínuo)
         // ==========================================
         function buildScenes() {
             scenesData = [];
+            imageUrlsToPreload = [];
             const container = document.getElementById('reels-container');
             
-            // Remove as cenas antigas mas mantém os utilitários (rec-status e countdown)
-            const oldScenes = container.querySelectorAll('.scene');
-            oldScenes.forEach(s => s.remove());
+            // Remove cenas antigas
+            container.querySelectorAll('.scene').forEach(s => s.remove());
 
-            // Filtros
+            // 1. Aplicar Filtros
             const keywordString = document.getElementById('cfg-keywords').value.toLowerCase();
             const keywords = keywordString.split(',').map(k => k.trim()).filter(k => k.length > 0);
             const cat = document.getElementById('cfg-cat').value;
@@ -203,33 +246,46 @@
                 return matchesName && matchesCat;
             });
 
-            // Agrupa os produtos em blocos de 6
-            for (let i = 0; i < filtered.length; i += 6) {
-                const batch = filtered.slice(i, i + 6);
+            if (filtered.length === 0) {
+                document.getElementById('scene-count').innerText = "0";
+                return;
+            }
+
+            // 2. MATEMÁTICA DA GRELHA (Evitar buracos)
+            // Se eu tenho 8 produtos, preciso de 2 grelhas de 6. Total de slots necessários = 12.
+            const slotsPerSlide = 6;
+            const slidesCount = Math.ceil(filtered.length / slotsPerSlide);
+            const totalSlotsNeeded = slidesCount * slotsPerSlide;
+            
+            let displayList = [];
+            for (let i = 0; i < totalSlotsNeeded; i++) {
+                // O operador módulo (%) garante que quando chega ao fim da lista, volta ao início (Loop)
+                displayList.push(filtered[i % filtered.length]);
+            }
+
+            // 3. Renderizar as Cenas
+            for (let i = 0; i < displayList.length; i += 6) {
+                const batch = displayList.slice(i, i + 6);
                 let gridHtml = `<div class="scene grid-scene">`;
                 
-                // Produtos preenchidos
                 batch.forEach(p => {
-                    const img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x600/f4f4f5/a1a1aa?text=SEM+FOTO';
+                    const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x600/f4f4f5/a1a1aa?text=SEM+FOTO';
+                    if (!imageUrlsToPreload.includes(imgUrl)) imageUrlsToPreload.push(imgUrl);
+
                     gridHtml += `
                         <div class="product-card">
-                            <img src="${img}">
-                            <div class="price">R$ ${parseFloat(p.preco||0).toFixed(2)}</div>
+                            <img src="${imgUrl}">
+                            <div class="price">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.', ',')}</div>
                             <div class="name">${p.nome}</div>
                         </div>
                     `;
                 });
-
-                // Produtos vazios (para garantir a grelha 2x3)
-                for(let j = batch.length; j < 6; j++) { 
-                    gridHtml += `<div class="product-card empty"></div>`; 
-                }
                 
                 gridHtml += `</div>`;
                 scenesData.push(gridHtml);
             }
 
-            // Renderizar as Cenas ocultas no DOM
+            // Injetar HTML
             scenesData.forEach((sceneHtml, index) => {
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = sceneHtml;
@@ -242,27 +298,49 @@
         }
 
         // ==========================================
-        // LÓGICA DE REPRODUÇÃO E CONTAGEM DECRESCENTE
+        // SISTEMA DE PRÉ-CARREGAMENTO (Fim dos travamentos)
         // ==========================================
-        
+        async function preloadAllImages() {
+            const overlay = document.getElementById('loader-overlay');
+            overlay.style.display = 'flex';
+            
+            const promises = imageUrlsToPreload.map(url => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = resolve;
+                    img.onerror = resolve; // Resolve mesmo com erro para não travar o processo
+                    img.src = url;
+                });
+            });
+
+            await Promise.all(promises);
+            overlay.style.display = 'none';
+        }
+
+        // ==========================================
+        // FLUXO DE REPRODUÇÃO
+        // ==========================================
         async function initiatePlayback(withRecording) {
-            buildScenes(); // Garante que a grelha está montada com os dados mais recentes
+            buildScenes(); 
 
             if (scenesData.length === 0) {
-                alert("Nenhum produto encontrado com os filtros atuais.");
-                return;
+                return alert("Nenhum produto encontrado com estes filtros.");
             }
 
+            // 1. Pré-carrega tudo para não haver saltos ou imagens brancas
+            await preloadAllImages();
+
+            // 2. Se for gravar, pede a permissão de tela AGORA (antes do contador)
             if (withRecording) {
                 const success = await setupRecording();
-                if(!success) return; // Se o utilizador cancelar a gravação, paramos.
+                if(!success) return; 
             }
 
-            // Esconde o painel e mostra tela cheia
+            // 3. Modo Visual
             document.getElementById('admin-panel').classList.add('hidden');
             document.getElementById('viewport').classList.add('full');
             
-            // Inicia a contagem decrescente
+            // 4. Inicia Contagem
             startCountdown(() => {
                 startSlideshow();
             });
@@ -274,14 +352,14 @@
             let count = 3;
             overlay.innerText = count;
 
-            const countdownInterval = setInterval(() => {
+            const interval = setInterval(() => {
                 count--;
                 if(count > 0) {
                     overlay.innerText = count;
                 } else if (count === 0) {
-                    overlay.innerText = "AÇÃO!";
+                    overlay.innerText = "PLAY";
                 } else {
-                    clearInterval(countdownInterval);
+                    clearInterval(interval);
                     overlay.style.display = 'none';
                     callback();
                 }
@@ -291,7 +369,6 @@
         function startSlideshow() {
             isPlaying = true;
             
-            // Limpa classes
             document.querySelectorAll('.scene').forEach(s => {
                 s.className = 'scene grid-scene'; 
                 s.classList.remove('active');
@@ -300,7 +377,6 @@
             currentSceneIndex = 0;
             document.getElementById(`scene-0`).classList.add('active');
             
-            // Se estiver a gravar, marca o indicador
             if (mediaRecorder && mediaRecorder.state === 'recording') {
                 document.getElementById('rec-status').style.display = 'flex';
             }
@@ -337,11 +413,10 @@
             const currentEl = document.getElementById(`scene-${currentSceneIndex}`);
             
             currentSceneIndex++;
-            if(currentSceneIndex >= scenesData.length) currentSceneIndex = 0; // Loop infinito
+            if(currentSceneIndex >= scenesData.length) currentSceneIndex = 0; 
             
             const nextEl = document.getElementById(`scene-${currentSceneIndex}`);
 
-            // Limpa as animações antigas
             currentEl.className = 'scene grid-scene active';
             nextEl.className = 'scene grid-scene';
 
@@ -364,7 +439,7 @@
         }
 
         // ==========================================
-        // GRAVAÇÃO DA TELA
+        // GRAVAÇÃO DA TELA MÁXIMA QUALIDADE
         // ==========================================
         async function setupRecording() {
             try {
@@ -384,7 +459,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `reels_sucedoan_${Date.now()}.webm`;
+                    a.download = `Sucedoan_Reels_Raw_${Date.now()}.webm`;
                     a.click();
                     recordedChunks = [];
                     document.getElementById('rec-status').style.display = 'none';
@@ -393,7 +468,7 @@
                 mediaRecorder.start();
                 return true;
             } catch (err) {
-                console.warn("Gravação cancelada ou falhou: ", err.message);
+                console.warn("Gravação cancelada:", err.message);
                 return false;
             }
         }
