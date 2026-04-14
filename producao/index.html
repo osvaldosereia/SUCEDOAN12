@@ -252,11 +252,15 @@
         const CONFIG_KEY = 'sucedoan_config';
         const PEDIDOS_KEY = 'sucedoan_pedidos';
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
+        const MARCAS_KEY = 'sucedoan_marcas';
         
         let categoriasDoSistema = []; 
+        let marcasDoSistema = [];
         
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
+
+    <datalist id="lista-marcas-global"></datalist>
 
     <div id="alerta-customizado">Mensagem</div>
 
@@ -377,12 +381,11 @@
     <div id="modal-meta-export" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index: 10000; opacity:1;">
         <div style="background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
             <h3 style="margin: 0; font-size: 16px; color: var(--accent);">Exportar Catálogo Meta</h3>
-            <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Selecione as categorias que deseja incluir no arquivo CSV para o Facebook/Instagram. Deixe vazio para exportar TODAS.</p>
-            <div id="meta-cat-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+            <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Escolha a Sessão (Categoria) ou Marca para baixar o arquivo CSV com os respectivos produtos.</p>
+            <div id="meta-cat-list" style="display: flex; flex-direction: column;">
                 </div>
             <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="nav-btn" style="flex:1; justify-content:center; height:40px;" onclick="fecharModalExportacaoMeta()">CANCELAR</button>
-                <button class="nav-btn success-btn" style="flex:1; justify-content:center; height:40px;" onclick="gerarCSVMeta()"><i data-lucide="download" size="14"></i> EXPORTAR</button>
+                <button class="nav-btn" style="flex:1; justify-content:center; height:40px;" onclick="fecharModalExportacaoMeta()">FECHAR MÓDULO</button>
             </div>
         </div>
     </div>
@@ -799,7 +802,7 @@ function sanitizeProductsForExport(prods) {
         'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
         'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
         'subcategoria', 'gondola', 'prateleira', 'localizacao',
-        'tags', 'last_update'
+        'tags', 'last_update', 'marca' // <--- INCLUÍDO CAMPO MARCA AQUI
     ];
 
     return prods.map(p => {
@@ -1565,7 +1568,7 @@ function sanitizeProductsForExport(prods) {
         }
 
         // ==========================================================
-        // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS GERAIS)
+        // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS GERAIS E MARCA)
         // ==========================================================
         
         let isFilter24hActive = false;
@@ -1614,10 +1617,47 @@ function sanitizeProductsForExport(prods) {
         
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
+        // MÓDULO MARCAS: Função para preencher a Datalist de autocomplete
+        function renderizarDatalistMarcas() {
+            let dl = document.getElementById('lista-marcas-global');
+            if(dl) {
+                dl.innerHTML = marcasDoSistema.map(m => `<option value="${m}">`).join('');
+            }
+        }
+
+        // MÓDULO MARCAS: Função especial para salvar Marca e atualizar a lista global
+        window.updateMarca = async function(sku, novaMarca) {
+            novaMarca = novaMarca.trim();
+            updateField(sku, 'marca', novaMarca);
+            
+            if (novaMarca && !marcasDoSistema.includes(novaMarca)) {
+                marcasDoSistema.push(novaMarca);
+                marcasDoSistema.sort();
+                await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+                renderizarDatalistMarcas();
+            }
+        };
+
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
             try { const savedPedidos = await localforage.getItem(PEDIDOS_KEY); if(savedPedidos && Array.isArray(savedPedidos)) filaDePedidos = savedPedidos; } catch (err) {}
             try { const savedCats = await localforage.getItem(CATEGORIAS_KEY); if(savedCats && Array.isArray(savedCats)) categoriasDoSistema = savedCats; } catch (err) {}
+            try { const savedMarcas = await localforage.getItem(MARCAS_KEY); if(savedMarcas && Array.isArray(savedMarcas)) marcasDoSistema = savedMarcas; } catch (err) {}
+            
+            // Extrai as marcas caso haja marcas nos produtos que não estejam salvas no localstorage
+            if (products.length > 0) {
+                const marcasExistentes = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))];
+                let marcasAdicionadas = false;
+                marcasExistentes.forEach(m => {
+                    if (!marcasDoSistema.includes(m)) { marcasDoSistema.push(m); marcasAdicionadas = true; }
+                });
+                if (marcasAdicionadas) {
+                    marcasDoSistema.sort();
+                    await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+                }
+            }
+            renderizarDatalistMarcas();
+
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
             renderGrid(); renderizarCartoes(); if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
         }
@@ -1630,7 +1670,7 @@ function sanitizeProductsForExport(prods) {
         window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
 
         // ==========================================================
-        // LAZY LOADING (CARREGAMENTO DINÂMICO DOS CARTOES)
+        // LAZY LOADING E CARTÕES DO PRODUTO (ATUALIZADO COM MARCA)
         // ==========================================================
         function renderGrid(filter = "", keepLoaded = false) {
             const gridContainer = document.getElementById('product-grid');
@@ -1692,7 +1732,7 @@ function sanitizeProductsForExport(prods) {
                 
                 const safeNameForInput = (p.nome || '').replace(/"/g, '"');
 
-                // Início do bloco do Card corrigido
+                // Início do bloco do Card (INCLUSÃO DO CAMPO MARCA AQUI)
                 card.innerHTML = `
                     <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
                         <div class="card-img-wrapper" style="width:100px; height:100px; padding:5px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border);" onclick="openEditSidebar('${p.codigo}')" title="Editar Imagens e Tags">
@@ -1750,6 +1790,11 @@ function sanitizeProductsForExport(prods) {
                                 <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">
                                     ${getOpcoesCategoria(p.categoria)}
                                 </select>
+                            </div>
+
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Marca</label>
+                                <input type="text" list="lista-marcas-global" class="form-input card-mini-input" placeholder="Ex: Sony" value="${p.marca || ''}" onchange="updateMarca('${p.codigo}', this.value)">
                             </div>
                         </div>
                     </div>
@@ -1958,6 +2003,7 @@ function sanitizeProductsForExport(prods) {
                         produtoFinal.preco_custo = parseFloat(d['Preço de custo']?.replace(',','.')) || 0;
                         produtoFinal.estoque = parseFloat(d['Estoque']?.replace(',','.')) || 0;
                         produtoFinal.categoria = d['Categoria do produto'] || produtoFinal.categoria || '';
+                        produtoFinal.marca = d['Marca'] || produtoFinal.marca || ''; // Adicionado extração da Marca no CSV
                         produtoFinal.gtin = ean;
                         produtoFinal.ncm = d['NCM'] || produtoFinal.ncm || '';
                         produtoFinal.validade = d['Data Validade'] || produtoFinal.validade || '';
@@ -2013,6 +2059,7 @@ function sanitizeProductsForExport(prods) {
                                 preco_custo: parseFloat(d['Preço de custo']?.replace(',','.')) || 0, 
                                 estoque: parseFloat(d['Estoque']?.replace(',','.')) || 0, 
                                 categoria: d['Categoria do produto'] || '', 
+                                marca: d['Marca'] || '', // Adicionado extração da Marca no CSV
                                 gtin: d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '', 
                                 ncm: d['NCM'] || '', 
                                 validade: d['Data Validade'] || '',
@@ -2066,7 +2113,7 @@ function sanitizeProductsForExport(prods) {
                     
                     products = parsedData;
 
-                    // --- NOVIDADE: Extrair categorias únicas dos produtos carregados ---
+                    // Extrair categorias únicas dos produtos carregados
                     const catsEncontradas = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))];
                     
                     // Atualiza categoriasDoSistema preservando as subcategorias se já existirem
@@ -2077,13 +2124,22 @@ function sanitizeProductsForExport(prods) {
                         }
                     });
 
+                    // Extrair marcas únicas para carregar no localstorage
+                    const marcasEncontradas = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))];
+                    marcasEncontradas.forEach(m => {
+                        if (!marcasDoSistema.includes(m)) marcasDoSistema.push(m);
+                    });
+                    marcasDoSistema.sort();
+
                     await saveDataLocally();
-                    await salvarCategoriasLocalmente(); // Garante que a lista de categorias seja salva
+                    await salvarCategoriasLocalmente(); 
+                    await localforage.setItem(MARCAS_KEY, marcasDoSistema);
                     
                     renderGrid(document.getElementById('search-input').value);
                     renderizarSidebarCategorias();
+                    renderizarDatalistMarcas();
                     
-                    alert("Atualização concluída! Categorias sincronizadas da nuvem.");
+                    alert("Atualização concluída! Categorias e Marcas sincronizadas da nuvem.");
                     closeSidebar('config-sidebar');
                 } else {
                     alert("O ficheiro transferido não tem o formato esperado.");
@@ -2101,7 +2157,7 @@ function sanitizeProductsForExport(prods) {
         }
 
         // ==========================================================
-        // 6. EXPORTAR CSV PADRÃO EXATO BLING E NOVO META (FACEBOOK)
+        // 6. EXPORTAR CSV PADRÃO EXATO BLING
         // ==========================================================
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Não há produtos para exportar.");
@@ -2123,11 +2179,10 @@ function sanitizeProductsForExport(prods) {
                 "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"
             ];
 
-           const dadosParaExportar = produtosExportar.map(p => {
+            // Replicamos a lógica original do CSV do Bling aqui para evitar alterar a estrutura
+           const dadosParaExportar = products.map(p => {
                 const linha = {};
                 
-                // Função interna para cumprir a regra da Meta: 
-                // Transforma em minúsculas e coloca a primeira em Maiúscula (Sentence Case)
                 const formatarTextoMeta = (texto) => {
                     if (!texto) return "";
                     let minusculo = texto.toLowerCase();
@@ -2135,27 +2190,18 @@ function sanitizeProductsForExport(prods) {
                 };
 
                 linha['id'] = p.codigo || p.id || "";
-                
-                // REQUISITO: Título com menos de 65 caracteres e sem CAIXA ALTA
                 linha['title'] = formatarTextoMeta(p.nome).substring(0, 64); 
-                
-                // REQUISITO: Descrição sem CAIXA ALTA
                 linha['description'] = formatarTextoMeta(p.nome || "Produto de alta qualidade").substring(0, 5000);
-                
-                // Regra de Ouro do Estoque
                 linha['availability'] = (parseFloat(p.estoque) > 0) ? 'in stock' : 'out of stock';
                 linha['condition'] = 'new'; 
                 
-                // Formatar preço com ponto e moeda BRL
                 let precoFmt = parseFloat(p.preco || 0).toFixed(2);
                 linha['price'] = `${precoFmt} BRL`;
                 
-                // Link do Produto
                 let slug = limparTextoParaURL(p.nome);
                 let codigo = p.codigo || '';
                 linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
                 
-                // REGRAS DE IMAGEM ESPELHADAS DO SITE (Mantendo sua correção anterior)
                 let codigoOuId = p.codigo || p.id || "";
                 let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
 
@@ -2172,7 +2218,7 @@ function sanitizeProductsForExport(prods) {
                 }
 
                 linha['image_link'] = encodeURI(img);
-                linha['brand'] = "Dona Antonia";
+                linha['brand'] = p.marca || "Dona Antonia"; // Atualizado com Marca
                 linha['gtin'] = p.gtin || "";
                 
                 return linha;
@@ -2186,7 +2232,7 @@ function sanitizeProductsForExport(prods) {
             closeSidebar('config-sidebar');
         }
 
-        // --- FUNÇÕES EXCLUSIVAS PARA A META (FACEBOOK / INSTAGRAM) ---
+        // --- FUNÇÕES EXCLUSIVAS PARA A META (FACEBOOK / INSTAGRAM) ATUALIZADO ---
 
         function limparTextoParaURL(texto) {
             if (!texto) return "";
@@ -2196,22 +2242,50 @@ function sanitizeProductsForExport(prods) {
         function abrirModalExportacaoMeta() {
             const container = document.getElementById('meta-cat-list');
             container.innerHTML = "";
-            const catsEncontradas = [...new Set(products.map(p => p.categoria || "Sem Categoria"))];
             
-            if(catsEncontradas.length === 0) {
-                container.innerHTML = "<div style='font-size:12px; color:#666;'>Nenhuma categoria encontrada nos produtos. O catálogo será exportado completo.</div>";
-            } else {
-                catsEncontradas.forEach(cat => {
-                    container.innerHTML += `
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; color: var(--text-primary);">
-                            <input type="checkbox" class="meta-cat-checkbox" value="${cat}" checked>
-                            ${cat}
-                        </label>
-                    `;
-                });
-            }
+            // Extrai as Categorias (Sessões) e Marcas únicas presentes nos produtos atuais
+            const catsEncontradas = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))].sort();
+            const marcasEncontradas = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))].sort();
+            
+            // Monta o layout HTML de Categorias
+            let htmlCategorias = catsEncontradas.length === 0 ? 
+                "<div style='font-size:12px; color:#666;'>Nenhuma categoria preenchida nos produtos.</div>" : 
+                catsEncontradas.map(cat => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${cat}</span>
+                        <button class="nav-btn success-btn" style="height:28px; padding: 0 10px; font-size:10px; flex-shrink:0;" onclick="gerarCSVMetaFiltro('categoria', '${cat.replace(/'/g, "\\'")}')">
+                            <i data-lucide="download" size="12"></i> BAIXAR
+                        </button>
+                    </div>
+                `).join('');
+
+            // Monta o layout HTML de Marcas
+            let htmlMarcas = marcasEncontradas.length === 0 ? 
+                "<div style='font-size:12px; color:#666;'>Nenhuma marca preenchida nos produtos.</div>" : 
+                marcasEncontradas.map(marca => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${marca}</span>
+                        <button class="nav-btn primary" style="height:28px; padding: 0 10px; font-size:10px; flex-shrink:0;" onclick="gerarCSVMetaFiltro('marca', '${marca.replace(/'/g, "\\'")}')">
+                            <i data-lucide="download" size="12"></i> BAIXAR
+                        </button>
+                    </div>
+                `).join('');
+
+            // Junta as listas no Modal
+            container.innerHTML = `
+                <div style="margin-bottom: 8px; font-size: 11px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Sessões (Por Categoria)</div>
+                <div style="display:flex; flex-direction:column; gap:6px; max-height: 200px; overflow-y:auto; margin-bottom: 20px; padding-right: 5px;">
+                    ${htmlCategorias}
+                </div>
+
+                <div style="margin-bottom: 8px; font-size: 11px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-top: 1px dashed var(--border); padding-top: 15px;">Por Marca</div>
+                <div style="display:flex; flex-direction:column; gap:6px; max-height: 200px; overflow-y:auto; padding-right: 5px;">
+                    ${htmlMarcas}
+                </div>
+            `;
             
             document.getElementById('modal-meta-export').style.display = 'flex';
+            lucide.createIcons();
             closeSidebar('config-sidebar'); 
         }
 
@@ -2219,24 +2293,18 @@ function sanitizeProductsForExport(prods) {
             document.getElementById('modal-meta-export').style.display = 'none';
         }
 
-       function gerarCSVMeta() {
-            const checkboxes = document.querySelectorAll('.meta-cat-checkbox');
-            let categoriasSelecionadas = [];
-            checkboxes.forEach(cb => {
-                if(cb.checked) categoriasSelecionadas.push(cb.value);
-            });
-
+       // Função Nova para gerar o CSV filtrando ou por Categoria ou por Marca
+       function gerarCSVMetaFiltro(tipoFiltro, valorFiltro) {
             let produtosExportar = products.filter(p => p.situacao !== 'I'); 
             
-            if(checkboxes.length > 0) {
-                produtosExportar = produtosExportar.filter(p => {
-                    let catDoProduto = p.categoria || "Sem Categoria";
-                    return categoriasSelecionadas.includes(catDoProduto);
-                });
+            if (tipoFiltro === 'categoria') {
+                produtosExportar = produtosExportar.filter(p => (p.categoria || "Sem Categoria") === valorFiltro);
+            } else if (tipoFiltro === 'marca') {
+                produtosExportar = produtosExportar.filter(p => (p.marca || "Sem Marca") === valorFiltro);
             }
 
             if (produtosExportar.length === 0) {
-                alert("Nenhum produto ativo encontrado para as categorias selecionadas.");
+                alert("Nenhum produto ativo encontrado para esta seleção.");
                 return;
             }
 
@@ -2248,7 +2316,6 @@ function sanitizeProductsForExport(prods) {
             const dadosParaExportar = produtosExportar.map(p => {
                 const linha = {};
                 
-                // Função para cumprir as regras de texto da Meta (Sentence case)
                 const formatarTextoMeta = (texto) => {
                     if (!texto) return "";
                     let minusculo = texto.toLowerCase().trim();
@@ -2256,13 +2323,8 @@ function sanitizeProductsForExport(prods) {
                 };
 
                 linha['id'] = p.id || p.codigo || "";
-                
-                // AJUSTE: Título com no máximo 60 caracteres (margem de segurança) e sem CAIXA ALTA
                 linha['title'] = formatarTextoMeta(p.nome).substring(0, 60); 
-                
-                // AJUSTE: Descrição sem CAIXA ALTA
                 linha['description'] = formatarTextoMeta(p.nome || "Produto de alta qualidade").substring(0, 5000);
-                
                 linha['availability'] = (parseFloat(p.estoque) > 0) ? 'in stock' : 'out of stock';
                 linha['condition'] = 'new'; 
                 
@@ -2273,7 +2335,6 @@ function sanitizeProductsForExport(prods) {
                 let codigo = p.codigo || '';
                 linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
                 
-                // REGRAS DE IMAGEM ESPELHADAS DO SITE
                 let codigoOuId = p.codigo || p.id || "";
                 let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
 
@@ -2288,22 +2349,23 @@ function sanitizeProductsForExport(prods) {
                 if (img.includes("?")) img = img.split("?")[0];
                 linha['image_link'] = encodeURI(img);
 
-                linha['brand'] = "Dona Antonia";
+                // IMPORTANTE: Agora usa a Marca do produto, se vazio mantém um fallback padrão
+                linha['brand'] = p.marca || "Dona Antonia"; 
                 
-                // AJUSTE: Limpa espaços e tabs do GTIN para evitar erro de formato
                 linha['gtin'] = (p.gtin || "").toString().replace(/\s/g, "").trim();
                 
                 return linha;
             });
 
-            // GERAÇÃO E DOWNLOAD DO ARQUIVO
+            // GERAÇÃO E DOWNLOAD DO ARQUIVO NOMEADO COM A SELEÇÃO
+            const prefixoNome = valorFiltro.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+            const nomeFicheiro = `catalogo_meta_${tipoFiltro}_${prefixoNome}_${new Date().getTime()}.csv`;
+
             const csv = Papa.unparse({ fields: colunasMeta, data: dadosParaExportar }, { quotes: true, delimiter: "," }); 
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
-            l.download = `catalogo_meta_limpo_${new Date().getTime()}.csv`; 
+            l.download = nomeFicheiro; 
             l.click(); 
-            
-            fecharModalExportacaoMeta();
         }
 
         // ==========================================================
