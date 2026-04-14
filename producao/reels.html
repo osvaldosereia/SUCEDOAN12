@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Reels Studio PRO v2</title>
+    <title>Sucedoan Reels Studio PRO v3</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -26,13 +26,12 @@
         .section { border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px; }
         .label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; display: block; }
         input, select { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; margin-bottom: 8px; outline: none; background: #fafafa; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-record { background: #ff3b30; color: white; }
 
         /* --- REELS VIEWPORT --- */
-        #viewport { margin-left: 420px; height: 100vh; display: flex; align-items: center; justify-content: center; background: #111; transition: margin 0.4s; }
+        #viewport { margin-left: 420px; height: 100vh; display: flex; align-items: center; justify-content: center; background: #111; transition: margin 0.4s; position: relative;}
         #viewport.full { margin-left: 0; }
         
         #reels-container {
@@ -43,30 +42,33 @@
         .scene {
             position: absolute; inset: 0; display: none; flex-direction: column; 
             background: #fff; width: 100%; height: 100%;
-            /* Preparação para Animação */
             animation-duration: var(--trans-speed);
             animation-fill-mode: both;
         }
         .scene.active { display: flex; }
 
-        /* Cena de Grelha de Produtos */
+        /* Cena de Grelha de Produtos Rígida 2x3 */
         .grid-scene { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 1px; background: #f0f0f0; }
         .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; text-align: center; }
+        .product-card.empty { background: #fafafa; } /* Diferencia slots vazios se quiseres */
         .product-card img { max-width: 90%; max-height: 60%; object-fit: contain; margin-bottom: 8px; }
         .product-card .price { font-size: 18px; font-weight: 900; color: #000; letter-spacing: -1px; }
         .product-card .name { font-size: 10px; color: var(--text-dim); font-weight: 600; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* Cenas Especiais (Abertura/Encerramento) */
-        .special-scene { align-items: center; justify-content: center; text-align: center; padding: 30px; background: var(--accent); color: white; }
-        .special-scene h2 { font-size: 48px; font-weight: 900; text-transform: uppercase; line-height: 1; margin: 0 0 15px 0; }
-        .special-scene p { font-size: 18px; font-weight: 400; opacity: 0.8; margin: 0; }
-
-        /* Indicador de Gravação e Controles */
+        /* Controles e Indicadores */
         #rec-status { position: absolute; top: 20px; right: 20px; background: rgba(255,0,0,0.8); color: white; padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 900; display: none; z-index: 1000; }
-        #float-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 1000; width: 50px; height: 50px; border-radius: 25px; padding: 0; }
+        #float-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 1000; width: 50px; height: 50px; border-radius: 25px; padding: 0; display: none;}
+        #viewport.full ~ #float-toggle { display: block; } /* Só mostra o botão flutuante quando em tela cheia */
+
+        /* Overlay da Contagem Decrescente */
+        #countdown-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999;
+            display: none; align-items: center; justify-content: center;
+            color: white; font-size: 120px; font-weight: 900;
+        }
 
         /* =========================================
-           10+ ANIMAÇÕES DE TRANSIÇÃO (IN e OUT)
+           5 ANIMAÇÕES DE TRANSIÇÃO (IN e OUT)
            ========================================= */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
@@ -80,44 +82,23 @@
         @keyframes slideLeftIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
         @keyframes slideLeftOut { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
-        @keyframes zoomInIn { from { opacity: 0; transform: scale(0.3); } to { opacity: 1; transform: scale(1); } }
+        @keyframes zoomInIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
         @keyframes zoomInOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.5); } }
 
-        @keyframes flipIn { from { transform: perspective(400px) rotateY(90deg); opacity: 0; } to { transform: perspective(400px) rotateY(0); opacity: 1; } }
-        @keyframes flipOut { from { transform: perspective(400px) rotateY(0); opacity: 1; } to { transform: perspective(400px) rotateY(-90deg); opacity: 0; } }
-
-        @keyframes bounceIn { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.05); opacity: 1; } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
-        @keyframes bounceOut { 20% { transform: scale(0.9); } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(0.3); opacity: 0; } }
-
-        @keyframes spinIn { from { transform: rotate(-180deg) scale(0); opacity: 0; } to { transform: rotate(0) scale(1); opacity: 1; } }
-        @keyframes spinOut { from { transform: rotate(0) scale(1); opacity: 1; } to { transform: rotate(180deg) scale(0); opacity: 0; } }
-
-        @keyframes blurIn { from { filter: blur(20px); opacity: 0; } to { filter: blur(0); opacity: 1; } }
-        @keyframes blurOut { from { filter: blur(0); opacity: 1; } to { filter: blur(20px); opacity: 0; } }
-
-        @keyframes dropIn { from { transform: translateY(-500px); opacity: 0; animation-timing-function: ease-in; } 38% { transform: translateY(0); animation-timing-function: ease-out; } 55% { transform: translateY(-65px); animation-timing-function: ease-in; } 72% { transform: translateY(0); animation-timing-function: ease-out; } 81% { transform: translateY(-28px); animation-timing-function: ease-in; } 90% { transform: translateY(0); animation-timing-function: ease-out; } 95% { transform: translateY(-8px); animation-timing-function: ease-in; } 100% { transform: translateY(0); animation-timing-function: ease-out; } }
-
-        /* Classes utilitárias geradas pelo JS */
-        .anim-none { animation: none; }
         .anim-in-fade { animation-name: fadeIn; } .anim-out-fade { animation-name: fadeOut; }
         .anim-in-slideUp { animation-name: slideUpIn; } .anim-out-slideUp { animation-name: slideUpOut; }
         .anim-in-slideDown { animation-name: slideDownIn; } .anim-out-slideDown { animation-name: slideDownOut; }
         .anim-in-slideLeft { animation-name: slideLeftIn; } .anim-out-slideLeft { animation-name: slideLeftOut; }
         .anim-in-zoom { animation-name: zoomInIn; } .anim-out-zoom { animation-name: zoomInOut; }
-        .anim-in-flip { animation-name: flipIn; } .anim-out-flip { animation-name: flipOut; }
-        .anim-in-bounce { animation-name: bounceIn; } .anim-out-bounce { animation-name: bounceOut; }
-        .anim-in-spin { animation-name: spinIn; } .anim-out-spin { animation-name: spinOut; }
-        .anim-in-blur { animation-name: blurIn; } .anim-out-blur { animation-name: blurOut; }
-        .anim-in-drop { animation-name: dropIn; } .anim-out-drop { animation-name: slideDownOut; /* Drop não tem out perfeito, usa slide */ }
     </style>
 </head>
 <body>
 
     <div id="admin-panel">
-        <h1><i data-lucide="film"></i> REELS STUDIO PRO</h1>
+        <h1><i data-lucide="film"></i> REELS STUDIO</h1>
         
         <div class="section">
-            <span class="label">1. Buscar Produtos (Vírgula para várias palavras)</span>
+            <span class="label">1. Buscar Produtos (Vírgula = várias palavras)</span>
             <input type="text" id="cfg-keywords" placeholder="Ex: fone, teclado, sony" onchange="buildScenes()">
             <select id="cfg-cat" onchange="buildScenes()">
                 <option value="">Todas as Categorias</option>
@@ -125,98 +106,52 @@
         </div>
 
         <div class="section">
-            <span class="label">2. Cenas Especiais</span>
-            <div class="grid-2">
-                <div>
-                    <span class="label">Abertura</span>
-                    <select id="cfg-opening" onchange="buildScenes()">
-                        <option value="none">Nenhuma</option>
-                        <option value="Oferta Relâmpago|Aproveite agora">Oferta Relâmpago</option>
-                        <option value="Lançamentos|Chegou novidade">Lançamentos</option>
-                        <option value="Destaques|Os mais vendidos">Destaques da Semana</option>
-                        <option value="Promoção|Descontos imperdíveis">Promoção</option>
-                        <option value="Nova Coleção|Confira as peças">Nova Coleção</option>
-                        <option value="Queima Estoque|Últimas unidades">Queima de Estoque</option>
-                        <option value="Bem-vindo|Conheça a loja">Bem-vindo à Loja</option>
-                        <option value="Top 10|Os melhores">Top 10</option>
-                        <option value="Black Friday|Preços de custo">Black Friday</option>
-                        <option value="Especial|Para você">Especial</option>
-                    </select>
-                </div>
-                <div>
-                    <span class="label">Encerramento</span>
-                    <select id="cfg-closing" onchange="buildScenes()">
-                        <option value="none">Nenhum</option>
-                        <option value="Acesse o Site|Link na Bio">Acesse o Site</option>
-                        <option value="Compre Agora|Envie um Direct">Compre Agora</option>
-                        <option value="Fale Connosco|WhatsApp na Bio">Fale no WhatsApp</option>
-                        <option value="Siga-nos|Acompanhe as novidades">Siga nosso Perfil</option>
-                        <option value="Obrigado|Volte sempre">Obrigado</option>
-                        <option value="Gostou?|Curta e Compartilhe">Curta e Compartilhe</option>
-                        <option value="Salve o Vídeo|Para não esquecer">Salve este Reel</option>
-                        <option value="Comente|Qual o seu favorito?">Deixe um comentário</option>
-                        <option value="Última Chance|Corra para o site">Última Chance</option>
-                        <option value="Até Logo|Esperamos por ti">Até a próxima</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="section">
-            <span class="label">3. Transições e Tempo</span>
-            <div class="grid-2">
-                <select id="cfg-trans-type">
-                    <option value="none">Sem Transição (Corte)</option>
-                    <option value="fade">Suave (Fade)</option>
-                    <option value="slideLeft">Deslizar Esquerda</option>
-                    <option value="slideUp">Deslizar Cima</option>
-                    <option value="slideDown">Deslizar Baixo</option>
-                    <option value="zoom">Efeito Zoom</option>
-                    <option value="flip">Girar (Flip)</option>
-                    <option value="bounce">Pulo (Bounce)</option>
-                    <option value="spin">Rodopiar (Spin)</option>
-                    <option value="blur">Desfoque (Blur)</option>
-                    <option value="drop">Queda (Drop)</option>
-                </select>
-                <select id="cfg-trans-dir">
-                    <option value="both">Entrada e Saída</option>
-                    <option value="in">Apenas Entrada</option>
-                    <option value="out">Apenas Saída</option>
-                </select>
-            </div>
+            <span class="label">2. Transições e Velocidade</span>
+            <select id="cfg-trans-type">
+                <option value="none">Sem Transição (Corte Rápido)</option>
+                <option value="fade">Suave (Fade)</option>
+                <option value="slideLeft">Deslizar para a Esquerda</option>
+                <option value="slideUp">Deslizar para Cima</option>
+                <option value="slideDown">Deslizar para Baixo</option>
+                <option value="zoom">Efeito Zoom</option>
+            </select>
+            
             <div style="display: flex; align-items: center; gap: 10px; margin-top:10px;">
                 <input type="number" id="cfg-speed" value="3.0" step="0.5" min="1" style="width: 80px; margin:0;">
-                <span style="font-size: 11px; font-weight:bold;">Segundos por Cena</span>
+                <span style="font-size: 11px; font-weight:bold;">Segundos por Tela</span>
             </div>
         </div>
 
         <div class="section" style="border:none;">
-            <button class="btn btn-primary" onclick="toggleMode()"><i data-lucide="play"></i> REPRODUZIR SLIDES</button>
-            <button id="btn-start-record" class="btn btn-record" onclick="startCapture()"><i data-lucide="video"></i> GRAVAR VÍDEO (.WEBM)</button>
+            <button class="btn btn-primary" onclick="initiatePlayback(false)"><i data-lucide="play"></i> REPRODUZIR</button>
+            <button id="btn-start-record" class="btn btn-record" onclick="initiatePlayback(true)"><i data-lucide="video"></i> GRAVAR (.WEBM)</button>
         </div>
         
         <div style="font-size: 10px; color: var(--text-dim); text-align:center;">
-            Produtos disponíveis: <span id="db-count">0</span> | Cenas geradas: <span id="scene-count">0</span>
+            Produtos disponíveis: <span id="db-count">0</span> | Slides a gerar: <span id="scene-count">0</span>
         </div>
     </div>
 
     <div id="viewport">
         <div id="reels-container">
             <div id="rec-status">🔴 GRAVANDO</div>
+            <div id="countdown-overlay">3</div>
             </div>
     </div>
 
-    <button id="float-toggle" class="btn btn-primary" onclick="toggleMode()"><i data-lucide="settings"></i></button>
+    <button id="float-toggle" class="btn btn-primary" onclick="stopAndExitFullscreen()"><i data-lucide="x"></i></button>
 
     <script>
         const STORAGE_KEY = 'sucedoan_pim_v37';
         const CAT_KEY = 'sucedoan_categorias';
         
         let allProducts = [];
-        let scenesData = []; // Guarda o HTML de cada cena
+        let scenesData = []; 
         let currentSceneIndex = 0;
         let slideTimer = null;
         let isPlaying = false;
+        let mediaRecorder;
+        let recordedChunks = [];
 
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
 
@@ -241,51 +176,39 @@
                         select.innerHTML += `<option value="${c.nome}">${c.nome}</option>`;
                     });
                 }
-                buildScenes(); // Constrói a primeira vez
+                buildScenes(); 
             } catch (e) { console.error(e); }
         }
 
         // ==========================================
-        // LÓGICA DE CONSTRUÇÃO DE CENAS E FILTROS
+        // CONSTRUÇÃO DOS SLIDES (Sempre 2x3)
         // ==========================================
         function buildScenes() {
             scenesData = [];
             const container = document.getElementById('reels-container');
             
-            // Limpa container (mantendo o rec-status)
-            container.innerHTML = '<div id="rec-status">🔴 GRAVANDO</div>';
+            // Remove as cenas antigas mas mantém os utilitários (rec-status e countdown)
+            const oldScenes = container.querySelectorAll('.scene');
+            oldScenes.forEach(s => s.remove());
 
-            // 1. APLICAR FILTROS (Múltiplas Palavras-chave)
+            // Filtros
             const keywordString = document.getElementById('cfg-keywords').value.toLowerCase();
-            // Separa por vírgula, limpa espaços vazios
             const keywords = keywordString.split(',').map(k => k.trim()).filter(k => k.length > 0);
             const cat = document.getElementById('cfg-cat').value;
 
             let filtered = allProducts.filter(p => {
                 const nomeProduto = (p.nome || "").toLowerCase();
-                // Se houver keywords, tem que bater com pelo menos uma (Lógica OR)
                 const matchesName = keywords.length === 0 || keywords.some(kw => nomeProduto.includes(kw));
                 const matchesCat = cat === "" || p.categoria === cat;
                 return matchesName && matchesCat;
             });
 
-            // 2. CENA DE ABERTURA
-            const opening = document.getElementById('cfg-opening').value;
-            if(opening !== 'none') {
-                const [title, sub] = opening.split('|');
-                scenesData.push(`
-                    <div class="scene special-scene">
-                        <h2>${title}</h2>
-                        <p>${sub}</p>
-                    </div>
-                `);
-            }
-
-            // 3. CENAS DE PRODUTOS (Batches de 6)
+            // Agrupa os produtos em blocos de 6
             for (let i = 0; i < filtered.length; i += 6) {
                 const batch = filtered.slice(i, i + 6);
                 let gridHtml = `<div class="scene grid-scene">`;
                 
+                // Produtos preenchidos
                 batch.forEach(p => {
                     const img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x600/f4f4f5/a1a1aa?text=SEM+FOTO';
                     gridHtml += `
@@ -297,23 +220,13 @@
                     `;
                 });
 
-                // Preencher buracos vazios se o último lote tiver < 6
-                for(let j = batch.length; j < 6; j++) { gridHtml += `<div class="product-card"></div>`; }
+                // Produtos vazios (para garantir a grelha 2x3)
+                for(let j = batch.length; j < 6; j++) { 
+                    gridHtml += `<div class="product-card empty"></div>`; 
+                }
                 
                 gridHtml += `</div>`;
                 scenesData.push(gridHtml);
-            }
-
-            // 4. CENA DE ENCERRAMENTO
-            const closing = document.getElementById('cfg-closing').value;
-            if(closing !== 'none') {
-                const [title, sub] = closing.split('|');
-                scenesData.push(`
-                    <div class="scene special-scene" style="background:#111;">
-                        <h2>${title}</h2>
-                        <p>${sub}</p>
-                    </div>
-                `);
             }
 
             // Renderizar as Cenas ocultas no DOM
@@ -326,36 +239,85 @@
             });
 
             document.getElementById('scene-count').innerText = scenesData.length;
-            currentSceneIndex = 0;
-
-            if (scenesData.length > 0) {
-                document.getElementById('scene-0').classList.add('active');
-            }
         }
 
         // ==========================================
-        // MOTOR DE ANIMAÇÃO E TRANSIÇÃO
+        // LÓGICA DE REPRODUÇÃO E CONTAGEM DECRESCENTE
         // ==========================================
-        function toggleMode() {
-            const panel = document.getElementById('admin-panel');
-            const view = document.getElementById('viewport');
-            
-            panel.classList.toggle('hidden');
-            view.classList.toggle('full');
+        
+        async function initiatePlayback(withRecording) {
+            buildScenes(); // Garante que a grelha está montada com os dados mais recentes
 
-            isPlaying = panel.classList.contains('hidden');
+            if (scenesData.length === 0) {
+                alert("Nenhum produto encontrado com os filtros atuais.");
+                return;
+            }
+
+            if (withRecording) {
+                const success = await setupRecording();
+                if(!success) return; // Se o utilizador cancelar a gravação, paramos.
+            }
+
+            // Esconde o painel e mostra tela cheia
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('viewport').classList.add('full');
             
-            if(isPlaying && scenesData.length > 0) {
-                // Começa sempre da cena 0 ao dar Play
-                document.querySelectorAll('.scene').forEach(s => {
-                    s.className = s.className.replace(/anim-[a-zA-Z-]+/g, ''); // Limpa classes antigas de anim
-                    s.classList.remove('active');
-                });
-                currentSceneIndex = 0;
-                document.getElementById(`scene-0`).classList.add('active');
-                scheduleNextScene();
-            } else {
-                if(slideTimer) clearTimeout(slideTimer);
+            // Inicia a contagem decrescente
+            startCountdown(() => {
+                startSlideshow();
+            });
+        }
+
+        function startCountdown(callback) {
+            const overlay = document.getElementById('countdown-overlay');
+            overlay.style.display = 'flex';
+            let count = 3;
+            overlay.innerText = count;
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if(count > 0) {
+                    overlay.innerText = count;
+                } else if (count === 0) {
+                    overlay.innerText = "AÇÃO!";
+                } else {
+                    clearInterval(countdownInterval);
+                    overlay.style.display = 'none';
+                    callback();
+                }
+            }, 1000);
+        }
+
+        function startSlideshow() {
+            isPlaying = true;
+            
+            // Limpa classes
+            document.querySelectorAll('.scene').forEach(s => {
+                s.className = 'scene grid-scene'; 
+                s.classList.remove('active');
+            });
+            
+            currentSceneIndex = 0;
+            document.getElementById(`scene-0`).classList.add('active');
+            
+            // Se estiver a gravar, marca o indicador
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                document.getElementById('rec-status').style.display = 'flex';
+            }
+
+            scheduleNextScene();
+        }
+
+        function stopAndExitFullscreen() {
+            isPlaying = false;
+            if(slideTimer) clearTimeout(slideTimer);
+            
+            document.getElementById('admin-panel').classList.remove('hidden');
+            document.getElementById('viewport').classList.remove('full');
+            document.getElementById('rec-status').style.display = 'none';
+
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
             }
         }
 
@@ -372,8 +334,6 @@
             if(!isPlaying || scenesData.length <= 1) return;
 
             const transType = document.getElementById('cfg-trans-type').value;
-            const transDir = document.getElementById('cfg-trans-dir').value;
-            
             const currentEl = document.getElementById(`scene-${currentSceneIndex}`);
             
             currentSceneIndex++;
@@ -381,54 +341,39 @@
             
             const nextEl = document.getElementById(`scene-${currentSceneIndex}`);
 
-            // Limpar classes de animação prévias
-            currentEl.className = currentEl.className.replace(/anim-[a-zA-Z-]+/g, '');
-            nextEl.className = nextEl.className.replace(/anim-[a-zA-Z-]+/g, '');
+            // Limpa as animações antigas
+            currentEl.className = 'scene grid-scene active';
+            nextEl.className = 'scene grid-scene';
 
             if(transType === 'none') {
                 currentEl.classList.remove('active');
                 nextEl.classList.add('active');
                 scheduleNextScene();
             } else {
-                // Processa lógica de In/Out/Both
-                const applyOut = transDir === 'both' || transDir === 'out';
-                const applyIn = transDir === 'both' || transDir === 'in';
-
-                if (applyOut) {
-                    currentEl.classList.add(`anim-out-${transType}`);
-                    // Ouve o fim da animação de saída do elemento atual
-                    currentEl.onanimationend = () => {
-                        currentEl.classList.remove('active');
-                        currentEl.onanimationend = null;
-                        
-                        nextEl.classList.add('active');
-                        if (applyIn) nextEl.classList.add(`anim-in-${transType}`);
-                        scheduleNextScene();
-                    };
-                } else {
-                    // Sem animação de saída, troca direto e faz a de entrada
+                currentEl.classList.add(`anim-out-${transType}`);
+                
+                currentEl.onanimationend = () => {
                     currentEl.classList.remove('active');
+                    currentEl.onanimationend = null;
+                    
                     nextEl.classList.add('active');
-                    if (applyIn) nextEl.classList.add(`anim-in-${transType}`);
+                    nextEl.classList.add(`anim-in-${transType}`);
                     scheduleNextScene();
-                }
+                };
             }
         }
 
         // ==========================================
         // GRAVAÇÃO DA TELA
         // ==========================================
-        let mediaRecorder;
-        let recordedChunks = [];
-
-        async function startCapture() {
+        async function setupRecording() {
             try {
                 const stream = await navigator.mediaDevices.getDisplayMedia({
                     video: { frameRate: { ideal: 60 } },
                     audio: false
                 });
 
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' }); // vp8 é mais universal
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' }); 
                 
                 mediaRecorder.ondataavailable = (e) => {
                     if (e.data.size > 0) recordedChunks.push(e.data);
@@ -446,15 +391,10 @@
                 };
 
                 mediaRecorder.start();
-                document.getElementById('rec-status').style.display = 'flex';
-                
-                // Entra em modo full screen e inicia o vídeo automaticamente
-                if(!document.getElementById('admin-panel').classList.contains('hidden')) {
-                    toggleMode();
-                }
-
+                return true;
             } catch (err) {
-                alert("Erro ao gravar: " + err.message);
+                console.warn("Gravação cancelada ou falhou: ", err.message);
+                return false;
             }
         }
     </script>
