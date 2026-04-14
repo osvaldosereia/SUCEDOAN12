@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Reels Studio PRO v9</title>
+    <title>Sucedoan Reels Studio PRO v10</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
-    <style id="dynamic-styles"></style> <style>
+    <style id="dynamic-styles"></style>
+    
+    <style>
         :root {
             --bg: #f5f5f7; --accent: #000000; --card-bg: #ffffff;
             --text-main: #1d1d1f; --text-dim: #86868b;
-            --price-scale: 1; --name-scale: 1;
+            --price-scale: 1; --name-scale: 1; --img-brightness: 1;
         }
 
         * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
@@ -27,9 +29,8 @@
         .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
         
-        input[type="text"], input[type="number"], select, input[type="color"] { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 12px; margin-bottom: 8px; outline: none; background: #fafafa; transition: 0.2s;}
+        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 12px; margin-bottom: 8px; outline: none; background: #fafafa; transition: 0.2s;}
         input:focus, select:focus { border-color: var(--accent); background: #fff; }
-        input[type="color"] { padding: 2px; height: 35px; cursor: pointer; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
@@ -63,12 +64,10 @@
 
         .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; }
         
-        /* FILTRO DE LENTE BRANCA APLICADA AQUI */
+        /* Controle de Luminosidade Limpo */
         .product-card img { 
             width: 100%; object-fit: contain; margin-bottom: 5%; 
-            mix-blend-mode: multiply; /* Derrete os fundos brancos/cinza */
-            filter: contrast(1.1) brightness(1.05); /* Lente de Clareamento */
-            background: #fff; /* Força o fundo por trás ser branco */
+            filter: brightness(var(--img-brightness));
         }
         
         .product-card .price { font-weight: 900; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; }
@@ -79,17 +78,11 @@
         .grid-2x2 .product-card img { height: 55%; } .grid-2x2 .product-card .price { font-size: calc(clamp(18px, 3.5vh, 45px) * var(--price-scale)); } .grid-2x2 .product-card .name { font-size: calc(clamp(11px, 1.5vh, 20px) * var(--name-scale)); }
         .grid-2x3 .product-card img { height: 50%; } .grid-2x3 .product-card .price { font-size: calc(clamp(16px, 2.8vh, 32px) * var(--price-scale)); } .grid-2x3 .product-card .name { font-size: calc(clamp(9px, 1.2vh, 16px) * var(--name-scale)); }
 
-        /* CAMADAS DE SOBREPOSIÇÃO (OVERLAYS) */
-        #custom-layer { position: absolute; inset: 0; pointer-events: none; z-index: 50; overflow: hidden;}
-        #overlay-text { position: absolute; white-space: pre-wrap; text-align: center; transform: translate(-50%, -50%); line-height: 1; }
-        #overlay-image { position: absolute; transform: translate(-50%, -50%); object-fit: contain; }
-        
-        /* TELA DE ENCERRAMENTO */
-        #closing-screen { position: absolute; inset: 0; background-color: #000; background-size: cover; background-position: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.8s ease; }
+        /* Tela Branca Inicial */
+        #white-start-screen { position: absolute; inset: 0; background: #ffffff; z-index: 90; display: none; }
 
         /* Loaders */
-        #loader-overlay, #countdown-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; color: white; }
-        #countdown-overlay { font-size: 120px; font-weight: 900; }
+        #loader-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; color: white; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;}
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
@@ -99,29 +92,26 @@
         #viewport.full ~ #float-toggle.visible { opacity: 1; pointer-events: auto; }
 
         /* =========================================
-           NOVAS ANIMAÇÕES DE TRANSIÇÃO
+           ANIMAÇÕES DE TRANSIÇÃO
            ========================================= */
         @keyframes staySolid { from { opacity: 1; } to { opacity: 1; } }
         
-        /* 1. Blur Zoom (Zoom com Desfoque) */
+        /* Blur Zoom (Zoom com Desfoque) */
         @keyframes blurZoomIn { from { opacity: 0; filter: blur(12px); transform: scale(0.85); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
         @keyframes blurZoomOut { from { opacity: 1; filter: blur(0); transform: scale(1); } to { opacity: 0.5; filter: blur(12px); transform: scale(1.15); } }
 
-        /* 2. Morph (Transformação de Produto) */
+        /* Morph (Transformação de Produto) */
         @keyframes morphIn { from { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(0.98); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } }
         @keyframes morphOut { from { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(1.02); } }
 
-        /* 3. Blur Fade (Clássico Premium) */
+        /* Blur Fade (Clássico Premium) */
         @keyframes blurIn { from { opacity: 0; filter: blur(15px); } to { opacity: 1; filter: blur(0); } }
         @keyframes blurOut { from { opacity: 1; filter: blur(0); } to { opacity: 0.5; filter: blur(15px); } }
 
-        /* Classes */
         .anim-in-blurZoom { animation: blurZoomIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; } 
         .anim-out-blurZoom { animation: blurZoomOut 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-
         .anim-in-morph { animation: morphIn 0.8s ease-in-out forwards; } 
         .anim-out-morph { animation: morphOut 0.8s ease-in-out forwards; }
-
         .anim-in-blurFade { animation: blurIn 0.7s ease forwards; } 
         .anim-out-blurFade { animation: blurOut 0.7s ease forwards; }
     </style>
@@ -161,7 +151,7 @@
         </div>
 
         <div class="section">
-            <span class="label">2. Fonte e Textos Extras</span>
+            <span class="label">2. Ajuste Visual de Fontes e Luz</span>
             <div class="grid-2">
                 <div>
                     <span style="font-size:9px;">Tam. Valor: <span id="lbl-font-price">100</span>%</span>
@@ -172,32 +162,11 @@
                     <input type="range" id="cfg-font-name" min="50" max="180" value="100" oninput="updateDynamicStyles()">
                 </div>
             </div>
-            <input type="text" id="cfg-overlay-txt" placeholder="Escreva na tela (Ex: OFERTA!)" oninput="updateOverlays()">
-            <div class="grid-2">
-                <input type="color" id="cfg-txt-color" value="#ff0000" oninput="updateOverlays()">
-                <select id="cfg-txt-format" onchange="updateOverlays()">
-                    <option value="900">Extrabold</option>
-                    <option value="400">Normal</option>
-                    <option value="italic">Itálico</option>
-                </select>
-            </div>
-            <div class="grid-2">
-                <div><span style="font-size:9px;">Cima/Baixo:</span><input type="range" id="cfg-txt-y" min="0" max="100" value="15" oninput="updateOverlays()"></div>
-                <div><span style="font-size:9px;">Tamanho:</span><input type="range" id="cfg-txt-size" min="2" max="15" value="6" step="0.5" oninput="updateOverlays()"></div>
-            </div>
-        </div>
-
-        <div class="section">
-            <span class="label">3. Imagens Extras & Encerramento</span>
-            <input type="text" id="cfg-overlay-img" placeholder="URL de Logotipo/Imagem por cima" oninput="updateOverlays()">
-            <div class="grid-2">
-                <div><span style="font-size:9px;">Pos. Y:</span><input type="range" id="cfg-img-y" min="0" max="100" value="85" oninput="updateOverlays()"></div>
-                <div><span style="font-size:9px;">Tamanho:</span><input type="range" id="cfg-img-size" min="10" max="100" value="30" oninput="updateOverlays()"></div>
-            </div>
             
-            <span class="label" style="margin-top:15px;">Imagem Final (15s limite)</span>
-            <input type="text" id="cfg-closing-img" placeholder="URL da Foto Vertical de Fim">
-            <span style="font-size:9px; color:var(--text-dim);">O sistema roda os produtos por 15s e depois fecha com esta imagem por 4s.</span>
+            <div style="margin-top: 5px;">
+                <span style="font-size:9px;">Luminosidade das Fotos: <span id="lbl-brightness">100</span>%</span>
+                <input type="range" id="cfg-brightness" min="50" max="150" value="100" oninput="updateDynamicStyles()">
+            </div>
         </div>
 
         <div class="section" style="border:none;">
@@ -209,18 +178,12 @@
     <div id="viewport">
         <div id="reels-container">
             
+            <div id="white-start-screen"></div>
+
             <div id="scenes-wrapper" style="position:absolute; inset:0;"></div>
             
-            <div id="custom-layer">
-                <img id="overlay-image" src="">
-                <div id="overlay-text"></div>
-            </div>
-
-            <div id="closing-screen"></div>
-
             <div id="rec-status">🔴 GRAVANDO</div>
             <div id="loader-overlay"><div class="spinner"></div><div style="font-size: 14px; font-weight: bold; letter-spacing: 1px;">A PREPARAR MAGIA...</div></div>
-            <div id="countdown-overlay">3</div>
         </div>
     </div>
 
@@ -249,65 +212,27 @@
             await loadData();
             setupViewportClick();
             updateDynamicStyles();
-            updateOverlays();
         };
 
-        // Aplica os estilos via injeção CSS
         function updateDynamicStyles() {
             const priceScale = document.getElementById('cfg-font-price').value;
             const nameScale = document.getElementById('cfg-font-name').value;
+            const brightness = document.getElementById('cfg-brightness').value;
             const hideName = document.getElementById('cfg-hide-name').checked;
             
             document.getElementById('lbl-font-price').innerText = priceScale;
             document.getElementById('lbl-font-name').innerText = nameScale;
+            document.getElementById('lbl-brightness').innerText = brightness;
             
             document.documentElement.style.setProperty('--price-scale', priceScale / 100);
             document.documentElement.style.setProperty('--name-scale', nameScale / 100);
+            document.documentElement.style.setProperty('--img-brightness', brightness / 100);
 
             let styleString = '';
             if (hideName) {
                 styleString += '.product-card .name { display: none !important; } ';
             }
             document.getElementById('dynamic-styles').innerHTML = styleString;
-        }
-
-        // Atualiza a posição, cor e tamanho dos overlays
-        function updateOverlays() {
-            const txtEl = document.getElementById('overlay-text');
-            const txtVal = document.getElementById('cfg-overlay-txt').value;
-            const txtColor = document.getElementById('cfg-txt-color').value;
-            const txtFormat = document.getElementById('cfg-txt-format').value;
-            const txtY = document.getElementById('cfg-txt-y').value;
-            const txtSize = document.getElementById('cfg-txt-size').value;
-
-            if (txtVal.trim() !== '') {
-                txtEl.style.display = 'block';
-                txtEl.innerText = txtVal;
-                txtEl.style.color = txtColor;
-                txtEl.style.top = `${txtY}%`;
-                txtEl.style.left = '50%';
-                txtEl.style.fontSize = `${txtSize}vh`;
-                txtEl.style.textShadow = `2px 2px 10px rgba(0,0,0,0.5)`;
-                
-                if(txtFormat === 'italic') {
-                    txtEl.style.fontStyle = 'italic'; txtEl.style.fontWeight = '900';
-                } else {
-                    txtEl.style.fontStyle = 'normal'; txtEl.style.fontWeight = txtFormat;
-                }
-            } else { txtEl.style.display = 'none'; }
-
-            const imgEl = document.getElementById('overlay-image');
-            const imgVal = document.getElementById('cfg-overlay-img').value;
-            const imgY = document.getElementById('cfg-img-y').value;
-            const imgSize = document.getElementById('cfg-img-size').value;
-
-            if (imgVal.trim() !== '') {
-                imgEl.style.display = 'block';
-                imgEl.src = imgVal;
-                imgEl.style.top = `${imgY}%`;
-                imgEl.style.left = '50%';
-                imgEl.style.width = `${imgSize}%`;
-            } else { imgEl.style.display = 'none'; }
         }
 
         function setupViewportClick() {
@@ -390,12 +315,6 @@
             const overlay = document.getElementById('loader-overlay');
             overlay.style.display = 'flex';
             
-            const closingUrl = document.getElementById('cfg-closing-img').value;
-            if(closingUrl && !imageUrlsToPreload.includes(closingUrl)) imageUrlsToPreload.push(closingUrl);
-
-            const overlayImgUrl = document.getElementById('cfg-overlay-img').value;
-            if(overlayImgUrl && !imageUrlsToPreload.includes(overlayImgUrl)) imageUrlsToPreload.push(overlayImgUrl);
-
             const promises = imageUrlsToPreload.map(url => {
                 return new Promise((resolve) => {
                     const img = new Image();
@@ -415,6 +334,7 @@
 
             await preloadAllImages();
 
+            // Pede permissão e inicia a gravação ANTES da tela branca começar
             if (withRecording) {
                 const success = await setupRecording();
                 if(!success) return; 
@@ -422,27 +342,14 @@
 
             document.getElementById('admin-panel').classList.add('hidden');
             document.getElementById('viewport').classList.add('full');
-            document.getElementById('closing-screen').style.opacity = 0;
-            document.getElementById('custom-layer').style.display = 'block';
             
-            startCountdown(() => { startSlideshow(); });
-        }
+            // Ativa a tela branca inicial por 1 segundo
+            const whiteScreen = document.getElementById('white-start-screen');
+            whiteScreen.style.display = 'block';
 
-        function startCountdown(callback) {
-            const overlay = document.getElementById('countdown-overlay');
-            overlay.style.display = 'flex';
-            let count = 3;
-            overlay.innerText = count;
-
-            const interval = setInterval(() => {
-                count--;
-                if(count > 0) { overlay.innerText = count; } 
-                else if (count === 0) { overlay.innerText = "PLAY"; } 
-                else {
-                    clearInterval(interval);
-                    overlay.style.display = 'none';
-                    callback();
-                }
+            setTimeout(() => {
+                whiteScreen.style.display = 'none';
+                startSlideshow();
             }, 1000);
         }
 
@@ -465,7 +372,7 @@
             scheduleNextScene();
         }
 
-        // ====== LÓGICA DE TEMPO: Exatos 15 Segundos ======
+        // Tempo Automático
         function scheduleNextScene() {
             if(!isPlaying) return;
             const speedMs = parseFloat(document.getElementById('cfg-speed').value) * 1000;
@@ -506,7 +413,7 @@
                 nextEl.classList.remove(`anim-in-${transType}`);
                 currentEl.style.zIndex = ""; nextEl.style.zIndex = "";
                 nextEl.removeEventListener('animationend', endHandler);
-                scheduleNextScene(); // Continua o loop
+                scheduleNextScene(); 
             };
             
             const endHandler = (e) => { if (e.target === nextEl) finishTransition(); };
@@ -514,44 +421,21 @@
             setTimeout(finishTransition, 1000); 
         }
 
-        // ====== O ENCERRAMENTO ÉPICO ======
+        // Fim Limpo
         function triggerClosingSequence() {
-            const closingUrl = document.getElementById('cfg-closing-img').value;
-            
-            // 1. Esconde os overlays (Textos e Logos colados)
-            document.getElementById('custom-layer').style.display = 'none';
-
-            // 2. Desvanece a última grelha visível
             const currentEl = document.getElementById(`scene-${currentSceneIndex}`);
             if(currentEl) {
-                currentEl.style.transition = 'opacity 0.8s ease';
+                currentEl.style.transition = 'opacity 0.5s ease';
                 currentEl.style.opacity = '0';
             }
-
-            if(closingUrl) {
-                // 3. Mostra o Fundo Preto com a Imagem Vertical
-                const closingScreen = document.getElementById('closing-screen');
-                closingScreen.style.backgroundImage = `url(${closingUrl})`;
-                
-                setTimeout(() => { 
-                    closingScreen.style.opacity = '1'; 
-                    // Fica por 4 segundos e encerra
-                    setTimeout(() => {
-                        closingScreen.style.opacity = '0';
-                        setTimeout(stopAndExitFullscreen, 800);
-                    }, 4000);
-                }, 500); 
-            } else {
-                // Se não houver imagem, só escurece e desliga a câmera
-                setTimeout(stopAndExitFullscreen, 1000);
-            }
+            // Encerra após meio segundo de fade
+            setTimeout(stopAndExitFullscreen, 500);
         }
 
         function stopAndExitFullscreen() {
             isPlaying = false;
             if(slideTimer) clearTimeout(slideTimer);
             
-            // Repõe tudo ao normal
             document.getElementById('admin-panel').classList.remove('hidden');
             document.getElementById('viewport').classList.remove('full');
             document.getElementById('rec-status').style.display = 'none';
@@ -574,7 +458,7 @@
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = `Reels_Premium_${Date.now()}.webm`;
+                    a.download = `Reels_Produtos_${Date.now()}.webm`;
                     a.click();
                     recordedChunks = [];
                     document.getElementById('rec-status').style.display = 'none';
