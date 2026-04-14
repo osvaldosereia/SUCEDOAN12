@@ -938,9 +938,35 @@ function sanitizeProductsForExport(prods) {
         // MÓDULO: BALANÇO DE ESTOQUE (NOVO LAYOUT)
         // ==========================================================
         
-        function startBalanco() {
+        async function startBalanco() {
             showScreen('balanco-screen');
             clearNumpad();
+            mostrarAlerta("Atualizando base com o site...", "aviso");
+            await baixarBaseSilencioso();
+        }
+
+        // Nova função para baixar do GitHub sem popups/confirmações
+        async function baixarBaseSilencioso() {
+            try {
+                const cfg = GitHubAPI.getConfig();
+                if (!cfg) return;
+                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
+                const response = await fetch(url, { 
+                    headers: { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Accept": "application/vnd.github.v3.raw" }, 
+                    cache: "no-store" 
+                });
+                
+                if (!response.ok) throw new Error("Falha na comunicação");
+                
+                const parsedData = await response.json();
+                if (parsedData && Array.isArray(parsedData)) {
+                    products = parsedData;
+                    await saveDataLocally();
+                    mostrarAlerta("Estoque sincronizado com sucesso!", "sucesso");
+                }
+            } catch(e) {
+                mostrarAlerta("Erro ao baixar base. Usando modo offline.", "erro");
+            }
         }
 
         function addNumpad(num) {
@@ -1081,7 +1107,7 @@ function sanitizeProductsForExport(prods) {
             openSidebar('balanco-sidebar');
         }
 
-        async function salvarBalanco(oldSku, forceSync, btnElement) {
+       async function salvarBalanco(oldSku, forceSync, btnElement) {
             let p = products.find(x => x.codigo === oldSku);
             if(!p) return;
 
@@ -1111,11 +1137,26 @@ function sanitizeProductsForExport(prods) {
             await saveDataLocally();
             
             balancoEditsCount++;
-            mostrarAlerta(`Salvo localmente! (Alterações não enviadas: ${balancoEditsCount})`, "sucesso");
             document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
 
             closeSidebar('balanco-sidebar');
             clearNumpad(); 
+
+            // Sistema Automático: Envia a cada 3 edições
+            if (balancoEditsCount >= 3) {
+                mostrarAlerta("Enviando lote de 3 alterações para o site...", "aviso");
+                
+                enqueueTask("Autosync Balanço", async () => {
+                    const vitrine = sanitizeProductsForExport(products);
+                    await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `Balanço: Atualização automática de 3 produtos`);
+                    
+                    // Zera a contagem apenas depois de enviar com sucesso
+                    balancoEditsCount = 0;
+                    document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
+                }, true); // O 'true' força a fila a rodar imediatamente
+            } else {
+                mostrarAlerta(`Salvo localmente! (${balancoEditsCount}/3 para envio)`, "sucesso");
+            }
         }
 
         // ==========================================================
