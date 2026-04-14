@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sucedoan Reels Studio PRO</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #f9f9fb;
+            --accent: #000000;
+            --card-bg: #ffffff;
+            --text-main: #1d1d1f;
+            --text-dim: #86868b;
+            --transition-speed: 0.5s;
+        }
+
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        body { 
+            margin: 0; 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        /* --- ADMIN PANEL --- */
+        #admin-panel {
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            width: 400px;
+            background: white;
+            border-right: 1px solid #e5e5e7;
+            padding: 30px;
+            z-index: 100;
+            overflow-y: auto;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #admin-panel.hidden { transform: translateX(-100%); }
+
+        h1 { font-weight: 900; font-size: 20px; letter-spacing: -1px; margin-bottom: 30px; display: flex; align-items: center; gap: 10px; }
+        
+        .section { margin-bottom: 25px; }
+        .label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; display: block; }
+        
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 14px;
+            margin-bottom: 10px;
+            outline: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { opacity: 0.8; }
+        .btn-record { background: #ff3b30; color: white; margin-top: 10px; }
+
+        /* --- REELS VIEW --- */
+        #viewport {
+            margin-left: 400px;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+            transition: margin 0.4s;
+        }
+
+        #viewport.full { margin-left: 0; }
+
+        #reels-container {
+            width: auto;
+            height: 90vh;
+            aspect-ratio: 9/16;
+            background: white;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .product-card {
+            border: 0.5px solid #f2f2f2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            text-align: center;
+            background: white;
+            position: relative;
+            transition: transform var(--transition-speed) ease-in-out, opacity var(--transition-speed);
+        }
+
+        .img-container {
+            width: 100%;
+            height: 70%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .img-container img {
+            max-width: 90%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .price {
+            font-size: 18px;
+            font-weight: 800;
+            color: #000;
+        }
+
+        .product-name {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        /* --- ANIMAÇÕES --- */
+        .fade-exit { opacity: 0; transform: scale(0.9); }
+        .slide-exit { transform: translateY(100%); }
+        .zoom-exit { transform: scale(1.5); opacity: 0; }
+
+        /* Controle flutuante */
+        #float-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .record-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: red;
+            display: none;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="admin-panel">
+        <h1><i data-lucide="video"></i> REELS STUDIO</h1>
+        
+        <div class="section">
+            <span class="label">Filtros de Seleção</span>
+            <input type="text" id="search-name" placeholder="Buscar por nome...">
+            <select id="search-cat">
+                <option value="">Todas as Categorias</option>
+            </select>
+            <select id="search-expiry">
+                <option value="all">Qualquer Validade</option>
+                <option value="next-30">Vence em 30 dias</option>
+                <option value="next-90">Vence em 90 dias</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <span class="label">Configurações do Slide</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="number" id="slide-speed" value="3" step="0.5" min="1" style="width: 80px;">
+                <span style="font-size: 12px;">Segundos por tela</span>
+            </div>
+            
+            <select id="transition-type">
+                <option value="fade">Transição: Suave (Fade)</option>
+                <option value="slide">Transição: Subir (Slide)</option>
+                <option value="zoom">Transição: Zoom</option>
+            </select>
+        </div>
+
+        <div class="section">
+            <button class="btn btn-primary" onclick="toggleMode()">
+                <i data-lucide="maximize"></i> GERAR SLIDE FULLSCREEN
+            </button>
+            <button id="btn-start-record" class="btn btn-record" onclick="startCapture()">
+                <i data-lucide="circle-dot"></i> GRAVAR TELA DO REELS
+            </button>
+        </div>
+
+        <div id="status-info" style="font-size: 11px; color: var(--text-dim); margin-top: 20px;">
+            Conectado à base: <span id="db-count">0</span> produtos
+        </div>
+    </div>
+
+    <div id="viewport">
+        <div id="reels-container">
+            <div class="record-indicator" id="rec-status">🔴 GRAVANDO</div>
+        </div>
+    </div>
+
+    <button id="float-toggle" class="btn btn-primary" style="width: auto; border-radius: 50px;" onclick="toggleMode()">
+        <i data-lucide="settings"></i>
+    </button>
+
+    <script>
+        let allProducts = [];
+        let filteredProducts = [];
+        let currentIndex = 0;
+        let slideInterval = null;
+        const STORAGE_KEY = 'sucedoan_pim_v37';
+        const CAT_KEY = 'sucedoan_categorias';
+
+        localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
+
+        // Inicialização
+        window.onload = async () => {
+            lucide.createIcons();
+            await loadData();
+            setupFilters();
+        };
+
+        async function loadData() {
+            try {
+                const data = await localforage.getItem(STORAGE_KEY);
+                const cats = await localforage.getItem(CAT_KEY);
+                
+                if(data) {
+                    allProducts = data.filter(p => p.situacao !== 'I');
+                    document.getElementById('db-count').innerText = allProducts.length;
+                    filteredProducts = [...allProducts];
+                    updatePreview();
+                }
+
+                if(cats) {
+                    const select = document.getElementById('search-cat');
+                    cats.forEach(c => {
+                        const opt = document.createElement('option');
+                        opt.value = c.nome;
+                        opt.innerText = c.nome;
+                        select.appendChild(opt);
+                    });
+                }
+            } catch (e) { console.error("Erro ao ler banco", e); }
+        }
+
+        function setupFilters() {
+            const inputs = ['search-name', 'search-cat', 'search-expiry'];
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('change', () => {
+                    applyFilters();
+                });
+            });
+        }
+
+        function applyFilters() {
+            const name = document.getElementById('search-name').value.toLowerCase();
+            const cat = document.getElementById('search-cat').value;
+            const expiry = document.getElementById('search-expiry').value;
+
+            filteredProducts = allProducts.filter(p => {
+                const matchesName = p.nome.toLowerCase().includes(name);
+                const matchesCat = cat === "" || p.categoria === cat;
+                
+                // Lógica de validade simplificada
+                let matchesExpiry = true;
+                if(expiry !== 'all') {
+                    // Aqui você implementaria a lógica de data comparando p.validade
+                }
+
+                return matchesName && matchesCat && matchesExpiry;
+            });
+
+            currentIndex = 0;
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const container = document.getElementById('reels-container');
+            const batch = filteredProducts.slice(currentIndex, currentIndex + 6);
+            const transition = document.getElementById('transition-type').value;
+
+            // Limpa com animação
+            const oldCards = container.querySelectorAll('.product-card');
+            oldCards.forEach(c => c.classList.add(`${transition}-exit`));
+
+            setTimeout(() => {
+                container.innerHTML = `<div class="record-indicator" id="rec-status">🔴 GRAVANDO</div>`;
+                
+                batch.forEach(p => {
+                    const img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x600/f4f4f5/a1a1aa?text=SEM+FOTO';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'product-card';
+                    card.innerHTML = `
+                        <div class="img-container">
+                            <img src="${img}">
+                        </div>
+                        <div class="price">R$ ${parseFloat(p.preco).toFixed(2)}</div>
+                        <div class="product-name">${p.nome.substring(0, 20)}</div>
+                    `;
+                    container.appendChild(card);
+                });
+                
+                // Se o lote for menor que 6, preenche espaços vazios para manter o grid
+                for(let i = batch.length; i < 6; i++) {
+                    const empty = document.createElement('div');
+                    empty.className = 'product-card';
+                    container.appendChild(empty);
+                }
+            }, 300);
+        }
+
+        function startSlideShow() {
+            stopSlideShow();
+            const speed = parseFloat(document.getElementById('slide-speed').value) * 1000;
+            
+            slideInterval = setInterval(() => {
+                currentIndex += 6;
+                if(currentIndex >= filteredProducts.length) currentIndex = 0;
+                updatePreview();
+            }, speed);
+        }
+
+        function stopSlideShow() {
+            if(slideInterval) clearInterval(slideInterval);
+        }
+
+        function toggleMode() {
+            const panel = document.getElementById('admin-panel');
+            const view = document.getElementById('viewport');
+            
+            panel.classList.toggle('hidden');
+            view.classList.toggle('full');
+
+            if(panel.classList.contains('hidden')) {
+                startSlideShow();
+            } else {
+                stopSlideShow();
+            }
+        }
+
+        // --- SISTEMA DE GRAVAÇÃO (TECNOLOGIA MODERNA) ---
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        async function startCapture() {
+            try {
+                // Captura apenas a aba atual ou janela
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: { frameRate: { ideal: 30 } },
+                    audio: false
+                });
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+                
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `reels_sucedoan_${Date.now()}.webm`;
+                    a.click();
+                    recordedChunks = [];
+                    document.getElementById('rec-status').style.display = 'none';
+                };
+
+                mediaRecorder.start();
+                document.getElementById('rec-status').style.display = 'flex';
+                mostrarAlerta("Iniciando Gravação! Coloque em Fullscreen.");
+                
+            } catch (err) {
+                console.error("Erro na gravação:", err);
+            }
+        }
+
+        function mostrarAlerta(msg) {
+            alert(msg); // Pode substituir pelo seu alerta estilizado
+        }
+    </script>
+</body>
+</html>
