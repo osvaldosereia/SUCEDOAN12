@@ -1057,9 +1057,16 @@ function sanitizeProductsForExport(prods) {
             renderBalancoSlider();
         }
 
-        function abrirSidebarBalanco(sku) {
+       function abrirSidebarBalanco(sku) {
             let p = products.find(x => x.codigo === sku);
             if(!p) return;
+
+            // TRADUTOR DE DATA PARA O VISUAL
+            // Se a data tiver "/", inverte para AAAA-MM-DD para o <input type="date"> conseguir ler
+            let dataValidadeFormulario = p.validade || '';
+            if (dataValidadeFormulario.includes('/')) {
+                dataValidadeFormulario = dataValidadeFormulario.split('/').reverse().join('-');
+            }
 
             let body = document.getElementById('balanco-sidebar-body');
             body.innerHTML = `
@@ -1089,7 +1096,7 @@ function sanitizeProductsForExport(prods) {
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 4px;">
                     <label class="form-label" style="font-size: 11px;">Validade</label>
-                    <input type="date" id="bal-val-${p.codigo}" value="${p.validade||''}" class="form-input" style="padding: 12px; font-size: 14px;">
+                    <input type="date" id="bal-val-${p.codigo}" value="${dataValidadeFormulario}" class="form-input" style="padding: 12px; font-size: 14px;">
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
                     <label class="form-label" style="color: var(--sep-primary); font-size: 13px; font-weight: 900; text-align:center;">ESTOQUE REAL CONTADO</label>
@@ -1107,7 +1114,7 @@ function sanitizeProductsForExport(prods) {
             openSidebar('balanco-sidebar');
         }
 
-       async function salvarBalanco(oldSku, forceSync, btnElement) {
+     async function salvarBalanco(oldSku, forceSync, btnElement) {
             let p = products.find(x => x.codigo === oldSku);
             if(!p) return;
 
@@ -1118,6 +1125,16 @@ function sanitizeProductsForExport(prods) {
             let newPra = document.getElementById(`bal-pra-${oldSku}`).value;
             let newVal = document.getElementById(`bal-val-${oldSku}`).value;
             let newEst = parseFloat(document.getElementById(`bal-est-${oldSku}`).value) || 0;
+
+            // TRADUTOR DE DATA PARA GRAVAR
+            // Converte de AAAA-MM-DD para DD/MM/AAAA para o sistema entender
+            let dataValidadeSalvar = newVal;
+            if (newVal && newVal.includes('-')) {
+                let partes = newVal.split('-');
+                if (partes[0].length === 4) {
+                    dataValidadeSalvar = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                }
+            }
 
             if(newSku !== oldSku && products.find(x => x.codigo === newSku)) {
                 mostrarAlerta("Este SKU já está em uso!", "erro");
@@ -1130,7 +1147,7 @@ function sanitizeProductsForExport(prods) {
             p.gondola = newGon;
             p.prateleira = newPra;
             p.localizacao = (newGon || newPra) ? `${newGon}-${newPra}` : "SEM LOC";
-            p.validade = newVal;
+            p.validade = dataValidadeSalvar; // Guardamos a data já convertida
             p.estoque = newEst;
             p.last_update = Date.now();
 
@@ -1153,7 +1170,7 @@ function sanitizeProductsForExport(prods) {
                     // Zera a contagem apenas depois de enviar com sucesso
                     balancoEditsCount = 0;
                     document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
-                }, true); // O 'true' força a fila a rodar imediatamente
+                }, true);
             } else {
                 mostrarAlerta(`Salvo localmente! (${balancoEditsCount}/3 para envio)`, "sucesso");
             }
