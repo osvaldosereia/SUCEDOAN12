@@ -3,84 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Reels Studio PRO v8</title>
+    <title>Sucedoan Reels Studio PRO v9</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
 
-    <style>
+    <style id="dynamic-styles"></style> <style>
         :root {
             --bg: #f5f5f7; --accent: #000000; --card-bg: #ffffff;
             --text-main: #1d1d1f; --text-dim: #86868b;
-            --price-scale: 1;
-            --name-scale: 1;
+            --price-scale: 1; --name-scale: 1;
         }
 
         * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); overflow: hidden; }
 
         /* --- ADMIN PANEL --- */
-        #admin-panel { position: fixed; left: 0; top: 0; bottom: 0; width: 420px; background: white; border-right: 1px solid #e5e5e7; padding: 30px; z-index: 100; overflow-y: auto; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
+        #admin-panel { position: fixed; left: 0; top: 0; bottom: 0; width: 420px; background: white; border-right: 1px solid #e5e5e7; padding: 25px; z-index: 100; overflow-y: auto; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
         #admin-panel.hidden { transform: translateX(-100%); }
-        h1 { font-weight: 900; font-size: 20px; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; color: var(--accent); letter-spacing: -0.5px;}
+        h1 { font-weight: 900; font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--accent); }
         
-        .section { margin-bottom: 25px; }
-        .label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
-        input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border: 1px solid #d2d2d7; border-radius: 10px; font-size: 14px; margin-bottom: 12px; outline: none; background: #fafafa; font-family: 'Inter'; transition: 0.2s;}
+        .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
+        
+        input[type="text"], input[type="number"], select, input[type="color"] { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 12px; margin-bottom: 8px; outline: none; background: #fafafa; transition: 0.2s;}
         input:focus, select:focus { border-color: var(--accent); background: #fff; }
+        input[type="color"] { padding: 2px; height: 35px; cursor: pointer; }
         
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-primary:hover { transform: scale(0.98); }
         .btn-record { background: #ff3b30; color: white; }
         .btn-record:hover { background: #d32f2f; }
 
         /* Sliders */
-        input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; margin: 8px 0; }
+        input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0 15px 0; }
         input[type="range"]:focus { outline: none; }
-        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: #d2d2d7; border-radius: 4px; }
-        input[type="range"]::-webkit-slider-thumb { height: 18px; width: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #d2d2d7; border-radius: 4px; }
+        input[type="range"]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; }
 
         /* --- REELS VIEWPORT --- */
         #viewport { margin-left: 420px; height: 100vh; display: flex; align-items: center; justify-content: center; background: #000; transition: margin 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative;}
         #viewport.full { margin-left: 0; cursor: pointer; }
         
-        /* O Container agora tem fundo branco para evitar qualquer vazamento escuro */
         #reels-container { height: 90vh; aspect-ratio: 9/16; background: #ffffff; position: relative; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.8); border-radius: 4px; }
 
         .scene { position: absolute; inset: 0; display: none; width: 100%; height: 100%; animation-fill-mode: forwards; }
         .scene.active { display: grid; }
 
-        /* DINÂMICA DE GRELHAS */
-        .grid-base { gap: 2px; background: #e5e5e7; } /* A cor #e5e5e7 aqui cria as linhas finas entre os produtos */
+        /* GRELHAS */
+        .grid-base { gap: 2px; background: #f0f0f0; } 
         .grid-1x1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         .grid-1x2 { grid-template-columns: 1fr; grid-template-rows: repeat(2, 1fr); }
         .grid-2x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
         .grid-2x3 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
 
         .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; }
-        .product-card img { width: 100%; object-fit: contain; margin-bottom: 5%; mix-blend-mode: multiply; }
+        
+        /* FILTRO DE LENTE BRANCA APLICADA AQUI */
+        .product-card img { 
+            width: 100%; object-fit: contain; margin-bottom: 5%; 
+            mix-blend-mode: multiply; /* Derrete os fundos brancos/cinza */
+            filter: contrast(1.1) brightness(1.05); /* Lente de Clareamento */
+            background: #fff; /* Força o fundo por trás ser branco */
+        }
+        
         .product-card .price { font-weight: 900; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; }
         .product-card .name { color: var(--text-dim); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        .grid-1x1 .product-card img { height: 65%; }
-        .grid-1x1 .product-card .price { font-size: calc(clamp(30px, 6vh, 80px) * var(--price-scale)); }
-        .grid-1x1 .product-card .name { font-size: calc(clamp(16px, 2.5vh, 30px) * var(--name-scale)); }
+        .grid-1x1 .product-card img { height: 65%; } .grid-1x1 .product-card .price { font-size: calc(clamp(30px, 6vh, 80px) * var(--price-scale)); } .grid-1x1 .product-card .name { font-size: calc(clamp(16px, 2.5vh, 30px) * var(--name-scale)); }
+        .grid-1x2 .product-card img { height: 60%; } .grid-1x2 .product-card .price { font-size: calc(clamp(24px, 4.5vh, 60px) * var(--price-scale)); } .grid-1x2 .product-card .name { font-size: calc(clamp(14px, 2vh, 24px) * var(--name-scale)); }
+        .grid-2x2 .product-card img { height: 55%; } .grid-2x2 .product-card .price { font-size: calc(clamp(18px, 3.5vh, 45px) * var(--price-scale)); } .grid-2x2 .product-card .name { font-size: calc(clamp(11px, 1.5vh, 20px) * var(--name-scale)); }
+        .grid-2x3 .product-card img { height: 50%; } .grid-2x3 .product-card .price { font-size: calc(clamp(16px, 2.8vh, 32px) * var(--price-scale)); } .grid-2x3 .product-card .name { font-size: calc(clamp(9px, 1.2vh, 16px) * var(--name-scale)); }
 
-        .grid-1x2 .product-card img { height: 60%; }
-        .grid-1x2 .product-card .price { font-size: calc(clamp(24px, 4.5vh, 60px) * var(--price-scale)); }
-        .grid-1x2 .product-card .name { font-size: calc(clamp(14px, 2vh, 24px) * var(--name-scale)); }
+        /* CAMADAS DE SOBREPOSIÇÃO (OVERLAYS) */
+        #custom-layer { position: absolute; inset: 0; pointer-events: none; z-index: 50; overflow: hidden;}
+        #overlay-text { position: absolute; white-space: pre-wrap; text-align: center; transform: translate(-50%, -50%); line-height: 1; }
+        #overlay-image { position: absolute; transform: translate(-50%, -50%); object-fit: contain; }
+        
+        /* TELA DE ENCERRAMENTO */
+        #closing-screen { position: absolute; inset: 0; background-color: #000; background-size: cover; background-position: center; z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.8s ease; }
 
-        .grid-2x2 .product-card img { height: 55%; }
-        .grid-2x2 .product-card .price { font-size: calc(clamp(18px, 3.5vh, 45px) * var(--price-scale)); }
-        .grid-2x2 .product-card .name { font-size: calc(clamp(11px, 1.5vh, 20px) * var(--name-scale)); }
-
-        .grid-2x3 .product-card img { height: 50%; }
-        .grid-2x3 .product-card .price { font-size: calc(clamp(16px, 2.8vh, 32px) * var(--price-scale)); }
-        .grid-2x3 .product-card .name { font-size: calc(clamp(9px, 1.2vh, 16px) * var(--name-scale)); }
-
-        /* Loaders e Controles */
+        /* Loaders */
         #loader-overlay, #countdown-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; color: white; }
         #countdown-overlay { font-size: 120px; font-weight: 900; }
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;}
@@ -92,40 +99,31 @@
         #viewport.full ~ #float-toggle.visible { opacity: 1; pointer-events: auto; }
 
         /* =========================================
-           NOVAS ANIMAÇÕES DE SOBREPOSIÇÃO (SEM PISCAR)
+           NOVAS ANIMAÇÕES DE TRANSIÇÃO
            ========================================= */
-        
-        /* Mantém a cena antiga visível (sem piscar para branco/cinza) enquanto a nova surge por cima */
         @keyframes staySolid { from { opacity: 1; } to { opacity: 1; } }
         
-        /* A nova cena aparece por cima */
-        @keyframes fadeInOverlay { from { opacity: 0; } to { opacity: 1; } }
-        
-        /* O NOVO Efeito Blur Fade Premium */
-        @keyframes blurIn { from { opacity: 0; filter: blur(15px); transform: scale(1.03); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
-        @keyframes blurOut { from { opacity: 1; filter: blur(0); transform: scale(1); } to { opacity: 0.5; filter: blur(15px); transform: scale(0.97); } }
+        /* 1. Blur Zoom (Zoom com Desfoque) */
+        @keyframes blurZoomIn { from { opacity: 0; filter: blur(12px); transform: scale(0.85); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+        @keyframes blurZoomOut { from { opacity: 1; filter: blur(0); transform: scale(1); } to { opacity: 0.5; filter: blur(12px); transform: scale(1.15); } }
 
-        @keyframes slideLeftIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        @keyframes slideLeftOut { from { transform: translateX(0); } to { transform: translateX(-30%); opacity: 0.5; } } /* Efeito Paralaxe (anda mais devagar) */
+        /* 2. Morph (Transformação de Produto) */
+        @keyframes morphIn { from { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(0.98); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } }
+        @keyframes morphOut { from { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(1.02); } }
 
-        @keyframes scaleFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        @keyframes scaleFadeOut { from { opacity: 1; transform: scale(1); } to { opacity: 0.5; transform: scale(1.05); } }
+        /* 3. Blur Fade (Clássico Premium) */
+        @keyframes blurIn { from { opacity: 0; filter: blur(15px); } to { opacity: 1; filter: blur(0); } }
+        @keyframes blurOut { from { opacity: 1; filter: blur(0); } to { opacity: 0.5; filter: blur(15px); } }
 
-        /* Aplicação das classes */
-        .anim-in-blurFade { animation: blurIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; } 
-        .anim-out-blurFade { animation: blurOut 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        /* Classes */
+        .anim-in-blurZoom { animation: blurZoomIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; } 
+        .anim-out-blurZoom { animation: blurZoomOut 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
-        .anim-in-fade { animation: fadeInOverlay 0.6s ease forwards; } 
-        .anim-out-fade { animation: staySolid 0.6s forwards; }
+        .anim-in-morph { animation: morphIn 0.8s ease-in-out forwards; } 
+        .anim-out-morph { animation: morphOut 0.8s ease-in-out forwards; }
 
-        .anim-in-fadeFast { animation: fadeInOverlay 0.25s ease forwards; } 
-        .anim-out-fadeFast { animation: staySolid 0.25s forwards; }
-
-        .anim-in-slideLeft { animation: slideLeftIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; } 
-        .anim-out-slideLeft { animation: slideLeftOut 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-        
-        .anim-in-scaleFade { animation: scaleFadeIn 0.4s ease forwards; } 
-        .anim-out-scaleFade { animation: scaleFadeOut 0.4s ease forwards; }
+        .anim-in-blurFade { animation: blurIn 0.7s ease forwards; } 
+        .anim-out-blurFade { animation: blurOut 0.7s ease forwards; }
     </style>
 </head>
 <body>
@@ -134,75 +132,96 @@
         <h1><i data-lucide="video"></i> SUCEDOAN REELS</h1>
         
         <div class="section">
-            <span class="label">1. Filtrar Produtos</span>
-            <input type="text" id="cfg-keywords" placeholder="Palavras-chave (ex: sony, fone)" onchange="buildScenes()">
-            <select id="cfg-cat" onchange="buildScenes()">
-                <option value="">Todas as Categorias</option>
-            </select>
-        </div>
-
-        <div class="section">
-            <span class="label">2. Layout do Vídeo</span>
-            <select id="cfg-layout" onchange="buildScenes()">
-                <option value="1x1">1 Produto (Tela Cheia)</option>
-                <option value="1x2">2 Produtos (Vertical)</option>
-                <option value="2x2">4 Produtos (2x2)</option>
-                <option value="2x3" selected>6 Produtos (2x3 Clássico)</option>
-            </select>
-        </div>
-
-        <div class="section">
-            <span class="label">3. Transição e Velocidade</span>
-            <select id="cfg-trans-type">
-                <optgroup label="Mais Elegantes (Sem Piscar)">
-                    <option value="blurFade" selected>Fade + Desfoque (Premium)</option>
-                    <option value="scaleFade">Escala Suave</option>
-                    <option value="fadeFast">Fade Rápido</option>
-                    <option value="none">Corte Seco (Sem Efeito)</option>
-                </optgroup>
-                <optgroup label="Clássicas">
-                    <option value="fade">Fade Lento</option>
-                    <option value="slideLeft">Deslizar para Esquerda</option>
-                </optgroup>
-            </select>
+            <span class="label">1. Configurações Básicas</span>
+            <input type="text" id="cfg-keywords" placeholder="Buscar (ex: sony, fone)" onchange="buildScenes()">
+            <select id="cfg-cat" onchange="buildScenes()"><option value="">Todas as Categorias</option></select>
+            <div class="grid-2">
+                <select id="cfg-layout" onchange="buildScenes()">
+                    <option value="1x1">1x1 (Tela Cheia)</option>
+                    <option value="1x2">1x2 (Vertical)</option>
+                    <option value="2x2">2x2 (4 Prods)</option>
+                    <option value="2x3" selected>2x3 (6 Prods)</option>
+                </select>
+                <select id="cfg-trans-type">
+                    <option value="blurZoom" selected>Zoom + Desfoque</option>
+                    <option value="morph">Transformação (Morph)</option>
+                    <option value="blurFade">Fade + Desfoque</option>
+                </select>
+            </div>
             
-            <div style="display: flex; align-items: center; gap: 10px; margin-top:15px; background: #fafafa; padding: 10px; border-radius: 10px; border: 1px solid #d2d2d7;">
-                <i data-lucide="clock" size="16" style="color:var(--text-dim)"></i>
-                <input type="number" id="cfg-speed" value="3.0" step="0.5" min="1" style="width: 70px; margin:0; padding: 6px; text-align:center;">
-                <span style="font-size: 12px; font-weight:800; color:var(--text-main);">Segundos por Slide</span>
+            <div style="display: flex; gap: 10px; margin-top: 10px; align-items:center;">
+                <input type="number" id="cfg-speed" value="1.5" step="0.5" min="0.5" style="width: 80px; margin:0;">
+                <span style="font-size: 11px; font-weight: bold;">Segs/Slide (A partir de 0.5s)</span>
+            </div>
+            
+            <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; font-weight:bold; cursor:pointer;">
+                <input type="checkbox" id="cfg-hide-name" style="width:auto; margin:0;" onchange="updateDynamicStyles()">
+                Ocultar Nomes dos Produtos
+            </label>
+        </div>
+
+        <div class="section">
+            <span class="label">2. Fonte e Textos Extras</span>
+            <div class="grid-2">
+                <div>
+                    <span style="font-size:9px;">Tam. Valor: <span id="lbl-font-price">100</span>%</span>
+                    <input type="range" id="cfg-font-price" min="50" max="180" value="100" oninput="updateDynamicStyles()">
+                </div>
+                <div>
+                    <span style="font-size:9px;">Tam. Nome: <span id="lbl-font-name">100</span>%</span>
+                    <input type="range" id="cfg-font-name" min="50" max="180" value="100" oninput="updateDynamicStyles()">
+                </div>
+            </div>
+            <input type="text" id="cfg-overlay-txt" placeholder="Escreva na tela (Ex: OFERTA!)" oninput="updateOverlays()">
+            <div class="grid-2">
+                <input type="color" id="cfg-txt-color" value="#ff0000" oninput="updateOverlays()">
+                <select id="cfg-txt-format" onchange="updateOverlays()">
+                    <option value="900">Extrabold</option>
+                    <option value="400">Normal</option>
+                    <option value="italic">Itálico</option>
+                </select>
+            </div>
+            <div class="grid-2">
+                <div><span style="font-size:9px;">Cima/Baixo:</span><input type="range" id="cfg-txt-y" min="0" max="100" value="15" oninput="updateOverlays()"></div>
+                <div><span style="font-size:9px;">Tamanho:</span><input type="range" id="cfg-txt-size" min="2" max="15" value="6" step="0.5" oninput="updateOverlays()"></div>
             </div>
         </div>
 
         <div class="section">
-            <span class="label">4. Ajuste de Fontes</span>
-            <div style="display: flex; gap: 15px; background: #fafafa; padding: 15px; border-radius: 10px; border: 1px solid #d2d2d7;">
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
-                    <span style="font-size: 11px; font-weight:800; color:var(--text-main); text-align:center;">Valor: <span id="lbl-font-price">100</span>%</span>
-                    <input type="range" id="cfg-font-price" min="50" max="180" value="100" oninput="updateFonts()">
-                </div>
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
-                    <span style="font-size: 11px; font-weight:800; color:var(--text-main); text-align:center;">Nome: <span id="lbl-font-name">100</span>%</span>
-                    <input type="range" id="cfg-font-name" min="50" max="180" value="100" oninput="updateFonts()">
-                </div>
+            <span class="label">3. Imagens Extras & Encerramento</span>
+            <input type="text" id="cfg-overlay-img" placeholder="URL de Logotipo/Imagem por cima" oninput="updateOverlays()">
+            <div class="grid-2">
+                <div><span style="font-size:9px;">Pos. Y:</span><input type="range" id="cfg-img-y" min="0" max="100" value="85" oninput="updateOverlays()"></div>
+                <div><span style="font-size:9px;">Tamanho:</span><input type="range" id="cfg-img-size" min="10" max="100" value="30" oninput="updateOverlays()"></div>
             </div>
+            
+            <span class="label" style="margin-top:15px;">Imagem Final (15s limite)</span>
+            <input type="text" id="cfg-closing-img" placeholder="URL da Foto Vertical de Fim">
+            <span style="font-size:9px; color:var(--text-dim);">O sistema roda os produtos por 15s e depois fecha com esta imagem por 4s.</span>
         </div>
 
         <div class="section" style="border:none;">
             <button class="btn btn-primary" onclick="initiatePlayback(false)"><i data-lucide="play-circle"></i> VER ECRÃ INTEIRO</button>
-            <button id="btn-start-record" class="btn btn-record" onclick="initiatePlayback(true)"><i data-lucide="video-recording"></i> GRAVAR REELS (.WEBM)</button>
-        </div>
-        
-        <div style="font-size: 11px; color: var(--text-dim); text-align:center; font-weight: 600; padding-top: 10px; border-top: 1px solid #eee;">
-            Grelhas geradas: <span id="scene-count" style="color:var(--accent)">0</span>
+            <button id="btn-start-record" class="btn btn-record" onclick="initiatePlayback(true)"><i data-lucide="video-recording"></i> GRAVAR REELS (15 Segs)</button>
         </div>
     </div>
 
     <div id="viewport">
         <div id="reels-container">
-            <div id="rec-status">🔴 GRAVANDO</div>
-            <div id="loader-overlay"><div class="spinner"></div><div style="font-size: 14px; font-weight: bold; letter-spacing: 1px;">A CARREGAR IMAGENS...</div></div>
-            <div id="countdown-overlay">3</div>
+            
+            <div id="scenes-wrapper" style="position:absolute; inset:0;"></div>
+            
+            <div id="custom-layer">
+                <img id="overlay-image" src="">
+                <div id="overlay-text"></div>
             </div>
+
+            <div id="closing-screen"></div>
+
+            <div id="rec-status">🔴 GRAVANDO</div>
+            <div id="loader-overlay"><div class="spinner"></div><div style="font-size: 14px; font-weight: bold; letter-spacing: 1px;">A PREPARAR MAGIA...</div></div>
+            <div id="countdown-overlay">3</div>
+        </div>
     </div>
 
     <button id="float-toggle" class="btn btn-primary" onclick="stopAndExitFullscreen()" title="Parar e Sair"><i data-lucide="x"></i></button>
@@ -210,6 +229,7 @@
     <script>
         const STORAGE_KEY = 'sucedoan_pim_v37';
         const CAT_KEY = 'sucedoan_categorias';
+        const MAX_VIDEO_TIME = 15000; // Exatamente 15 Segundos de produtos
         
         let allProducts = [];
         let scenesData = []; 
@@ -217,6 +237,7 @@
         let currentSceneIndex = 0;
         let slideTimer = null;
         let isPlaying = false;
+        let totalElapsedMs = 0;
         let mediaRecorder;
         let recordedChunks = [];
         let hideBtnTimeout;
@@ -227,18 +248,66 @@
             lucide.createIcons();
             await loadData();
             setupViewportClick();
-            updateFonts();
+            updateDynamicStyles();
+            updateOverlays();
         };
 
-        function updateFonts() {
+        // Aplica os estilos via injeção CSS
+        function updateDynamicStyles() {
             const priceScale = document.getElementById('cfg-font-price').value;
             const nameScale = document.getElementById('cfg-font-name').value;
+            const hideName = document.getElementById('cfg-hide-name').checked;
             
             document.getElementById('lbl-font-price').innerText = priceScale;
             document.getElementById('lbl-font-name').innerText = nameScale;
             
             document.documentElement.style.setProperty('--price-scale', priceScale / 100);
             document.documentElement.style.setProperty('--name-scale', nameScale / 100);
+
+            let styleString = '';
+            if (hideName) {
+                styleString += '.product-card .name { display: none !important; } ';
+            }
+            document.getElementById('dynamic-styles').innerHTML = styleString;
+        }
+
+        // Atualiza a posição, cor e tamanho dos overlays
+        function updateOverlays() {
+            const txtEl = document.getElementById('overlay-text');
+            const txtVal = document.getElementById('cfg-overlay-txt').value;
+            const txtColor = document.getElementById('cfg-txt-color').value;
+            const txtFormat = document.getElementById('cfg-txt-format').value;
+            const txtY = document.getElementById('cfg-txt-y').value;
+            const txtSize = document.getElementById('cfg-txt-size').value;
+
+            if (txtVal.trim() !== '') {
+                txtEl.style.display = 'block';
+                txtEl.innerText = txtVal;
+                txtEl.style.color = txtColor;
+                txtEl.style.top = `${txtY}%`;
+                txtEl.style.left = '50%';
+                txtEl.style.fontSize = `${txtSize}vh`;
+                txtEl.style.textShadow = `2px 2px 10px rgba(0,0,0,0.5)`;
+                
+                if(txtFormat === 'italic') {
+                    txtEl.style.fontStyle = 'italic'; txtEl.style.fontWeight = '900';
+                } else {
+                    txtEl.style.fontStyle = 'normal'; txtEl.style.fontWeight = txtFormat;
+                }
+            } else { txtEl.style.display = 'none'; }
+
+            const imgEl = document.getElementById('overlay-image');
+            const imgVal = document.getElementById('cfg-overlay-img').value;
+            const imgY = document.getElementById('cfg-img-y').value;
+            const imgSize = document.getElementById('cfg-img-size').value;
+
+            if (imgVal.trim() !== '') {
+                imgEl.style.display = 'block';
+                imgEl.src = imgVal;
+                imgEl.style.top = `${imgY}%`;
+                imgEl.style.left = '50%';
+                imgEl.style.width = `${imgSize}%`;
+            } else { imgEl.style.display = 'none'; }
         }
 
         function setupViewportClick() {
@@ -246,11 +315,8 @@
                 if(isPlaying) {
                     const btn = document.getElementById('float-toggle');
                     btn.classList.add('visible');
-                    
                     if(hideBtnTimeout) clearTimeout(hideBtnTimeout);
-                    hideBtnTimeout = setTimeout(() => {
-                        btn.classList.remove('visible');
-                    }, 3000);
+                    hideBtnTimeout = setTimeout(() => { btn.classList.remove('visible'); }, 3000);
                 }
             });
         }
@@ -260,19 +326,18 @@
                 const data = await localforage.getItem(STORAGE_KEY);
                 const cats = await localforage.getItem(CAT_KEY);
                 
-                if(data) { allProducts = data.filter(p => p.situacao !== 'I'); }
-                if(cats) { cats.forEach(c => { document.getElementById('cfg-cat').innerHTML += `<option value="${c.nome}">${c.nome}</option>`; }); }
+                if(data) allProducts = data.filter(p => p.situacao !== 'I');
+                if(cats) cats.forEach(c => { document.getElementById('cfg-cat').innerHTML += `<option value="${c.nome}">${c.nome}</option>`; });
                 
                 buildScenes(); 
-            } catch (e) { console.error("Erro ao carregar dados locais", e); }
+            } catch (e) { console.error(e); }
         }
 
         function buildScenes() {
             scenesData = [];
             imageUrlsToPreload = [];
-            const container = document.getElementById('reels-container');
-            
-            container.querySelectorAll('.scene').forEach(s => s.remove());
+            const container = document.getElementById('scenes-wrapper');
+            container.innerHTML = '';
 
             const keywords = document.getElementById('cfg-keywords').value.toLowerCase().split(',').map(k => k.trim()).filter(k => k.length > 0);
             const cat = document.getElementById('cfg-cat').value;
@@ -285,10 +350,7 @@
                 return matchesName && matchesCat;
             });
 
-            if (filtered.length === 0) {
-                document.getElementById('scene-count').innerText = "0";
-                return;
-            }
+            if (filtered.length === 0) return;
 
             let slotsPerSlide = 6;
             if (layout === '1x1') slotsPerSlide = 1;
@@ -308,14 +370,7 @@
                 batch.forEach(p => {
                     const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x600/f4f4f5/a1a1aa?text=SEM+FOTO';
                     if (!imageUrlsToPreload.includes(imgUrl)) imageUrlsToPreload.push(imgUrl);
-
-                    gridHtml += `
-                        <div class="product-card">
-                            <img src="${imgUrl}">
-                            <div class="price">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.', ',')}</div>
-                            <div class="name">${p.nome}</div>
-                        </div>
-                    `;
+                    gridHtml += `<div class="product-card"><img src="${imgUrl}"><div class="price">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.', ',')}</div><div class="name">${p.nome}</div></div>`;
                 });
                 
                 gridHtml += `</div>`;
@@ -329,14 +384,18 @@
                 sceneEl.id = `scene-${index}`;
                 container.appendChild(sceneEl);
             });
-
-            document.getElementById('scene-count').innerText = scenesData.length;
         }
 
         async function preloadAllImages() {
             const overlay = document.getElementById('loader-overlay');
             overlay.style.display = 'flex';
             
+            const closingUrl = document.getElementById('cfg-closing-img').value;
+            if(closingUrl && !imageUrlsToPreload.includes(closingUrl)) imageUrlsToPreload.push(closingUrl);
+
+            const overlayImgUrl = document.getElementById('cfg-overlay-img').value;
+            if(overlayImgUrl && !imageUrlsToPreload.includes(overlayImgUrl)) imageUrlsToPreload.push(overlayImgUrl);
+
             const promises = imageUrlsToPreload.map(url => {
                 return new Promise((resolve) => {
                     const img = new Image();
@@ -352,8 +411,7 @@
 
         async function initiatePlayback(withRecording) {
             buildScenes(); 
-
-            if (scenesData.length === 0) return alert("Nenhum produto encontrado com estes filtros.");
+            if (scenesData.length === 0) return alert("Nenhum produto encontrado.");
 
             await preloadAllImages();
 
@@ -364,6 +422,8 @@
 
             document.getElementById('admin-panel').classList.add('hidden');
             document.getElementById('viewport').classList.add('full');
+            document.getElementById('closing-screen').style.opacity = 0;
+            document.getElementById('custom-layer').style.display = 'block';
             
             startCountdown(() => { startSlideshow(); });
         }
@@ -388,11 +448,11 @@
 
         function startSlideshow() {
             isPlaying = true;
+            totalElapsedMs = 0;
             const layout = document.getElementById('cfg-layout').value;
             
             document.querySelectorAll('.scene').forEach(s => {
                 s.className = `scene grid-base grid-${layout}`; 
-                s.classList.remove('active');
             });
             
             currentSceneIndex = 0;
@@ -405,22 +465,19 @@
             scheduleNextScene();
         }
 
-        function stopAndExitFullscreen() {
-            isPlaying = false;
-            if(slideTimer) clearTimeout(slideTimer);
-            
-            document.getElementById('admin-panel').classList.remove('hidden');
-            document.getElementById('viewport').classList.remove('full');
-            document.getElementById('rec-status').style.display = 'none';
-            document.getElementById('float-toggle').classList.remove('visible');
-
-            if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); }
-        }
-
+        // ====== LÓGICA DE TEMPO: Exatos 15 Segundos ======
         function scheduleNextScene() {
             if(!isPlaying) return;
             const speedMs = parseFloat(document.getElementById('cfg-speed').value) * 1000;
-            slideTimer = setTimeout(() => { transitionToNext(); }, speedMs);
+            
+            slideTimer = setTimeout(() => {
+                totalElapsedMs += speedMs;
+                if(totalElapsedMs >= MAX_VIDEO_TIME) {
+                    triggerClosingSequence();
+                } else {
+                    transitionToNext();
+                }
+            }, speedMs);
         }
 
         function transitionToNext() {
@@ -430,72 +487,98 @@
             const layout = document.getElementById('cfg-layout').value;
             
             const currentEl = document.getElementById(`scene-${currentSceneIndex}`);
-            
             currentSceneIndex++;
             if(currentSceneIndex >= scenesData.length) currentSceneIndex = 0; 
-            
             const nextEl = document.getElementById(`scene-${currentSceneIndex}`);
 
-            // === A MÁGICA: SOBREPOSIÇÃO (Z-INDEX) PARA EVITAR PISCAR ===
             currentEl.style.zIndex = "1";
             nextEl.style.zIndex = "2";
-
-            // Ambas ativas simultaneamente
             nextEl.className = `scene grid-base grid-${layout} active`;
 
-            if(transType === 'none') {
-                currentEl.classList.remove('active');
-                currentEl.style.zIndex = "";
-                nextEl.style.zIndex = "";
-                scheduleNextScene();
-            } else {
-                currentEl.classList.add(`anim-out-${transType}`);
-                nextEl.classList.add(`anim-in-${transType}`);
-                
-                // Finaliza a transição sem deixar o código preso
-                let animEnded = false;
-                const finishTransition = () => {
-                    if (animEnded) return;
-                    animEnded = true;
-                    currentEl.classList.remove('active', `anim-out-${transType}`);
-                    nextEl.classList.remove(`anim-in-${transType}`);
-                    currentEl.style.zIndex = "";
-                    nextEl.style.zIndex = "";
-                    nextEl.removeEventListener('animationend', endHandler);
-                    scheduleNextScene();
-                };
-                
-                const endHandler = (e) => { if (e.target === nextEl) finishTransition(); };
-                
-                nextEl.addEventListener('animationend', endHandler);
-                setTimeout(finishTransition, 1000); // Fallback de segurança de 1 segundo
+            currentEl.classList.add(`anim-out-${transType}`);
+            nextEl.classList.add(`anim-in-${transType}`);
+            
+            let animEnded = false;
+            const finishTransition = () => {
+                if (animEnded) return;
+                animEnded = true;
+                currentEl.classList.remove('active', `anim-out-${transType}`);
+                nextEl.classList.remove(`anim-in-${transType}`);
+                currentEl.style.zIndex = ""; nextEl.style.zIndex = "";
+                nextEl.removeEventListener('animationend', endHandler);
+                scheduleNextScene(); // Continua o loop
+            };
+            
+            const endHandler = (e) => { if (e.target === nextEl) finishTransition(); };
+            nextEl.addEventListener('animationend', endHandler);
+            setTimeout(finishTransition, 1000); 
+        }
+
+        // ====== O ENCERRAMENTO ÉPICO ======
+        function triggerClosingSequence() {
+            const closingUrl = document.getElementById('cfg-closing-img').value;
+            
+            // 1. Esconde os overlays (Textos e Logos colados)
+            document.getElementById('custom-layer').style.display = 'none';
+
+            // 2. Desvanece a última grelha visível
+            const currentEl = document.getElementById(`scene-${currentSceneIndex}`);
+            if(currentEl) {
+                currentEl.style.transition = 'opacity 0.8s ease';
+                currentEl.style.opacity = '0';
             }
+
+            if(closingUrl) {
+                // 3. Mostra o Fundo Preto com a Imagem Vertical
+                const closingScreen = document.getElementById('closing-screen');
+                closingScreen.style.backgroundImage = `url(${closingUrl})`;
+                
+                setTimeout(() => { 
+                    closingScreen.style.opacity = '1'; 
+                    // Fica por 4 segundos e encerra
+                    setTimeout(() => {
+                        closingScreen.style.opacity = '0';
+                        setTimeout(stopAndExitFullscreen, 800);
+                    }, 4000);
+                }, 500); 
+            } else {
+                // Se não houver imagem, só escurece e desliga a câmera
+                setTimeout(stopAndExitFullscreen, 1000);
+            }
+        }
+
+        function stopAndExitFullscreen() {
+            isPlaying = false;
+            if(slideTimer) clearTimeout(slideTimer);
+            
+            // Repõe tudo ao normal
+            document.getElementById('admin-panel').classList.remove('hidden');
+            document.getElementById('viewport').classList.remove('full');
+            document.getElementById('rec-status').style.display = 'none';
+            document.getElementById('float-toggle').classList.remove('visible');
+            
+            if(document.getElementById(`scene-${currentSceneIndex}`)) {
+                document.getElementById(`scene-${currentSceneIndex}`).style.opacity = '1';
+            }
+
+            if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); }
         }
 
         async function setupRecording() {
             try {
-                const stream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { frameRate: { ideal: 60 } },
-                    audio: false
-                });
-
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 } }, audio: false });
                 mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' }); 
                 
-                mediaRecorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) recordedChunks.push(e.data);
-                };
-
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `Sucedoan_Reels_Raw_${Date.now()}.webm`;
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `Reels_Premium_${Date.now()}.webm`;
                     a.click();
                     recordedChunks = [];
                     document.getElementById('rec-status').style.display = 'none';
                 };
-
                 mediaRecorder.start();
                 return true;
             } catch (err) {
