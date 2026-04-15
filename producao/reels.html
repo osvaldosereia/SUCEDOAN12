@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Reels Studio PRO v11</title>
+    <title>Sucedoan Reels Studio PRO v13</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,6 +17,7 @@
             --bg: #f5f5f7; --accent: #000000; --card-bg: #ffffff;
             --text-main: #1d1d1f; --text-dim: #86868b;
             --price-scale: 1; --name-scale: 1; --img-scale: 1;
+            --price-y: 0px; --name-y: 0px;
             --footer-logo-size: 3vh; 
             --footer-l1-size: 1.2vh; --footer-l1-color: #000000;
             --footer-l2-size: 1vh;   --footer-l2-color: #86868b;
@@ -36,15 +37,18 @@
         input[type="text"], input[type="number"], select, input[type="file"] { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 12px; margin-bottom: 8px; outline: none; background: #fafafa; transition: 0.2s;}
         input:focus, select:focus { border-color: var(--accent); background: #fff; }
         
+        /* Estilo para a caixa de categorias múltiplas */
+        .cat-container { max-height: 100px; overflow-y: auto; border: 1px solid #d2d2d7; border-radius: 8px; padding: 8px; background: #fafafa; margin-bottom: 8px; }
+        .cat-item { display: flex; align-items: center; gap: 5px; font-size: 11px; margin-bottom: 4px; cursor: pointer; }
+        .cat-item input { width: auto; margin: 0; }
+
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
 
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-primary:hover { transform: scale(0.98); }
         .btn-record { background: #ff3b30; color: white; }
         .btn-record:hover { background: #d32f2f; }
-        .btn-secondary { background: #e5e5e7; color: #1d1d1f; padding: 10px; font-size: 11px; }
 
         input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0 15px 0; }
         input[type="range"]:focus { outline: none; }
@@ -55,9 +59,12 @@
         #viewport { margin-left: 420px; height: 100vh; display: flex; align-items: center; justify-content: center; background: #000; transition: margin 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative;}
         #viewport.full { margin-left: 0; }
         
-        #reels-container { height: 90vh; aspect-ratio: 9/16; background: #ffffff; position: relative; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.8); border-radius: 4px; display: flex; flex-direction: column; }
+        #reels-container { background: #ffffff; position: relative; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.8); border-radius: 4px; display: flex; flex-direction: column; transition: all 0.3s ease; }
+        
+        /* Classes dinâmicas para o formato do vídeo/carrossel */
+        .format-vertical { aspect-ratio: 9/16; height: 90vh; }
+        .format-square { aspect-ratio: 1/1; height: 80vh; }
 
-        /* Ajuste: 92% para produtos, deixando margem para o rodapé respirar */
         #scenes-wrapper { height: 92%; width: 100%; position: relative; }
 
         .scene { position: absolute; inset: 0; display: none; width: 100%; height: 100%; animation-fill-mode: forwards; }
@@ -72,15 +79,15 @@
         .grid-3x4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
         .grid-3x5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(5, 1fr); }
 
-        .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; }
+        .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; position: relative; }
         
         .product-card img { 
             width: 100%; object-fit: contain; margin-bottom: 5%; 
-            transform: scale(var(--img-scale));
+            transform: scale(var(--img-scale)); position: relative; z-index: 1;
         }
         
-        .product-card .price { font-weight: 900; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; }
-        .product-card .name { color: var(--text-dim); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-card .price { font-weight: 900; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; transform: translateY(var(--price-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        .product-card .name { color: var(--text-dim); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transform: translateY(var(--name-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8);}
 
         .grid-1x1 .product-card img { height: 65%; } .grid-1x1 .product-card .price { font-size: calc(clamp(30px, 6vh, 80px) * var(--price-scale)); } .grid-1x1 .product-card .name { font-size: calc(clamp(16px, 2.5vh, 30px) * var(--name-scale)); }
         .grid-1x2 .product-card img { height: 60%; } .grid-1x2 .product-card .price { font-size: calc(clamp(24px, 4.5vh, 60px) * var(--price-scale)); } .grid-1x2 .product-card .name { font-size: calc(clamp(14px, 2vh, 24px) * var(--name-scale)); }
@@ -91,9 +98,8 @@
 
         /* --- RODAPÉ DO REEL --- */
         #reels-footer {
-            height: 5%; width: 100%;
-            margin-bottom: 3%; /* Descolando da margem inferior */
-            background: transparent; /* Removido fundo branco para não cortar caso falte algo */
+            height: 5%; width: 100%; margin-bottom: 3%;
+            background: transparent; 
             display: flex; align-items: center; justify-content: center; gap: 8px;
             box-sizing: border-box; z-index: 50; padding: 0 10px;
         }
@@ -111,8 +117,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         #rec-status { position: absolute; top: 20px; right: 20px; background: rgba(255,0,0,0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 900; display: none; z-index: 1000; letter-spacing: 1px;}
-        
-        /* Botão Sair */
         #float-toggle { position: fixed; bottom: 30px; left: 30px; z-index: 1000; width: 50px; height: 50px; border-radius: 25px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none; }
         #viewport.full ~ #float-toggle { display: flex; align-items: center; justify-content: center; }
 
@@ -121,15 +125,41 @@
         .mc-btn { background: rgba(0,0,0,0.8); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; font-family: inherit; display: flex; align-items: center; gap: 5px; transition: 0.2s;}
         .mc-btn:hover { background: var(--accent); transform: scale(1.05); }
 
+        /* =========================================
+           NOVAS E ANTIGAS ANIMAÇÕES
+           ========================================= */
         @keyframes simpleZoomIn { from { opacity: 0; transform: scale(0.90); } to { opacity: 1; transform: scale(1); } }
         @keyframes simpleZoomOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.10); } }
+        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
 
+        /* Morph (Transformação de Produto) */
+        @keyframes morphIn { from { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(0.98); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } }
+        @keyframes morphOut { from { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(1.02); } }
+
+        /* Slide Lateral */
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 1; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-100%); opacity: 1; } }
+
+        /* Crossfade (Sem fundo branco) */
+        @keyframes crossfadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes staySolid { from { opacity: 1; } to { opacity: 1; } } /* O atual fica sólido no fundo */
+
         .anim-in-zoom { animation: simpleZoomIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; } 
         .anim-out-zoom { animation: simpleZoomOut 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        
         .anim-in-fade { animation: fadeIn 0.7s ease forwards; } 
         .anim-out-fade { animation: fadeOut 0.7s ease forwards; }
+
+        .anim-in-morph { animation: morphIn 0.8s ease-in-out forwards; } 
+        .anim-out-morph { animation: morphOut 0.8s ease-in-out forwards; }
+
+        .anim-in-slide { animation: slideIn 0.6s ease forwards; } 
+        .anim-out-slide { animation: slideOut 0.6s ease forwards; }
+
+        .anim-in-crossfade { animation: crossfadeIn 0.8s ease forwards; } 
+        .anim-out-crossfade { animation: staySolid 0.8s ease forwards; }
     </style>
 </head>
 <body>
@@ -139,20 +169,28 @@
         
         <div class="section">
             <span class="label">1. Configurações Básicas</span>
+            
+            <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Formato de Tela</span>
+            <select id="cfg-format" onchange="updateLayoutOptions()">
+                <option value="vertical" selected>Vertical (Reels 9:16)</option>
+                <option value="square">Quadrado (Carrossel 1:1)</option>
+            </select>
+
             <input type="text" id="cfg-keywords" placeholder="Buscar (ex: sony, fone)" onchange="buildScenes()">
-            <select id="cfg-cat" onchange="buildScenes()"><option value="">Todas as Categorias</option></select>
+            
+            <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Categorias (Múltipla Seleção)</span>
+            <div id="cfg-cat-container" class="cat-container">
+                </div>
+
             <div class="grid-2">
                 <select id="cfg-layout" onchange="buildScenes()">
-                    <option value="1x1">1x1 (Tela Cheia)</option>
-                    <option value="1x2">1x2 (Vertical)</option>
-                    <option value="2x2">2x2 (4 Prods)</option>
-                    <option value="2x3" selected>2x3 (6 Prods)</option>
-                    <option value="3x4">3x4 (12 Prods)</option>
-                    <option value="3x5">3x5 (15 Prods)</option>
-                </select>
+                    </select>
                 <select id="cfg-trans-type">
                     <option value="zoom" selected>Zoom Limpo</option>
                     <option value="fade">Fade Limpo</option>
+                    <option value="morph">Transformação (Morph)</option>
+                    <option value="slide">Slide Lateral</option>
+                    <option value="crossfade">Fade Suave (Sem Fundo Branco)</option>
                 </select>
             </div>
             
@@ -187,16 +225,24 @@
 
         <div class="section">
             <span class="label">2. Ajuste Visual dos Produtos</span>
-            <div class="grid-3">
+            <div class="grid-2">
                 <div>
                     <span style="font-size:9px;">Tam. Valor: <span id="lbl-font-price">100</span>%</span>
                     <input type="range" id="cfg-font-price" min="50" max="180" value="100" oninput="updateDynamicStyles()">
+                </div>
+                <div>
+                    <span style="font-size:9px;">Pos. Valor (Acima/Abaixo): <span id="lbl-pos-price">0</span>px</span>
+                    <input type="range" id="cfg-pos-price" min="-150" max="150" value="0" oninput="updateDynamicStyles()">
                 </div>
                 <div>
                     <span style="font-size:9px;">Tam. Nome: <span id="lbl-font-name">100</span>%</span>
                     <input type="range" id="cfg-font-name" min="50" max="180" value="100" oninput="updateDynamicStyles()">
                 </div>
                 <div>
+                    <span style="font-size:9px;">Pos. Nome (Acima/Abaixo): <span id="lbl-pos-name">0</span>px</span>
+                    <input type="range" id="cfg-pos-name" min="-150" max="150" value="0" oninput="updateDynamicStyles()">
+                </div>
+                <div style="grid-column: span 2; margin-top: 5px;">
                     <span style="font-size:9px;">Tam. Foto: <span id="lbl-img-scale">100</span>%</span>
                     <input type="range" id="cfg-img-scale" min="50" max="300" value="100" oninput="updateDynamicStyles()">
                 </div>
@@ -246,7 +292,7 @@
     </div>
 
     <div id="viewport">
-        <div id="reels-container">
+        <div id="reels-container" class="format-vertical">
             <div id="white-start-screen"></div>
             <div id="scenes-wrapper"></div>
             <div id="reels-footer">
@@ -291,24 +337,59 @@
 
         window.onload = async () => {
             lucide.createIcons();
+            updateLayoutOptions(); // Inicializa o layout padrão
             await loadData();
             loadFooterConfig();
             updateDynamicStyles();
         };
 
+        function updateLayoutOptions() {
+            const format = document.getElementById('cfg-format').value;
+            const layoutSelect = document.getElementById('cfg-layout');
+            const container = document.getElementById('reels-container');
+            
+            layoutSelect.innerHTML = '';
+            
+            if (format === 'square') {
+                container.className = 'format-square';
+                layoutSelect.innerHTML = `
+                    <option value="1x1">1x1 (Tela Cheia)</option>
+                    <option value="1x2">1x2 (Vertical)</option>
+                    <option value="2x2" selected>2x2 (4 Prods)</option>
+                `;
+            } else {
+                container.className = 'format-vertical';
+                layoutSelect.innerHTML = `
+                    <option value="1x1">1x1 (Tela Cheia)</option>
+                    <option value="1x2">1x2 (Vertical)</option>
+                    <option value="2x2">2x2 (4 Prods)</option>
+                    <option value="2x3" selected>2x3 (6 Prods)</option>
+                    <option value="3x4">3x4 (12 Prods)</option>
+                    <option value="3x5">3x5 (15 Prods)</option>
+                `;
+            }
+            buildScenes();
+        }
+
         function updateDynamicStyles() {
             const priceScale = document.getElementById('cfg-font-price').value;
+            const posPrice = document.getElementById('cfg-pos-price').value;
             const nameScale = document.getElementById('cfg-font-name').value;
+            const posName = document.getElementById('cfg-pos-name').value;
             const imgScale = document.getElementById('cfg-img-scale').value;
             const hideName = document.getElementById('cfg-hide-name').checked;
             const hidePrice = document.getElementById('cfg-hide-price').checked;
             
             document.getElementById('lbl-font-price').innerText = priceScale;
+            document.getElementById('lbl-pos-price').innerText = posPrice;
             document.getElementById('lbl-font-name').innerText = nameScale;
+            document.getElementById('lbl-pos-name').innerText = posName;
             document.getElementById('lbl-img-scale').innerText = imgScale;
             
             document.documentElement.style.setProperty('--price-scale', priceScale / 100);
+            document.documentElement.style.setProperty('--price-y', `${posPrice}px`);
             document.documentElement.style.setProperty('--name-scale', nameScale / 100);
+            document.documentElement.style.setProperty('--name-y', `${posName}px`);
             document.documentElement.style.setProperty('--img-scale', imgScale / 100);
 
             let styleString = '';
@@ -323,7 +404,18 @@
                 const cats = await localforage.getItem(CAT_KEY);
                 
                 if(data) allProducts = data.filter(p => p.situacao !== 'I');
-                if(cats) cats.forEach(c => { document.getElementById('cfg-cat').innerHTML += `<option value="${c.nome}">${c.nome}</option>`; });
+                if(cats) {
+                    const catContainer = document.getElementById('cfg-cat-container');
+                    catContainer.innerHTML = '';
+                    cats.forEach(c => {
+                        catContainer.innerHTML += `
+                            <label class="cat-item">
+                                <input type="checkbox" value="${c.nome}" class="cat-checkbox" onchange="buildScenes()"> 
+                                ${c.nome}
+                            </label>
+                        `;
+                    });
+                }
                 
                 buildScenes(); 
             } catch (e) { console.error(e); }
@@ -399,13 +491,17 @@
             container.innerHTML = '';
 
             const keywords = document.getElementById('cfg-keywords').value.toLowerCase().split(',').map(k => k.trim()).filter(k => k.length > 0);
-            const cat = document.getElementById('cfg-cat').value;
+            
+            // Lógica nova para múltiplas categorias
+            const checkboxes = document.querySelectorAll('.cat-checkbox:checked');
+            const selectedCats = Array.from(checkboxes).map(cb => cb.value);
+
             const layout = document.getElementById('cfg-layout').value;
 
             let filtered = allProducts.filter(p => {
                 const nomeProduto = (p.nome || "").toLowerCase();
                 const matchesName = keywords.length === 0 || keywords.some(kw => nomeProduto.includes(kw));
-                const matchesCat = cat === "" || p.categoria === cat;
+                const matchesCat = selectedCats.length === 0 || selectedCats.includes(p.categoria);
                 return matchesName && matchesCat;
             });
 
@@ -513,10 +609,8 @@
             }
 
             if (isManualMode) {
-                // Modo Manual: Mostra controles, não agenda tempo
                 document.getElementById('manual-controls').style.display = 'flex';
             } else {
-                // Modo Auto
                 scheduleNextScene();
             }
         }
@@ -566,7 +660,6 @@
             setTimeout(finishTransition, 1000); 
         }
 
-        // --- CONTROLES MODO MANUAL ---
         function manualChangeScene(direction) {
             if(scenesData.length <= 1) return;
             const layout = document.getElementById('cfg-layout').value;
@@ -583,14 +676,28 @@
         }
 
         async function downloadWebP() {
-            // Esconde UI extra antes de fotografar
             document.getElementById('manual-controls').style.display = 'none';
             document.getElementById('float-toggle').style.display = 'none';
             
             const container = document.getElementById('reels-container');
-            const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+            const rect = container.getBoundingClientRect();
+            const originalWidth = container.style.width;
+            const originalHeight = container.style.height;
             
-            // Lógica para comprimir abaixo de 50kb
+            container.style.width = rect.width + 'px';
+            container.style.height = rect.height + 'px';
+
+            const canvas = await html2canvas(container, { 
+                scale: 2, 
+                useCORS: true, 
+                backgroundColor: "#ffffff",
+                width: rect.width,
+                height: rect.height
+            });
+            
+            container.style.width = originalWidth;
+            container.style.height = originalHeight;
+            
             let quality = 0.9;
             let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
             
@@ -606,7 +713,6 @@
             a.click();
             URL.revokeObjectURL(url);
 
-            // Devolve a UI
             document.getElementById('manual-controls').style.display = 'flex';
             document.getElementById('float-toggle').style.display = 'flex';
         }
