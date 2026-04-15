@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Reels Studio PRO v13</title>
+    <title>Sucedoan Carrossel Studio PRO v15</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -26,7 +26,7 @@
         * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); overflow: hidden; }
 
-        /* --- ADMIN PANEL --- */
+        /* --- PAINEL DE ADMINISTRAÇÃO --- */
         #admin-panel { position: fixed; left: 0; top: 0; bottom: 0; width: 420px; background: white; border-right: 1px solid #e5e5e7; padding: 25px; z-index: 100; overflow-y: auto; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 10px 0 30px rgba(0,0,0,0.05); }
         #admin-panel.hidden { transform: translateX(-100%); }
         h1 { font-weight: 900; font-size: 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--accent); }
@@ -37,7 +37,6 @@
         input[type="text"], input[type="number"], select, input[type="file"] { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 12px; margin-bottom: 8px; outline: none; background: #fafafa; transition: 0.2s;}
         input:focus, select:focus { border-color: var(--accent); background: #fff; }
         
-        /* Estilo para a caixa de categorias múltiplas */
         .cat-container { max-height: 100px; overflow-y: auto; border: 1px solid #d2d2d7; border-radius: 8px; padding: 8px; background: #fafafa; margin-bottom: 8px; }
         .cat-item { display: flex; align-items: center; gap: 5px; font-size: 11px; margin-bottom: 4px; cursor: pointer; }
         .cat-item input { width: auto; margin: 0; }
@@ -47,30 +46,27 @@
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-primary:hover { transform: scale(0.98); }
-        .btn-record { background: #ff3b30; color: white; }
-        .btn-record:hover { background: #d32f2f; }
 
         input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0 15px 0; }
         input[type="range"]:focus { outline: none; }
         input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: #d2d2d7; border-radius: 4px; }
         input[type="range"]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; -webkit-appearance: none; margin-top: -6px; }
 
-        /* --- REELS VIEWPORT --- */
+        /* --- TELA PRINCIPAL (VIEWPORT) --- */
         #viewport { margin-left: 420px; height: 100vh; display: flex; align-items: center; justify-content: center; background: #000; transition: margin 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative;}
         #viewport.full { margin-left: 0; }
         
         #reels-container { background: #ffffff; position: relative; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.8); border-radius: 4px; display: flex; flex-direction: column; transition: all 0.3s ease; }
         
-        /* Classes dinâmicas para o formato do vídeo/carrossel */
-        .format-vertical { aspect-ratio: 9/16; height: 90vh; }
-        .format-square { aspect-ratio: 1/1; height: 80vh; }
+        /* Adaptação Perfeita e Proporcional para Quadrado e Vertical */
+        .format-vertical { height: 90vh; width: calc(90vh * 9 / 16); max-width: 95vw; }
+        .format-square { width: min(85vh, 90vw); height: min(85vh, 90vw); aspect-ratio: 1/1; }
 
         #scenes-wrapper { height: 92%; width: 100%; position: relative; }
 
         .scene { position: absolute; inset: 0; display: none; width: 100%; height: 100%; animation-fill-mode: forwards; }
         .scene.active { display: grid; }
 
-        /* GRELHAS */
         .grid-base { gap: 2px; background: #f0f0f0; } 
         .grid-1x1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
         .grid-1x2 { grid-template-columns: 1fr; grid-template-rows: repeat(2, 1fr); }
@@ -80,12 +76,7 @@
         .grid-3x5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(5, 1fr); }
 
         .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; position: relative; }
-        
-        .product-card img { 
-            width: 100%; object-fit: contain; margin-bottom: 5%; 
-            transform: scale(var(--img-scale)); position: relative; z-index: 1;
-        }
-        
+        .product-card img { width: 100%; object-fit: contain; margin-bottom: 5%; transform: scale(var(--img-scale)); position: relative; z-index: 1; }
         .product-card .price { font-weight: 900; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; transform: translateY(var(--price-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
         .product-card .name { color: var(--text-dim); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transform: translateY(var(--name-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8);}
 
@@ -96,17 +87,8 @@
         .grid-3x4 .product-card img { height: 45%; } .grid-3x4 .product-card .price { font-size: calc(clamp(12px, 2.2vh, 24px) * var(--price-scale)); } .grid-3x4 .product-card .name { font-size: calc(clamp(8px, 1.0vh, 14px) * var(--name-scale)); }
         .grid-3x5 .product-card img { height: 40%; } .grid-3x5 .product-card .price { font-size: calc(clamp(10px, 1.8vh, 20px) * var(--price-scale)); } .grid-3x5 .product-card .name { font-size: calc(clamp(7px, 0.9vh, 12px) * var(--name-scale)); }
 
-        /* --- RODAPÉ DO REEL --- */
-        #reels-footer {
-            height: 5%; width: 100%; margin-bottom: 3%;
-            background: transparent; 
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-sizing: border-box; z-index: 50; padding: 0 10px;
-        }
-        #reels-footer img {
-            height: var(--footer-logo-size); width: var(--footer-logo-size);
-            border-radius: 50%; object-fit: cover; flex-shrink: 0; display: none;
-        }
+        #reels-footer { height: 5%; width: 100%; margin-bottom: 3%; background: transparent; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; z-index: 50; padding: 0 10px; }
+        #reels-footer img { height: var(--footer-logo-size); width: var(--footer-logo-size); border-radius: 50%; object-fit: cover; flex-shrink: 0; display: none; }
         #reels-footer .text-container { display: flex; flex-direction: column; justify-content: center; }
         #reels-footer .line1 { font-size: var(--footer-l1-size); color: var(--footer-l1-color); font-weight: 900; line-height: 1.1; }
         #reels-footer .line2 { font-size: var(--footer-l2-size); color: var(--footer-l2-color); font-weight: 700; line-height: 1.1; }
@@ -116,48 +98,35 @@
         .spinner { border: 4px solid rgba(255,255,255,0.1); border-top: 4px solid white; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px;}
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        #rec-status { position: absolute; top: 20px; right: 20px; background: rgba(255,0,0,0.9); color: white; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 900; display: none; z-index: 1000; letter-spacing: 1px;}
-        #float-toggle { position: fixed; bottom: 30px; left: 30px; z-index: 1000; width: 50px; height: 50px; border-radius: 25px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.3); display: none; }
-        #viewport.full ~ #float-toggle { display: flex; align-items: center; justify-content: center; }
+        /* --- BOTÕES E COMANDOS OCULTOS --- */
+        #float-toggle { position: fixed; bottom: 30px; left: 30px; z-index: 1000; width: 50px; height: 50px; border-radius: 25px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.3); opacity: 0; pointer-events: none; transition: 0.3s ease; display: flex; align-items: center; justify-content: center; }
+        #manual-controls { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); gap: 10px; z-index: 2000; display: flex; opacity: 0; pointer-events: none; transition: 0.3s ease; }
+        
+        /* A classe 'show-ui' no body faz com que os botões apareçam */
+        body.show-ui #float-toggle, body.show-ui #manual-controls { opacity: 1; pointer-events: auto; }
 
-        /* Controles do Modo Manual */
-        #manual-controls { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); display: none; gap: 10px; z-index: 2000; }
         .mc-btn { background: rgba(0,0,0,0.8); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; font-family: inherit; display: flex; align-items: center; gap: 5px; transition: 0.2s;}
         .mc-btn:hover { background: var(--accent); transform: scale(1.05); }
 
-        /* =========================================
-           NOVAS E ANTIGAS ANIMAÇÕES
-           ========================================= */
         @keyframes simpleZoomIn { from { opacity: 0; transform: scale(0.90); } to { opacity: 1; transform: scale(1); } }
         @keyframes simpleZoomOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.10); } }
-        
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-
-        /* Morph (Transformação de Produto) */
         @keyframes morphIn { from { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(0.98); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } }
         @keyframes morphOut { from { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(1.02); } }
-
-        /* Slide Lateral */
         @keyframes slideIn { from { transform: translateX(100%); opacity: 1; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-100%); opacity: 1; } }
-
-        /* Crossfade (Sem fundo branco) */
         @keyframes crossfadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes staySolid { from { opacity: 1; } to { opacity: 1; } } /* O atual fica sólido no fundo */
+        @keyframes staySolid { from { opacity: 1; } to { opacity: 1; } }
 
         .anim-in-zoom { animation: simpleZoomIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; } 
         .anim-out-zoom { animation: simpleZoomOut 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        
         .anim-in-fade { animation: fadeIn 0.7s ease forwards; } 
         .anim-out-fade { animation: fadeOut 0.7s ease forwards; }
-
         .anim-in-morph { animation: morphIn 0.8s ease-in-out forwards; } 
         .anim-out-morph { animation: morphOut 0.8s ease-in-out forwards; }
-
         .anim-in-slide { animation: slideIn 0.6s ease forwards; } 
         .anim-out-slide { animation: slideOut 0.6s ease forwards; }
-
         .anim-in-crossfade { animation: crossfadeIn 0.8s ease forwards; } 
         .anim-out-crossfade { animation: staySolid 0.8s ease forwards; }
     </style>
@@ -165,51 +134,49 @@
 <body>
 
     <div id="admin-panel">
-        <h1><i data-lucide="video"></i> SUCEDOAN REELS</h1>
+        <h1><i data-lucide="image"></i> SUCEDOAN CARROSSEL</h1>
         
         <div class="section">
             <span class="label">1. Configurações Básicas</span>
             
             <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Formato de Tela</span>
             <select id="cfg-format" onchange="updateLayoutOptions()">
-                <option value="vertical" selected>Vertical (Reels 9:16)</option>
-                <option value="square">Quadrado (Carrossel 1:1)</option>
+                <option value="vertical">Vertical (Reels 9:16)</option>
+                <option value="square" selected>Quadrado (Carrossel 1:1)</option>
             </select>
 
             <input type="text" id="cfg-keywords" placeholder="Buscar (ex: sony, fone)" onchange="buildScenes()">
             
             <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Categorias (Múltipla Seleção)</span>
-            <div id="cfg-cat-container" class="cat-container">
-                </div>
+            <div id="cfg-cat-container" class="cat-container"></div>
 
             <div class="grid-2">
-                <select id="cfg-layout" onchange="buildScenes()">
-                    </select>
+                <select id="cfg-layout" onchange="buildScenes()"></select>
                 <select id="cfg-trans-type">
                     <option value="zoom" selected>Zoom Limpo</option>
                     <option value="fade">Fade Limpo</option>
                     <option value="morph">Transformação (Morph)</option>
                     <option value="slide">Slide Lateral</option>
-                    <option value="crossfade">Fade Suave (Sem Fundo Branco)</option>
+                    <option value="crossfade">Fade Suave</option>
                 </select>
             </div>
             
             <div class="grid-2" style="margin-top: 10px;">
                 <div>
-                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Velocidade (s)</span>
+                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Velocidade Prévia (s)</span>
                     <input type="number" id="cfg-speed" value="1.5" step="0.5" min="0.5">
                 </div>
                 <div>
-                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Duração Total (s)</span>
+                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Duração Prévia (s)</span>
                     <input type="number" id="cfg-duration" value="15" step="1" min="1">
                 </div>
             </div>
 
             <div style="margin-top: 10px;">
-                <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Modo de Reprodução</span>
+                <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Modo de Uso</span>
                 <select id="cfg-play-mode">
-                    <option value="auto" selected>Automático (Vídeo Reels)</option>
-                    <option value="manual">Manual (Salvar Imagens)</option>
+                    <option value="manual" selected>Manual (Salvar Imagens WebP)</option>
+                    <option value="auto">Automático (Apenas Visualização)</option>
                 </select>
             </div>
             
@@ -286,13 +253,12 @@
         </div>
 
         <div class="section" style="border:none;">
-            <button class="btn btn-primary" onclick="initiatePlayback(false)"><i data-lucide="play-circle"></i> ABRIR ECRÃ DE CRIAÇÃO</button>
-            <button id="btn-start-record" class="btn btn-record" onclick="initiatePlayback(true)"><i data-lucide="video-recording"></i> GRAVAR REELS (Auto)</button>
+            <button class="btn btn-primary" onclick="initiatePlayback()"><i data-lucide="play-circle"></i> ABRIR ECRÃ DE CRIAÇÃO</button>
         </div>
     </div>
 
     <div id="viewport">
-        <div id="reels-container" class="format-vertical">
+        <div id="reels-container" class="format-square">
             <div id="white-start-screen"></div>
             <div id="scenes-wrapper"></div>
             <div id="reels-footer">
@@ -302,14 +268,13 @@
                     <div id="view-footer-l2" class="line2"></div>
                 </div>
             </div>
-            
-            <div id="rec-status">🔴 GRAVANDO</div>
             <div id="loader-overlay"><div class="spinner"></div><div style="font-size: 14px; font-weight: bold; letter-spacing: 1px;">A PREPARAR MAGIA...</div></div>
         </div>
 
         <div id="manual-controls">
             <button class="mc-btn" onclick="manualChangeScene(-1)"><i data-lucide="chevron-left"></i></button>
-            <button class="mc-btn" style="background:#007AFF;" onclick="downloadWebP()"><i data-lucide="download"></i> Download WebP (< 50kb)</button>
+            <button class="mc-btn" style="background:#007AFF;" onclick="downloadWebP()"><i data-lucide="download"></i> Baixar Atual</button>
+            <button class="mc-btn" style="background:#34C759;" onclick="downloadAllWebP()"><i data-lucide="layers"></i> Baixar Todas</button>
             <button class="mc-btn" onclick="manualChangeScene(1)"><i data-lucide="chevron-right"></i></button>
         </div>
     </div>
@@ -328,8 +293,6 @@
         let slideTimer = null;
         let isPlaying = false;
         let totalElapsedMs = 0;
-        let mediaRecorder;
-        let recordedChunks = [];
         let isManualMode = false;
         let footerData = { logo: '', l1Text: '', l1Color: '#000000', l1Size: '1.2', l2Text: '', l2Color: '#86868b', l2Size: '1.0', logoSize: '3' };
 
@@ -337,11 +300,20 @@
 
         window.onload = async () => {
             lucide.createIcons();
-            updateLayoutOptions(); // Inicializa o layout padrão
+            updateLayoutOptions(); 
+            setupViewportClick(); // Ativa a lógica de mostrar/esconder botões
             await loadData();
             loadFooterConfig();
             updateDynamicStyles();
         };
+
+        // Mostrar e Esconder Comandos com 1 clique no viewport
+        function setupViewportClick() {
+            document.getElementById('viewport').addEventListener('click', (e) => {
+                if (e.target.closest('.mc-btn') || e.target.closest('#float-toggle')) return;
+                if (isPlaying) { document.body.classList.toggle('show-ui'); }
+            });
+        }
 
         function updateLayoutOptions() {
             const format = document.getElementById('cfg-format').value;
@@ -352,21 +324,10 @@
             
             if (format === 'square') {
                 container.className = 'format-square';
-                layoutSelect.innerHTML = `
-                    <option value="1x1">1x1 (Tela Cheia)</option>
-                    <option value="1x2">1x2 (Vertical)</option>
-                    <option value="2x2" selected>2x2 (4 Prods)</option>
-                `;
+                layoutSelect.innerHTML = `<option value="1x1">1x1 (Tela Cheia)</option><option value="1x2">1x2 (Vertical)</option><option value="2x2" selected>2x2 (4 Prods)</option>`;
             } else {
                 container.className = 'format-vertical';
-                layoutSelect.innerHTML = `
-                    <option value="1x1">1x1 (Tela Cheia)</option>
-                    <option value="1x2">1x2 (Vertical)</option>
-                    <option value="2x2">2x2 (4 Prods)</option>
-                    <option value="2x3" selected>2x3 (6 Prods)</option>
-                    <option value="3x4">3x4 (12 Prods)</option>
-                    <option value="3x5">3x5 (15 Prods)</option>
-                `;
+                layoutSelect.innerHTML = `<option value="1x1">1x1 (Tela Cheia)</option><option value="1x2">1x2 (Vertical)</option><option value="2x2">2x2 (4 Prods)</option><option value="2x3" selected>2x3 (6 Prods)</option><option value="3x4">3x4 (12 Prods)</option><option value="3x5">3x5 (15 Prods)</option>`;
             }
             buildScenes();
         }
@@ -408,20 +369,13 @@
                     const catContainer = document.getElementById('cfg-cat-container');
                     catContainer.innerHTML = '';
                     cats.forEach(c => {
-                        catContainer.innerHTML += `
-                            <label class="cat-item">
-                                <input type="checkbox" value="${c.nome}" class="cat-checkbox" onchange="buildScenes()"> 
-                                ${c.nome}
-                            </label>
-                        `;
+                        catContainer.innerHTML += `<label class="cat-item"><input type="checkbox" value="${c.nome}" class="cat-checkbox" onchange="buildScenes()"> ${c.nome}</label>`;
                     });
                 }
-                
                 buildScenes(); 
             } catch (e) { console.error(e); }
         }
 
-        /* --- LOGICA DO RODAPÉ --- */
         function loadFooterConfig() {
             const saved = localStorage.getItem(FOOTER_KEY);
             if(saved) {
@@ -429,11 +383,9 @@
                 document.getElementById('cfg-footer-l1-text').value = footerData.l1Text || '';
                 document.getElementById('cfg-footer-l1-color').value = footerData.l1Color || '#000000';
                 document.getElementById('cfg-footer-l1-size').value = footerData.l1Size || '1.2';
-                
                 document.getElementById('cfg-footer-l2-text').value = footerData.l2Text || '';
                 document.getElementById('cfg-footer-l2-color').value = footerData.l2Color || '#86868b';
                 document.getElementById('cfg-footer-l2-size').value = footerData.l2Size || '1.0';
-                
                 document.getElementById('cfg-footer-logo-size').value = footerData.logoSize || '3';
             }
             updateFooterVisuals();
@@ -465,22 +417,14 @@
             document.getElementById('view-footer-l2').innerText = footerData.l2Text;
             
             const logoEl = document.getElementById('view-footer-logo');
-            if(footerData.logo && footerData.logo.length > 10) {
-                logoEl.src = footerData.logo;
-                logoEl.style.display = 'block';
-            } else {
-                logoEl.style.display = 'none';
-            }
+            if(footerData.logo && footerData.logo.length > 10) { logoEl.src = footerData.logo; logoEl.style.display = 'block'; } else { logoEl.style.display = 'none'; }
         }
 
         function handleLogoUpload(e) {
             const file = e.target.files[0];
             if(!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => {
-                footerData.logo = ev.target.result; 
-                updateFooterVisuals();
-            }
+            reader.onload = (ev) => { footerData.logo = ev.target.result; updateFooterVisuals(); }
             reader.readAsDataURL(file);
         }
 
@@ -491,11 +435,8 @@
             container.innerHTML = '';
 
             const keywords = document.getElementById('cfg-keywords').value.toLowerCase().split(',').map(k => k.trim()).filter(k => k.length > 0);
-            
-            // Lógica nova para múltiplas categorias
             const checkboxes = document.querySelectorAll('.cat-checkbox:checked');
             const selectedCats = Array.from(checkboxes).map(cb => cb.value);
-
             const layout = document.getElementById('cfg-layout').value;
 
             let filtered = allProducts.filter(p => {
@@ -508,12 +449,9 @@
             if (filtered.length === 0) return;
 
             let slotsPerSlide = 6;
-            if (layout === '1x1') slotsPerSlide = 1;
-            if (layout === '1x2') slotsPerSlide = 2;
-            if (layout === '2x2') slotsPerSlide = 4;
-            if (layout === '2x3') slotsPerSlide = 6;
-            if (layout === '3x4') slotsPerSlide = 12;
-            if (layout === '3x5') slotsPerSlide = 15;
+            if (layout === '1x1') slotsPerSlide = 1; if (layout === '1x2') slotsPerSlide = 2;
+            if (layout === '2x2') slotsPerSlide = 4; if (layout === '2x3') slotsPerSlide = 6;
+            if (layout === '3x4') slotsPerSlide = 12; if (layout === '3x5') slotsPerSlide = 15;
 
             let displayList = filtered;
 
@@ -528,9 +466,7 @@
                 });
                 
                 const vazios = slotsPerSlide - batch.length;
-                for(let j=0; j<vazios; j++) {
-                    gridHtml += `<div class="product-card" style="background:#f9f9f9;"></div>`;
-                }
+                for(let j=0; j<vazios; j++) { gridHtml += `<div class="product-card" style="background:#f9f9f9;"></div>`; }
                 
                 gridHtml += `</div>`;
                 scenesData.push(gridHtml);
@@ -548,37 +484,21 @@
         async function preloadAllImages() {
             const overlay = document.getElementById('loader-overlay');
             overlay.style.display = 'flex';
-            
             const promises = imageUrlsToPreload.map(url => {
                 return new Promise((resolve) => {
-                    const img = new Image();
-                    img.onload = resolve;
-                    img.onerror = resolve; 
-                    img.src = url;
+                    const img = new Image(); img.onload = resolve; img.onerror = resolve; img.src = url;
                 });
             });
-
             await Promise.all(promises);
             overlay.style.display = 'none';
         }
 
-        async function initiatePlayback(withRecording) {
+        async function initiatePlayback() {
             buildScenes(); 
             if (scenesData.length === 0) return alert("Nenhum produto encontrado.");
 
             isManualMode = document.getElementById('cfg-play-mode').value === 'manual';
-
-            if (isManualMode && withRecording) {
-                alert("Não é possível gravar vídeo no Modo Manual. Altere o modo para Automático.");
-                return;
-            }
-
             await preloadAllImages();
-
-            if (withRecording && !isManualMode) {
-                const success = await setupRecording();
-                if(!success) return; 
-            }
 
             document.getElementById('admin-panel').classList.add('hidden');
             document.getElementById('viewport').classList.add('full');
@@ -593,24 +513,19 @@
         }
 
         function startSlideshow() {
-            isPlaying = true;
-            totalElapsedMs = 0;
+            isPlaying = true; totalElapsedMs = 0;
             const layout = document.getElementById('cfg-layout').value;
             
-            document.querySelectorAll('.scene').forEach(s => {
-                s.className = `scene grid-base grid-${layout}`; 
-            });
-            
+            document.querySelectorAll('.scene').forEach(s => { s.className = `scene grid-base grid-${layout}`; });
             currentSceneIndex = 0;
             document.getElementById(`scene-0`).classList.add('active');
             
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                document.getElementById('rec-status').style.display = 'flex';
-            }
-
             if (isManualMode) {
                 document.getElementById('manual-controls').style.display = 'flex';
+                document.body.classList.add('show-ui'); // Mostra os comandos logo no início do modo manual
             } else {
+                document.getElementById('manual-controls').style.display = 'none';
+                document.body.classList.remove('show-ui'); // Esconde no modo de apresentação
                 scheduleNextScene();
             }
         }
@@ -622,11 +537,8 @@
             
             slideTimer = setTimeout(() => {
                 totalElapsedMs += speedMs;
-                if(totalElapsedMs >= durationMaxMs) {
-                    triggerClosingSequence();
-                } else {
-                    transitionToNext();
-                }
+                if(totalElapsedMs >= durationMaxMs) { triggerClosingSequence(); } 
+                else { transitionToNext(); }
             }, speedMs);
         }
 
@@ -642,8 +554,7 @@
 
             currentEl.style.zIndex = "1"; nextEl.style.zIndex = "2";
             nextEl.className = `scene grid-base grid-${layout} active`;
-            currentEl.classList.add(`anim-out-${transType}`);
-            nextEl.classList.add(`anim-in-${transType}`);
+            currentEl.classList.add(`anim-out-${transType}`); nextEl.classList.add(`anim-in-${transType}`);
             
             let animEnded = false;
             const finishTransition = () => {
@@ -670,33 +581,26 @@
             if(currentSceneIndex < 0) currentSceneIndex = scenesData.length - 1;
             
             const nextEl = document.getElementById(`scene-${currentSceneIndex}`);
-            
             currentEl.classList.remove('active');
             nextEl.className = `scene grid-base grid-${layout} active`;
         }
 
-        async function downloadWebP() {
-            document.getElementById('manual-controls').style.display = 'none';
-            document.getElementById('float-toggle').style.display = 'none';
+        // Gera e faz download da imagem com escala exata e limite de 50kb
+        async function downloadWebP(index = currentSceneIndex, isBatch = false) {
+            if(!isBatch) document.body.classList.remove('show-ui'); // Oculta botões para a foto
             
             const container = document.getElementById('reels-container');
             const rect = container.getBoundingClientRect();
-            const originalWidth = container.style.width;
-            const originalHeight = container.style.height;
             
-            container.style.width = rect.width + 'px';
-            container.style.height = rect.height + 'px';
+            // Lógica para garantir que o lado menor tenha no mínimo 1200px
+            const smallerSide = Math.min(rect.width, rect.height);
+            const captureScale = 1200 / smallerSide;
 
             const canvas = await html2canvas(container, { 
-                scale: 2, 
+                scale: captureScale, 
                 useCORS: true, 
-                backgroundColor: "#ffffff",
-                width: rect.width,
-                height: rect.height
+                backgroundColor: "#ffffff"
             });
-            
-            container.style.width = originalWidth;
-            container.style.height = originalHeight;
             
             let quality = 0.9;
             let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/webp', quality));
@@ -709,61 +613,60 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Carrossel_${currentSceneIndex + 1}.webp`;
+            a.download = `Carrossel_${index + 1}.webp`;
             a.click();
             URL.revokeObjectURL(url);
 
-            document.getElementById('manual-controls').style.display = 'flex';
-            document.getElementById('float-toggle').style.display = 'flex';
+            if(!isBatch) document.body.classList.add('show-ui'); // Devolve os botões
+        }
+
+        // Faz o loop por todos os slides e transfere automaticamente a cada 5 segundos
+        async function downloadAllWebP() {
+            if(!confirm(`Isto irá transferir os ${scenesData.length} slides como imagens. Processo automático (1 a cada 5 segs). Deseja continuar?`)) return;
+            
+            document.body.classList.remove('show-ui'); // Esconde UI durante o processo inteiro
+            
+            for(let i = 0; i < scenesData.length; i++) {
+                const layout = document.getElementById('cfg-layout').value;
+                document.getElementById(`scene-${currentSceneIndex}`).classList.remove('active');
+                currentSceneIndex = i;
+                document.getElementById(`scene-${currentSceneIndex}`).className = `scene grid-base grid-${layout} active`;
+                
+                // Dá um tempo curto (0.5s) para garantir que as fontes/imagens carregam visivelmente
+                await new Promise(r => setTimeout(r, 500));
+                
+                const startTime = Date.now();
+                await downloadWebP(i, true); // Transfere a imagem atual sem piscar a UI
+                
+                const elapsed = Date.now() - startTime;
+                
+                // Calcula quanto tempo falta para chegar exatos 5 segundos
+                const timeToWait = Math.max(0, 5000 - elapsed - 500);
+                
+                if (i < scenesData.length - 1) {
+                    await new Promise(r => setTimeout(r, timeToWait));
+                }
+            }
+            
+            document.body.classList.add('show-ui');
+            alert("Transferências concluídas com sucesso!");
         }
 
         function triggerClosingSequence() {
             const currentEl = document.getElementById(`scene-${currentSceneIndex}`);
-            if(currentEl) {
-                currentEl.style.transition = 'opacity 0.5s ease';
-                currentEl.style.opacity = '0';
-            }
+            if(currentEl) { currentEl.style.transition = 'opacity 0.5s ease'; currentEl.style.opacity = '0'; }
             setTimeout(stopAndExitFullscreen, 500);
         }
 
         function stopAndExitFullscreen() {
-            isPlaying = false;
-            isManualMode = false;
+            isPlaying = false; isManualMode = false;
             if(slideTimer) clearTimeout(slideTimer);
             
             document.getElementById('admin-panel').classList.remove('hidden');
             document.getElementById('viewport').classList.remove('full');
-            document.getElementById('rec-status').style.display = 'none';
-            document.getElementById('manual-controls').style.display = 'none';
+            document.body.classList.remove('show-ui');
             
-            if(document.getElementById(`scene-${currentSceneIndex}`)) {
-                document.getElementById(`scene-${currentSceneIndex}`).style.opacity = '1';
-            }
-
-            if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); }
-        }
-
-        async function setupRecording() {
-            try {
-                const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 } }, audio: false });
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8' }); 
-                
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-                mediaRecorder.onstop = () => {
-                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                    const a = document.createElement('a');
-                    a.href = URL.createObjectURL(blob);
-                    a.download = `Reels_Produtos_${Date.now()}.webm`;
-                    a.click();
-                    recordedChunks = [];
-                    document.getElementById('rec-status').style.display = 'none';
-                };
-                mediaRecorder.start();
-                return true;
-            } catch (err) {
-                console.warn("Gravação cancelada:", err.message);
-                return false;
-            }
+            if(document.getElementById(`scene-${currentSceneIndex}`)) { document.getElementById(`scene-${currentSceneIndex}`).style.opacity = '1'; }
         }
     </script>
 </body>
