@@ -1412,8 +1412,8 @@ async function init() {
 
                 return {
     id: String(codigoOuId), 
-blingId: String(p.id),
-                  name: String(p.nome),
+    blingId: String(p.id), // <-- Deixe como String para o Make não dar erro de limite numérico
+    name: String(p.nome),
                     price: precoBase,
                     oldPrice: precoBase,
                     stock: parseInt(p.estoque) || 0, 
@@ -2433,7 +2433,7 @@ async function sendOrder() {
     
     let idsForMeta = []; // Variável para o Pixel
 
-Object.entries(STATE.cart).forEach(([id, q]) => { const p = STATE.prods.find(x => x.id === id); if (p) { let unitPrice = p.price; totalBruto += unitPrice * q; let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: p.id, nome: p.name, qtd: q, price: unitPrice}); idsForMeta.push(id); } });
+Object.entries(STATE.cart).forEach(([id, q]) => { const p = STATE.prods.find(x => x.id === id); if (p) { let unitPrice = p.price; totalBruto += unitPrice * q; let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice}); idsForMeta.push(id); } });
   
     let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.deliveryDiscount - STATE.atacadoDiscount;
     
