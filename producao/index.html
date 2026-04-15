@@ -2375,49 +2375,42 @@ function sanitizeProductsForExport(prods) {
                 "link", "image_link", "brand", "gtin"
             ];
 
-            const dadosParaExportar = produtosExportar.map(p => {
-                const linha = {};
-                
-                const formatarTextoMeta = (texto) => {
-                    if (!texto) return "";
-                    let minusculo = texto.toLowerCase().trim();
-                    return minusculo.charAt(0).toUpperCase() + minusculo.slice(1);
-                };
+          const dadosParaExportar = products.map(p => {
+            const linha = {};
+            
+            // Mapeamento EXATO para as colunas do Bling
+            linha['ID'] = p.id || "";
+            linha['Código'] = p.codigo || "";
+            linha['Descrição'] = p.nome || "";
+            linha['Unidade'] = "UN";
+            linha['NCM'] = p.ncm || "";
+            linha['Origem'] = "0";
+            linha['Preço'] = p.preco || 0;
+            linha['Situação'] = p.situacao === 'I' ? 'Inativo' : 'Ativo';
+            linha['Estoque'] = p.estoque || 0;
+            linha['Preço de custo'] = p.preco_custo || 0;
+            linha['Localização'] = p.localizacao || "";
+            linha['GTIN/EAN'] = p.gtin || "";
+            linha['Data Validade'] = p.validade || "";
+            linha['Categoria do produto'] = p.categoria || "";
+            linha['Marca'] = p.marca || "";
 
-                linha['id'] = p.id || p.codigo || "";
-                linha['title'] = formatarTextoMeta(p.nome).substring(0, 60); 
-                linha['description'] = formatarTextoMeta(p.nome || "Produto de alta qualidade").substring(0, 5000);
-                linha['availability'] = (parseFloat(p.estoque) > 0) ? 'in stock' : 'out of stock';
-                linha['condition'] = 'new'; 
-                
-                let precoFmt = parseFloat(p.preco || 0).toFixed(2);
-                linha['price'] = `${precoFmt} BRL`;
-                
-                let slug = limparTextoParaURL(p.nome);
-                let codigo = p.codigo || '';
-                linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
-                
-                let codigoOuId = p.codigo || p.id || "";
-                let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
-
-                if (img.startsWith("../site/")) {
-                    img = img.replace("../site/", "https://donaantonia.com.br/site/");
-                } else if (img.startsWith("/site/")) {
-                    img = "https://donaantonia.com.br" + img;
-                } else if (!img.startsWith("http")) {
-                    img = `https://donaantonia.com.br/site/img/produtos/${img}`;
-                }
-
-                if (img.includes("?")) img = img.split("?")[0];
-                linha['image_link'] = encodeURI(img);
-
-                // IMPORTANTE: Agora usa a Marca do produto, se vazio mantém um fallback padrão
-                linha['brand'] = p.marca || "Dona Antonia"; 
-                
-                linha['gtin'] = (p.gtin || "").toString().replace(/\s/g, "").trim();
-                
-                return linha;
-            });
+            // Formatação correta da imagem para a coluna do Bling
+            let codigoOuId = p.codigo || p.id || "";
+            let img = p.url_imagem || `../site/img/produtos/${codigoOuId}.webp`;
+            if (img.startsWith("../site/")) {
+                img = img.replace("../site/", "https://donaantonia.com.br/site/");
+            } else if (img.startsWith("/site/")) {
+                img = "https://donaantonia.com.br" + img;
+            } else if (!img.startsWith("http")) {
+                img = `https://donaantonia.com.br/site/img/produtos/${img}`;
+            }
+            if (img.includes("?")) img = img.split("?")[0];
+            
+            linha['URL Imagens Externas'] = img;
+            
+            return linha;
+        });
 
             // GERAÇÃO E DOWNLOAD DO ARQUIVO NOMEADO COM A SELEÇÃO
             const prefixoNome = valorFiltro.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
