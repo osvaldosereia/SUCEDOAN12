@@ -2435,6 +2435,7 @@ async function sendOrder() {
     
     let idsForMeta = []; // Variável para o Pixel
 
+// Localize este trecho dentro de sendOrder() e substitua:
 Object.entries(STATE.cart).forEach(([cartId, q]) => { 
     const p = STATE.prods.find(x => x.id === cartId); 
     if (p) { 
@@ -2443,11 +2444,13 @@ Object.entries(STATE.cart).forEach(([cartId, q]) => {
         let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; 
         itemsTxt += `${q}x ${p.name}${priceInfo}\n`; 
         
-        // Prioriza o ID real do Bling. Se falhar (por ex: produto manual), usa o cartId.
-        let idSeguro = p.blingId || cartId;
+        // --- CORREÇÃO AQUI ---
+        // Se o blingId existir (vindo do PIM), usamos ele. Caso contrário, usamos o id.
+        // O Bling v3 precisa do ID numérico interno para não dar erro de vínculo.
+        let idParaBling = p.blingId && p.blingId !== "" ? p.blingId : p.id;
 
         apiItens.push({
-            id: String(idSeguro), 
+            id: String(idParaBling), 
             nome: p.name, 
             qtd: q, 
             price: unitPrice
