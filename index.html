@@ -496,6 +496,8 @@ dialog::backdrop { background: rgba(15,23,42,0.4); backdrop-filter: blur(2px); }
 
   <!-- Meta Pixel Code -->
 <script>
+localStorage.removeItem('cache_prods'); localStorage.removeItem('donaAntoniaSavedCart');
+  
 !function(f,b,e,v,n,t,s)
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
@@ -1411,9 +1413,9 @@ async function init() {
                 ['link_video','link_video_2','link_video_3','link_video_4','link_video_5'].forEach(k => { if(p[k]) vids.push(p[k]); });
 
               return {
-    id: p.codigo ? String(p.codigo) : String(p.id), // ID primário do site (SKU ou ID)
-    blingId: String(p.id), // Força a salvar o ID do Bling como Texto puro
-    name: String(p.nome),
+                    id: String(codigoOuId), 
+                    blingId: p.id ? String(p.id) : "", // Se não tiver ID no JSON, fica em branco em vez de "undefined"
+                    name: String(p.nome),
                     price: precoBase,
                     oldPrice: precoBase,
                     stock: parseInt(p.estoque) || 0, 
@@ -2441,13 +2443,8 @@ Object.entries(STATE.cart).forEach(([cartId, q]) => {
         let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; 
         itemsTxt += `${q}x ${p.name}${priceInfo}\n`; 
         
-        // VALIDAÇÃO BLINDADA: Tenta o blingId, se falhar tenta o cartId.
-        let idSeguro = p.blingId || p.id || cartId;
-        
-        // Se por qualquer falha de cache vier a palavra "undefined", avise no log do Make
-        if (idSeguro === "undefined" || idSeguro === "NaN") {
-            idSeguro = "ERRO_DE_CACHE_" + cartId;
-        }
+        // Prioriza o ID real do Bling. Se falhar (por ex: produto manual), usa o cartId.
+        let idSeguro = p.blingId || cartId;
 
         apiItens.push({
             id: String(idSeguro), 
