@@ -2253,7 +2253,15 @@ function updateTotals() {
     let sum = 0;
     let atacadoDiscount = 0;
     
-    Object.entries(STATE.cart).forEach(([id, q]) => { const p = STATE.prods.find(x => x.id === id); if (p) { let unitPrice = p.price; totalBruto += unitPrice * q; let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: Number(p.blingId), nome: p.name, qtd: q, price: unitPrice}); idsForMeta.push(id); } });
+    Object.entries(STATE.cart).forEach(([id, q]) => { 
+        let p = STATE.prods.find(x => x.id === id); 
+        if (p) { 
+            sum += p.price * q; 
+            if (q >= 3) {
+                atacadoDiscount += (p.price * 0.10) * q; 
+            }
+        }
+    });
     STATE.atacadoDiscount = atacadoDiscount;
 
     let subtotal = sum + STATE.basketExtraFee; 
