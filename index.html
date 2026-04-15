@@ -2431,38 +2431,47 @@ async function sendOrder() {
 
     btnSubmit.disabled = true; btnSubmit.innerHTML = "⏳ ENVIANDO...";
 
-    const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0;
-    
-    let idsForMeta = []; // Variável para o Pixel
+  const orderId = String(Date.now()).slice(-6); 
+    let itemsTxt = ""; 
+    let apiItens = []; 
+    let itensParaNuvem = []; // ARRAY NOVO: Para o JSON de Pedidos do Make
+    let totalBruto = 0;
+    let idsForMeta = [];
 
-// Localize este trecho dentro de sendOrder() e substitua:
-Object.entries(STATE.cart).forEach(([cartId, q]) => { 
-    const p = STATE.prods.find(x => x.id === cartId); 
-    if (p) { 
-        let unitPrice = p.price; 
-        totalBruto += unitPrice * q; 
-        let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; 
-        itemsTxt += `${q}x ${p.name}${priceInfo}\n`; 
-        
-        // --- CORREÇÃO AQUI ---
-        // Se o blingId existir (vindo do PIM), usamos ele. Caso contrário, usamos o id.
-        // O Bling v3 precisa do ID numérico interno para não dar erro de vínculo.
-        let idParaBling = p.blingId && p.blingId !== "" ? p.blingId : p.id;
+    Object.entries(STATE.cart).forEach(([cartId, q]) => { 
+        const p = STATE.prods.find(x => x.id === cartId); 
+        if (p) { 
+            let unitPrice = p.price; 
+            totalBruto += unitPrice * q; 
+            let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; 
+            itemsTxt += `${q}x ${p.name}${priceInfo}\n`; 
+            
+            // DADOS PARA O BLING
+            let idParaBling = p.blingId && p.blingId !== "" ? p.blingId : p.id;
+            apiItens.push({
+                id: String(idParaBling), 
+                nome: p.name, 
+                qtd: q, 
+                price: unitPrice
+            });
+            
+            // DADOS PARA A NUVEM (SISTEMA DE PICKING)
+            let codigoOuId = p.codigo || p.id || "";
+            let imgCaminho = p.img || `../site/img/produtos/${codigoOuId}.webp`;
+            itensParaNuvem.push({
+                qtd: q,
+                nomeOriginal: p.name,
+                sku: p.codigo || p.id,
+                precoUnitario: unitPrice,
+                imagem: imgCaminho
+            });
 
-        apiItens.push({
-            id: String(idParaBling), // AGORA SIM! Ele vai enviar o ID numérico do Bling
-            nome: p.name, 
-            qtd: q, 
-            price: unitPrice
-        });
-        
-        idsForMeta.push(cartId); 
-    } 
-});
-  
+            idsForMeta.push(cartId); 
+        } 
+    });
+      
     let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.deliveryDiscount - STATE.atacadoDiscount;
     
-    // --- META PIXEL: PURCHASE ---
     if (typeof fbq === 'function') {
         fbq('track', 'Purchase', {
             content_ids: idsForMeta,
@@ -2472,8 +2481,10 @@ Object.entries(STATE.cart).forEach(([cartId, q]) => {
         });
     }
 
-    let outras_despesas = STATE.basketExtraFee || 0; let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.atacadoDiscount;
-    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; let tipoCestaTexto = "Cestas Personalizada"; 
+    let outras_despesas = STATE.basketExtraFee || 0; 
+    let totalDescontos = STATE.comboDiscount + STATE.deliveryDiscount + STATE.atacadoDiscount;
+    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
+    let tipoCestaTexto = "Cestas Personalizada"; 
     
     if (STATE.baseBasket) {
         obs += ` | Cesta Base: ${STATE.baseBasket.nome}`; let orig = {}; 
@@ -2494,11 +2505,29 @@ Object.entries(STATE.cart).forEach(([cartId, q]) => {
     const orderData = { id: orderId, date: new Date().toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric'}), total: final, basketName: STATE.baseBasket ? STATE.baseBasket.nome : 'Itens Avulsos/Kits', items: Object.entries(STATE.cart).map(([id, qty]) => ({ id, qty })), baseBasketId: STATE.baseBasket ? STATE.baseBasket.id : null, basketQty: 1 };
     let history = JSON.parse(localStorage.getItem('donaAntoniaOrders') || '[]'); history.unshift(orderData); if(history.length > 20) history.pop(); localStorage.setItem('donaAntoniaOrders', JSON.stringify(history));
 
-  try {
-        const payload = { cliente: { nome: nomeCliente, cpf: cpfCliente, pagamento: formaPagamento }, pedido: { itens: apiItens, total: Number(final) || 0, outras_despesas: Number(outras_despesas) || 0, desconto: Number(totalDescontos) || 0, observacoes: obs || "" } };
+    try {
+        const dataHoraAtual = new Date().toLocaleString('pt-BR');
+        
+        const registroPedidoJson = {
+            id: Date.now(),
+            status: "PENDENTE",
+            orderNumMatch: [`*PEDIDO #${orderId}*`, `#${orderId}`],
+            orderNum: `#${orderId}`,
+            cliente: nomeCliente,
+            entrega: STATE.deliveryDateStr,
+            dataHora: dataHoraAtual,
+            valorTotal: final.toFixed(2),
+            itens: itensParaNuvem
+        };
+
+        const payload = { 
+            cliente: { nome: nomeCliente, cpf: cpfCliente, pagamento: formaPagamento }, 
+            pedido: { itens: apiItens, total: Number(final) || 0, outras_despesas: Number(outras_despesas) || 0, desconto: Number(totalDescontos) || 0, observacoes: obs || "" },
+            registroNuvem: registroPedidoJson
+        };
         await fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) });
     } catch(e) { console.error("Erro na rede:", e); }
-    
+  
     setTimeout(() => { window.location.href = `https://wa.me/5565998150975?text=${encodeURIComponent(msg)}`; setTimeout(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = `ENVIAR PEDIDO`; }, 3000); }, 400);
 }
 
