@@ -2049,9 +2049,10 @@ function sanitizeProductsForExport(prods) {
 
                         let produtoFinal = {};
 
-                        if (produtoExistente) {
+                       if (produtoExistente) {
                             produtoFinal = { ...produtoExistente }; 
-                            produtoFinal.id = produtoExistente.id || d['ID'] || timestamp + atualizados;
+                            // CORREÇÃO: O ID do Bling (d['ID']) agora tem prioridade absoluta!
+                            produtoFinal.id = d['ID'] || produtoExistente.id || timestamp + atualizados;
                             atualizados++;
                         } else {
                             produtoFinal = { id: d['ID'] || timestamp + novos, tags: [] };
