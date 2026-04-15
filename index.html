@@ -1410,9 +1410,9 @@ async function init() {
                 let vids = [];
                 ['link_video','link_video_2','link_video_3','link_video_4','link_video_5'].forEach(k => { if(p[k]) vids.push(p[k]); });
 
-                return {
-    id: String(codigoOuId), 
-    blingId: String(p.id), // <-- Deixe como String para o Make não dar erro de limite numérico
+              return {
+    id: p.codigo ? String(p.codigo) : String(p.id), // ID primário do site (SKU ou ID)
+    blingId: String(p.id), // Força a salvar o ID do Bling como Texto puro
     name: String(p.nome),
                     price: precoBase,
                     oldPrice: precoBase,
@@ -2441,11 +2441,16 @@ Object.entries(STATE.cart).forEach(([cartId, q]) => {
         let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; 
         itemsTxt += `${q}x ${p.name}${priceInfo}\n`; 
         
-        // Camada de segurança (Fallback): Pega o BlingID, se não tiver, pega o ID do carrinho, e força a virar Texto
-        let idSeguro = String(p.blingId || p.id || cartId);
+        // VALIDAÇÃO BLINDADA: Tenta o blingId, se falhar tenta o cartId.
+        let idSeguro = p.blingId || p.id || cartId;
         
+        // Se por qualquer falha de cache vier a palavra "undefined", avise no log do Make
+        if (idSeguro === "undefined" || idSeguro === "NaN") {
+            idSeguro = "ERRO_DE_CACHE_" + cartId;
+        }
+
         apiItens.push({
-            id: idSeguro, 
+            id: String(idSeguro), 
             nome: p.name, 
             qtd: q, 
             price: unitPrice
