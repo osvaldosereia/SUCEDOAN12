@@ -799,7 +799,10 @@
  */
 function sanitizeProductsForExport(prods) {
     const camposPermitidos = [
-        'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
+        'id', // <-- Mantenha este como o primeiro da lista
+        'codigo', 
+        'nome',
+        'gtin', 'preco', 'preco_custo', 
         'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
         'subcategoria', 'gondola', 'prateleira', 'localizacao',
         'tags', 'last_update', 'marca' // <--- INCLUÍDO CAMPO MARCA AQUI
