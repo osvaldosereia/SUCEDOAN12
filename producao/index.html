@@ -808,8 +808,13 @@ function sanitizeProductsForExport(prods) {
         'tags', 'last_update', 'marca' // <--- INCLUÍDO CAMPO MARCA AQUI
     ];
 
-    return prods.map(p => {
+   return prods.map(p => {
         let cleanP = {};
+        
+        // TRAVA DE SEGURANÇA: Se não tiver ID, gera um numérico único agora
+        if (!p.id) {
+            p.id = Math.floor(Date.now() + Math.random() * 10000);
+        }
         
         camposPermitidos.forEach(campo => {
             if (p[campo] !== undefined && p[campo] !== null) {
@@ -2256,9 +2261,9 @@ function sanitizeProductsForExport(prods) {
                 linha['Preço de custo'] = p.preco_custo || 0;
                 linha['Localização'] = p.localizacao || "";
                 linha['GTIN/EAN'] = p.gtin || "";
-                linha['Data Validade'] = p.validade || "";
-                linha['Categoria do produto'] = p.categoria || "";
-                linha['Marca'] = p.marca || "";
+               linha['Data Validade'] = p.validade || "";
+linha['Categoria do produto'] = ""; // FORÇADO A FICAR VAZIO
+linha['Marca'] = p.marca || "";
 
                 let codigoOuId = p.codigo || p.id || "";
                 let img = p.url_imagem || `../site/img/produtos/${codigoOuId}.webp`;
