@@ -2450,11 +2450,11 @@ Object.entries(STATE.cart).forEach(([cartId, q]) => {
         let idParaBling = p.blingId && p.blingId !== "" ? p.blingId : p.id;
 
         apiItens.push({
-    id: String(p.id), // <-- GARANTA QUE ESTEJA ASSIM. 
-    nome: p.name, 
-    qtd: q, 
-    price: unitPrice
-});
+            id: String(idParaBling), // AGORA SIM! Ele vai enviar o ID numérico do Bling
+            nome: p.name, 
+            qtd: q, 
+            price: unitPrice
+        });
         
         idsForMeta.push(cartId); 
     } 
