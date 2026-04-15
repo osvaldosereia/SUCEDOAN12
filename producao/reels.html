@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Carrossel Studio PRO v16</title>
+    <title>Sucedoan Carrossel Studio PRO v17</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -78,10 +78,11 @@
 
         .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; position: relative; }
         
-        /* Uso do Background-image ao invés de <img> para evitar achatamentos no html2canvas */
-        .product-card .img-wrapper { 
-            width: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; 
-            margin-bottom: 5%; transform: scale(var(--img-scale)) translateY(var(--img-y)); 
+        /* Uso da tag <img> com max-height para evitar achatamento e garantir alta resolução */
+        .product-card img { 
+            max-width: 100%; height: auto; object-fit: contain; 
+            margin-bottom: 5%; 
+            transform: scale(var(--img-scale)) translateY(var(--img-y)); 
             position: relative; z-index: 1; 
         }
         
@@ -89,15 +90,15 @@
         .product-card .price { font-weight: 700; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; transform: translateY(var(--price-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
         .product-card .name { color: var(--text-dim); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transform: translateY(var(--name-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8);}
 
-        /* Proporções da imagem (agora div) de acordo com o grid */
-        .grid-1x1 .product-card .img-wrapper { height: 65%; } .grid-1x1 .product-card .price { font-size: calc(clamp(30px, 6vh, 80px) * var(--price-scale)); } .grid-1x1 .product-card .name { font-size: calc(clamp(16px, 2.5vh, 30px) * var(--name-scale)); }
-        .grid-1x2 .product-card .img-wrapper { height: 60%; } .grid-1x2 .product-card .price { font-size: calc(clamp(24px, 4.5vh, 60px) * var(--price-scale)); } .grid-1x2 .product-card .name { font-size: calc(clamp(14px, 2vh, 24px) * var(--name-scale)); }
-        .grid-2x2 .product-card .img-wrapper { height: 55%; } .grid-2x2 .product-card .price { font-size: calc(clamp(18px, 3.5vh, 45px) * var(--price-scale)); } .grid-2x2 .product-card .name { font-size: calc(clamp(11px, 1.5vh, 20px) * var(--name-scale)); }
-        .grid-2x3 .product-card .img-wrapper { height: 50%; } .grid-2x3 .product-card .price { font-size: calc(clamp(16px, 2.8vh, 32px) * var(--price-scale)); } .grid-2x3 .product-card .name { font-size: calc(clamp(9px, 1.2vh, 16px) * var(--name-scale)); }
-        .grid-3x4 .product-card .img-wrapper { height: 45%; } .grid-3x4 .product-card .price { font-size: calc(clamp(12px, 2.2vh, 24px) * var(--price-scale)); } .grid-3x4 .product-card .name { font-size: calc(clamp(8px, 1.0vh, 14px) * var(--name-scale)); }
-        .grid-3x5 .product-card .img-wrapper { height: 40%; } .grid-3x5 .product-card .price { font-size: calc(clamp(10px, 1.8vh, 20px) * var(--price-scale)); } .grid-3x5 .product-card .name { font-size: calc(clamp(7px, 0.9vh, 12px) * var(--name-scale)); }
+        /* Proporções da imagem usando max-height */
+        .grid-1x1 .product-card img { max-height: 65%; } .grid-1x1 .product-card .price { font-size: calc(clamp(30px, 6vh, 80px) * var(--price-scale)); } .grid-1x1 .product-card .name { font-size: calc(clamp(16px, 2.5vh, 30px) * var(--name-scale)); }
+        .grid-1x2 .product-card img { max-height: 60%; } .grid-1x2 .product-card .price { font-size: calc(clamp(24px, 4.5vh, 60px) * var(--price-scale)); } .grid-1x2 .product-card .name { font-size: calc(clamp(14px, 2vh, 24px) * var(--name-scale)); }
+        .grid-2x2 .product-card img { max-height: 55%; } .grid-2x2 .product-card .price { font-size: calc(clamp(18px, 3.5vh, 45px) * var(--price-scale)); } .grid-2x2 .product-card .name { font-size: calc(clamp(11px, 1.5vh, 20px) * var(--name-scale)); }
+        .grid-2x3 .product-card img { max-height: 50%; } .grid-2x3 .product-card .price { font-size: calc(clamp(16px, 2.8vh, 32px) * var(--price-scale)); } .grid-2x3 .product-card .name { font-size: calc(clamp(9px, 1.2vh, 16px) * var(--name-scale)); }
+        .grid-3x4 .product-card img { max-height: 45%; } .grid-3x4 .product-card .price { font-size: calc(clamp(12px, 2.2vh, 24px) * var(--price-scale)); } .grid-3x4 .product-card .name { font-size: calc(clamp(8px, 1.0vh, 14px) * var(--name-scale)); }
+        .grid-3x5 .product-card img { max-height: 40%; } .grid-3x5 .product-card .price { font-size: calc(clamp(10px, 1.8vh, 20px) * var(--price-scale)); } .grid-3x5 .product-card .name { font-size: calc(clamp(7px, 0.9vh, 12px) * var(--name-scale)); }
 
-        /* --- RODAPÉ: Z-index elevado e position relative para nunca ser coberto --- */
+        /* --- RODAPÉ --- */
         #reels-footer { height: 5%; width: 100%; margin-bottom: 3%; background: transparent; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; z-index: 100; position: relative; padding: 0 10px; }
         #reels-footer img { height: var(--footer-logo-size); width: var(--footer-logo-size); border-radius: 50%; object-fit: cover; flex-shrink: 0; display: none; }
         #reels-footer .text-container { display: flex; flex-direction: column; justify-content: center; }
@@ -332,7 +333,7 @@
         let isManualMode = false;
         
         let footerData = { logo: '', l1Text: '', l1Color: '#000000', l1Size: '1.2', l2Text: '', l2Color: '#86868b', l2Size: '1.0', logoSize: '3' };
-        let userPresets = {}; // Objeto que guarda os padrões
+        let userPresets = {}; 
 
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
 
@@ -369,7 +370,6 @@
                 layoutSelect.innerHTML = `<option value="1x1">1x1 (Tela Cheia)</option><option value="1x2">1x2 (Vertical)</option><option value="2x2">2x2 (4 Prods)</option><option value="2x3">2x3 (6 Prods)</option><option value="3x4">3x4 (12 Prods)</option><option value="3x5">3x5 (15 Prods)</option>`;
             }
             
-            // Tenta manter a seleção anterior se ela existir no novo formato, senão pega a última ou padrão
             if(Array.from(layoutSelect.options).some(opt => opt.value === currentLayout)) {
                 layoutSelect.value = currentLayout;
             } else {
@@ -514,7 +514,7 @@
                 posName: document.getElementById('cfg-pos-name').value,
                 imgScale: document.getElementById('cfg-img-scale').value,
                 posImg: document.getElementById('cfg-pos-img').value,
-                footer: { ...footerData } // Salva uma cópia do rodapé
+                footer: { ...footerData } 
             };
             
             userPresets[name] = config;
@@ -532,7 +532,7 @@
             const config = userPresets[name];
             
             document.getElementById('cfg-format').value = config.format || 'square';
-            updateLayoutOptions(); // Atualiza as opções do select de layout primeiro
+            updateLayoutOptions(); 
             document.getElementById('cfg-layout').value = config.layout || '2x2';
             
             document.getElementById('cfg-trans-type').value = config.transType || 'zoom';
@@ -586,7 +586,7 @@
             reader.onload = (ev) => {
                 try {
                     const imported = JSON.parse(ev.target.result);
-                    userPresets = { ...userPresets, ...imported }; // Mescla com os atuais
+                    userPresets = { ...userPresets, ...imported }; 
                     localStorage.setItem(PRESETS_KEY, JSON.stringify(userPresets));
                     loadPresetsList();
                     alert("Padrões importados com sucesso!");
@@ -632,10 +632,11 @@
                 batch.forEach(p => {
                     const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x600/f4f4f5/a1a1aa?text=SEM+FOTO';
                     if (!imageUrlsToPreload.includes(imgUrl)) imageUrlsToPreload.push(imgUrl);
-                    // Uso de background-image na div img-wrapper 
+                    
+                    // Voltámos à tag img com crossorigin (evita erros ao desenhar a foto em alta resolução)
                     gridHtml += `
                         <div class="product-card">
-                            <div class="img-wrapper" style="background-image: url('${imgUrl}');"></div>
+                            <img src="${imgUrl}" crossorigin="anonymous">
                             <div class="price">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.', ',')}</div>
                             <div class="name">${p.nome}</div>
                         </div>`;
