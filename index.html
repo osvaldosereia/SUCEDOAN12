@@ -2433,7 +2433,27 @@ async function sendOrder() {
     
     let idsForMeta = []; // Variável para o Pixel
 
-Object.entries(STATE.cart).forEach(([id, q]) => { const p = STATE.prods.find(x => x.id === id); if (p) { let unitPrice = p.price; totalBruto += unitPrice * q; let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; itemsTxt += `${q}x ${p.name}${priceInfo}\n`; apiItens.push({id: p.blingId, nome: p.name, qtd: q, price: unitPrice}); idsForMeta.push(id); } });
+Object.entries(STATE.cart).forEach(([cartId, q]) => { 
+    const p = STATE.prods.find(x => x.id === cartId); 
+    if (p) { 
+        let unitPrice = p.price; 
+        totalBruto += unitPrice * q; 
+        let priceInfo = (unitPrice < p.oldPrice) ? ` (Oferta)` : ''; 
+        itemsTxt += `${q}x ${p.name}${priceInfo}\n`; 
+        
+        // Camada de segurança (Fallback): Pega o BlingID, se não tiver, pega o ID do carrinho, e força a virar Texto
+        let idSeguro = String(p.blingId || p.id || cartId);
+        
+        apiItens.push({
+            id: idSeguro, 
+            nome: p.name, 
+            qtd: q, 
+            price: unitPrice
+        }); 
+        
+        idsForMeta.push(cartId); 
+    } 
+});
   
     let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.deliveryDiscount - STATE.atacadoDiscount;
     
