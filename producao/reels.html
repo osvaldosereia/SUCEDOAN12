@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sucedoan Carrossel Studio PRO v15</title>
+    <title>Sucedoan Carrossel Studio PRO v16</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,7 +17,7 @@
             --bg: #f5f5f7; --accent: #000000; --card-bg: #ffffff;
             --text-main: #1d1d1f; --text-dim: #86868b;
             --price-scale: 1; --name-scale: 1; --img-scale: 1;
-            --price-y: 0px; --name-y: 0px;
+            --price-y: 0px; --name-y: 0px; --img-y: 0px;
             --footer-logo-size: 3vh; 
             --footer-l1-size: 1.2vh; --footer-l1-color: #000000;
             --footer-l2-size: 1vh;   --footer-l2-color: #86868b;
@@ -43,9 +43,11 @@
 
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
+        .btn { width: 100%; padding: 10px 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-primary:hover { transform: scale(0.98); }
+        .btn-secondary { background: #e5e5e7; color: #1d1d1f; }
+        .btn-danger { background: #ff3b30; color: white; }
 
         input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0 15px 0; }
         input[type="range"]:focus { outline: none; }
@@ -58,11 +60,10 @@
         
         #reels-container { background: #ffffff; position: relative; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.8); border-radius: 4px; display: flex; flex-direction: column; transition: all 0.3s ease; }
         
-        /* Adaptação Perfeita e Proporcional para Quadrado e Vertical */
         .format-vertical { height: 90vh; width: calc(90vh * 9 / 16); max-width: 95vw; }
         .format-square { width: min(85vh, 90vw); height: min(85vh, 90vw); aspect-ratio: 1/1; }
 
-        #scenes-wrapper { height: 92%; width: 100%; position: relative; }
+        #scenes-wrapper { height: 92%; width: 100%; position: relative; overflow: hidden; }
 
         .scene { position: absolute; inset: 0; display: none; width: 100%; height: 100%; animation-fill-mode: forwards; }
         .scene.active { display: grid; }
@@ -76,18 +77,28 @@
         .grid-3x5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(5, 1fr); }
 
         .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; position: relative; }
-        .product-card img { width: 100%; object-fit: contain; margin-bottom: 5%; transform: scale(var(--img-scale)); position: relative; z-index: 1; }
-        .product-card .price { font-weight: 900; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; transform: translateY(var(--price-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
+        
+        /* Uso do Background-image ao invés de <img> para evitar achatamentos no html2canvas */
+        .product-card .img-wrapper { 
+            width: 100%; background-size: contain; background-repeat: no-repeat; background-position: center; 
+            margin-bottom: 5%; transform: scale(var(--img-scale)) translateY(var(--img-y)); 
+            position: relative; z-index: 1; 
+        }
+        
+        /* Fonte do preço ajustada para font-weight: 700 */
+        .product-card .price { font-weight: 700; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; transform: translateY(var(--price-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
         .product-card .name { color: var(--text-dim); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transform: translateY(var(--name-y)); position: relative; z-index: 2; text-shadow: 0 0 10px rgba(255,255,255,0.8);}
 
-        .grid-1x1 .product-card img { height: 65%; } .grid-1x1 .product-card .price { font-size: calc(clamp(30px, 6vh, 80px) * var(--price-scale)); } .grid-1x1 .product-card .name { font-size: calc(clamp(16px, 2.5vh, 30px) * var(--name-scale)); }
-        .grid-1x2 .product-card img { height: 60%; } .grid-1x2 .product-card .price { font-size: calc(clamp(24px, 4.5vh, 60px) * var(--price-scale)); } .grid-1x2 .product-card .name { font-size: calc(clamp(14px, 2vh, 24px) * var(--name-scale)); }
-        .grid-2x2 .product-card img { height: 55%; } .grid-2x2 .product-card .price { font-size: calc(clamp(18px, 3.5vh, 45px) * var(--price-scale)); } .grid-2x2 .product-card .name { font-size: calc(clamp(11px, 1.5vh, 20px) * var(--name-scale)); }
-        .grid-2x3 .product-card img { height: 50%; } .grid-2x3 .product-card .price { font-size: calc(clamp(16px, 2.8vh, 32px) * var(--price-scale)); } .grid-2x3 .product-card .name { font-size: calc(clamp(9px, 1.2vh, 16px) * var(--name-scale)); }
-        .grid-3x4 .product-card img { height: 45%; } .grid-3x4 .product-card .price { font-size: calc(clamp(12px, 2.2vh, 24px) * var(--price-scale)); } .grid-3x4 .product-card .name { font-size: calc(clamp(8px, 1.0vh, 14px) * var(--name-scale)); }
-        .grid-3x5 .product-card img { height: 40%; } .grid-3x5 .product-card .price { font-size: calc(clamp(10px, 1.8vh, 20px) * var(--price-scale)); } .grid-3x5 .product-card .name { font-size: calc(clamp(7px, 0.9vh, 12px) * var(--name-scale)); }
+        /* Proporções da imagem (agora div) de acordo com o grid */
+        .grid-1x1 .product-card .img-wrapper { height: 65%; } .grid-1x1 .product-card .price { font-size: calc(clamp(30px, 6vh, 80px) * var(--price-scale)); } .grid-1x1 .product-card .name { font-size: calc(clamp(16px, 2.5vh, 30px) * var(--name-scale)); }
+        .grid-1x2 .product-card .img-wrapper { height: 60%; } .grid-1x2 .product-card .price { font-size: calc(clamp(24px, 4.5vh, 60px) * var(--price-scale)); } .grid-1x2 .product-card .name { font-size: calc(clamp(14px, 2vh, 24px) * var(--name-scale)); }
+        .grid-2x2 .product-card .img-wrapper { height: 55%; } .grid-2x2 .product-card .price { font-size: calc(clamp(18px, 3.5vh, 45px) * var(--price-scale)); } .grid-2x2 .product-card .name { font-size: calc(clamp(11px, 1.5vh, 20px) * var(--name-scale)); }
+        .grid-2x3 .product-card .img-wrapper { height: 50%; } .grid-2x3 .product-card .price { font-size: calc(clamp(16px, 2.8vh, 32px) * var(--price-scale)); } .grid-2x3 .product-card .name { font-size: calc(clamp(9px, 1.2vh, 16px) * var(--name-scale)); }
+        .grid-3x4 .product-card .img-wrapper { height: 45%; } .grid-3x4 .product-card .price { font-size: calc(clamp(12px, 2.2vh, 24px) * var(--price-scale)); } .grid-3x4 .product-card .name { font-size: calc(clamp(8px, 1.0vh, 14px) * var(--name-scale)); }
+        .grid-3x5 .product-card .img-wrapper { height: 40%; } .grid-3x5 .product-card .price { font-size: calc(clamp(10px, 1.8vh, 20px) * var(--price-scale)); } .grid-3x5 .product-card .name { font-size: calc(clamp(7px, 0.9vh, 12px) * var(--name-scale)); }
 
-        #reels-footer { height: 5%; width: 100%; margin-bottom: 3%; background: transparent; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; z-index: 50; padding: 0 10px; }
+        /* --- RODAPÉ: Z-index elevado e position relative para nunca ser coberto --- */
+        #reels-footer { height: 5%; width: 100%; margin-bottom: 3%; background: transparent; display: flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; z-index: 100; position: relative; padding: 0 10px; }
         #reels-footer img { height: var(--footer-logo-size); width: var(--footer-logo-size); border-radius: 50%; object-fit: cover; flex-shrink: 0; display: none; }
         #reels-footer .text-container { display: flex; flex-direction: column; justify-content: center; }
         #reels-footer .line1 { font-size: var(--footer-l1-size); color: var(--footer-l1-color); font-weight: 900; line-height: 1.1; }
@@ -102,12 +113,12 @@
         #float-toggle { position: fixed; bottom: 30px; left: 30px; z-index: 1000; width: 50px; height: 50px; border-radius: 25px; padding: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.3); opacity: 0; pointer-events: none; transition: 0.3s ease; display: flex; align-items: center; justify-content: center; }
         #manual-controls { position: absolute; bottom: 10%; left: 50%; transform: translateX(-50%); gap: 10px; z-index: 2000; display: flex; opacity: 0; pointer-events: none; transition: 0.3s ease; }
         
-        /* A classe 'show-ui' no body faz com que os botões apareçam */
         body.show-ui #float-toggle, body.show-ui #manual-controls { opacity: 1; pointer-events: auto; }
 
         .mc-btn { background: rgba(0,0,0,0.8); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; font-family: inherit; display: flex; align-items: center; gap: 5px; transition: 0.2s;}
         .mc-btn:hover { background: var(--accent); transform: scale(1.05); }
 
+        /* Animações */
         @keyframes simpleZoomIn { from { opacity: 0; transform: scale(0.90); } to { opacity: 1; transform: scale(1); } }
         @keyframes simpleZoomOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.10); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -163,7 +174,7 @@
             
             <div class="grid-2" style="margin-top: 10px;">
                 <div>
-                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Velocidade Prévia (s)</span>
+                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Veloc. Prévia (s)</span>
                     <input type="number" id="cfg-speed" value="1.5" step="0.5" min="0.5">
                 </div>
                 <div>
@@ -195,10 +206,10 @@
             <div class="grid-2">
                 <div>
                     <span style="font-size:9px;">Tam. Valor: <span id="lbl-font-price">100</span>%</span>
-                    <input type="range" id="cfg-font-price" min="50" max="180" value="100" oninput="updateDynamicStyles()">
+                    <input type="range" id="cfg-font-price" min="20" max="180" value="100" oninput="updateDynamicStyles()">
                 </div>
                 <div>
-                    <span style="font-size:9px;">Pos. Valor (Acima/Abaixo): <span id="lbl-pos-price">0</span>px</span>
+                    <span style="font-size:9px;">Pos. Valor (Y): <span id="lbl-pos-price">0</span>px</span>
                     <input type="range" id="cfg-pos-price" min="-150" max="150" value="0" oninput="updateDynamicStyles()">
                 </div>
                 <div>
@@ -206,12 +217,16 @@
                     <input type="range" id="cfg-font-name" min="50" max="180" value="100" oninput="updateDynamicStyles()">
                 </div>
                 <div>
-                    <span style="font-size:9px;">Pos. Nome (Acima/Abaixo): <span id="lbl-pos-name">0</span>px</span>
+                    <span style="font-size:9px;">Pos. Nome (Y): <span id="lbl-pos-name">0</span>px</span>
                     <input type="range" id="cfg-pos-name" min="-150" max="150" value="0" oninput="updateDynamicStyles()">
                 </div>
-                <div style="grid-column: span 2; margin-top: 5px;">
+                <div>
                     <span style="font-size:9px;">Tam. Foto: <span id="lbl-img-scale">100</span>%</span>
                     <input type="range" id="cfg-img-scale" min="50" max="300" value="100" oninput="updateDynamicStyles()">
+                </div>
+                <div>
+                    <span style="font-size:9px;">Pos. Foto (Y): <span id="lbl-pos-img">0</span>px</span>
+                    <input type="range" id="cfg-pos-img" min="-150" max="150" value="0" oninput="updateDynamicStyles()">
                 </div>
             </div>
         </div>
@@ -252,8 +267,28 @@
             <input type="range" id="cfg-footer-l2-size" min="0.5" max="3" step="0.1" value="1.0" oninput="updateFooterVisuals()">
         </div>
 
+        <div class="section">
+            <span class="label">4. Meus Padrões (Presets)</span>
+            <select id="cfg-preset-list" style="margin-bottom:10px;">
+                <option value="">-- Selecionar um Padrão --</option>
+            </select>
+            <div class="grid-2">
+                <button class="btn btn-secondary" onclick="loadSelectedPreset()"><i data-lucide="check-circle"></i> Carregar</button>
+                <button class="btn btn-danger" onclick="deleteSelectedPreset()"><i data-lucide="trash"></i> Excluir</button>
+            </div>
+
+            <input type="text" id="cfg-preset-name" placeholder="Nome para novo padrão" style="margin-top: 10px;">
+            <button class="btn btn-primary" onclick="saveCurrentAsPreset()"><i data-lucide="save"></i> Salvar Novo Padrão</button>
+            
+            <div class="grid-2" style="margin-top:10px;">
+                <button class="btn btn-secondary" onclick="exportPresets()"><i data-lucide="download"></i> Exportar</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('import-presets-file').click()"><i data-lucide="upload"></i> Importar</button>
+                <input type="file" id="import-presets-file" accept=".json" style="display:none" onchange="importPresets(event)">
+            </div>
+        </div>
+
         <div class="section" style="border:none;">
-            <button class="btn btn-primary" onclick="initiatePlayback()"><i data-lucide="play-circle"></i> ABRIR ECRÃ DE CRIAÇÃO</button>
+            <button class="btn btn-primary" onclick="initiatePlayback()" style="padding: 16px; font-size: 14px;"><i data-lucide="play-circle"></i> ABRIR ECRÃ DE CRIAÇÃO</button>
         </div>
     </div>
 
@@ -285,6 +320,7 @@
         const STORAGE_KEY = 'sucedoan_pim_v37';
         const CAT_KEY = 'sucedoan_categorias';
         const FOOTER_KEY = 'sucedoan_footer_config';
+        const PRESETS_KEY = 'sucedoan_presets_v1';
         
         let allProducts = [];
         let scenesData = []; 
@@ -294,20 +330,22 @@
         let isPlaying = false;
         let totalElapsedMs = 0;
         let isManualMode = false;
+        
         let footerData = { logo: '', l1Text: '', l1Color: '#000000', l1Size: '1.2', l2Text: '', l2Color: '#86868b', l2Size: '1.0', logoSize: '3' };
+        let userPresets = {}; // Objeto que guarda os padrões
 
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
 
         window.onload = async () => {
             lucide.createIcons();
             updateLayoutOptions(); 
-            setupViewportClick(); // Ativa a lógica de mostrar/esconder botões
+            setupViewportClick(); 
             await loadData();
             loadFooterConfig();
+            loadPresetsList();
             updateDynamicStyles();
         };
 
-        // Mostrar e Esconder Comandos com 1 clique no viewport
         function setupViewportClick() {
             document.getElementById('viewport').addEventListener('click', (e) => {
                 if (e.target.closest('.mc-btn') || e.target.closest('#float-toggle')) return;
@@ -320,15 +358,24 @@
             const layoutSelect = document.getElementById('cfg-layout');
             const container = document.getElementById('reels-container');
             
+            const currentLayout = layoutSelect.value;
             layoutSelect.innerHTML = '';
             
             if (format === 'square') {
                 container.className = 'format-square';
-                layoutSelect.innerHTML = `<option value="1x1">1x1 (Tela Cheia)</option><option value="1x2">1x2 (Vertical)</option><option value="2x2" selected>2x2 (4 Prods)</option>`;
+                layoutSelect.innerHTML = `<option value="1x1">1x1 (Tela Cheia)</option><option value="1x2">1x2 (Vertical)</option><option value="2x2">2x2 (4 Prods)</option>`;
             } else {
                 container.className = 'format-vertical';
-                layoutSelect.innerHTML = `<option value="1x1">1x1 (Tela Cheia)</option><option value="1x2">1x2 (Vertical)</option><option value="2x2">2x2 (4 Prods)</option><option value="2x3" selected>2x3 (6 Prods)</option><option value="3x4">3x4 (12 Prods)</option><option value="3x5">3x5 (15 Prods)</option>`;
+                layoutSelect.innerHTML = `<option value="1x1">1x1 (Tela Cheia)</option><option value="1x2">1x2 (Vertical)</option><option value="2x2">2x2 (4 Prods)</option><option value="2x3">2x3 (6 Prods)</option><option value="3x4">3x4 (12 Prods)</option><option value="3x5">3x5 (15 Prods)</option>`;
             }
+            
+            // Tenta manter a seleção anterior se ela existir no novo formato, senão pega a última ou padrão
+            if(Array.from(layoutSelect.options).some(opt => opt.value === currentLayout)) {
+                layoutSelect.value = currentLayout;
+            } else {
+                layoutSelect.selectedIndex = layoutSelect.options.length - 1;
+            }
+            
             buildScenes();
         }
 
@@ -338,6 +385,7 @@
             const nameScale = document.getElementById('cfg-font-name').value;
             const posName = document.getElementById('cfg-pos-name').value;
             const imgScale = document.getElementById('cfg-img-scale').value;
+            const posImg = document.getElementById('cfg-pos-img').value;
             const hideName = document.getElementById('cfg-hide-name').checked;
             const hidePrice = document.getElementById('cfg-hide-price').checked;
             
@@ -346,12 +394,14 @@
             document.getElementById('lbl-font-name').innerText = nameScale;
             document.getElementById('lbl-pos-name').innerText = posName;
             document.getElementById('lbl-img-scale').innerText = imgScale;
+            document.getElementById('lbl-pos-img').innerText = posImg;
             
             document.documentElement.style.setProperty('--price-scale', priceScale / 100);
             document.documentElement.style.setProperty('--price-y', `${posPrice}px`);
             document.documentElement.style.setProperty('--name-scale', nameScale / 100);
             document.documentElement.style.setProperty('--name-y', `${posName}px`);
             document.documentElement.style.setProperty('--img-scale', imgScale / 100);
+            document.documentElement.style.setProperty('--img-y', `${posImg}px`);
 
             let styleString = '';
             if (hideName) { styleString += '.product-card .name { display: none !important; } '; }
@@ -376,19 +426,24 @@
             } catch (e) { console.error(e); }
         }
 
+        /* --- GESTÃO DO RODAPÉ --- */
         function loadFooterConfig() {
             const saved = localStorage.getItem(FOOTER_KEY);
             if(saved) {
                 footerData = JSON.parse(saved);
-                document.getElementById('cfg-footer-l1-text').value = footerData.l1Text || '';
-                document.getElementById('cfg-footer-l1-color').value = footerData.l1Color || '#000000';
-                document.getElementById('cfg-footer-l1-size').value = footerData.l1Size || '1.2';
-                document.getElementById('cfg-footer-l2-text').value = footerData.l2Text || '';
-                document.getElementById('cfg-footer-l2-color').value = footerData.l2Color || '#86868b';
-                document.getElementById('cfg-footer-l2-size').value = footerData.l2Size || '1.0';
-                document.getElementById('cfg-footer-logo-size').value = footerData.logoSize || '3';
+                applyFooterDataToUI();
             }
             updateFooterVisuals();
+        }
+        
+        function applyFooterDataToUI() {
+            document.getElementById('cfg-footer-l1-text').value = footerData.l1Text || '';
+            document.getElementById('cfg-footer-l1-color').value = footerData.l1Color || '#000000';
+            document.getElementById('cfg-footer-l1-size').value = footerData.l1Size || '1.2';
+            document.getElementById('cfg-footer-l2-text').value = footerData.l2Text || '';
+            document.getElementById('cfg-footer-l2-color').value = footerData.l2Color || '#86868b';
+            document.getElementById('cfg-footer-l2-size').value = footerData.l2Size || '1.0';
+            document.getElementById('cfg-footer-logo-size').value = footerData.logoSize || '3';
         }
 
         function saveFooterConfig() { localStorage.setItem(FOOTER_KEY, JSON.stringify(footerData)); }
@@ -428,6 +483,121 @@
             reader.readAsDataURL(file);
         }
 
+        /* --- GESTÃO DE PADRÕES (PRESETS) --- */
+        function loadPresetsList() {
+            const saved = localStorage.getItem(PRESETS_KEY);
+            if(saved) userPresets = JSON.parse(saved);
+            
+            const select = document.getElementById('cfg-preset-list');
+            select.innerHTML = '<option value="">-- Selecionar um Padrão --</option>';
+            for (let name in userPresets) {
+                select.innerHTML += `<option value="${name}">${name}</option>`;
+            }
+        }
+
+        function saveCurrentAsPreset() {
+            const name = document.getElementById('cfg-preset-name').value.trim();
+            if(!name) return alert("Por favor, introduza um nome para o Padrão.");
+            
+            const config = {
+                format: document.getElementById('cfg-format').value,
+                layout: document.getElementById('cfg-layout').value,
+                transType: document.getElementById('cfg-trans-type').value,
+                speed: document.getElementById('cfg-speed').value,
+                duration: document.getElementById('cfg-duration').value,
+                playMode: document.getElementById('cfg-play-mode').value,
+                hideName: document.getElementById('cfg-hide-name').checked,
+                hidePrice: document.getElementById('cfg-hide-price').checked,
+                fontPrice: document.getElementById('cfg-font-price').value,
+                posPrice: document.getElementById('cfg-pos-price').value,
+                fontName: document.getElementById('cfg-font-name').value,
+                posName: document.getElementById('cfg-pos-name').value,
+                imgScale: document.getElementById('cfg-img-scale').value,
+                posImg: document.getElementById('cfg-pos-img').value,
+                footer: { ...footerData } // Salva uma cópia do rodapé
+            };
+            
+            userPresets[name] = config;
+            localStorage.setItem(PRESETS_KEY, JSON.stringify(userPresets));
+            loadPresetsList();
+            document.getElementById('cfg-preset-name').value = '';
+            document.getElementById('cfg-preset-list').value = name;
+            alert("Padrão guardado com sucesso!");
+        }
+
+        function loadSelectedPreset() {
+            const name = document.getElementById('cfg-preset-list').value;
+            if(!name || !userPresets[name]) return;
+            
+            const config = userPresets[name];
+            
+            document.getElementById('cfg-format').value = config.format || 'square';
+            updateLayoutOptions(); // Atualiza as opções do select de layout primeiro
+            document.getElementById('cfg-layout').value = config.layout || '2x2';
+            
+            document.getElementById('cfg-trans-type').value = config.transType || 'zoom';
+            document.getElementById('cfg-speed').value = config.speed || '1.5';
+            document.getElementById('cfg-duration').value = config.duration || '15';
+            document.getElementById('cfg-play-mode').value = config.playMode || 'manual';
+            
+            document.getElementById('cfg-hide-name').checked = config.hideName || false;
+            document.getElementById('cfg-hide-price').checked = config.hidePrice || false;
+            
+            document.getElementById('cfg-font-price').value = config.fontPrice || '100';
+            document.getElementById('cfg-pos-price').value = config.posPrice || '0';
+            document.getElementById('cfg-font-name').value = config.fontName || '100';
+            document.getElementById('cfg-pos-name').value = config.posName || '0';
+            document.getElementById('cfg-img-scale').value = config.imgScale || '100';
+            document.getElementById('cfg-pos-img').value = config.posImg || '0';
+            
+            if(config.footer) {
+                footerData = { ...config.footer };
+                applyFooterDataToUI();
+            }
+            
+            updateDynamicStyles();
+            updateFooterVisuals();
+            buildScenes();
+        }
+
+        function deleteSelectedPreset() {
+            const name = document.getElementById('cfg-preset-list').value;
+            if(!name || !userPresets[name]) return;
+            
+            if(confirm(`Tem a certeza que deseja eliminar o padrão "${name}"?`)) {
+                delete userPresets[name];
+                localStorage.setItem(PRESETS_KEY, JSON.stringify(userPresets));
+                loadPresetsList();
+            }
+        }
+
+        function exportPresets() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userPresets));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "meus_padroes_carrossel.json");
+            dlAnchorElem.click();
+        }
+
+        function importPresets(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const imported = JSON.parse(ev.target.result);
+                    userPresets = { ...userPresets, ...imported }; // Mescla com os atuais
+                    localStorage.setItem(PRESETS_KEY, JSON.stringify(userPresets));
+                    loadPresetsList();
+                    alert("Padrões importados com sucesso!");
+                } catch(err) {
+                    alert("Erro ao importar o ficheiro. Verifique se é um .json válido.");
+                }
+            }
+            reader.readAsText(file);
+        }
+
+        /* --- CONSTRUÇÃO DAS CENAS --- */
         function buildScenes() {
             scenesData = [];
             imageUrlsToPreload = [];
@@ -462,7 +632,13 @@
                 batch.forEach(p => {
                     const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/400x600/f4f4f5/a1a1aa?text=SEM+FOTO';
                     if (!imageUrlsToPreload.includes(imgUrl)) imageUrlsToPreload.push(imgUrl);
-                    gridHtml += `<div class="product-card"><img src="${imgUrl}"><div class="price">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.', ',')}</div><div class="name">${p.nome}</div></div>`;
+                    // Uso de background-image na div img-wrapper 
+                    gridHtml += `
+                        <div class="product-card">
+                            <div class="img-wrapper" style="background-image: url('${imgUrl}');"></div>
+                            <div class="price">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.', ',')}</div>
+                            <div class="name">${p.nome}</div>
+                        </div>`;
                 });
                 
                 const vazios = slotsPerSlide - batch.length;
@@ -522,10 +698,10 @@
             
             if (isManualMode) {
                 document.getElementById('manual-controls').style.display = 'flex';
-                document.body.classList.add('show-ui'); // Mostra os comandos logo no início do modo manual
+                document.body.classList.add('show-ui');
             } else {
                 document.getElementById('manual-controls').style.display = 'none';
-                document.body.classList.remove('show-ui'); // Esconde no modo de apresentação
+                document.body.classList.remove('show-ui');
                 scheduleNextScene();
             }
         }
@@ -585,14 +761,12 @@
             nextEl.className = `scene grid-base grid-${layout} active`;
         }
 
-        // Gera e faz download da imagem com escala exata e limite de 50kb
         async function downloadWebP(index = currentSceneIndex, isBatch = false) {
-            if(!isBatch) document.body.classList.remove('show-ui'); // Oculta botões para a foto
+            if(!isBatch) document.body.classList.remove('show-ui'); 
             
             const container = document.getElementById('reels-container');
             const rect = container.getBoundingClientRect();
             
-            // Lógica para garantir que o lado menor tenha no mínimo 1200px
             const smallerSide = Math.min(rect.width, rect.height);
             const captureScale = 1200 / smallerSide;
 
@@ -617,14 +791,13 @@
             a.click();
             URL.revokeObjectURL(url);
 
-            if(!isBatch) document.body.classList.add('show-ui'); // Devolve os botões
+            if(!isBatch) document.body.classList.add('show-ui'); 
         }
 
-        // Faz o loop por todos os slides e transfere automaticamente a cada 5 segundos
         async function downloadAllWebP() {
             if(!confirm(`Isto irá transferir os ${scenesData.length} slides como imagens. Processo automático (1 a cada 5 segs). Deseja continuar?`)) return;
             
-            document.body.classList.remove('show-ui'); // Esconde UI durante o processo inteiro
+            document.body.classList.remove('show-ui'); 
             
             for(let i = 0; i < scenesData.length; i++) {
                 const layout = document.getElementById('cfg-layout').value;
@@ -632,15 +805,12 @@
                 currentSceneIndex = i;
                 document.getElementById(`scene-${currentSceneIndex}`).className = `scene grid-base grid-${layout} active`;
                 
-                // Dá um tempo curto (0.5s) para garantir que as fontes/imagens carregam visivelmente
                 await new Promise(r => setTimeout(r, 500));
                 
                 const startTime = Date.now();
-                await downloadWebP(i, true); // Transfere a imagem atual sem piscar a UI
+                await downloadWebP(i, true); 
                 
                 const elapsed = Date.now() - startTime;
-                
-                // Calcula quanto tempo falta para chegar exatos 5 segundos
                 const timeToWait = Math.max(0, 5000 - elapsed - 500);
                 
                 if (i < scenesData.length - 1) {
