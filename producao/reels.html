@@ -15,7 +15,11 @@
         :root {
             --bg: #f5f5f7; --accent: #000000; --card-bg: #ffffff;
             --text-main: #1d1d1f; --text-dim: #86868b;
-            --price-scale: 1; --name-scale: 1; --img-brightness: 1;
+            --price-scale: 1; --name-scale: 1; --img-scale: 1;
+            /* Variáveis dinâmicas para o rodapé */
+            --footer-logo-size: 3vh; 
+            --footer-l1-size: 1.2vh; --footer-l1-color: #000000;
+            --footer-l2-size: 1vh;   --footer-l2-color: #86868b;
         }
 
         * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
@@ -29,16 +33,18 @@
         .section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
         
-        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 12px; margin-bottom: 8px; outline: none; background: #fafafa; transition: 0.2s;}
+        input[type="text"], input[type="number"], select, input[type="file"] { width: 100%; padding: 10px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 12px; margin-bottom: 8px; outline: none; background: #fafafa; transition: 0.2s;}
         input:focus, select:focus { border-color: var(--accent); background: #fff; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
 
         .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-primary:hover { transform: scale(0.98); }
         .btn-record { background: #ff3b30; color: white; }
         .btn-record:hover { background: #d32f2f; }
+        .btn-secondary { background: #e5e5e7; color: #1d1d1f; padding: 10px; font-size: 11px; }
 
         /* Sliders */
         input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; margin: 5px 0 15px 0; }
@@ -50,7 +56,10 @@
         #viewport { margin-left: 420px; height: 100vh; display: flex; align-items: center; justify-content: center; background: #000; transition: margin 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative;}
         #viewport.full { margin-left: 0; cursor: pointer; }
         
-        #reels-container { height: 90vh; aspect-ratio: 9/16; background: #ffffff; position: relative; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.8); border-radius: 4px; }
+        #reels-container { height: 90vh; aspect-ratio: 9/16; background: #ffffff; position: relative; overflow: hidden; box-shadow: 0 10px 50px rgba(0,0,0,0.8); border-radius: 4px; display: flex; flex-direction: column; }
+
+        /* 95% para os produtos e 5% para o rodapé */
+        #scenes-wrapper { height: 95%; width: 100%; position: relative; }
 
         .scene { position: absolute; inset: 0; display: none; width: 100%; height: 100%; animation-fill-mode: forwards; }
         .scene.active { display: grid; }
@@ -61,22 +70,44 @@
         .grid-1x2 { grid-template-columns: 1fr; grid-template-rows: repeat(2, 1fr); }
         .grid-2x2 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); }
         .grid-2x3 { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); }
+        .grid-3x4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
+        .grid-3x5 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(5, 1fr); }
 
         .product-card { background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5%; text-align: center; width: 100%; height: 100%; overflow: hidden; }
         
-        /* Controle de Luminosidade Limpo */
+        /* Imagem com escala controlada e sem filtros */
         .product-card img { 
             width: 100%; object-fit: contain; margin-bottom: 5%; 
-            filter: brightness(var(--img-brightness));
+            transform: scale(var(--img-scale));
         }
         
         .product-card .price { font-weight: 900; color: #000; letter-spacing: -1px; line-height: 1; margin-bottom: 2%; }
         .product-card .name { color: var(--text-dim); font-weight: 700; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
+        /* Tamanhos proporcionais de acordo com a grelha */
         .grid-1x1 .product-card img { height: 65%; } .grid-1x1 .product-card .price { font-size: calc(clamp(30px, 6vh, 80px) * var(--price-scale)); } .grid-1x1 .product-card .name { font-size: calc(clamp(16px, 2.5vh, 30px) * var(--name-scale)); }
         .grid-1x2 .product-card img { height: 60%; } .grid-1x2 .product-card .price { font-size: calc(clamp(24px, 4.5vh, 60px) * var(--price-scale)); } .grid-1x2 .product-card .name { font-size: calc(clamp(14px, 2vh, 24px) * var(--name-scale)); }
         .grid-2x2 .product-card img { height: 55%; } .grid-2x2 .product-card .price { font-size: calc(clamp(18px, 3.5vh, 45px) * var(--price-scale)); } .grid-2x2 .product-card .name { font-size: calc(clamp(11px, 1.5vh, 20px) * var(--name-scale)); }
         .grid-2x3 .product-card img { height: 50%; } .grid-2x3 .product-card .price { font-size: calc(clamp(16px, 2.8vh, 32px) * var(--price-scale)); } .grid-2x3 .product-card .name { font-size: calc(clamp(9px, 1.2vh, 16px) * var(--name-scale)); }
+        .grid-3x4 .product-card img { height: 45%; } .grid-3x4 .product-card .price { font-size: calc(clamp(12px, 2.2vh, 24px) * var(--price-scale)); } .grid-3x4 .product-card .name { font-size: calc(clamp(8px, 1.0vh, 14px) * var(--name-scale)); }
+        .grid-3x5 .product-card img { height: 40%; } .grid-3x5 .product-card .price { font-size: calc(clamp(10px, 1.8vh, 20px) * var(--price-scale)); } .grid-3x5 .product-card .name { font-size: calc(clamp(7px, 0.9vh, 12px) * var(--name-scale)); }
+
+        /* --- RODAPÉ DO REEL (5%) --- */
+        #reels-footer {
+            height: 5%; width: 100%;
+            background: #ffffff; /* Fundo do rodapé */
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-sizing: border-box; z-index: 50; padding: 0 10px;
+        }
+        #reels-footer img {
+            height: var(--footer-logo-size); width: var(--footer-logo-size);
+            border-radius: 50%; object-fit: cover; flex-shrink: 0;
+            display: none; /* Escondido caso não tenha logo */
+        }
+        #reels-footer .text-container { display: flex; flex-direction: column; justify-content: center; }
+        #reels-footer .line1 { font-size: var(--footer-l1-size); color: var(--footer-l1-color); font-weight: 900; line-height: 1.1; }
+        #reels-footer .line2 { font-size: var(--footer-l2-size); color: var(--footer-l2-color); font-weight: 700; line-height: 1.1; }
+
 
         /* Tela Branca Inicial */
         #white-start-screen { position: absolute; inset: 0; background: #ffffff; z-index: 90; display: none; }
@@ -92,28 +123,19 @@
         #viewport.full ~ #float-toggle.visible { opacity: 1; pointer-events: auto; }
 
         /* =========================================
-           ANIMAÇÕES DE TRANSIÇÃO
+           ANIMAÇÕES LIMPAS (SEM EFEITOS DE BLUR/LENTE)
            ========================================= */
-        @keyframes staySolid { from { opacity: 1; } to { opacity: 1; } }
+        @keyframes simpleZoomIn { from { opacity: 0; transform: scale(0.90); } to { opacity: 1; transform: scale(1); } }
+        @keyframes simpleZoomOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.10); } }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+        .anim-in-zoom { animation: simpleZoomIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; } 
+        .anim-out-zoom { animation: simpleZoomOut 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         
-        /* Blur Zoom (Zoom com Desfoque) */
-        @keyframes blurZoomIn { from { opacity: 0; filter: blur(12px); transform: scale(0.85); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
-        @keyframes blurZoomOut { from { opacity: 1; filter: blur(0); transform: scale(1); } to { opacity: 0.5; filter: blur(12px); transform: scale(1.15); } }
-
-        /* Morph (Transformação de Produto) */
-        @keyframes morphIn { from { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(0.98); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } }
-        @keyframes morphOut { from { opacity: 1; filter: contrast(1) blur(0); transform: scale(1); } 50% { filter: contrast(1.8) blur(2px); } to { opacity: 0; filter: contrast(1.5) blur(5px); transform: scale(1.02); } }
-
-        /* Blur Fade (Clássico Premium) */
-        @keyframes blurIn { from { opacity: 0; filter: blur(15px); } to { opacity: 1; filter: blur(0); } }
-        @keyframes blurOut { from { opacity: 1; filter: blur(0); } to { opacity: 0.5; filter: blur(15px); } }
-
-        .anim-in-blurZoom { animation: blurZoomIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; } 
-        .anim-out-blurZoom { animation: blurZoomOut 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .anim-in-morph { animation: morphIn 0.8s ease-in-out forwards; } 
-        .anim-out-morph { animation: morphOut 0.8s ease-in-out forwards; }
-        .anim-in-blurFade { animation: blurIn 0.7s ease forwards; } 
-        .anim-out-blurFade { animation: blurOut 0.7s ease forwards; }
+        .anim-in-fade { animation: fadeIn 0.7s ease forwards; } 
+        .anim-out-fade { animation: fadeOut 0.7s ease forwards; }
     </style>
 </head>
 <body>
@@ -131,28 +153,40 @@
                     <option value="1x2">1x2 (Vertical)</option>
                     <option value="2x2">2x2 (4 Prods)</option>
                     <option value="2x3" selected>2x3 (6 Prods)</option>
+                    <option value="3x4">3x4 (12 Prods)</option>
+                    <option value="3x5">3x5 (15 Prods)</option>
                 </select>
                 <select id="cfg-trans-type">
-                    <option value="blurZoom" selected>Zoom + Desfoque</option>
-                    <option value="morph">Transformação (Morph)</option>
-                    <option value="blurFade">Fade + Desfoque</option>
+                    <option value="zoom" selected>Zoom Limpo</option>
+                    <option value="fade">Fade Limpo</option>
                 </select>
             </div>
             
-            <div style="display: flex; gap: 10px; margin-top: 10px; align-items:center;">
-                <input type="number" id="cfg-speed" value="1.5" step="0.5" min="0.5" style="width: 80px; margin:0;">
-                <span style="font-size: 11px; font-weight: bold;">Segs/Slide (A partir de 0.5s)</span>
+            <div class="grid-2" style="margin-top: 10px;">
+                <div>
+                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Velocidade (s)</span>
+                    <input type="number" id="cfg-speed" value="1.5" step="0.5" min="0.5">
+                </div>
+                <div>
+                    <span style="font-size: 11px; font-weight: bold; display:block; margin-bottom:5px;">Duração Total (s)</span>
+                    <input type="number" id="cfg-duration" value="15" step="1" min="1">
+                </div>
             </div>
             
-            <label style="display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; font-weight:bold; cursor:pointer;">
+            <label style="display:flex; align-items:center; gap:8px; margin-top:5px; font-size:12px; font-weight:bold; cursor:pointer;">
                 <input type="checkbox" id="cfg-hide-name" style="width:auto; margin:0;" onchange="updateDynamicStyles()">
                 Ocultar Nomes dos Produtos
+            </label>
+
+            <label style="display:flex; align-items:center; gap:8px; margin-top:8px; font-size:12px; font-weight:bold; cursor:pointer;">
+                <input type="checkbox" id="cfg-hide-price" style="width:auto; margin:0;" onchange="updateDynamicStyles()">
+                Ocultar Valores (Preços)
             </label>
         </div>
 
         <div class="section">
-            <span class="label">2. Ajuste Visual de Fontes e Luz</span>
-            <div class="grid-2">
+            <span class="label">2. Ajuste Visual dos Produtos</span>
+            <div class="grid-3">
                 <div>
                     <span style="font-size:9px;">Tam. Valor: <span id="lbl-font-price">100</span>%</span>
                     <input type="range" id="cfg-font-price" min="50" max="180" value="100" oninput="updateDynamicStyles()">
@@ -161,17 +195,58 @@
                     <span style="font-size:9px;">Tam. Nome: <span id="lbl-font-name">100</span>%</span>
                     <input type="range" id="cfg-font-name" min="50" max="180" value="100" oninput="updateDynamicStyles()">
                 </div>
+                <div>
+                    <span style="font-size:9px;">Tam. Foto: <span id="lbl-img-scale">100</span>%</span>
+                    <input type="range" id="cfg-img-scale" min="50" max="150" value="100" oninput="updateDynamicStyles()">
+                </div>
             </div>
+        </div>
+
+        <div class="section">
+            <span class="label">3. Configuração do Rodapé</span>
+            <span style="font-size:9px;">Logo Redonda</span>
+            <input type="file" id="cfg-footer-logo-file" accept="image/*" onchange="handleLogoUpload(event)">
+            <span style="font-size:9px;">Tamanho Logo: <span id="lbl-footer-logo">3</span>vh</span>
+            <input type="range" id="cfg-footer-logo-size" min="1" max="10" step="0.5" value="3" oninput="updateFooterVisuals()">
             
-            <div style="margin-top: 5px;">
-                <span style="font-size:9px;">Luminosidade das Fotos: <span id="lbl-brightness">100</span>%</span>
-                <input type="range" id="cfg-brightness" min="50" max="150" value="100" oninput="updateDynamicStyles()">
+            <span style="font-size:9px; display:block; margin-top:10px;">Linha 1</span>
+            <div class="grid-2">
+                <input type="text" id="cfg-footer-l1-text" placeholder="Texto da linha 1" oninput="updateFooterVisuals()">
+                <select id="cfg-footer-l1-color" onchange="updateFooterVisuals()">
+                    <option value="#000000">Preto</option>
+                    <option value="#333333">Cinza Escuro</option>
+                    <option value="#808080">Cinza Médio</option>
+                    <option value="#8B0000">Vermelho Escuro</option>
+                    <option value="#00008B">Azul Escuro</option>
+                </select>
+            </div>
+            <span style="font-size:9px;">Tamanho L1: <span id="lbl-footer-l1">1.2</span>vh</span>
+            <input type="range" id="cfg-footer-l1-size" min="0.5" max="3" step="0.1" value="1.2" oninput="updateFooterVisuals()">
+
+            <span style="font-size:9px; display:block; margin-top:10px;">Linha 2</span>
+            <div class="grid-2">
+                <input type="text" id="cfg-footer-l2-text" placeholder="Texto da linha 2" oninput="updateFooterVisuals()">
+                <select id="cfg-footer-l2-color" onchange="updateFooterVisuals()">
+                    <option value="#86868b">Cinza Padrão</option>
+                    <option value="#000000">Preto</option>
+                    <option value="#333333">Cinza Escuro</option>
+                    <option value="#8B0000">Vermelho Escuro</option>
+                    <option value="#00008B">Azul Escuro</option>
+                </select>
+            </div>
+            <span style="font-size:9px;">Tamanho L2: <span id="lbl-footer-l2">1.0</span>vh</span>
+            <input type="range" id="cfg-footer-l2-size" min="0.5" max="3" step="0.1" value="1.0" oninput="updateFooterVisuals()">
+
+            <div class="grid-2" style="margin-top:15px;">
+                <button class="btn btn-secondary" onclick="exportFooterConfig()"><i data-lucide="download"></i> Exportar Config</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('file-import-footer').click()"><i data-lucide="upload"></i> Importar Config</button>
+                <input type="file" id="file-import-footer" accept=".json" style="display:none;" onchange="importFooterConfig(event)">
             </div>
         </div>
 
         <div class="section" style="border:none;">
             <button class="btn btn-primary" onclick="initiatePlayback(false)"><i data-lucide="play-circle"></i> VER ECRÃ INTEIRO</button>
-            <button id="btn-start-record" class="btn btn-record" onclick="initiatePlayback(true)"><i data-lucide="video-recording"></i> GRAVAR REELS (15 Segs)</button>
+            <button id="btn-start-record" class="btn btn-record" onclick="initiatePlayback(true)"><i data-lucide="video-recording"></i> GRAVAR REELS</button>
         </div>
     </div>
 
@@ -180,7 +255,15 @@
             
             <div id="white-start-screen"></div>
 
-            <div id="scenes-wrapper" style="position:absolute; inset:0;"></div>
+            <div id="scenes-wrapper"></div>
+            
+            <div id="reels-footer">
+                <img id="view-footer-logo" src="">
+                <div class="text-container">
+                    <div id="view-footer-l1" class="line1"></div>
+                    <div id="view-footer-l2" class="line2"></div>
+                </div>
+            </div>
             
             <div id="rec-status">🔴 GRAVANDO</div>
             <div id="loader-overlay"><div class="spinner"></div><div style="font-size: 14px; font-weight: bold; letter-spacing: 1px;">A PREPARAR MAGIA...</div></div>
@@ -192,7 +275,7 @@
     <script>
         const STORAGE_KEY = 'sucedoan_pim_v37';
         const CAT_KEY = 'sucedoan_categorias';
-        const MAX_VIDEO_TIME = 15000; // Exatamente 15 Segundos de produtos
+        const FOOTER_KEY = 'sucedoan_footer_config';
         
         let allProducts = [];
         let scenesData = []; 
@@ -204,12 +287,14 @@
         let mediaRecorder;
         let recordedChunks = [];
         let hideBtnTimeout;
+        let footerData = { logo: '', l1Text: '', l1Color: '#000000', l1Size: '1.2', l2Text: '', l2Color: '#86868b', l2Size: '1.0', logoSize: '3' };
 
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
 
         window.onload = async () => {
             lucide.createIcons();
             await loadData();
+            loadFooterConfig();
             setupViewportClick();
             updateDynamicStyles();
         };
@@ -217,21 +302,21 @@
         function updateDynamicStyles() {
             const priceScale = document.getElementById('cfg-font-price').value;
             const nameScale = document.getElementById('cfg-font-name').value;
-            const brightness = document.getElementById('cfg-brightness').value;
+            const imgScale = document.getElementById('cfg-img-scale').value;
             const hideName = document.getElementById('cfg-hide-name').checked;
+            const hidePrice = document.getElementById('cfg-hide-price').checked;
             
             document.getElementById('lbl-font-price').innerText = priceScale;
             document.getElementById('lbl-font-name').innerText = nameScale;
-            document.getElementById('lbl-brightness').innerText = brightness;
+            document.getElementById('lbl-img-scale').innerText = imgScale;
             
             document.documentElement.style.setProperty('--price-scale', priceScale / 100);
             document.documentElement.style.setProperty('--name-scale', nameScale / 100);
-            document.documentElement.style.setProperty('--img-brightness', brightness / 100);
+            document.documentElement.style.setProperty('--img-scale', imgScale / 100);
 
             let styleString = '';
-            if (hideName) {
-                styleString += '.product-card .name { display: none !important; } ';
-            }
+            if (hideName) { styleString += '.product-card .name { display: none !important; } '; }
+            if (hidePrice) { styleString += '.product-card .price { display: none !important; } '; }
             document.getElementById('dynamic-styles').innerHTML = styleString;
         }
 
@@ -258,6 +343,102 @@
             } catch (e) { console.error(e); }
         }
 
+        /* --- LOGICA DO RODAPÉ --- */
+        function loadFooterConfig() {
+            const saved = localStorage.getItem(FOOTER_KEY);
+            if(saved) {
+                footerData = JSON.parse(saved);
+                document.getElementById('cfg-footer-l1-text').value = footerData.l1Text || '';
+                document.getElementById('cfg-footer-l1-color').value = footerData.l1Color || '#000000';
+                document.getElementById('cfg-footer-l1-size').value = footerData.l1Size || '1.2';
+                
+                document.getElementById('cfg-footer-l2-text').value = footerData.l2Text || '';
+                document.getElementById('cfg-footer-l2-color').value = footerData.l2Color || '#86868b';
+                document.getElementById('cfg-footer-l2-size').value = footerData.l2Size || '1.0';
+                
+                document.getElementById('cfg-footer-logo-size').value = footerData.logoSize || '3';
+            }
+            updateFooterVisuals();
+        }
+
+        function saveFooterConfig() {
+            localStorage.setItem(FOOTER_KEY, JSON.stringify(footerData));
+        }
+
+        function updateFooterVisuals() {
+            // Obter valores
+            footerData.l1Text = document.getElementById('cfg-footer-l1-text').value;
+            footerData.l1Color = document.getElementById('cfg-footer-l1-color').value;
+            footerData.l1Size = document.getElementById('cfg-footer-l1-size').value;
+            
+            footerData.l2Text = document.getElementById('cfg-footer-l2-text').value;
+            footerData.l2Color = document.getElementById('cfg-footer-l2-color').value;
+            footerData.l2Size = document.getElementById('cfg-footer-l2-size').value;
+            
+            footerData.logoSize = document.getElementById('cfg-footer-logo-size').value;
+            saveFooterConfig();
+
+            // Atualizar UI
+            document.getElementById('lbl-footer-l1').innerText = footerData.l1Size;
+            document.getElementById('lbl-footer-l2').innerText = footerData.l2Size;
+            document.getElementById('lbl-footer-logo').innerText = footerData.logoSize;
+
+            document.documentElement.style.setProperty('--footer-l1-size', `${footerData.l1Size}vh`);
+            document.documentElement.style.setProperty('--footer-l1-color', footerData.l1Color);
+            document.documentElement.style.setProperty('--footer-l2-size', `${footerData.l2Size}vh`);
+            document.documentElement.style.setProperty('--footer-l2-color', footerData.l2Color);
+            document.documentElement.style.setProperty('--footer-logo-size', `${footerData.logoSize}vh`);
+
+            document.getElementById('view-footer-l1').innerText = footerData.l1Text;
+            document.getElementById('view-footer-l2').innerText = footerData.l2Text;
+            
+            const logoEl = document.getElementById('view-footer-logo');
+            if(footerData.logo && footerData.logo.length > 10) {
+                logoEl.src = footerData.logo;
+                logoEl.style.display = 'block';
+            } else {
+                logoEl.style.display = 'none';
+            }
+        }
+
+        function handleLogoUpload(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                footerData.logo = ev.target.result; // Base64
+                updateFooterVisuals();
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function exportFooterConfig() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(footerData));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", "rodape_config.json");
+            dlAnchorElem.click();
+        }
+
+        function importFooterConfig(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const importedData = JSON.parse(ev.target.result);
+                    footerData = importedData;
+                    saveFooterConfig();
+                    loadFooterConfig();
+                    alert("Rodapé importado com sucesso!");
+                } catch(err) {
+                    alert("Erro ao importar o arquivo. Verifique se é um .json válido.");
+                }
+            }
+            reader.readAsText(file);
+        }
+        /* ------------------------- */
+
         function buildScenes() {
             scenesData = [];
             imageUrlsToPreload = [];
@@ -281,12 +462,12 @@
             if (layout === '1x1') slotsPerSlide = 1;
             if (layout === '1x2') slotsPerSlide = 2;
             if (layout === '2x2') slotsPerSlide = 4;
+            if (layout === '2x3') slotsPerSlide = 6;
+            if (layout === '3x4') slotsPerSlide = 12;
+            if (layout === '3x5') slotsPerSlide = 15;
 
-            const totalSlotsNeeded = Math.ceil(filtered.length / slotsPerSlide) * slotsPerSlide;
-            let displayList = [];
-            for (let i = 0; i < totalSlotsNeeded; i++) {
-                displayList.push(filtered[i % filtered.length]);
-            }
+            // Logica Nova: Sem repetir produtos
+            let displayList = filtered;
 
             for (let i = 0; i < displayList.length; i += slotsPerSlide) {
                 const batch = displayList.slice(i, i + slotsPerSlide);
@@ -297,6 +478,12 @@
                     if (!imageUrlsToPreload.includes(imgUrl)) imageUrlsToPreload.push(imgUrl);
                     gridHtml += `<div class="product-card"><img src="${imgUrl}"><div class="price">R$ ${parseFloat(p.preco||0).toFixed(2).replace('.', ',')}</div><div class="name">${p.nome}</div></div>`;
                 });
+                
+                // Slots vazios para manter a malha caso o ultimo slide não esteja cheio
+                const vazios = slotsPerSlide - batch.length;
+                for(let j=0; j<vazios; j++) {
+                    gridHtml += `<div class="product-card" style="background:#f9f9f9;"></div>`;
+                }
                 
                 gridHtml += `</div>`;
                 scenesData.push(gridHtml);
@@ -372,14 +559,14 @@
             scheduleNextScene();
         }
 
-        // Tempo Automático
         function scheduleNextScene() {
             if(!isPlaying) return;
             const speedMs = parseFloat(document.getElementById('cfg-speed').value) * 1000;
+            const durationMaxMs = parseFloat(document.getElementById('cfg-duration').value) * 1000;
             
             slideTimer = setTimeout(() => {
                 totalElapsedMs += speedMs;
-                if(totalElapsedMs >= MAX_VIDEO_TIME) {
+                if(totalElapsedMs >= durationMaxMs) {
                     triggerClosingSequence();
                 } else {
                     transitionToNext();
@@ -421,14 +608,12 @@
             setTimeout(finishTransition, 1000); 
         }
 
-        // Fim Limpo
         function triggerClosingSequence() {
             const currentEl = document.getElementById(`scene-${currentSceneIndex}`);
             if(currentEl) {
                 currentEl.style.transition = 'opacity 0.5s ease';
                 currentEl.style.opacity = '0';
             }
-            // Encerra após meio segundo de fade
             setTimeout(stopAndExitFullscreen, 500);
         }
 
