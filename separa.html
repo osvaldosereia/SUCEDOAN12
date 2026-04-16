@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dona Antônia - Logística</title>
+    <title>Dona Antônia - Logística Pro</title>
     <style>
-        :root { --cor-bg: #f4f4f9; --cor-primaria: #2c3e50; --cor-sucesso: #27ae60; --cor-alerta: #e74c3c; }
+        :root { --cor-bg: #f4f4f9; --cor-primaria: #2c3e50; --cor-sucesso: #27ae60; --cor-alerta: #e74c3c; --cor-local: #007bff; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--cor-bg); color: #333; overflow-x: hidden; touch-action: manipulation; }
         
@@ -23,23 +23,24 @@
         #sep-nome { font-size: 18px; text-align: center; font-weight: bold; min-height: 45px; margin-bottom: 5px; }
         .ean-v { font-size: 24px; font-weight: bold; text-align: center; color: var(--cor-primaria); background: #eee; padding: 5px; border-radius: 4px; margin: 5px 0; }
         
-        /* Imagem da largura da tela */
         .img-container { position: relative; width: 100%; height: auto; min-height: 250px; margin: 5px 0; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; overflow: hidden; }
         .img-container img { width: 100%; height: auto; object-fit: contain; }
         
+        /* RETÂNGULO AZUL (GÔNDOLA | PRATELEIRA) */
+        .box-localizacao { position: absolute; bottom: 10px; left: 10px; background: var(--cor-local); color: #fff; padding: 10px 15px; border-radius: 5px; font-size: 24px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 10; border: 2px solid #fff; }
+
+        /* BOLINHA VERMELHA (QUANTIDADE) */
         .bolinha-qtd { position: absolute; bottom: 10px; right: 10px; background: var(--cor-alerta); color: #fff; width: 70px; height: 70px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 4px solid var(--cor-bg); box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 10; }
         .bolinha-qtd span { font-size: 36px; font-weight: bold; line-height: 1; }
         .bolinha-qtd small { font-size: 10px; text-transform: uppercase; }
 
-        /* Controles logo abaixo da informação do item */
         .controles { display: flex; width: 100%; gap: 8px; margin-top: 5px; }
         .btn-nav { background: #bdc3c7; width: 65px; font-size: 28px; color: #333; flex: none; height: 80px; }
         .btn-confirmar { background: var(--cor-sucesso); flex: 1; font-size: 22px; height: 80px; }
 
-        /* TELA CONFERÊNCIA (DESKTOP) */
+        /* TELA CONFERÊNCIA */
         .item-lista { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px; border-bottom: 1px solid #ddd; font-size: 20px; }
         .item-lista.ok { background: #d5f5e3; color: #1e8449; }
-        .item-lista.erro { background: #fadbd8; color: #c0392b; font-weight: bold; }
         #input-pistola { position: fixed; top: -100px; opacity: 0; }
     </style>
 </head>
@@ -57,6 +58,7 @@
         
         <div class="img-container">
             <img id="sep-img" src="">
+            <div class="box-localizacao" id="sep-local">-- | --</div>
             <div class="bolinha-qtd">
                 <small>Faltam</small>
                 <span id="sep-qtd">0</span>
@@ -97,9 +99,16 @@
             const resProd = await fetch('site/produtos.json');
             if (!resProd.ok) throw new Error("Não achou site/produtos.json");
             const dataProd = await resProd.json();
-            dataProd.forEach(function(p) { dbProdutos[p.codigo] = p.gtin; });
+            // Mapeamos gtin, gondola e prateleira pelo código SKU
+            dataProd.forEach(function(p) { 
+                dbProdutos[p.codigo] = {
+                    ean: p.gtin,
+                    gondola: p.gondola || "--",
+                    prateleira: p.prateleira || "--"
+                }; 
+            });
 
-            const resPedidos = await fetch('site/pedidos_fila.json');
+            const resPedidos = await fetch('pedidos_fila.json');
             if (!resPedidos.ok) throw new Error("Não achou pedidos_fila.json");
             const dataPedidos = await resPedidos.json();
             pedidosFila = dataPedidos.fila || [];
@@ -131,6 +140,19 @@
         let p = pedidosFila[idx];
         pedidoAtivo = (typeof p === 'string') ? JSON.parse(p) : p;
         indexItem = 0;
+
+        // ORDENAÇÃO POR GÔNDOLA E PRATELEIRA
+        pedidoAtivo.itens.sort(function(a, b) {
+            let infoA = dbProdutos[a.sku] || {gondola: "ZZ", prateleira: "ZZ"};
+            let infoB = dbProdutos[b.sku] || {gondola: "ZZ", prateleira: "ZZ"};
+            
+            if (infoA.gondola < infoB.gondola) return -1;
+            if (infoA.gondola > infoB.gondola) return 1;
+            if (infoA.prateleira < infoB.prateleira) return -1;
+            if (infoA.prateleira > infoB.prateleira) return 1;
+            return 0;
+        });
+
         pedidoAtivo.itens.forEach(function(it) { it.coletados = 0; });
         atualizarTelaSeparacao();
         trocarTela('tela-separacao');
@@ -138,11 +160,12 @@
 
     function atualizarTelaSeparacao() {
         const item = pedidoAtivo.itens[indexItem];
-        const ean = dbProdutos[item.sku] || "SEM EAN";
+        const info = dbProdutos[item.sku] || { ean: "SEM EAN", gondola: "--", prateleira: "--" };
         
         document.getElementById('sep-nome').innerText = item.nomeOriginal;
-        document.getElementById('sep-ean').innerText = ean;
+        document.getElementById('sep-ean').innerText = info.ean;
         document.getElementById('sep-img').src = item.imagem;
+        document.getElementById('sep-local').innerText = info.gondola + " | " + info.prateleira;
         document.getElementById('sep-qtd').innerText = item.qtd - item.coletados;
         document.getElementById('sep-progresso').innerText = (indexItem + 1) + " / " + pedidoAtivo.itens.length;
         
@@ -180,8 +203,8 @@
         pedidoAtivo = (typeof p === 'string') ? JSON.parse(p) : p;
         mapaConferencia = {};
         pedidoAtivo.itens.forEach(function(it) {
-            const ean = dbProdutos[it.sku] || "SEM_EAN";
-            mapaConferencia[ean] = { nome: it.nomeOriginal, total: it.qtd, lido: 0 };
+            const info = dbProdutos[it.sku] || { ean: "SEM_EAN" };
+            mapaConferencia[info.ean] = { nome: it.nomeOriginal, total: it.qtd, lido: 0 };
         });
         document.getElementById('conf-pedido-num').innerText = "Pedido " + pedidoAtivo.orderNum;
         renderizarListaConferencia();
