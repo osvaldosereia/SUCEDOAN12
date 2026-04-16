@@ -21,38 +21,37 @@
         .btn-conferir { background: var(--cor-sucesso); width: 100%; margin-top: 5px; }
         .btn-voltar { background: #95a5a6; padding: 10px; margin-bottom: 5px; font-size: 14px; width: auto; align-self: flex-start; }
 
-        /* TELA SEPARAÇÃO */
-        #tela-separacao { justify-content: flex-start; }
-        #sep-nome { font-size: 14px; text-align: center; color: #7f8c8d; margin-bottom: 2px; line-height: 1.2; }
-        .ean-v { font-size: 26px; font-weight: bold; text-align: center; color: var(--cor-primaria); background: #eee; padding: 2px 5px; border-radius: 4px; margin: 0 0 5px 0; }
+        /* TELA BUSCA DE PRODUTO */
+        #tela-produto { justify-content: flex-start; height: 100vh; }
+        .busca-container { display: flex; gap: 10px; margin-bottom: 15px; position: sticky; top: 0; background: var(--cor-bg); z-index: 20; padding: 5px 0; }
+        .busca-input { flex: 1; padding: 12px; border: 2px solid var(--cor-primaria); border-radius: 8px; font-size: 16px; }
+        .btn-buscar { background: var(--cor-acao); color: white; border: none; border-radius: 8px; padding: 0 20px; font-weight: bold; cursor: pointer; }
         
+        #lista-resultados { overflow-y: auto; flex: 1; padding-bottom: 20px; }
+        
+        /* CARD DE RESULTADO DE PRODUTO */
+        .card-produto-resultado { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 25px; overflow: hidden; border: 1px solid #ddd; }
+        .card-produto-resultado img { width: 100%; height: 250px; object-fit: contain; background: #fff; border-bottom: 1px solid #eee; display: block; }
+        
+        .info-container { padding: 15px; }
+        .info-item { margin-bottom: 12px; }
+        .info-label { font-size: 12px; font-weight: bold; color: #7f8c8d; text-transform: uppercase; margin-bottom: 2px; }
+        .info-valor { font-size: 18px; font-weight: bold; color: var(--cor-primaria); line-height: 1.2; }
+        
+        .erro-busca { color: var(--cor-alerta); font-weight: bold; text-align: center; margin-top: 20px; padding: 15px; background: #fdedec; border-radius: 8px; }
+
+        /* MANTENDO ESTILOS ANTERIORES */
         .img-container { position: relative; width: 100%; height: auto; min-height: 250px; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; overflow: hidden; border-radius: 8px; }
         .img-container img { width: 100%; height: auto; object-fit: contain; }
-        
-        .box-localizacao { position: absolute; bottom: 10px; left: 10px; background: var(--cor-local); color: #fff; padding: 10px 15px; border-radius: 5px; font-size: 24px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 10; border: 2px solid #fff; }
-        .bolinha-qtd { position: absolute; bottom: 10px; right: 10px; background: var(--cor-alerta); color: #fff; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid var(--cor-bg); box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 10; }
-        .bolinha-qtd span { font-size: 38px; font-weight: bold; line-height: 1; }
-
+        .box-localizacao { position: absolute; bottom: 10px; left: 10px; background: var(--cor-local); color: #fff; padding: 10px 15px; border-radius: 5px; font-size: 24px; font-weight: bold; z-index: 10; border: 2px solid #fff; }
+        .bolinha-qtd { position: absolute; bottom: 10px; right: 10px; background: var(--cor-alerta); color: #fff; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid var(--cor-bg); z-index: 10; }
+        .bolinha-qtd span { font-size: 38px; font-weight: bold; }
         .controles { display: flex; width: 100%; gap: 8px; margin-top: 15px; }
-        .btn-nav { background: #bdc3c7; width: 65px; font-size: 28px; color: #333; flex: none; height: 80px; }
+        .btn-nav { background: #bdc3c7; width: 65px; font-size: 28px; color: #333; height: 80px; }
         .btn-confirmar { background: var(--cor-sucesso); flex: 1; font-size: 22px; height: 80px; }
-
-        /* TELA CONFERÊNCIA */
         .item-lista { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px; border-bottom: 1px solid #ddd; font-size: 20px; }
         .item-lista.ok { background: #d5f5e3; color: #1e8449; }
         #input-pistola { position: fixed; top: -100px; opacity: 0; }
-
-        /* TELA BUSCA DE PRODUTO */
-        #tela-produto { justify-content: flex-start; }
-        .busca-container { display: flex; gap: 10px; margin-bottom: 15px; }
-        .busca-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        .btn-buscar { background: var(--cor-acao); color: white; border: none; border-radius: 5px; padding: 10px 15px; font-weight: bold; cursor: pointer; }
-        .produto-detalhes { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; flex-direction: column; align-items: center; overflow-y: auto; flex: 1; }
-        .produto-detalhes img { width: 100%; max-width: 250px; border-radius: 8px; margin-bottom: 15px; object-fit: contain; }
-        .produto-info { width: 100%; text-align: left; }
-        .produto-info p { margin-bottom: 8px; font-size: 15px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
-        .produto-info strong { color: var(--cor-primaria); display: inline-block; width: 100px; }
-        .erro-busca { color: var(--cor-alerta); font-weight: bold; text-align: center; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -68,36 +67,28 @@
 
     <div id="tela-produto" class="tela">
         <button class="btn btn-voltar" onclick="voltarHome()">⬅ Voltar</button>
-        <h2 style="text-align:center; margin-bottom: 15px;">🔍 Consulta de Produto</h2>
         
         <div class="busca-container">
-            <input type="text" id="input-busca" class="busca-input" placeholder="Digite nome ou GTIN...">
-            <button class="btn-buscar" onclick="buscarProduto()">Buscar</button>
+            <input type="text" id="input-busca" class="busca-input" placeholder="Nome ou GTIN...">
+            <button class="btn-buscar" onclick="buscarProduto()">BUSCAR</button>
         </div>
         
-        <div id="msg-erro-busca" class="erro-busca">Produto não encontrado. Verifique o nome ou GTIN.</div>
-
-        <div id="container-produto" class="produto-detalhes">
+        <div id="lista-resultados">
             </div>
     </div>
 
     <div id="tela-separacao" class="tela">
         <button class="btn btn-voltar" onclick="voltarHome()">⬅ Voltar</button>
-        <div id="sep-nome"></div>
-        <div class="ean-v" id="sep-ean"></div>
-        
+        <div id="sep-nome" style="text-align:center; font-weight:bold; margin-bottom:5px;"></div>
+        <div class="ean-v" id="sep-ean" style="text-align:center; font-size:24px; background:#eee; padding:5px; margin-bottom:5px;"></div>
         <div class="img-container">
             <img id="sep-img" src="">
             <div class="box-localizacao" id="sep-local">-- | --</div>
-            <div class="bolinha-qtd">
-                <span id="sep-qtd">0</span>
-            </div>
+            <div class="bolinha-qtd"><span id="sep-qtd">0</span></div>
         </div>
-
         <div style="text-align: center; font-weight: bold; font-size: 15px; margin-top: 10px;">
             PRODUTO <span id="sep-progresso"></span>
         </div>
-
         <div class="controles">
             <button class="btn btn-nav" onclick="navegar(-1)">❮</button>
             <button class="btn btn-confirmar" id="btn-acao" onclick="registrarClique()">SEPARAR</button>
@@ -122,7 +113,6 @@
     let indexItem = 0;
     let mapaConferencia = {};
     
-    // Motor de Som Nativo
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function emitirBipe(tipo) {
         if (!audioCtx) return;
@@ -132,156 +122,121 @@
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         if (tipo === 'ok') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(900, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.1);
         } else {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.5);
         }
+        osc.start(); osc.stop(audioCtx.currentTime + (tipo==='ok'?0.1:0.5));
     }
 
-    // Função de Leitura Limpa
     async function carregarDados() {
         const containerHome = document.getElementById('lista-pedidos');
         containerHome.innerHTML = '<p>Buscando...</p>';
-        
         try {
             const resProd = await fetch('site/produtos.json');
-            if (!resProd.ok) throw new Error("Não achou site/produtos.json");
+            if (!resProd.ok) throw new Error("Erro ao carregar produtos.json");
             const dataProd = await resProd.json();
-            
-            // ALTERAÇÃO: Salvando todas as informações (o objeto "p" inteiro) dentro do dbProdutos
-            dataProd.forEach(function(p) { 
-                dbProdutos[p.codigo] = { ...p, ean: p.gtin, gondola: p.gondola || "--", prateleira: p.prateleira || "--" }; 
+            dataProd.forEach(p => { 
+                dbProdutos[p.codigo] = { ...p, ean: p.gtin }; 
             });
 
             const resPedidos = await fetch('site/pedidos_fila.json');
-            if (!resPedidos.ok) throw new Error("Não achou pedidos_fila.json");
             const dataPedidos = await resPedidos.json();
             pedidosFila = dataPedidos.fila || [];
-            
-            if (pedidosFila.length === 0) {
-                containerHome.innerHTML = "<p style='padding: 20px;'>Fila vazia no momento.</p>";
-            } else {
-                renderizarHome();
-            }
+            renderizarHome();
         } catch (e) {
-            containerHome.innerHTML = '<div style="color:red; padding:10px; border:1px solid red;">' + e.message + '</div>';
+            containerHome.innerHTML = '<div style="color:red; padding:10px;">' + e.message + '</div>';
         }
     }
 
     function renderizarHome() {
         const container = document.getElementById('lista-pedidos');
         container.innerHTML = '';
-        
+        if (pedidosFila.length === 0) { container.innerHTML = "Fila vazia."; return; }
         for (let i = pedidosFila.length - 1; i >= 0; i--) {
             let p = pedidosFila[i];
             let pedido = (typeof p === 'string') ? JSON.parse(p) : p;
-            
-            let hora = "Hora não registrada";
-            if(pedido.dataHora) {
-                let partes = pedido.dataHora.split(',');
-                if(partes.length > 1) hora = partes[1].trim(); 
-                else hora = pedido.dataHora;
-            }
-
-            container.innerHTML += '<div class="card-pedido">' +
-                '<div class="hora-pedido">🕒 ' + hora + '</div>' +
-                '<strong>Pedido ' + pedido.orderNum + '</strong><br><small>' + pedido.cliente + '</small>' +
-                '<div style="margin-top: 5px; margin-bottom: 5px;"><small style="color:#666;">' + pedido.itens.length + ' itens para separar</small></div>' +
-                '<button class="btn btn-separar" onclick="abrirSeparacao(' + i + ')">ABRIR SEPARAÇÃO</button>' +
-                '<button class="btn btn-conferir" onclick="abrirConferencia(' + i + ')">CONFERIR (DESKTOP)</button>' +
-                '</div>';
+            container.innerHTML += `<div class="card-pedido">
+                <div class="hora-pedido">🕒 ${pedido.dataHora || ''}</div>
+                <strong>Pedido ${pedido.orderNum}</strong><br><small>${pedido.cliente}</small>
+                <button class="btn btn-separar" onclick="abrirSeparacao(${i})">ABRIR SEPARAÇÃO</button>
+                <button class="btn btn-conferir" onclick="abrirConferencia(${i})">CONFERIR (DESKTOP)</button>
+            </div>`;
         }
     }
 
-    // NOVAS FUNÇÕES: TELA DE PRODUTO
+    // --- LOGICA DE BUSCA DE PRODUTOS (REVISADA) ---
     function abrirTelaProduto() {
         document.getElementById('input-busca').value = '';
-        document.getElementById('container-produto').style.display = 'none';
-        document.getElementById('msg-erro-busca').style.display = 'none';
+        document.getElementById('lista-resultados').innerHTML = '';
         trocarTela('tela-produto');
     }
 
     function buscarProduto() {
         const termoBusca = document.getElementById('input-busca').value.trim().toLowerCase();
-        const containerProduto = document.getElementById('container-produto');
-        const msgErro = document.getElementById('msg-erro-busca');
+        const containerResultados = document.getElementById('lista-resultados');
         
         if (!termoBusca) return;
+        containerResultados.innerHTML = '<p style="text-align:center;">Buscando...</p>';
 
-        let produtoEncontrado = null;
+        let produtosEncontrados = [];
 
-        // Varrer todos os produtos armazenados na memória
+        // Filtra todos os produtos que batem com o nome ou GTIN
         for (let codigo in dbProdutos) {
             let prod = dbProdutos[codigo];
-            let nomeProduto = (prod.nome || prod.descricao || "").toLowerCase();
-            let gtinProduto = (prod.gtin || prod.ean || "").toLowerCase();
+            let nome = (prod.nome || prod.descricao || "").toLowerCase();
+            let gtin = (prod.gtin || "").toLowerCase();
             
-            // Verifica se o termo digitado é igual ao GTIN ou faz parte do nome do produto
-            if (gtinProduto === termoBusca || nomeProduto.includes(termoBusca)) {
-                produtoEncontrado = prod;
-                break; // Achou? Para de procurar.
+            if (gtin.includes(termoBusca) || nome.includes(termoBusca)) {
+                produtosEncontrados.push(prod);
             }
         }
 
-        if (produtoEncontrado) {
-            msgErro.style.display = 'none'; // Esconde a mensagem de erro
-            containerProduto.style.display = 'flex'; // Mostra a div do produto
+        if (produtosEncontrados.length > 0) {
+            containerResultados.innerHTML = ''; // Limpa o "buscando"
             
-            // Gerar a lista de informações dinamicamente (pega tudo que tem no JSON)
-            let infoHtml = '';
-            for (let chave in produtoEncontrado) {
-                // Não queremos mostrar a palavra 'imagem' como texto, nem duplicar a chave 'ean' gerada
-                if (chave !== 'imagem' && chave !== 'img' && chave !== 'ean') { 
-                    infoHtml += `<p><strong>${chave.toUpperCase()}:</strong> ${produtoEncontrado[chave]}</p>`;
+            produtosEncontrados.forEach(prod => {
+                // Monta o bloco de informações (Nome em cima, Valor embaixo)
+                let infoHtml = '';
+                for (let chave in prod) {
+                    if (!['imagem', 'img', 'ean'].includes(chave)) {
+                        infoHtml += `
+                            <div class="info-item">
+                                <div class="info-label">${chave.replace('_', ' ')}</div>
+                                <div class="info-valor">${prod[chave]}</div>
+                            </div>`;
+                    }
                 }
-            }
 
-            // Tenta pegar o link da imagem, se não tiver, usa uma imagem em branco
-            let imagemUrl = produtoEncontrado.imagem || produtoEncontrado.img || 'https://via.placeholder.com/250x250?text=Sem+Foto';
+                // Validação da Foto
+                let fotoUrl = prod.imagem || prod.img || 'https://via.placeholder.com/250x250?text=Sem+Foto';
 
-            containerProduto.innerHTML = `
-                <img src="${imagemUrl}" alt="Foto do Produto">
-                <div class="produto-info">
-                    ${infoHtml}
-                </div>
-            `;
+                // Cria o Card do Produto
+                const card = document.createElement('div');
+                card.className = 'card-produto-resultado';
+                card.innerHTML = `
+                    <img src="${fotoUrl}" onerror="this.src='https://via.placeholder.com/250x250?text=Erro+na+Foto'">
+                    <div class="info-container">
+                        ${infoHtml}
+                    </div>
+                `;
+                containerResultados.appendChild(card);
+            });
         } else {
-            // Se não encontrou nada
-            containerProduto.style.display = 'none';
-            msgErro.style.display = 'block';
+            containerResultados.innerHTML = '<div class="erro-busca">Nenhum produto encontrado para: "' + termoBusca + '"</div>';
         }
     }
 
-    // Permite buscar apertando a tecla "Enter" no teclado
-    document.getElementById('input-busca').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') buscarProduto();
-    });
+    document.getElementById('input-busca').addEventListener('keypress', e => { if (e.key === 'Enter') buscarProduto(); });
 
-    // FUNÇÕES DE SEPARAÇÃO E CONFERÊNCIA MANTIDAS INTACTAS
+    // --- FUNÇÕES DE NAVEGAÇÃO E TELAS ---
     function abrirSeparacao(idx) {
         let p = pedidosFila[idx];
         pedidoAtivo = (typeof p === 'string') ? JSON.parse(p) : p;
         indexItem = 0;
-
-        pedidoAtivo.itens.sort(function(a, b) {
-            let infoA = dbProdutos[a.sku] || {gondola: "ZZ", prateleira: "ZZ"};
-            let infoB = dbProdutos[b.sku] || {gondola: "ZZ", prateleira: "ZZ"};
-            if (infoA.gondola < infoB.gondola) return -1;
-            if (infoA.gondola > infoB.gondola) return 1;
-            if (infoA.prateleira < infoB.prateleira) return -1;
-            if (infoA.prateleira > infoB.prateleira) return 1;
-            return 0;
-        });
-
-        pedidoAtivo.itens.forEach(function(it) { it.coletados = 0; });
+        pedidoAtivo.itens.forEach(it => it.coletados = 0);
         atualizarTelaSeparacao();
         trocarTela('tela-separacao');
     }
@@ -289,22 +244,15 @@
     function atualizarTelaSeparacao() {
         const item = pedidoAtivo.itens[indexItem];
         const info = dbProdutos[item.sku] || { ean: "SEM EAN", gondola: "--", prateleira: "--" };
-        
         document.getElementById('sep-nome').innerText = item.nomeOriginal;
         document.getElementById('sep-ean').innerText = info.ean;
-        document.getElementById('sep-img').src = item.imagem || info.imagem || ''; // Tenta pegar imagem do pedido ou do banco
+        document.getElementById('sep-img').src = item.imagem || info.imagem || '';
         document.getElementById('sep-local').innerText = info.gondola + " | " + info.prateleira;
         document.getElementById('sep-qtd').innerText = item.qtd;
         document.getElementById('sep-progresso').innerText = (indexItem + 1) + " / " + pedidoAtivo.itens.length;
-        
         const btn = document.getElementById('btn-acao');
-        if (item.coletados < item.qtd) {
-            btn.innerText = "CONFIRMAR (" + item.coletados + "/" + item.qtd + ")";
-            btn.style.background = "var(--cor-primaria)";
-        } else {
-            btn.innerText = "PRÓXIMO PRODUTO ❯";
-            btn.style.background = "var(--cor-sucesso)";
-        }
+        btn.innerText = item.coletados < item.qtd ? "CONFIRMAR (" + item.coletados + "/" + item.qtd + ")" : "PRÓXIMO ❯";
+        btn.style.background = item.coletados < item.qtd ? "var(--cor-primaria)" : "var(--cor-sucesso)";
     }
 
     function registrarClique() {
@@ -312,26 +260,20 @@
         if (item.coletados < item.qtd) {
             item.coletados++;
             atualizarTelaSeparacao();
-            if (item.coletados === item.qtd && indexItem < pedidoAtivo.itens.length - 1) {
-                setTimeout(function() { navegar(1); }, 400);
-            }
-        } else { navegar(1); }
+            if (item.coletados === item.qtd && indexItem < pedidoAtivo.itens.length - 1) setTimeout(() => navegar(1), 400);
+        } else navegar(1);
     }
 
     function navegar(dir) {
         let novo = indexItem + dir;
-        if (novo >= 0 && novo < pedidoAtivo.itens.length) { 
-            indexItem = novo; 
-            atualizarTelaSeparacao(); 
-        }
+        if (novo >= 0 && novo < pedidoAtivo.itens.length) { indexItem = novo; atualizarTelaSeparacao(); }
     }
 
     function abrirConferencia(idx) {
-        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         let p = pedidosFila[idx];
         pedidoAtivo = (typeof p === 'string') ? JSON.parse(p) : p;
         mapaConferencia = {};
-        pedidoAtivo.itens.forEach(function(it) {
+        pedidoAtivo.itens.forEach(it => {
             const info = dbProdutos[it.sku] || { ean: "SEM_EAN" };
             mapaConferencia[info.ean] = { nome: it.nomeOriginal, total: it.qtd, lido: 0 };
         });
@@ -344,13 +286,12 @@
     function renderizarListaConferencia() {
         const container = document.getElementById('lista-conferencia');
         container.innerHTML = '';
-        Object.keys(mapaConferencia).forEach(function(ean) {
+        Object.keys(mapaConferencia).forEach(ean => {
             const it = mapaConferencia[ean];
-            const classe = it.lido >= it.total ? 'ok' : '';
-            container.innerHTML += '<div class="item-lista ' + classe + '">' +
-                '<span>' + it.nome + '<br><small>EAN: ' + ean + '</small></span>' +
-                '<span style="font-weight:bold; font-size:28px;">' + it.lido + ' / ' + it.total + '</span>' +
-                '</div>';
+            container.innerHTML += `<div class="item-lista ${it.lido >= it.total ? 'ok' : ''}">
+                <span>${it.nome}<br><small>EAN: ${ean}</small></span>
+                <span style="font-weight:bold; font-size:28px;">${it.lido} / ${it.total}</span>
+            </div>`;
         });
     }
 
@@ -359,35 +300,16 @@
             const eanLido = this.value.trim();
             if (mapaConferencia[eanLido]) {
                 mapaConferencia[eanLido].lido++;
-                if (mapaConferencia[eanLido].lido > mapaConferencia[eanLido].total) {
-                    emitirBipe('erro');
-                    alert("⚠️ Qtd Excedida para este produto!");
-                } else {
-                    emitirBipe('ok');
-                }
-            } else {
-                emitirBipe('erro');
-                alert("⛔ PRODUTO NÃO PERTENCE A ESTE PEDIDO!");
-            }
-            this.value = '';
-            renderizarListaConferencia();
+                emitirBipe(mapaConferencia[eanLido].lido > mapaConferencia[eanLido].total ? 'erro' : 'ok');
+            } else emitirBipe('erro');
+            this.value = ''; renderizarListaConferencia();
         }
     });
 
-    function focarPistola() { 
-        const input = document.getElementById('input-pistola');
-        input.focus();
-        document.onclick = function() { input.focus(); };
-    }
-
-    function trocarTela(id) {
-        document.querySelectorAll('.tela').forEach(function(t) { t.classList.remove('ativa'); });
-        document.getElementById(id).classList.add('ativa');
-    }
-
+    function focarPistola() { const input = document.getElementById('input-pistola'); input.focus(); document.onclick = () => input.focus(); }
+    function trocarTela(id) { document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa')); document.getElementById(id).classList.add('ativa'); }
     function voltarHome() { trocarTela('tela-home'); document.onclick = null; }
 
-    // Roda a primeira vez ao abrir
     carregarDados();
 </script>
 </body>
