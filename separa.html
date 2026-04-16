@@ -76,7 +76,7 @@
             dataProd.forEach(p => { dbProdutos[p.codigo] = p.gtin; });
 
             // 2. Carrega a fila de pedidos real
-            const resPedidos = await fetch('pedidos_fila.json');
+            const resPedidos = await fetch('site/pedidos_fila.json');
             const dataPedidos = await resPedidos.json();
             pedidosFila = dataPedidos.fila || [];
             
