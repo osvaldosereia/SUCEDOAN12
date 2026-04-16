@@ -13,13 +13,13 @@
         .tela.ativa { display: flex; }
 
         /* TELA HOME */
+        .btn-atualizar { background: var(--cor-acao); width: 100%; margin-bottom: 15px; font-size: 18px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; }
         .card-pedido { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid var(--cor-primaria); position: relative; }
         .hora-pedido { position: absolute; top: 15px; right: 15px; font-size: 13px; color: #7f8c8d; font-weight: bold; background: #ecf0f1; padding: 4px 8px; border-radius: 4px; }
         .btn { border: none; border-radius: 5px; font-size: 16px; font-weight: bold; color: #fff; cursor: pointer; padding: 15px; text-align: center; }
         .btn-separar { background: var(--cor-primaria); width: 100%; margin-top: 10px; }
         .btn-conferir { background: var(--cor-sucesso); width: 100%; margin-top: 5px; }
         .btn-voltar { background: #95a5a6; padding: 10px; margin-bottom: 5px; font-size: 14px; width: auto; align-self: flex-start; }
-        .btn-atualizar { background: var(--cor-acao); width: 100%; margin-bottom: 15px; font-size: 18px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
         /* TELA SEPARAÇÃO */
         #tela-separacao { justify-content: flex-start; }
@@ -47,8 +47,8 @@
 
     <div id="tela-home" class="tela ativa">
         <h2 style="text-align:center; margin: 10px 0;">📦 Fila de Pedidos</h2>
-        <button class="btn btn-atualizar" onclick="carregarDados()">🔄 ATUALIZAR PEDIDOS</button>
-        <div id="lista-pedidos">Carregando dados da loja...</div>
+        <button class="btn-atualizar" onclick="carregarDados()">🔄 PUXAR PEDIDOS</button>
+        <div id="lista-pedidos" style="text-align:center; font-weight:bold;">Aperte o botão azul acima para ler o arquivo</div>
     </div>
 
     <div id="tela-separacao" class="tela">
@@ -116,26 +116,26 @@
         }
     }
 
+    // Função de Leitura Limpa (SEM CACHE BUSTING DE SERVIDOR)
     async function carregarDados() {
         const containerHome = document.getElementById('lista-pedidos');
-        containerHome.innerHTML = '<p style="text-align:center;">Buscando pedidos novos...</p>';
+        containerHome.innerHTML = '<p>Buscando...</p>';
         
         try {
-            // O COMANDO { cache: 'no-store' } DESTRÓI O CACHE DO NAVEGADOR
-            const resProd = await fetch('site/produtos.json', { cache: 'no-store' });
+            const resProd = await fetch('site/produtos.json');
             if (!resProd.ok) throw new Error("Não achou site/produtos.json");
             const dataProd = await resProd.json();
             dataProd.forEach(function(p) { 
                 dbProdutos[p.codigo] = { ean: p.gtin, gondola: p.gondola || "--", prateleira: p.prateleira || "--" }; 
             });
 
-            const resPedidos = await fetch('pedidos_fila.json', { cache: 'no-store' });
+            const resPedidos = await fetch('pedidos_fila.json');
             if (!resPedidos.ok) throw new Error("Não achou pedidos_fila.json");
             const dataPedidos = await resPedidos.json();
             pedidosFila = dataPedidos.fila || [];
             
             if (pedidosFila.length === 0) {
-                containerHome.innerHTML = "<p style='text-align:center; padding: 20px;'>Fila vazia no momento.</p>";
+                containerHome.innerHTML = "<p style='padding: 20px;'>Fila vazia no momento.</p>";
             } else {
                 renderizarHome();
             }
@@ -148,7 +148,7 @@
         const container = document.getElementById('lista-pedidos');
         container.innerHTML = '';
         
-        // LOOP INVERTIDO: Mais recentes no topo
+        // MAIS RECENTE NO TOPO
         for (let i = pedidosFila.length - 1; i >= 0; i--) {
             let p = pedidosFila[i];
             let pedido = (typeof p === 'string') ? JSON.parse(p) : p;
