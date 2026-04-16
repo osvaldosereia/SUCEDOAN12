@@ -108,7 +108,7 @@
                 }; 
             });
 
-            const resPedidos = await fetch('pedidos_fila.json');
+            const resPedidos = await fetch('site/pedidos_fila.json');
             if (!resPedidos.ok) throw new Error("Não achou pedidos_fila.json");
             const dataPedidos = await resPedidos.json();
             pedidosFila = dataPedidos.fila || [];
