@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dona Antônia - Logística Pro</title>
     <style>
-        :root { --cor-bg: #f4f4f9; --cor-primaria: #2c3e50; --cor-sucesso: #27ae60; --cor-alerta: #e74c3c; --cor-local: #007bff; }
+        :root { --cor-bg: #f4f4f9; --cor-primaria: #2c3e50; --cor-sucesso: #27ae60; --cor-alerta: #e74c3c; --cor-local: #007bff; --cor-acao: #3498db; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background: var(--cor-bg); color: #333; overflow-x: hidden; touch-action: manipulation; }
         
@@ -19,24 +19,20 @@
         .btn-separar { background: var(--cor-primaria); width: 100%; margin-top: 10px; }
         .btn-conferir { background: var(--cor-sucesso); width: 100%; margin-top: 5px; }
         .btn-voltar { background: #95a5a6; padding: 10px; margin-bottom: 5px; font-size: 14px; width: auto; align-self: flex-start; }
+        .btn-atualizar { background: var(--cor-acao); width: 100%; margin-bottom: 15px; font-size: 18px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
-        /* TELA SEPARAÇÃO (ALINHADA AO TOPO) */
-        #tela-separacao { justify-content: flex-start; } /* Fixa tudo no topo */
-        
+        /* TELA SEPARAÇÃO */
+        #tela-separacao { justify-content: flex-start; }
         #sep-nome { font-size: 14px; text-align: center; color: #7f8c8d; margin-bottom: 2px; line-height: 1.2; }
         .ean-v { font-size: 26px; font-weight: bold; text-align: center; color: var(--cor-primaria); background: #eee; padding: 2px 5px; border-radius: 4px; margin: 0 0 5px 0; }
         
         .img-container { position: relative; width: 100%; height: auto; min-height: 250px; background: #fff; display: flex; align-items: center; justify-content: center; border: 1px solid #ddd; overflow: hidden; border-radius: 8px; }
         .img-container img { width: 100%; height: auto; object-fit: contain; }
         
-        /* RETÂNGULO AZUL (GÔNDOLA | PRATELEIRA) */
         .box-localizacao { position: absolute; bottom: 10px; left: 10px; background: var(--cor-local); color: #fff; padding: 10px 15px; border-radius: 5px; font-size: 24px; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 10; border: 2px solid #fff; }
-
-        /* BOLINHA VERMELHA (QUANTIDADE TOTAL) */
         .bolinha-qtd { position: absolute; bottom: 10px; right: 10px; background: var(--cor-alerta); color: #fff; width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 4px solid var(--cor-bg); box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 10; }
         .bolinha-qtd span { font-size: 38px; font-weight: bold; line-height: 1; }
 
-        /* Controles subiram para ficar logo abaixo da imagem */
         .controles { display: flex; width: 100%; gap: 8px; margin-top: 15px; }
         .btn-nav { background: #bdc3c7; width: 65px; font-size: 28px; color: #333; flex: none; height: 80px; }
         .btn-confirmar { background: var(--cor-sucesso); flex: 1; font-size: 22px; height: 80px; }
@@ -51,7 +47,8 @@
 
     <div id="tela-home" class="tela ativa">
         <h2 style="text-align:center; margin: 10px 0;">📦 Fila de Pedidos</h2>
-        <div id="lista-pedidos">Carregando pedidos...</div>
+        <button class="btn btn-atualizar" onclick="carregarDados()">🔄 ATUALIZAR PEDIDOS</button>
+        <div id="lista-pedidos">Carregando dados da loja...</div>
     </div>
 
     <div id="tela-separacao" class="tela">
@@ -95,49 +92,50 @@
     let indexItem = 0;
     let mapaConferencia = {};
     
-    // Motor de Som Nativo (Não pesa nada!)
+    // Motor de Som Nativo
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function emitirBipe(tipo) {
         if (!audioCtx) return;
         if (audioCtx.state === 'suspended') audioCtx.resume();
-        
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        
         if (tipo === 'ok') {
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(900, audioCtx.currentTime); // Agudo e feliz
+            osc.frequency.setValueAtTime(900, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.1); // Super rápido
+            osc.stop(audioCtx.currentTime + 0.1);
         } else {
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime); // Grave e feio
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
             gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.5); // Demora mais
+            osc.stop(audioCtx.currentTime + 0.5);
         }
     }
 
     async function carregarDados() {
         const containerHome = document.getElementById('lista-pedidos');
+        containerHome.innerHTML = '<p style="text-align:center;">Buscando pedidos novos...</p>';
+        
         try {
-            const resProd = await fetch('site/produtos.json');
+            // O COMANDO { cache: 'no-store' } DESTRÓI O CACHE DO NAVEGADOR
+            const resProd = await fetch('site/produtos.json', { cache: 'no-store' });
             if (!resProd.ok) throw new Error("Não achou site/produtos.json");
             const dataProd = await resProd.json();
             dataProd.forEach(function(p) { 
                 dbProdutos[p.codigo] = { ean: p.gtin, gondola: p.gondola || "--", prateleira: p.prateleira || "--" }; 
             });
 
-            const resPedidos = await fetch('pedidos_fila.json');
+            const resPedidos = await fetch('pedidos_fila.json', { cache: 'no-store' });
             if (!resPedidos.ok) throw new Error("Não achou pedidos_fila.json");
             const dataPedidos = await resPedidos.json();
             pedidosFila = dataPedidos.fila || [];
             
             if (pedidosFila.length === 0) {
-                containerHome.innerHTML = "Fila vazia.";
+                containerHome.innerHTML = "<p style='text-align:center; padding: 20px;'>Fila vazia no momento.</p>";
             } else {
                 renderizarHome();
             }
@@ -150,15 +148,14 @@
         const container = document.getElementById('lista-pedidos');
         container.innerHTML = '';
         
-        // LOOP INVERTIDO: Do último para o primeiro (Mais recentes no topo)
+        // LOOP INVERTIDO: Mais recentes no topo
         for (let i = pedidosFila.length - 1; i >= 0; i--) {
             let p = pedidosFila[i];
             let pedido = (typeof p === 'string') ? JSON.parse(p) : p;
             
-            // Tratamento da hora (Tenta extrair do campo dataHora)
-            let hora = "Hora Indisponível";
+            let hora = "Hora não registrada";
             if(pedido.dataHora) {
-                let partes = pedido.dataHora.split(','); // "15/04/2026, 23:42:23"
+                let partes = pedido.dataHora.split(',');
                 if(partes.length > 1) hora = partes[1].trim(); 
                 else hora = pedido.dataHora;
             }
@@ -166,7 +163,7 @@
             container.innerHTML += '<div class="card-pedido">' +
                 '<div class="hora-pedido">🕒 ' + hora + '</div>' +
                 '<strong>Pedido ' + pedido.orderNum + '</strong><br><small>' + pedido.cliente + '</small>' +
-                '<div style="margin-top: 5px; margin-bottom: 5px;"><small style="color:#666;">' + pedido.itens.length + ' itens</small></div>' +
+                '<div style="margin-top: 5px; margin-bottom: 5px;"><small style="color:#666;">' + pedido.itens.length + ' itens para separar</small></div>' +
                 '<button class="btn btn-separar" onclick="abrirSeparacao(' + i + ')">ABRIR SEPARAÇÃO</button>' +
                 '<button class="btn btn-conferir" onclick="abrirConferencia(' + i + ')">CONFERIR (DESKTOP)</button>' +
                 '</div>';
@@ -201,10 +198,7 @@
         document.getElementById('sep-ean').innerText = info.ean;
         document.getElementById('sep-img').src = item.imagem;
         document.getElementById('sep-local').innerText = info.gondola + " | " + info.prateleira;
-        
-        // BOLA VERMELHA AGORA MOSTRA O TOTAL DO ITEM FIXO
         document.getElementById('sep-qtd').innerText = item.qtd;
-        
         document.getElementById('sep-progresso').innerText = (indexItem + 1) + " / " + pedidoAtivo.itens.length;
         
         const btn = document.getElementById('btn-acao');
@@ -237,8 +231,7 @@
     }
 
     function abrirConferencia(idx) {
-        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Acorda o som
-
+        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
         let p = pedidosFila[idx];
         pedidoAtivo = (typeof p === 'string') ? JSON.parse(p) : p;
         mapaConferencia = {};
@@ -270,16 +263,14 @@
             const eanLido = this.value.trim();
             if (mapaConferencia[eanLido]) {
                 mapaConferencia[eanLido].lido++;
-                
                 if (mapaConferencia[eanLido].lido > mapaConferencia[eanLido].total) {
-                    emitirBipe('erro'); // Apita longo (Erro)
+                    emitirBipe('erro');
                     alert("⚠️ Qtd Excedida para este produto!");
                 } else {
-                    emitirBipe('ok'); // Apita curto (Sucesso)
+                    emitirBipe('ok');
                 }
-
             } else {
-                emitirBipe('erro'); // Apita longo (Erro)
+                emitirBipe('erro');
                 alert("⛔ PRODUTO NÃO PERTENCE A ESTE PEDIDO!");
             }
             this.value = '';
@@ -300,6 +291,7 @@
 
     function voltarHome() { trocarTela('tela-home'); document.onclick = null; }
 
+    // Roda a primeira vez ao abrir
     carregarDados();
 </script>
 </body>
