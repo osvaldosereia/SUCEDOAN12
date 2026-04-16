@@ -41,14 +41,44 @@
         .item-lista { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 15px; border-bottom: 1px solid #ddd; font-size: 20px; }
         .item-lista.ok { background: #d5f5e3; color: #1e8449; }
         #input-pistola { position: fixed; top: -100px; opacity: 0; }
+
+        /* TELA BUSCA DE PRODUTO */
+        #tela-produto { justify-content: flex-start; }
+        .busca-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        .busca-input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
+        .btn-buscar { background: var(--cor-acao); color: white; border: none; border-radius: 5px; padding: 10px 15px; font-weight: bold; cursor: pointer; }
+        .produto-detalhes { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; flex-direction: column; align-items: center; overflow-y: auto; flex: 1; }
+        .produto-detalhes img { width: 100%; max-width: 250px; border-radius: 8px; margin-bottom: 15px; object-fit: contain; }
+        .produto-info { width: 100%; text-align: left; }
+        .produto-info p { margin-bottom: 8px; font-size: 15px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .produto-info strong { color: var(--cor-primaria); display: inline-block; width: 100px; }
+        .erro-busca { color: var(--cor-alerta); font-weight: bold; text-align: center; margin-top: 10px; display: none; }
     </style>
 </head>
 <body>
 
     <div id="tela-home" class="tela ativa">
         <h2 style="text-align:center; margin: 10px 0;">📦 Fila de Pedidos</h2>
-        <button class="btn-atualizar" onclick="carregarDados()">🔄 PUXAR PEDIDOS</button>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-atualizar" style="flex: 2;" onclick="carregarDados()">🔄 PUXAR PEDIDOS</button>
+            <button class="btn-atualizar" style="flex: 1; background: var(--cor-primaria);" onclick="abrirTelaProduto()">🔍 PRODUTO</button>
+        </div>
         <div id="lista-pedidos" style="text-align:center; font-weight:bold;">Aperte o botão azul acima para ler o arquivo</div>
+    </div>
+
+    <div id="tela-produto" class="tela">
+        <button class="btn btn-voltar" onclick="voltarHome()">⬅ Voltar</button>
+        <h2 style="text-align:center; margin-bottom: 15px;">🔍 Consulta de Produto</h2>
+        
+        <div class="busca-container">
+            <input type="text" id="input-busca" class="busca-input" placeholder="Digite nome ou GTIN...">
+            <button class="btn-buscar" onclick="buscarProduto()">Buscar</button>
+        </div>
+        
+        <div id="msg-erro-busca" class="erro-busca">Produto não encontrado. Verifique o nome ou GTIN.</div>
+
+        <div id="container-produto" class="produto-detalhes">
+            </div>
     </div>
 
     <div id="tela-separacao" class="tela">
@@ -116,7 +146,7 @@
         }
     }
 
-    // Função de Leitura Limpa (SEM CACHE BUSTING DE SERVIDOR)
+    // Função de Leitura Limpa
     async function carregarDados() {
         const containerHome = document.getElementById('lista-pedidos');
         containerHome.innerHTML = '<p>Buscando...</p>';
@@ -125,8 +155,10 @@
             const resProd = await fetch('site/produtos.json');
             if (!resProd.ok) throw new Error("Não achou site/produtos.json");
             const dataProd = await resProd.json();
+            
+            // ALTERAÇÃO: Salvando todas as informações (o objeto "p" inteiro) dentro do dbProdutos
             dataProd.forEach(function(p) { 
-                dbProdutos[p.codigo] = { ean: p.gtin, gondola: p.gondola || "--", prateleira: p.prateleira || "--" }; 
+                dbProdutos[p.codigo] = { ...p, ean: p.gtin, gondola: p.gondola || "--", prateleira: p.prateleira || "--" }; 
             });
 
             const resPedidos = await fetch('site/pedidos_fila.json');
@@ -148,7 +180,6 @@
         const container = document.getElementById('lista-pedidos');
         container.innerHTML = '';
         
-        // MAIS RECENTE NO TOPO
         for (let i = pedidosFila.length - 1; i >= 0; i--) {
             let p = pedidosFila[i];
             let pedido = (typeof p === 'string') ? JSON.parse(p) : p;
@@ -170,6 +201,71 @@
         }
     }
 
+    // NOVAS FUNÇÕES: TELA DE PRODUTO
+    function abrirTelaProduto() {
+        document.getElementById('input-busca').value = '';
+        document.getElementById('container-produto').style.display = 'none';
+        document.getElementById('msg-erro-busca').style.display = 'none';
+        trocarTela('tela-produto');
+    }
+
+    function buscarProduto() {
+        const termoBusca = document.getElementById('input-busca').value.trim().toLowerCase();
+        const containerProduto = document.getElementById('container-produto');
+        const msgErro = document.getElementById('msg-erro-busca');
+        
+        if (!termoBusca) return;
+
+        let produtoEncontrado = null;
+
+        // Varrer todos os produtos armazenados na memória
+        for (let codigo in dbProdutos) {
+            let prod = dbProdutos[codigo];
+            let nomeProduto = (prod.nome || prod.descricao || "").toLowerCase();
+            let gtinProduto = (prod.gtin || prod.ean || "").toLowerCase();
+            
+            // Verifica se o termo digitado é igual ao GTIN ou faz parte do nome do produto
+            if (gtinProduto === termoBusca || nomeProduto.includes(termoBusca)) {
+                produtoEncontrado = prod;
+                break; // Achou? Para de procurar.
+            }
+        }
+
+        if (produtoEncontrado) {
+            msgErro.style.display = 'none'; // Esconde a mensagem de erro
+            containerProduto.style.display = 'flex'; // Mostra a div do produto
+            
+            // Gerar a lista de informações dinamicamente (pega tudo que tem no JSON)
+            let infoHtml = '';
+            for (let chave in produtoEncontrado) {
+                // Não queremos mostrar a palavra 'imagem' como texto, nem duplicar a chave 'ean' gerada
+                if (chave !== 'imagem' && chave !== 'img' && chave !== 'ean') { 
+                    infoHtml += `<p><strong>${chave.toUpperCase()}:</strong> ${produtoEncontrado[chave]}</p>`;
+                }
+            }
+
+            // Tenta pegar o link da imagem, se não tiver, usa uma imagem em branco
+            let imagemUrl = produtoEncontrado.imagem || produtoEncontrado.img || 'https://via.placeholder.com/250x250?text=Sem+Foto';
+
+            containerProduto.innerHTML = `
+                <img src="${imagemUrl}" alt="Foto do Produto">
+                <div class="produto-info">
+                    ${infoHtml}
+                </div>
+            `;
+        } else {
+            // Se não encontrou nada
+            containerProduto.style.display = 'none';
+            msgErro.style.display = 'block';
+        }
+    }
+
+    // Permite buscar apertando a tecla "Enter" no teclado
+    document.getElementById('input-busca').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') buscarProduto();
+    });
+
+    // FUNÇÕES DE SEPARAÇÃO E CONFERÊNCIA MANTIDAS INTACTAS
     function abrirSeparacao(idx) {
         let p = pedidosFila[idx];
         pedidoAtivo = (typeof p === 'string') ? JSON.parse(p) : p;
@@ -196,7 +292,7 @@
         
         document.getElementById('sep-nome').innerText = item.nomeOriginal;
         document.getElementById('sep-ean').innerText = info.ean;
-        document.getElementById('sep-img').src = item.imagem;
+        document.getElementById('sep-img').src = item.imagem || info.imagem || ''; // Tenta pegar imagem do pedido ou do banco
         document.getElementById('sep-local').innerText = info.gondola + " | " + info.prateleira;
         document.getElementById('sep-qtd').innerText = item.qtd;
         document.getElementById('sep-progresso').innerText = (indexItem + 1) + " / " + pedidoAtivo.itens.length;
