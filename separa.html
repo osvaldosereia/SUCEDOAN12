@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dona Antônia - Logística</title>
+    <style>
+        /* CSS ULTRA LEVE PARA O LG K9 E DESKTOP */
+        :root { --cor-bg: #f4f4f9; --cor-primaria: #2c3e50; --cor-sucesso: #27ae60; --cor-alerta: #e74c3c; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: var(--cor-bg); color: #333; overflow-x: hidden; }
+        
+        .tela { display: none; padding: 15px; width: 100vw; height: 100vh; flex-direction: column; }
+        .tela.ativa { display: flex; }
+
+        /* TELA HOME */
+        .card-pedido { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card-pedido h3 { font-size: 18px; margin-bottom: 10px; }
+        .botoes-acao { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 15px; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; color: #fff; cursor: pointer; }
+        .btn-separar { background: var(--cor-primaria); }
+        .btn-conferir { background: var(--cor-sucesso); }
+        .btn-voltar { background: #95a5a6; margin-bottom: 15px; padding: 10px; }
+
+        /* TELA SEPARAÇÃO (MOBILE LG K9) */
+        #tela-separacao { align-items: center; justify-content: space-between; }
+        .img-container { position: relative; width: 250px; height: 250px; margin: 20px auto; background: #fff; border-radius: 10px; padding: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .img-container img { width: 100%; height: 100%; object-fit: contain; }
+        .bolinha-qtd { position: absolute; bottom: -15px; right: -15px; background: var(--cor-alerta); color: #fff; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; border: 4px solid var(--cor-bg); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .info-produto { text-align: center; margin-bottom: 20px; width: 100%; }
+        .ean-destaque { font-size: 28px; font-weight: bold; letter-spacing: 2px; margin: 10px 0; color: var(--cor-primaria); }
+        
+        .controles-separacao { display: flex; width: 100%; gap: 10px; margin-bottom: 20px; }
+        .btn-nav { background: #bdc3c7; width: 60px; font-size: 24px; }
+        .btn-confirmar { background: var(--cor-sucesso); flex: 1; font-size: 20px; }
+        .item-separado { opacity: 0.3; } /* Efeito de item já bipado */
+
+        /* TELA CONFERÊNCIA (DESKTOP) */
+        #tela-conferencia { max-width: 1200px; margin: 0 auto; }
+        .leitor-aviso { font-size: 24px; background: var(--cor-primaria); color: #fff; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
+        .item-lista { display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 20px; font-size: 22px; border-bottom: 2px solid #eee; }
+        .item-lista.ok { background: #d5f5e3; text-decoration: line-through; color: var(--cor-sucesso); }
+        .item-lista.erro { background: #fadbd8; color: var(--cor-alerta); font-weight: bold; }
+        .qtd-bipada { font-size: 32px; font-weight: bold; }
+        
+        /* Input fantasma para focar a pistola */
+        #input-pistola { opacity: 0; position: absolute; z-index: -1; }
+    </style>
+</head>
+<body>
+
+    <div id="tela-home" class="tela ativa">
+        <h2 style="margin-bottom: 20px;">Fila de Pedidos</h2>
+        <div id="lista-pedidos"></div>
+    </div>
+
+    <div id="tela-separacao" class="tela">
+        <button class="btn btn-voltar" onclick="voltarHome()">⬅ Voltar para Pedidos</button>
+        <div class="info-produto">
+            <h2 id="sep-nome">Nome do Produto</h2>
+            <div class="ean-destaque" id="sep-ean">EAN AQUI</div>
+        </div>
+        
+        <div class="img-container" id="container-imagem">
+            <img id="sep-img" src="" alt="Produto" loading="lazy">
+            <div class="bolinha-qtd" id="sep-qtd">1</div>
+        </div>
+
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
+            Item <span id="sep-progresso">0/0</span>
+        </div>
+
+        <div class="controles-separacao">
+            <button class="btn btn-nav" onclick="navegar(-1)">❮</button>
+            <button class="btn btn-confirmar" id="btn-confirma-item" onclick="confirmarSeparacao()">Confirmar ✔</button>
+            <button class="btn btn-nav" onclick="navegar(1)">❯</button>
+        </div>
+    </div>
+
+    <div id="tela-conferencia" class="tela">
+        <button class="btn btn-voltar" onclick="voltarHome()">⬅ Voltar</button>
+        <div class="leitor-aviso">
+            BIPE OS CÓDIGOS DE BARRA AGORA 🔫
+            <br><small style="font-size: 14px;">O sistema está ouvindo...</small>
+        </div>
+        <input type="text" id="input-pistola" autofocus>
+        
+        <div id="lista-conferencia"></div>
+    </div>
+
+<script>
+    // SIMULAÇÃO DO SEU JSON DO GITHUB
+    const dbPedidos = [
+        {
+            "orderNum": "#343510",
+            "cliente": "CESTAS BASICAS DONA ANTONIA LTDA",
+            "itens": [
+                {"qtd": 1, "nomeOriginal": "BUCHA DE LAVAR LOUÇA", "sku": "16109433", "imagem": "../site/img/produtos/16109433.webp"},
+                {"qtd": 2, "nomeOriginal": "ARROZ TIO BONINI 5KG", "sku": "P0026", "imagem": "../site/img/produtos/P0026.webp"},
+                {"qtd": 1, "nomeOriginal": "CAFÉ CABOCLO 250G", "sku": "C0067", "imagem": "../site/img/produtos/C0067.webp"}
+            ]
+        }
+    ];
+
+    // Variáveis de Estado (Ultra leves)
+    let pedidoAtual = null;
+    let indiceAtual = 0;
+    let mapaConferencia = {};
+    let bufferPistola = '';
+
+    // INICIALIZAÇÃO
+    function renderizarHome() {
+        const div = document.getElementById('lista-pedidos');
+        div.innerHTML = '';
+        dbPedidos.forEach((p, index) => {
+            div.innerHTML += `
+                <div class="card-pedido">
+                    <h3>${p.orderNum} - ${p.cliente}</h3>
+                    <div class="botoes-acao">
+                        <button class="btn btn-separar" onclick="abrirSeparacao(${index})">Separar (Mobile)</button>
+                        <button class="btn btn-conferir" onclick="abrirConferencia(${index})">Conferir (Desktop)</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    function trocarTela(idTela) {
+        document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+        document.getElementById(idTela).classList.add('ativa');
+    }
+
+    function voltarHome() { trocarTela('tela-home'); }
+
+    // ==========================================
+    // LÓGICA DE SEPARAÇÃO (MOBILE LG K9)
+    // ==========================================
+    function abrirSeparacao(index) {
+        pedidoAtual = dbPedidos[index];
+        
+        // Simulação de ordenação por gôndola baseada no SKU
+        // Aqui você pode plugar um dicionário/banco local no futuro
+        pedidoAtual.itens.sort((a, b) => a.sku.localeCompare(b.sku)); 
+        
+        indiceAtual = 0;
+        renderizarItemSeparacao();
+        trocarTela('tela-separacao');
+    }
+
+    function renderizarItemSeparacao() {
+        const item = pedidoAtual.itens[indiceAtual];
+        document.getElementById('sep-nome').innerText = item.nomeOriginal;
+        document.getElementById('sep-ean').innerText = item.sku;
+        document.getElementById('sep-qtd').innerText = item.qtd;
+        document.getElementById('sep-img').src = item.imagem;
+        document.getElementById('sep-progresso').innerText = `${indiceAtual + 1} de ${pedidoAtual.itens.length}`;
+        
+        // Feedback visual se já separou
+        const container = document.getElementById('container-imagem');
+        const btnConfirma = document.getElementById('btn-confirma-item');
+        
+        if (item.separado) {
+            container.classList.add('item-separado');
+            btnConfirma.innerText = "Já Separado";
+            btnConfirma.style.background = "#95a5a6";
+        } else {
+            container.classList.remove('item-separado');
+            btnConfirma.innerText = "Confirmar ✔";
+            btnConfirma.style.background = "var(--cor-sucesso)";
+        }
+    }
+
+    function navegar(direcao) {
+        const novoIndice = indiceAtual + direcao;
+        if (novoIndice >= 0 && novoIndice < pedidoAtual.itens.length) {
+            indiceAtual = novoIndice;
+            renderizarItemSeparacao();
+        }
+    }
+
+    function confirmarSeparacao() {
+        pedidoAtual.itens[indiceAtual].separado = true;
+        renderizarItemSeparacao();
+        setTimeout(() => navegar(1), 300); // Passa pro próximo sozinho após 300ms
+    }
+
+    // ==========================================
+    // LÓGICA DE CONFERÊNCIA E PISTOLA (DESKTOP)
+    // ==========================================
+    function abrirConferencia(index) {
+        pedidoAtual = dbPedidos[index];
+        mapaConferencia = {};
+        
+        // Monta o dicionário para a pistola checar rápido
+        pedidoAtual.itens.forEach(item => {
+            mapaConferencia[item.sku] = {
+                nome: item.nomeOriginal,
+                qtdTotal: item.qtd,
+                qtdLida: 0
+            };
+        });
+
+        renderizarListaConferencia();
+        trocarTela('tela-conferencia');
+        
+        // Força o foco pro leitor
+        const input = document.getElementById('input-pistola');
+        input.value = '';
+        input.focus();
+        
+        // Mantém o foco ativo caso o usuário clique fora
+        document.addEventListener('click', () => input.focus());
+    }
+
+    function renderizarListaConferencia() {
+        const div = document.getElementById('lista-conferencia');
+        div.innerHTML = '';
+        
+        Object.keys(mapaConferencia).forEach(sku => {
+            const item = mapaConferencia[sku];
+            let statusClass = '';
+            let feedback = '';
+
+            if (item.qtdLida === item.qtdTotal) {
+                statusClass = 'ok';
+            } else if (item.qtdLida > item.qtdTotal) {
+                statusClass = 'erro';
+                feedback = ' ⚠️ PASSOU DO LIMITE';
+            }
+
+            div.innerHTML += `
+                <div class="item-lista ${statusClass}">
+                    <div>
+                        <strong>${item.nome}</strong><br>
+                        <small style="color: #666;">EAN: ${sku}</small> ${feedback}
+                    </div>
+                    <div class="qtd-bipada">
+                        ${item.qtdLida} / ${item.qtdTotal}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Captura o Enter da Pistola de Código de Barras
+    document.getElementById('input-pistola').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            processarBipe(this.value.trim());
+            this.value = ''; // Limpa para o próximo bipe
+        }
+    });
+
+    function processarBipe(ean) {
+        if (!ean) return;
+
+        if (mapaConferencia[ean]) {
+            mapaConferencia[ean].qtdLida++;
+            
+            if(mapaConferencia[ean].qtdLida > mapaConferencia[ean].qtdTotal){
+                alert(`ERRO: Você bipou mais ${mapaConferencia[ean].nome} do que o pedido pede!`);
+            }
+        } else {
+            alert(`ERRO GIGANTE: O produto ${ean} NÃO PERTENCE a este pedido! Retire da caixa agora.`);
+        }
+        
+        renderizarListaConferencia();
+    }
+
+    // Start
+    renderizarHome();
+</script>
+</body>
+</html>
