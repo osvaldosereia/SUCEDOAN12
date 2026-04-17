@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oferta Especial - Dona Antônia</title>
+    <style>
+        /* Variáveis de cor do site original */
+        :root {
+            --c-p: #1e293b; --c-s: #64748b; --c-a: #ea1d2c; --c-ok: #10b981;
+            --c-bg: #ffffff; --c-bd: #f1f5f9; --c-img-bg: #f1f5f9;
+            --font: 'Inter', system-ui, sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: var(--font); background: var(--c-bg); color: var(--c-p); padding-bottom: 80px; }
+        
+        /* Cabeçalho Profissional */
+        .header-row { display: flex; align-items: center; justify-content: center; padding: 15px; background: #fff; border-bottom: 1px solid var(--c-bd); box-shadow: 0 2px 8px rgba(0,0,0,0.05);}
+        .logo-top { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid var(--c-bd); margin-right: 10px;}
+        .brand-name { font-weight: 700; font-size: 1.3rem; }
+
+        /* Banner de Desconto */
+        .banner-desconto { background: var(--c-a); color: #fff; text-align: center; padding: 15px; margin: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; box-shadow: 0 4px 12px rgba(234, 29, 44, 0.3); animation: pulsar 2s infinite;}
+        @keyframes pulsar { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        .banner-desconto span { display: block; font-size: 0.85rem; font-weight: normal; margin-top: 5px; }
+
+        /* Grade Elegante (Copiado do seu site) */
+        .grid-elegant { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background-color: var(--c-bd); border: 1px solid var(--c-bd); border-radius: 8px; margin: 0 15px 20px; overflow: hidden; }
+        .card-elegant { display: flex; flex-direction: column; background: #fff; padding: 10px; text-align: center;}
+        .card-elegant .img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+        .card-elegant .img-wrap img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .card-elegant .info-wrap { display: flex; flex-direction: column; flex: 1; }
+        .card-elegant .title { font-size: 0.75rem; font-weight: 500; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .card-elegant .price { font-size: 1rem; font-weight: 800; color: var(--c-p); margin-top: auto;}
+
+        /* Botão WhatsApp Fixo no Rodapé */
+        .btn-whatsapp-fixo { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: #25D366; color: #fff; text-align: center; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1.1rem; text-decoration: none; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px; z-index: 100;}
+        
+        /* Ajuste para PC */
+        @media(min-width: 800px) {
+            .grid-elegant { grid-template-columns: repeat(4, 1fr); max-width: 800px; margin: 0 auto 20px; }
+            .banner-desconto { max-width: 800px; margin: 15px auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-row">
+        <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="logo-top" alt="Logo Dona Antônia">
+        <span class="brand-name">Dona Antônia</span>
+    </div>
+
+    <div class="banner-desconto">
+        🎟️ VOCÊ GANHOU ATÉ R$ 30 DE DESCONTO!
+        <span>Valide seu cupom agora no nosso WhatsApp para os produtos abaixo:</span>
+    </div>
+
+    <div class="grid-elegant">
+        
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/42232584.webp?v=1776442465781" alt="LOCAO HIDRATANTE HIDRAMAIS PERFUME DE BEBE 500ML " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">LOCAO HIDRATANTE HIDRAMAIS PERFUME DE BEBE 500ML </div>
+                    <div class="price">R$ 23,13</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/40415738.webp?v=1776441734365" alt="NIVEA HIDRATANTE LABIAL MELANCIA 4,8G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">NIVEA HIDRATANTE LABIAL MELANCIA 4,8G</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/38912098.webp?v=1776440610777" alt="NIVEA HIDRATANTE LABIAL CUPCAKE DE BAUNILHA 4,8G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">NIVEA HIDRATANTE LABIAL CUPCAKE DE BAUNILHA 4,8G</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/38910181.webp?v=1776440796599" alt="NIVEA HIDRATANTE LABIAL MORANGO 4,8G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">NIVEA HIDRATANTE LABIAL MORANGO 4,8G</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/38905302.webp?v=1776440982536" alt="NIVEA HIDRATANTE LABIAL AMORA 4,8G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">NIVEA HIDRATANTE LABIAL AMORA 4,8G</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/38902228.webp?v=1776441168536" alt="NIVEA HIDRATANTE LABIAL CEREJA 4,8G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">NIVEA HIDRATANTE LABIAL CEREJA 4,8G</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/33444996.webp?v=1776434529553" alt="CARMED REPARADOR LABIAL  ÁCIDO HIALURÔNICO 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED REPARADOR LABIAL  ÁCIDO HIALURÔNICO 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/33443545.webp?v=1776434591614" alt="CARMED HIDRATANTE LABIAL COCA-COLA INCOLOR  10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL COCA-COLA INCOLOR  10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/33441431.webp?v=1776438577782" alt="CARMED HIDRATANTE LABIAL COCA-COLA MARROM 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL COCA-COLA MARROM 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/33436424.webp?v=1776434846452" alt="CARMED HIDRATANTE LABIAL FINI BEIJOS 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL FINI BEIJOS 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/33414375.webp?v=1776434970623" alt="CARMED HIDRATANTE LABIAL BBF 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL BBF 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/33248188.webp?v=1776434405911" alt="CARMED HIDRATANTE LABIAL COCA-COLA VERMELHO 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL COCA-COLA VERMELHO 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/67983261.webp" alt="CARMED HIDRATANTE LABIAL MAÇA DO AMOR 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL MAÇA DO AMOR 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/67618307.webp?v=1776367961566" alt="CARMED HIDRATANTE LABIAL WAFLE 10F" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL WAFLE 10F</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/67427809.webp?v=1776368148118" alt="CARMED HIDRATANTE LABIAL FINI AMORAS 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL FINI AMORAS 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/66106834.webp?v=1776367643030" alt="CARMED HIDRATANTE LABIAL FINI BANANAS 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL FINI BANANAS 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/65530355.webp?v=1776366287011" alt="CARMED HIDRATANTE LABIAL LEITE CONDENSADO 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL LEITE CONDENSADO 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/65094708.webp?v=1776366159090" alt="CARMED HIDRATANTE LABIAL DOCE DE LEITE 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL DOCE DE LEITE 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/64858366.webp?v=1776365973316" alt="CARMED HIDRATANTE LABIAL ANA CASTELA 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL ANA CASTELA 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/62313986.webp?v=1776365849838" alt="CARMED HIDRATANTE LABIAL ÁGUA DE COCO 10G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CARMED HIDRATANTE LABIAL ÁGUA DE COCO 10G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/340149A.webp?v=1776050601698" alt="Monange Hidratante Desodorante Flor De Lavanda 400 Ml" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Monange Hidratante Desodorante Flor De Lavanda 400 Ml</div>
+                    <div class="price">R$ 21,11</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/131717Z.webp?v=1776053714009" alt="HIDRATANTE PAIXAO DESODORANTE CORPORAL IRRESISTIVEL 400 ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE PAIXAO DESODORANTE CORPORAL IRRESISTIVEL 400 ML</div>
+                    <div class="price">R$ 23,13</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/576525G.webp?v=1776048178160" alt="Monange Hidratante Desodorante Frutas Vermelhas 400 Ml" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Monange Hidratante Desodorante Frutas Vermelhas 400 Ml</div>
+                    <div class="price">R$ 21,11</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/481864Y.webp?v=1776048021780" alt="OFF! Family Locao Repelente de Insetos e Mosquitos, 200ml" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">OFF! Family Locao Repelente de Insetos e Mosquitos, 200ml</div>
+                    <div class="price">R$ 22,12</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/651183X.webp?v=1776047713303" alt="HIDRATANTE PAIXAO DESODORANTE CORPORAL TENTADORA 400 ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE PAIXAO DESODORANTE CORPORAL TENTADORA 400 ML</div>
+                    <div class="price">R$ 23,13</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/124285W.webp?v=1776047512670" alt="HIDRATANTE PAIXAO DESODORANTE CORPORAL INSPIRADORA 400 ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE PAIXAO DESODORANTE CORPORAL INSPIRADORA 400 ML</div>
+                    <div class="price">R$ 23,13</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/172190G.webp?v=1776044876250" alt="NIVEA SABONETE LIQUIDO OLEO DE BANHO 200ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">NIVEA SABONETE LIQUIDO OLEO DE BANHO 200ML</div>
+                    <div class="price">R$ 37,27</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/859237U.webp?v=1776045061228" alt="HIDRATANTE FACIAL NIVEA EM GEL ULTRALEVE 7 EM 1 100G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE FACIAL NIVEA EM GEL ULTRALEVE 7 EM 1 100G</div>
+                    <div class="price">R$ 37,27</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/999262Z.webp?v=1776046622063" alt="CREME FACIAL NIVEA UNIFORMIZADOR BELEZA RADIANTE 7 EM 1 100G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME FACIAL NIVEA UNIFORMIZADOR BELEZA RADIANTE 7 EM 1 100G</div>
+                    <div class="price">R$ 37,27</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/228944B.webp?v=1776046102774" alt="CREME FACIAL NIVEA ANTISSINAIS ULTRALEVE 7 EM 1 100G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME FACIAL NIVEA ANTISSINAIS ULTRALEVE 7 EM 1 100G</div>
+                    <div class="price">R$ 37,27</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/770604D.webp?v=1776045751962" alt="CREME FACIAL NIVEA NUTRITIVO ULTRALEVE 7 EM 1 100G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME FACIAL NIVEA NUTRITIVO ULTRALEVE 7 EM 1 100G</div>
+                    <div class="price">R$ 37,27</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/210555C.webp?v=1776043590893" alt="Monange AGUA MICELAR FACIAL COM ACIDO HIALURONICO 200ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Monange AGUA MICELAR FACIAL COM ACIDO HIALURONICO 200ML</div>
+                    <div class="price">R$ 20,10</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/488846M.webp?v=1776037050897" alt="TONICO FACIAL NIVEA CONTROLE DO BRILHO 200ML, TONIFICA A PELE, REMOVE IMPUREZAS" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">TONICO FACIAL NIVEA CONTROLE DO BRILHO 200ML, TONIFICA A PELE, REMOVE IMPUREZAS</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/355421Z.webp?v=1776033662291" alt="Monange HIDRATANTE CORPORAL 400ML COTY ANTISSINAIS HIALU" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Monange HIDRATANTE CORPORAL 400ML COTY ANTISSINAIS HIALU</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/710585O.webp" alt="Monange GEL DE LIMPEZA FACIAL ANTI-RESSECAMENTO COM ACIDO HIALURONICO E NIACINAMIDA 120G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Monange GEL DE LIMPEZA FACIAL ANTI-RESSECAMENTO COM ACIDO HIALURONICO E NIACINAMIDA 120G</div>
+                    <div class="price">R$ 19,09</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/489678D.webp?v=1776084822841" alt="AGUA MICELAR L'OREAL PARIS EFEITO MATTE SOLUCAO DE LIMPEZA FACIAL 5 EM 1 - 200ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">AGUA MICELAR L'OREAL PARIS EFEITO MATTE SOLUCAO DE LIMPEZA FACIAL 5 EM 1 - 200ML</div>
+                    <div class="price">R$ 27,17</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/510855D.webp" alt="CREME HIDRATANTE FACIAL  GARNIER, GEL ANTIMANCHAS TOQUE SECO 85G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME HIDRATANTE FACIAL  GARNIER, GEL ANTIMANCHAS TOQUE SECO 85G</div>
+                    <div class="price">R$ 35,25</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/993523B.webp?v=1776032768167" alt="GEL DE LIMPEZA FACIAL GARNIER EXPRESS ACLARA HIDRATANTE, ACAO ANTIBACTERIANA E ANTIMANCHAS " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">GEL DE LIMPEZA FACIAL GARNIER EXPRESS ACLARA HIDRATANTE, ACAO ANTIBACTERIANA E ANTIMANCHAS </div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/473042L.webp?v=1776032512134" alt="NIVEA HIDRATANTE LABIAL ORIGINAL CARE 4,8G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">NIVEA HIDRATANTE LABIAL ORIGINAL CARE 4,8G</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/733835P.webp?v=1776032296934" alt="Oleo em Gel Seda Boom Volumao Power 190 ml" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Oleo em Gel Seda Boom Volumao Power 190 ml</div>
+                    <div class="price">R$ 22,12</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/954819C.webp?v=1776032063037" alt="SABONETE LIMPEZA FACIAL GARNIER UNIFORM & MATTE VITAMINA C ANTIOLEOSIDADE - 120G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SABONETE LIMPEZA FACIAL GARNIER UNIFORM & MATTE VITAMINA C ANTIOLEOSIDADE - 120G</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/894339O.webp?v=1776028621149" alt="MASCARA CAPILAR  L'OREAL PARIS ELSEVE GLYCOLIC GLOSS 300G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">MASCARA CAPILAR  L'OREAL PARIS ELSEVE GLYCOLIC GLOSS 300G</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/991954Y.webp?v=1776052366872" alt="SKALA CREME PARA PENTEAR 12 EM 1 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR 12 EM 1 1KG </div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/112546L.webp?v=1776053007272" alt="SKALA  CREME PARA PENTEAR  BOMBA DE VITAMINAS 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA  CREME PARA PENTEAR  BOMBA DE VITAMINAS 1KG </div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/976162K.webp?v=1776052025825" alt="SKALA CREME PARA PENTEAR  CERAMIDAS G3 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR  CERAMIDAS G3 1KG </div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/757003C.webp?v=1775973501552" alt="SKALA CREME PARA PENTEAR BABOSA 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR BABOSA 1KG </div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/741222C.webp?v=1775973625442" alt="SKALA CREME PARA PENTEAR  ABACATE 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR  ABACATE 1KG </div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/572665P.webp?v=1775973687301" alt="SKALA CREME PARA PENTEAR POTAO DESMAIADO 1KG" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR POTAO DESMAIADO 1KG</div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/151795D.webp?v=1775972669630" alt="SKALA CREME PARA PENTEAR MAIS CACHOS 1KG" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR MAIS CACHOS 1KG</div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/202028T.webp?v=1776052305001" alt="SKALA CREME PARA PENTEAR  DIVINO POTAO 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR  DIVINO POTAO 1KG </div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/180065T.webp?v=1776053068604" alt="SKALA CREME PARA PENTEAR CEREJA 1KG" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR CEREJA 1KG</div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/580210P.webp?v=1776053130806" alt="SKALA CREME PARA PENTEAR GENETIQS GLICOLICO 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR GENETIQS GLICOLICO 1KG </div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/798463Z.webp?v=1775974422537" alt="SKALA CREME PARA PENTEAR MORANGO 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR MORANGO 1KG </div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/255979A.webp?v=1776442921512" alt="SKALA LOCAO LOVE INTENSE 400ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA LOCAO LOVE INTENSE 400ML</div>
+                    <div class="price">R$ 9,60</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/531161P.webp?v=1775967548624" alt="SKALA LOCAO FRESCOR NATURAL 400ML " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA LOCAO FRESCOR NATURAL 400ML </div>
+                    <div class="price">R$ 9,60</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/190818X.webp?v=1775967610588" alt="SKALA LOCAO MANTEGA DE KARITE 400ML " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA LOCAO MANTEGA DE KARITE 400ML </div>
+                    <div class="price">R$ 9,60</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/818928A.webp?v=1775967672121" alt="SKALA LOCAO LAVANDA 400ML " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA LOCAO LAVANDA 400ML </div>
+                    <div class="price">R$ 9,60</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/632741B.webp?v=1775967733731" alt="SKALA LOCAO ROSAS E AMENDOAS 400ML " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA LOCAO ROSAS E AMENDOAS 400ML </div>
+                    <div class="price">R$ 9,60</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/451013T.webp?v=1775968368611" alt="LOCAO HIDRATANTE HIDRAMAIS FLOR LARANJEIRA 500ML " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">LOCAO HIDRATANTE HIDRAMAIS FLOR LARANJEIRA 500ML </div>
+                    <div class="price">R$ 23,13</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/574919W.webp?v=1775966354488" alt="CREME CAPILAR KANECHOM SUPER HIALU 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME CAPILAR KANECHOM SUPER HIALU 1KG </div>
+                    <div class="price">R$ 14,04</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/110924R.webp?v=1775966930583" alt="CREME CAPILAR KANECHOM CERAMIDAS 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME CAPILAR KANECHOM CERAMIDAS 1KG </div>
+                    <div class="price">R$ 14,04</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/799931K.webp?v=1775966992575" alt="CREME CAPILAR KANECHOM MANTEIGA KARITE 1KG " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME CAPILAR KANECHOM MANTEIGA KARITE 1KG </div>
+                    <div class="price">R$ 14,04</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/322509N.webp?v=1775964178765" alt="CREME DE TRATAMENTO L'OREAL PARIS ELSEVE PREENCHEDOR HIDRA HIALURONICO 300G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME DE TRATAMENTO L'OREAL PARIS ELSEVE PREENCHEDOR HIDRA HIALURONICO 300G</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/480588C.webp?v=1775964240349" alt="Creme de Tratamento Elseve Cachos Longos dos Sonhos 300ml" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Creme de Tratamento Elseve Cachos Longos dos Sonhos 300ml</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/516782Z.webp?v=1775965720560" alt="Creme de Tratamento L'Oreal Paris Elseve Liso dos Sonhos 300g" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Creme de Tratamento L'Oreal Paris Elseve Liso dos Sonhos 300g</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/155503S.webp" alt="HIDRATANTE FACIAL NEUTROGENA  ANTISSINAIS REPARADO FACE 100G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE FACIAL NEUTROGENA  ANTISSINAIS REPARADO FACE 100G</div>
+                    <div class="price">R$ 40,30</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/555156I.webp" alt="PROTETOR SOLAR OAZ 70 FPS 200ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">PROTETOR SOLAR OAZ 70 FPS 200ML</div>
+                    <div class="price">R$ 49,39</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/136735K.webp" alt="HIDRATANTE FACIAL NIVEA SOFT CORPORAL E FACIAL 97G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE FACIAL NIVEA SOFT CORPORAL E FACIAL 97G</div>
+                    <div class="price">R$ 37,27</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/573913K.webp" alt="HIDRATANTE FACIAL NEUTROGENA ANTISSINAIS FACE CARE INTENSIVE 100G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE FACIAL NEUTROGENA ANTISSINAIS FACE CARE INTENSIVE 100G</div>
+                    <div class="price">R$ 40,30</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/825882S.webp" alt="PROTETOR SOLAR OAZ  50 FPS 200ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">PROTETOR SOLAR OAZ  50 FPS 200ML</div>
+                    <div class="price">R$ 45,35</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/697979D.webp" alt="Protetor Solar FPS 50 Cenoura & Bronze 200ml" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Protetor Solar FPS 50 Cenoura & Bronze 200ml</div>
+                    <div class="price">R$ 35,14</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/364817D.webp" alt="HIDRATANTE FACIAL NEUTROGENA MATTE 3 EM 1 - 100G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE FACIAL NEUTROGENA MATTE 3 EM 1 - 100G</div>
+                    <div class="price">R$ 39,29</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/978274J.webp" alt="NIVEA HIDRATANTE LABIAL SUN PROTECT FPS 30 4,8G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">NIVEA HIDRATANTE LABIAL SUN PROTECT FPS 30 4,8G</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/127221O.webp?v=1775917166418" alt=" MASCARA DE TRATAMENTO TRESEMME BLINDAGEM ANTIUMIDADE 400G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title"> MASCARA DE TRATAMENTO TRESEMME BLINDAGEM ANTIUMIDADE 400G</div>
+                    <div class="price">R$ 25,15</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/636012W.webp?v=1775915740835" alt="HIDRATANTE FACIAL MONANGE HIDRA ANTISSINAIS COM ACIDO HIALURONICO E NIACINAMIDA 80G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE FACIAL MONANGE HIDRA ANTISSINAIS COM ACIDO HIALURONICO E NIACINAMIDA 80G</div>
+                    <div class="price">R$ 27,17</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/493275T.webp?v=1774637022611" alt="HIDRATANTE MONANGE FIRMADOR Q10 VITAMINA C 400ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE MONANGE FIRMADOR Q10 VITAMINA C 400ML</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/638759B.webp?v=1775096783553" alt="TRATAMENTO CICATRI RENOV L'OREAL PARIS ELSEVE 50ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">TRATAMENTO CICATRI RENOV L'OREAL PARIS ELSEVE 50ML</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/954962Y.webp?v=1774636836594" alt="HIDRATANTE FACIAL GARNIER ANTISSINAIS TOQUE SECO, COM COLAGENO 85G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE FACIAL GARNIER ANTISSINAIS TOQUE SECO, COM COLAGENO 85G</div>
+                    <div class="price">R$ 35,25</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/547547W.webp?v=1775138835405" alt="TRATAMENTO L'OREAL PARIS ELSEVE LISO DOS SONHOS 100ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">TRATAMENTO L'OREAL PARIS ELSEVE LISO DOS SONHOS 100ML</div>
+                    <div class="price">R$ 40,30</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/736295V.webp?v=1774636899769" alt="HIDRATANTE FACIAL GARNIER ANTIACNE TOQUE SECO COM ACIDO SALICILICO 85G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE FACIAL GARNIER ANTIACNE TOQUE SECO COM ACIDO SALICILICO 85G</div>
+                    <div class="price">R$ 35,25</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/662239W.webp?v=1775098593330" alt="Creme de Tratamento L'Oreal Elseve Pure Hialuronico 300g" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Creme de Tratamento L'Oreal Elseve Pure Hialuronico 300g</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/985503J.webp" alt="CREME DE TRATAMENTO L'OREAL PARIS ELSEVE REPARACAO TOTAL 300G" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME DE TRATAMENTO L'OREAL PARIS ELSEVE REPARACAO TOTAL 300G</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/163352L.webp?v=1775170484181" alt="TRATAMENTO CAPILAR MILAGROSO PANTENE PRO-V MIRACLES QUERATINA NUTRICAO, BRILHO E PROTECAO 95ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">TRATAMENTO CAPILAR MILAGROSO PANTENE PRO-V MIRACLES QUERATINA NUTRICAO, BRILHO E PROTECAO 95ML</div>
+                    <div class="price">R$ 32,22</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/287733R.webp?v=1775170485738" alt="TRATAMENTO CAPILAR L'OREAL PARIS ELSEVE GLYCOLIC GLOSS, KIT 5 PRODUTOS " onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">TRATAMENTO CAPILAR L'OREAL PARIS ELSEVE GLYCOLIC GLOSS, KIT 5 PRODUTOS </div>
+                    <div class="price">R$ 131,20</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/277065F.webp?v=1775170487039" alt="TRATAMENTO CAPILAR ULTRAPROFUNDO EMBELLEZE NOVEX CREME 1KG" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">TRATAMENTO CAPILAR ULTRAPROFUNDO EMBELLEZE NOVEX CREME 1KG</div>
+                    <div class="price">R$ 27,17</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/494079I.webp?v=1774366587906" alt="HIDRATANTE MONANGE  FIRMADOR Q10 VITAMINA 400ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">HIDRATANTE MONANGE  FIRMADOR Q10 VITAMINA 400ML</div>
+                    <div class="price">R$ 29,19</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/654043O.webp?v=1774363447338" alt="Mascara Capilar Inoar com Oleo de Argan 500g" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Mascara Capilar Inoar com Oleo de Argan 500g</div>
+                    <div class="price">R$ 39,29</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/868319K.webp?v=1774363385832" alt="Creme para Pentear Super Gloss L'Oreal Paris Elseve Glycolic Gloss 250ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">Creme para Pentear Super Gloss L'Oreal Paris Elseve Glycolic Gloss 250ML</div>
+                    <div class="price">R$ 23,13</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/P527.webp?v=1771967924353" alt="ACETONA FARMAX 100ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">ACETONA FARMAX 100ML</div>
+                    <div class="price">R$ 3,73</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/P0011.webp" alt="FARMAX ÁGUA OXIGENADA CREM  20V/90ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">FARMAX ÁGUA OXIGENADA CREM  20V/90ML</div>
+                    <div class="price">R$ 2,93</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/P0012.webp?v=1775103637329" alt="FARMAX ÁGUA OXIGENADA CREM FARMAX 30V/90ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">FARMAX ÁGUA OXIGENADA CREM FARMAX 30V/90ML</div>
+                    <div class="price">R$ 2,93</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/P0013.webp" alt="FARMAX ÁGUA OXIGENADA CREM FARMAX 40V/90ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">FARMAX ÁGUA OXIGENADA CREM FARMAX 40V/90ML</div>
+                    <div class="price">R$ 2,93</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/P0017.webp?v=1771967924353" alt="ALGODÃO TOPZ ROLO 25GR" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">ALGODÃO TOPZ ROLO 25GR</div>
+                    <div class="price">R$ 4,55</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/970601C.webp?v=1772124265049" alt="CREME PARA PENTEAR KOLENE ORIGINAL 300ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME PARA PENTEAR KOLENE ORIGINAL 300ML</div>
+                    <div class="price">R$ 13,03</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/366689A.webp?v=1772125845741" alt="CREME PARA PENTEAR NEUTROX 300ML CLASSICO" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME PARA PENTEAR NEUTROX 300ML CLASSICO</div>
+                    <div class="price">R$ 18,08</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/647864M.webp?v=1772916075578" alt="CREME PARA PENTEAR SEDA CERAMIDAS 300ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME PARA PENTEAR SEDA CERAMIDAS 300ML</div>
+                    <div class="price">R$ 13,03</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/250442U.webp?v=1772125266631" alt="CREME PARA PENTEAR SEDA COLAGENO 300ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME PARA PENTEAR SEDA COLAGENO 300ML</div>
+                    <div class="price">R$ 13,03</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/535614N.webp?v=1772125142388" alt="CREME PARA PENTEAR SEDA PRETOS LUMINOSOS 300ML" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">CREME PARA PENTEAR SEDA PRETOS LUMINOSOS 300ML</div>
+                    <div class="price">R$ 13,03</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/243006E.webp?v=1772916259652" alt="SKALA CREME PARA PENTEAR BABOSA 1KG" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR BABOSA 1KG</div>
+                    <div class="price">R$ 15,05</div>
+                </div>
+            </div>
+            <div class="card-elegant">
+                <div class="img-wrap">
+                    <img src="../site/img/produtos/669110P.webp?v=1776027966433" alt="SKALA CREME PARA PENTEAR MAIS CACHOS 250GR" onerror="this.src='/site/img/produtos/cesta.webp'">
+                </div>
+                <div class="info-wrap">
+                    <div class="title">SKALA CREME PARA PENTEAR MAIS CACHOS 250GR</div>
+                    <div class="price">R$ 11,01</div>
+                </div>
+            </div>
+    </div>
+
+    <a href="https://wa.me/5565998150975?text=Ol%C3%A1!%20Vim%20pelo%20Instagram%20e%20quero%20resgatar%20meu%20cupom%20de%20desconto!" target="_blank" class="btn-whatsapp-fixo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+        QUERO MEU CUPOM AGORA
+    </a>
+
+</body>
+</html>
