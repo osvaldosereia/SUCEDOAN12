@@ -39,7 +39,7 @@
     --c-t: #64748b;       
     --c-a: #ef4444;       
     --c-ok: #059669;      /* Emerald 600 */
-    --brand: #e11d48;     /* Rose 600 - Cor Vibrante Principal */
+    --brand: #e11d48;     /* Rose 600 */
     --brand-light: #fff1f2;
     --c-wpp: #16a34a;     /* Green 600 */
     --c-bg: #ffffff;      
@@ -60,14 +60,26 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* Desktop Container limits */
 .layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; background: var(--c-bg-sec); height: 100dvh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(15,23,42,0.1);} 
 
+/* ========================================================
+   LOADER INICIAL (SPLASH SCREEN PARA PAGESPEED)
+   ======================================================== */
+#initial-loader {
+    position: fixed; inset: 0; background: var(--c-bg-sec); z-index: 999999;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.5s ease;
+}
+@keyframes pulseLoad { 0% { transform: scale(0.9); opacity: 0.7; } 50% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(0.9); opacity: 0.7; } }
+.loader-logo { width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: pulseLoad 1.5s infinite ease-in-out; border: 2px solid var(--brand); padding: 2px; background: #fff;}
+.loader-text { margin-top: 20px; font-weight: 700; color: var(--c-p); font-size: 1rem; letter-spacing: -0.3px; }
+
 /* Topbar Stories (Some tudo junto na rolagem) */
 .stories-bar-container {
-    flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--c-bd); position: relative; z-index: 80;
-    transition: margin-top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
+    background: #fff; border-bottom: 1px solid var(--c-bd); position: sticky; top: 0; z-index: 80;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     padding-top: max(12px, env(safe-area-inset-top)); width: 100%;
     box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
-.stories-bar-container.hidden { margin-top: -160px; opacity: 0; pointer-events: none; }
+.stories-bar-container.hidden { transform: translateY(-100%); }
 
 .stories-bar { display: flex; align-items: flex-start; gap: 16px; padding: 16px; overflow-x: auto; scrollbar-width: none; }
 
@@ -78,11 +90,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     .stories-bar::-webkit-scrollbar-thumb { background: var(--c-t); border-radius: 4px; }
     .stories-bar::-webkit-scrollbar-thumb:hover { background: var(--c-s); }
 }
-.stories-bar::-webkit-scrollbar { display: none; }
+.stories-bar::-webkit-scrollbar { display: none; } /* Oculta no mobile */
 
 .story-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 90px; flex-shrink: 0; transition: transform 0.2s;}
 .story-item:active { transform: scale(0.94); }
 .story-ring { width: 90px; height: 90px; border-radius: 50%; padding: 3px; background: var(--story-ring); box-shadow: 0 4px 10px rgba(0,0,0,0.08);}
+.story-ring.watched { background: var(--c-bd); }
 .story-ring.logo-ring { background: transparent; border: 2px solid var(--brand); padding: 2px; box-shadow: none;}
 .story-img-wrap { width: 100%; height: 100%; background: #fff; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;}
 .story-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
@@ -92,7 +105,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 /* Main Stage */
 .main-stage { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: var(--c-bg-sec); padding-bottom: calc(var(--nav-height) + 20px); }
 
-/* Minimalist Grid & Cards (Responsivo Desktop/Mobile) */
+/* Minimalist Grid & Cards */
 .grid-elegant { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 24px; }
 @media(min-width: 768px) { .grid-elegant { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
 @media(min-width: 1024px) { .grid-elegant { grid-template-columns: repeat(6, 1fr); gap: 20px; } }
@@ -105,16 +118,15 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-elegant .info-wrap { display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
 .card-elegant .title { font-size: 0.85rem; font-weight: 500; color: var(--c-p); margin-bottom: 6px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 34px;}
 
-/* Preços lado a lado elegantemente */
 .price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;}
 .card-elegant .price { font-size: 1.15rem; font-weight: 800; color: var(--brand); line-height: 1; letter-spacing: -0.5px;}
-.card-elegant .old-price { font-size: 0.8rem; color: var(--c-s); text-decoration: line-through; font-weight: 500;}
+.card-elegant .old-price { font-size: 0.8rem; color: var(--c-t); text-decoration: line-through; font-weight: 500;}
 .card-elegant .atacado { font-size: 0.7rem; color: var(--c-ok); font-weight: 700; margin-top: 2px; background: #ecfdf5; padding: 4px 8px; border-radius: 6px; display: inline-block; align-self: flex-start;}
 
-.card-add-btn-wide { background: var(--brand-light); color: var(--brand); border-radius: 8px; padding: 10px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(225,29,72,0.2); width: 100%; margin-top: 12px; cursor: pointer; transition: 0.2s; min-height: 48px; }
+.card-add-btn-wide { background: var(--brand-light); color: var(--brand); border-radius: 8px; padding: 10px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(225,29,72,0.2); width: 100%; margin-top: 12px; cursor: pointer; transition: 0.2s; min-height: 44px;}
 .card-add-btn-wide:active { background: var(--brand); color: #fff;}
-.card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: var(--c-bg-sec); border-radius: 8px; height: 48px; margin-top: 12px; width: 100%; border: 1px solid var(--c-bd); overflow: hidden; }
-.card-qty-ctrl button { font-size: 1.4rem; color: var(--c-p); width: 48px; height: 100%; display: flex; align-items: center; justify-content: center; background: transparent; transition:0.2s; min-height: auto;}
+.card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: var(--c-bg-sec); border-radius: 8px; height: 44px; margin-top: 12px; width: 100%; border: 1px solid var(--c-bd); overflow: hidden; }
+.card-qty-ctrl button { font-size: 1.4rem; color: var(--c-p); width: 44px; height: 100%; display: flex; align-items: center; justify-content: center; background: transparent; transition:0.2s; min-height: auto;}
 .card-qty-ctrl button:active { background: var(--c-bd); }
 .card-qty-ctrl span { font-weight: 700; font-size: 1rem; color: var(--c-p); flex: 1; text-align: center;}
 
@@ -145,7 +157,7 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .see-all-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--c-bg-sec);}
 
 /* Quick View Respiro & Layout Desktop */
-.qv-info-wrap { padding: 24px 20px; max-width: 100vw; overflow-x: hidden; background: #fff;} 
+.qv-info-wrap { padding: 24px 16px; max-width: 100vw; overflow-x: hidden; background: #fff;} 
 
 @media(min-width: 768px) {
     #quick-view-lateral .see-all-content-inner { display: flex; flex-direction: row; max-width: 1000px; margin: 24px auto; background: #fff; border-radius: 20px; box-shadow: var(--shadow-soft); overflow: hidden;}
@@ -216,6 +228,13 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 <body>
 
 <div class="layout-limit">
+
+    <div id="initial-loader">
+        <div class="loader-logo">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Carregando..." style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+        </div>
+        <div class="loader-text">Carregando a loja...</div>
+    </div>
 
     <div class="stories-bar-container" id="stories-bar-container">
         <div class="stories-bar" id="stories-bar">
@@ -458,7 +477,6 @@ function converterDataValidade(dataStr) {
     return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
 }
 
-// Corrigido para blindar contra vídeos inválidos
 function getYouTubeVideoId(url) {
     if(!url || typeof url !== 'string') return '';
     if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
@@ -508,7 +526,6 @@ function injectSEO(type, data) {
             }
         };
         
-        // Injeta tag OGP manual para leitores que executam JS
         let ogImg = document.querySelector('meta[property="og:image"]');
         if(ogImg) ogImg.setAttribute("content", data.img);
         
@@ -522,7 +539,7 @@ function injectSEO(type, data) {
 }
 
 // ==========================================
-// NAVEGAÇÃO "STORIES" E GRIDS
+// NAVEGAÇÃO "STORIES"
 // ==========================================
 function getFirstProductImage(obj, type) {
     if(type === 'PROD' && obj.data && obj.data.length > 0) return obj.data[0].img;
@@ -607,7 +624,8 @@ function buildElegantCard(item, type, isCheckoutOrKit = false, cartQty = 0, pId 
     if(isCheckoutOrKit && type === 'PROD') {
         let insideKitType = expanderState.type; 
         if(insideKitType === 'BASKET' || !insideKitType) { 
-            controls = `<div class="card-qty-ctrl" style="margin-top:auto;"><button aria-label="Remover" onclick="${insideKitType ? `changeExpanderQty('${id}', -1)` : `upd('${id}', -1); event.stopPropagation();`} ">-</button><span>${qty}</span><button aria-label="Adicionar" onclick="${insideKitType ? `changeExpanderQty('${id}', 1)` : `upd('${id}', 1); event.stopPropagation();`} ">+</button></div>`;
+            // CORRIGIDO: event.stopPropagation() adicionado ao changeExpanderQty
+            controls = `<div class="card-qty-ctrl" style="margin-top:auto;"><button aria-label="Remover" onclick="event.stopPropagation(); ${insideKitType ? `changeExpanderQty('${id}', -1)` : `upd('${id}', -1)`} ">-</button><span>${qty}</span><button aria-label="Adicionar" onclick="event.stopPropagation(); ${insideKitType ? `changeExpanderQty('${id}', 1)` : `upd('${id}', 1)`} ">+</button></div>`;
         } else if(insideKitType === 'COMBO') {
             controls = `<div style="margin-top:auto; font-weight:700; color:var(--brand); background:var(--brand-light); padding:10px; border-radius:8px; text-align:center;">${qty} un</div>`;
         }
@@ -649,12 +667,13 @@ window.goToHome = function() {
     $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' }); 
     document.title = "Super Cestas Básicas Dona Antônia";
     $('stories-bar-container').classList.remove('hidden'); 
+    $('generic-overlay').style.display = 'none'; // Prevenção de Bug de Overlay Preso
     renderStories('home');
     updateNav('home', document.querySelectorAll('.nav-item')[0]);
 };
 
 window.addEventListener('popstate', function(event) {
-    $('generic-overlay').style.display = 'none';
+    $('generic-overlay').style.display = 'none'; // Prevenção de Bug Overlay
     if ($('drawer-menu').classList.contains('open')) closeDrawerMenu();
     else if ($('quick-view-lateral').classList.contains('open')) closeQuickView(true);
     else if ($('kit-detail-view').classList.contains('open')) closeKitDetail(true);
@@ -705,7 +724,7 @@ window.openQuickView = function(id) {
     let slug = createSlug(p.name); let prodUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?p=${slug}-${id}`;
     window.history.pushState({ qvOpen: true, productId: id }, '', prodUrl);
 
-    // Carrossel Seguro para Multimídia (Evita quebrar se a string do JSON for inválida)
+    // Carrossel Seguro
     let carrosselHtml = ''; let totalItems = 0;
     
     carrosselHtml += `<div class="qv-carousel-item"><img src="${p.img}" alt="${p.name.replace(/"/g, '')}"></div>`; totalItems++;
@@ -745,7 +764,6 @@ window.openQuickView = function(id) {
     if (p.descricao) { $('qv-desc').innerHTML = p.descricao.replace(/\n/g, '<br>'); $('qv-desc').style.display = 'block'; } else $('qv-desc').style.display = 'none';
     $('qv-price').innerHTML = buildPriceHtml(p.price, p.oldPrice); 
     
-    // Compartilhamento no Zap
     let shareText = encodeURIComponent(`Olha o que encontrei na Dona Antônia:\n\n*${p.name}*\nPor apenas *${fmt(p.price)}*\n\nCompre aqui: ${prodUrl}`);
     let shareBtn = $('qv-share-btn'); 
     if(shareBtn) {
@@ -942,9 +960,6 @@ window.openCheckout = function() {
 window.closeCheckout = function() { $('checkout-view').classList.remove('open'); $('bottom-nav').classList.remove('hidden'); STATE.checkoutOpen = false; updateTotals(); }
 window.selectPayment = function(metodo, elemento) { $('chk-pagamento').value = metodo; document.querySelectorAll('.pay-opt').forEach(el => el.classList.remove('selected')); elemento.classList.add('selected'); }
 
-// ==========================================
-// SOLUÇÃO DE ENVIO MAKE + WHATSAPP INTÁCTA
-// ==========================================
 function sendOrder() {
     const btnSubmit = $('btn-send-order'); if (btnSubmit.disabled) return;
     const inpNome = $('chk-nome'); const inpCpf = $('chk-cpf'); const inpPagamento = $('chk-pagamento'); 
@@ -1100,12 +1115,14 @@ async function init() {
         }
         STATE.dataLoaded = true;
         
-        // Injeta SEO do Catálogo Completo no carregamento
         injectSEO('CATALOG', STATE.prods);
+        
+        // Remove Splash Screen do PageSpeed
+        let loader = document.getElementById('initial-loader');
+        if(loader) loader.style.display = 'none';
 
         renderStories('home'); 
 
-        // LÓGICA PARA ABRIR O LINK DO ZAP COM PRODUTO SELECIONADO
         const urlParams = new URLSearchParams(window.location.search); 
         const pParam = urlParams.get('p');
         if (pParam) { 
