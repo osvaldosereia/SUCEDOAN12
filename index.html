@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#f1f5f9">
 <link rel="manifest" href="manifest.json">
 <title>Super Cestas Básicas Dona Antônia</title>
 <meta name="robots" content="index, follow">
@@ -26,166 +26,190 @@
 
 <style>
 /* ========================================================
-   DESIGN INSTAGRAM LITE & MINIMALISTA
+   DESIGN VIBRANTE & INSTAGRAM LITE
    ======================================================== */
 :root {
-    --c-p: #111111;       
-    --c-s: #737373;       
-    --c-t: #a3a3a3;       
+    --c-p: #0f172a;       /* Textos Principais Escuros */
+    --c-s: #64748b;       /* Textos Secundários */
+    --c-t: #94a3b8;       
     --c-a: #ef4444;       
     --c-ok: #10b981;      
+    --brand: #e11d48;     /* Rose 600 - Cor Vibrante Principal */
+    --brand-light: #fff1f2;
     --c-wpp: #25D366;     
     --c-bg: #ffffff;      
-    --c-bg-sec: #fafafa;  
-    --c-bd: #efefef;      
-    --c-img-bg: #f8f8f8;  
+    --c-bg-sec: #f1f5f9;  /* Fundo de página levemente cinza/azulado */
+    --c-bd: #e2e8f0;      
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --nav-height: 55px;
+    --nav-height: 60px;
     --story-ring: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+    --radius-md: 14px;
+    --shadow-soft: 0 4px 20px rgba(0,0,0,0.06);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; margin: 0; padding: 0; }
 body { font-family: var(--font); background: var(--c-bg-sec); color: var(--c-p); height: 100dvh; overflow: hidden; -webkit-font-smoothing: antialiased; }
 img { user-select: none; } 
-button { cursor: pointer; border: none; background: 0 0; font-family: inherit; font-weight: 500; }
+button { cursor: pointer; border: none; background: 0 0; font-family: inherit; font-weight: 600; }
 
 /* Desktop Container limits */
-.layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; background: var(--c-bg); height: 100dvh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 40px rgba(0,0,0,0.05);} 
+.layout-limit { width: 100%; max-width: 1200px; margin: 0 auto; position: relative; background: var(--c-bg-sec); height: 100dvh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(15,23,42,0.1);} 
 
-/* Topbar Stories (Instagram Style) */
-.stories-bar {
-    display: flex; align-items: flex-start; gap: 14px; padding: 16px; 
-    overflow-x: auto; scrollbar-width: none; background: #fff;
-    border-bottom: 1px solid var(--c-bd); position: sticky; top: 0; z-index: 80;
-    padding-top: max(16px, env(safe-area-inset-top));
+/* Topbar Stories (Instagram Style - Maior) */
+.stories-bar-container {
+    background: #fff; border-bottom: 1px solid var(--c-bd); position: sticky; top: 0; z-index: 80;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    padding-top: max(12px, env(safe-area-inset-top));
+    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
+.stories-bar-container.hidden { transform: translateY(-100%); }
+
+.stories-bar { display: flex; align-items: flex-start; gap: 16px; padding: 16px; overflow-x: auto; scrollbar-width: none; }
 .stories-bar::-webkit-scrollbar { display: none; }
-.story-item { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; min-width: 72px; flex-shrink: 0; transition: transform 0.2s;}
-.story-item:active { transform: scale(0.95); }
-.story-ring { width: 68px; height: 68px; border-radius: 50%; padding: 2px; background: var(--story-ring); }
+.story-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 90px; flex-shrink: 0; transition: transform 0.2s;}
+.story-item:active { transform: scale(0.94); }
+.story-ring { width: 90px; height: 90px; border-radius: 50%; padding: 3px; background: var(--story-ring); box-shadow: 0 4px 10px rgba(0,0,0,0.08);}
 .story-ring.watched { background: var(--c-bd); }
-.story-ring.logo-ring { background: transparent; border: 2px solid var(--c-bd); padding: 0;}
-.story-img-wrap { width: 100%; height: 100%; background: #fff; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; }
+.story-ring.logo-ring { background: transparent; border: 2px solid var(--brand); padding: 2px; box-shadow: none;}
+.story-img-wrap { width: 100%; height: 100%; background: #fff; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;}
 .story-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-.story-icon { font-size: 1.8rem; }
-.story-title { font-size: 0.75rem; font-weight: 400; color: var(--c-p); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 74px; }
+.story-icon { font-size: 2.2rem; }
+.story-title { font-size: 0.85rem; font-weight: 600; color: var(--c-p); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; letter-spacing: -0.3px;}
 
 /* Main Stage */
-.main-stage { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: var(--c-bg); padding-bottom: calc(var(--nav-height) + 20px); }
+.main-stage { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: var(--c-bg-sec); padding-bottom: calc(var(--nav-height) + 20px); }
 
-/* Minimalist Grid & Cards */
-.grid-elegant { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: var(--c-bd); }
-@media(min-width: 768px) { .grid-elegant { grid-template-columns: repeat(4, 1fr); } }
-@media(min-width: 1024px) { .grid-elegant { grid-template-columns: repeat(6, 1fr); } }
+/* Minimalist Grid & Cards (Responsivo Desktop/Mobile) */
+.grid-elegant { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 24px; }
+@media(min-width: 768px) { .grid-elegant { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
+@media(min-width: 1024px) { .grid-elegant { grid-template-columns: repeat(6, 1fr); gap: 20px; } }
 
-.card-elegant { display: flex; flex-direction: column; background: #fff; position: relative; cursor: pointer; transition: opacity 0.2s; padding: 12px; }
-.card-elegant:active { opacity: 0.7; }
-.card-elegant .img-wrap { width: 100%; aspect-ratio: 1/1; background: #fff; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-.card-elegant .img-wrap img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: transform 0.3s;}
-.card-elegant .info-wrap { display: flex; flex-direction: column; flex: 1; }
-.card-elegant .title { font-size: 0.85rem; font-weight: 300; color: var(--c-p); margin-bottom: 4px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 34px;}
-.card-elegant .price { font-size: 1.1rem; font-weight: 600; color: var(--c-p); line-height: 1;}
-.card-elegant .old-price { font-size: 0.75rem; color: var(--c-t); text-decoration: line-through; display: block; margin-bottom: 2px;}
-.card-elegant .atacado { font-size: 0.7rem; color: var(--c-ok); font-weight: 500; margin-top: 4px; display: block;}
+.card-elegant { display: flex; flex-direction: column; background: #fff; position: relative; cursor: pointer; transition: 0.2s; padding: 12px; border-radius: var(--radius-md); box-shadow: var(--shadow-soft); border: 1px solid rgba(0,0,0,0.02);}
+.card-elegant:active { transform: scale(0.97); }
+.card-elegant .img-wrap { width: 100%; aspect-ratio: 1/1; background: transparent; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+.card-elegant .img-wrap img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: transform 0.4s;}
+.card-elegant:hover .img-wrap img { transform: scale(1.05); }
+.card-elegant .info-wrap { display: flex; flex-direction: column; flex: 1; justify-content: space-between; }
+.card-elegant .title { font-size: 0.85rem; font-weight: 500; color: var(--c-p); margin-bottom: 6px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 34px;}
 
-.card-add-btn-wide { background: transparent; color: var(--c-p); border-radius: 4px; padding: 8px; font-weight: 600; font-size: 0.85rem; border: 1px solid var(--c-bd); width: 100%; margin-top: 12px; cursor: pointer; transition: 0.2s; }
-.card-add-btn-wide:active { background: var(--c-bg-sec); }
-.card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 4px; height: 34px; margin-top: 12px; width: 100%; border: 1px solid var(--c-bd); }
-.card-qty-ctrl button { font-size: 1.2rem; color: var(--c-p); width: 40px; height: 100%; display: flex; align-items: center; justify-content: center; background: transparent;}
-.card-qty-ctrl span { font-weight: 600; font-size: 0.95rem; color: var(--c-p); flex: 1; text-align: center;}
+/* Preços lado a lado elegantemente */
+.price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;}
+.card-elegant .price { font-size: 1.15rem; font-weight: 800; color: var(--brand); line-height: 1; letter-spacing: -0.5px;}
+.card-elegant .old-price { font-size: 0.8rem; color: var(--c-t); text-decoration: line-through; font-weight: 500;}
+.card-elegant .atacado { font-size: 0.7rem; color: var(--c-ok); font-weight: 700; margin-top: 2px; background: #ecfdf5; padding: 4px 8px; border-radius: 6px; display: inline-block; align-self: flex-start;}
+
+.card-add-btn-wide { background: var(--brand-light); color: var(--brand); border-radius: 8px; padding: 10px; font-weight: 700; font-size: 0.85rem; border: 1px solid rgba(225,29,72,0.2); width: 100%; margin-top: 12px; cursor: pointer; transition: 0.2s; }
+.card-add-btn-wide:active { background: var(--brand); color: #fff;}
+.card-qty-ctrl { display: flex; align-items: center; justify-content: space-between; background: var(--c-bg-sec); border-radius: 8px; height: 38px; margin-top: 12px; width: 100%; border: 1px solid var(--c-bd); overflow: hidden; }
+.card-qty-ctrl button { font-size: 1.2rem; color: var(--c-p); width: 40px; height: 100%; display: flex; align-items: center; justify-content: center; background: transparent; transition:0.2s;}
+.card-qty-ctrl button:active { background: var(--c-bd); }
+.card-qty-ctrl span { font-weight: 700; font-size: 0.95rem; color: var(--c-p); flex: 1; text-align: center;}
 
 /* Bottom Navigation (Icons Only) */
 .bottom-nav {
     position: absolute; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
-    background: #fff; border-top: 1px solid var(--c-bd);
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-top: 1px solid rgba(0,0,0,0.05);
     display: flex; justify-content: space-around; align-items: center; z-index: 105;
-    padding-bottom: env(safe-area-inset-bottom); transition: bottom 0.3s;
+    padding-bottom: env(safe-area-inset-bottom); transition: bottom 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
-.bottom-nav.hidden { bottom: -100px; } /* Hide on checkout */
+.bottom-nav.hidden { bottom: -100px; } 
 .nav-item { display: flex; align-items: center; justify-content: center; color: var(--c-p); font-size: 1.6rem; cursor: pointer; flex: 1; height: 100%; position: relative; transition:0.2s;}
-.nav-item.active { transform: scale(1.1); font-weight: bold;}
-.nav-item .badge { position: absolute; top: 6px; right: calc(50% - 16px); background: var(--c-a); color: #fff; font-size: 0.6rem; width: 16px; height: 16px; border-radius: 50%; font-weight: 600; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+.nav-item.active { transform: scale(1.15); font-weight: bold; color: var(--brand);}
+.nav-item .badge { position: absolute; top: 6px; right: calc(50% - 18px); background: var(--brand); color: #fff; font-size: 0.65rem; width: 18px; height: 18px; border-radius: 50%; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
 
 /* Lateral Views & Drawers */
-.lateral-view, .drawer-view { position: absolute; top: 0; width: 100%; height: 100dvh; background: var(--c-bg); z-index: 110; transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; overflow: hidden; }
+.lateral-view, .drawer-view { position: absolute; top: 0; width: 100%; height: 100dvh; background: var(--c-bg-sec); z-index: 110; transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; overflow: hidden; }
 .lateral-view { left: 100%; }
 .lateral-view.open { left: 0; }
-.drawer-view { left: -100%; width: 85%; max-width: 350px; box-shadow: 10px 0 30px rgba(0,0,0,0.1); z-index: 120;}
+.drawer-view { left: -100%; width: 85%; max-width: 350px; background: #fff; box-shadow: 10px 0 30px rgba(0,0,0,0.15); z-index: 120;}
 .drawer-view.open { left: 0; }
 #checkout-view { z-index: 120; }
 
-.see-all-header { display: flex; align-items: center; padding: 12px 16px; background: #fff; border-bottom: 1px solid var(--c-bd); flex-shrink: 0; gap: 12px; padding-top: max(12px, env(safe-area-inset-top)); }
-.see-all-back { color: var(--c-p); background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 4px; font-weight: 600; width: 40px; height: 40px; font-size: 1.5rem; transition: 0.2s; }
-.see-all-title { font-size: 1rem; font-weight: 600; color: var(--c-p); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; margin-right: 40px;}
-.see-all-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--c-bg);}
+.see-all-header { display: flex; align-items: center; padding: 12px 16px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.05); flex-shrink: 0; gap: 12px; padding-top: max(12px, env(safe-area-inset-top)); z-index: 10;}
+.see-all-back { color: var(--c-p); background: var(--c-bg-sec); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 42px; height: 42px; transition: 0.2s; }
+.see-all-back:active { transform: scale(0.9); }
+.see-all-title { font-size: 1.1rem; font-weight: 700; color: var(--c-p); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; margin-right: 42px; letter-spacing: -0.3px;}
+.see-all-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; background: var(--c-bg-sec);}
 
-/* Formatos de inputs e botoes em modais */
+/* Desktop Layout para Quick View (Evitar foto gigante) */
+@media(min-width: 768px) {
+    #quick-view-lateral .see-all-content-inner { display: flex; flex-direction: row; max-width: 1000px; margin: 20px auto; background: #fff; border-radius: 20px; box-shadow: var(--shadow-soft); overflow: hidden;}
+    #quick-view-lateral .qv-carousel-wrap { width: 50%; border-right: 1px solid var(--c-bd); background: #fff; position: relative;}
+    #quick-view-lateral .qv-info-wrap { width: 50%; padding: 40px; display: flex; flex-direction: column; justify-content: center;}
+    #quick-view-lateral .qv-recommendations-wrap { max-width: 1000px; margin: 0 auto; padding: 20px;}
+}
+
+/* Modals & Checkouts Formatos */
 .search-wrapper-aba { position: relative; flex: 1; }
-.depto-search { width: 100%; padding: 10px 10px 10px 36px; border-radius: 8px; border: none; background: var(--c-bg-sec); font-size: 0.95rem; color: var(--c-p); font-weight: 400; outline: none;}
-.search-icon-aba { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--c-s); width: 18px; }
-.see-all-footer { position: absolute; bottom: 0; width: 100%; background: #fff; padding: 16px; border-top: 1px solid var(--c-bd); z-index: 110; display: flex; flex-direction: column; gap: 12px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.depto-search { width: 100%; padding: 12px 12px 12px 40px; border-radius: 12px; border: none; background: var(--c-bg-sec); font-size: 0.95rem; color: var(--c-p); font-weight: 500; outline: none;}
+.search-icon-aba { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--c-s); width: 20px; }
+.see-all-footer { position: absolute; bottom: 0; width: 100%; background: #fff; padding: 16px; border-top: 1px solid rgba(0,0,0,0.05); z-index: 110; display: flex; flex-direction: column; gap: 12px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 20px rgba(0,0,0,0.03);}
 
 /* TV Feed TikTok Style */
 #video-feed-view { background: #000; z-index: 100; } 
 #video-feed-view .see-all-header { background: transparent; border: none; position: absolute; top: 0; width: 100%; z-index: 10;}
-#video-feed-view .see-all-back { color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+#video-feed-view .see-all-back { color: #fff; background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); }
 .video-feed-container { height: 100dvh; overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; background: #000; }
 .v-feed-item { width: 100%; height: 100dvh; position: relative; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; }
 .v-player { width: 100%; height: 100%; position: absolute; top:0; left:0; display: flex; align-items: center; justify-content: center; background: #000; z-index: 1;}
 .v-thumb { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
 .v-play-btn { position: absolute; font-size: 4rem; color: rgba(255,255,255,0.8); z-index: 5; pointer-events: none;}
-.v-prod-card { position: absolute; bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom)); left: 16px; right: 16px; z-index: 10; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); padding: 12px; display: flex; align-items: center; gap: 12px; border-radius: 8px;}
-.v-prod-img { width: 48px; height: 48px; object-fit: contain; border-radius: 4px; mix-blend-mode: multiply; background: #fff;}
+.v-prod-card { position: absolute; bottom: calc(var(--nav-height) + 20px + env(safe-area-inset-bottom)); left: 16px; right: 16px; z-index: 10; background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); padding: 12px; display: flex; align-items: center; gap: 12px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);}
+.v-prod-img { width: 56px; height: 56px; object-fit: contain; border-radius: 8px; mix-blend-mode: multiply; background: #fff;}
 .v-prod-info { flex: 1; }
-.v-prod-name { font-size: 0.85rem; font-weight: 500; color: #000; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;}
-.v-prod-price { font-size: 1.1rem; font-weight: 600; color: #000; margin-top: 4px;}
-.v-prod-btn { background: #000; color: #fff; padding: 8px 16px; border-radius: 4px; font-weight: 500; font-size: 0.85rem; }
+.v-prod-name { font-size: 0.85rem; font-weight: 600; color: #000; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.2;}
+.v-prod-price { font-size: 1.15rem; font-weight: 800; color: var(--brand); margin-top: 4px; letter-spacing: -0.5px;}
+.v-prod-btn { background: #000; color: #fff; padding: 10px 16px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; }
 
-/* Modals & Checkouts */
-.btn-modal { width: 100%; padding: 14px; border-radius: 8px; font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;}
-.btn-modal.primary { background: var(--c-p); color: #fff; }
-.btn-modal.secondary { background: #fff; color: var(--c-p); border: 1px solid var(--c-bd); }
-.btn-modal.wpp { background: var(--c-wpp); color: #fff; gap: 8px; }
+/* Checkout Melhorado (Contraste) */
+.chk-section { background: #fff; padding: 24px 16px; border-radius: 16px; margin: 0 16px 16px; box-shadow: var(--shadow-soft); border: 1px solid rgba(0,0,0,0.02);}
+.chk-section-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 16px; color: var(--c-p);}
+.input-chk { width: 100%; padding: 16px; border-radius: 10px; border: 2px solid var(--c-bd); background: #fff; font-size: 1rem; font-family: inherit; margin-bottom: 12px; outline:none; transition: 0.2s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);}
+.input-chk:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1); }
+.pay-opt { padding: 16px; border-radius: 10px; border: 2px solid var(--c-bd); cursor: pointer; font-size: 0.95rem; font-weight: 600; text-align: center; flex: 1; min-width: 45%; transition: 0.2s; background: #fff; color: var(--c-s);}
+.pay-opt.selected { background: var(--brand); color: #fff; border-color: var(--brand); box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);}
+.btn-big-action { width: 100%; background: var(--brand); color: #fff; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; transition: 0.2s; box-shadow: 0 8px 20px rgba(225, 29, 72, 0.3); letter-spacing: -0.2px;}
+.btn-big-action:active { transform: scale(0.98); }
 
-.chk-section { background: #fff; padding: 16px; border-bottom: 1px solid var(--c-bd); margin-bottom: 8px; }
-.chk-section-title { font-weight: 600; font-size: 1rem; margin-bottom: 16px;}
-.input-chk { width: 100%; padding: 14px; border-radius: 4px; border: 1px solid var(--c-bd); background: var(--c-bg-sec); font-size: 0.95rem; font-family: inherit; margin-bottom: 12px; outline:none;}
-.input-chk:focus { background: #fff; border-color: var(--c-p); }
-.pay-opt { padding: 14px; border-radius: 4px; border: 1px solid var(--c-bd); cursor: pointer; font-size: 0.9rem; font-weight: 500; text-align: center; flex: 1; min-width: 45%; transition: 0.2s; background: #fff; color: var(--c-s);}
-.pay-opt.selected { background: #000; color: #fff; border-color: #000;}
-.btn-big-action { width: 100%; background: #000; color: #fff; padding: 16px; border-radius: 8px; font-weight: 600; font-size: 1rem; transition: 0.2s;}
+.btn-modal { width: 100%; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 1rem; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;}
+.btn-modal.secondary { background: #fff; color: var(--c-p); border: 1px solid var(--c-bd); box-shadow: var(--shadow-soft);}
+.btn-modal.wpp { background: var(--c-wpp); color: #fff; gap: 8px; border: none; box-shadow: 0 6px 16px rgba(37, 211, 102, 0.3);}
 
-.chk-item-card { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--c-bg-sec); padding: 12px 0; }
-.chk-item-card img { width: 50px; height: 50px; object-fit: contain; border-radius: 4px; background: #fff; border: 1px solid var(--c-bd); padding: 2px; }
-.chk-item-card .name { font-size: 0.85rem; font-weight: 400; flex: 1; color: var(--c-p); line-height: 1.2;}
-
-/* Quick View */
-.qv-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; background: #fff;}
+/* Quick View Carousel */
+.qv-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; background: #fff; aspect-ratio: 1/1;}
 .qv-carousel-item { flex: 0 0 100%; scroll-snap-align: center; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: #fff;}
-.qv-carousel-item img { width: 100%; height: 100%; object-fit: contain; padding: 5%; mix-blend-mode: multiply;}
-.qv-dots { display: flex; justify-content: center; gap: 6px; padding: 12px 0 0; }
-.qv-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c-bd); transition: 0.3s; }
-.qv-dot.active { background: var(--c-s); }
+.qv-carousel-item img { width: 100%; height: 100%; object-fit: contain; padding: 8%; mix-blend-mode: multiply;}
+.qv-dots { display: flex; justify-content: center; gap: 8px; padding: 16px 0; background: #fff;}
+.qv-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-bd); transition: 0.3s; }
+.qv-dot.active { background: var(--brand); width: 24px; border-radius: 4px;}
 
 #toast-container { position: fixed; top: max(20px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 999999; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
-.toast { padding: 14px 20px; background: #000; color: #fff; border-radius: 8px; font-weight: 500; font-size: 0.9rem; text-align: center; animation: toastPop 0.3s ease-out; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-@keyframes toastPop { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.toast { padding: 16px 24px; background: var(--c-p); color: #fff; border-radius: 12px; font-weight: 600; font-size: 0.95rem; text-align: center; animation: toastPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+@keyframes toastPop { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
-/* Drawer Links */
-.drawer-link { display: flex; align-items: center; gap: 16px; padding: 16px; color: var(--c-p); text-decoration: none; font-weight: 400; font-size: 1rem; border-bottom: 1px solid var(--c-bd); transition: 0.2s;}
-.drawer-link-icon { font-size: 1.4rem; color: var(--c-p); width: 30px; text-align: center;}
+/* Drawer Info Fixas */
+.drawer-link { display: flex; align-items: center; gap: 16px; padding: 18px 20px; color: var(--c-p); text-decoration: none; font-weight: 500; font-size: 1.05rem; border-bottom: 1px solid var(--c-bd); transition: 0.2s;}
+.drawer-link-icon { font-size: 1.5rem; color: var(--c-p); width: 30px; text-align: center;}
+.drawer-info-block { padding: 20px; background: var(--c-bg-sec); margin: 0;}
+.drawer-info-item { display: flex; gap: 12px; margin-bottom: 16px; align-items: flex-start;}
+.drawer-info-item:last-child { margin-bottom: 0; }
+.drawer-info-icon { font-size: 1.5rem; }
+.drawer-info-text b { display: block; font-size: 0.95rem; margin-bottom: 2px; color: var(--c-p);}
+.drawer-info-text span { font-size: 0.85rem; color: var(--c-s); line-height: 1.3; display: block;}
 </style>
 </head>
 <body>
 
 <div class="layout-limit">
 
-    <div class="stories-bar" id="stories-bar">
-        </div>
+    <div class="stories-bar-container" id="stories-bar-container">
+        <div class="stories-bar" id="stories-bar">
+            </div>
+    </div>
 
     <main class="main-stage" id="scroll-stage">
         
-        <div style="padding: 16px; font-size: 1rem; font-weight: 600;" id="grid-title">Destaques para você</div>
+        <div style="padding: 24px 16px 12px; font-size: 1.2rem; font-weight: 800; color: var(--c-p); letter-spacing:-0.5px;" id="grid-title">Destaques para você</div>
         
         <div id="main-grid" class="grid-elegant"></div>
         
@@ -193,31 +217,31 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 
     <nav class="bottom-nav" id="bottom-nav">
         <div class="nav-item active" onclick="goToHome(); updateNav('home', this)">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
         </div>
         <div class="nav-item" onclick="openVideoFeed(); updateNav('tv', this)">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect><line x1="16" y1="3" x2="16" y2="21"></line><line x1="8" y1="3" x2="8" y2="21"></line><line x1="2" y1="8" x2="8" y2="8"></line><line x1="2" y1="16" x2="8" y2="16"></line><line x1="16" y1="8" x2="22" y2="8"></line><line x1="16" y1="16" x2="22" y2="16"></line></svg>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="18" rx="2" ry="2"></rect><line x1="16" y1="3" x2="16" y2="21"></line><line x1="8" y1="3" x2="8" y2="21"></line><line x1="2" y1="8" x2="8" y2="8"></line><line x1="2" y1="16" x2="8" y2="16"></line><line x1="16" y1="8" x2="22" y2="8"></line><line x1="16" y1="16" x2="22" y2="16"></line></svg>
         </div>
         <div class="nav-item" onclick="openGlobalSearch(); updateNav('search', this)">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
         </div>
         <div class="nav-item" onclick="openCheckout(); updateNav('cart', this)">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
             <div class="badge" id="nav-badge">0</div>
         </div>
         <div class="nav-item" onclick="openDrawerMenu(); updateNav('menu', this)">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
         </div>
     </nav>
 
-    <div id="generic-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:109;" onclick="closeGenericOverlay()"></div>
+    <div id="generic-overlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.6); z-index:109; backdrop-filter: blur(4px);" onclick="closeGenericOverlay()"></div>
 
     <div id="drawer-menu" class="drawer-view">
-        <div style="padding: 24px 16px 16px; border-bottom: 1px solid var(--c-bd); display: flex; align-items: center; gap: 12px;">
-            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--c-bd);">
+        <div style="padding: 30px 20px 20px; border-bottom: 1px solid var(--c-bd); display: flex; align-items: center; gap: 16px;">
+            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Logo" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--brand); box-shadow: var(--shadow-soft);">
             <div>
-                <h3 style="font-weight: 600; font-size: 1rem; color: var(--c-p);">Dona Antônia</h3>
-                <div style="font-size: 0.8rem; color: var(--c-s);">O seu supermercado</div>
+                <h3 style="font-weight: 800; font-size: 1.2rem; color: var(--c-p); letter-spacing:-0.5px;">Dona Antônia</h3>
+                <div style="font-size: 0.9rem; color: var(--c-s); font-weight:500;">O seu supermercado</div>
             </div>
         </div>
         <div style="flex: 1; overflow-y: auto; padding-bottom: 40px;">
@@ -226,127 +250,127 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
             <a href="#" class="drawer-link" onclick="closeDrawerMenu(); renderStories('kits');"><span class="drawer-link-icon">🎁</span> Kits Promocionais</a>
             <a href="#" class="drawer-link" onclick="closeDrawerMenu(); renderStories('mercado');"><span class="drawer-link-icon">🛍️</span> Supermercado</a>
             <a href="#" class="drawer-link" onclick="closeDrawerMenu(); openVideoFeed();"><span class="drawer-link-icon">▶️</span> DA TV (Vídeos)</a>
-            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); openHistoricoPedidos();"><span class="drawer-link-icon">📋</span> Meus Pedidos</a>
-            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); openStoreRules();"><span class="drawer-link-icon">🚚</span> Informações e Entregas</a>
-            <a href="https://wa.me/5565998150975" target="_blank" class="drawer-link"><span class="drawer-link-icon" style="color:var(--c-wpp);">💬</span> Fale Conosco (WhatsApp)</a>
+            <a href="https://wa.me/5565998150975" target="_blank" class="drawer-link"><span class="drawer-link-icon" style="color:var(--c-wpp);">💬</span> Atendimento WhatsApp</a>
+            
+            <div style="padding: 24px 20px 12px; font-size: 0.85rem; font-weight: 800; color: var(--c-t); text-transform: uppercase; letter-spacing: 0.5px;">Informações Úteis</div>
+            <div class="drawer-info-block">
+                <div class="drawer-info-item">
+                    <div class="drawer-info-icon">🚚</div>
+                    <div class="drawer-info-text"><b>Entrega Grátis</b><span>Para Cuiabá e Várzea Grande.</span></div>
+                </div>
+                <div class="drawer-info-item">
+                    <div class="drawer-info-icon">📦</div>
+                    <div class="drawer-info-text"><b>Pedido Mínimo</b><span>A partir de R$ 75,00.</span></div>
+                </div>
+                <div class="drawer-info-item">
+                    <div class="drawer-info-icon">💳</div>
+                    <div class="drawer-info-text"><b>Pagamentos</b><span>Até 3x sem juros ou Alimentação.</span></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div id="global-search-view" class="lateral-view">
         <div class="see-all-header">
-            <button class="see-all-back" onclick="closeGlobalSearch()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+            <button class="see-all-back" onclick="closeGlobalSearch()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
             <div class="search-wrapper-aba">
-                <svg class="search-icon-aba" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" class="depto-search" id="global-search-input" placeholder="Pesquisar..." oninput="doGlobalSearch()" autocomplete="off">
+                <svg class="search-icon-aba" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" class="depto-search" id="global-search-input" placeholder="Pesquisar produtos..." oninput="doGlobalSearch()" autocomplete="off">
             </div>
         </div>
         <div class="see-all-content" id="global-search-results" style="padding: 16px;">
-            <div style="text-align:center; color:var(--c-s); margin-top:60px; font-size:0.9rem;">Busque produtos, categorias ou marcas.</div>
+            <div style="text-align:center; color:var(--c-s); margin-top:60px; font-size:1rem; font-weight:500;">Encontre rapidamente o que precisa.</div>
         </div>
     </div>
 
     <div id="kit-detail-view" class="lateral-view">
         <div class="see-all-header">
-            <button class="see-all-back" onclick="closeKitDetail()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+            <button class="see-all-back" onclick="closeKitDetail()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
             <h2 class="see-all-title" id="kit-header-title-text">Detalhes</h2>
         </div>
-        <div class="see-all-content" style="background: var(--c-bg-sec);">
-            <div style="padding: 16px; background: #fff; border-bottom: 1px solid var(--c-bd); margin-bottom: 8px;">
-                <div style="font-size: 1.5rem; font-weight: 600; color: var(--c-p);" id="kit-header-price-text">R$ 0,00</div>
-                <div style="font-size: 0.85rem; color: var(--c-s); margin-top: 4px;" id="kit-header-desc">Itens inclusos</div>
+        <div class="see-all-content">
+            <div style="padding: 24px 16px; background: #fff; border-bottom: 1px solid var(--c-bd); margin-bottom: 16px; box-shadow: var(--shadow-soft);">
+                <div style="font-size: 2rem; font-weight: 800; color: var(--brand); letter-spacing:-0.5px;" id="kit-header-price-text">R$ 0,00</div>
+                <div style="font-size: 0.95rem; color: var(--c-s); margin-top: 4px; font-weight:500;" id="kit-header-desc">Itens inclusos neste pacote</div>
             </div>
-            <div id="kit-items-grid" style="display: flex; flex-direction: column;"></div>
+            <div id="kit-items-grid" class="grid-elegant"></div>
         </div>
         <div class="see-all-footer">
-            <div class="expander-total" id="kit-total-container" style="font-size:1.1rem; font-weight:600; text-align:left;">Total: R$ 0,00</div>
+            <div class="expander-total" id="kit-total-container" style="font-size:1.2rem; font-weight:800; text-align:left;">Total: R$ 0,00</div>
             <button class="btn-big-action" onclick="commitExpander()">Adicionar à Sacola</button>
         </div>
     </div>
 
     <div id="quick-view-lateral" class="lateral-view" style="z-index: 120;">
         <div class="see-all-header">
-            <button class="see-all-back" onclick="closeQuickView()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+            <button class="see-all-back" onclick="closeQuickView()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
             <h2 class="see-all-title">Produto</h2>
         </div>
-        <div class="see-all-content" style="padding: 0 0 120px;">
-            <div style="position: relative; width: 100%; border-bottom: 1px solid var(--c-bd);">
-                <div class="qv-carousel" id="qv-carousel"></div>
-                <div class="qv-dots" id="qv-dots"></div>
-            </div>
-            
-            <div style="padding: 16px;">
-                <h3 id="qv-name" style="font-size: 1.1rem; font-weight: 400; line-height: 1.3; margin-bottom: 8px; color: var(--c-p);"></h3>
-                <div id="qv-price" style="font-size: 1.4rem; font-weight: 600; color: var(--c-p); margin-bottom: 16px;"></div>
-                
-                <div id="qv-action-area" data-id=""></div>
-                
-                <div style="display:flex; gap:8px; margin-top:16px;">
-                    <button class="btn-modal secondary" id="qv-share-btn" style="flex:1; font-size: 0.85rem; padding:10px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-                        Compartilhar
-                    </button>
+        <div class="see-all-content">
+            <div class="see-all-content-inner">
+                <div class="qv-carousel-wrap">
+                    <div class="qv-carousel" id="qv-carousel"></div>
+                    <div class="qv-dots" id="qv-dots" style="display:none;"></div>
                 </div>
+                
+                <div class="qv-info-wrap">
+                    <h3 id="qv-name" style="font-size: 1.4rem; font-weight: 600; line-height: 1.2; margin-bottom: 12px; color: var(--c-p); letter-spacing:-0.3px;"></h3>
+                    <div class="price-row" id="qv-price" style="margin-bottom: 24px;"></div>
+                    
+                    <div id="qv-action-area" data-id=""></div>
+                    
+                    <div style="display:flex; gap:12px; margin-top:20px;">
+                        <button class="btn-modal wpp" id="qv-share-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                            Compartilhar
+                        </button>
+                    </div>
 
-                <div id="qv-validade" style="font-size: 0.85rem; color: var(--c-err); font-weight: 500; margin-top: 16px; display: none;"></div>
-                <div id="qv-wholesale" style="font-size: 0.85rem; color: var(--c-ok); font-weight: 500; margin-top: 8px; display: none;"></div>
-                <div id="qv-desc" style="font-size: 0.9rem; color: var(--c-s); line-height: 1.5; margin-top: 24px; display: none;"></div>
+                    <div id="qv-validade" style="font-size: 0.9rem; color: var(--c-err); font-weight: 600; margin-top: 20px; display: none;"></div>
+                    <div id="qv-wholesale" style="font-size: 0.9rem; color: var(--c-ok); font-weight: 700; margin-top: 12px; display: none;"></div>
+                    <div id="qv-desc" style="font-size: 0.95rem; color: var(--c-s); line-height: 1.6; margin-top: 32px; display: none;"></div>
+                </div>
+            </div>
+
+            <div class="qv-recommendations-wrap">
+                <h3 id="qv-rec-title" style="font-size: 1.2rem; font-weight: 800; margin: 32px 16px 16px; color:var(--c-p); display:none;">Você também pode gostar</h3>
+                <div id="qv-recommendations" class="grid-elegant" style="padding-top:0;"></div>
             </div>
         </div>
     </div>
 
     <div id="video-feed-view" class="lateral-view" style="z-index: 100;">
         <div class="see-all-header">
-            <button class="see-all-back" onclick="closeVideoFeed(); updateNav('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+            <button class="see-all-back" onclick="closeVideoFeed(); updateNav('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
         </div>
         <div class="video-feed-container" id="v-feed-track"></div>
     </div>
 
-    <div id="store-rules-view" class="lateral-view">
-        <div class="see-all-header">
-            <button class="see-all-back" onclick="closeStoreRules()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
-            <h2 class="see-all-title">Informações</h2>
-        </div>
-        <div class="see-all-content" style="padding: 16px; background: var(--c-bg-sec);">
-            <div style="background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 12px;">
-                <div style="font-size: 1.2rem; margin-bottom: 8px;">🚚 Entrega Grátis</div>
-                <div style="font-size: 0.9rem; color: var(--c-s);">Para Cuiabá e Várzea Grande.</div>
-            </div>
-            <div style="background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 12px;">
-                <div style="font-size: 1.2rem; margin-bottom: 8px;">📦 Pedido Mínimo</div>
-                <div style="font-size: 0.9rem; color: var(--c-s);">A partir de R$ 75,00.</div>
-            </div>
-            <div style="background: #fff; padding: 16px; border-radius: 8px; border: 1px solid var(--c-bd); margin-bottom: 12px;">
-                <div style="font-size: 1.2rem; margin-bottom: 8px;">💳 Pagamento</div>
-                <div style="font-size: 0.9rem; color: var(--c-s);">Até 3x sem juros ou Ticket Alimentação.</div>
-            </div>
-        </div>
-    </div>
-
     <div id="checkout-view" class="lateral-view" style="z-index: 120;">
         <div class="see-all-header">
-            <button class="see-all-back" onclick="closeCheckout(); updateNav('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
+            <button class="see-all-back" onclick="closeCheckout(); updateNav('home')"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg></button>
             <h2 class="see-all-title">Sacola</h2>
         </div>
-        <div class="see-all-content" style="padding: 0 0 140px; background: var(--c-bg-sec);">
+        <div class="see-all-content" style="padding: 16px 0 140px;">
             <div class="chk-section">
                 <h3 class="chk-section-title">Revisar Itens</h3>
-                <div id="chk-list" style="display: flex; flex-direction: column;"></div>
+                <div id="chk-list" class="grid-elegant" style="padding:0; gap:12px;"></div>
             </div>
             <div class="chk-section">
                 <h3 class="chk-section-title">Agendamento de Entrega</h3>
-                <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                <div id="delivery-options-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
             </div>
-            <div class="chk-section" style="background: transparent; border: none; padding: 8px 16px;">
-                <div id="chk-summary-lines" style="font-size: 0.9rem; color: var(--c-s); line-height: 2;"></div>
+            <div class="chk-section" style="background: transparent; border: none; padding: 0 16px; box-shadow:none;">
+                <div id="chk-summary-lines" style="font-size: 0.95rem; color: var(--c-s); line-height: 2.2; font-weight:500;"></div>
             </div>
             <div class="chk-section">
                 <h3 class="chk-section-title">Seus Dados</h3>
                 <input type="text" id="chk-nome" class="input-chk" placeholder="Nome Completo">
                 <input type="text" id="chk-cpf" class="input-chk" placeholder="CPF (Opcional)" style="margin-bottom:0;">
             </div>
-            <div class="chk-section" style="margin-bottom: 16px;">
+            <div class="chk-section" style="margin-bottom: 24px;">
                 <h3 class="chk-section-title">Pagamento na Entrega</h3>
-                <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <div id="payment-options" style="display: flex; flex-wrap: wrap; gap: 12px;">
                     <div class="pay-opt" onclick="selectPayment('Dinheiro', this)">Dinheiro</div>
                     <div class="pay-opt" onclick="selectPayment('PIX', this)">PIX</div>
                     <div class="pay-opt" onclick="selectPayment('Débito', this)">Débito</div>
@@ -356,36 +380,26 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
                 <input type="hidden" id="chk-pagamento" value="">
             </div>
             <div style="padding: 0 16px 20px;">
-                <button class="btn-modal secondary" style="color: var(--c-err); border:none; background:transparent;" onclick="clearCart()">Esvaziar Sacola</button>
+                <button class="btn-modal secondary" style="color: var(--c-err); border:none; background:transparent; font-weight:700;" onclick="clearCart()">Esvaziar Sacola</button>
             </div>
         </div>
-        <div class="see-all-footer" style="padding: 12px 16px; border-top: 1px solid var(--c-bd);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-weight: 400; color: var(--c-s);">Total</span>
-                <span style="font-weight: 600; font-size: 1.4rem; color: var(--c-p);" id="chk-total-fixed">R$ 0,00</span>
+        <div class="see-all-footer">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-weight: 500; color: var(--c-s); font-size:1.1rem;">Total</span>
+                <span style="font-weight: 800; font-size: 1.8rem; color: var(--brand); letter-spacing:-0.5px;" id="chk-total-fixed">R$ 0,00</span>
             </div>
             <button id="btn-send-order" onclick="sendOrder()" class="btn-big-action">Finalizar Pedido</button>
         </div>
     </div>
 
-    <dialog id="modal-pedidos" style="border: none; border-radius: 8px; width: 90%; max-width: 400px; padding: 0;">
-        <div style="padding: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h2 style="font-weight: 600; font-size: 1.1rem;">Histórico</h2>
-                <button onclick="this.closest('dialog').close()" style="font-size: 1.2rem; color: var(--c-s);">✕</button>
-            </div>
-            <div id="pedidos-list" style="display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto;"></div>
-        </div>
-    </dialog>
-
     <div id="toast-container"></div>
-    <div id="video-loading" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 500; z-index: 99999;">Carregando...</div>
+    <div id="video-loading" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(15,23,42,0.9); color: white; padding: 16px 32px; border-radius: 12px; font-weight: 700; z-index: 99999; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">⏳ Carregando...</div>
 
 </div>
 
 <script>
 // ==========================================
-// ESTADO, CONFIGS E INICIALIZAÇÃO
+// ESTADO E CONFIGURAÇÕES INTEGRAÇÕES
 // ==========================================
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00; 
@@ -403,6 +417,26 @@ const STATE = {
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: ''
 };
 
+// ==========================================
+// LÓGICA DE OCULTAÇÃO DA TOP BAR (STORIES) - ESCONDE PRA BAIXO / MOSTRA PRA CIMA
+// ==========================================
+let lastScrollTop = 0;
+$('scroll-stage').addEventListener('scroll', (e) => {
+    let st = e.target.scrollTop;
+    let bar = $('stories-bar-container');
+    if(bar) {
+        // Se rolar pra baixo (st > lastScrollTop) e passou de 60px, esconde.
+        if (st > lastScrollTop && st > 60) {
+            bar.classList.add('hidden');
+        } 
+        // Se rolar pra cima (st < lastScrollTop), mostra.
+        else if (st < lastScrollTop) {
+            bar.classList.remove('hidden');
+        }
+    }
+    lastScrollTop = st <= 0 ? 0 : st;
+});
+
 function createSlug(text) { return text ? text.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') : ""; }
 function catToId(name) { return name ? 'cat_' + norm(name).replace(/[^a-z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').substring(0, 25) : 'cat_outros'; }
 function norm(str) { return str ? String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
@@ -414,7 +448,6 @@ function converterDataValidade(dataStr) {
     if (partes.length === 3) return new Date(partes[2], partes[1] - 1, partes[0]).getTime();
     return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
 }
-
 function getYouTubeVideoId(url) {
     if(!url) return '';
     if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split('?')[0];
@@ -424,10 +457,70 @@ function getYouTubeVideoId(url) {
 }
 
 // ==========================================
-// LÓGICA DE NAVEGAÇÃO "STORIES" E GRIDS
+// GERADOR DE SEO DINÂMICO (JSON-LD PARA GOOGLE)
 // ==========================================
+function injectSEO(type, data) {
+    let scriptId = 'dynamic-seo-schema';
+    let oldScript = document.getElementById(scriptId);
+    if(oldScript) oldScript.remove();
+    
+    let schema = {};
+    if (type === 'CATALOG') {
+        schema = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "itemListElement": data.slice(0, 100).map((p, i) => ({
+                "@type": "ListItem",
+                "position": i + 1,
+                "url": window.location.protocol + "//" + window.location.host + window.location.pathname + "?p=" + createSlug(p.name) + "-" + p.id
+            }))
+        };
+    } else if (type === 'PRODUCT') {
+        schema = {
+            "@context": "https://schema.org/",
+            "@type": "Product",
+            "name": data.name,
+            "image": [data.img, ...(data.imagensExtras || [])],
+            "description": data.descricao || `Compre ${data.name} online na Dona Antônia.`,
+            "sku": data.id,
+            "offers": {
+                "@type": "Offer",
+                "url": window.location.href,
+                "priceCurrency": "BRL",
+                "price": data.price.toFixed(2),
+                "availability": data.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+                "itemCondition": "https://schema.org/NewCondition"
+            }
+        };
+        document.title = `${data.name} | Super Cestas Dona Antônia`;
+    }
+
+    let script = document.createElement('script');
+    script.id = scriptId; script.type = 'application/ld+json';
+    script.text = JSON.stringify(schema);
+    document.head.appendChild(script);
+}
+
+
+// ==========================================
+// NAVEGAÇÃO "STORIES" E GRIDS DINÂMICOS
+// ==========================================
+function getFirstProductImage(obj, type) {
+    if(type === 'PROD' && obj.data && obj.data.length > 0) return obj.data[0].img;
+    if(type === 'BASKET' || type === 'COMBO') {
+        if(obj.img || obj.url_imagem) return obj.img || obj.url_imagem;
+        if(obj.produtos && obj.produtos.length > 0) {
+            let pId = obj.produtos[0].split('x')[1]?.trim();
+            let p = STATE.prods.find(x => String(x.id) === String(pId));
+            if(p) return p.img;
+        }
+    }
+    return '/site/img/produtos/cesta.webp';
+}
+
 function renderStories(level = 'home') {
-    let html = `<div class="story-item" onclick="goToHome()"><div class="story-ring logo-ring"><div class="story-img-wrap"><img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="story-img"></div></div><span class="story-title">Início</span></div>`;
+    // A Logo sempre fica fixa e manda pro início. Não precisa de botão "Voltar".
+    let html = `<div class="story-item" onclick="goToHome()"><div class="story-ring logo-ring"><div class="story-img-wrap"><img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" class="story-img"></div></div><span class="story-title" style="font-weight:800; color:var(--brand);">Dona Antônia</span></div>`;
 
     if (level === 'home') {
         html += `<div class="story-item" onclick="renderStories('cestas')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🛒</div></div></div><span class="story-title">Cestas</span></div>`;
@@ -435,40 +528,37 @@ function renderStories(level = 'home') {
         html += `<div class="story-item" onclick="renderStories('mercado')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🛍️</div></div></div><span class="story-title">Mercado</span></div>`;
         
         $('grid-title').innerText = "Destaques para você";
-        renderMainGrid(STATE.deptos.ofertas.data, 'PROD'); // Ofertas
+        renderMainGrid(STATE.deptos.ofertas.data, 'PROD'); 
     } 
     else if (level === 'cestas') {
-        html += `<div class="story-item" onclick="renderStories('home')"><div class="story-ring watched"><div class="story-img-wrap"><div class="story-icon">🔙</div></div></div><span class="story-title">Voltar</span></div>`;
         STATE.baskets.forEach(b => {
-            html += `<div class="story-item" onclick="openKitLateralView('${b.id}', 'BASKET')"><div class="story-ring"><div class="story-img-wrap"><img src="/site/img/produtos/cesta.webp" class="story-img"></div></div><span class="story-title">${b.nome}</span></div>`;
+            let img = getFirstProductImage(b, 'BASKET');
+            html += `<div class="story-item" onclick="openKitLateralView('${b.id}', 'BASKET')"><div class="story-ring"><div class="story-img-wrap"><img src="${img}" class="story-img"></div></div><span class="story-title">${b.nome}</span></div>`;
         });
         $('grid-title').innerText = "Nossas Cestas Básicas";
         renderMainGrid(STATE.baskets, 'BASKET');
     }
     else if (level === 'kits') {
-        html += `<div class="story-item" onclick="renderStories('home')"><div class="story-ring watched"><div class="story-img-wrap"><div class="story-icon">🔙</div></div></div><span class="story-title">Voltar</span></div>`;
         STATE.combos.forEach(b => {
-            html += `<div class="story-item" onclick="openKitLateralView('${b.id}', 'COMBO')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">✨</div></div></div><span class="story-title">${b.nome}</span></div>`;
+            let img = getFirstProductImage(b, 'COMBO');
+            html += `<div class="story-item" onclick="openKitLateralView('${b.id}', 'COMBO')"><div class="story-ring"><div class="story-img-wrap"><img src="${img}" class="story-img"></div></div><span class="story-title">${b.nome}</span></div>`;
         });
         $('grid-title').innerText = "Kits Promocionais";
         renderMainGrid(STATE.combos, 'COMBO');
     }
     else if (level === 'mercado') {
-        html += `<div class="story-item" onclick="renderStories('home')"><div class="story-ring watched"><div class="story-img-wrap"><div class="story-icon">🔙</div></div></div><span class="story-title">Voltar</span></div>`;
         let catArray = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0);
         catArray.forEach(d => {
-            html += `<div class="story-item" onclick="openDeptoGrid('${d.id}')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🏷️</div></div></div><span class="story-title">${d.title}</span></div>`;
+            let img = getFirstProductImage(d, 'PROD');
+            html += `<div class="story-item" onclick="openDeptoGrid('${d.id}')"><div class="story-ring"><div class="story-img-wrap"><img src="${img}" class="story-img"></div></div><span class="story-title">${d.title}</span></div>`;
         });
         $('grid-title').innerText = "Todos os Produtos";
         let allProds = []; catArray.forEach(c => allProds.push(...c.data));
-        renderMainGrid(allProds.slice(0, 50), 'PROD'); // Limita inicial
+        renderMainGrid(allProds.slice(0, 50), 'PROD'); 
     }
 
     let bar = $('stories-bar');
-    if(bar) {
-        bar.innerHTML = html;
-        bar.scrollTo({ left: 0, behavior: 'smooth' });
-    }
+    if(bar) { bar.innerHTML = html; bar.scrollTo({ left: 0, behavior: 'smooth' }); }
 }
 
 function openDeptoGrid(deptoId) {
@@ -479,32 +569,58 @@ function openDeptoGrid(deptoId) {
 
 function renderMainGrid(items, type) {
     let container = $('main-grid');
-    if (!items || items.length === 0) { container.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align:center; color: var(--c-s);">Nenhum item aqui.</div>'; return; }
+    if (!items || items.length === 0) { container.innerHTML = '<div style="grid-column: 1/-1; padding: 40px; text-align:center; color: var(--c-s); font-weight:500;">Nenhum item aqui.</div>'; return; }
     container.innerHTML = items.map(item => buildElegantCard(item, type)).join('');
 }
 
-function buildElegantCard(item, type) {
-    let id = item.id; let img = item.img || item.imagem || '/site/img/produtos/cesta.webp'; let name = item.name || item.nome; let pPrice = item.price || item.preco;
-    let isEsgotado = (item.stock <= 0 && type === 'PROD'); let qty = STATE.cart[id] || 0; let isBasketOrCombo = (type === 'BASKET' || type === 'COMBO');
+// Retorna Preço com risco perfeitamente alinhado na mesma linha
+function buildPriceHtml(pPrice, oldPrice) {
+    if(oldPrice && oldPrice > pPrice) {
+        return `<div class="price-row"><span class="old-price">${fmt(oldPrice)}</span><span class="price">${fmt(pPrice)}</span></div>`;
+    }
+    return `<div class="price-row"><span class="price">${fmt(pPrice)}</span></div>`;
+}
+
+// Modificado para suportar o contexto de Cards Verticais no Checkout e Kits
+function buildElegantCard(item, type, isCheckoutOrKit = false, cartQty = 0, pId = null) {
+    let id = pId || item.id; let img = item.img || item.imagem || '/site/img/produtos/cesta.webp'; let name = item.name || item.nome; let pPrice = item.price || item.preco;
+    let isEsgotado = (item.stock <= 0 && type === 'PROD'); let qty = isCheckoutOrKit ? cartQty : (STATE.cart[id] || 0); let isBasketOrCombo = (type === 'BASKET' || type === 'COMBO');
     let onClickAct = isEsgotado ? '' : (isBasketOrCombo ? `openKitLateralView('${id}', '${type}')` : `openQuickView('${id}')`);
     
-    return `
-    <div class="card-elegant" data-id="${id}" onclick="${onClickAct}" style="${isEsgotado ? 'opacity:0.5; filter:grayscale(1);' : ''}">
-        <div class="img-wrap"><img src="${img}" loading="lazy">${(item.videosExtra && item.videosExtra.length > 0) ? `<div style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.8); color:#fff; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">▶</div>` : ''}</div>
-        <div class="info-wrap">
-            <div class="title">${formatName(name)}</div>
-            <div><div class="price">${fmt(pPrice)}</div>${type === 'PROD' && item.price ? `<div class="atacado">3+ por ${fmt(item.price * 0.90)}/un</div>` : ''}</div>
-            ${isEsgotado ? `<button class="card-add-btn-wide" disabled>Esgotado</button>` : (isBasketOrCombo ? `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClickAct}">Ver Itens</button>` : `
+    // Controles de quantidade para os grids internos (Cesta Editável ou Checkout)
+    let controls = '';
+    if(isCheckoutOrKit && type === 'PROD') {
+        let insideKitType = expanderState.type; // Se estivermos na view de kit
+        if(insideKitType === 'BASKET' || !insideKitType) { 
+            // Cesta Base ou Checkout
+            controls = `<div class="card-qty-ctrl" style="margin-top:auto;"><button onclick="${insideKitType ? `changeExpanderQty('${id}', -1)` : `upd('${id}', -1); event.stopPropagation();`} ">-</button><span>${qty}</span><button onclick="${insideKitType ? `changeExpanderQty('${id}', 1)` : `upd('${id}', 1); event.stopPropagation();`} ">+</button></div>`;
+        } else if(insideKitType === 'COMBO') {
+            // Kits são fixos
+            controls = `<div style="margin-top:auto; font-weight:700; color:var(--brand); background:var(--brand-light); padding:8px; border-radius:8px; text-align:center;">${qty} un</div>`;
+        }
+    } else {
+        // Grid normal da Home
+        controls = isEsgotado ? `<button class="card-add-btn-wide" disabled style="background:var(--c-bd); border:none; color:var(--c-s);">Esgotado</button>` : (isBasketOrCombo ? `<button class="card-add-btn-wide" onclick="event.stopPropagation(); ${onClickAct}">Ver Itens</button>` : `
             <div style="margin-top: auto; width: 100%;">
                 <button class="card-add-btn-wide btn-add-${id}" style="${qty > 0 ? 'display: none;' : ''}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">Adicionar</button>
                 <div class="card-qty-ctrl ctrl-${id}" style="${qty > 0 ? 'display: flex;' : 'display: none;'}"><button onclick="event.stopPropagation(); upd('${id}', -1)">-</button><span class="qty-span-${id}">${qty}</span><button onclick="event.stopPropagation(); handleAddClick(event, '${id}')">+</button></div>
-            </div>`)}
+            </div>`);
+    }
+
+    return `
+    <div class="card-elegant" data-id="${id}" onclick="${onClickAct}" style="${isEsgotado || (isCheckoutOrKit && qty === 0) ? 'opacity:0.6; filter:grayscale(1);' : ''}">
+        ${(isCheckoutOrKit && qty === 0) ? `<div style="position:absolute; inset:0; background:rgba(255,255,255,0.7); z-index:5; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--c-a);">REMOVIDO</div>` : ''}
+        <div class="img-wrap"><img src="${img}" loading="lazy">${(item.videosExtra && item.videosExtra.length > 0 && !isCheckoutOrKit) ? `<div style="position:absolute; top:4px; right:4px; background:rgba(225,29,72,0.9); color:#fff; border-radius:50%; width:24px; height:24px; display:flex; align-items:center; justify-content:center; font-size:0.7rem; box-shadow:0 2px 8px rgba(225,29,72,0.4);">▶</div>` : ''}</div>
+        <div class="info-wrap">
+            <div class="title">${formatName(name)}</div>
+            <div>${buildPriceHtml(pPrice, item.oldPrice)}${type === 'PROD' && item.price && !isCheckoutOrKit ? `<div class="atacado">3+ por ${fmt(item.price * 0.90)}/un</div>` : ''}</div>
+            ${controls}
         </div>
     </div>`;
 }
 
 // ==========================================
-// DRAWER, NAV E BOTÃO VOLTAR
+// DRAWER E NAVEGAÇÃO BÁSICA
 // ==========================================
 function updateNav(type, el = null) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -519,6 +635,7 @@ window.goToHome = function() {
     if($('video-feed-view').classList.contains('open')) closeVideoFeed();
     if($('global-search-view').classList.contains('open')) closeGlobalSearch();
     $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' }); 
+    document.title = "Super Cestas Básicas Dona Antônia";
     renderStories('home');
     updateNav('home', document.querySelectorAll('.nav-item')[0]);
 };
@@ -530,17 +647,14 @@ window.addEventListener('popstate', function(event) {
     else if ($('kit-detail-view').classList.contains('open')) closeKitDetail(true);
     else if ($('video-feed-view').classList.contains('open')) closeVideoFeed();
     else if ($('global-search-view').classList.contains('open')) closeGlobalSearch();
-    else if ($('store-rules-view').classList.contains('open')) closeStoreRules();
     else if (STATE.checkoutOpen) closeCheckout();
+    document.title = "Super Cestas Básicas Dona Antônia";
 });
 
 window.openDrawerMenu = function() { $('generic-overlay').style.display = 'block'; $('generic-overlay').onclick = closeDrawerMenu; $('drawer-menu').classList.add('open'); if (!history.state || !history.state.drawerOpen) history.pushState({ drawerOpen: true }, ''); }
 window.closeDrawerMenu = function() { $('drawer-menu').classList.remove('open'); $('generic-overlay').style.display = 'none'; $('generic-overlay').onclick = closeGenericOverlay; }
-window.closeGenericOverlay = function() { if ($('drawer-menu').classList.contains('open')) closeDrawerMenu(); if ($('quick-view-lateral').classList.contains('open')) closeQuickView(); if ($('global-search-view').classList.contains('open')) closeGlobalSearch(); if ($('store-rules-view').classList.contains('open')) closeStoreRules(); $('generic-overlay').style.display = 'none'; };
+window.closeGenericOverlay = function() { if ($('drawer-menu').classList.contains('open')) closeDrawerMenu(); if ($('quick-view-lateral').classList.contains('open')) closeQuickView(); if ($('global-search-view').classList.contains('open')) closeGlobalSearch(); $('generic-overlay').style.display = 'none'; };
 
-// ==========================================
-// BUSCA GLOBAL
-// ==========================================
 window.openGlobalSearch = function() { if (!STATE.dataLoaded) return showToast("Sincronizando...", "s"); $('generic-overlay').style.display = 'block'; $('global-search-view').classList.add('open'); setTimeout(() => $('global-search-input').focus(), 300); if (!history.state || !history.state.searchOpen) history.pushState({ searchOpen: true }, ''); };
 window.closeGlobalSearch = function() { $('global-search-view').classList.remove('open'); $('global-search-input').value = ''; setTimeout(() => { if(!document.querySelector('.lateral-view.open')) $('generic-overlay').style.display = 'none'; }, 300); };
 window.doGlobalSearch = function() {
@@ -548,21 +662,10 @@ window.doGlobalSearch = function() {
     if(q.length < 2) { res.innerHTML = '<div style="text-align:center; color:var(--c-s); margin-top:60px;">Busque produtos...</div>'; return; }
     let results = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q)).slice(0, 30);
     if(results.length === 0) { res.innerHTML = '<div style="text-align:center; color:var(--c-s); margin-top:60px;">Nenhum produto encontrado.</div>'; return; }
-    res.innerHTML = results.map(p => `
-        <div class="chk-item-card" onclick="openQuickView('${p.id}')" style="cursor:pointer; background:#fff; padding:8px; border-radius:4px; margin-bottom:8px; border:1px solid var(--c-bd);">
-            <img src="${p.img}" loading="lazy" onerror="this.src='/site/img/produtos/cesta.webp'">
-            <div class="name" style="font-weight:500;">${formatName(p.name)}</div>
-            <div style="font-weight:600; font-size:1.1rem;">${fmt(p.price)}</div>
-        </div>
-    `).join('');
+    
+    // Renderizando resultados da busca na mesma grade elegante vertical
+    res.innerHTML = `<div class="grid-elegant" style="padding:0;">${results.map(p => buildElegantCard(p, 'PROD')).join('')}</div>`;
 };
-
-// ==========================================
-// REGRAS E INFO
-// ==========================================
-window.openStoreRules = function() { $('generic-overlay').style.display = 'block'; $('store-rules-view').classList.add('open'); if (!history.state || !history.state.rulesOpen) history.pushState({ rulesOpen: true }, ''); };
-window.closeStoreRules = function() { $('store-rules-view').classList.remove('open'); setTimeout(() => { if(!document.querySelector('.lateral-view.open')) $('generic-overlay').style.display = 'none'; }, 300); };
-
 
 // ==========================================
 // QUICK VIEW (DETALHES DO PRODUTO)
@@ -570,14 +673,14 @@ window.closeStoreRules = function() { $('store-rules-view').classList.remove('op
 function getCardControls(id) {
     let p = STATE.prods.find(x => x.id === id); if (!p) return '';
     const q = STATE.cart[id] || 0;
-    if (p.stock <= 0) return `<button class="btn-big-action" disabled style="background:var(--c-bg-sec); color:var(--c-s); border:1px solid var(--c-bd);">ESGOTADO</button>`;
+    if (p.stock <= 0) return `<button class="btn-big-action" disabled style="background:var(--c-bg-sec); color:var(--c-s); box-shadow:none;">ESGOTADO</button>`;
     return `
     <div style="width: 100%;">
         <button class="btn-big-action btn-add-${id}" style="${q > 0 ? 'display: none;' : ''}" onclick="event.stopPropagation(); handleAddClick(event, '${id}')">Adicionar à Sacola</button>
-        <div class="card-qty-ctrl ctrl-${id}" style="${q > 0 ? 'display: flex;' : 'display: none;'} height: 50px; border-radius: 8px; border: 1px solid var(--c-p);">
-            <button onclick="event.stopPropagation(); upd('${id}', -1)" style="width: 60px; font-size: 1.8rem;">-</button>
-            <span class="qty-span-${id}" style="font-size: 1.2rem;">${q}</span>
-            <button onclick="event.stopPropagation(); handleAddClick(event, '${id}')" style="width: 60px; font-size: 1.8rem;">+</button>
+        <div class="card-qty-ctrl ctrl-${id}" style="${q > 0 ? 'display: flex;' : 'display: none;'} height: 56px; border-radius: 12px; border: 2px solid var(--brand); background: var(--brand-light);">
+            <button onclick="event.stopPropagation(); upd('${id}', -1)" style="width: 60px; font-size: 2rem; color:var(--brand);">-</button>
+            <span class="qty-span-${id}" style="font-size: 1.4rem; color:var(--brand);">${q}</span>
+            <button onclick="event.stopPropagation(); handleAddClick(event, '${id}')" style="width: 60px; font-size: 2rem; color:var(--brand);">+</button>
         </div>
     </div>`;
 }
@@ -585,37 +688,79 @@ function getCardControls(id) {
 window.openQuickView = function(id) { 
     let p = STATE.prods.find(x => x.id === id); if (!p || p.stock <= 0) return; 
     
+    injectSEO('PRODUCT', p);
+
     let slug = createSlug(p.name); let prodUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?p=${slug}-${id}`;
     window.history.pushState({ qvOpen: true, productId: id }, '', prodUrl);
 
+    // Mídias Extras (Corrigido e Validado)
     let carrosselHtml = ''; let totalItems = 0;
-    if (p.imagensExtras && p.imagensExtras.length > 0) { p.imagensExtras.forEach(urlImg => { carrosselHtml += `<div class="qv-carousel-item"><img src="${urlImg}"></div>`; totalItems++; }); } else { carrosselHtml = `<div class="qv-carousel-item"><img src="${p.img}"></div>`; totalItems++; }
+    
+    // Imagem principal sempre primeiro
+    carrosselHtml += `<div class="qv-carousel-item"><img src="${p.img}"></div>`; totalItems++;
+    
+    // Imagens secundárias (2 a 5) se existirem
+    if (p.imagensExtras && p.imagensExtras.length > 1) { 
+        p.imagensExtras.slice(1).forEach(urlImg => { 
+            if(urlImg) { carrosselHtml += `<div class="qv-carousel-item"><img src="${urlImg}"></div>`; totalItems++; }
+        }); 
+    }
+    
+    // Vídeos (Se existirem)
+    if (p.videosExtra && p.videosExtra.length > 0) {
+        p.videosExtra.forEach(link => {
+            let embedUrl = getYouTubeEmbedUrl(link);
+            if(embedUrl) {
+                carrosselHtml += `<div class="qv-carousel-item"><iframe src="${embedUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy" style="width:100%;height:100%;border:none;"></iframe></div>`; totalItems++;
+            }
+        });
+    }
+    
     $('qv-carousel').innerHTML = carrosselHtml;
     
-    let dotsHtml = ''; if (totalItems > 1) { for(let i=0; i<totalItems; i++) dotsHtml += `<div class="qv-dot ${i === 0 ? 'active' : ''}"></div>`; }
-    $('qv-dots').innerHTML = dotsHtml;
+    // Só renderiza dots se tiver > 1 item
+    let dotsContainer = $('qv-dots');
+    if (totalItems > 1) { 
+        let dotsHtml = ''; for(let i=0; i<totalItems; i++) dotsHtml += `<div class="qv-dot ${i === 0 ? 'active' : ''}"></div>`; 
+        dotsContainer.innerHTML = dotsHtml;
+        dotsContainer.style.display = 'flex';
+    } else { 
+        dotsContainer.innerHTML = '';
+        dotsContainer.style.display = 'none';
+    }
     
     $('qv-name').innerText = p.name; 
     if (p.descricao) { $('qv-desc').innerHTML = p.descricao.replace(/\n/g, '<br>'); $('qv-desc').style.display = 'block'; } else $('qv-desc').style.display = 'none';
-    $('qv-price').innerHTML = p.oldPrice && p.oldPrice > p.price ? `<span style="font-size:1rem; text-decoration: line-through; margin-right: 8px; color: var(--c-s); font-weight:400;">De: ${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price); 
+    $('qv-price').innerHTML = buildPriceHtml(p.price, p.oldPrice); 
     
     let shareText = encodeURIComponent(`Olha o que encontrei na Dona Antônia:\n\n*${p.name}*\nPor apenas *${fmt(p.price)}*\n\nCompre aqui: ${prodUrl}`);
     let shareBtn = $('qv-share-btn'); if(shareBtn) shareBtn.onclick = function() { window.open(`https://wa.me/?text=${shareText}`, '_blank'); };
 
     $('qv-action-area').dataset.id = id; $('qv-action-area').innerHTML = getCardControls(id); 
     
+    // Recomendações (Devolvemos ao menos 6)
+    let recs = STATE.prods.filter(x => x.categoria === p.categoria && x.id !== id && x.stock > 0 && !x._isBasket && !x._isCombo).sort(() => 0.5 - Math.random()).slice(0, 6);
+    if(recs.length > 0) {
+        $('qv-rec-title').style.display = 'block';
+        $('qv-recommendations').innerHTML = recs.map(r => buildElegantCard(r, 'PROD')).join('');
+    } else {
+        $('qv-rec-title').style.display = 'none';
+        $('qv-recommendations').innerHTML = '';
+    }
+
     $('generic-overlay').style.display = 'block'; $('quick-view-lateral').classList.add('open');
     $('qv-carousel').scrollTo({ left: 0, behavior: 'instant' }); document.querySelector('#quick-view-lateral .see-all-content').scrollTo({ top: 0, behavior: 'instant' });
 }
 
 window.closeQuickView = function(isFromBrowser = false) {
     $('quick-view-lateral').classList.remove('open');
+    document.title = "Super Cestas Básicas Dona Antônia";
     if (!isFromBrowser) window.history.pushState({ qvOpen: false }, '', window.location.protocol + "//" + window.location.host + window.location.pathname);
     setTimeout(() => { if(!document.querySelector('.lateral-view.open') && !$('drawer-menu').classList.contains('open')) $('generic-overlay').style.display = 'none'; $('qv-carousel').innerHTML = ''; }, 300);
 };
 
 // ==========================================
-// KITS E CESTAS (DETAIL VIEW)
+// KITS E CESTAS (CARDS VERTICAIS)
 // ==========================================
 let expanderState = { id: null, type: null, basePrice: 0, originalSum: 0, priceOffset: 0, items: {}, originalItems: {}, discountLost: false, orderedIds: [], sourceObj: null, currentDisplayPrice: 0 };
 
@@ -632,15 +777,11 @@ window.openKitLateralView = function(id, type) {
     expanderState.priceOffset = type === 'BASKET' ? Math.max(0, sourceObj.preco - expanderState.originalSum) : 0;
 
     let currentSum = 0;
+    
+    // Gerando Cards Verticais para os itens dentro do Kit
     let itemsHtml = expanderState.orderedIds.map(pId => { 
         let qty = expanderState.items[pId]; let p = STATE.prods.find(x => x.id === pId); if(!p) return ''; currentSum += p.price * qty;
-        let controlArea = type === 'BASKET' ? `<div class="card-qty-ctrl" style="width:100px; margin-top:0; height:34px;"><button onclick="changeExpanderQty('${pId}', -1)">-</button><span id="exp-qty-${pId}">${qty}</span><button onclick="changeExpanderQty('${pId}', 1)">+</button></div>` : `<div style="font-weight:600; font-size:0.85rem;">${qty} un</div>`;
-        return `
-        <div class="chk-item-card" id="exp-card-${pId}" style="padding: 12px 16px; background:#fff; border-bottom:1px solid var(--c-bd);">
-            <img src="${p.img}" loading="lazy">
-            <div class="name">${formatName(p.name)}</div>
-            ${controlArea}
-        </div>`;
+        return buildElegantCard(p, 'PROD', true, qty, pId);
     }).join('');
 
     $('kit-header-title-text').innerText = sourceObj.nome;
@@ -665,9 +806,17 @@ window.changeExpanderQty = function(pId, delta) {
     if (next > p.stock) return showToast("Estoque insuficiente", "r");
     expanderState.items[pId] = next;
     
-    let qtyEl = $('exp-qty-' + pId); if(qtyEl) qtyEl.innerText = next;
+    // Atualiza apenas a exibição interna sem re-renderizar tudo
+    let qtyEl = document.querySelector(`.qty-span-${pId}`); if(qtyEl) qtyEl.innerText = next;
+    
     let currentSum = 0; Object.keys(expanderState.items).forEach(id => { let prod = STATE.prods.find(x => x.id === id); if (prod) currentSum += prod.price * expanderState.items[id]; });
     updateExpanderTotalDisplay(currentSum);
+    
+    // Reforça a re-renderização completa do grid para garantir o estado "Removido" acinzentado no card vertical
+    $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => { 
+        let qty = expanderState.items[pId]; let p = STATE.prods.find(x => x.id === pId); if(!p) return '';
+        return buildElegantCard(p, 'PROD', true, qty, pId);
+    }).join('');
 };
 
 window.commitExpander = function() {
@@ -685,11 +834,12 @@ window.commitExpander = function() {
 
 window.closeKitDetail = function(isFromBrowser = false) {
     $('kit-detail-view').classList.remove('open');
+    expanderState.type = null; // Reseta pra não bugar controles
     if (!isFromBrowser && history.state && history.state.lateralOpen) history.back();
 }
 
 // ==========================================
-// CARRINHO E CHECKOUT (Lógica Intacta)
+// CARRINHO E CHECKOUT (CARDS VERTICAIS)
 // ==========================================
 function upd(id, delta, skipKitCheck = false) { 
     let p = STATE.prods.find(x => x.id === id); if (!p) return; 
@@ -752,9 +902,11 @@ window.selectDelivery = function(index) {
 };
 
 function renderCheckoutItems() {
+    expanderState.type = null; // Garante que a renderização dos cards force a view padrão de checkout
+    
     $('chk-list').innerHTML = STATE.cartOrder.map(id => { 
         let p = STATE.prods.find(x => x.id === id); let qty = STATE.cart[id];
-        return `<div class="chk-item-card"><img src="${p.img}" loading="lazy"><div class="name">${formatName(p.name)}</div><div class="card-qty-ctrl" style="width:100px; margin-top:0;"><button onclick="upd('${id}',-1); event.stopPropagation();">-</button><span>${qty}</span><button onclick="upd('${id}',1); event.stopPropagation();">+</button></div></div>`; 
+        return buildElegantCard(p, 'PROD', true, qty, id);
     }).join('');
     
     let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => x.id === id); if (p) sum += p.price * q; });
@@ -763,8 +915,8 @@ function renderCheckoutItems() {
     $('chk-summary-lines').innerHTML = `<div style="display:flex;justify-content:space-between;"><span>Subtotal</span><span style="font-weight:600; color:var(--c-p);">${fmt(subtotal)}</span></div>` + (STATE.atacadoDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Desconto Atacado</span><span>-${fmt(STATE.atacadoDiscount)}</span></div>` : '') + (STATE.comboDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Kits Promo</span><span>-${fmt(STATE.comboDiscount)}</span></div>` : '') + (STATE.deliveryDiscount > 0 ? `<div style="color:var(--c-ok);display:flex;justify-content:space-between;"><span>Bônus Agendamento</span><span>-${fmt(STATE.deliveryDiscount)}</span></div>` : '');
         
     let btn = $('btn-send-order'); let final = subtotal - STATE.deliveryDiscount - totalDescontosKits - STATE.atacadoDiscount;
-    if (final < MIN_ORDER && subtotal > 0) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--c-bd)'; btn.style.color = 'var(--c-s)';} 
-    else { btn.disabled = false; btn.innerText = 'Finalizar Pedido'; btn.style.background = 'var(--c-p)'; btn.style.color = '#fff'; }
+    if (final < MIN_ORDER && subtotal > 0) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--c-bd)'; btn.style.color = 'var(--c-s)'; btn.style.boxShadow = 'none';} 
+    else { btn.disabled = false; btn.innerText = 'Finalizar Pedido'; btn.style.background = 'var(--brand)'; btn.style.color = '#fff'; btn.style.boxShadow = '0 8px 20px rgba(225, 29, 72, 0.3)';}
 }
 
 window.openCheckout = function() { 
@@ -775,7 +927,7 @@ window.openCheckout = function() {
     while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(!CONFIG_ENTREGA.diasSemanaInativos.includes(checkDate.getDay())) { let desc = options.length === 0 ? 0 : (options.length === 1 ? CONFIG_ENTREGA.descontoOpcao2 : CONFIG_ENTREGA.descontoOpcao3); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
     STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
     
-    $('delivery-options-list').innerHTML = options.map((opt, i) => `<div class="pay-opt del-option ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" style="text-align:left; display:flex; justify-content:space-between; align-items:center;" onclick="selectDelivery(${i});"><div><div style="font-weight:600; font-size:1rem; margin-bottom:2px;">${opt.title}</div><div style="font-size:0.8rem;">${opt.dateStr}</div></div>${opt.discount > 0 ? `<div style="color:var(--c-ok); font-weight:600;">- ${fmt(opt.discount)}</div>` : ''}</div>`).join('');
+    $('delivery-options-list').innerHTML = options.map((opt, i) => `<div class="pay-opt del-option ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" style="text-align:left; display:flex; justify-content:space-between; align-items:center;" onclick="selectDelivery(${i});"><div><div style="font-weight:600; font-size:1rem; margin-bottom:2px;">${opt.title}</div><div style="font-size:0.8rem;">${opt.dateStr}</div></div>${opt.discount > 0 ? `<div style="color:var(--c-ok); font-weight:700;">- ${fmt(opt.discount)}</div>` : ''}</div>`).join('');
     
     renderCheckoutItems(); $('checkout-view').classList.add('open'); $('bottom-nav').classList.add('hidden');
 }
@@ -804,7 +956,7 @@ async function sendOrder() {
     });
       
     let final = totalBruto + STATE.basketExtraFee - STATE.comboDiscount - STATE.deliveryDiscount - STATE.atacadoDiscount;
-    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; let tipoCestaTexto = "Itens e Kits"; 
+    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
 
     if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO VOLUME (3+ UN): -${fmt(STATE.atacadoDiscount)}`;
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
@@ -857,7 +1009,7 @@ window.openVideoFeed = function() {
                 <div class="v-prod-card" onclick="openQuickView('${v.product.id}')">
                     <img src="${v.product.img}" loading="lazy" class="v-prod-img" onerror="this.src='/site/img/produtos/cesta.webp'">
                     <div class="v-prod-info"><div class="v-prod-name">${v.product.name}</div><div class="v-prod-price">${fmt(v.product.price)}</div></div>
-                    <button class="v-prod-btn">Ver Detalhes</button>
+                    <button class="v-prod-btn">Ver Produto</button>
                 </div>
             </div>`;
         }).join('');
@@ -895,7 +1047,14 @@ async function init() {
             const TAXA_AUMENTO = 1.01;
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                 const cId = p.codigo || p.id; const pBase = parseFloat(p.preco) * TAXA_AUMENTO;
-                let imgs = [p.url_imagem || `/site/img/produtos/${cId}.webp`]; for(let i=2; i<=5; i++) imgs.push(p[`url_imagem_${i}`] || `/site/img/produtos/${cId}_${i}.webp`);
+                let imgs = [p.url_imagem || `/site/img/produtos/${cId}.webp`]; 
+                
+                // Mapeia até 5 imagens baseadas no JSON do Bling/Sistema
+                for(let i=2; i<=5; i++) {
+                    if(p[`url_imagem_${i}`]) imgs.push(p[`url_imagem_${i}`]);
+                    else if(p[`imagem_${i}`]) imgs.push(p[`imagem_${i}`]); 
+                }
+                
                 let vids = []; ['link_video','link_video_2','link_video_3','link_video_4','link_video_5'].forEach(k => { if(p[k]) vids.push(p[k]); });
                 return { id: String(cId), blingId: p.id ? String(p.id) : "", name: String(p.nome), price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, validade: p.validade || null, img: imgs[0], imagensExtras: imgs, videosExtra: vids, descricao: p.descricao || "", categoria: p.categoria || "Outros" };
             });
@@ -927,7 +1086,11 @@ async function init() {
             if (STATE.deptos.ofertas) STATE.deptos.ofertas.data.sort((a, b) => ((b.oldPrice - b.price) / b.oldPrice) - ((a.oldPrice - a.price) / a.oldPrice));
         }
         STATE.dataLoaded = true;
-        renderStories('home'); // Renderiza as stories iniciais e o Grid
+        
+        // Injeta SEO do Catálogo Completo no carregamento
+        injectSEO('CATALOG', STATE.prods);
+
+        renderStories('home'); 
         
     } catch (e) { showToast("Erro de conexão.", "r"); console.error(e); }
 }
