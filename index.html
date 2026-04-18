@@ -81,8 +81,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .stories-bar-container.hidden { transform: translateY(-100%); }
 
-.stories-bar { display: flex; align-items: flex-start; gap: 16px; padding: 16px; overflow-x: auto; scrollbar-width: none; }
-
+.stories-bar { display: flex; align-items: flex-start; gap: 16px; padding: 16px; overflow-x: auto; scrollbar-width: none; max-width: 1400px; margin: 0 auto; width: 100%; }
+  
 /* Desktop Scrollbar para os Stories */
 @media(min-width: 768px) {
     .stories-bar::-webkit-scrollbar { display: block; height: 6px; }
@@ -112,7 +112,8 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .main-stage { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: var(--c-bg-sec); padding-bottom: calc(var(--nav-height) + 20px); }
 
 /* Minimalist Grid & Cards */
-.grid-elegant { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 24px; }
+.grid-elegant { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
+  
 @media(min-width: 768px) { .grid-elegant { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
 @media(min-width: 1024px) { .grid-elegant { grid-template-columns: repeat(6, 1fr); gap: 20px; } }
 
@@ -136,13 +137,15 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .card-qty-ctrl button:active { background: var(--c-bd); }
 .card-qty-ctrl span { font-weight: 700; font-size: 1rem; color: var(--c-p); flex: 1; text-align: center;}
 
-/* Bottom Navigation (Destaque Adicionado) */
 .bottom-nav {
     position: absolute; bottom: 0; left: 0; width: 100%; height: var(--nav-height);
     background: rgba(255,255,255,0.98); backdrop-filter: blur(10px); border-top: 1px solid rgba(0,0,0,0.05);
-    display: flex; justify-content: space-around; align-items: center; z-index: 105;
+    display: flex; justify-content: center; align-items: center; gap: 10%; z-index: 105;
     padding-bottom: env(safe-area-inset-bottom); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
+@media(max-width: 768px) { .bottom-nav { justify-content: space-around; gap: 0; } }
+  
+  
 .bottom-nav.hidden { transform: translateY(100%); } 
 .nav-item { display: flex; align-items: center; justify-content: center; color: var(--c-p); cursor: pointer; flex: 1; height: 100%; position: relative; transition:0.2s; min-height: 48px; min-width: 48px;}
 .nav-item.active { transform: scale(1.15); font-weight: bold; color: var(--brand);}
