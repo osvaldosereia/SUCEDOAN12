@@ -47,7 +47,6 @@
     --c-bd: #e2e8f0;      
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --nav-height: 64px;   /* Touch targets > 48px */
-    --story-ring: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
     --radius-md: 14px;
     --shadow-soft: 0 4px 20px rgba(0,0,0,0.06);
 }
@@ -57,11 +56,10 @@ body { font-family: var(--font); background: var(--c-bg-sec); color: var(--c-p);
 img { user-select: none; } 
 button { cursor: pointer; border: none; background: 0 0; font-family: inherit; font-weight: 600; min-height: 48px; }
 
-/* Desktop Container limits removidos (Site Normal Tela Cheia) */
 .layout-limit { width: 100%; max-width: 100%; margin: 0 auto; position: relative; background: var(--c-bg-sec); height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
   
 /* ========================================================
-   LOADER INICIAL (SPLASH SCREEN PARA PAGESPEED)
+   LOADER INICIAL
    ======================================================== */
 #initial-loader {
     position: fixed; inset: 0; background: var(--c-bg-sec); z-index: 999999;
@@ -93,45 +91,35 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 }
 .horizontal-scroll::-webkit-scrollbar { display: none; }
 
-/* Topbar (Stories + Chips) */
-.stories-bar-container {
-    flex-shrink: 0; 
-    background: #fff; 
-    border-bottom: 1px solid var(--c-bd); 
-    position: relative; 
-    z-index: 80;
-    transition: margin-top 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease;
-    padding-top: max(12px, env(safe-area-inset-top)); 
-    width: 100%;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-}
-.stories-bar-container.hidden { 
-    margin-top: -220px;
-    opacity: 0; 
-    pointer-events: none; 
-}
+/* ========================================================
+   CABEÇALHO FIXO COM RECOLHIMENTO SUAVE
+   ======================================================== */
+.header-block { flex-shrink: 0; background: #fff; z-index: 80; position: relative; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
+
+/* Stories */
+#header-stories { transition: margin-top 0.35s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s ease; padding-top: max(12px, env(safe-area-inset-top)); background: #fff;}
+#header-stories.hidden { margin-top: -125px; opacity: 0; pointer-events: none; }
 
 .stories-bar { display: flex; align-items: flex-start; gap: 16px; padding: 16px; overflow-x: auto; scrollbar-width: none; width: 100%; scroll-behavior: smooth;}
-
 .story-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 90px; flex-shrink: 0; transition: transform 0.2s;}
 .story-item:active { transform: scale(0.94); }
-.story-ring { width: 90px; height: 90px; border-radius: 50%; padding: 3px; background: var(--story-ring); box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: 0.2s;}
-.story-ring.watched { background: var(--c-bd); }
+
+/* Anéis Cinzas por Padrão */
+.story-ring { width: 90px; height: 90px; border-radius: 50%; padding: 3px; background: var(--c-bd); box-shadow: 0 4px 10px rgba(0,0,0,0.08); transition: 0.2s;}
 .story-ring.logo-ring { background: transparent; border: 2px solid var(--brand); padding: 2px; box-shadow: none;}
 .story-img-wrap { width: 100%; height: 100%; background: #fff; border-radius: 50%; padding: 2px; display: flex; align-items: center; justify-content: center; overflow: hidden;}
 .story-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .story-icon { font-size: 2.2rem; }
 .story-title { font-size: 0.85rem; font-weight: 600; color: var(--c-p); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90px; letter-spacing: -0.3px; transition: 0.2s;}
 
-/* Destaque Visual do Menu Selecionado (Stories) */
+/* Destaque apenas no selecionado */
 .story-item.active { transform: scale(1.05); }
 .story-item.active .story-ring { background: var(--brand); padding: 4px; box-shadow: 0 4px 12px rgba(225,29,72,0.3); }
 .story-item.active .story-ring.logo-ring { border-width: 3px; padding: 2px; box-shadow: 0 4px 12px rgba(225,29,72,0.3);}
 .story-item.active .story-title { font-weight: 800; color: var(--brand); }
 
-/* ========================================================
-   CHIPS DINÂMICOS
-   ======================================================== */
+/* Chips (Fixo abaixo do menu) */
+#header-chips { border-top: 1px solid var(--c-bd); border-bottom: 1px solid var(--c-bd); background: #fff; z-index: 85;}
 .chips-track { display: flex; align-items: center; gap: 10px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; width: 100%; scroll-behavior: smooth;}
 .chip-item { padding: 8px 16px; background: var(--c-bg-sec); color: var(--c-p); border-radius: 20px; font-size: 0.9rem; font-weight: 600; white-space: nowrap; cursor: pointer; border: 1px solid var(--c-bd); transition: 0.2s; }
 .chip-item:hover { background: var(--brand-light); color: var(--brand); border-color: rgba(225,29,72,0.2); }
@@ -259,18 +247,22 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
         <div class="loader-text">Preparando a loja...</div>
     </div>
 
-    <div class="stories-bar-container" id="stories-bar-container">
+    <div class="header-block" id="main-header">
         
-        <div class="scroll-wrapper">
-            <button class="scroll-arrow left" onclick="scrollH('stories-bar', -300)">❮</button>
-            <div class="stories-bar horizontal-scroll" id="stories-bar"></div>
-            <button class="scroll-arrow right" onclick="scrollH('stories-bar', 300)">❯</button>
+        <div id="header-stories">
+            <div class="scroll-wrapper">
+                <button class="scroll-arrow left" onclick="scrollH('stories-bar', -300)">❮</button>
+                <div class="stories-bar horizontal-scroll" id="stories-bar"></div>
+                <button class="scroll-arrow right" onclick="scrollH('stories-bar', 300)">❯</button>
+            </div>
         </div>
 
-        <div class="scroll-wrapper" style="border-top: 1px solid var(--c-bd);">
-            <button class="scroll-arrow left" onclick="scrollH('main-chips', -300)">❮</button>
-            <div class="chips-track horizontal-scroll" id="main-chips"></div>
-            <button class="scroll-arrow right" onclick="scrollH('main-chips', 300)">❯</button>
+        <div id="header-chips">
+            <div class="scroll-wrapper">
+                <button class="scroll-arrow left" onclick="scrollH('main-chips', -300)">❮</button>
+                <div class="chips-track horizontal-scroll" id="main-chips"></div>
+                <button class="scroll-arrow right" onclick="scrollH('main-chips', 300)">❯</button>
+            </div>
         </div>
 
     </div>
@@ -312,8 +304,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
         <div style="flex: 1; overflow-y: auto; padding-bottom: 40px;">
             <a href="#" class="drawer-link" onclick="closeDrawerMenu(); goToHome();"><span class="drawer-link-icon">🏠</span> Início</a>
             <a href="#" class="drawer-link" onclick="closeDrawerMenu(); selectMainCategory('cestas');"><span class="drawer-link-icon">🛒</span> Cestas Básicas</a>
-            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); selectMainCategory('kits');"><span class="drawer-link-icon">🎁</span> Kits Promocionais</a>
             <a href="#" class="drawer-link" onclick="closeDrawerMenu(); selectMainCategory('mercado');"><span class="drawer-link-icon">🛍️</span> Supermercado</a>
+            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); selectMainCategory('ofertas');"><span class="drawer-link-icon">🔥</span> Ofertas</a>
+            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); selectMainCategory('kits');"><span class="drawer-link-icon">🎁</span> Kits Promocionais</a>
             <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="drawer-link"><span class="drawer-link-icon" style="color:var(--c-wpp);">💬</span> Atendimento WhatsApp</a>
             
             <div style="padding: 24px 20px 12px; font-size: 0.85rem; font-weight: 800; color: var(--c-t); text-transform: uppercase; letter-spacing: 0.5px;">Informações Úteis</div>
@@ -481,15 +474,19 @@ const STATE = {
 };
 
 // ==========================================
-// LÓGICA DA TOP BAR E ROLAGEM
+// LÓGICA DA TOP BAR E ROLAGEM (SUAVE)
 // ==========================================
 let lastScrollTop = 0;
 $('scroll-stage').addEventListener('scroll', (e) => {
     let st = e.target.scrollTop;
-    let bar = $('stories-bar-container');
+    let bar = $('header-stories');
     if(bar) {
-        if (st > lastScrollTop && st > 50) { bar.classList.add('hidden'); } 
-        else if (st < lastScrollTop) { bar.classList.remove('hidden'); }
+        // Trava para evitar pulos (jumps): só esconde ao rolar > 80px e só aparece ao subir 15px
+        if (st > lastScrollTop && st > 80) { 
+            bar.classList.add('hidden'); 
+        } else if (st < lastScrollTop - 15 || st <= 0) { 
+            bar.classList.remove('hidden'); 
+        }
     }
     lastScrollTop = st <= 0 ? 0 : st;
 });
@@ -573,10 +570,12 @@ function updateActiveStory(storyId) {
 
 // Renderiza a barra superior (bolas) APENAS UMA VEZ
 function renderStories() {
+    // Nova Ordem: Logo > Cestas > Mercado > Ofertas > Kits | Marcas
     let html = `<div class="story-item" id="story-home" onclick="goToHome()"><div class="story-ring logo-ring"><div class="story-img-wrap"><img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Início" class="story-img"></div></div><span class="story-title" style="font-weight:800; color:var(--brand);">Dona Antônia</span></div>`;
     html += `<div class="story-item" id="story-cestas" onclick="selectMainCategory('cestas')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🛒</div></div></div><span class="story-title">Cestas</span></div>`;
-    html += `<div class="story-item" id="story-kits" onclick="selectMainCategory('kits')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🎁</div></div></div><span class="story-title">Kits Promo</span></div>`;
     html += `<div class="story-item" id="story-mercado" onclick="selectMainCategory('mercado')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🛍️</div></div></div><span class="story-title">Mercado</span></div>`;
+    html += `<div class="story-item" id="story-ofertas" onclick="selectMainCategory('ofertas')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🔥</div></div></div><span class="story-title">Ofertas</span></div>`;
+    html += `<div class="story-item" id="story-kits" onclick="selectMainCategory('kits')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🎁</div></div></div><span class="story-title">Kits Promo</span></div>`;
     
     // Gerador de Marcas Top
     let marcasCount = {};
@@ -612,7 +611,7 @@ window.selectMainCategory = function(type, extra, slug) {
         let allProds = []; 
         let catArray = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0);
         catArray.forEach(c => allProds.push(...c.data));
-        renderMainGrid(allProds.slice(0, 50), 'PROD'); // Mostra os 50 primeiros no mercado geral
+        renderMainGrid(allProds.slice(0, 50), 'PROD'); 
         renderChipsFor('mercado');
     } 
     else if (type === 'cestas') {
@@ -625,11 +624,16 @@ window.selectMainCategory = function(type, extra, slug) {
         renderMainGrid(STATE.combos, 'COMBO');
         renderChipsFor('kits');
     }
+    else if (type === 'ofertas') {
+        $('grid-title').innerText = "Ofertas (Vencimentos Próximos)";
+        renderMainGrid(STATE.deptos.ofertas.data, 'PROD');
+        renderChipsFor('ofertas');
+    }
     else if (type === 'marca') {
         $('grid-title').innerText = "Marca: " + extra;
         let filtered = STATE.prods.filter(p => p.marca && String(p.marca).trim() === extra);
         renderMainGrid(filtered, 'PROD');
-        renderChipsFor('marca'); // Chips de busca padrão quando na marca
+        renderChipsFor('marca'); 
     }
     
     // Rola para o topo do grid ao trocar a aba principal
@@ -641,7 +645,6 @@ window.renderChipsFor = function(type) {
     let html = '';
     
     if (type === 'mercado') {
-        // Ordenação inteligente das categorias
         let priority = ['mercearia basica', 'mercearia', 'limpeza', 'higiene', 'beleza', 'chocolate', 'bolacha'];
         let cats = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0);
         
@@ -652,7 +655,7 @@ window.renderChipsFor = function(type) {
             if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
             if (aIndex !== -1) return -1;
             if (bIndex !== -1) return 1;
-            return a.title.localeCompare(b.title); // Restante em ordem alfabética
+            return a.title.localeCompare(b.title);
         });
 
         html = cats.map(c => `<div class="chip-item" id="chip-${c.id}" onclick="openDeptoGrid('${c.id}')">${c.title}</div>`).join('');
@@ -663,8 +666,7 @@ window.renderChipsFor = function(type) {
     else if (type === 'kits') {
         html = STATE.combos.map(c => `<div class="chip-item" onclick="openKitLateralView('${c.id}', 'COMBO')">${c.nome}</div>`).join('');
     }
-    else if (type === 'marca') {
-        // Na marca mantemos os chips rápidos de pesquisa para utilidade
+    else if (type === 'ofertas' || type === 'marca') {
         html = TOP_CHIPS.map(c => `<div class="chip-item" onclick="searchByChip('${c}')">${c}</div>`).join('');
     }
 
@@ -686,6 +688,9 @@ window.openDeptoGrid = function(deptoId) {
         activeChip.classList.add('active');
         activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
+
+    // SEMPRE MOSTRA A PÁGINA NO INÍCIO
+    $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.searchByChip = function(term) {
@@ -693,6 +698,7 @@ window.searchByChip = function(term) {
     let input = $('global-search-input');
     input.value = term;
     doGlobalSearch();
+    $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 
@@ -758,13 +764,13 @@ window.goToHome = function() {
     if($('global-search-view').classList.contains('open')) closeGlobalSearch();
     $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' }); 
     document.title = "Super Cestas Básicas Dona Antônia";
-    $('stories-bar-container').classList.remove('hidden'); 
+    $('header-stories').classList.remove('hidden'); 
     
     $('generic-overlay').style.display = 'none'; 
     
-    // Início agora aciona o painel Mercado
-    selectMainCategory('mercado');
-    updateActiveStory('home'); // Destaca a logo da Dona Antonia
+    // Início agora aciona o painel Cestas por padrão
+    selectMainCategory('cestas');
+    updateActiveStory('home'); // Mas o logo fica brilhando
     updateNav('home', document.querySelectorAll('.nav-item')[0]);
 };
 
@@ -901,6 +907,9 @@ window.openKitLateralView = function(id, type) {
     updateExpanderTotalDisplay(currentSum); updateTotals(); 
     $('kit-detail-view').classList.add('open');
     if (!history.state || !history.state.lateralOpen) history.pushState({ lateralOpen: true }, '');
+
+    // Joga o painel da cesta para o topo
+    document.querySelector('#kit-detail-view .see-all-content').scrollTo({ top: 0, behavior: 'instant' });
 };
 
 function updateExpanderTotalDisplay(currentSum) {
@@ -1155,11 +1164,10 @@ async function init() {
             setTimeout(() => loader.remove(), 500);
         }
 
-        // Renderiza as bolas da Topbar APENAS UMA VEZ
         renderStories(); 
         
-        // Define 'Mercado' como a Página Inicial Padrão
-        selectMainCategory('mercado');
+        // Inicia com as Cestas selecionadas (já destaca no menu)
+        selectMainCategory('cestas');
 
         const urlParams = new URLSearchParams(window.location.search); 
         const pParam = urlParams.get('p');
