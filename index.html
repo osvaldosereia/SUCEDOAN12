@@ -607,13 +607,22 @@ window.selectMainCategory = function(type, extra, slug) {
     updateActiveStory(type === 'marca' ? 'marca-' + slug : (type === 'home' ? 'home' : type));
     
     if (type === 'mercado') {
-        $('grid-title').innerText = "Todos os Produtos";
-        let allProds = []; 
-        let catArray = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0);
-        catArray.forEach(c => allProds.push(...c.data));
-        renderMainGrid(allProds.slice(0, 50), 'PROD'); 
-        renderChipsFor('mercado');
-    } 
+        renderChipsFor('mercado'); // Renderiza os chips primeiro
+        
+        // Categoria que queremos abrir por padrão (o sistema transforma espaços e acentos em _ )
+        let catPadrao = 'cat_mercearia_basica'; 
+        
+        // Verifica se a categoria existe e tem produtos, se sim, abre ela. Se não, mostra "Todos"
+        if(STATE.deptos[catPadrao] && STATE.deptos[catPadrao].data.length > 0) {
+            openDeptoGrid(catPadrao);
+        } else {
+            $('grid-title').innerText = "Todos os Produtos";
+            let allProds = []; 
+            let catArray = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0);
+            catArray.forEach(c => allProds.push(...c.data));
+            renderMainGrid(allProds.slice(0, 50), 'PROD'); 
+        }
+    }
     else if (type === 'cestas') {
         $('grid-title').innerText = "Nossas Cestas Básicas";
         renderMainGrid(STATE.baskets, 'BASKET');
@@ -695,10 +704,16 @@ window.openDeptoGrid = function(deptoId) {
 
 window.searchByChip = function(term) {
     if (!$('global-search-view').classList.contains('open')) openGlobalSearch();
+    
     let input = $('global-search-input');
     input.value = term;
     doGlobalSearch();
-    $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Procura a área de conteúdo ESPECÍFICA da tela de pesquisa e rola para o topo
+    let searchContent = document.querySelector('#global-search-view .see-all-content');
+    if(searchContent) {
+        searchContent.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 };
 
 
