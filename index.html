@@ -72,7 +72,28 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .loader-logo { width: 80px; height: 80px; border-radius: 50%; box-shadow: 0 4px 20px rgba(0,0,0,0.1); animation: pulseLoad 1.5s infinite ease-in-out; border: 2px solid var(--brand); padding: 2px; background: #fff;}
 .loader-text { margin-top: 20px; font-weight: 700; color: var(--c-p); font-size: 1rem; letter-spacing: -0.3px; }
 
-/* Topbar Stories (Ocultação real de fundo e espaço) */
+/* ========================================================
+   BARRAS DE ROLAGEM HORIZONTAL E SETAS (DESKTOP)
+   ======================================================== */
+.scroll-wrapper { position: relative; width: 100%; display: flex; align-items: center; max-width: 1400px; margin: 0 auto; }
+.scroll-arrow { display: none; position: absolute; z-index: 10; background: #fff; border: 1px solid var(--c-bd); border-radius: 50%; width: 36px; height: 36px; box-shadow: var(--shadow-soft); color: var(--c-p); font-size: 1.2rem; align-items: center; justify-content: center; cursor: pointer; top: 50%; transform: translateY(-50%); transition: 0.2s;}
+.scroll-arrow:hover { background: var(--c-bg-sec); color: var(--brand); }
+.scroll-arrow.left { left: 8px; }
+.scroll-arrow.right { right: 8px; }
+
+@media(min-width: 768px) {
+    .scroll-arrow { display: flex; }
+    .stories-bar { padding: 16px 48px !important; }
+    .chips-track { padding: 12px 48px !important; }
+
+    .horizontal-scroll::-webkit-scrollbar { display: block; height: 6px; }
+    .horizontal-scroll::-webkit-scrollbar-track { background: var(--c-bg-sec); border-radius: 4px; margin: 0 16px;}
+    .horizontal-scroll::-webkit-scrollbar-thumb { background: var(--c-t); border-radius: 4px; }
+    .horizontal-scroll::-webkit-scrollbar-thumb:hover { background: var(--c-s); }
+}
+.horizontal-scroll::-webkit-scrollbar { display: none; }
+
+/* Topbar (Stories + Chips) */
 .stories-bar-container {
     flex-shrink: 0; 
     background: #fff; 
@@ -85,21 +106,12 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
 .stories-bar-container.hidden { 
-    margin-top: -170px; 
+    margin-top: -220px;
     opacity: 0; 
     pointer-events: none; 
 }
 
-.stories-bar { display: flex; align-items: flex-start; gap: 16px; padding: 16px; overflow-x: auto; scrollbar-width: none; max-width: 1400px; margin: 0 auto; width: 100%; }
-  
-/* Desktop Scrollbar para os Stories */
-@media(min-width: 768px) {
-    .stories-bar::-webkit-scrollbar { display: block; height: 6px; }
-    .stories-bar::-webkit-scrollbar-track { background: var(--c-bg-sec); border-radius: 4px; margin: 0 16px;}
-    .stories-bar::-webkit-scrollbar-thumb { background: var(--c-t); border-radius: 4px; }
-    .stories-bar::-webkit-scrollbar-thumb:hover { background: var(--c-s); }
-}
-.stories-bar::-webkit-scrollbar { display: none; } /* Oculta no mobile */
+.stories-bar { display: flex; align-items: flex-start; gap: 16px; padding: 16px; overflow-x: auto; scrollbar-width: none; width: 100%; scroll-behavior: smooth;}
 
 .story-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; min-width: 90px; flex-shrink: 0; transition: transform 0.2s;}
 .story-item:active { transform: scale(0.94); }
@@ -116,6 +128,14 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
 .story-item.active .story-ring { background: var(--brand); padding: 4px; box-shadow: 0 4px 12px rgba(225,29,72,0.3); }
 .story-item.active .story-ring.logo-ring { border-width: 3px; padding: 2px; box-shadow: 0 4px 12px rgba(225,29,72,0.3);}
 .story-item.active .story-title { font-weight: 800; color: var(--brand); }
+
+/* ========================================================
+   CHIPS DINÂMICOS
+   ======================================================== */
+.chips-track { display: flex; align-items: center; gap: 10px; padding: 12px 16px; overflow-x: auto; scrollbar-width: none; width: 100%; scroll-behavior: smooth;}
+.chip-item { padding: 8px 16px; background: var(--c-bg-sec); color: var(--c-p); border-radius: 20px; font-size: 0.9rem; font-weight: 600; white-space: nowrap; cursor: pointer; border: 1px solid var(--c-bd); transition: 0.2s; }
+.chip-item:hover { background: var(--brand-light); color: var(--brand); border-color: rgba(225,29,72,0.2); }
+.chip-item.active { background: var(--brand); color: #fff; border-color: var(--brand); box-shadow: 0 2px 10px rgba(225,29,72,0.2); }
 
 /* Main Stage */
 .main-stage { flex: 1; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; background: var(--c-bg-sec); padding-bottom: calc(var(--nav-height) + 20px); }
@@ -153,7 +173,6 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     padding-bottom: env(safe-area-inset-bottom); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 @media(max-width: 768px) { .bottom-nav { justify-content: space-around; gap: 0; } }
-  
   
 .bottom-nav.hidden { transform: translateY(100%); } 
 .nav-item { display: flex; align-items: center; justify-content: center; color: var(--c-p); cursor: pointer; flex: 1; height: 100%; position: relative; transition:0.2s; min-height: 48px; min-width: 48px;}
@@ -241,13 +260,24 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
     </div>
 
     <div class="stories-bar-container" id="stories-bar-container">
-        <div class="stories-bar" id="stories-bar">
-            </div>
+        
+        <div class="scroll-wrapper">
+            <button class="scroll-arrow left" onclick="scrollH('stories-bar', -300)">❮</button>
+            <div class="stories-bar horizontal-scroll" id="stories-bar"></div>
+            <button class="scroll-arrow right" onclick="scrollH('stories-bar', 300)">❯</button>
+        </div>
+
+        <div class="scroll-wrapper" style="border-top: 1px solid var(--c-bd);">
+            <button class="scroll-arrow left" onclick="scrollH('main-chips', -300)">❮</button>
+            <div class="chips-track horizontal-scroll" id="main-chips"></div>
+            <button class="scroll-arrow right" onclick="scrollH('main-chips', 300)">❯</button>
+        </div>
+
     </div>
 
     <main class="main-stage" id="scroll-stage">
         
-        <div style="padding: 24px 16px 12px; font-size: 1.2rem; font-weight: 800; color: var(--c-p); letter-spacing:-0.5px;" id="grid-title">Destaques para você</div>
+        <div style="padding: 24px 16px 12px; font-size: 1.2rem; font-weight: 800; color: var(--c-p); letter-spacing:-0.5px;" id="grid-title">Mercado</div>
         
         <div id="main-grid" class="grid-elegant"></div>
         
@@ -281,9 +311,9 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
         </div>
         <div style="flex: 1; overflow-y: auto; padding-bottom: 40px;">
             <a href="#" class="drawer-link" onclick="closeDrawerMenu(); goToHome();"><span class="drawer-link-icon">🏠</span> Início</a>
-            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); renderStories('cestas');"><span class="drawer-link-icon">🛒</span> Cestas Básicas</a>
-            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); renderStories('kits');"><span class="drawer-link-icon">🎁</span> Kits Promocionais</a>
-            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); renderStories('mercado');"><span class="drawer-link-icon">🛍️</span> Supermercado</a>
+            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); selectMainCategory('cestas');"><span class="drawer-link-icon">🛒</span> Cestas Básicas</a>
+            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); selectMainCategory('kits');"><span class="drawer-link-icon">🎁</span> Kits Promocionais</a>
+            <a href="#" class="drawer-link" onclick="closeDrawerMenu(); selectMainCategory('mercado');"><span class="drawer-link-icon">🛍️</span> Supermercado</a>
             <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="drawer-link"><span class="drawer-link-icon" style="color:var(--c-wpp);">💬</span> Atendimento WhatsApp</a>
             
             <div style="padding: 24px 20px 12px; font-size: 0.85rem; font-weight: 800; color: var(--c-t); text-transform: uppercase; letter-spacing: 0.5px;">Informações Úteis</div>
@@ -312,6 +342,13 @@ button { cursor: pointer; border: none; background: 0 0; font-family: inherit; f
                 <input type="text" class="depto-search" id="global-search-input" placeholder="Pesquisar produtos..." oninput="doGlobalSearch()" autocomplete="off">
             </div>
         </div>
+        
+        <div class="scroll-wrapper" style="background:#fff; border-bottom: 1px solid var(--c-bd); flex-shrink:0;">
+            <button class="scroll-arrow left" onclick="scrollH('search-chips', -300)">❮</button>
+            <div class="chips-track horizontal-scroll" id="search-chips"></div>
+            <button class="scroll-arrow right" onclick="scrollH('search-chips', 300)">❯</button>
+        </div>
+
         <div class="see-all-content" id="global-search-results" style="padding: 16px;">
             <div style="text-align:center; color:var(--c-s); margin-top:60px; font-size:1rem; font-weight:500;">Encontre rapidamente o que precisa.</div>
         </div>
@@ -444,7 +481,7 @@ const STATE = {
 };
 
 // ==========================================
-// LÓGICA DA TOP BAR (STORIES) - ESCONDE NO SCROLL
+// LÓGICA DA TOP BAR E ROLAGEM
 // ==========================================
 let lastScrollTop = 0;
 $('scroll-stage').addEventListener('scroll', (e) => {
@@ -468,6 +505,11 @@ function converterDataValidade(dataStr) {
     if (partes.length === 3) return new Date(partes[2], partes[1] - 1, partes[0]).getTime();
     return new Date(dataStr).getTime() || new Date(8640000000000000).getTime();
 }
+
+window.scrollH = function(id, offset) {
+    let el = document.getElementById(id);
+    if(el) el.scrollBy({ left: offset, behavior: 'smooth' });
+};
 
 // ==========================================
 // GERADOR DE SEO DINÂMICO (JSON-LD)
@@ -519,112 +561,140 @@ function injectSEO(type, data) {
 }
 
 // ==========================================
-// NAVEGAÇÃO "STORIES"
+// NAVEGAÇÃO "STORIES" FIXOS E CHIPS DINÂMICOS
 // ==========================================
-function getFirstProductImage(obj, type) {
-    if(type === 'PROD' && obj.data && obj.data.length > 0) return obj.data[0].img;
-    if(type === 'BASKET' || type === 'COMBO') {
-        if(obj.img || obj.url_imagem) return obj.img || obj.url_imagem;
-        if(obj.produtos && obj.produtos.length > 0) {
-            let pId = obj.produtos[0].split('x')[1]?.trim();
-            let p = STATE.prods.find(x => String(x.id) === String(pId));
-            if(p) return p.img;
-        }
-    }
-    return '/site/img/produtos/cesta.webp';
-}
+const TOP_CHIPS = ['Arroz', 'Feijão', 'Óleo', 'Açúcar', 'Café', 'Macarrão', 'Molho', 'Bolacha', 'Leite', 'Chocolate', 'Shampoo', 'Desodorante', 'Creme', 'Sabão', 'Amaciante', 'Desinfetante', 'Pano', 'Vassoura', 'Achocolatado', 'Suco', 'Tempero'];
 
-// Atualiza o estado ativo dos Stories
 function updateActiveStory(storyId) {
     document.querySelectorAll('.story-item').forEach(el => el.classList.remove('active'));
     let el = document.getElementById('story-' + storyId);
     if (el) el.classList.add('active');
 }
 
-function renderStories(level = 'home') {
+// Renderiza a barra superior (bolas) APENAS UMA VEZ
+function renderStories() {
     let html = `<div class="story-item" id="story-home" onclick="goToHome()"><div class="story-ring logo-ring"><div class="story-img-wrap"><img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Início" class="story-img"></div></div><span class="story-title" style="font-weight:800; color:var(--brand);">Dona Antônia</span></div>`;
-
-    if (level === 'home') {
-        html += `<div class="story-item" id="story-cestas" onclick="renderStories('cestas')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🛒</div></div></div><span class="story-title">Cestas</span></div>`;
-        html += `<div class="story-item" id="story-kits" onclick="renderStories('kits')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🎁</div></div></div><span class="story-title">Kits Promo</span></div>`;
-        html += `<div class="story-item" id="story-mercado" onclick="renderStories('mercado')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🛍️</div></div></div><span class="story-title">Mercado</span></div>`;
-        
-        // Gerador Automático de Top 10 Marcas
-        let marcasCount = {};
-        STATE.prods.forEach(p => {
-            if(p.marca && typeof p.marca === 'string' && p.marca.trim() !== '') {
-                let marca = p.marca.trim();
-                marcasCount[marca] = (marcasCount[marca] || 0) + 1;
-            }
-        });
-        
-        let topMarcas = Object.entries(marcasCount)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10)
-            .map(entry => entry[0]);
-        
-        if(topMarcas.length > 0) {
-            html += `<div style="width: 2px; height: 50px; background: var(--c-bd); margin: auto 4px; border-radius: 2px; flex-shrink: 0;"></div>`;
-            topMarcas.forEach(marca => {
-                let img = STATE.prods.find(x => x.marca && String(x.marca).trim() === marca && x.img) ? STATE.prods.find(x => x.marca && String(x.marca).trim() === marca && x.img).img : '/site/img/produtos/cesta.webp';
-                let slug = createSlug(marca);
-                html += `<div class="story-item" id="story-marca-${slug}" onclick="openMarcaGrid('${marca}', '${slug}')"><div class="story-ring"><div class="story-img-wrap"><img src="${img}" alt="${marca}" loading="lazy" class="story-img"></div></div><span class="story-title">${marca}</span></div>`;
-            });
+    html += `<div class="story-item" id="story-cestas" onclick="selectMainCategory('cestas')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🛒</div></div></div><span class="story-title">Cestas</span></div>`;
+    html += `<div class="story-item" id="story-kits" onclick="selectMainCategory('kits')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🎁</div></div></div><span class="story-title">Kits Promo</span></div>`;
+    html += `<div class="story-item" id="story-mercado" onclick="selectMainCategory('mercado')"><div class="story-ring"><div class="story-img-wrap"><div class="story-icon">🛍️</div></div></div><span class="story-title">Mercado</span></div>`;
+    
+    // Gerador de Marcas Top
+    let marcasCount = {};
+    STATE.prods.forEach(p => {
+        if(p.marca && typeof p.marca === 'string' && p.marca.trim() !== '') {
+            let marca = p.marca.trim();
+            marcasCount[marca] = (marcasCount[marca] || 0) + 1;
         }
-
-        $('grid-title').innerText = "Destaques para você";
-        renderMainGrid(STATE.deptos.ofertas.data, 'PROD'); 
-        setTimeout(() => updateActiveStory('home'), 50);
-    } 
-    else if (level === 'cestas') {
-        STATE.baskets.forEach(b => {
-            let img = getFirstProductImage(b, 'BASKET');
-            let slug = createSlug(b.id);
-            html += `<div class="story-item" id="story-cesta-${slug}" onclick="openKitLateralView('${b.id}', 'BASKET'); updateActiveStory('cesta-${slug}')"><div class="story-ring"><div class="story-img-wrap"><img src="${img}" alt="${b.nome}" loading="lazy" class="story-img"></div></div><span class="story-title">${b.nome}</span></div>`;
+    });
+    
+    let topMarcas = Object.entries(marcasCount).sort((a, b) => b[1] - a[1]).slice(0, 10).map(entry => entry[0]);
+    if(topMarcas.length > 0) {
+        html += `<div style="width: 2px; height: 50px; background: var(--c-bd); margin: auto 4px; border-radius: 2px; flex-shrink: 0;"></div>`;
+        topMarcas.forEach(marca => {
+            let img = STATE.prods.find(x => x.marca && String(x.marca).trim() === marca && x.img) ? STATE.prods.find(x => x.marca && String(x.marca).trim() === marca && x.img).img : '/site/img/produtos/cesta.webp';
+            let slug = createSlug(marca);
+            html += `<div class="story-item" id="story-marca-${slug}" onclick="selectMainCategory('marca', '${marca}', '${slug}')"><div class="story-ring"><div class="story-img-wrap"><img src="${img}" alt="${marca}" loading="lazy" class="story-img"></div></div><span class="story-title">${marca}</span></div>`;
         });
-        $('grid-title').innerText = "Nossas Cestas Básicas";
-        renderMainGrid(STATE.baskets, 'BASKET');
-        setTimeout(() => updateActiveStory('cestas'), 50);
-    }
-    else if (level === 'kits') {
-        STATE.combos.forEach(b => {
-            let img = getFirstProductImage(b, 'COMBO');
-            let slug = createSlug(b.id);
-            html += `<div class="story-item" id="story-kit-${slug}" onclick="openKitLateralView('${b.id}', 'COMBO'); updateActiveStory('kit-${slug}')"><div class="story-ring"><div class="story-img-wrap"><img src="${img}" alt="${b.nome}" loading="lazy" class="story-img"></div></div><span class="story-title">${b.nome}</span></div>`;
-        });
-        $('grid-title').innerText = "Kits Promocionais";
-        renderMainGrid(STATE.combos, 'COMBO');
-        setTimeout(() => updateActiveStory('kits'), 50);
-    }
-    else if (level === 'mercado') {
-        let catArray = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0);
-        catArray.forEach(d => {
-            let img = getFirstProductImage(d, 'PROD');
-            let slug = createSlug(d.id);
-            html += `<div class="story-item" id="story-depto-${slug}" onclick="openDeptoGrid('${d.id}'); updateActiveStory('depto-${slug}')"><div class="story-ring"><div class="story-img-wrap"><img src="${img}" alt="${d.title}" loading="lazy" class="story-img"></div></div><span class="story-title">${d.title}</span></div>`;
-        });
-        $('grid-title').innerText = "Todos os Produtos";
-        let allProds = []; catArray.forEach(c => allProds.push(...c.data));
-        renderMainGrid(allProds.slice(0, 50), 'PROD'); 
-        setTimeout(() => updateActiveStory('mercado'), 50);
     }
 
-    let bar = $('stories-bar');
-    if(bar) { bar.innerHTML = html; bar.scrollTo({ left: 0, behavior: 'smooth' }); }
+    $('stories-bar').innerHTML = html;
+    
+    // Os chips fixos da tela de busca sempre serão os de pesquisa rápida
+    $('search-chips').innerHTML = TOP_CHIPS.map(c => `<div class="chip-item" onclick="searchByChip('${c}')">${c}</div>`).join(''); 
 }
 
-function openDeptoGrid(deptoId) {
+// Controla o clique no Menu Fixo (Bolas)
+window.selectMainCategory = function(type, extra, slug) {
+    updateActiveStory(type === 'marca' ? 'marca-' + slug : (type === 'home' ? 'home' : type));
+    
+    if (type === 'mercado') {
+        $('grid-title').innerText = "Todos os Produtos";
+        let allProds = []; 
+        let catArray = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0);
+        catArray.forEach(c => allProds.push(...c.data));
+        renderMainGrid(allProds.slice(0, 50), 'PROD'); // Mostra os 50 primeiros no mercado geral
+        renderChipsFor('mercado');
+    } 
+    else if (type === 'cestas') {
+        $('grid-title').innerText = "Nossas Cestas Básicas";
+        renderMainGrid(STATE.baskets, 'BASKET');
+        renderChipsFor('cestas');
+    }
+    else if (type === 'kits') {
+        $('grid-title').innerText = "Kits Promocionais";
+        renderMainGrid(STATE.combos, 'COMBO');
+        renderChipsFor('kits');
+    }
+    else if (type === 'marca') {
+        $('grid-title').innerText = "Marca: " + extra;
+        let filtered = STATE.prods.filter(p => p.marca && String(p.marca).trim() === extra);
+        renderMainGrid(filtered, 'PROD');
+        renderChipsFor('marca'); // Chips de busca padrão quando na marca
+    }
+    
+    // Rola para o topo do grid ao trocar a aba principal
+    $('scroll-stage').scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Renderiza os Chips baseados na aba atual
+window.renderChipsFor = function(type) {
+    let html = '';
+    
+    if (type === 'mercado') {
+        // Ordenação inteligente das categorias
+        let priority = ['mercearia basica', 'mercearia', 'limpeza', 'higiene', 'beleza', 'chocolate', 'bolacha'];
+        let cats = Object.values(STATE.deptos).filter(d => d.type === 'PROD' && d.id.startsWith('cat_') && d.data.length > 0);
+        
+        cats.sort((a, b) => {
+            let aTitle = norm(a.title); let bTitle = norm(b.title);
+            let aIndex = priority.findIndex(p => aTitle.includes(p));
+            let bIndex = priority.findIndex(p => bTitle.includes(p));
+            if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+            if (aIndex !== -1) return -1;
+            if (bIndex !== -1) return 1;
+            return a.title.localeCompare(b.title); // Restante em ordem alfabética
+        });
+
+        html = cats.map(c => `<div class="chip-item" id="chip-${c.id}" onclick="openDeptoGrid('${c.id}')">${c.title}</div>`).join('');
+    } 
+    else if (type === 'cestas') {
+        html = STATE.baskets.map(b => `<div class="chip-item" onclick="openKitLateralView('${b.id}', 'BASKET')">${b.nome}</div>`).join('');
+    }
+    else if (type === 'kits') {
+        html = STATE.combos.map(c => `<div class="chip-item" onclick="openKitLateralView('${c.id}', 'COMBO')">${c.nome}</div>`).join('');
+    }
+    else if (type === 'marca') {
+        // Na marca mantemos os chips rápidos de pesquisa para utilidade
+        html = TOP_CHIPS.map(c => `<div class="chip-item" onclick="searchByChip('${c}')">${c}</div>`).join('');
+    }
+
+    let track = $('main-chips');
+    track.innerHTML = html;
+    track.scrollTo({ left: 0, behavior: 'smooth' }); // Reseta rolagem
+};
+
+// Abre um Departamento do Mercado clicando num Chip
+window.openDeptoGrid = function(deptoId) {
     let d = STATE.deptos[deptoId]; if(!d) return;
     $('grid-title').innerText = d.title;
     renderMainGrid(d.data, 'PROD');
-}
+    
+    // Destaca o chip clicado
+    document.querySelectorAll('#main-chips .chip-item').forEach(el => el.classList.remove('active'));
+    let activeChip = document.getElementById('chip-' + deptoId);
+    if(activeChip) {
+        activeChip.classList.add('active');
+        activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+};
 
-window.openMarcaGrid = function(marca, slug) {
-    let filtered = STATE.prods.filter(p => p.marca && String(p.marca).trim() === marca);
-    $('grid-title').innerText = "Marca: " + marca;
-    renderMainGrid(filtered, 'PROD');
-    updateActiveStory('marca-' + slug);
-}
+window.searchByChip = function(term) {
+    if (!$('global-search-view').classList.contains('open')) openGlobalSearch();
+    let input = $('global-search-input');
+    input.value = term;
+    doGlobalSearch();
+};
+
 
 function renderMainGrid(items, type) {
     let container = $('main-grid');
@@ -648,7 +718,6 @@ function buildElegantCard(item, type, isCheckoutOrKit = false, cartQty = 0, pId 
     if(isCheckoutOrKit && type === 'PROD') {
         let insideKitType = expanderState.type; 
         if(insideKitType === 'BASKET' || !insideKitType) { 
-            // CORRIGIDO: event.stopPropagation() cravado no onClick para não abrir a tela de produto
             controls = `<div class="card-qty-ctrl" style="margin-top:auto;"><button aria-label="Remover" onclick="event.stopPropagation(); ${insideKitType ? `changeExpanderQty('${id}', -1)` : `upd('${id}', -1)`} ">-</button><span>${qty}</span><button aria-label="Adicionar" onclick="event.stopPropagation(); ${insideKitType ? `changeExpanderQty('${id}', 1)` : `upd('${id}', 1)`} ">+</button></div>`;
         } else if(insideKitType === 'COMBO') {
             controls = `<div style="margin-top:auto; font-weight:700; color:var(--brand); background:var(--brand-light); padding:10px; border-radius:8px; text-align:center;">${qty} un</div>`;
@@ -691,15 +760,16 @@ window.goToHome = function() {
     document.title = "Super Cestas Básicas Dona Antônia";
     $('stories-bar-container').classList.remove('hidden'); 
     
-    // Força limpeza do overlay em caso de bugs de histórico
     $('generic-overlay').style.display = 'none'; 
     
-    renderStories('home');
+    // Início agora aciona o painel Mercado
+    selectMainCategory('mercado');
+    updateActiveStory('home'); // Destaca a logo da Dona Antonia
     updateNav('home', document.querySelectorAll('.nav-item')[0]);
 };
 
 window.addEventListener('popstate', function(event) {
-    $('generic-overlay').style.display = 'none'; // Limpa fundo ao voltar a tela nativamente
+    $('generic-overlay').style.display = 'none'; 
     if ($('drawer-menu').classList.contains('open')) closeDrawerMenu();
     else if ($('quick-view-lateral').classList.contains('open')) closeQuickView(true);
     else if ($('kit-detail-view').classList.contains('open')) closeKitDetail(true);
@@ -749,7 +819,6 @@ window.openQuickView = function(id) {
     let slug = createSlug(p.name); let prodUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + `?p=${slug}-${id}`;
     window.history.pushState({ qvOpen: true, productId: id }, '', prodUrl);
 
-    // Carrossel Blindado contra Vazio (Somente se > 1 mídia)
     let validImages = p.imagensExtras ? p.imagensExtras.filter(img => img && typeof img === 'string' && img.trim() !== '') : [];
     let uniqueImages = [...new Set([p.img, ...validImages])].filter(Boolean);
 
@@ -784,7 +853,6 @@ window.openQuickView = function(id) {
 
     $('qv-action-area').dataset.id = id; $('qv-action-area').innerHTML = getCardControls(id); 
     
-    // Aumentado para 12 sugestões de produtos relacionados
     let recs = STATE.prods.filter(x => x.categoria === p.categoria && String(x.id) !== String(id) && x.stock > 0 && !x._isBasket && !x._isCombo).sort(() => 0.5 - Math.random()).slice(0, 12);
     if(recs.length > 0) {
         $('qv-rec-title').style.display = 'block';
@@ -1009,10 +1077,8 @@ function sendOrder() {
         registroNuvem: { id: Date.now(), status: "PENDENTE", orderNumMatch: [`*PEDIDO #${orderId}*`, `#${orderId}`], orderNum: `#${orderId}`, cliente: nomeCliente, entrega: STATE.deliveryDateStr, dataHora: new Date().toLocaleString('pt-BR'), valorTotal: final.toFixed(2), itens: itensParaNuvem }
     };
     
-    // Dispara webhook em segundo plano
     fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
   
-    // Força redirecionamento IMEDIATO nativo
     const wppUrl = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
     window.location.href = wppUrl;
 
@@ -1042,7 +1108,6 @@ async function init() {
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                 const cId = p.codigo || p.id; const pBase = parseFloat(p.preco) * TAXA_AUMENTO;
                 
-                // Mapeamento Blindado de Imagens Extras
                 let imgs = [p.url_imagem || `/site/img/produtos/${cId}.webp`]; 
                 for(let i=2; i<=5; i++) {
                     let imgExtra = p[`url_imagem_${i}`] || p[`imagem_${i}`];
@@ -1084,16 +1149,18 @@ async function init() {
         
         injectSEO('CATALOG', STATE.prods);
 
-        // Remove a tela de splash garantindo que o PageSpeed sinta a renderização finalizada
         let loader = document.getElementById('initial-loader');
         if(loader) {
             loader.style.opacity = '0';
             setTimeout(() => loader.remove(), 500);
         }
 
-        renderStories('home'); 
+        // Renderiza as bolas da Topbar APENAS UMA VEZ
+        renderStories(); 
+        
+        // Define 'Mercado' como a Página Inicial Padrão
+        selectMainCategory('mercado');
 
-        // Roteador de URL seguro
         const urlParams = new URLSearchParams(window.location.search); 
         const pParam = urlParams.get('p');
         if (pParam) { 
