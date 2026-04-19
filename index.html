@@ -101,6 +101,7 @@
         .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
         .fc-total { font-size: 1.15rem; font-weight: 800; }
 
+        /* Modal Lateral (Drawers) */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
@@ -111,17 +112,19 @@
         .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
         .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; }
         
+        /* Listas (Cesta, Swap, Checkout) */
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
-        .list-img-wrap { width: 85px; height: 85px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
+        /* Foto 20% maior (era 85px, agora 100px) */
+        .list-img-wrap { width: 100px; height: 100px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .list-info { flex: 1; }
         .list-name { font-size: 0.8rem; font-weight: 500; color: var(--text-gray); line-height: 1.35; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); }
         
-        /* NOVO: Botão de Trocar Item na Cesta */
-        .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 4px 8px; background: var(--brand-light); border-radius: 6px; transition: 0.2s;}
-        .btn-swap:active { background: #e5e7eb; }
+        /* Botão de Trocar (Abaixo da quantidade) */
+        .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
+        .btn-swap:active { background: var(--brand-light); }
         
         .chk-section { margin-bottom: 32px; }
         .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
@@ -209,10 +212,11 @@
 
     <div class="drawer" id="swap-drawer" style="z-index: 102;">
         <div class="drawer-header">
-            <div class="drawer-title" style="font-size: 1rem;">Opções de Troca</div>
+            <div class="drawer-title" style="font-size: 1.1rem;">Trocar ou Adicionar</div>
             <button class="btn-close" onclick="closeDrawer('swap-drawer')">✕</button>
         </div>
-        <div class="drawer-body" id="swap-items-grid"></div>
+        <div class="drawer-body" id="swap-items-grid">
+            </div>
     </div>
 
     <div class="drawer" id="checkout-drawer">
@@ -277,7 +281,7 @@ const STATE = {
     cart: {}, cartOrder: [], maisOfertas: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-    activeCat: 'cestas', // <--- Inicia em cestas
+    activeCat: 'cestas', 
     promoIds: { leve5: [], leve2: [] }
 };
 
@@ -287,7 +291,7 @@ function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f
 function openDrawer(id) { $('overlay').classList.add('open'); $(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeDrawer(id) { 
     $(id).classList.remove('open'); 
-    // Se fechar a aba de troca, e a aba da cesta ainda estiver aberta, não pode tirar o bloqueio de scroll
+    // Proteção: não remove o fundo se ainda houver outro modal aberto (como fechar a troca e voltar pra cesta)
     if (!document.querySelector('#checkout-drawer.open') && !document.querySelector('#kit-drawer.open') && !document.querySelector('#main-menu.open')) {
         $('overlay').classList.remove('open'); document.body.style.overflow = ''; 
     }
@@ -372,9 +376,6 @@ function findItem(idStr) {
     return STATE.prods.find(p => p.id === target || p.blingId === target || p.codigo === target);
 }
 
-// ==========================================
-// CONSTRUTOR DE CARDS INTELIGENTES
-// ==========================================
 function buildCardsHTML(items, type, promoSpecialType = null) {
     let html = '';
     let isBasket = type === 'BASKET';
@@ -448,9 +449,6 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
     return html;
 }
 
-// ==========================================
-// RENDERIZAÇÃO ESTRATÉGICA DA HOME
-// ==========================================
 function renderHome() {
     $('grid-title').style.display = "none";
     let html = ''; 
@@ -458,7 +456,6 @@ function renderHome() {
     function buildSection(title, items, isPromoRow = true, promoType = null) {
         let validItems = (items || []).filter(p => p !== undefined && p !== null);
         if(validItems.length === 0) return '';
-        
         let classRow = isPromoRow ? "promo-row" : "";
         return `
         <div class="home-section">
@@ -469,15 +466,10 @@ function renderHome() {
         </div>`;
     }
 
-    let aproveiteItems = PROMO_CONFIG.aproveite.map(findItem);
-    html += buildSection("Aproveite a viagem, talvez você precise", aproveiteItems, true, 'APROVEITE');
-
-    let leve5Items = PROMO_CONFIG.leve5pague4.map(findItem);
-    html += buildSection("Promoção Exclusiva: Leve 5 pague 4", leve5Items, true, 'LEVE5');
-
-    let leve2Items = PROMO_CONFIG.leve2.map(findItem);
-    html += buildSection("Leve 2 e economize 20%", leve2Items, true, 'LEVE2');
-
+    html += buildSection("Aproveite a viagem, talvez você precise", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
+    html += buildSection("Promoção Exclusiva: Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
+    html += buildSection("Leve 2 e economize 20%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
+    
     let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
     html += buildSection("Produtos com 30% de Desconto", off30Items, true);
 
@@ -495,7 +487,7 @@ function renderHome() {
 }
 
 // ==========================================
-// EXPANDER DA CESTA & FUNÇÃO TROCAR
+// CESTA BÁSICA (EXPANDER) E SUBSTITUIÇÕES
 // ==========================================
 let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
@@ -524,17 +516,19 @@ function renderKitList() {
         currentSum += p.price * qty;
         return `
         <div class="list-item">
-            <div class="list-img-wrap"><img src="${p.img}" loading="lazy"></div>
+            <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
             <div class="list-info">
                 <div class="list-name">${p.name}</div>
                 <div class="list-price">${fmt(p.price)}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
+                    <button onclick="changeKitQty('${pId}', -1)">-</button><span>${qty}</span><button onclick="changeKitQty('${pId}', 1)">+</button>
+                </div>
                 <button class="btn-swap" onclick="openSwapView('${p.id}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
                     Trocar
                 </button>
-            </div>
-            <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
-                <button onclick="changeKitQty('${pId}', -1)">-</button><span>${qty}</span><button onclick="changeKitQty('${pId}', 1)">+</button>
             </div>
         </div>`;
     }).join('');
@@ -560,65 +554,107 @@ window.commitExpander = function() {
     updateTotals(); closeDrawer('kit-drawer'); selectCategory('ofertas'); 
 };
 
-// ==========================================
-// INTELIGÊNCIA DE SUBSTITUIÇÃO (TROCA)
-// ==========================================
+// --- Inteligência de Troca & Sugestões ---
 window.openSwapView = function(oldPId) {
     let oldProd = STATE.prods.find(x => String(x.id) === String(oldPId));
     if(!oldProd) return;
 
-    // Lógica: Pega a primeira palavra (minúsculo e sem acento) para achar similares
+    // Isola a primeira palavra para achar produtos iguais (ex: Arroz)
     let firstWord = norm(oldProd.name).split(' ')[0];
     
-    // Procura na loja: mesma primeira palavra, que não seja ele mesmo, e tenha estoque
+    // Filtra produtos similares para Troca direta
     let similarProds = STATE.prods.filter(p => 
         p.id !== oldProd.id && 
         norm(p.name).split(' ')[0] === firstWord && 
         p.stock > 0
     );
 
-    if(similarProds.length === 0) {
-        alert("Poxa! Não encontramos produtos similares no momento para essa troca.");
-        return;
+    // Filtra TODOS os outros produtos da MESMA CATEGORIA para Sugestões Livres
+    let similarIds = similarProds.map(s => s.id);
+    let suggestionProds = STATE.prods.filter(p => 
+        p.categoria === oldProd.categoria &&
+        p.id !== oldProd.id &&
+        !similarIds.includes(p.id) &&
+        p.stock > 0
+    );
+
+    let html = '';
+
+    // BLOCO 1: Opções de Troca Exata
+    if(similarProds.length > 0) {
+        html += `
+        <div style="margin-bottom: 24px;">
+            <h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>
+            ${similarProds.map(p => `
+                <div class="list-item">
+                    <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
+                    <div class="list-info">
+                        <div class="list-name">${p.name}</div>
+                        <div class="list-price">${fmt(p.price)}</div>
+                    </div>
+                    <div>
+                        <button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">Escolher</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>`;
+    } else {
+        html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto idêntico disponível para troca no momento.</p>`;
     }
 
-    $('swap-items-grid').innerHTML = similarProds.map(p => `
-        <div class="list-item" style="background:#f9fafb; padding:12px; border-radius:12px; margin-bottom:12px; border: 1px solid var(--border-light);">
-            <div class="list-img-wrap" style="width:65px; height:65px;"><img src="${p.img}" loading="lazy"></div>
-            <div class="list-info">
-                <div class="list-name">${p.name}</div>
-                <div class="list-price">${fmt(p.price)}</div>
-            </div>
-            <button class="btn-add special" style="width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">Escolher</button>
-        </div>
-    `).join('');
+    // BLOCO 2: Completar Cesta (Adicionar itens da mesma categoria)
+    if(suggestionProds.length > 0) {
+        html += `
+        <div style="padding-top: 16px; border-top: 1px dashed var(--border-light);">
+            <h4 style="font-size: 1rem; color: var(--text-dark); margin-bottom: 16px;">Adicionar mais à cesta</h4>
+            ${suggestionProds.map(p => `
+                <div class="list-item">
+                    <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
+                    <div class="list-info">
+                        <div class="list-name">${p.name}</div>
+                        <div class="list-price">${fmt(p.price)}</div>
+                    </div>
+                    <div>
+                        <button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${p.id}')">Adicionar</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>`;
+    }
 
+    $('swap-items-grid').innerHTML = html;
     openDrawer('swap-drawer');
 };
 
+// Executa a Troca (Substituição)
 window.confirmSwap = function(oldPId, newPId) {
     let qty = expanderState.items[oldPId] || 0;
+    delete expanderState.items[oldPId]; // Remove antigo
     
-    // Remove o antigo
-    delete expanderState.items[oldPId];
-    
-    // Substitui o ID na ordem exata da lista para não bagunçar o visual
+    // Mantém a ordem visual original
     let index = expanderState.orderedIds.indexOf(oldPId);
-    if(index !== -1) {
-        expanderState.orderedIds[index] = newPId;
-    } else {
-        expanderState.orderedIds.push(newPId);
-    }
+    if(index !== -1) expanderState.orderedIds[index] = newPId;
+    else expanderState.orderedIds.push(newPId);
     
-    // Insere o novo com a mesma quantidade
-    expanderState.items[newPId] = qty;
-
+    expanderState.items[newPId] = qty; // Insere o novo com a qtde anterior
     renderKitList();
     closeDrawer('swap-drawer');
 };
 
+// Executa a Adição Extra (Sugestões)
+window.addSuggestionToKit = function(newPId) {
+    if (!expanderState.orderedIds.includes(newPId)) {
+        expanderState.orderedIds.push(newPId);
+    }
+    expanderState.items[newPId] = (expanderState.items[newPId] || 0) + 1; // Adiciona 1 unidade por vez
+    renderKitList();
+    
+    // Feedback visual sutil (pisca a gaveta da cesta)
+    closeDrawer('swap-drawer');
+};
+
 // ==========================================
-// CARRINHO E CHECKOUT (COM MATEMÁTICA DE PROMOÇÃO)
+// CARRINHO GERAL E CHECKOUT
 // ==========================================
 function upd(id, delta) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
@@ -788,7 +824,6 @@ async function init() {
             STATE.prods.forEach(p => { if (p._is30Off) usedIds.add(p.id); }); 
 
             let availableProds = STATE.prods.filter(p => !usedIds.has(p.id) && p.stock > 0);
-            
             let byCat = {};
             availableProds.forEach(p => { if(!byCat[p.categoria]) byCat[p.categoria] = []; byCat[p.categoria].push(p); });
 
@@ -812,7 +847,7 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
-        selectCategory('cestas'); // Inicia focado em cestas conforme você pediu antes
+        selectCategory('cestas');
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
 }
