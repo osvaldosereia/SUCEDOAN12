@@ -528,6 +528,10 @@
             <div class="form-section" style="margin-top:15px;">
                 <div class="section-title">Ações Manuais GitHub</div>
                 <button id="btnSyncFila" class="nav-btn sync-btn" style="height:44px; justify-content:center;" onclick="uploadFilaPedidosGithub(this)"><i data-lucide="upload-cloud" size="14"></i> FORÇAR PEDIDOS_FILA</button>
+           <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top: 10px;" onclick="executarLimpezaImagens()">
+    <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO)
+</button>
+            
             </div>
         </div>
         <div class="sidebar-footer">
@@ -2562,6 +2566,99 @@ linha['Marca'] = p.marca || "";
             const subCatSelectGrid = document.getElementById(`sel-subcat-grid-${sku}`);
             if (subCatSelectGrid) subCatSelectGrid.innerHTML = getOpcoesSubcategoria(novaCategoria, '');
         }
+        // --- MÓDULO DE LIMPEZA INTELIGENTE ---
+
+// 1. Identifica quais imagens realmente pertencem a produtos existentes
+function obterImagensEmUso() {
+    const imagensSet = new Set();
+    products.forEach(p => {
+        // Verifica os 3 slots de imagem
+        [p.url_imagem, p.url_imagem_2, p.url_imagem_3].forEach(url => {
+            if (url && typeof url === 'string' && url.includes('.webp')) {
+                // Extrai apenas o nome do arquivo (ex: 1001.webp) do caminho completo
+                const nomeArquivo = url.split('/').pop().split('?')[0];
+                imagensSet.add(nomeArquivo);
+            }
+        });
+    });
+    return imagensSet;
+}
+
+// 2. Extensão da sua GitHubAPI para deletar arquivos
+GitHubAPI.deleteFile = async function(path, sha, message) {
+    const cfg = this.getConfig();
+    if (!cfg) throw new Error("Credenciais ausentes");
+    
+    const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+    const body = {
+        message: message,
+        sha: sha
+    };
+    
+    const res = await fetch(url, { 
+        method: 'DELETE', 
+        headers: this.getHeaders(cfg), 
+        body: JSON.stringify(body) 
+    });
+    
+    if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(`Erro ao deletar: ${errorData.message}`);
+    }
+    return await res.json();
+};
+
+// 3. Função principal de Varredura e Limpeza
+async function executarLimpezaImagens() {
+    if (!confirm("⚠️ CUIDADO: Esta ação apagará permanentemente do GitHub todas as fotos que não estão vinculadas a nenhum produto. Deseja continuar?")) return;
+
+    mostrarAlerta("Iniciando varredura no GitHub...", "aviso");
+    
+    try {
+        const imagensEmUso = obterImagensEmUso();
+        const pastaImagens = "site/img/produtos";
+        
+        // Busca a lista de arquivos na pasta do GitHub
+        const arquivosNoGithub = await GitHubAPI.getFileData(pastaImagens);
+        
+        if (!Array.isArray(arquivosNoGithub)) {
+            alert("Não foi possível ler a lista de arquivos ou a pasta está vazia.");
+            return;
+        }
+
+        // Filtra quais arquivos do GitHub NÃO estão na nossa lista de uso
+        const arquivosParaDeletar = arquivosNoGithub.filter(arq => {
+            return arq.type === 'file' && !imagensEmUso.has(arq.name);
+        });
+
+        if (arquivosParaDeletar.length === 0) {
+            alert("🎉 Excelente! Não foram encontradas imagens inúteis. O seu repositório está limpo.");
+            return;
+        }
+
+        if (!confirm(`Foram encontradas ${arquivosParaDeletar.length} imagens sem uso. Deseja apagá-las agora?`)) return;
+
+        // Processa a deleção em lotes para não sobrecarregar
+        let deletados = 0;
+        for (const arq of arquivosParaDeletar) {
+            try {
+                await GitHubAPI.deleteFile(arq.path, arq.sha, `Limpeza PIM: Removendo imagem órfã ${arq.name}`);
+                deletados++;
+                console.log(`Deletado: ${arq.name}`);
+                // Pequena pausa para evitar Rate Limit da API
+                await new Promise(r => setTimeout(r, 300)); 
+            } catch (err) {
+                console.error(`Falha ao deletar ${arq.name}:`, err);
+            }
+        }
+
+        alert(`✅ Limpeza concluída! ${deletados} imagens inúteis foram removidas do GitHub.`);
+        closeSidebar('config-sidebar');
+
+    } catch (e) {
+        alert("Erro durante a limpeza: " + e.message);
+    }
+}
     </script>
 </body>
 </html>
