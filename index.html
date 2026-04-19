@@ -552,7 +552,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
 
         let tagHTML = '';
-        if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% OFF (Vencimento Próximo)</div>`;
+        if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% de Desconto</div>`;
         
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
 
