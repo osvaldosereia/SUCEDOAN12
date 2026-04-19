@@ -135,7 +135,7 @@
         #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
         @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
         /* No drawer, o chip deve colar no topo (0px) de forma precisa */
-        #swap-chips-container-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
+#swap-chips-container-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
         #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
 
 
@@ -155,6 +155,39 @@
         .menu-link { display: block; padding: 16px 0; font-size: 1.1rem; font-weight: 500; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
         
         #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-gray); transition: opacity 0.3s; }
+
+        /* ========================================================
+           AJUSTES GAVETA E BANNER
+           ======================================================== */
+        /* Grid de produtos na gaveta (limitar a 3 colunas no desktop) */
+        #kit-extra-grid .product-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px !important;
+        }
+        @media(min-width: 768px) {
+            #kit-extra-grid .product-grid {
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 20px !important;
+            }
+        }
+
+        /* Banner destacado para "Adicione mais produtos" */
+        .banner-destaque {
+            background: var(--brand);
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.15rem;
+            box-shadow: 0 4px 15px rgba(90, 56, 38, 0.2);
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+    
     </style>
 </head>
 <body>
@@ -224,18 +257,19 @@
         <div class="drawer-body" style="padding: 0;">
             <div id="kit-items-grid" style="padding: 20px;"></div>
             
-            <div id="kit-extra-section" style="padding: 20px; border-top: 8px solid var(--bg-img);">
-                <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--brand); margin-bottom: 16px;">Adicione mais produtos</h3>
+            <div id="kit-extra-section" style="padding: 24px 0 20px 0; border-top: 8px solid var(--bg-img);">
+                <div style="padding: 0 20px 20px 20px;">
+                    <div class="banner-destaque">🛒 Adicione mais produtos</div>
+                </div>
                 
-                <div class="chips-wrapper" id="kit-extra-chips-wrap">
+                <div class="chips-wrapper" id="kit-extra-chips-wrap" style="position: sticky; top: 0; background: #fff; z-index: 10; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1);">
                     <button class="scroll-btn left" onclick="scrollElementChips('kit-extra-chips-container', -200)">❮</button>
                     <div class="swap-chips" id="kit-extra-chips-container"></div>
                     <button class="scroll-btn right" onclick="scrollElementChips('kit-extra-chips-container', 200)">❯</button>
                 </div>
                 
-                <div id="kit-extra-grid" style="margin-top: 16px;"></div>
+                <div id="kit-extra-grid" style="margin-top: 20px; padding: 0 20px;"></div>
             </div>
-
         </div>
         <div class="drawer-footer">
             <div class="summary-row total"><span>Total da Cesta</span><span id="kit-total-price">R$ 0,00</span></div>
