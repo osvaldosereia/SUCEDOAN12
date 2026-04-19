@@ -6,7 +6,7 @@
     <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
     <title>Dona Antônia | Super Cestas Básicas</title>
 
-    <link rel="preload" href="../site/img/produtos/logoantonia.png" as="image">
+    <link rel="preload" href="../img/logoantonia.png" as="image">
 
     <style>
         /* ========================================================
@@ -62,12 +62,12 @@
         @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
         @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
 
-        /* SESSÕES HOME (Oculta o 5º item no mobile) */
+        /* SESSÕES HOME */
         .home-section { margin-bottom: 48px; }
         .home-section-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px;}
         @media (max-width: 1023px) { .promo-row .card:nth-child(5) { display: none !important; } }
 
-        .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; }
+        .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden;}
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
@@ -136,7 +136,7 @@
 <div class="app-container">
 
     <header class="top-bar">
-        <img src="../site/img/produtos/logoantonia.png" alt="Dona Antônia" class="logo">
+        <img src="../img/logoantonia.png" alt="Dona Antônia" class="logo">
         <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
     </header>
 
@@ -239,15 +239,12 @@
 <script>
 // ==========================================
 // CONFIGURAÇÃO DAS PROMOÇÕES ESPECIAIS
-// Edite aqui facilmente os IDs dos produtos
 // ==========================================
 const PROMO_CONFIG = {
-    // 1. Aproveite a viagem (máximo de 5 produtos recomendados)
+    // 1. Aproveite a viagem
     aproveite: ["1776338128673", "1776338128389", "1776338125752", "7896355700510", "1776338126174"],
-    
     // 2. Leve 2 e economize (10% de desconto automático na compra de 2 ou mais)
     leve2: ["1776338127057", "1776338127713", "1776338123812", "1776338123007", "1775968438873"],
-    
     // 3. Leve 5 pague 4 (A cada 5, 1 sai de graça automaticamente)
     leve5pague4: ["1775965599401", "1776338131018", "1776338123831", "1776338125770", "1776338132236"]
 };
@@ -348,6 +345,16 @@ function clearSearch(triggerSearch = true) {
     if(triggerSearch) { clearTimeout(searchTimeout); selectCategory(STATE.activeCat); }
 }
 
+// ==========================================
+// BUSCA INTELIGENTE DE PRODUTOS (CORREÇÃO DE BUG)
+// ==========================================
+// Essa função garante que a gente ache o produto seja pelo ID, pelo BlingID ou pelo Código (SKU).
+function findItem(idStr) {
+    if(!idStr) return null;
+    let target = String(idStr).trim();
+    return STATE.prods.find(p => p.id === target || p.blingId === target || p.codigo === target);
+}
+
 // Construtor Central de Cards
 function buildCardsHTML(items, type) {
     let html = '';
@@ -355,7 +362,18 @@ function buildCardsHTML(items, type) {
     
     for(let i=0; i<items.length; i++) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
-        let acaoHTML = isBasket ? `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>` : (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`);
+        let isEsgotado = p.stock <= 0 && !isBasket; // Se não tem estoque, aplicamos o visual Esgotado
+        
+        let acaoHTML = '';
+        if (isEsgotado) {
+            acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`;
+        } else if (isBasket) {
+            acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`;
+        } else if (q > 0) {
+            acaoHTML = `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`;
+        } else {
+            acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`;
+        }
 
         let tagHTML = '';
         if (!isBasket) {
@@ -365,7 +383,7 @@ function buildCardsHTML(items, type) {
         }
 
         html += `
-        <div class="card ${isBasket ? 'card-basket' : ''}">
+        <div class="card ${isBasket ? 'card-basket' : ''}" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
             <div class="card-img-wrap"><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" loading="lazy" decoding="async"></div>
             <div class="card-title">${p.name || p.nome}</div>
             <div class="card-price-row">
@@ -385,11 +403,11 @@ function renderHome() {
     let html = ''; let usedIds = new Set();
 
     function buildSection(title, items, isPromoRow = true) {
-        if(!items || items.length === 0) return '';
-        let validItems = items.filter(p => p && p.stock > 0);
+        // Remove undefined e null que acontecem se o ID não for encontrado
+        let validItems = (items || []).filter(p => p !== undefined && p !== null);
         if(validItems.length === 0) return '';
         
-        validItems.slice(0, 5).forEach(p => usedIds.add(p.id)); // Marca como usado
+        validItems.slice(0, 5).forEach(p => usedIds.add(p.id)); 
         let classRow = isPromoRow ? "promo-row" : "";
         
         return `
@@ -401,8 +419,8 @@ function renderHome() {
         </div>`;
     }
 
-    // 1. Aproveite a viagem
-    let aproveiteItems = PROMO_CONFIG.aproveite.map(id => STATE.prods.find(p => p.id === id));
+    // 1. Aproveite a viagem (AGORA USANDO O findItem CORRIGIDO)
+    let aproveiteItems = PROMO_CONFIG.aproveite.map(findItem);
     html += buildSection("Aproveite a viagem, talvez você precise", aproveiteItems);
 
     // 2. 30% Off (Vencimento Próximo)
@@ -410,11 +428,11 @@ function renderHome() {
     html += buildSection("Produtos com 30% de Desconto", off30Items);
 
     // 3. Leve 2
-    let leve2Items = PROMO_CONFIG.leve2.map(id => STATE.prods.find(p => p.id === id));
+    let leve2Items = PROMO_CONFIG.leve2.map(findItem);
     html += buildSection("Leve 2 e economize", leve2Items);
 
     // 4. Leve 5 Pague 4
-    let leve5Items = PROMO_CONFIG.leve5pague4.map(id => STATE.prods.find(p => p.id === id));
+    let leve5Items = PROMO_CONFIG.leve5pague4.map(findItem);
     html += buildSection("Leve 5 pague 4", leve5Items);
 
     // 5. Restante das Ofertas
@@ -506,7 +524,6 @@ function upd(id, delta) {
     if ((STATE.cart[id] || 0) === 0 && n > 0) STATE.cartOrder.push(id);
     STATE.cart[id] = n; if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); }
     
-    // Atualiza todos os botões visíveis desse produto (pode aparecer em mais de uma sessão)
     document.querySelectorAll(`#card-act-${id}`).forEach(actBox => {
         actBox.innerHTML = n > 0 ? `<div class="qty-control"><button onclick="upd('${id}', -1)">-</button><span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
     });
@@ -522,14 +539,12 @@ function updateTotals() {
         if (p) { 
             sum += p.price * q; count += q; 
             
-            // Regras de Desconto Customizado
             if (PROMO_CONFIG.leve5pague4.includes(p.id)) {
                 let itemsGratis = Math.floor(q / 5);
                 customPromoDiscount += (itemsGratis * p.price);
             } else if (PROMO_CONFIG.leve2.includes(p.id)) {
                 if (q >= 2) customPromoDiscount += (p.price * 0.10) * q;
             } else {
-                // Desconto atacado padrão se não estiver nas outras promos
                 if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; 
             }
         } 
@@ -645,8 +660,12 @@ async function init() {
                     else if (dPv <= 60) price = pBase * 0.90; 
                 }
                 
+                // Salva o codigo e o blingId para a busca inteligente nunca falhar
                 return { 
-                    id: String(p.codigo || p.id), blingId: p.id, name: p.nome, 
+                    id: String(p.codigo || p.id), 
+                    blingId: String(p.id), 
+                    codigo: String(p.codigo || ""), 
+                    name: p.nome, 
                     price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                     categoria: p.categoria || "Outros", _is30Off: is30Off 
@@ -665,7 +684,6 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
-        // Inicia montando a Home Personalizada
         selectCategory('ofertas');
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
