@@ -13,12 +13,12 @@
            DESIGN COM A PALETA "DONA ANTÔNIA"
            ======================================================== */
         :root {
-            --brand: #5A3826;        /* Marrom da Logo */
-            --brand-light: #EBD9C3;  /* Bege/Areia da Logo */
+            --brand: #5A3826;        
+            --brand-light: #EBD9C3;  
             --bg-page: #ffffff;
-            --bg-img: #f3f4f6;       /* Cinza clarinho para produtos normais */
-            --text-dark: #291F1A;    /* Marrom bem escuro quase preto para textos */
-            --text-gray: #6B5C55;    /* Cinza quente/amarronzado */
+            --bg-img: #f3f4f6;       
+            --text-dark: #291F1A;    
+            --text-gray: #6B5C55;    
             --border-light: #e5e7eb;
             --success: #10b981;
             --radius-img: 16px;
@@ -32,24 +32,14 @@
 
         .app-container { max-width: 1200px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; }
 
-        /* Top Bar com Logo Dinâmica */
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; min-height: 75px; }
         .logo { height: 45px; object-fit: contain; transition: 0.3s; }
         .btn-menu { font-size: 1.8rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
 
-        @media(min-width: 768px) {
-            .logo { height: 60px; } /* 30% maior no desktop */
-        }
+        @media(min-width: 768px) { .logo { height: 60px; } }
 
-        /* Controles Fixos (Busca + Dropdown) */
         .controls-wrapper { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        
-        /* 50/50 no Desktop */
-        @media(min-width: 768px) { 
-            .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } 
-            .search-box { flex: 1; } 
-            .custom-dropdown-container { flex: 1; width: auto; } 
-        }
+        @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } .search-box { flex: 1; } .custom-dropdown-container { flex: 1; width: auto; } }
 
         .search-box { position: relative; display: flex; align-items: center; width: 100%; }
         .search-icon { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--text-gray); }
@@ -72,7 +62,11 @@
         @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
         @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
 
-        /* Cards Base */
+        /* SESSÕES HOME (Oculta o 5º item no mobile) */
+        .home-section { margin-bottom: 48px; }
+        .home-section-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px;}
+        @media (max-width: 1023px) { .promo-row .card:nth-child(5) { display: none !important; } }
+
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; }
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden;}
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
@@ -82,24 +76,23 @@
         .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
         .old-price { font-size: 0.8rem; color: #9ca3af; text-decoration: line-through; }
         
-        /* OVERRIDES PARA A CESTA BÁSICA */
+        .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
+        .promo-tag.exp { background: var(--brand-light); color: var(--brand); }
+
         .card-basket .card-img-wrap { background: transparent; padding: 0; }
         .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
         .card-basket .card-title { -webkit-line-clamp: 1; height: auto; white-space: nowrap; }
 
-        /* Botões */
         .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
-        /* Sacola Flutuante */
         .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
         .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
         .fc-total { font-size: 1.15rem; font-weight: 800; }
 
-        /* Modal Lateral (Drawers) */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
@@ -164,8 +157,8 @@
     </div>
 
     <main class="main-content">
-        <h2 class="section-title" id="grid-title">Carregando...</h2>
-        <div class="product-grid" id="main-grid"></div>
+        <h2 class="section-title" id="grid-title" style="display:none;">Carregando...</h2>
+        <div id="main-grid"></div>
     </main>
 
     <div class="floating-cart hidden" id="floating-cart" onclick="openCheckout()">
@@ -184,7 +177,7 @@
             <button class="btn-close" onclick="closeDrawer('main-menu')">✕</button>
         </div>
         <div class="drawer-body">
-            <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectCategory('ofertas');">🔥 Ofertas</a>
+            <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectCategory('ofertas');">🔥 Destaques e Ofertas</a>
             <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectCategory('cestas');">🛒 Cestas Básicas</a>
             <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="menu-link" style="color: var(--success);">💬 Atendimento WhatsApp</a>
         </div>
@@ -235,7 +228,7 @@
         </div>
         <div class="drawer-footer">
             <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
-            <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos</span><span id="sum-desc">R$ 0,00</span></div>
+            <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos Promocionais</span><span id="sum-desc">R$ 0,00</span></div>
             <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
             <button class="btn-checkout" id="btn-send-order" onclick="sendOrder()">Enviar pelo WhatsApp</button>
         </div>
@@ -244,6 +237,21 @@
 </div>
 
 <script>
+// ==========================================
+// CONFIGURAÇÃO DAS PROMOÇÕES ESPECIAIS
+// Edite aqui facilmente os IDs dos produtos
+// ==========================================
+const PROMO_CONFIG = {
+    // 1. Aproveite a viagem (máximo de 5 produtos recomendados)
+    aproveite: ["1776541524551", "COLOQUE_OUTRO_ID_AQUI", "ID3", "ID4", "ID5"],
+    
+    // 2. Leve 2 e economize (10% de desconto automático na compra de 2 ou mais)
+    leve2: ["ID_PRODUTO_L1", "ID_PRODUTO_L2", "ID_PRODUTO_L3", "ID_PRODUTO_L4", "ID_PRODUTO_L5"],
+    
+    // 3. Leve 5 pague 4 (A cada 5, 1 sai de graça automaticamente)
+    leve5pague4: ["ID_PRODUTO_P1", "ID_PRODUTO_P2", "ID_PRODUTO_P3", "ID_PRODUTO_P4", "ID_PRODUTO_P5"]
+};
+
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00;
 const $ = id => document.getElementById(id);
@@ -251,7 +259,7 @@ const $ = id => document.getElementById(id);
 const STATE = {
     prods: [], baskets: [], deptos: {}, categoriesList: [],
     cart: {}, cartOrder: [],
-    basketExtraFee: 0, atacadoDiscount: 0,
+    basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
     activeCat: 'ofertas'
 };
@@ -280,7 +288,7 @@ document.addEventListener('click', (e) => {
 function setupDropdown() {
     const priority = ['ofertas', 'cestas', 'cat_mercearia_basica', 'cat_limpeza', 'cat_higiene', 'cat_beleza', 'cat_cafe_da_manha'];
     STATE.categoriesList = [
-        { id: 'ofertas', title: 'Ofertas 🔥' },
+        { id: 'ofertas', title: 'Destaques e Ofertas 🔥' },
         { id: 'cestas', title: 'Cestas Básicas' },
         ...Object.keys(STATE.deptos).map(k => ({ id: k, title: STATE.deptos[k].title }))
     ];
@@ -305,9 +313,15 @@ function selectCategory(id) {
     STATE.activeCat = id; renderDropdownItems(); clearSearch(false);
     $('dropdown-menu').classList.remove('open'); $('dropdown-icon').style.transform = 'rotate(0deg)';
     
-    if (id === 'cestas') { $('grid-title').innerText = "Cestas Básicas"; renderGrid(STATE.baskets, 'BASKET'); }
-    else if (id === 'ofertas') { $('grid-title').innerText = "Ofertas"; renderGrid(STATE.prods.filter(p => p.price < p.oldPrice), 'PROD'); }
-    else { $('grid-title').innerText = STATE.deptos[id].title; renderGrid(STATE.deptos[id].data, 'PROD'); }
+    if (id === 'ofertas') {
+        renderHome();
+    } else if (id === 'cestas') { 
+        $('grid-title').style.display = "block"; $('grid-title').innerText = "Cestas Básicas"; 
+        $('main-grid').innerHTML = `<div class="product-grid">${buildCardsHTML(STATE.baskets, 'BASKET')}</div>`;
+    } else { 
+        $('grid-title').style.display = "block"; $('grid-title').innerText = STATE.deptos[id].title; 
+        $('main-grid').innerHTML = `<div class="product-grid">${buildCardsHTML(STATE.deptos[id].data, 'PROD')}</div>`;
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -319,9 +333,11 @@ function handleSearchInput() {
         let q = norm(val);
         if(q.length < 2) { selectCategory(STATE.activeCat); } 
         else {
-            $('grid-title').innerText = "Resultados da Busca"; $('dropdown-label').innerText = "Resultados...";
+            $('grid-title').style.display = "block"; $('grid-title').innerText = "Resultados da Busca"; $('dropdown-label').innerText = "Resultados...";
             document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
-            renderGrid(STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q)), 'PROD');
+            
+            let filtered = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
+            $('main-grid').innerHTML = filtered.length > 0 ? `<div class="product-grid">${buildCardsHTML(filtered, 'PROD')}</div>` : '<p style="text-align:center; color:var(--text-gray); margin-top: 40px;">Nenhum produto encontrado.</p>';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, 300);
@@ -332,9 +348,8 @@ function clearSearch(triggerSearch = true) {
     if(triggerSearch) { clearTimeout(searchTimeout); selectCategory(STATE.activeCat); }
 }
 
-function renderGrid(items, type) {
-    if (!items || items.length === 0) { $('main-grid').innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:var(--text-gray); margin-top: 40px;">Nenhum produto encontrado.</p>'; return; }
-    
+// Construtor Central de Cards
+function buildCardsHTML(items, type) {
     let html = '';
     let isBasket = type === 'BASKET';
     
@@ -342,20 +357,84 @@ function renderGrid(items, type) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
         let acaoHTML = isBasket ? `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>` : (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`);
 
+        let tagHTML = '';
+        if (!isBasket) {
+            if (PROMO_CONFIG.leve5pague4.includes(p.id)) tagHTML = `<div class="promo-tag">LEVE 5 PAGUE 4</div>`;
+            else if (PROMO_CONFIG.leve2.includes(p.id)) tagHTML = `<div class="promo-tag">LEVE 2 COM 10% OFF</div>`;
+            else if (p._is30Off) tagHTML = `<div class="promo-tag exp">30% OFF</div>`;
+        }
+
         html += `
         <div class="card ${isBasket ? 'card-basket' : ''}">
-            <div class="card-img-wrap"><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" alt="Foto" loading="lazy" decoding="async"></div>
+            <div class="card-img-wrap"><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" loading="lazy" decoding="async"></div>
             <div class="card-title">${p.name || p.nome}</div>
             <div class="card-price-row">
                 ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
                 <span class="price">${fmt(p.price || p.preco)}</span>
+                ${tagHTML}
             </div>
             <div id="card-act-${p.id}">${acaoHTML}</div>
         </div>`;
     }
-    $('main-grid').innerHTML = html;
+    return html;
 }
 
+// Montador da Home Completa com as Sessões
+function renderHome() {
+    $('grid-title').style.display = "none";
+    let html = ''; let usedIds = new Set();
+
+    function buildSection(title, items, isPromoRow = true) {
+        if(!items || items.length === 0) return '';
+        let validItems = items.filter(p => p && p.stock > 0);
+        if(validItems.length === 0) return '';
+        
+        validItems.slice(0, 5).forEach(p => usedIds.add(p.id)); // Marca como usado
+        let classRow = isPromoRow ? "promo-row" : "";
+        
+        return `
+        <div class="home-section">
+            <h3 class="home-section-title">${title}</h3>
+            <div class="product-grid ${classRow}">
+                ${buildCardsHTML(validItems.slice(0, 5), 'PROD')}
+            </div>
+        </div>`;
+    }
+
+    // 1. Aproveite a viagem
+    let aproveiteItems = PROMO_CONFIG.aproveite.map(id => STATE.prods.find(p => p.id === id));
+    html += buildSection("Aproveite a viagem, talvez você precise", aproveiteItems);
+
+    // 2. 30% Off (Vencimento Próximo)
+    let off30Items = STATE.prods.filter(p => p._is30Off);
+    html += buildSection("Produtos com 30% de Desconto", off30Items);
+
+    // 3. Leve 2
+    let leve2Items = PROMO_CONFIG.leve2.map(id => STATE.prods.find(p => p.id === id));
+    html += buildSection("Leve 2 e economize", leve2Items);
+
+    // 4. Leve 5 Pague 4
+    let leve5Items = PROMO_CONFIG.leve5pague4.map(id => STATE.prods.find(p => p.id === id));
+    html += buildSection("Leve 5 pague 4", leve5Items);
+
+    // 5. Restante das Ofertas
+    let outrasOfertas = STATE.prods.filter(p => p.price < p.oldPrice && p.stock > 0 && !usedIds.has(p.id));
+    if(outrasOfertas.length > 0) {
+        html += `
+        <div class="home-section">
+            <h3 class="home-section-title">Mais Ofertas Imperdíveis</h3>
+            <div class="product-grid">
+                ${buildCardsHTML(outrasOfertas, 'PROD')}
+            </div>
+        </div>`;
+    }
+
+    $('main-grid').innerHTML = html || "<p style='text-align:center;'>Nenhuma oferta disponível no momento.</p>";
+}
+
+// ==========================================
+// EXPANDER DA CESTA
+// ==========================================
 let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
 window.openKitLateralView = function(id) {
@@ -414,9 +493,12 @@ window.commitExpander = function() {
     STATE.basketExtraFee += expanderState.priceOffset;
     updateTotals(); 
     closeDrawer('kit-drawer');
-    selectCategory('ofertas'); // Retorna para ofertas
+    selectCategory('ofertas'); 
 };
 
+// ==========================================
+// CARRINHO E CHECKOUT (COM MATEMÁTICA DE PROMOÇÃO)
+// ==========================================
 function upd(id, delta) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
     let n = Math.max(0, (STATE.cart[id] || 0) + delta);
@@ -424,18 +506,41 @@ function upd(id, delta) {
     if ((STATE.cart[id] || 0) === 0 && n > 0) STATE.cartOrder.push(id);
     STATE.cart[id] = n; if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); }
     
-    let actBox = $(`card-act-${id}`);
-    if (actBox) actBox.innerHTML = n > 0 ? `<div class="qty-control"><button onclick="upd('${id}', -1)">-</button><span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
+    // Atualiza todos os botões visíveis desse produto (pode aparecer em mais de uma sessão)
+    document.querySelectorAll(`#card-act-${id}`).forEach(actBox => {
+        actBox.innerHTML = n > 0 ? `<div class="qty-control"><button onclick="upd('${id}', -1)">-</button><span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
+    });
     
     updateTotals(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
 }
 
 function updateTotals() {
-    let sum = 0; let count = 0; let atacadoDiscount = 0;
-    Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) { sum += p.price * q; count += q; if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; } });
+    let sum = 0; let count = 0; let atacadoDiscount = 0; let customPromoDiscount = 0;
     
-    STATE.atacadoDiscount = atacadoDiscount; let subtotal = sum + STATE.basketExtraFee;
-    let final = subtotal - STATE.deliveryDiscount - STATE.atacadoDiscount;
+    Object.entries(STATE.cart).forEach(([id, q]) => { 
+        let p = STATE.prods.find(x => String(x.id) === String(id)); 
+        if (p) { 
+            sum += p.price * q; count += q; 
+            
+            // Regras de Desconto Customizado
+            if (PROMO_CONFIG.leve5pague4.includes(p.id)) {
+                let itemsGratis = Math.floor(q / 5);
+                customPromoDiscount += (itemsGratis * p.price);
+            } else if (PROMO_CONFIG.leve2.includes(p.id)) {
+                if (q >= 2) customPromoDiscount += (p.price * 0.10) * q;
+            } else {
+                // Desconto atacado padrão se não estiver nas outras promos
+                if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; 
+            }
+        } 
+    });
+    
+    STATE.atacadoDiscount = atacadoDiscount;
+    STATE.customPromoDiscount = customPromoDiscount;
+    
+    let subtotal = sum + STATE.basketExtraFee;
+    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount;
+    let final = subtotal - totalDesc;
     
     let fc = $('floating-cart');
     if (count > 0) { fc.classList.remove('hidden'); $('fc-qtd').innerText = `${count} item(s)`; $('fc-total').innerText = fmt(final); } 
@@ -473,7 +578,8 @@ function renderCheckoutItems() {
     }).join('');
 
     let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
-    let totalDesc = STATE.atacadoDiscount + STATE.deliveryDiscount; let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
+    let totalDesc = STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.deliveryDiscount; 
+    let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
 
     $('sum-sub').innerText = fmt(subtotal); $('sum-desc').innerText = `- ${fmt(totalDesc)}`; $('sum-desc-row').style.display = totalDesc > 0 ? 'flex' : 'none'; $('sum-total').innerText = fmt(final);
 
@@ -495,8 +601,11 @@ function sendOrder() {
         if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; apiItens.push({ id: String(p.blingId || p.id), nome: p.name, qtd: q, price: p.price }); } 
     });
       
-    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount; let final = totalBruto + STATE.basketExtraFee - totalDesc;
-    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount; 
+    let final = totalBruto + STATE.basketExtraFee - totalDesc;
+    
+    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO VOLUME: -${fmt(STATE.atacadoDiscount)}`;
+    if (STATE.customPromoDiscount > 0) itemsTxt += `\n🎁 DESCONTOS PROMOCIONAIS: -${fmt(STATE.customPromoDiscount)}`;
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     
     const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
@@ -527,8 +636,21 @@ async function init() {
                 let pBase = parseFloat(p.preco) * 1.01;
                 let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
                 let price = pBase; let dPv = (validade - hTime) / 86400000;
-                if (dPv <= 60 && parseInt(p.estoque) > 0) { if (dPv < 30) price = pBase * 0.70; else if (dPv <= 40) price = pBase * 0.80; else if (dPv <= 60) price = pBase * 0.90; }
-                return { id: String(p.codigo || p.id), blingId: p.id, name: p.nome, price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "Outros" };
+                let is30Off = false;
+                
+                // Mapeia quem ganha o desconto de validade (-30% se < 30 dias)
+                if (dPv <= 60 && parseInt(p.estoque) > 0) { 
+                    if (dPv < 30) { price = pBase * 0.70; is30Off = true; } 
+                    else if (dPv <= 40) price = pBase * 0.80; 
+                    else if (dPv <= 60) price = pBase * 0.90; 
+                }
+                
+                return { 
+                    id: String(p.codigo || p.id), blingId: p.id, name: p.nome, 
+                    price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
+                    img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
+                    categoria: p.categoria || "Outros", _is30Off: is30Off 
+                };
             });
 
             STATE.prods.forEach(p => { 
@@ -543,6 +665,7 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
+        // Inicia montando a Home Personalizada
         selectCategory('ofertas');
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
