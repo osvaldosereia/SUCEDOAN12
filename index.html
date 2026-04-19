@@ -71,7 +71,7 @@
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden;}
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
-        .card-title { font-size: 0.75rem; font-weight: 500; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.2em; }
+        .card-title { font-size: 0.75rem; font-weight: 500; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.2em; text-transform: uppercase; }
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
         .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
         .old-price { font-size: 0.8rem; color: #9ca3af; text-decoration: line-through; }
@@ -93,7 +93,7 @@
 
         .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
-        .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); }
+        .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
         .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -101,31 +101,35 @@
         .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
         .fc-total { font-size: 1.15rem; font-weight: 800; }
 
-        /* Modal Lateral (Drawers) */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
         .drawer.open { transform: translateX(0); }
         
-        .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; }
+        .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
         .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--brand); }
         .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
-        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; }
         
-        /* Listas (Cesta, Swap, Checkout) */
+        /* NOVO DESIGN DA LISTA (CESTA, CHECKOUT, SWAP) */
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
-        /* Foto 20% maior (era 85px, agora 100px) */
         .list-img-wrap { width: 100px; height: 100px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .list-info { flex: 1; }
-        .list-name { font-size: 0.8rem; font-weight: 500; color: var(--text-gray); line-height: 1.35; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); }
+        .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .list-name { font-size: 0.75rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-transform: uppercase; height: 4.2em; }
+        .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; }
         
         /* Botão de Trocar (Abaixo da quantidade) */
-        .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 6px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
+        .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
         .btn-swap:active { background: var(--brand-light); }
         
+        /* CHIPS DA TELA DE TROCA */
+        .swap-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 8px; scrollbar-width: none; }
+        .swap-chips::-webkit-scrollbar { display: none; }
+        .swap-chip { padding: 8px 16px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; }
+        .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
         .chk-section { margin-bottom: 32px; }
         .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
         .input-text { width: 100%; padding: 14px; border: none; background: var(--bg-img); border-radius: 12px; margin-bottom: 12px; font-size: 1rem; outline: none; transition: 0.2s; }
@@ -134,7 +138,7 @@
         .pay-btn { padding: 14px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-weight: 500; color: var(--text-gray); transition: 0.2s; }
         .pay-btn.selected { border-color: var(--brand); background: var(--brand); color: #fff; }
         
-        .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); }
+        .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); z-index: 2; position: relative;}
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; color: var(--text-gray); font-weight: 500;}
         .summary-row.total { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
         .btn-checkout { width: 100%; background: var(--brand); color: #fff; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; }
@@ -261,15 +265,9 @@
 </div>
 
 <script>
-// ==========================================
-// CONFIGURAÇÃO DAS PROMOÇÕES ESPECIAIS
-// ==========================================
 const PROMO_CONFIG = {
-    // 1. Aproveite a viagem (10% de Desconto Direto)
     aproveite: ["1776338128673", "1776338128389", "1776338125752", "7896355700510", "1776338126174"],
-    // 2. Leve 2 e economize (20% de Desconto Inteligente)
     leve2: ["1776338127057", "1776338127713", "1776338123812", "1776338123007", "1775968438873"],
-    // 3. Leve 5 pague 4 (1 Grátis a cada 5)
     leve5pague4: ["1775965599401", "1776338131018", "1776338123831", "1776338125770", "1776338132236"]
 };
 
@@ -278,12 +276,15 @@ const $ = id => document.getElementById(id);
 
 const STATE = {
     prods: [], baskets: [], deptos: {}, categoriesList: [],
-    cart: {}, cartOrder: [], maisOfertas: [],
+    cart: {}, cartOrder: [], maisOfertas: [], swapSimilarProds: [], swapCats: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
     activeCat: 'cestas', 
     promoIds: { leve5: [], leve2: [] }
 };
+
+const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px; height:16px; display:block; margin:auto;"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>`;
+const swapIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>`;
 
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
@@ -291,8 +292,7 @@ function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f
 function openDrawer(id) { $('overlay').classList.add('open'); $(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeDrawer(id) { 
     $(id).classList.remove('open'); 
-    // Proteção: não remove o fundo se ainda houver outro modal aberto (como fechar a troca e voltar pra cesta)
-    if (!document.querySelector('#checkout-drawer.open') && !document.querySelector('#kit-drawer.open') && !document.querySelector('#main-menu.open')) {
+    if (!document.querySelector('#checkout-drawer.open') && !document.querySelector('#kit-drawer.open') && !document.querySelector('#main-menu.open') && !document.querySelector('#swap-drawer.open')) {
         $('overlay').classList.remove('open'); document.body.style.overflow = ''; 
     }
 }
@@ -384,9 +384,11 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
         let isEsgotado = p.stock <= 0 && !isBasket;
 
+        let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
+
         if (promoSpecialType === 'LEVE5') {
             let addAction = isEsgotado ? `<button class="btn-add" disabled style="background:var(--border-light); color:var(--text-gray);">Esgotado</button>` : 
-                            (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
+                            (q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
                                    : `<button class="btn-add special" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`);
 
             html += `
@@ -407,7 +409,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         if (promoSpecialType === 'LEVE2') {
             let totalFull = p.price * 2; let totalOff = totalFull * 0.80;
             let addAction = isEsgotado ? `<button class="btn-add" disabled style="background:var(--border-light); color:var(--text-gray);">Esgotado</button>` : 
-                            (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
+                            (q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
                                    : `<button class="btn-add special" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`);
 
             html += `
@@ -428,7 +430,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         let acaoHTML = '';
         if (isEsgotado) { acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; } 
         else if (isBasket) { acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; } 
-        else if (q > 0) { acaoHTML = `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; } 
+        else if (q > 0) { acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; } 
         else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
 
         let tagHTML = '';
@@ -514,6 +516,9 @@ function renderKitList() {
     $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => {
         let p = STATE.prods.find(x => String(x.id) === pId); let qty = expanderState.items[pId];
         currentSum += p.price * qty;
+        
+        let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
+
         return `
         <div class="list-item">
             <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
@@ -523,11 +528,10 @@ function renderKitList() {
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
                 <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
-                    <button onclick="changeKitQty('${pId}', -1)">-</button><span>${qty}</span><button onclick="changeKitQty('${pId}', 1)">+</button>
+                    ${minusBtn}<span>${qty}</span><button onclick="changeKitQty('${pId}', 1)">+</button>
                 </div>
-                <button class="btn-swap" onclick="openSwapView('${p.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-                    Trocar
+                <button class="btn-swap" onclick="openSwapView('${p.id}', 'KIT')">
+                    ${swapIcon} Trocar
                 </button>
             </div>
         </div>`;
@@ -541,7 +545,14 @@ window.changeKitQty = function(pId, delta) {
     let p = STATE.prods.find(x => String(x.id) === pId); if(!p) return;
     let next = Math.max(0, (expanderState.items[pId] || 0) + delta);
     if (next > p.stock) return alert("Estoque insuficiente");
-    expanderState.items[pId] = next; renderKitList();
+    
+    if (next === 0) {
+        delete expanderState.items[pId];
+        expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== pId);
+    } else {
+        expanderState.items[pId] = next; 
+    }
+    renderKitList();
 }
 
 window.commitExpander = function() {
@@ -554,33 +565,41 @@ window.commitExpander = function() {
     updateTotals(); closeDrawer('kit-drawer'); selectCategory('ofertas'); 
 };
 
-// --- Inteligência de Troca & Sugestões ---
-window.openSwapView = function(oldPId) {
+// ==========================================
+// INTELIGÊNCIA DE SUBSTITUIÇÃO (TROCA GERAL)
+// ==========================================
+let swapContext = 'KIT';
+let currentSwapOldId = null;
+
+window.openSwapView = function(oldPId, context = 'KIT') {
+    swapContext = context;
+    currentSwapOldId = oldPId;
     let oldProd = STATE.prods.find(x => String(x.id) === String(oldPId));
     if(!oldProd) return;
 
-    // Isola a primeira palavra para achar produtos iguais (ex: Arroz)
     let firstWord = norm(oldProd.name).split(' ')[0];
     
-    // Filtra produtos similares para Troca direta
     let similarProds = STATE.prods.filter(p => 
         p.id !== oldProd.id && 
         norm(p.name).split(' ')[0] === firstWord && 
         p.stock > 0
     );
 
-    // Filtra TODOS os outros produtos da MESMA CATEGORIA para Sugestões Livres
-    let similarIds = similarProds.map(s => s.id);
-    let suggestionProds = STATE.prods.filter(p => 
-        p.categoria === oldProd.categoria &&
-        p.id !== oldProd.id &&
-        !similarIds.includes(p.id) &&
-        p.stock > 0
-    );
+    let allCats = new Set();
+    STATE.prods.forEach(p => { if(p.stock > 0) allCats.add(p.categoria); });
+    let catArr = Array.from(allCats);
+    
+    catArr.sort((a, b) => {
+        if (a === oldProd.categoria) return -1;
+        if (b === oldProd.categoria) return 1;
+        return a.localeCompare(b);
+    });
+
+    STATE.swapCats = catArr;
+    STATE.swapSimilarProds = similarProds;
 
     let html = '';
 
-    // BLOCO 1: Opções de Troca Exata
     if(similarProds.length > 0) {
         html += `
         <div style="margin-bottom: 24px;">
@@ -592,7 +611,7 @@ window.openSwapView = function(oldPId) {
                         <div class="list-name">${p.name}</div>
                         <div class="list-price">${fmt(p.price)}</div>
                     </div>
-                    <div>
+                    <div style="display:flex; align-items:center; justify-content:flex-end;">
                         <button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">Escolher</button>
                     </div>
                 </div>
@@ -602,55 +621,123 @@ window.openSwapView = function(oldPId) {
         html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto idêntico disponível para troca no momento.</p>`;
     }
 
-    // BLOCO 2: Completar Cesta (Adicionar itens da mesma categoria)
-    if(suggestionProds.length > 0) {
-        html += `
+    html += `
         <div style="padding-top: 16px; border-top: 1px dashed var(--border-light);">
-            <h4 style="font-size: 1rem; color: var(--text-dark); margin-bottom: 16px;">Adicionar mais à cesta</h4>
-            ${suggestionProds.map(p => `
-                <div class="list-item">
-                    <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
-                    <div class="list-info">
-                        <div class="list-name">${p.name}</div>
-                        <div class="list-price">${fmt(p.price)}</div>
-                    </div>
-                    <div>
-                        <button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${p.id}')">Adicionar</button>
-                    </div>
-                </div>
-            `).join('')}
+            <h4 style="font-size: 1rem; color: var(--text-dark); margin-bottom: 12px;">Adicionar mais à cesta</h4>
+            <div class="swap-chips" id="swap-chips-container">
+                ${catArr.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
+            </div>
+            <div id="swap-suggestions-list">
+                ${buildSwapSuggestions(catArr[0])}
+            </div>
         </div>`;
-    }
 
     $('swap-items-grid').innerHTML = html;
     openDrawer('swap-drawer');
+    
+    // Faz a gaveta de troca abrir sempre no topo
+    setTimeout(() => {
+        $('swap-drawer').querySelector('.drawer-body').scrollTop = 0;
+    }, 50);
 };
 
-// Executa a Troca (Substituição)
+window.selectSwapCategory = function(cat) {
+    document.querySelectorAll('#swap-chips-container .swap-chip').forEach(el => {
+        if(el.innerText === cat) el.classList.add('active');
+        else el.classList.remove('active');
+    });
+    $('swap-suggestions-list').innerHTML = buildSwapSuggestions(cat);
+};
+
+function buildSwapSuggestions(cat) {
+    let similarIds = STATE.swapSimilarProds.map(s => s.id);
+    let suggestionProds = STATE.prods.filter(p => 
+        p.categoria === cat &&
+        p.id !== currentSwapOldId &&
+        !similarIds.includes(p.id) &&
+        p.stock > 0
+    );
+    
+    if(suggestionProds.length === 0) return `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhum produto extra nesta categoria.</p>`;
+
+    return suggestionProds.map(p => `
+        <div class="list-item">
+            <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-info">
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${fmt(p.price)}</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:flex-end;">
+                <button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${p.id}', event)">Adicionar</button>
+            </div>
+        </div>
+    `).join('');
+}
+
 window.confirmSwap = function(oldPId, newPId) {
-    let qty = expanderState.items[oldPId] || 0;
-    delete expanderState.items[oldPId]; // Remove antigo
-    
-    // Mantém a ordem visual original
-    let index = expanderState.orderedIds.indexOf(oldPId);
-    if(index !== -1) expanderState.orderedIds[index] = newPId;
-    else expanderState.orderedIds.push(newPId);
-    
-    expanderState.items[newPId] = qty; // Insere o novo com a qtde anterior
-    renderKitList();
+    if (swapContext === 'KIT') {
+        let qty = expanderState.items[oldPId] || 0;
+        delete expanderState.items[oldPId]; 
+        
+        let index = expanderState.orderedIds.indexOf(oldPId);
+        if(index !== -1) expanderState.orderedIds[index] = newPId;
+        else expanderState.orderedIds.push(newPId);
+        
+        expanderState.items[newPId] = qty;
+        renderKitList();
+    } else if (swapContext === 'CART') {
+        let qty = STATE.cart[oldPId] || 0;
+        delete STATE.cart[oldPId]; 
+        
+        let index = STATE.cartOrder.indexOf(oldPId);
+        if(index !== -1) STATE.cartOrder[index] = newPId;
+        else STATE.cartOrder.push(newPId);
+        
+        STATE.cart[newPId] = qty;
+        
+        // Atualiza a UI da página por baixo
+        document.querySelectorAll(`#card-act-${oldPId}`).forEach(el => el.innerHTML = `<button class="btn-add" onclick="upd('${oldPId}', 1)">Adicionar</button>`);
+        let minusBtnGrid = qty === 1 ? `<button onclick="upd('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${newPId}', -1)">-</button>`;
+        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = `<div class="qty-control">${minusBtnGrid}<span>${qty}</span><button onclick="upd('${newPId}', 1)">+</button></div>`);
+        
+        updateTotals();
+        renderCheckoutItems();
+    }
     closeDrawer('swap-drawer');
 };
 
-// Executa a Adição Extra (Sugestões)
-window.addSuggestionToKit = function(newPId) {
-    if (!expanderState.orderedIds.includes(newPId)) {
-        expanderState.orderedIds.push(newPId);
+window.addSuggestionToKit = function(newPId, event) {
+    if (swapContext === 'KIT') {
+        if (!expanderState.orderedIds.includes(newPId)) {
+            expanderState.orderedIds.push(newPId);
+        }
+        expanderState.items[newPId] = (expanderState.items[newPId] || 0) + 1; 
+        renderKitList();
+    } else if (swapContext === 'CART') {
+        if (!STATE.cartOrder.includes(newPId)) {
+            STATE.cartOrder.push(newPId);
+        }
+        STATE.cart[newPId] = (STATE.cart[newPId] || 0) + 1;
+        let q = STATE.cart[newPId];
+        let minusBtnGrid = q === 1 ? `<button onclick="upd('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${newPId}', -1)">-</button>`;
+        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${newPId}', 1)">+</button></div>`);
+        updateTotals();
+        renderCheckoutItems();
     }
-    expanderState.items[newPId] = (expanderState.items[newPId] || 0) + 1; // Adiciona 1 unidade por vez
-    renderKitList();
-    
-    // Feedback visual sutil (pisca a gaveta da cesta)
-    closeDrawer('swap-drawer');
+
+    // Feedback visual sem fechar a gaveta (para permitir continuar adicionando)
+    if(event) {
+        let btn = event.currentTarget;
+        let oldText = btn.innerText;
+        btn.innerText = "Adicionado!";
+        btn.style.background = "var(--success)";
+        btn.style.color = "#fff";
+        setTimeout(() => {
+            btn.innerText = oldText;
+            btn.style.background = "var(--bg-img)";
+            btn.style.color = "var(--text-dark)";
+        }, 1000);
+    }
 };
 
 // ==========================================
@@ -664,7 +751,8 @@ function upd(id, delta) {
     STATE.cart[id] = n; if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); }
     
     document.querySelectorAll(`#card-act-${id}`).forEach(actBox => {
-        actBox.innerHTML = n > 0 ? `<div class="qty-control"><button onclick="upd('${id}', -1)">-</button><span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
+        let minusBtnGrid = n === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
+        actBox.innerHTML = n > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
     });
     updateTotals(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
 }
@@ -717,15 +805,23 @@ function selectPayment(metodo, btn) { $('chk-pagamento').value = metodo; documen
 function renderCheckoutItems() {
     $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
         let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
+        
+        let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
+
         return `
         <div class="list-item">
-            <div class="list-img-wrap"><img src="${p.img}" loading="lazy"></div>
+            <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
             <div class="list-info">
                 <div class="list-name">${p.name}</div>
                 <div class="list-price">${fmt(p.price)}</div>
             </div>
-            <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
-                <button onclick="upd('${id}', -1)">-</button><span>${q}</span><button onclick="upd('${id}', 1)">+</button>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
+                    ${minusBtn}<span>${q}</span><button onclick="upd('${id}', 1)">+</button>
+                </div>
+                <button class="btn-swap" onclick="openSwapView('${id}', 'CART')">
+                    ${swapIcon} Trocar
+                </button>
             </div>
         </div>`;
     }).join('');
@@ -847,7 +943,7 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
-        selectCategory('cestas');
+        selectCategory('cestas'); 
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
 }
