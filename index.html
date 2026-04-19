@@ -188,7 +188,7 @@
             gap: 8px;
         }
 
-/* Estilo para o botão de sacola dentro da gaveta (padrão do site) */
+        /* Estilo para o botão de sacola dentro da gaveta (padrão do site) */
         .drawer-cart-display {
             background: var(--brand);
             color: #fff;
@@ -894,34 +894,6 @@ window.commitExpander = function() {
         }
     });
     
-    if(!added) return alert("Cesta vazia.");
-    STATE.basketExtraFee += expanderState.priceOffset;
-    
-    updateTotals(); 
-    saveCart();
-
-    // Rola para a sessão de mais produtos
-    let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
-    let offsetTarget = $('kit-extra-section');
-    if(bodyDrawer && offsetTarget) {
-        bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
-    }
-
-    // [Ajuste] Transforma o rodapé no botão flutuante padrão do site
-    let footer = $('kit-footer-container');
-    let totalFormatado = $('fc-total').innerText; // Pega o total atualizado do estado global
-    let itensFormatado = $('fc-qtd').innerText;
-
-    footer.innerHTML = `
-        <button class="drawer-cart-display" onclick="openCheckout()">
-            <div class="fc-info">
-                <span style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${itensFormatado}</span>
-                <span>Ver Sacola</span>
-            </div>
-            <div class="fc-total">${totalFormatado}</div>
-        </button>
-    `;
-};
     if(!added) return alert("Cesta vazia.");
     STATE.basketExtraFee += expanderState.priceOffset;
     
