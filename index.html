@@ -1013,10 +1013,26 @@ window.openSwapView = function(oldPId, context = 'KIT') {
             ${similarProds.map(p => {
                 let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
                 
-                // [NOVO] Lógica para exibir o preço original riscado se houver desconto
                 let priceDisplay = p.oldPrice > p.price 
                     ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
                     : fmt(p.price);
+
+                // [NOVO] Verificamos se o produto já foi adicionado
+                let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+                
+                // [NOVO] Lógica de Ações (Trocar vs Adicionar vs Controle de Quantidade)
+                let acaoHTML = '';
+                if (q > 0) {
+                    let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+                    acaoHTML = `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+                } else {
+                    acaoHTML = `
+                        <div style="display:flex; gap: 8px;">
+                            <button class="btn-swap" style="width: auto; padding: 10px 14px; border-color: var(--border-light); color: var(--text-gray);" onclick="confirmSwap('${oldPId}', '${p.id}')">🔄 Trocar</button>
+                            <button class="btn-add special" style="width: auto; padding: 10px 14px; font-size: 0.85rem;" onclick="addSuggestionToKit('${p.id}', 1)">➕ Adicionar</button>
+                        </div>
+                    `;
+                }
 
                 return `
                 <div class="list-item">
@@ -1025,8 +1041,8 @@ window.openSwapView = function(oldPId, context = 'KIT') {
                         <div class="list-name">${p.name}</div>
                         <div class="list-price">${priceDisplay}${lbl10}</div>
                     </div>
-                    <div style="display:flex; align-items:center; justify-content:flex-end;">
-                        <button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">Escolher</button>
+                    <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                        ${acaoHTML}
                     </div>
                 </div>
             `}).join('')}
@@ -1034,6 +1050,7 @@ window.openSwapView = function(oldPId, context = 'KIT') {
     } else {
         html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto similar disponível para troca no momento.</p>`;
     }
+    
 
     // [Ajuste] Incorporamos o botão de arrasto/rolagem no wrapper nas guias de troca com layout "sem vazios"
     html += `
