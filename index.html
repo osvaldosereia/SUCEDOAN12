@@ -10,7 +10,7 @@
 
     <style>
         /* ========================================================
-           DESIGN COM A PALETA "DONA ANTÔNIA"
+           DESIGN PREMIUM "DONA ANTÔNIA"
            ======================================================== */
         :root {
             --brand: #5A3826;        
@@ -66,12 +66,13 @@
         .home-section { margin-bottom: 56px; }
         .home-section-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
         @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
+        .show-all .card { display: flex !important; } /* Usado para os 6 produtos do 30% OFF */
 
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
-        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden;}
+        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
-        .card-title { font-size: 0.75rem; font-weight: 500; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.2em; text-transform: uppercase; }
+        .card-title { font-size: 0.75rem; font-weight: 500; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.2em; text-transform: uppercase; cursor: pointer; }
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
         .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
         .old-price { font-size: 0.8rem; color: #9ca3af; text-decoration: line-through; }
@@ -103,6 +104,7 @@
 
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
+        
         .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
         .drawer.open { transform: translateX(0); }
         
@@ -111,7 +113,7 @@
         .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
         .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; }
         
-        /* NOVO DESIGN DA LISTA (CESTA, CHECKOUT, SWAP) */
+        /* Listas Padrão Ouro (Cesta, Swap, Checkout) */
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
         .list-img-wrap { width: 100px; height: 100px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
@@ -120,11 +122,10 @@
         .list-name { font-size: 0.75rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-transform: uppercase; height: 4.2em; }
         .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; }
         
-        /* Botão de Trocar (Abaixo da quantidade) */
         .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
         .btn-swap:active { background: var(--brand-light); }
         
-        /* CHIPS DA TELA DE TROCA */
+        .swap-hint { font-size: 0.75rem; color: var(--text-gray); margin-bottom: 8px; display:flex; align-items:center; gap:4px; font-weight: 600; }
         .swap-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 8px; scrollbar-width: none; }
         .swap-chips::-webkit-scrollbar { display: none; }
         .swap-chip { padding: 8px 16px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; }
@@ -202,6 +203,14 @@
         </div>
     </div>
 
+    <div class="drawer" id="quick-drawer" style="z-index: 105;">
+        <div class="drawer-header">
+            <div class="drawer-title">Detalhes do Produto</div>
+            <button class="btn-close" onclick="closeDrawer('quick-drawer')">✕</button>
+        </div>
+        <div class="drawer-body" id="quick-content" style="padding: 0;"></div>
+    </div>
+
     <div class="drawer" id="kit-drawer">
         <div class="drawer-header">
             <div class="drawer-title" id="kit-title">Personalizar Cesta</div>
@@ -219,8 +228,7 @@
             <div class="drawer-title" style="font-size: 1.1rem;">Trocar ou Adicionar</div>
             <button class="btn-close" onclick="closeDrawer('swap-drawer')">✕</button>
         </div>
-        <div class="drawer-body" id="swap-items-grid">
-            </div>
+        <div class="drawer-body" id="swap-items-grid"></div>
     </div>
 
     <div class="drawer" id="checkout-drawer">
@@ -289,14 +297,51 @@ const swapIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
-function openDrawer(id) { $('overlay').classList.add('open'); $(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeDrawer(id) { 
-    $(id).classList.remove('open'); 
-    if (!document.querySelector('#checkout-drawer.open') && !document.querySelector('#kit-drawer.open') && !document.querySelector('#main-menu.open') && !document.querySelector('#swap-drawer.open')) {
-        $('overlay').classList.remove('open'); document.body.style.overflow = ''; 
-    }
+// ==========================================
+// HISTORY API (BOTÃO VOLTAR NATIVO)
+// ==========================================
+let modalStack = [];
+function openDrawer(id) { 
+    $('overlay').classList.add('open'); 
+    $(id).classList.add('open'); 
+    document.body.style.overflow = 'hidden'; 
+    modalStack.push(id);
+    history.pushState({ modal: id }, "");
 }
-function closeAllDrawers() { document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); $('overlay').classList.remove('open'); document.body.style.overflow = ''; }
+
+function closeDrawer(id, fromHistory = false) { 
+    $(id).classList.remove('open'); 
+    modalStack = modalStack.filter(m => m !== id);
+    if (!fromHistory) history.back(); 
+    checkDrawers();
+}
+
+function closeAllDrawers() { 
+    document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); 
+    modalStack = [];
+    $('overlay').classList.remove('open'); 
+    document.body.style.overflow = ''; 
+}
+
+function checkDrawers() { 
+    if (modalStack.length === 0) {
+        $('overlay').classList.remove('open'); 
+        document.body.style.overflow = ''; 
+    } 
+}
+
+window.addEventListener('popstate', (e) => {
+    if(modalStack.length > 0) {
+        let id = modalStack.pop();
+        $(id).classList.remove('open');
+        checkDrawers();
+    } else {
+        if (STATE.activeCat !== 'cestas') { // Volta pra aba principal
+            selectCategory('cestas');
+            history.pushState({home: true}, ""); 
+        }
+    }
+});
 
 function toggleDropdown() {
     const menu = $('dropdown-menu'); const icon = $('dropdown-icon');
@@ -376,6 +421,32 @@ function findItem(idStr) {
     return STATE.prods.find(p => p.id === target || p.blingId === target || p.codigo === target);
 }
 
+// ==========================================
+// QUICK VIEW (DETALHES DO PRODUTO)
+// ==========================================
+window.openQuickView = function(id) {
+    let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
+    let q = STATE.cart[p.id] || 0;
+    
+    let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
+    let acaoHTML = q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`;
+    
+    $('quick-content').innerHTML = `
+        <div style="width:100%; aspect-ratio:1/1; background:var(--bg-img); display:flex; align-items:center; justify-content:center; padding:20px;">
+            <img src="${p.img}" style="max-height:100%; mix-blend-mode:multiply; object-fit:contain;">
+        </div>
+        <div style="padding: 24px 20px;">
+            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; text-transform: uppercase;">${p.name}</div>
+            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom: 24px;">
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--brand);">${fmt(p.price)}</div>
+                ${p.oldPrice > p.price ? `<div style="font-size:0.9rem; color:var(--text-gray); text-decoration:line-through;">${fmt(p.oldPrice)}</div>` : ''}
+            </div>
+            <div id="quick-act-${p.id}">${acaoHTML}</div>
+        </div>
+    `;
+    openDrawer('quick-drawer');
+};
+
 function buildCardsHTML(items, type, promoSpecialType = null) {
     let html = '';
     let isBasket = type === 'BASKET';
@@ -394,8 +465,8 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
             html += `
             <div class="card card-special" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
                 <div class="promo-tag" style="background:var(--brand); color:#fff;">LEVE 5 PAGUE 4</div>
-                <div class="card-img-wrap"><img src="${p.img}" loading="lazy"></div>
-                <div class="card-title" style="margin-bottom:4px;">${p.name}</div>
+                <div class="card-img-wrap" onclick="openQuickView('${p.id}')"><img src="${p.img}" loading="lazy"></div>
+                <div class="card-title" onclick="openQuickView('${p.id}')" style="margin-bottom:4px;">${p.name}</div>
                 <div class="special-price-box">
                     <div class="old-price">5 un. por ${fmt(p.price * 5)}</div>
                     <div class="price">${fmt(p.price * 4)}</div>
@@ -415,8 +486,8 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
             html += `
             <div class="card card-special" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
                 <div class="promo-tag" style="background:var(--brand); color:#fff;">LEVE 2 COM 20% OFF</div>
-                <div class="card-img-wrap"><img src="${p.img}" loading="lazy"></div>
-                <div class="card-title" style="margin-bottom:4px;">${p.name}</div>
+                <div class="card-img-wrap" onclick="openQuickView('${p.id}')"><img src="${p.img}" loading="lazy"></div>
+                <div class="card-title" onclick="openQuickView('${p.id}')" style="margin-bottom:4px;">${p.name}</div>
                 <div class="special-price-box">
                     <div class="old-price">2 un. por ${fmt(totalFull)}</div>
                     <div class="price">${fmt(totalOff)}</div>
@@ -435,11 +506,13 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
 
         let tagHTML = '';
         if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% OFF (Vencimento Próximo)</div>`;
+        
+        let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
 
         html += `
         <div class="card ${isBasket ? 'card-basket' : ''}" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
-            <div class="card-img-wrap"><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" loading="lazy" decoding="async"></div>
-            <div class="card-title">${p.name || p.nome}</div>
+            <div class="card-img-wrap" ${clickEvt}><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" loading="lazy" decoding="async"></div>
+            <div class="card-title" ${clickEvt}>${p.name || p.nome}</div>
             <div class="card-price-row">
                 ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
                 <span class="price">${fmt(p.price || p.preco)}</span>
@@ -455,26 +528,31 @@ function renderHome() {
     $('grid-title').style.display = "none";
     let html = ''; 
 
-    function buildSection(title, items, isPromoRow = true, promoType = null) {
+    function buildSection(title, items, isPromoRow = true, promoType = null, forceShowAll = false) {
         let validItems = (items || []).filter(p => p !== undefined && p !== null);
         if(validItems.length === 0) return '';
         let classRow = isPromoRow ? "promo-row" : "";
+        if(forceShowAll) classRow += " show-all"; // Permite mostrar os 6
+        
+        let displayItems = forceShowAll ? validItems.slice(0, 6) : validItems.slice(0, 5);
+
         return `
         <div class="home-section">
             <h3 class="home-section-title">${title}</h3>
             <div class="product-grid ${classRow}">
-                ${buildCardsHTML(validItems.slice(0, 5), 'PROD', promoType)}
+                ${buildCardsHTML(displayItems, 'PROD', promoType)}
             </div>
         </div>`;
     }
+
+    // 1. PRIMEIRA SESSÃO: 30% OFF (6 Itens ordenados)
+    let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
+    html += buildSection("Produtos com 30% de Desconto", off30Items, false, null, true);
 
     html += buildSection("Aproveite a viagem, talvez você precise", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
     html += buildSection("Promoção Exclusiva: Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
     html += buildSection("Leve 2 e economize 20%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
     
-    let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
-    html += buildSection("Produtos com 30% de Desconto", off30Items, true);
-
     if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
         html += `
         <div class="home-section">
@@ -579,25 +657,19 @@ window.openSwapView = function(oldPId, context = 'KIT') {
 
     let firstWord = norm(oldProd.name).split(' ')[0];
     
-    // Filtra produtos similares garantindo que sejam da MESMA CATEGORIA
     let similarProds = STATE.prods.filter(p => 
-        p.id !== oldProd.id && 
-        p.categoria === oldProd.categoria && // <-- Nova regra inserida aqui!
-        norm(p.name).split(' ')[0] === firstWord && 
-        p.stock > 0
+        p.id !== oldProd.id && p.categoria === oldProd.categoria &&
+        norm(p.name).split(' ')[0] === firstWord && p.stock > 0
     );
 
     let allCats = new Set();
     STATE.prods.forEach(p => { if(p.stock > 0) allCats.add(p.categoria); });
-    let catArr = Array.from(allCats);
     
-    catArr.sort((a, b) => {
-        if (a === oldProd.categoria) return -1;
-        if (b === oldProd.categoria) return 1;
-        return a.localeCompare(b);
-    });
-
-    STATE.swapCats = catArr;
+    let catArr = Array.from(allCats).filter(c => c !== oldProd.categoria);
+    catArr.sort((a, b) => a.localeCompare(b));
+    
+    // O Chip Relacionado primeiro, Ofertas em segundo, resto Alfa
+    STATE.swapCats = [oldProd.categoria, 'Ofertas', ...catArr];
     STATE.swapSimilarProds = similarProds;
 
     let html = '';
@@ -620,27 +692,24 @@ window.openSwapView = function(oldPId, context = 'KIT') {
             `).join('')}
         </div>`;
     } else {
-        html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto idêntico disponível para troca no momento.</p>`;
+        html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto similar disponível para troca no momento.</p>`;
     }
 
     html += `
         <div style="padding-top: 16px; border-top: 1px dashed var(--border-light);">
-            <h4 style="font-size: 1rem; color: var(--text-dark); margin-bottom: 12px;">Adicionar mais à cesta</h4>
+            <div class="swap-hint">Deslize para ver mais categorias ➔</div>
             <div class="swap-chips" id="swap-chips-container">
-                ${catArr.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
+                ${STATE.swapCats.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
             </div>
             <div id="swap-suggestions-list">
-                ${buildSwapSuggestions(catArr[0])}
+                ${buildSwapSuggestions(STATE.swapCats[0])}
             </div>
         </div>`;
 
     $('swap-items-grid').innerHTML = html;
     openDrawer('swap-drawer');
     
-    // Faz a gaveta de troca abrir sempre no topo
-    setTimeout(() => {
-        $('swap-drawer').querySelector('.drawer-body').scrollTop = 0;
-    }, 50);
+    setTimeout(() => { $('swap-drawer').querySelector('.drawer-body').scrollTop = 0; }, 50);
 };
 
 window.selectSwapCategory = function(cat) {
@@ -653,27 +722,34 @@ window.selectSwapCategory = function(cat) {
 
 function buildSwapSuggestions(cat) {
     let similarIds = STATE.swapSimilarProds.map(s => s.id);
-    let suggestionProds = STATE.prods.filter(p => 
-        p.categoria === cat &&
-        p.id !== currentSwapOldId &&
-        !similarIds.includes(p.id) &&
-        p.stock > 0
-    );
+    let suggestionProds = [];
+
+    if(cat === 'Ofertas') {
+        suggestionProds = STATE.maisOfertas.filter(p => !similarIds.includes(p.id) && p.id !== currentSwapOldId);
+    } else {
+        suggestionProds = STATE.prods.filter(p => p.categoria === cat && p.id !== currentSwapOldId && !similarIds.includes(p.id) && p.stock > 0);
+    }
     
     if(suggestionProds.length === 0) return `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhum produto extra nesta categoria.</p>`;
 
-    return suggestionProds.map(p => `
+    return suggestionProds.map(p => {
+        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+        let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>` 
+                             : `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>`;
+
+        return `
         <div class="list-item">
             <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
             <div class="list-info">
                 <div class="list-name">${p.name}</div>
                 <div class="list-price">${fmt(p.price)}</div>
             </div>
-            <div style="display:flex; align-items:center; justify-content:flex-end;">
-                <button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${p.id}', event)">Adicionar</button>
+            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                ${acaoHTML}
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
 }
 
 window.confirmSwap = function(oldPId, newPId) {
@@ -696,49 +772,54 @@ window.confirmSwap = function(oldPId, newPId) {
         else STATE.cartOrder.push(newPId);
         
         STATE.cart[newPId] = qty;
-        
-        // Atualiza a UI da página por baixo
-        document.querySelectorAll(`#card-act-${oldPId}`).forEach(el => el.innerHTML = `<button class="btn-add" onclick="upd('${oldPId}', 1)">Adicionar</button>`);
-        let minusBtnGrid = qty === 1 ? `<button onclick="upd('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${newPId}', -1)">-</button>`;
-        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = `<div class="qty-control">${minusBtnGrid}<span>${qty}</span><button onclick="upd('${newPId}', 1)">+</button></div>`);
-        
         updateTotals();
         renderCheckoutItems();
     }
     closeDrawer('swap-drawer');
 };
 
-window.addSuggestionToKit = function(newPId, event) {
+window.addSuggestionToKit = function(newPId, delta) {
+    let p = STATE.prods.find(x => String(x.id) === String(newPId)); if(!p) return;
+
     if (swapContext === 'KIT') {
-        if (!expanderState.orderedIds.includes(newPId)) {
-            expanderState.orderedIds.push(newPId);
+        let next = Math.max(0, (expanderState.items[newPId] || 0) + delta);
+        if (next > p.stock) return alert("Estoque insuficiente");
+        
+        if(next === 0) {
+            delete expanderState.items[newPId];
+            expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== newPId);
+        } else {
+            if (!expanderState.orderedIds.includes(newPId)) expanderState.orderedIds.push(newPId);
+            expanderState.items[newPId] = next; 
         }
-        expanderState.items[newPId] = (expanderState.items[newPId] || 0) + 1; 
         renderKitList();
+        
+        let q = expanderState.items[newPId] || 0;
+        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
+        let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>` 
+                             : `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${newPId}', 1)">Adicionar</button>`;
+        document.querySelectorAll(`#swap-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
+
     } else if (swapContext === 'CART') {
-        if (!STATE.cartOrder.includes(newPId)) {
-            STATE.cartOrder.push(newPId);
+        let next = Math.max(0, (STATE.cart[newPId] || 0) + delta);
+        if (next > p.stock) return alert("Estoque insuficiente");
+
+        if(next === 0) {
+            delete STATE.cart[newPId];
+            STATE.cartOrder = STATE.cartOrder.filter(id => id !== newPId);
+        } else {
+            if (!STATE.cartOrder.includes(newPId)) STATE.cartOrder.push(newPId);
+            STATE.cart[newPId] = next;
         }
-        STATE.cart[newPId] = (STATE.cart[newPId] || 0) + 1;
-        let q = STATE.cart[newPId];
-        let minusBtnGrid = q === 1 ? `<button onclick="upd('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${newPId}', -1)">-</button>`;
-        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${newPId}', 1)">+</button></div>`);
         updateTotals();
         renderCheckoutItems();
-    }
-
-    // Feedback visual sem fechar a gaveta (para permitir continuar adicionando)
-    if(event) {
-        let btn = event.currentTarget;
-        let oldText = btn.innerText;
-        btn.innerText = "Adicionado!";
-        btn.style.background = "var(--success)";
-        btn.style.color = "#fff";
-        setTimeout(() => {
-            btn.innerText = oldText;
-            btn.style.background = "var(--bg-img)";
-            btn.style.color = "var(--text-dark)";
-        }, 1000);
+        
+        let q = STATE.cart[newPId] || 0;
+        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
+        let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>` 
+                             : `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${newPId}', 1)">Adicionar</button>`;
+        document.querySelectorAll(`#swap-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
+        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML.replace("addSuggestionToKit", "upd"));
     }
 };
 
@@ -752,7 +833,7 @@ function upd(id, delta) {
     if ((STATE.cart[id] || 0) === 0 && n > 0) STATE.cartOrder.push(id);
     STATE.cart[id] = n; if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); }
     
-    document.querySelectorAll(`#card-act-${id}`).forEach(actBox => {
+    document.querySelectorAll(`#card-act-${id}, #quick-act-${id}`).forEach(actBox => {
         let minusBtnGrid = n === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
         actBox.innerHTML = n > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
     });
@@ -887,21 +968,22 @@ async function init() {
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                 let pBase = parseFloat(p.preco) * 1.01;
                 let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
-                let price = pBase; let dPv = (validade - hTime) / 86400000;
-                let is30Off = false;
-                
-                if (dPv <= 60 && parseInt(p.estoque) > 0) { 
-                    if (dPv < 30) { price = pBase * 0.70; is30Off = true; } 
-                    else if (dPv <= 40) price = pBase * 0.80; 
-                    else if (dPv <= 60) price = pBase * 0.90; 
-                }
+                let price = pBase;
                 
                 return { 
                     id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), name: p.nome, 
                     price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                    categoria: p.categoria || "Outros", _is30Off: is30Off, _valTime: validade
+                    categoria: p.categoria || "Outros", _is30Off: false, _valTime: validade
                 };
+            });
+
+            // Lógica Exata dos 6 Produtos com 30% OFF (Mais Próximos de Vencer)
+            let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
+            produtosComValidade.sort((a, b) => a._valTime - b._valTime);
+            produtosComValidade.slice(0, 6).forEach(p => {
+                p.price = p.oldPrice * 0.70;
+                p._is30Off = true;
             });
 
             PROMO_CONFIG.aproveite.forEach(idStr => {
@@ -945,6 +1027,8 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
+        // Empurra a primeira rota no histórico
+        history.replaceState({home: true}, "");
         selectCategory('cestas'); 
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
