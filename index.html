@@ -851,10 +851,25 @@ window.commitExpander = function() {
     updateTotals(); 
     saveCart();
     
-    // [Ajuste] Adicionado comportamento que ao salvar fecha as gavetas e pula para "produtos" do início
-    closeAllDrawers(); 
-    selectMainCategory('ofertas'); 
-    setTimeout(() => { scrollToProdutos(); }, 200);
+    // [Ajuste] Rola a gaveta suavemente para a sessão "Adicione mais produtos"
+    let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
+    let offsetTarget = $('kit-extra-section');
+    if(bodyDrawer && offsetTarget) {
+        bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
+    }
+
+    // [Bônus de UX] Feedback visual no botão para o cliente saber que deu certo
+    let btn = document.querySelector('#kit-drawer .btn-checkout');
+    if (btn) {
+        let originalText = btn.innerText;
+        btn.innerText = "✓ Adicionado à Sacola!";
+        btn.style.background = "var(--success)"; // Fica verde
+        
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "var(--brand)"; // Volta a cor original
+        }, 2000);
+    }
 };
 
 // ==========================================
