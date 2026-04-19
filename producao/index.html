@@ -812,7 +812,6 @@ function sanitizeProductsForExport(prods) {
     return prods.map(p => {
         let cleanP = {};
         
-        // TRAVA DE SEGURANÇA: Se não tiver ID, gera um numérico único agora
         if (!p.id) {
             p.id = Math.floor(Date.now() + Math.random() * 10000);
         }
@@ -821,7 +820,6 @@ function sanitizeProductsForExport(prods) {
             if (p[campo] !== undefined && p[campo] !== null) {
                 let valor = p[campo];
 
-                // CORREÇÃO CRÍTICA: Se for validade e estiver no formato AAAA-MM-DD, converte para DD/MM/AAAA
                 if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) {
                     const partes = valor.split('-');
                     if (partes[0].length === 4) {
@@ -833,12 +831,14 @@ function sanitizeProductsForExport(prods) {
             }
         });
 
-        // Copia APENAS a Imagem Principal (Slot 1)
+        // Modificação: Respeitar a pasta exata onde a imagem foi guardada
         if (p.url_imagem) {
             if (p.url_imagem.startsWith('data:image')) {
+                // Se a pessoa salvar o JSON sem clicar em Upload, assumimos a pasta padrão para não quebrar
                 cleanP.url_imagem = `../site/img/produtos/${cleanP.codigo}.webp`;
             } else {
-                cleanP.url_imagem = p.url_imagem;
+                // Limpa o "?v=123" do final da URL, mas MATÉM a pasta correta que foi gerada no Upload
+                cleanP.url_imagem = p.url_imagem.split('?')[0]; 
             }
         }
 
@@ -853,24 +853,67 @@ function sanitizeProductsForExport(prods) {
             }, true);
         }
 
-       function uploadImagens() {
+// ==========================================================
+// GESTOR DE PASTAS INTELIGENTE (LIMITE DE 990 FOTOS)
+// ==========================================================
+async function getPastaUploadAtiva() {
+    let limit = 990;
+    let folderIndex = 1;
+    
+    while (true) {
+        // Define o nome da pasta: a primeira é normal, as seguintes levam _2, _3, etc.
+        let folderName = folderIndex === 1 ? "site/img/produtos" : `site/img/produtos_${folderIndex}`;
+        
+        try {
+            const files = await GitHubAPI.getFileData(folderName);
+            
+            // Se o GitHub retornar null, significa que a pasta ainda não existe (está vazia). Perfeito, usamos esta!
+            if (!files) {
+                return folderName;
+            }
+            
+            // Se a pasta existe (é um array), contamos os ficheiros
+            if (Array.isArray(files)) {
+                if (files.length < limit) {
+                    return folderName; // Tem espaço, usamos esta!
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao verificar pasta", e);
+            return folderName; // Em caso de falha de rede, tenta enviar para a atual para não travar
+        }
+        
+        // Se a pasta tinha 990 ou mais ficheiros, o ciclo (while) repete e soma +1 ao folderIndex
+        folderIndex++;
+    }
+}
+        
+
+       async function uploadImagens() {
     if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
     
     const queueCopy = [...imageQueue]; 
     imageQueue = []; 
     updateImageBadge();
     
+    // Mostra um aviso enquanto o sistema conta as pastas no GitHub
+    mostrarAlerta("A verificar espaço nas pastas de imagens do GitHub...", "aviso");
+    
+    // 1. O sistema descobre automaticamente qual pasta tem espaço (ex: site/img/produtos_2)
+    const pastaDestinoGithub = await getPastaUploadAtiva();
+    const pastaDestinoLocal = "../" + pastaDestinoGithub; 
+    
     queueCopy.forEach(img => {
         enqueueTask(`Imagem ${img.sku}`, async () => {
-            // Removido o sufixo, sempre usa o formato base
             const fileName = `${img.sku}.webp`; 
-            const githubFolderPath = "site/img/produtos"; 
-            const localFolderPath = "../site/img/produtos";
             
-            await GitHubAPI.saveFile(`${githubFolderPath}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
+            // 2. Salva no GitHub na pasta que tem espaço
+            await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName} na pasta ${pastaDestinoGithub}`, true);
+            
             const pRef = products.find(x => x.codigo === img.sku); 
             if(pRef) { 
-                pRef.url_imagem = `${localFolderPath}/${fileName}?v=${Date.now()}`; 
+                // 3. Atualiza o cadastro do produto com a nova pasta exata!
+                pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
                 pRef.last_update = Date.now(); 
                 await saveDataLocally(); 
             }
