@@ -1024,12 +1024,13 @@ window.openSwapView = function(oldPId, context = 'KIT') {
                 let acaoHTML = '';
                 if (q > 0) {
                     let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
-                    acaoHTML = `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+                    acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
                 } else {
+                    // [AJUSTE] Flex-direction: column para empilhar os botões e larguras iguais
                     acaoHTML = `
-                        <div style="display:flex; gap: 8px;">
-                            <button class="btn-swap" style="width: auto; padding: 10px 14px; border-color: var(--border-light); color: var(--text-gray);" onclick="confirmSwap('${oldPId}', '${p.id}')">🔄 Trocar</button>
-                            <button class="btn-add special" style="width: auto; padding: 10px 14px; font-size: 0.85rem;" onclick="addSuggestionToKit('${p.id}', 1)">➕ Adicionar</button>
+                        <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                            <button class="btn-swap" style="width: 100%; padding: 8px; border-color: var(--border-light); color: var(--text-gray); font-size: 0.75rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">🔄 Trocar</button>
+                            <button class="btn-add special" style="width: 100%; padding: 8px; font-size: 0.75rem;" onclick="addSuggestionToKit('${p.id}', 1)">➕ Adicionar</button>
                         </div>
                     `;
                 }
