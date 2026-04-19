@@ -275,8 +275,8 @@ const STATE = {
     cart: {}, cartOrder: [], maisOfertas: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-    activeCat: 'ofertas',
-    promoIds: { leve5: [], leve2: [] } // Otimização interna
+    activeCat: 'cestas', // Mudamos para 'cestas'
+    promoIds: { leve5: [], leve2: [] }
 };
 
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
@@ -770,7 +770,7 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
-        selectCategory('ofertas'); // Inicia a página
+        selectCategory('cestas'); // Mudamos para abrir as cestas primeiro
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
 }
