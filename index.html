@@ -6,7 +6,7 @@
     <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
     <title>Dona Antônia | Super Cestas Básicas</title>
 
-    <link rel="preload" href="../site/img/produtos/logoantonia.png" as="image">
+    <link rel="preload" href="../img/logoantonia.png" as="image">
 
     <style>
         /* ========================================================
@@ -151,7 +151,7 @@
 <div class="app-container">
 
     <header class="top-bar">
-        <img src="../site/img/produtos/logoantonia.png" alt="Dona Antônia" class="logo">
+        <img src="../img/logoantonia.png" alt="Dona Antônia" class="logo">
         <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
     </header>
 
@@ -689,36 +689,44 @@ async function init() {
         const [r1, r2] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods') ]);
         STATE.baskets = r1 || [];
 
-        if (r2 && r2.length > 0) {
+       if (r2 && r2.length > 0) {
             let hTime = new Date().getTime();
             
             // 1. Cria o catálogo básico
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                 let pBase = parseFloat(p.preco) * 1.01;
                 let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
-                let price = pBase; let dPv = (validade - hTime) / 86400000;
-                let is30Off = false;
-                
-                // Validade (< 30 dias = 30% OFF automático)
-                if (dPv <= 60 && parseInt(p.estoque) > 0) { 
-                    if (dPv < 30) { price = pBase * 0.70; is30Off = true; } 
-                    else if (dPv <= 40) price = pBase * 0.80; 
-                    else if (dPv <= 60) price = pBase * 0.90; 
-                }
                 
                 return { 
                     id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), name: p.nome, 
-                    price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
+                    price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                    categoria: p.categoria || "Outros", _is30Off: is30Off, _valTime: validade
+                    categoria: p.categoria || "Outros", _is30Off: false, _valTime: validade
                 };
             });
+
+            // ==========================================
+            // NOVA LÓGICA: 30% OFF NOS MAIS PRÓXIMOS A VENCER
+            // ==========================================
+            // Separa apenas os produtos que têm data de validade e estão em estoque
+            let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
+            
+            // Ordena os produtos colocando os que vencem mais rápido no topo da lista
+            produtosComValidade.sort((a, b) => a._valTime - b._valTime);
+
+            // Pega os 5 produtos mais próximos de vencer e aplica 30% de desconto neles
+            produtosComValidade.slice(0, 5).forEach(p => {
+                p.price = p.oldPrice * 0.70; // Reduz o preço em 30%
+                p._is30Off = true;           // Aciona a tag visual de 30% OFF
+            });
+            // ==========================================
 
             // 2. Aplica o desconto de 10% aos produtos da aba "Aproveite a Viagem"
             PROMO_CONFIG.aproveite.forEach(idStr => {
                 let p = findItem(idStr);
-                if(p) { p.price = p.oldPrice * 0.90; } // Desconto de 10% direto no preço visual
+                if(p) { p.price = p.oldPrice * 0.90; } // Desconto de 10% direto
             });
+           
 
             // 3. Monta os Departamentos
             STATE.prods.forEach(p => { 
