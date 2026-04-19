@@ -804,7 +804,10 @@ window.openKitLateralView = function(id) {
 function renderKitList() {
     let currentSum = 0;
     $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => {
-        let p = STATE.prods.find(x => String(x.id) === pId); let qty = expanderState.items[pId];
+        let p = STATE.prods.find(x => String(x.id) === pId); 
+        if (!p) return ''; // Proteção extra caso falte algum produto
+        
+        let qty = expanderState.items[pId];
         currentSum += p.price * qty;
         
         let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
@@ -829,7 +832,16 @@ function renderKitList() {
     }).join('');
     
     expanderState.currentDisplayPrice = currentSum + expanderState.priceOffset;
-    $('kit-total-price').innerText = fmt(expanderState.currentDisplayPrice);
+    let precoFormatado = fmt(expanderState.currentDisplayPrice);
+    
+    // [Ajuste] Atualiza o botão com o preço para compensar a remoção da linha de Total
+    let totalEl = $('kit-total-price');
+    if (totalEl) {
+        totalEl.innerText = precoFormatado;
+    } else {
+        let btnCheckout = document.querySelector('#kit-footer-container .btn-checkout');
+        if (btnCheckout) btnCheckout.innerText = `Adicionar à Sacola • ${precoFormatado}`;
+    }
 }
 
 // [Ajuste] Adicionamos o parâmetro shouldScroll (por padrão é true)
@@ -882,6 +894,34 @@ window.commitExpander = function() {
         }
     });
     
+    if(!added) return alert("Cesta vazia.");
+    STATE.basketExtraFee += expanderState.priceOffset;
+    
+    updateTotals(); 
+    saveCart();
+
+    // Rola para a sessão de mais produtos
+    let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
+    let offsetTarget = $('kit-extra-section');
+    if(bodyDrawer && offsetTarget) {
+        bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
+    }
+
+    // [Ajuste] Transforma o rodapé no botão flutuante padrão do site
+    let footer = $('kit-footer-container');
+    let totalFormatado = $('fc-total').innerText; // Pega o total atualizado do estado global
+    let itensFormatado = $('fc-qtd').innerText;
+
+    footer.innerHTML = `
+        <button class="drawer-cart-display" onclick="openCheckout()">
+            <div class="fc-info">
+                <span style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${itensFormatado}</span>
+                <span>Ver Sacola</span>
+            </div>
+            <div class="fc-total">${totalFormatado}</div>
+        </button>
+    `;
+};
     if(!added) return alert("Cesta vazia.");
     STATE.basketExtraFee += expanderState.priceOffset;
     
