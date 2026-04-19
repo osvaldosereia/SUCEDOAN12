@@ -723,10 +723,16 @@ window.openKitLateralView = function(id) {
     $('kit-title').innerText = sourceObj.nome;
     renderKitList(); 
     
-    // [Ajuste] Inicializamos também a sessão de itens extras seguindo o padrão
-    setupKitExtraCategory('ofertas');
+    // [Ajuste] Chamamos a sessão extra passando 'false' para NÃO rolar a tela agora
+    setupKitExtraCategory('ofertas', false);
     
     openDrawer('kit-drawer');
+    
+    // [Ajuste] Garante que a gaveta force a barra de rolagem no topo absoluto
+    setTimeout(() => { 
+        let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
+        if (bodyDrawer) bodyDrawer.scrollTop = 0; 
+    }, 50);
 };
 
 function renderKitList() {
@@ -760,12 +766,14 @@ function renderKitList() {
     $('kit-total-price').innerText = fmt(expanderState.currentDisplayPrice);
 }
 
-// [Ajuste] Função para renderizar as categorias extra ao final da cesta básica
-window.setupKitExtraCategory = function(catId) {
+// [Ajuste] Adicionamos o parâmetro shouldScroll (por padrão é true)
+window.setupKitExtraCategory = function(catId, shouldScroll = true) {
     STATE.activeKitCat = catId;
+    
+    // Quando clicar num chip, passamos true para ele rolar a tela para o início da grade
     let chipsHtml = STATE.categoriesList.map(c => 
         `<div class="swap-chip ${catId === c.id ? 'active' : ''}" 
-              onclick="setupKitExtraCategory('${c.id}')">${c.title}</div>`
+              onclick="setupKitExtraCategory('${c.id}', true)">${c.title}</div>`
     ).join('');
     
     let chipsContainer = $('kit-extra-chips-container');
@@ -774,14 +782,15 @@ window.setupKitExtraCategory = function(catId) {
     let gridContainer = $('kit-extra-grid');
     if (gridContainer) gridContainer.innerHTML = getProdutosHTML(catId);
     
-    // Rolar para o início da grade da sessão de produtos extras
-    let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
-    let offsetTarget = $('kit-extra-section');
-    if(bodyDrawer && offsetTarget) {
-        bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
+    // [Ajuste] Só rola a tela para os extras se a permissão shouldScroll for verdadeira
+    if (shouldScroll) {
+        let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
+        let offsetTarget = $('kit-extra-section');
+        if(bodyDrawer && offsetTarget) {
+            bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
+        }
     }
 };
-
 
 window.changeKitQty = function(pId, delta) {
     let p = STATE.prods.find(x => String(x.id) === pId); if(!p) return;
