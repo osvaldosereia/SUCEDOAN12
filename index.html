@@ -700,7 +700,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
             economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(p.price)}!</div>`; // Economia de 1 unidade
         } else if (promoSpecialType === 'LEVE2') {
             acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`;
-            let valEcon = (p.price * 2) * 0.20; // 20% de desconto sobre 2 unidades
+            let valEcon = (p.price * 2) * 0.10; // 10% de desconto sobre 2 unidades
             economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(valEcon)}!</div>`;
         } else { 
             acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; 
@@ -947,7 +947,7 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
             priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`;
         } else if (promoSpecialType === 'LEVE2') {
             addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;";
-            tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 20% OFF</div><br>`;
+            tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 10% DE DESCONTO/div><br>`;
             let tf = p.price * 2; let to = tf * 0.8;
             priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(tf)}</span>${fmt(to)}`;
         }
