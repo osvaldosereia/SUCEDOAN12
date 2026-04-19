@@ -6,11 +6,11 @@
     <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
     <title>Dona Antônia | Super Cestas Básicas</title>
 
-    <link rel="preload" href="../img/logoantonia.png" as="image">
+    <link rel="preload" href="../site/img/produtos/logoantonia.png" as="image">
 
     <style>
         /* ========================================================
-           DESIGN COM A PALETA "DONA ANTÔNIA"
+           DESIGN COM A PALETA "DONA ANTÔNIA" E CARTÕES ESPECIAIS
            ======================================================== */
         :root {
             --brand: #5A3826;        
@@ -58,15 +58,17 @@
 
         .main-content { padding: 32px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
         .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
+        
         .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 16px; }
         @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
         @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
 
-        /* SESSÕES HOME */
-        .home-section { margin-bottom: 48px; }
-        .home-section-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px;}
-        @media (max-width: 1023px) { .promo-row .card:nth-child(5) { display: none !important; } }
+        /* SESSÕES HOME - 5 no Desktop, 4 no Mobile */
+        .home-section { margin-bottom: 56px; }
+        .home-section-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
+        @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
 
+        /* Card Padrão */
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden;}
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
@@ -79,20 +81,33 @@
         .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
         .promo-tag.exp { background: var(--brand-light); color: var(--brand); }
 
+        /* Card Especial (Leve 5 Pague 4 / Leve 2) */
+        .card-special { border: 2px solid var(--brand-light); padding: 12px; border-radius: var(--radius-img); background: #fff; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.05); }
+        .card-special .card-img-wrap { margin-bottom: 8px; }
+        .special-price-box { margin-top: auto; margin-bottom: 12px; background: var(--bg-page); padding: 10px; border-radius: 12px; text-align: center; border: 1px dashed var(--border-light); }
+        .special-price-box .old-price { font-size: 0.8rem; color: var(--text-gray); text-decoration: line-through; margin-bottom: 2px; }
+        .special-price-box .price { font-size: 1.3rem; font-weight: 900; color: var(--brand); line-height: 1; }
+        .special-price-box .economia { font-size: 0.75rem; color: var(--success); font-weight: 800; margin-top: 6px; display: inline-block; background: #ecfdf5; padding: 4px 10px; border-radius: 20px;}
+        .btn-add.special { background: var(--brand); color: #fff; }
+
+        /* Card Cesta */
         .card-basket .card-img-wrap { background: transparent; padding: 0; }
         .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
-        .card-basket .card-title { -webkit-line-clamp: 1; height: auto; white-space: nowrap; }
+        .card-basket .card-title { -webkit-line-clamp: 1; height: auto; white-space: nowrap; font-weight: 700;}
 
+        /* Botões Padrão */
         .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
+        /* Sacola Flutuante */
         .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
         .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
         .fc-total { font-size: 1.15rem; font-weight: 800; }
 
+        /* Modal Lateral (Drawers) */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
@@ -136,7 +151,7 @@
 <div class="app-container">
 
     <header class="top-bar">
-        <img src="../img/logoantonia.png" alt="Dona Antônia" class="logo">
+        <img src="../site/img/produtos/logoantonia.png" alt="Dona Antônia" class="logo">
         <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
     </header>
 
@@ -228,7 +243,7 @@
         </div>
         <div class="drawer-footer">
             <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
-            <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos Promocionais</span><span id="sum-desc">R$ 0,00</span></div>
+            <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos Especiais</span><span id="sum-desc">R$ 0,00</span></div>
             <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
             <button class="btn-checkout" id="btn-send-order" onclick="sendOrder()">Enviar pelo WhatsApp</button>
         </div>
@@ -239,26 +254,29 @@
 <script>
 // ==========================================
 // CONFIGURAÇÃO DAS PROMOÇÕES ESPECIAIS
+// Use o Código ou o ID do Produto aqui
 // ==========================================
 const PROMO_CONFIG = {
-    // 1. Aproveite a viagem
+    // 1. Aproveite a viagem (10% de Desconto Direto)
     aproveite: ["1776338128673", "1776338128389", "1776338125752", "7896355700510", "1776338126174"],
-    // 2. Leve 2 e economize (10% de desconto automático na compra de 2 ou mais)
+    
+    // 2. Leve 2 e economize (20% de Desconto Inteligente)
     leve2: ["1776338127057", "1776338127713", "1776338123812", "1776338123007", "1775968438873"],
-    // 3. Leve 5 pague 4 (A cada 5, 1 sai de graça automaticamente)
+    
+    // 3. Leve 5 pague 4 (1 Grátis a cada 5)
     leve5pague4: ["1775965599401", "1776338131018", "1776338123831", "1776338125770", "1776338132236"]
 };
 
-const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00;
 const $ = id => document.getElementById(id);
 
 const STATE = {
     prods: [], baskets: [], deptos: {}, categoriesList: [],
-    cart: {}, cartOrder: [],
+    cart: {}, cartOrder: [], maisOfertas: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-    activeCat: 'ofertas'
+    activeCat: 'ofertas',
+    promoIds: { leve5: [], leve2: [] } // Otimização interna
 };
 
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
@@ -276,10 +294,7 @@ function toggleDropdown() {
 }
 
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('#category-dropdown-container')) {
-        $('dropdown-menu').classList.remove('open');
-        $('dropdown-icon').style.transform = 'rotate(0deg)';
-    }
+    if (!e.target.closest('#category-dropdown-container')) { $('dropdown-menu').classList.remove('open'); $('dropdown-icon').style.transform = 'rotate(0deg)'; }
 });
 
 function setupDropdown() {
@@ -345,42 +360,75 @@ function clearSearch(triggerSearch = true) {
     if(triggerSearch) { clearTimeout(searchTimeout); selectCategory(STATE.activeCat); }
 }
 
-// ==========================================
-// BUSCA INTELIGENTE DE PRODUTOS (CORREÇÃO DE BUG)
-// ==========================================
-// Essa função garante que a gente ache o produto seja pelo ID, pelo BlingID ou pelo Código (SKU).
+// Busca Segura de Produtos
 function findItem(idStr) {
-    if(!idStr) return null;
-    let target = String(idStr).trim();
+    if(!idStr) return null; let target = String(idStr).trim();
     return STATE.prods.find(p => p.id === target || p.blingId === target || p.codigo === target);
 }
 
-// Construtor Central de Cards
-function buildCardsHTML(items, type) {
+// ==========================================
+// CONSTRUTOR DE CARDS INTELIGENTES
+// ==========================================
+function buildCardsHTML(items, type, promoSpecialType = null) {
     let html = '';
     let isBasket = type === 'BASKET';
     
     for(let i=0; i<items.length; i++) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
-        let isEsgotado = p.stock <= 0 && !isBasket; // Se não tem estoque, aplicamos o visual Esgotado
-        
-        let acaoHTML = '';
-        if (isEsgotado) {
-            acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`;
-        } else if (isBasket) {
-            acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`;
-        } else if (q > 0) {
-            acaoHTML = `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`;
-        } else {
-            acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`;
+        let isEsgotado = p.stock <= 0 && !isBasket;
+
+        // ---------- CARD ESPECIAL LEVE 5 PAGUE 4 ----------
+        if (promoSpecialType === 'LEVE5') {
+            let addAction = isEsgotado ? `<button class="btn-add" disabled style="background:var(--border-light); color:var(--text-gray);">Esgotado</button>` : 
+                            (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
+                                   : `<button class="btn-add special" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`);
+
+            html += `
+            <div class="card card-special" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
+                <div class="promo-tag" style="background:var(--brand); color:#fff;">LEVE 5 PAGUE 4</div>
+                <div class="card-img-wrap"><img src="${p.img}" loading="lazy"></div>
+                <div class="card-title" style="margin-bottom:4px;">${p.name}</div>
+                <div class="special-price-box">
+                    <div class="old-price">5 un. por ${fmt(p.price * 5)}</div>
+                    <div class="price">${fmt(p.price * 4)}</div>
+                    <div class="economia">Economize ${fmt(p.price)}!</div>
+                </div>
+                <div id="card-act-${p.id}">${addAction}</div>
+            </div>`;
+            continue;
         }
 
-        let tagHTML = '';
-        if (!isBasket) {
-            if (PROMO_CONFIG.leve5pague4.includes(p.id)) tagHTML = `<div class="promo-tag">LEVE 5 PAGUE 4</div>`;
-            else if (PROMO_CONFIG.leve2.includes(p.id)) tagHTML = `<div class="promo-tag">LEVE 2 COM 10% OFF</div>`;
-            else if (p._is30Off) tagHTML = `<div class="promo-tag exp">30% OFF</div>`;
+        // ---------- CARD ESPECIAL LEVE 2 (20% OFF) ----------
+        if (promoSpecialType === 'LEVE2') {
+            let totalFull = p.price * 2; let totalOff = totalFull * 0.80;
+            let addAction = isEsgotado ? `<button class="btn-add" disabled style="background:var(--border-light); color:var(--text-gray);">Esgotado</button>` : 
+                            (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
+                                   : `<button class="btn-add special" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`);
+
+            html += `
+            <div class="card card-special" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
+                <div class="promo-tag" style="background:var(--brand); color:#fff;">LEVE 2 COM 20% OFF</div>
+                <div class="card-img-wrap"><img src="${p.img}" loading="lazy"></div>
+                <div class="card-title" style="margin-bottom:4px;">${p.name}</div>
+                <div class="special-price-box">
+                    <div class="old-price">2 un. por ${fmt(totalFull)}</div>
+                    <div class="price">${fmt(totalOff)}</div>
+                    <div class="economia">Economize ${fmt(totalFull - totalOff)}!</div>
+                </div>
+                <div id="card-act-${p.id}">${addAction}</div>
+            </div>`;
+            continue;
         }
+
+        // ---------- CARD PADRÃO ----------
+        let acaoHTML = '';
+        if (isEsgotado) { acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; } 
+        else if (isBasket) { acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; } 
+        else if (q > 0) { acaoHTML = `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; } 
+        else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
+
+        let tagHTML = '';
+        if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% OFF (Vencimento Próximo)</div>`;
 
         html += `
         <div class="card ${isBasket ? 'card-basket' : ''}" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
@@ -397,52 +445,50 @@ function buildCardsHTML(items, type) {
     return html;
 }
 
-// Montador da Home Completa com as Sessões
+// ==========================================
+// RENDERIZAÇÃO ESTRATÉGICA DA HOME
+// ==========================================
 function renderHome() {
     $('grid-title').style.display = "none";
-    let html = ''; let usedIds = new Set();
+    let html = ''; 
 
-    function buildSection(title, items, isPromoRow = true) {
-        // Remove undefined e null que acontecem se o ID não for encontrado
+    function buildSection(title, items, isPromoRow = true, promoType = null) {
         let validItems = (items || []).filter(p => p !== undefined && p !== null);
         if(validItems.length === 0) return '';
         
-        validItems.slice(0, 5).forEach(p => usedIds.add(p.id)); 
         let classRow = isPromoRow ? "promo-row" : "";
-        
         return `
         <div class="home-section">
             <h3 class="home-section-title">${title}</h3>
             <div class="product-grid ${classRow}">
-                ${buildCardsHTML(validItems.slice(0, 5), 'PROD')}
+                ${buildCardsHTML(validItems.slice(0, 5), 'PROD', promoType)}
             </div>
         </div>`;
     }
 
-    // 1. Aproveite a viagem (AGORA USANDO O findItem CORRIGIDO)
+    // 1. Aproveite a viagem (Desconto Fixo de 10% já aplicado no init)
     let aproveiteItems = PROMO_CONFIG.aproveite.map(findItem);
-    html += buildSection("Aproveite a viagem, talvez você precise", aproveiteItems);
+    html += buildSection("Aproveite a viagem, talvez você precise", aproveiteItems, true, 'APROVEITE');
 
-    // 2. 30% Off (Vencimento Próximo)
-    let off30Items = STATE.prods.filter(p => p._is30Off);
-    html += buildSection("Produtos com 30% de Desconto", off30Items);
-
-    // 3. Leve 2
-    let leve2Items = PROMO_CONFIG.leve2.map(findItem);
-    html += buildSection("Leve 2 e economize", leve2Items);
-
-    // 4. Leve 5 Pague 4
+    // 2. Leve 5 Pague 4
     let leve5Items = PROMO_CONFIG.leve5pague4.map(findItem);
-    html += buildSection("Leve 5 pague 4", leve5Items);
+    html += buildSection("Promoção Exclusiva: Leve 5 pague 4", leve5Items, true, 'LEVE5');
 
-    // 5. Restante das Ofertas
-    let outrasOfertas = STATE.prods.filter(p => p.price < p.oldPrice && p.stock > 0 && !usedIds.has(p.id));
-    if(outrasOfertas.length > 0) {
+    // 3. Leve 2 e Economize (20% OFF)
+    let leve2Items = PROMO_CONFIG.leve2.map(findItem);
+    html += buildSection("Leve 2 e economize 20%", leve2Items, true, 'LEVE2');
+
+    // 4. 30% Off (Vencimento Próximo - Ordenado pela data)
+    let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
+    html += buildSection("Produtos com 30% de Desconto", off30Items, true);
+
+    // 5. Mais Ofertas Imperdíveis (60 produtos sortidos de todo o site, 5% a 10% OFF)
+    if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
         html += `
         <div class="home-section">
             <h3 class="home-section-title">Mais Ofertas Imperdíveis</h3>
             <div class="product-grid">
-                ${buildCardsHTML(outrasOfertas, 'PROD')}
+                ${buildCardsHTML(STATE.maisOfertas, 'PROD')}
             </div>
         </div>`;
     }
@@ -509,13 +555,11 @@ window.commitExpander = function() {
     });
     if(!added) return alert("Cesta vazia.");
     STATE.basketExtraFee += expanderState.priceOffset;
-    updateTotals(); 
-    closeDrawer('kit-drawer');
-    selectCategory('ofertas'); 
+    updateTotals(); closeDrawer('kit-drawer'); selectCategory('ofertas'); 
 };
 
 // ==========================================
-// CARRINHO E CHECKOUT (COM MATEMÁTICA DE PROMOÇÃO)
+// CARRINHO, CÁLCULOS ESPECIAIS E CHECKOUT
 // ==========================================
 function upd(id, delta) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
@@ -527,7 +571,6 @@ function upd(id, delta) {
     document.querySelectorAll(`#card-act-${id}`).forEach(actBox => {
         actBox.innerHTML = n > 0 ? `<div class="qty-control"><button onclick="upd('${id}', -1)">-</button><span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
     });
-    
     updateTotals(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
 }
 
@@ -539,11 +582,12 @@ function updateTotals() {
         if (p) { 
             sum += p.price * q; count += q; 
             
-            if (PROMO_CONFIG.leve5pague4.includes(p.id)) {
+            // Matemática Dinâmica do Desconto na Sacola
+            if (STATE.promoIds.leve5.includes(p.id)) {
                 let itemsGratis = Math.floor(q / 5);
                 customPromoDiscount += (itemsGratis * p.price);
-            } else if (PROMO_CONFIG.leve2.includes(p.id)) {
-                if (q >= 2) customPromoDiscount += (p.price * 0.10) * q;
+            } else if (STATE.promoIds.leve2.includes(p.id)) {
+                if (q >= 2) customPromoDiscount += (p.price * 0.20) * q;
             } else {
                 if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; 
             }
@@ -565,8 +609,8 @@ function updateTotals() {
 function openCheckout() {
     if (STATE.cartOrder.length === 0) return;
     let options = []; let date = new Date(); let checkDate = new Date(date);
-    if (date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
-    while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(!CONFIG_ENTREGA.diasSemanaInativos.includes(checkDate.getDay())) { let desc = options.length === 0 ? 0 : (options.length === 1 ? CONFIG_ENTREGA.descontoOpcao2 : CONFIG_ENTREGA.descontoOpcao3); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
+    if (date.getHours() < 10 && date.getDay() !== 0) options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
+    while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(checkDate.getDay() !== 0) { let desc = options.length === 0 ? 0 : (options.length === 1 ? 3.00 : 6.00); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
     STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
     
     $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}</button>`).join('');
@@ -647,36 +691,70 @@ async function init() {
 
         if (r2 && r2.length > 0) {
             let hTime = new Date().getTime();
+            
+            // 1. Cria o catálogo básico
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                 let pBase = parseFloat(p.preco) * 1.01;
                 let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
                 let price = pBase; let dPv = (validade - hTime) / 86400000;
                 let is30Off = false;
                 
-                // Mapeia quem ganha o desconto de validade (-30% se < 30 dias)
+                // Validade (< 30 dias = 30% OFF automático)
                 if (dPv <= 60 && parseInt(p.estoque) > 0) { 
                     if (dPv < 30) { price = pBase * 0.70; is30Off = true; } 
                     else if (dPv <= 40) price = pBase * 0.80; 
                     else if (dPv <= 60) price = pBase * 0.90; 
                 }
                 
-                // Salva o codigo e o blingId para a busca inteligente nunca falhar
                 return { 
-                    id: String(p.codigo || p.id), 
-                    blingId: String(p.id), 
-                    codigo: String(p.codigo || ""), 
-                    name: p.nome, 
+                    id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), name: p.nome, 
                     price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                    categoria: p.categoria || "Outros", _is30Off: is30Off 
+                    categoria: p.categoria || "Outros", _is30Off: is30Off, _valTime: validade
                 };
             });
 
+            // 2. Aplica o desconto de 10% aos produtos da aba "Aproveite a Viagem"
+            PROMO_CONFIG.aproveite.forEach(idStr => {
+                let p = findItem(idStr);
+                if(p) { p.price = p.oldPrice * 0.90; } // Desconto de 10% direto no preço visual
+            });
+
+            // 3. Monta os Departamentos
             STATE.prods.forEach(p => { 
                 let cId = 'cat_' + norm(p.categoria).replace(/[^a-z0-9]/g, '_');
                 if (!STATE.deptos[cId]) STATE.deptos[cId] = { title: p.categoria || "Outros", data: [] };
                 STATE.deptos[cId].data.push(p); 
             });
+
+            // 4. Salva IDs formatados para cálculo dinâmico da Sacola (Leve 2 e Leve 5)
+            STATE.promoIds.leve5 = PROMO_CONFIG.leve5pague4.map(findItem).filter(Boolean).map(p => p.id);
+            STATE.promoIds.leve2 = PROMO_CONFIG.leve2.map(findItem).filter(Boolean).map(p => p.id);
+
+            // 5. Robô para sortear 60 produtos "Mais Ofertas" (com 5% a 10% de desconto)
+            let usedIds = new Set([...STATE.promoIds.leve5, ...STATE.promoIds.leve2, ...PROMO_CONFIG.aproveite.map(findItem).filter(Boolean).map(p => p.id)]);
+            STATE.prods.forEach(p => { if (p._is30Off) usedIds.add(p.id); }); // Não repete os vencidos
+
+            let availableProds = STATE.prods.filter(p => !usedIds.has(p.id) && p.stock > 0);
+            
+            // Agrupa por categoria para pegar variado
+            let byCat = {};
+            availableProds.forEach(p => { if(!byCat[p.categoria]) byCat[p.categoria] = []; byCat[p.categoria].push(p); });
+
+            let maisOfertas = []; let cats = Object.keys(byCat); let i = 0;
+            while(maisOfertas.length < 60 && availableProds.length > 0) {
+                let cat = cats[i % cats.length];
+                if(byCat[cat].length > 0) {
+                    let p = byCat[cat].shift();
+                    // Aplica 5% a 10% de desconto aleatório
+                    let desc = 0.05 + (Math.random() * 0.05);
+                    p.price = p.oldPrice * (1 - desc);
+                    maisOfertas.push(p);
+                    availableProds = availableProds.filter(x => x.id !== p.id);
+                }
+                i++; if(availableProds.length === 0) break;
+            }
+            STATE.maisOfertas = maisOfertas;
         }
         
         setupDropdown();
@@ -684,7 +762,7 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
-        selectCategory('ofertas');
+        selectCategory('ofertas'); // Inicia a página
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
 }
