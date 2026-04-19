@@ -1063,8 +1063,15 @@ window.selectSwapCategory = function(cat) {
     });
     $('swap-suggestions-list').innerHTML = buildSwapSuggestions(cat);
     
-    // [Ajuste] Volta o scroll na gaveta para o inicio das listas
-    $('swap-drawer').querySelector('.drawer-body').scrollTo({ top: 0, behavior: 'smooth' });
+    // [NOVO] Lógica para rolar a gaveta exatamente até a barra de chips
+    let drawerBody = $('swap-drawer').querySelector('.drawer-body');
+    let chipsWrap = $('swap-chips-container-wrap');
+    
+    if (drawerBody && chipsWrap) {
+        // Usamos o offsetTop do wrapper para rolar exatamente até onde ele está.
+        // Subtraímos 16px para compensar o padding e deixar coladinho no cabeçalho.
+        drawerBody.scrollTo({ top: chipsWrap.offsetTop - 16, behavior: 'smooth' });
+    }
 };
 
 function buildSwapSuggestions(cat) {
