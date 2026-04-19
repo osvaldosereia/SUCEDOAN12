@@ -66,13 +66,15 @@
         .home-section { margin-bottom: 56px; }
         .home-section-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
         @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
-        .show-all .card { display: flex !important; } /* Usado para os 6 produtos do 30% OFF */
+        .show-all .card { display: flex !important; } 
 
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
-        .card-title { font-size: 0.75rem; font-weight: 500; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.2em; text-transform: uppercase; cursor: pointer; }
+        /* Ajuste do Título do Card: Fonte menor e até 4 linhas */
+        .card-title { font-size: 0.65rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; height: 5.2em; text-transform: uppercase; cursor: pointer; }
+        
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
         .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
         .old-price { font-size: 0.8rem; color: #9ca3af; text-decoration: line-through; }
@@ -113,7 +115,6 @@
         .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
         .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; }
         
-        /* Listas Padrão Ouro (Cesta, Swap, Checkout) */
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
         .list-img-wrap { width: 100px; height: 100px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
@@ -261,6 +262,10 @@
                 </div>
                 <input type="hidden" id="chk-pagamento">
             </div>
+
+            <div class="chk-section" style="margin-top: 24px; border-top: 1px dashed var(--border-light); padding-top: 24px;">
+                <button class="pay-btn" style="width: 100%; border-color: #ef4444; color: #ef4444; font-weight: 800; background: #fef2f2;" onclick="clearCart()">🗑️ Limpar Carrinho</button>
+            </div>
         </div>
         <div class="drawer-footer">
             <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
@@ -298,6 +303,43 @@ function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'curren
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
 // ==========================================
+// PERSISTÊNCIA DE CARRINHO (LOCAL STORAGE)
+// ==========================================
+function saveCart() {
+    localStorage.setItem('dona_antonia_cart', JSON.stringify({
+        cart: STATE.cart,
+        cartOrder: STATE.cartOrder,
+        basketExtraFee: STATE.basketExtraFee
+    }));
+}
+
+function loadCart() {
+    try {
+        let saved = localStorage.getItem('dona_antonia_cart');
+        if (saved) {
+            let parsed = JSON.parse(saved);
+            STATE.cart = parsed.cart || {};
+            STATE.cartOrder = parsed.cartOrder || [];
+            STATE.basketExtraFee = parsed.basketExtraFee || 0;
+        }
+    } catch(e) { console.error("Erro ao carregar carrinho", e); }
+}
+
+window.clearCart = function() {
+    if(confirm("Tem certeza que deseja limpar o carrinho?")) {
+        STATE.cart = {};
+        STATE.cartOrder = [];
+        STATE.basketExtraFee = 0;
+        saveCart();
+        updateTotals();
+        closeDrawer('checkout-drawer');
+        
+        // Recarrega a view para repor os botões como "Adicionar"
+        selectCategory(STATE.activeCat);
+    }
+};
+
+// ==========================================
 // HISTORY API (BOTÃO VOLTAR NATIVO)
 // ==========================================
 let modalStack = [];
@@ -309,14 +351,19 @@ function openDrawer(id) {
     history.pushState({ modal: id }, "");
 }
 
-function closeDrawer(id, fromHistory = false) { 
-    $(id).classList.remove('open'); 
-    modalStack = modalStack.filter(m => m !== id);
-    if (!fromHistory) history.back(); 
-    checkDrawers();
+function closeDrawer(id) { 
+    // Em vez de fechar e depois dar back, apenas disparamos o back nativo.
+    // O evento popstate (logo abaixo) garantirá que apenas a última aba feche corretamente.
+    if (modalStack.includes(id)) {
+        history.back();
+    }
 }
 
 function closeAllDrawers() { 
+    let count = modalStack.length;
+    if(count > 0) history.go(-count);
+
+    // Limpeza forçada de segurança
     document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); 
     modalStack = [];
     $('overlay').classList.remove('open'); 
@@ -336,9 +383,9 @@ window.addEventListener('popstate', (e) => {
         $(id).classList.remove('open');
         checkDrawers();
     } else {
-        if (STATE.activeCat !== 'cestas') { // Volta pra aba principal
+        if (STATE.activeCat !== 'cestas') { 
             selectCategory('cestas');
-            history.pushState({home: true}, ""); 
+            // Não fazemos pushState aqui para não quebrar o fluxo de "Voltar" nativo do celular
         }
     }
 });
@@ -422,7 +469,7 @@ function findItem(idStr) {
 }
 
 // ==========================================
-// QUICK VIEW (DETALHES DO PRODUTO)
+// QUICK VIEW (DETALHES DO PRODUTO APRIMORADO)
 // ==========================================
 window.openQuickView = function(id) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
@@ -432,14 +479,14 @@ window.openQuickView = function(id) {
     let acaoHTML = q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`;
     
     $('quick-content').innerHTML = `
-        <div style="width:100%; aspect-ratio:1/1; background:var(--bg-img); display:flex; align-items:center; justify-content:center; padding:20px;">
-            <img src="${p.img}" style="max-height:100%; mix-blend-mode:multiply; object-fit:contain;">
+        <div style="width:100%; height: 350px; background:var(--bg-img); display:flex; align-items:center; justify-content:center; padding:10px;">
+            <img src="${p.img}" style="max-height:100%; max-width:100%; mix-blend-mode:multiply; object-fit:contain;">
         </div>
         <div style="padding: 24px 20px;">
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px; text-transform: uppercase;">${p.name}</div>
+            <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; text-transform: uppercase; line-height: 1.3;">${p.name}</div>
             <div style="display:flex; align-items:baseline; gap:8px; margin-bottom: 24px;">
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--brand);">${fmt(p.price)}</div>
-                ${p.oldPrice > p.price ? `<div style="font-size:0.9rem; color:var(--text-gray); text-decoration:line-through;">${fmt(p.oldPrice)}</div>` : ''}
+                <div style="font-size: 1.8rem; font-weight: 900; color: var(--brand);">${fmt(p.price)}</div>
+                ${p.oldPrice > p.price ? `<div style="font-size:1rem; color:var(--text-gray); text-decoration:line-through;">${fmt(p.oldPrice)}</div>` : ''}
             </div>
             <div id="quick-act-${p.id}">${acaoHTML}</div>
         </div>
@@ -640,7 +687,10 @@ window.commitExpander = function() {
     });
     if(!added) return alert("Cesta vazia.");
     STATE.basketExtraFee += expanderState.priceOffset;
-    updateTotals(); closeDrawer('kit-drawer'); selectCategory('ofertas'); 
+    updateTotals(); 
+    saveCart();
+    closeDrawer('kit-drawer'); 
+    selectCategory('ofertas'); 
 };
 
 // ==========================================
@@ -773,6 +823,7 @@ window.confirmSwap = function(oldPId, newPId) {
         
         STATE.cart[newPId] = qty;
         updateTotals();
+        saveCart();
         renderCheckoutItems();
     }
     closeDrawer('swap-drawer');
@@ -812,6 +863,7 @@ window.addSuggestionToKit = function(newPId, delta) {
             STATE.cart[newPId] = next;
         }
         updateTotals();
+        saveCart();
         renderCheckoutItems();
         
         let q = STATE.cart[newPId] || 0;
@@ -837,7 +889,7 @@ function upd(id, delta) {
         let minusBtnGrid = n === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
         actBox.innerHTML = n > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
     });
-    updateTotals(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
+    updateTotals(); saveCart(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
 }
 
 function updateTotals() {
@@ -1022,6 +1074,8 @@ async function init() {
             STATE.maisOfertas = maisOfertas;
         }
         
+        loadCart(); // ← Carrega o carrinho salvo no navegador
+        updateTotals(); 
         setupDropdown();
         
         $('loader').style.opacity = '0';
