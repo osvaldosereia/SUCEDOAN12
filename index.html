@@ -77,19 +77,12 @@
         .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
         .promo-tag.exp { background: var(--brand-light); color: var(--brand); }
 
-        .card-special { border: 2px solid var(--brand-light); padding: 12px; border-radius: var(--radius-img); background: #fff; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.05); }
-        .card-special .card-img-wrap { margin-bottom: 8px; }
-        .special-price-box { margin-top: auto; margin-bottom: 12px; background: var(--bg-page); padding: 10px; border-radius: 12px; text-align: center; border: 1px dashed var(--border-light); }
-        .special-price-box .old-price { font-size: 0.8rem; color: var(--text-gray); text-decoration: line-through; margin-bottom: 2px; }
-        .special-price-box .price { font-size: 1.3rem; font-weight: 900; color: var(--brand); line-height: 1; }
-        .special-price-box .economia { font-size: 0.75rem; color: var(--success); font-weight: 800; margin-top: 6px; display: inline-block; background: #ecfdf5; padding: 4px 10px; border-radius: 20px;}
-        .btn-add.special { background: var(--brand); color: #fff; }
-
         .card-basket .card-img-wrap { background: transparent; padding: 0; }
         .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
         .card-basket .card-title { -webkit-line-clamp: 2; height: auto; white-space: normal;}
 
         .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
+        .btn-add.special { background: var(--brand); color: #fff; } /* [Ajuste] Mantemos isso para os botões das promos */
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
@@ -123,17 +116,28 @@
         .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
         .btn-swap:active { background: var(--brand-light); }
         
-        .swap-hint { font-size: 0.75rem; color: var(--text-gray); margin-bottom: 8px; display:flex; align-items:center; gap:4px; font-weight: 600; }
-        
-        .swap-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 8px; scrollbar-width: none; }
-        .swap-chips::-webkit-scrollbar { display: none; }
+        /* [Ajuste] CSS novo para os Wrappers e setas (Chips) */
+        .chips-wrapper { position: relative; display: flex; align-items: center; width: 100%; background: transparent; }
+        .scroll-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); z-index: 5; background: #fff; border: 1px solid var(--border-light); border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; justify-content: center; align-items: center; color: var(--brand); font-size: 0.9rem;}
+        .scroll-btn.left { left: 0px; }
+        .scroll-btn.right { right: 0px; }
+        @media(min-width: 768px) {
+            .scroll-btn { display: flex; }
+            .swap-chips::-webkit-scrollbar { display: none; }
+        }
+
+        .swap-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; padding: 0 4px; scroll-behavior: smooth;}
         .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
         .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
-        /* Estilos CSS para Chips Fixos (Sticky) */
-        #main-category-chips { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
-        @media(min-width: 768px) { #main-category-chips { top: 72px; } }
-        #swap-chips-container { position: sticky; top: 0; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
+        /* [Ajuste] Estilos CSS para Chips Fixos colados sem espaços vazios */
+        /* O topo é regulado com base na .controls-wrapper (aprox 72px) para a página principal */
+        #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
+        @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
+        /* No drawer, o chip deve colar no topo (0px) de forma precisa */
+        #swap-chips-container-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
+        #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
+
 
         .chk-section { margin-bottom: 32px; }
         .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
@@ -160,7 +164,7 @@
 <div class="app-container">
 
     <header class="top-bar">
-        <img src="../img/logoantonia.png" alt="Dona Antônia" class="logo">
+        <img src="../img/logoantonia.png" alt="Dona Antônia" class="logo" onclick="goToHome()" style="cursor: pointer;" aria-label="Voltar para Início">
         <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
     </header>
 
@@ -217,7 +221,22 @@
             <div class="drawer-title" id="kit-title">Personalizar Cesta</div>
             <button class="btn-close" onclick="closeDrawer('kit-drawer')">✕</button>
         </div>
-        <div class="drawer-body" id="kit-items-grid"></div>
+        <div class="drawer-body" style="padding: 0;">
+            <div id="kit-items-grid" style="padding: 20px;"></div>
+            
+            <div id="kit-extra-section" style="padding: 20px; border-top: 8px solid var(--bg-img);">
+                <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--brand); margin-bottom: 16px;">Adicione mais produtos</h3>
+                
+                <div class="chips-wrapper" id="kit-extra-chips-wrap">
+                    <button class="scroll-btn left" onclick="scrollElementChips('kit-extra-chips-container', -200)">❮</button>
+                    <div class="swap-chips" id="kit-extra-chips-container"></div>
+                    <button class="scroll-btn right" onclick="scrollElementChips('kit-extra-chips-container', 200)">❯</button>
+                </div>
+                
+                <div id="kit-extra-grid" style="margin-top: 16px;"></div>
+            </div>
+
+        </div>
         <div class="drawer-footer">
             <div class="summary-row total"><span>Total da Cesta</span><span id="kit-total-price">R$ 0,00</span></div>
             <button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>
@@ -292,7 +311,7 @@ const STATE = {
     cart: {}, cartOrder: [], maisOfertas: [], swapSimilarProds: [], swapCats: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-    activeCat: 'ofertas', 
+    activeCat: 'ofertas', activeKitCat: 'ofertas',
     promoIds: { leve5: [], leve2: [] }
 };
 
@@ -313,6 +332,21 @@ function formatName(name) {
         return w.charAt(0).toUpperCase() + w.slice(1);
     }).join(' ');
 }
+
+// [Ajuste] Função genérica de rolagem para setas no desktop
+window.scrollElementChips = function(id, amount) {
+    let el = document.getElementById(id);
+    if(el) el.scrollBy({ left: amount, behavior: 'smooth' });
+};
+
+// [Ajuste] Função para retornar ao Home clicando na Logo
+window.goToHome = function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    clearSearch(false);
+    selectMainCategory('ofertas');
+    renderMainPage();
+    updateNavButtons('cestas');
+};
 
 // ==========================================
 // PERSISTÊNCIA DE CARRINHO (LOCAL STORAGE)
@@ -414,6 +448,7 @@ function setupCategories() {
 function renderMainPage() {
     $('grid-title').style.display = "none";
     
+    // [Ajuste] Incorporamos o wrapper com botões e setas no desktop
     let html = `
         <div id="secao-cestas" style="scroll-margin-top: 140px; margin-bottom: 48px;">
             <h2 class="section-title">Cestas Básicas</h2>
@@ -425,8 +460,12 @@ function renderMainPage() {
         <div id="secao-produtos" style="scroll-margin-top: 140px; border-top: 2px dashed var(--border-light); padding-top: 32px;">
             <h2 class="section-title" style="margin-bottom: 12px;">Produtos</h2>
             
-            <div class="swap-chips" id="main-category-chips">
-                ${buildMainChipsHTML()}
+            <div class="chips-wrapper" id="main-category-chips-wrap">
+                <button class="scroll-btn left" onclick="scrollElementChips('main-category-chips-container', -200)">❮</button>
+                <div class="swap-chips" id="main-category-chips-container">
+                    ${buildMainChipsHTML()}
+                </div>
+                <button class="scroll-btn right" onclick="scrollElementChips('main-category-chips-container', 200)">❯</button>
             </div>
 
             <div id="produtos-grid-container">
@@ -446,11 +485,18 @@ function buildMainChipsHTML() {
 
 window.selectMainCategory = function(id) {
     STATE.activeCat = id;
-    let chipsContainer = $('main-category-chips');
+    let chipsContainer = $('main-category-chips-container');
     if(chipsContainer) chipsContainer.innerHTML = buildMainChipsHTML();
     
     let gridContainer = $('produtos-grid-container');
     if(gridContainer) gridContainer.innerHTML = getProdutosHTML(id);
+
+    // [Ajuste] Reset de scroll ao mudar de chip na página principal (puxa pro inicio da lista de produtos)
+    let secaoProd = document.getElementById('secao-produtos');
+    if(secaoProd) {
+        let pos = secaoProd.getBoundingClientRect().top + window.scrollY - 130;
+        window.scrollTo({ top: pos, behavior: 'smooth' });
+    }
 };
 
 function getProdutosHTML(id) {
@@ -572,62 +618,30 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
     let html = '';
     let isBasket = type === 'BASKET';
     
+    // [Ajuste] Unificamos a lógica para que promos (LEVE5 / LEVE2) utilizem o design padrão de cards
     for(let i=0; i<items.length; i++) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
         let isEsgotado = p.stock <= 0 && !isBasket;
 
         let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
 
-        if (promoSpecialType === 'LEVE5') {
-            let addAction = isEsgotado ? `<button class="btn-add" disabled style="background:var(--border-light); color:var(--text-gray);">Esgotado</button>` : 
-                            (q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
-                                   : `<button class="btn-add special" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`);
-
-            html += `
-            <div class="card card-special" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
-                <div class="promo-tag" style="background:var(--brand); color:#fff;">LEVE 5 PAGUE 4</div>
-                <div class="card-img-wrap" onclick="openQuickView('${p.id}')"><img src="${p.img}" loading="lazy"></div>
-                <div class="card-title" onclick="openQuickView('${p.id}')" style="margin-bottom:4px;">${p.name}</div>
-                <div class="special-price-box">
-                    <div class="old-price">5 un. por ${fmt(p.price * 5)}</div>
-                    <div class="price">${fmt(p.price * 4)}</div>
-                    <div class="economia">Economize ${fmt(p.price)}!</div>
-                </div>
-                <div id="card-act-${p.id}">${addAction}</div>
-            </div>`;
-            continue;
-        }
-
-        if (promoSpecialType === 'LEVE2') {
-            let totalFull = p.price * 2; let totalOff = totalFull * 0.80;
-            let addAction = isEsgotado ? `<button class="btn-add" disabled style="background:var(--border-light); color:var(--text-gray);">Esgotado</button>` : 
-                            (q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
-                                   : `<button class="btn-add special" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`);
-
-            html += `
-            <div class="card card-special" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
-                <div class="promo-tag" style="background:var(--brand); color:#fff;">LEVE 2 COM 20% OFF</div>
-                <div class="card-img-wrap" onclick="openQuickView('${p.id}')"><img src="${p.img}" loading="lazy"></div>
-                <div class="card-title" onclick="openQuickView('${p.id}')" style="margin-bottom:4px;">${p.name}</div>
-                <div class="special-price-box">
-                    <div class="old-price">2 un. por ${fmt(totalFull)}</div>
-                    <div class="price">${fmt(totalOff)}</div>
-                    <div class="economia">Economize ${fmt(totalFull - totalOff)}!</div>
-                </div>
-                <div id="card-act-${p.id}">${addAction}</div>
-            </div>`;
-            continue;
-        }
-
         let acaoHTML = '';
-        if (isEsgotado) { acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; } 
-        else if (isBasket) { acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; } 
-        else if (q > 0) { acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; } 
-        else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
+        if (isEsgotado) { 
+            acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; 
+        } else if (isBasket) { 
+            acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; 
+        } else if (q > 0) { 
+            acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; 
+        } else if (promoSpecialType === 'LEVE5') {
+            // [Ajuste] O card não tem layout diferente, apenas o texto e lógica do botão
+            acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`;
+        } else if (promoSpecialType === 'LEVE2') {
+            acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`;
+        } else { 
+            acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; 
+        }
 
-        let tagHTML = '';
-        if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% de Desconto</div>`;
-        
+        // [Ajuste] Removemos a tag "30% de Desconto" de dentro do card
         let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
 
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
@@ -640,7 +654,6 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
                 ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
                 <span class="price">${fmt(p.price || p.preco)}</span>
                 ${lbl10}
-                ${tagHTML}
             </div>
             <div id="card-act-${p.id}">${acaoHTML}</div>
         </div>`;
@@ -708,7 +721,12 @@ window.openKitLateralView = function(id) {
 
     expanderState.priceOffset = Math.max(0, sourceObj.preco - expanderState.originalSum);
     $('kit-title').innerText = sourceObj.nome;
-    renderKitList(); openDrawer('kit-drawer');
+    renderKitList(); 
+    
+    // [Ajuste] Inicializamos também a sessão de itens extras seguindo o padrão
+    setupKitExtraCategory('ofertas');
+    
+    openDrawer('kit-drawer');
 };
 
 function renderKitList() {
@@ -742,6 +760,29 @@ function renderKitList() {
     $('kit-total-price').innerText = fmt(expanderState.currentDisplayPrice);
 }
 
+// [Ajuste] Função para renderizar as categorias extra ao final da cesta básica
+window.setupKitExtraCategory = function(catId) {
+    STATE.activeKitCat = catId;
+    let chipsHtml = STATE.categoriesList.map(c => 
+        `<div class="swap-chip ${catId === c.id ? 'active' : ''}" 
+              onclick="setupKitExtraCategory('${c.id}')">${c.title}</div>`
+    ).join('');
+    
+    let chipsContainer = $('kit-extra-chips-container');
+    if (chipsContainer) chipsContainer.innerHTML = chipsHtml;
+    
+    let gridContainer = $('kit-extra-grid');
+    if (gridContainer) gridContainer.innerHTML = getProdutosHTML(catId);
+    
+    // Rolar para o início da grade da sessão de produtos extras
+    let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
+    let offsetTarget = $('kit-extra-section');
+    if(bodyDrawer && offsetTarget) {
+        bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
+    }
+};
+
+
 window.changeKitQty = function(pId, delta) {
     let p = STATE.prods.find(x => String(x.id) === pId); if(!p) return;
     let next = Math.max(0, (expanderState.items[pId] || 0) + delta);
@@ -763,11 +804,14 @@ window.commitExpander = function() {
     });
     if(!added) return alert("Cesta vazia.");
     STATE.basketExtraFee += expanderState.priceOffset;
+    
     updateTotals(); 
     saveCart();
-    closeDrawer('kit-drawer'); 
+    
+    // [Ajuste] Adicionado comportamento que ao salvar fecha as gavetas e pula para "produtos" do início
+    closeAllDrawers(); 
     selectMainCategory('ofertas'); 
-    scrollToProdutos();
+    setTimeout(() => { scrollToProdutos(); }, 200);
 };
 
 // ==========================================
@@ -797,8 +841,6 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
             tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 20% OFF</div><br>`;
             let tf = p.price * 2; let to = tf * 0.8;
             priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(tf)}</span>${fmt(to)}`;
-        } else if (p._is30Off && promoSpecialType !== 'APROVEITE') {
-            tagHtml = `<div style="font-size: 0.65rem; color: var(--brand); background: var(--brand-light); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">30% de Desconto</div><br>`;
         }
 
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
@@ -869,10 +911,15 @@ window.openSwapView = function(oldPId, context = 'KIT') {
         html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto similar disponível para troca no momento.</p>`;
     }
 
+    // [Ajuste] Incorporamos o botão de arrasto/rolagem no wrapper nas guias de troca com layout "sem vazios"
     html += `
         <div style="padding-top: 16px; border-top: 1px dashed var(--border-light);">
-            <div class="swap-chips" id="swap-chips-container">
-                ${STATE.swapCats.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
+            <div class="chips-wrapper" id="swap-chips-container-wrap">
+                <button class="scroll-btn left" onclick="scrollElementChips('swap-chips-container', -200)">❮</button>
+                <div class="swap-chips" id="swap-chips-container">
+                    ${STATE.swapCats.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
+                </div>
+                <button class="scroll-btn right" onclick="scrollElementChips('swap-chips-container', 200)">❯</button>
             </div>
             <div id="swap-suggestions-list">
                 ${buildSwapSuggestions(STATE.swapCats[0])}
@@ -891,6 +938,9 @@ window.selectSwapCategory = function(cat) {
         else el.classList.remove('active');
     });
     $('swap-suggestions-list').innerHTML = buildSwapSuggestions(cat);
+    
+    // [Ajuste] Volta o scroll na gaveta para o inicio das listas
+    $('swap-drawer').querySelector('.drawer-body').scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 function buildSwapSuggestions(cat) {
