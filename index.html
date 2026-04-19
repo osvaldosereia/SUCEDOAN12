@@ -787,14 +787,15 @@ window.openKitLateralView = function(id) {
 
     expanderState.priceOffset = Math.max(0, sourceObj.preco - expanderState.originalSum);
     $('kit-title').innerText = sourceObj.nome;
+    
+    // [Ajuste] Reseta o botão do rodapé para o estado inicial sempre que abrir uma nova cesta
+    $('kit-footer-container').innerHTML = `<button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>`;
+    
     renderKitList(); 
     
-    // [Ajuste] Chamamos a sessão extra passando 'false' para NÃO rolar a tela agora
     setupKitExtraCategory('ofertas', false);
-    
     openDrawer('kit-drawer');
     
-    // [Ajuste] Garante que a gaveta force a barra de rolagem no topo absoluto
     setTimeout(() => { 
         let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
         if (bodyDrawer) bodyDrawer.scrollTop = 0; 
@@ -900,25 +901,24 @@ window.commitExpander = function() {
     updateTotals(); 
     saveCart();
 
-    // Rola para a sessão de mais produtos
     let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
     let offsetTarget = $('kit-extra-section');
     if(bodyDrawer && offsetTarget) {
         bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
     }
 
-    // [Ajuste] Transforma o rodapé no botão flutuante padrão do site
+    // [Ajuste] Colocamos IDs "drawer-fc-qtd" e "drawer-fc-total" para podermos modificar ao vivo
     let footer = $('kit-footer-container');
-    let totalFormatado = $('fc-total').innerText; // Pega o total atualizado do estado global
+    let totalFormatado = $('fc-total').innerText; 
     let itensFormatado = $('fc-qtd').innerText;
 
     footer.innerHTML = `
         <button class="drawer-cart-display" onclick="openCheckout()">
             <div class="fc-info">
-                <span style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${itensFormatado}</span>
+                <span id="drawer-fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${itensFormatado}</span>
                 <span>Ver Sacola</span>
             </div>
-            <div class="fc-total">${totalFormatado}</div>
+            <div class="fc-total" id="drawer-fc-total">${totalFormatado}</div>
         </button>
     `;
 };
@@ -1230,8 +1230,30 @@ function updateTotals() {
     let final = subtotal - totalDesc;
     
     let fc = $('floating-cart');
-    if (count > 0) { fc.classList.remove('hidden'); $('fc-qtd').innerText = `${count} item(s)`; $('fc-total').innerText = fmt(final); } 
-    else { fc.classList.add('hidden'); }
+    if (count > 0) { 
+        fc.classList.remove('hidden'); 
+        $('fc-qtd').innerText = `${count} item(s)`; 
+        $('fc-total').innerText = fmt(final); 
+        
+        // [Ajuste] Atualiza em tempo real o botão flutuante que fica dentro da gaveta da cesta
+        let dfcQtd = document.getElementById('drawer-fc-qtd');
+        let dfcTotal = document.getElementById('drawer-fc-total');
+        if (dfcQtd && dfcTotal) {
+            dfcQtd.innerText = `${count} item(s)`;
+            dfcTotal.innerText = fmt(final);
+        }
+    } 
+    else { 
+        fc.classList.add('hidden'); 
+        
+        // [Ajuste] Zera o botão dentro da gaveta caso o carrinho fique vazio
+        let dfcQtd = document.getElementById('drawer-fc-qtd');
+        let dfcTotal = document.getElementById('drawer-fc-total');
+        if (dfcQtd && dfcTotal) {
+            dfcQtd.innerText = `0 itens`;
+            dfcTotal.innerText = fmt(0);
+        }
+    }
 }
 
 function openCheckout() {
