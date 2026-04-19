@@ -579,8 +579,10 @@ window.openSwapView = function(oldPId, context = 'KIT') {
 
     let firstWord = norm(oldProd.name).split(' ')[0];
     
+    // Filtra produtos similares garantindo que sejam da MESMA CATEGORIA
     let similarProds = STATE.prods.filter(p => 
         p.id !== oldProd.id && 
+        p.categoria === oldProd.categoria && // <-- Nova regra inserida aqui!
         norm(p.name).split(' ')[0] === firstWord && 
         p.stock > 0
     );
