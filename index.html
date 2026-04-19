@@ -132,13 +132,13 @@
 
         /* [Ajuste] Estilos CSS para Chips Fixos colados sem espaços vazios */
         /* O topo é regulado com base na .controls-wrapper (aprox 72px) para a página principal */
-        #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
+        #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
         @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
         /* No drawer, o chip deve colar no topo (0px) de forma precisa */
-#swap-chips-container-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
-        #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
+        #swap-chips-container-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
+        #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
 
-
+        
         .chk-section { margin-bottom: 32px; }
         .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
         .input-text { width: 100%; padding: 14px; border: none; background: var(--bg-img); border-radius: 12px; margin-bottom: 12px; font-size: 1rem; outline: none; transition: 0.2s; }
@@ -289,7 +289,7 @@
                     <div class="banner-destaque">🛒 Adicione mais produtos</div>
                 </div>
                 
-                <div class="chips-wrapper" id="kit-extra-chips-wrap" style="position: sticky; top: 0; background: #fff; z-index: 10; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1);">
+              <div class="chips-wrapper" id="kit-extra-chips-wrap">
                     <button class="scroll-btn left" onclick="scrollElementChips('kit-extra-chips-container', -200)">❮</button>
                     <div class="swap-chips" id="kit-extra-chips-container"></div>
                     <button class="scroll-btn right" onclick="scrollElementChips('kit-extra-chips-container', 200)">❯</button>
