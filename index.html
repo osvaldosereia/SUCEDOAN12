@@ -671,8 +671,8 @@ function getHomeHTML() {
     let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
     html += buildSection("Produtos com 30% de Desconto", off30Items, false, null, true);
 
-    html += buildSection("Aproveite a viagem, talvez você precise", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
-    html += buildSection("Promoção Exclusiva: Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
+    html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
+    html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
     html += buildSection("Leve 2 e economize 20%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
     
     if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
@@ -902,10 +902,10 @@ function buildSwapSuggestions(cat) {
         if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 30% de Desconto</h4>${h1}</div>`;
 
         let h2 = buildSwapHorizontalCards(PROMO_CONFIG.aproveite.map(findItem), 'APROVEITE');
-        if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Aproveite a viagem, talvez você precise</h4>${h2}</div>`;
+        if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Dicas de Hoje</h4>${h2}</div>`;
 
         let h3 = buildSwapHorizontalCards(PROMO_CONFIG.leve5pague4.map(findItem), 'LEVE5');
-        if(h3) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Promoção Exclusiva: Leve 5 pague 4</h4>${h3}</div>`;
+        if(h3) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 5 pague 4</h4>${h3}</div>`;
 
         let h4 = buildSwapHorizontalCards(PROMO_CONFIG.leve2.map(findItem), 'LEVE2');
         if(h4) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 2 e economize 20%</h4>${h4}</div>`;
