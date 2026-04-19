@@ -187,7 +187,34 @@
             justify-content: center;
             gap: 8px;
         }
-    
+
+/* Estilo para o botão de sacola dentro da gaveta (padrão do site) */
+        .drawer-cart-display {
+            background: var(--brand);
+            color: #fff;
+            padding: 16px 24px;
+            border-radius: 100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            width: 100%;
+            border: none;
+            transition: 0.3s;
+        }
+
+        /* Etiqueta de economia nos cards */
+        .economia-tag {
+            font-size: 0.75rem;
+            color: var(--success);
+            font-weight: 800;
+            background: #ecfdf5;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        
     </style>
 </head>
 <body>
@@ -271,8 +298,7 @@
                 <div id="kit-extra-grid" style="margin-top: 20px; padding: 0 20px;"></div>
             </div>
         </div>
-        <div class="drawer-footer">
-            <div class="summary-row total"><span>Total da Cesta</span><span id="kit-total-price">R$ 0,00</span></div>
+       <div class="drawer-footer" id="kit-footer-container">
             <button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>
         </div>
     </div>
@@ -652,7 +678,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
     let html = '';
     let isBasket = type === 'BASKET';
     
-    // [Ajuste] Unificamos a lógica para que promos (LEVE5 / LEVE2) utilizem o design padrão de cards
+   // [Ajuste] Unificamos a lógica para que promos (LEVE5 / LEVE2) utilizem o design padrão de cards
     for(let i=0; i<items.length; i++) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
         let isEsgotado = p.stock <= 0 && !isBasket;
@@ -660,6 +686,8 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
 
         let acaoHTML = '';
+        let economiaHTML = ''; // [Ajuste] Variável para guardar a tag de economia
+
         if (isEsgotado) { 
             acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; 
         } else if (isBasket) { 
@@ -669,8 +697,11 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         } else if (promoSpecialType === 'LEVE5') {
             // [Ajuste] O card não tem layout diferente, apenas o texto e lógica do botão
             acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`;
+            economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(p.price)}!</div>`; // Economia de 1 unidade
         } else if (promoSpecialType === 'LEVE2') {
             acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`;
+            let valEcon = (p.price * 2) * 0.20; // 20% de desconto sobre 2 unidades
+            economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(valEcon)}!</div>`;
         } else { 
             acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; 
         }
@@ -688,6 +719,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
                 ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
                 <span class="price">${fmt(p.price || p.preco)}</span>
                 ${lbl10}
+                ${economiaHTML}
             </div>
             <div id="card-act-${p.id}">${acaoHTML}</div>
         </div>`;
@@ -843,33 +875,40 @@ window.changeKitQty = function(pId, delta) {
 window.commitExpander = function() {
     let added = false;
     Object.entries(expanderState.items).forEach(([pId, qty]) => {
-        if (qty > 0) { if (!STATE.cart[pId]) STATE.cartOrder.push(pId); STATE.cart[pId] = (STATE.cart[pId] || 0) + qty; added = true; }
+        if (qty > 0) { 
+            if (!STATE.cart[pId]) STATE.cartOrder.push(pId); 
+            STATE.cart[pId] = (STATE.cart[pId] || 0) + qty; 
+            added = true; 
+        }
     });
+    
     if(!added) return alert("Cesta vazia.");
     STATE.basketExtraFee += expanderState.priceOffset;
     
     updateTotals(); 
     saveCart();
-    
-    // [Ajuste] Rola a gaveta suavemente para a sessão "Adicione mais produtos"
+
+    // Rola para a sessão de mais produtos
     let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
     let offsetTarget = $('kit-extra-section');
     if(bodyDrawer && offsetTarget) {
         bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
     }
 
-    // [Bônus de UX] Feedback visual no botão para o cliente saber que deu certo
-    let btn = document.querySelector('#kit-drawer .btn-checkout');
-    if (btn) {
-        let originalText = btn.innerText;
-        btn.innerText = "✓ Adicionado à Sacola!";
-        btn.style.background = "var(--success)"; // Fica verde
-        
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.style.background = "var(--brand)"; // Volta a cor original
-        }, 2000);
-    }
+    // [Ajuste] Transforma o rodapé no botão flutuante padrão do site
+    let footer = $('kit-footer-container');
+    let totalFormatado = $('fc-total').innerText; // Pega o total atualizado do estado global
+    let itensFormatado = $('fc-qtd').innerText;
+
+    footer.innerHTML = `
+        <button class="drawer-cart-display" onclick="openCheckout()">
+            <div class="fc-info">
+                <span style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${itensFormatado}</span>
+                <span>Ver Sacola</span>
+            </div>
+            <div class="fc-total">${totalFormatado}</div>
+        </button>
+    `;
 };
 
 // ==========================================
