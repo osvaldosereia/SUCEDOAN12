@@ -6,11 +6,11 @@
     <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
     <title>Dona Antônia | Super Cestas Básicas</title>
 
-    <link rel="preload" href="../img/logoantonia.png" as="image">
+    <link rel="preload" href="../site/img/produtos/logoantonia.png" as="image">
 
     <style>
         /* ========================================================
-           DESIGN COM A PALETA "DONA ANTÔNIA" E CARTÕES ESPECIAIS
+           DESIGN COM A PALETA "DONA ANTÔNIA"
            ======================================================== */
         :root {
             --brand: #5A3826;        
@@ -63,12 +63,10 @@
         @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
         @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
 
-        /* SESSÕES HOME - 5 no Desktop, 4 no Mobile */
         .home-section { margin-bottom: 56px; }
         .home-section-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
         @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
 
-        /* Card Padrão */
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden;}
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
@@ -81,7 +79,6 @@
         .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
         .promo-tag.exp { background: var(--brand-light); color: var(--brand); }
 
-        /* Card Especial (Leve 5 Pague 4 / Leve 2) */
         .card-special { border: 2px solid var(--brand-light); padding: 12px; border-radius: var(--radius-img); background: #fff; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.05); }
         .card-special .card-img-wrap { margin-bottom: 8px; }
         .special-price-box { margin-top: auto; margin-bottom: 12px; background: var(--bg-page); padding: 10px; border-radius: 12px; text-align: center; border: 1px dashed var(--border-light); }
@@ -90,24 +87,20 @@
         .special-price-box .economia { font-size: 0.75rem; color: var(--success); font-weight: 800; margin-top: 6px; display: inline-block; background: #ecfdf5; padding: 4px 10px; border-radius: 20px;}
         .btn-add.special { background: var(--brand); color: #fff; }
 
-        /* Card Cesta */
         .card-basket .card-img-wrap { background: transparent; padding: 0; }
         .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
         .card-basket .card-title { -webkit-line-clamp: 1; height: auto; white-space: nowrap; font-weight: 700;}
 
-        /* Botões Padrão */
         .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
-        /* Sacola Flutuante */
         .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
         .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
         .fc-total { font-size: 1.15rem; font-weight: 800; }
 
-        /* Modal Lateral (Drawers) */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
@@ -125,6 +118,10 @@
         .list-info { flex: 1; }
         .list-name { font-size: 0.8rem; font-weight: 500; color: var(--text-gray); line-height: 1.35; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); }
+        
+        /* NOVO: Botão de Trocar Item na Cesta */
+        .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 4px 8px; background: var(--brand-light); border-radius: 6px; transition: 0.2s;}
+        .btn-swap:active { background: #e5e7eb; }
         
         .chk-section { margin-bottom: 32px; }
         .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
@@ -151,7 +148,7 @@
 <div class="app-container">
 
     <header class="top-bar">
-        <img src="../img/logoantonia.png" alt="Dona Antônia" class="logo">
+        <img src="../site/img/produtos/logoantonia.png" alt="Dona Antônia" class="logo">
         <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
     </header>
 
@@ -210,6 +207,14 @@
         </div>
     </div>
 
+    <div class="drawer" id="swap-drawer" style="z-index: 102;">
+        <div class="drawer-header">
+            <div class="drawer-title" style="font-size: 1rem;">Opções de Troca</div>
+            <button class="btn-close" onclick="closeDrawer('swap-drawer')">✕</button>
+        </div>
+        <div class="drawer-body" id="swap-items-grid"></div>
+    </div>
+
     <div class="drawer" id="checkout-drawer">
         <div class="drawer-header">
             <div class="drawer-title">Finalizar Pedido</div>
@@ -254,15 +259,12 @@
 <script>
 // ==========================================
 // CONFIGURAÇÃO DAS PROMOÇÕES ESPECIAIS
-// Use o Código ou o ID do Produto aqui
 // ==========================================
 const PROMO_CONFIG = {
     // 1. Aproveite a viagem (10% de Desconto Direto)
-    aproveite: ["1776338128673", "1776338128389", "1776338125752", "7896355700510", "1776338131374"],
-    
+    aproveite: ["1776338128673", "1776338128389", "1776338125752", "7896355700510", "1776338126174"],
     // 2. Leve 2 e economize (20% de Desconto Inteligente)
     leve2: ["1776338127057", "1776338127713", "1776338123812", "1776338123007", "1775968438873"],
-    
     // 3. Leve 5 pague 4 (1 Grátis a cada 5)
     leve5pague4: ["1775965599401", "1776338131018", "1776338123831", "1776338125770", "1776338132236"]
 };
@@ -275,7 +277,7 @@ const STATE = {
     cart: {}, cartOrder: [], maisOfertas: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-    activeCat: 'cestas', // Mudamos para 'cestas'
+    activeCat: 'cestas', // <--- Inicia em cestas
     promoIds: { leve5: [], leve2: [] }
 };
 
@@ -283,9 +285,14 @@ function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'curren
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
 function openDrawer(id) { $('overlay').classList.add('open'); $(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
-function closeDrawer(id) { $(id).classList.remove('open'); checkDrawers(); }
-function closeAllDrawers() { document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); checkDrawers(); }
-function checkDrawers() { if (!document.querySelector('.drawer.open')) { $('overlay').classList.remove('open'); document.body.style.overflow = ''; } }
+function closeDrawer(id) { 
+    $(id).classList.remove('open'); 
+    // Se fechar a aba de troca, e a aba da cesta ainda estiver aberta, não pode tirar o bloqueio de scroll
+    if (!document.querySelector('#checkout-drawer.open') && !document.querySelector('#kit-drawer.open') && !document.querySelector('#main-menu.open')) {
+        $('overlay').classList.remove('open'); document.body.style.overflow = ''; 
+    }
+}
+function closeAllDrawers() { document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); $('overlay').classList.remove('open'); document.body.style.overflow = ''; }
 
 function toggleDropdown() {
     const menu = $('dropdown-menu'); const icon = $('dropdown-icon');
@@ -360,7 +367,6 @@ function clearSearch(triggerSearch = true) {
     if(triggerSearch) { clearTimeout(searchTimeout); selectCategory(STATE.activeCat); }
 }
 
-// Busca Segura de Produtos
 function findItem(idStr) {
     if(!idStr) return null; let target = String(idStr).trim();
     return STATE.prods.find(p => p.id === target || p.blingId === target || p.codigo === target);
@@ -377,7 +383,6 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
         let isEsgotado = p.stock <= 0 && !isBasket;
 
-        // ---------- CARD ESPECIAL LEVE 5 PAGUE 4 ----------
         if (promoSpecialType === 'LEVE5') {
             let addAction = isEsgotado ? `<button class="btn-add" disabled style="background:var(--border-light); color:var(--text-gray);">Esgotado</button>` : 
                             (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` 
@@ -398,7 +403,6 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
             continue;
         }
 
-        // ---------- CARD ESPECIAL LEVE 2 (20% OFF) ----------
         if (promoSpecialType === 'LEVE2') {
             let totalFull = p.price * 2; let totalOff = totalFull * 0.80;
             let addAction = isEsgotado ? `<button class="btn-add" disabled style="background:var(--border-light); color:var(--text-gray);">Esgotado</button>` : 
@@ -420,7 +424,6 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
             continue;
         }
 
-        // ---------- CARD PADRÃO ----------
         let acaoHTML = '';
         if (isEsgotado) { acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; } 
         else if (isBasket) { acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; } 
@@ -466,23 +469,18 @@ function renderHome() {
         </div>`;
     }
 
-    // 1. Aproveite a viagem (Desconto Fixo de 10% já aplicado no init)
     let aproveiteItems = PROMO_CONFIG.aproveite.map(findItem);
     html += buildSection("Aproveite a viagem, talvez você precise", aproveiteItems, true, 'APROVEITE');
 
-    // 2. Leve 5 Pague 4
     let leve5Items = PROMO_CONFIG.leve5pague4.map(findItem);
     html += buildSection("Promoção Exclusiva: Leve 5 pague 4", leve5Items, true, 'LEVE5');
 
-    // 3. Leve 2 e Economize (20% OFF)
     let leve2Items = PROMO_CONFIG.leve2.map(findItem);
     html += buildSection("Leve 2 e economize 20%", leve2Items, true, 'LEVE2');
 
-    // 4. 30% Off (Vencimento Próximo - Ordenado pela data)
     let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
     html += buildSection("Produtos com 30% de Desconto", off30Items, true);
 
-    // 5. Mais Ofertas Imperdíveis (60 produtos sortidos de todo o site, 5% a 10% OFF)
     if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
         html += `
         <div class="home-section">
@@ -497,7 +495,7 @@ function renderHome() {
 }
 
 // ==========================================
-// EXPANDER DA CESTA
+// EXPANDER DA CESTA & FUNÇÃO TROCAR
 // ==========================================
 let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
@@ -530,6 +528,10 @@ function renderKitList() {
             <div class="list-info">
                 <div class="list-name">${p.name}</div>
                 <div class="list-price">${fmt(p.price)}</div>
+                <button class="btn-swap" onclick="openSwapView('${p.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                    Trocar
+                </button>
             </div>
             <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
                 <button onclick="changeKitQty('${pId}', -1)">-</button><span>${qty}</span><button onclick="changeKitQty('${pId}', 1)">+</button>
@@ -559,7 +561,64 @@ window.commitExpander = function() {
 };
 
 // ==========================================
-// CARRINHO, CÁLCULOS ESPECIAIS E CHECKOUT
+// INTELIGÊNCIA DE SUBSTITUIÇÃO (TROCA)
+// ==========================================
+window.openSwapView = function(oldPId) {
+    let oldProd = STATE.prods.find(x => String(x.id) === String(oldPId));
+    if(!oldProd) return;
+
+    // Lógica: Pega a primeira palavra (minúsculo e sem acento) para achar similares
+    let firstWord = norm(oldProd.name).split(' ')[0];
+    
+    // Procura na loja: mesma primeira palavra, que não seja ele mesmo, e tenha estoque
+    let similarProds = STATE.prods.filter(p => 
+        p.id !== oldProd.id && 
+        norm(p.name).split(' ')[0] === firstWord && 
+        p.stock > 0
+    );
+
+    if(similarProds.length === 0) {
+        alert("Poxa! Não encontramos produtos similares no momento para essa troca.");
+        return;
+    }
+
+    $('swap-items-grid').innerHTML = similarProds.map(p => `
+        <div class="list-item" style="background:#f9fafb; padding:12px; border-radius:12px; margin-bottom:12px; border: 1px solid var(--border-light);">
+            <div class="list-img-wrap" style="width:65px; height:65px;"><img src="${p.img}" loading="lazy"></div>
+            <div class="list-info">
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${fmt(p.price)}</div>
+            </div>
+            <button class="btn-add special" style="width: auto; padding: 8px 16px; font-size: 0.8rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">Escolher</button>
+        </div>
+    `).join('');
+
+    openDrawer('swap-drawer');
+};
+
+window.confirmSwap = function(oldPId, newPId) {
+    let qty = expanderState.items[oldPId] || 0;
+    
+    // Remove o antigo
+    delete expanderState.items[oldPId];
+    
+    // Substitui o ID na ordem exata da lista para não bagunçar o visual
+    let index = expanderState.orderedIds.indexOf(oldPId);
+    if(index !== -1) {
+        expanderState.orderedIds[index] = newPId;
+    } else {
+        expanderState.orderedIds.push(newPId);
+    }
+    
+    // Insere o novo com a mesma quantidade
+    expanderState.items[newPId] = qty;
+
+    renderKitList();
+    closeDrawer('swap-drawer');
+};
+
+// ==========================================
+// CARRINHO E CHECKOUT (COM MATEMÁTICA DE PROMOÇÃO)
 // ==========================================
 function upd(id, delta) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
@@ -582,7 +641,6 @@ function updateTotals() {
         if (p) { 
             sum += p.price * q; count += q; 
             
-            // Matemática Dinâmica do Desconto na Sacola
             if (STATE.promoIds.leve5.includes(p.id)) {
                 let itemsGratis = Math.floor(q / 5);
                 customPromoDiscount += (itemsGratis * p.price);
@@ -689,63 +747,48 @@ async function init() {
         const [r1, r2] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods') ]);
         STATE.baskets = r1 || [];
 
-       if (r2 && r2.length > 0) {
+        if (r2 && r2.length > 0) {
             let hTime = new Date().getTime();
             
-            // 1. Cria o catálogo básico
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                 let pBase = parseFloat(p.preco) * 1.01;
                 let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
+                let price = pBase; let dPv = (validade - hTime) / 86400000;
+                let is30Off = false;
+                
+                if (dPv <= 60 && parseInt(p.estoque) > 0) { 
+                    if (dPv < 30) { price = pBase * 0.70; is30Off = true; } 
+                    else if (dPv <= 40) price = pBase * 0.80; 
+                    else if (dPv <= 60) price = pBase * 0.90; 
+                }
                 
                 return { 
                     id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), name: p.nome, 
-                    price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
+                    price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                    categoria: p.categoria || "Outros", _is30Off: false, _valTime: validade
+                    categoria: p.categoria || "Outros", _is30Off: is30Off, _valTime: validade
                 };
             });
 
-            // ==========================================
-            // NOVA LÓGICA: 30% OFF NOS MAIS PRÓXIMOS A VENCER
-            // ==========================================
-            // Separa apenas os produtos que têm data de validade e estão em estoque
-            let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
-            
-            // Ordena os produtos colocando os que vencem mais rápido no topo da lista
-            produtosComValidade.sort((a, b) => a._valTime - b._valTime);
-
-            // Pega os 5 produtos mais próximos de vencer e aplica 30% de desconto neles
-            produtosComValidade.slice(0, 5).forEach(p => {
-                p.price = p.oldPrice * 0.70; // Reduz o preço em 30%
-                p._is30Off = true;           // Aciona a tag visual de 30% OFF
-            });
-            // ==========================================
-
-            // 2. Aplica o desconto de 10% aos produtos da aba "Aproveite a Viagem"
             PROMO_CONFIG.aproveite.forEach(idStr => {
                 let p = findItem(idStr);
-                if(p) { p.price = p.oldPrice * 0.90; } // Desconto de 10% direto
+                if(p) { p.price = p.oldPrice * 0.90; } 
             });
-           
 
-            // 3. Monta os Departamentos
             STATE.prods.forEach(p => { 
                 let cId = 'cat_' + norm(p.categoria).replace(/[^a-z0-9]/g, '_');
                 if (!STATE.deptos[cId]) STATE.deptos[cId] = { title: p.categoria || "Outros", data: [] };
                 STATE.deptos[cId].data.push(p); 
             });
 
-            // 4. Salva IDs formatados para cálculo dinâmico da Sacola (Leve 2 e Leve 5)
             STATE.promoIds.leve5 = PROMO_CONFIG.leve5pague4.map(findItem).filter(Boolean).map(p => p.id);
             STATE.promoIds.leve2 = PROMO_CONFIG.leve2.map(findItem).filter(Boolean).map(p => p.id);
 
-            // 5. Robô para sortear 60 produtos "Mais Ofertas" (com 5% a 10% de desconto)
             let usedIds = new Set([...STATE.promoIds.leve5, ...STATE.promoIds.leve2, ...PROMO_CONFIG.aproveite.map(findItem).filter(Boolean).map(p => p.id)]);
-            STATE.prods.forEach(p => { if (p._is30Off) usedIds.add(p.id); }); // Não repete os vencidos
+            STATE.prods.forEach(p => { if (p._is30Off) usedIds.add(p.id); }); 
 
             let availableProds = STATE.prods.filter(p => !usedIds.has(p.id) && p.stock > 0);
             
-            // Agrupa por categoria para pegar variado
             let byCat = {};
             availableProds.forEach(p => { if(!byCat[p.categoria]) byCat[p.categoria] = []; byCat[p.categoria].push(p); });
 
@@ -754,7 +797,6 @@ async function init() {
                 let cat = cats[i % cats.length];
                 if(byCat[cat].length > 0) {
                     let p = byCat[cat].shift();
-                    // Aplica 5% a 10% de desconto aleatório
                     let desc = 0.05 + (Math.random() * 0.05);
                     p.price = p.oldPrice * (1 - desc);
                     maisOfertas.push(p);
@@ -770,7 +812,7 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
-        selectCategory('cestas'); // Mudamos para abrir as cestas primeiro
+        selectCategory('cestas'); // Inicia focado em cestas conforme você pediu antes
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
 }
