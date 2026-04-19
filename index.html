@@ -8,96 +8,117 @@
 
     <style>
         /* ========================================================
-           DESIGN CONSOLIDADO DE E-COMMERCE (TIPO IFOOD/RAPPI)
+           DESIGN CLEAN & DESKTOP-READY
            ======================================================== */
         :root {
             --brand: #e11d48;
             --brand-light: #fff1f2;
-            --bg-page: #f9fafb;
-            --bg-card: #ffffff;
+            --bg-page: #ffffff;
+            --bg-img: #f3f4f6; /* Fundo arredondado cinza claro */
             --text-dark: #111827;
-            --text-gray: #6b7280;
-            --border: #e5e7eb;
+            --text-gray: #4b5563;
+            --border-light: #f3f4f6;
             --success: #10b981;
-            --radius: 8px;
+            --radius-img: 16px;
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-page); color: var(--text-dark); overflow-x: hidden; padding-bottom: 80px; }
-        button { border: none; background: none; cursor: pointer; font-weight: 600; }
+        body { background-color: var(--bg-page); color: var(--text-dark); overflow-x: hidden; padding-bottom: 90px; }
+        button { border: none; background: none; cursor: pointer; font-weight: 600; outline: none; }
         img { max-width: 100%; height: auto; }
 
-        /* Container Limitador para Desktop (mantém proporção de App) */
-        .app-container { max-width: 600px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
+        /* Container Principal Ajustável (Desktop e Mobile) */
+        .app-container { max-width: 1200px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; }
 
-        /* Cabeçalho Fixo */
-        .header { background: #fff; padding: 16px; text-align: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; display: flex; flex-direction: column; gap: 12px;}
-        .logo { height: 45px; object-fit: contain; }
-        .search-bar { width: 100%; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-page); font-size: 0.95rem; outline: none; }
-        .search-bar:focus { border-color: var(--brand); }
+        /* Top Bar com Logo e Menu Hambúrguer (Some no Scroll) */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; transition: height 0.3s, opacity 0.3s, padding 0.3s; background: #fff; z-index: 50; position: sticky; top: 0; overflow: hidden; height: 75px; border-bottom: 1px solid var(--border-light); }
+        .top-bar.scrolled { height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; border-color: transparent; }
+        .logo { height: 35px; object-fit: contain; }
+        .btn-menu { font-size: 1.8rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
 
-        /* Barra de Categorias Horizontal (Sticky) */
-        .category-nav { background: #fff; padding: 12px 16px; display: flex; gap: 12px; overflow-x: auto; white-space: nowrap; position: sticky; top: 125px; z-index: 40; border-bottom: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); scrollbar-width: none; }
+        /* Barra de Busca (Fixa logo abaixo da Logo) */
+        .search-area { padding: 12px 20px; background: #fff; position: sticky; top: 0; z-index: 40; transition: 0.3s; }
+        .search-bar { width: 100%; padding: 14px 16px; border-radius: 12px; border: none; background: var(--border-light); font-size: 0.95rem; outline: none; transition: 0.2s; }
+        .search-bar:focus { box-shadow: 0 0 0 2px var(--brand-light); }
+
+        /* Barra de Categorias Horizontal */
+        .category-nav { background: #fff; padding: 0 20px 16px; display: flex; gap: 12px; overflow-x: auto; white-space: nowrap; position: sticky; top: 68px; z-index: 40; scrollbar-width: none; border-bottom: 1px solid var(--border-light); }
         .category-nav::-webkit-scrollbar { display: none; }
-        .cat-chip { padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; color: var(--text-gray); font-weight: 600; background: var(--bg-page); transition: 0.2s; }
-        .cat-chip.active { background: var(--brand); color: #fff; }
+        .cat-chip { padding: 8px 18px; border-radius: 20px; font-size: 0.9rem; color: var(--text-gray); font-weight: 500; background: transparent; transition: 0.2s; border: 1px solid #e5e7eb; }
+        .cat-chip.active { background: var(--text-dark); color: #fff; border-color: var(--text-dark); }
 
-        /* Grid de Produtos */
-        .main-content { padding: 16px; }
-        .section-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 16px; color: var(--text-dark); }
-        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        /* Grid de Produtos Clean */
+        .main-content { padding: 32px 20px; }
+        .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 16px; }
+        
+        @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } .search-area { top: 0 !important; } }
+        @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
 
-        /* Cards de Produto (Padrão Catálogo) */
-        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; position: relative; }
-        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
-        .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text-dark); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em; }
-        .card-price-row { display: flex; align-items: baseline; gap: 6px; margin-top: auto; margin-bottom: 12px; flex-wrap: wrap; }
-        .price { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); }
-        .old-price { font-size: 0.8rem; color: var(--text-gray); text-decoration: line-through; }
-        .atacado-tag { font-size: 0.7rem; color: var(--success); background: #ecfdf5; padding: 2px 6px; border-radius: 4px; font-weight: 700; width: fit-content;}
+        /* Cards de Produto sem Bordas */
+        .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; }
+        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 16px; padding: 12px; }
+        .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; }
+        
+        /* Fonte mais fina e até 3 linhas */
+        .card-title { font-size: 0.85rem; font-weight: 500; line-height: 1.35; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 3.9em; }
+        .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
+        .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
+        .old-price { font-size: 0.8rem; color: #9ca3af; text-decoration: line-through; }
+        
+        /* Botões Limpos */
+        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; transition: 0.2s; }
+        .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--border-light); border-radius: 10px; height: 40px; overflow: hidden; }
+        .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); transition: 0.2s; }
+        .qty-control button:active { background: #e5e7eb; }
+        .qty-control span { font-weight: 700; font-size: 1rem; color: var(--text-dark); }
 
-        /* Ações de Compra no Card */
-        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(225,29,72,0.2); }
-        .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border); border-radius: 6px; height: 38px; }
-        .qty-control button { width: 38px; height: 100%; font-size: 1.2rem; color: var(--brand); }
-        .qty-control span { font-weight: 700; font-size: 0.95rem; }
-
-        /* Sacola Flutuante (Floating Cart) */
-        .floating-cart { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 568px; background: var(--brand); color: #fff; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(225,29,72,0.4); z-index: 90; cursor: pointer; transition: transform 0.3s; }
+        /* Sacola Flutuante */
+        .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--text-dark); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.15); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
-        .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 600; }
-        .fc-total { font-size: 1.1rem; font-weight: 800; }
+        .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
+        .fc-total { font-size: 1.15rem; font-weight: 800; }
 
-        /* Drawer / Modal Lateral para Sacola e Kits */
-        .drawer { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; display: flex; justify-content: flex-end; }
-        .drawer.open { opacity: 1; pointer-events: auto; }
-        .drawer-content { width: 100%; max-width: 400px; background: #fff; height: 100%; transform: translateX(100%); transition: 0.3s; display: flex; flex-direction: column; }
-        .drawer.open .drawer-content { transform: translateX(0); }
+        /* Modal Lateral (Drawers) */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
+        .overlay.open { opacity: 1; pointer-events: auto; }
+        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; flex-direction: column; box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
+        .drawer.open { transform: translateX(0); }
         
-        .drawer-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; background: #fff; }
-        .drawer-title { font-weight: 800; font-size: 1.2rem; }
-        .btn-close { font-size: 1.5rem; color: var(--text-dark); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+        .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; }
+        .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
         
-        .drawer-body { flex: 1; overflow-y: auto; padding: 16px; background: var(--bg-page); }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; }
         
-        /* Checkout Form */
-        .chk-section { background: #fff; padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px; }
-        .chk-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
-        .input-text { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 1rem; outline: none; }
-        .input-text:focus { border-color: var(--brand); }
-        .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .pay-btn { padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; font-weight: 600; color: var(--text-gray); }
-        .pay-btn.selected { border-color: var(--brand); background: var(--brand-light); color: var(--brand); }
+        /* Estilo Limpo de Listas (Kits e Checkout) */
+        .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
+        .list-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .list-img-wrap { width: 70px; height: 70px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
+        .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .list-info { flex: 1; }
+        .list-name { font-size: 0.85rem; font-weight: 500; color: var(--text-gray); line-height: 1.3; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .list-price { font-size: 1rem; font-weight: 800; color: var(--text-dark); }
         
-        .drawer-footer { padding: 16px; background: #fff; border-top: 1px solid var(--border); box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
-        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; color: var(--text-gray); }
-        .summary-row.total { font-size: 1.3rem; font-weight: 800; color: var(--text-dark); margin-bottom: 16px; }
-        .btn-checkout { width: 100%; background: var(--success); color: #fff; padding: 16px; border-radius: 8px; font-weight: 800; font-size: 1.1rem; }
+        /* Checkout Forms */
+        .chk-section { margin-bottom: 32px; }
+        .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; }
+        .input-text { width: 100%; padding: 14px; border: none; background: var(--border-light); border-radius: 12px; margin-bottom: 12px; font-size: 1rem; outline: none; transition: 0.2s; }
+        .input-text:focus { box-shadow: 0 0 0 2px var(--text-dark); }
+        .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .pay-btn { padding: 14px; border: 1px solid #e5e7eb; border-radius: 12px; background: #fff; font-weight: 500; color: var(--text-gray); transition: 0.2s; }
+        .pay-btn.selected { border-color: var(--text-dark); background: var(--text-dark); color: #fff; }
+        
+        .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; color: var(--text-gray); font-weight: 500;}
+        .summary-row.total { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
+        .btn-checkout { width: 100%; background: var(--brand); color: #fff; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; }
 
-        /* Loader */
-        #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text-gray); }
+        /* Menu Principal (Hambúrguer) */
+        .menu-link { display: block; padding: 16px 0; font-size: 1.1rem; font-weight: 500; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
+        
+        #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-gray); }
     </style>
 </head>
 <body>
@@ -106,80 +127,99 @@
 
 <div class="app-container">
 
-    <header class="header">
-        <img src="/site/img/produtos/logoantonia.png" alt="Dona Antônia" class="logo">
-        <input type="text" id="search-input" class="search-bar" placeholder="Buscar produtos..." oninput="doSearch()">
+    <header class="top-bar" id="top-bar">
+        <img src="../site/img/produtos/logoantonia.png" alt="Dona Antônia" class="logo">
+        <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
     </header>
 
-    <nav class="category-nav" id="cat-nav">
-        </nav>
+    <div class="search-area" id="search-area">
+        <input type="text" id="search-input" class="search-bar" placeholder="O que você precisa hoje?" oninput="doSearch()">
+    </div>
+
+    <nav class="category-nav" id="cat-nav"></nav>
 
     <main class="main-content">
         <h2 class="section-title" id="grid-title">Carregando...</h2>
-        <div class="product-grid" id="main-grid">
-            </div>
+        <div class="product-grid" id="main-grid"></div>
     </main>
 
     <div class="floating-cart hidden" id="floating-cart" onclick="openCheckout()">
         <div class="fc-info">
-            <span id="fc-qtd" style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px;">0 itens</span>
+            <span id="fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">0 itens</span>
             <span>Ver Sacola</span>
         </div>
         <div class="fc-total" id="fc-total">R$ 0,00</div>
     </div>
 
-    <div class="drawer" id="checkout-drawer">
-        <div class="drawer-content">
-            <div class="drawer-header">
-                <button class="btn-close" onclick="closeCheckout()">×</button>
-                <div class="drawer-title">Finalizar Pedido</div>
-            </div>
-            <div class="drawer-body">
-                <div class="chk-section" id="chk-items-list" style="display:flex; flex-direction:column; gap:12px;"></div>
-                
-                <div class="chk-section">
-                    <div class="chk-title">Agendamento</div>
-                    <div class="pay-options" id="delivery-options-list"></div>
-                </div>
+    <div class="overlay" id="overlay" onclick="closeAllDrawers()"></div>
 
-                <div class="chk-section">
-                    <div class="chk-title">Seus Dados</div>
-                    <input type="text" id="chk-nome" class="input-text" placeholder="Nome Completo">
-                    <input type="text" id="chk-cpf" class="input-text" placeholder="CPF (Opcional)" style="margin-bottom:0;">
-                </div>
-
-                <div class="chk-section">
-                    <div class="chk-title">Pagamento na Entrega</div>
-                    <div class="pay-options">
-                        <button class="pay-btn" onclick="selectPayment('Dinheiro', this)">Dinheiro</button>
-                        <button class="pay-btn" onclick="selectPayment('PIX', this)">PIX</button>
-                        <button class="pay-btn" onclick="selectPayment('Débito', this)">Débito</button>
-                        <button class="pay-btn" onclick="selectPayment('Crédito', this)">Crédito</button>
-                        <button class="pay-btn" onclick="selectPayment('Alimentação', this)" style="grid-column: span 2;">Vale Alimentação</button>
-                    </div>
-                    <input type="hidden" id="chk-pagamento">
-                </div>
-            </div>
-            <div class="drawer-footer">
-                <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos</span><span id="sum-desc">R$ 0,00</span></div>
-                <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
-                <button class="btn-checkout" id="btn-send-order" onclick="sendOrder()">Enviar pelo WhatsApp</button>
+    <div class="drawer" id="main-menu">
+        <div class="drawer-header">
+            <div class="drawer-title">Dona Antônia</div>
+            <button class="btn-close" onclick="closeDrawer('main-menu')">✕</button>
+        </div>
+        <div class="drawer-body">
+            <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectCategory('cestas'); window.scrollTo(0,0);">🛒 Cestas Básicas</a>
+            <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectCategory('ofertas'); window.scrollTo(0,0);">🔥 Ofertas</a>
+            <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="menu-link" style="color: var(--success);">💬 Atendimento WhatsApp</a>
+            
+            <div style="margin-top: 32px; padding: 20px; background: var(--bg-img); border-radius: 16px;">
+                <h4 style="margin-bottom: 12px; font-weight: 800;">Informações</h4>
+                <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 8px;">🚚 <b>Entrega Grátis:</b> Cuiabá e Várzea Grande.</p>
+                <p style="font-size: 0.85rem; color: var(--text-gray); margin-bottom: 8px;">📦 <b>Pedido Mínimo:</b> R$ 75,00.</p>
+                <p style="font-size: 0.85rem; color: var(--text-gray);">💳 <b>Pagamentos:</b> Cartão, Alimentação, PIX e Dinheiro na entrega.</p>
             </div>
         </div>
     </div>
 
     <div class="drawer" id="kit-drawer">
-        <div class="drawer-content">
-            <div class="drawer-header">
-                <button class="btn-close" onclick="closeKit()">×</button>
-                <div class="drawer-title" id="kit-title">Itens do Kit</div>
+        <div class="drawer-header">
+            <div class="drawer-title" id="kit-title">Personalizar Cesta</div>
+            <button class="btn-close" onclick="closeDrawer('kit-drawer')">✕</button>
+        </div>
+        <div class="drawer-body" id="kit-items-grid"></div>
+        <div class="drawer-footer">
+            <div class="summary-row total"><span>Total da Cesta</span><span id="kit-total-price">R$ 0,00</span></div>
+            <button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>
+        </div>
+    </div>
+
+    <div class="drawer" id="checkout-drawer">
+        <div class="drawer-header">
+            <div class="drawer-title">Finalizar Pedido</div>
+            <button class="btn-close" onclick="closeDrawer('checkout-drawer')">✕</button>
+        </div>
+        <div class="drawer-body">
+            <div class="chk-section" id="chk-items-list"></div>
+            
+            <div class="chk-section">
+                <div class="chk-title">Agendamento</div>
+                <div class="pay-options" id="delivery-options-list"></div>
             </div>
-            <div class="drawer-body" id="kit-items-grid" style="display:flex; flex-direction:column; gap:12px;"></div>
-            <div class="drawer-footer">
-                <div class="summary-row total"><span>Total do Kit</span><span id="kit-total-price">R$ 0,00</span></div>
-                <button class="btn-checkout" style="background: var(--brand);" onclick="commitExpander()">Adicionar Kit</button>
+
+            <div class="chk-section">
+                <div class="chk-title">Seus Dados</div>
+                <input type="text" id="chk-nome" class="input-text" placeholder="Nome Completo">
+                <input type="text" id="chk-cpf" class="input-text" placeholder="CPF (Opcional)">
             </div>
+
+            <div class="chk-section">
+                <div class="chk-title">Pagamento na Entrega</div>
+                <div class="pay-options">
+                    <button class="pay-btn" onclick="selectPayment('Dinheiro', this)">Dinheiro</button>
+                    <button class="pay-btn" onclick="selectPayment('PIX', this)">PIX</button>
+                    <button class="pay-btn" onclick="selectPayment('Débito', this)">Débito</button>
+                    <button class="pay-btn" onclick="selectPayment('Crédito', this)">Crédito</button>
+                    <button class="pay-btn" onclick="selectPayment('Alimentação', this)" style="grid-column: span 2;">Vale Alimentação</button>
+                </div>
+                <input type="hidden" id="chk-pagamento">
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
+            <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos</span><span id="sum-desc">R$ 0,00</span></div>
+            <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
+            <button class="btn-checkout" id="btn-send-order" onclick="sendOrder()">Enviar pelo WhatsApp</button>
         </div>
     </div>
 
@@ -187,311 +227,262 @@
 
 <script>
 // ==========================================
-// ESTADO E LÓGICA PRESERVADOS
+// ESTADO E LÓGICA PRINCIPAL
 // ==========================================
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00;
 const $ = id => document.getElementById(id);
 
 const STATE = {
-    prods: [], baskets: [], combos: [], deptos: {},
+    prods: [], baskets: [], deptos: {},
     cart: {}, cartOrder: [],
-    baseBasket: null, basketExtraFee: 0, comboDiscount: 0, atacadoDiscount: 0,
+    basketExtraFee: 0, atacadoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
     activeCat: 'cestas'
 };
 
-// Formatação
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
+// Scroll Control
+window.addEventListener('scroll', () => {
+    let currentScroll = window.scrollY;
+    let topBar = $('top-bar');
+    let searchArea = $('search-area');
+    let catNav = $('cat-nav');
+    
+    if (currentScroll > 40) {
+        topBar.classList.add('scrolled');
+        searchArea.style.top = '0';
+        catNav.style.top = searchArea.offsetHeight + 'px';
+    } else {
+        topBar.classList.remove('scrolled');
+        searchArea.style.top = '0';
+        catNav.style.top = (75 + searchArea.offsetHeight) + 'px'; // 75px é a altura da top-bar
+    }
+});
+
+// Drawers
+function openDrawer(id) { $('overlay').classList.add('open'); $(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeDrawer(id) { $(id).classList.remove('open'); checkDrawers(); }
+function closeAllDrawers() { document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); checkDrawers(); }
+function checkDrawers() { if (!document.querySelector('.drawer.open')) { $('overlay').classList.remove('open'); document.body.style.overflow = ''; } }
+
 // ==========================================
-// RENDERIZAÇÃO DA INTERFACE (APP STYLE)
+// RENDERIZAÇÃO
 // ==========================================
 function renderCategories() {
-    const cats = [
+    const priority = ['cestas', 'ofertas', 'cat_mercearia_basica', 'cat_limpeza', 'cat_higiene', 'cat_beleza', 'cat_cafe_da_manha'];
+    let cats = [
         { id: 'cestas', title: 'Cestas Básicas' },
-        { id: 'ofertas', title: 'Ofertas 🔥' },
-        { id: 'kits', title: 'Kits Promo' },
-        ...Object.keys(STATE.deptos).filter(k => k.startsWith('cat_')).map(k => ({ id: k, title: STATE.deptos[k].title }))
+        { id: 'ofertas', title: 'Ofertas' },
+        ...Object.keys(STATE.deptos).map(k => ({ id: k, title: STATE.deptos[k].title }))
     ];
 
-    $('cat-nav').innerHTML = cats.map(c => 
-        `<button class="cat-chip ${STATE.activeCat === c.id ? 'active' : ''}" onclick="selectCategory('${c.id}')">${c.title}</button>`
-    ).join('');
+    cats.sort((a, b) => {
+        let idxA = priority.indexOf(a.id); let idxB = priority.indexOf(b.id);
+        if(idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if(idxA !== -1) return -1;
+        if(idxB !== -1) return 1;
+        return a.title.localeCompare(b.title);
+    });
+
+    $('cat-nav').innerHTML = cats.map(c => `<button class="cat-chip ${STATE.activeCat === c.id ? 'active' : ''}" onclick="selectCategory('${c.id}')">${c.title}</button>`).join('');
 }
 
 function selectCategory(id) {
-    STATE.activeCat = id;
-    renderCategories();
-    $('search-input').value = '';
+    STATE.activeCat = id; renderCategories(); $('search-input').value = '';
     
     if (id === 'cestas') { $('grid-title').innerText = "Cestas Básicas"; renderGrid(STATE.baskets, 'BASKET'); }
-    else if (id === 'kits') { $('grid-title').innerText = "Kits Promocionais"; renderGrid(STATE.combos, 'COMBO'); }
-    else if (id === 'ofertas') { $('grid-title').innerText = "Ofertas (Vencimento Próximo)"; renderGrid(STATE.prods.filter(p => p.price < p.oldPrice), 'PROD'); }
+    else if (id === 'ofertas') { $('grid-title').innerText = "Ofertas"; renderGrid(STATE.prods.filter(p => p.price < p.oldPrice), 'PROD'); }
     else { $('grid-title').innerText = STATE.deptos[id].title; renderGrid(STATE.deptos[id].data, 'PROD'); }
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderGrid(items, type) {
-    if (!items || items.length === 0) { $('main-grid').innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#6b7280; padding: 20px;">Nenhum produto encontrado.</p>'; return; }
+    if (!items || items.length === 0) { $('main-grid').innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#9ca3af;">Nenhum produto encontrado.</p>'; return; }
     
     $('main-grid').innerHTML = items.map(p => {
         let q = STATE.cart[p.id] || 0;
-        let isKit = type === 'BASKET' || type === 'COMBO';
-        
-        let acaoHTML = '';
-        if (isKit) {
-            acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}', '${type}')">Ver Itens</button>`;
-        } else {
-            acaoHTML = q > 0 
-                ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`
-                : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`;
-        }
+        let isBasket = type === 'BASKET';
+        let acaoHTML = isBasket ? `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens da Cesta</button>` : (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`);
 
         return `
         <div class="card">
-            <div class="card-img-wrap"><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" alt="${p.name || p.nome}" loading="lazy"></div>
+            <div class="card-img-wrap"><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" alt="Foto" loading="lazy"></div>
             <div class="card-title">${p.name || p.nome}</div>
             <div class="card-price-row">
                 ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
                 <span class="price">${fmt(p.price || p.preco)}</span>
-                ${type === 'PROD' && !isKit && p.price ? `<div class="atacado-tag">3+ por ${fmt(p.price * 0.90)}</div>` : ''}
             </div>
             <div id="card-act-${p.id}">${acaoHTML}</div>
         </div>`;
     }).join('');
 }
 
-// Busca Simples
 function doSearch() {
-    let q = norm($('search-input').value);
-    if(q.length < 2) return selectCategory('cestas');
+    let q = norm($('search-input').value); if(q.length < 2) return selectCategory('cestas');
     document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
-    $('grid-title').innerText = "Resultados da Busca";
-    renderGrid(STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q)), 'PROD');
+    $('grid-title').innerText = "Resultados"; renderGrid(STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q)), 'PROD');
 }
 
 // ==========================================
-// LÓGICA DE CARRINHO (REUTILIZADA INTACTA)
+// CESTAS EDITÁVEIS (EXPANDER)
 // ==========================================
-function upd(id, delta) {
-    let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
-    let cur = STATE.cart[id] || 0; let n = Math.max(0, cur + delta);
-    if (n > p.stock) return alert("Estoque insuficiente");
-    
-    if (cur === 0 && n > 0) STATE.cartOrder.push(id);
-    STATE.cart[id] = n;
-    if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); }
-    
-    // Atualiza apenas a área de ação do card (Rápido e limpo)
-    let actBox = $(`card-act-${id}`);
-    if (actBox) {
-        actBox.innerHTML = n > 0 
-            ? `<div class="qty-control"><button onclick="upd('${id}', -1)">-</button><span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>`
-            : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
-    }
-    
-    updateTotals();
-    if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
-}
+let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
-function updateTotals() {
-    let sum = 0; let count = 0; let atacadoDiscount = 0;
-    Object.entries(STATE.cart).forEach(([id, q]) => { 
-        let p = STATE.prods.find(x => String(x.id) === String(id)); 
-        if (p) { sum += p.price * q; count += q; if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; } 
-    });
-    
-    STATE.atacadoDiscount = atacadoDiscount;
-    let subtotal = sum + STATE.basketExtraFee;
-    let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - STATE.atacadoDiscount;
-    
-    // Mostra/Esconde Sacola Flutuante
-    let fc = $('floating-cart');
-    if (count > 0) {
-        fc.classList.remove('hidden');
-        $('fc-qtd').innerText = `${count} item(s)`;
-        $('fc-total').innerText = fmt(final);
-    } else {
-        fc.classList.add('hidden');
-    }
-}
-
-// ==========================================
-// CHECKOUT E ENVIO MAKE + WHATSAPP (INTACTO)
-// ==========================================
-function openCheckout() {
-    if (STATE.cartOrder.length === 0) return;
-    
-    // Opções de Entrega
-    let options = []; let date = new Date(); let checkDate = new Date(date);
-    if (date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) 
-        options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
-    
-    while(options.length < 3) { 
-        checkDate.setDate(checkDate.getDate() + 1); 
-        if(!CONFIG_ENTREGA.diasSemanaInativos.includes(checkDate.getDay())) { 
-            let desc = options.length === 0 ? 0 : (options.length === 1 ? CONFIG_ENTREGA.descontoOpcao2 : CONFIG_ENTREGA.descontoOpcao3); 
-            options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); 
-        } 
-    }
-    STATE.deliveryOptions = options;
-    let sel = options[STATE.selectedDeliveryIndex || 0]; 
-    STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
-    
-    $('delivery-options-list').innerHTML = options.map((opt, i) => 
-        `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">
-            ${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}
-        </button>`
-    ).join('');
-
-    renderCheckoutItems();
-    $('checkout-drawer').classList.add('open');
-}
-
-function closeCheckout() { $('checkout-drawer').classList.remove('open'); }
-
-function selectDelivery(idx) {
-    STATE.selectedDeliveryIndex = idx;
-    let sel = STATE.deliveryOptions[idx];
-    STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
-    openCheckout(); // Re-renderiza para atualizar seleções
-    updateTotals();
-}
-
-function selectPayment(metodo, btn) {
-    $('chk-pagamento').value = metodo;
-    document.querySelectorAll('#checkout-drawer .pay-btn').forEach(el => el.classList.remove('selected'));
-    btn.classList.add('selected');
-}
-
-function renderCheckoutItems() {
-    $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
-        let p = STATE.prods.find(x => String(x.id) === String(id));
-        let q = STATE.cart[id];
-        return `
-        <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
-            <img src="${p.img}" style="width:40px; height:40px; object-fit:contain; border-radius:4px;">
-            <div style="flex:1;">
-                <div style="font-size:0.9rem; font-weight:600;">${p.name}</div>
-                <div style="font-size:0.85rem; color:var(--text-gray);">${fmt(p.price)} un</div>
-            </div>
-            <div class="qty-control" style="width: 80px; height: 32px;">
-                <button onclick="upd('${id}', -1)">-</button><span style="font-size:0.9rem;">${q}</span><button onclick="upd('${id}', 1)">+</button>
-            </div>
-        </div>`;
-    }).join('');
-
-    let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
-    let totalDesc = STATE.comboDiscount + STATE.atacadoDiscount + STATE.deliveryDiscount;
-    let subtotal = sum + STATE.basketExtraFee;
-    let final = subtotal - totalDesc;
-
-    $('sum-sub').innerText = fmt(subtotal);
-    $('sum-desc').innerText = `- ${fmt(totalDesc)}`;
-    $('sum-desc-row').style.display = totalDesc > 0 ? 'flex' : 'none';
-    $('sum-total').innerText = fmt(final);
-
-    let btn = $('btn-send-order');
-    if (final < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-gray)'; }
-    else { btn.disabled = false; btn.innerText = 'Enviar pelo WhatsApp'; btn.style.background = 'var(--success)'; }
-}
-
-function sendOrder() {
-    const btnSubmit = $('btn-send-order'); if (btnSubmit.disabled) return;
-    const nomeCliente = $('chk-nome').value.trim(); const cpfCliente = $('chk-cpf').value.trim(); const formaPagamento = $('chk-pagamento').value;
-
-    if (!nomeCliente) return alert("Preencha seu nome.");
-    if (!formaPagamento) return alert("Escolha o pagamento.");
-
-    btnSubmit.disabled = true; btnSubmit.innerText = "Processando...";
-
-    const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let itensParaNuvem = []; let totalBruto = 0; 
-    Object.entries(STATE.cart).forEach(([cartId, q]) => { 
-        const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
-        if (p) { 
-            let unitPrice = p.price; totalBruto += unitPrice * q; itemsTxt += `${q}x ${p.name}\n`; 
-            apiItens.push({ id: String(p.blingId || p.id), nome: p.name, qtd: q, price: unitPrice });
-            itensParaNuvem.push({ qtd: q, nomeOriginal: p.name, sku: p.codigo || p.id, precoUnitario: unitPrice, imagem: p.img });
-        } 
-    });
-      
-    let totalDesc = STATE.comboDiscount + STATE.deliveryDiscount + STATE.atacadoDiscount;
-    let final = totalBruto + STATE.basketExtraFee - totalDesc;
-    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
-
-    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
-    if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-    
-    const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nomeCliente}\n*PAGAMENTO:* ${formaPagamento}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
-    
-    const payload = { 
-        cliente: { nome: nomeCliente, cpf: cpfCliente, pagamento: formaPagamento }, 
-        pedido: { itens: apiItens, total: Number(final), outras_despesas: Number(STATE.basketExtraFee), desconto: Number(totalDesc), observacoes: obs },
-        registroNuvem: { id: Date.now(), status: "PENDENTE", orderNum: `#${orderId}`, cliente: nomeCliente, entrega: STATE.deliveryDateStr, valorTotal: final.toFixed(2), itens: itensParaNuvem }
-    };
-    
-    fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
-  
-    window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
-    setTimeout(() => { btnSubmit.disabled = false; btnSubmit.innerText = `Enviar pelo WhatsApp`; }, 3000);
-}
-
-// ==========================================
-// LÓGICA DE KITS E EXPANDER (MANTIDA)
-// ==========================================
-let expanderState = { items: {}, sourceObj: null, type: null, orderedIds: [] };
-
-window.openKitLateralView = function(id, type) {
-    let sourceObj = type === 'BASKET' ? STATE.baskets.find(x => String(x.id) === String(id)) : STATE.combos.find(x => String(x.id) === String(id)); if (!sourceObj) return;
-    expanderState = { items: {}, sourceObj, type, orderedIds: [] };
+window.openKitLateralView = function(id) {
+    let sourceObj = STATE.baskets.find(x => String(x.id) === String(id)); if (!sourceObj) return;
+    expanderState = { items: {}, sourceObj, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
     sourceObj.produtos.forEach(s => {
         let partes = String(s).split('x');
         if (partes.length > 1) { 
             let pId = partes[1].trim(); let qty = parseInt(partes[0]); 
             let p = STATE.prods.find(x => String(x.id) === pId); 
-            if (p) { expanderState.items[pId] = qty; expanderState.orderedIds.push(pId); } 
+            if (p) { expanderState.items[pId] = qty; expanderState.orderedIds.push(pId); expanderState.originalSum += (p.price * qty); } 
         }
     });
 
-    $('kit-title').innerText = sourceObj.nome || sourceObj.name;
-    $('kit-total-price').innerText = fmt(sourceObj.preco || sourceObj.price);
-    
+    expanderState.priceOffset = Math.max(0, sourceObj.preco - expanderState.originalSum);
+    $('kit-title').innerText = sourceObj.nome;
+    renderKitList(); openDrawer('kit-drawer');
+};
+
+function renderKitList() {
+    let currentSum = 0;
     $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => {
-        let p = STATE.prods.find(x => String(x.id) === pId);
-        let qty = expanderState.items[pId];
+        let p = STATE.prods.find(x => String(x.id) === pId); let qty = expanderState.items[pId];
+        currentSum += p.price * qty;
         return `
-        <div style="display:flex; align-items:center; gap:12px; background:#fff; padding:12px; border-radius:8px; border:1px solid var(--border);">
-            <img src="${p.img}" style="width:50px; height:50px; object-fit:contain;">
-            <div style="flex:1;">
-                <div style="font-weight:600; font-size:0.9rem;">${p.name}</div>
-                <div style="color:var(--text-gray); font-size:0.8rem;">Qtd inclusa: ${qty} un</div>
+        <div class="list-item">
+            <div class="list-img-wrap"><img src="${p.img}"></div>
+            <div class="list-info">
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${fmt(p.price)}</div>
+            </div>
+            <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
+                <button onclick="changeKitQty('${pId}', -1)">-</button><span>${qty}</span><button onclick="changeKitQty('${pId}', 1)">+</button>
+            </div>
+        </div>`;
+    }).join('');
+    
+    expanderState.currentDisplayPrice = currentSum + expanderState.priceOffset;
+    $('kit-total-price').innerText = fmt(expanderState.currentDisplayPrice);
+}
+
+window.changeKitQty = function(pId, delta) {
+    let p = STATE.prods.find(x => String(x.id) === pId); if(!p) return;
+    let next = Math.max(0, (expanderState.items[pId] || 0) + delta);
+    if (next > p.stock) return alert("Estoque insuficiente");
+    expanderState.items[pId] = next; renderKitList();
+}
+
+window.commitExpander = function() {
+    let added = false;
+    Object.entries(expanderState.items).forEach(([pId, qty]) => {
+        if (qty > 0) { if (!STATE.cart[pId]) STATE.cartOrder.push(pId); STATE.cart[pId] = (STATE.cart[pId] || 0) + qty; added = true; }
+    });
+    if(!added) return alert("Cesta vazia.");
+    STATE.basketExtraFee += expanderState.priceOffset;
+    updateTotals(); closeDrawer('kit-drawer');
+};
+
+// ==========================================
+// CARRINHO E CHECKOUT
+// ==========================================
+function upd(id, delta) {
+    let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
+    let n = Math.max(0, (STATE.cart[id] || 0) + delta);
+    if (n > p.stock) return alert("Estoque insuficiente");
+    if ((STATE.cart[id] || 0) === 0 && n > 0) STATE.cartOrder.push(id);
+    STATE.cart[id] = n; if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); }
+    
+    let actBox = $(`card-act-${id}`);
+    if (actBox) actBox.innerHTML = n > 0 ? `<div class="qty-control"><button onclick="upd('${id}', -1)">-</button><span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
+    
+    updateTotals(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
+}
+
+function updateTotals() {
+    let sum = 0; let count = 0; let atacadoDiscount = 0;
+    Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) { sum += p.price * q; count += q; if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; } });
+    
+    STATE.atacadoDiscount = atacadoDiscount; let subtotal = sum + STATE.basketExtraFee;
+    let final = subtotal - STATE.deliveryDiscount - STATE.atacadoDiscount;
+    
+    let fc = $('floating-cart');
+    if (count > 0) { fc.classList.remove('hidden'); $('fc-qtd').innerText = `${count} item(s)`; $('fc-total').innerText = fmt(final); } 
+    else { fc.classList.add('hidden'); }
+}
+
+function openCheckout() {
+    if (STATE.cartOrder.length === 0) return;
+    let options = []; let date = new Date(); let checkDate = new Date(date);
+    if (date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
+    while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(!CONFIG_ENTREGA.diasSemanaInativos.includes(checkDate.getDay())) { let desc = options.length === 0 ? 0 : (options.length === 1 ? CONFIG_ENTREGA.descontoOpcao2 : CONFIG_ENTREGA.descontoOpcao3); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
+    STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
+    
+    $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}</button>`).join('');
+    renderCheckoutItems(); openDrawer('checkout-drawer');
+}
+
+function selectDelivery(idx) { STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; openCheckout(); updateTotals(); }
+function selectPayment(metodo, btn) { $('chk-pagamento').value = metodo; document.querySelectorAll('#checkout-drawer .pay-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); }
+
+function renderCheckoutItems() {
+    $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
+        let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
+        return `
+        <div class="list-item">
+            <div class="list-img-wrap"><img src="${p.img}"></div>
+            <div class="list-info">
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${fmt(p.price)}</div>
+            </div>
+            <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
+                <button onclick="upd('${id}', -1)">-</button><span>${q}</span><button onclick="upd('${id}', 1)">+</button>
             </div>
         </div>`;
     }).join('');
 
-    $('kit-drawer').classList.add('open');
-};
+    let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
+    let totalDesc = STATE.atacadoDiscount + STATE.deliveryDiscount; let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
 
-function closeKit() { $('kit-drawer').classList.remove('open'); }
+    $('sum-sub').innerText = fmt(subtotal); $('sum-desc').innerText = `- ${fmt(totalDesc)}`; $('sum-desc-row').style.display = totalDesc > 0 ? 'flex' : 'none'; $('sum-total').innerText = fmt(final);
 
-function commitExpander() {
-    Object.entries(expanderState.items).forEach(([pId, qty]) => {
-        if (qty > 0) { 
-            if (!STATE.cart[pId]) STATE.cartOrder.push(pId); 
-            STATE.cart[pId] = (STATE.cart[pId] || 0) + qty; 
-        }
+    let btn = $('btn-send-order');
+    if (final < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-gray)'; }
+    else { btn.disabled = false; btn.innerText = 'Enviar pelo WhatsApp'; btn.style.background = 'var(--brand)'; }
+}
+
+function sendOrder() {
+    const btn = $('btn-send-order'); if (btn.disabled) return;
+    const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.trim(); const pag = $('chk-pagamento').value;
+    if (!nome) return alert("Preencha seu nome."); if (!pag) return alert("Escolha o pagamento.");
+
+    btn.disabled = true; btn.innerText = "Processando...";
+    const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
+    
+    Object.entries(STATE.cart).forEach(([cartId, q]) => { 
+        const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
+        if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; apiItens.push({ id: String(p.blingId || p.id), nome: p.name, qtd: q, price: p.price }); } 
     });
-    updateTotals(); closeKit(); 
-    $('floating-cart').classList.add('shake'); // Efeito visual sutil
-    setTimeout(() => $('floating-cart').classList.remove('shake'), 300);
+      
+    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount; let final = totalBruto + STATE.basketExtraFee - totalDesc;
+    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+    if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+    
+    const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
+    
+    const payload = { cliente: { nome: nome, cpf: cpf, pagamento: pag }, pedido: { itens: apiItens, total: Number(final), outras_despesas: Number(STATE.basketExtraFee), desconto: Number(totalDesc), observacoes: `Entrega: ${STATE.deliveryDateStr}` } };
+    fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
+  
+    window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
+    setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar pelo WhatsApp`; }, 3000);
 }
 
 // ==========================================
-// INICIALIZAÇÃO DE DADOS JSON
+// INICIALIZAÇÃO
 // ==========================================
 async function fetchWithCache(url, key) {
     try {
@@ -503,16 +494,22 @@ async function fetchWithCache(url, key) {
 
 async function init() {
     try {
-        const [r1, r2, r3] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods'), fetchWithCache('/site/combos.json', 'cache_combos') ]);
-        STATE.baskets = r1 || []; STATE.combos = r3 || [];
+        const [r1, r2] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods') ]);
+        STATE.baskets = r1 || [];
 
         if (r2 && r2.length > 0) {
+            let hTime = new Date().getTime();
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
-                const pBase = parseFloat(p.preco) * 1.01;
-                return { id: String(p.codigo || p.id), blingId: p.id, name: p.nome, price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "Outros" };
+                let pBase = parseFloat(p.preco) * 1.01;
+                
+                // Lógica de Validade (Preservada, porém oculta do UI)
+                let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
+                let price = pBase; let dPv = (validade - hTime) / 86400000;
+                if (dPv <= 60 && parseInt(p.estoque) > 0) { if (dPv < 30) price = pBase * 0.70; else if (dPv <= 40) price = pBase * 0.80; else if (dPv <= 60) price = pBase * 0.90; }
+                
+                return { id: String(p.codigo || p.id), blingId: p.id, name: p.nome, price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "Outros" };
             });
 
-            // Agrupa Departamentos
             STATE.prods.forEach(p => { 
                 let cId = 'cat_' + norm(p.categoria).replace(/[^a-z0-9]/g, '_');
                 if (!STATE.deptos[cId]) STATE.deptos[cId] = { title: p.categoria || "Outros", data: [] };
