@@ -6,19 +6,19 @@
     <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
     <title>Dona Antônia | Super Cestas Básicas</title>
 
-    <link rel="preload" href="../img/logoantonia.png" as="image">
+    <link rel="preload" href="../site/img/produtos/logoantonia.png" as="image">
 
     <style>
         /* ========================================================
-           DESIGN CLEAN, ULTRA RÁPIDO E DESKTOP-READY
+           DESIGN COM A PALETA "DONA ANTÔNIA"
            ======================================================== */
         :root {
-            --brand: #e11d48;
-            --brand-light: #fff1f2;
+            --brand: #5A3826;        /* Marrom da Logo */
+            --brand-light: #EBD9C3;  /* Bege/Areia da Logo */
             --bg-page: #ffffff;
-            --bg-img: #f3f4f6;
-            --text-dark: #111827;
-            --text-gray: #4b5563;
+            --bg-img: #f3f4f6;       /* Cinza clarinho para produtos normais */
+            --text-dark: #291F1A;    /* Marrom bem escuro quase preto para textos */
+            --text-gray: #6B5C55;    /* Cinza quente/amarronzado */
             --border-light: #e5e7eb;
             --success: #10b981;
             --radius-img: 16px;
@@ -30,66 +30,71 @@
         button { border: none; background: none; cursor: pointer; font-weight: 600; outline: none; }
         img { max-width: 100%; height: auto; }
 
-        /* Container Principal */
         .app-container { max-width: 1200px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; }
 
-        /* Top Bar com Logo (Desaparece naturalmente no scroll) */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; }
-        .logo { height: 35px; object-fit: contain; }
+        /* Top Bar com Logo Dinâmica */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; min-height: 75px; }
+        .logo { height: 45px; object-fit: contain; transition: 0.3s; }
         .btn-menu { font-size: 1.8rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
 
-        /* Controles Fixos (Busca + Dropdown) - Fica preso no topo sem bugar */
+        @media(min-width: 768px) {
+            .logo { height: 60px; } /* 30% maior no desktop */
+        }
+
+        /* Controles Fixos (Busca + Dropdown) */
         .controls-wrapper { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         
-        @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; } .search-box { flex: 1; } .custom-dropdown-container { width: 300px; } }
+        /* 50/50 no Desktop */
+        @media(min-width: 768px) { 
+            .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } 
+            .search-box { flex: 1; } 
+            .custom-dropdown-container { flex: 1; width: auto; } 
+        }
 
-        /* Busca Padrão Google */
         .search-box { position: relative; display: flex; align-items: center; width: 100%; }
-        .search-icon { position: absolute; left: 14px; width: 20px; height: 20px; color: #9ca3af; }
-        .search-clear { position: absolute; right: 14px; width: 24px; height: 24px; background: #f3f4f6; border-radius: 50%; display: none; align-items: center; justify-content: center; color: #6b7280; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .search-clear:active { background: #e5e7eb; }
-        .search-input { width: 100%; padding: 14px 44px 14px 44px; border-radius: 12px; border: 1px solid var(--border-light); background: #f9fafb; font-size: 0.95rem; outline: none; transition: 0.2s; }
-        .search-input:focus { border-color: var(--text-dark); background: #fff; }
+        .search-icon { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--text-gray); }
+        .search-clear { position: absolute; right: 14px; width: 24px; height: 24px; background: var(--border-light); border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-dark); font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        .search-input { width: 100%; padding: 14px 44px; border-radius: 12px; border: 1px solid var(--border-light); background: #f9fafb; font-size: 0.95rem; outline: none; transition: 0.2s; }
+        .search-input:focus { border-color: var(--brand); background: #fff; }
 
-        /* Dropdown Não-Nativo */
         .custom-dropdown-container { position: relative; width: 100%; user-select: none; }
         .dropdown-trigger { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 14px 16px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-size: 0.95rem; font-weight: 600; cursor: pointer; color: var(--text-dark); transition: 0.2s; }
-        .dropdown-trigger:active { background: #f9fafb; }
         .dropdown-icon { transition: transform 0.3s; width: 16px; height: 16px; fill: currentColor; }
         .dropdown-menu { position: absolute; top: calc(100% + 8px); left: 0; width: 100%; max-height: 350px; overflow-y: auto; background: #fff; border: 1px solid var(--border-light); border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); opacity: 0; visibility: hidden; transform: translateY(-10px); transition: 0.2s; z-index: 60; }
         .dropdown-menu.open { opacity: 1; visibility: visible; transform: translateY(0); }
         .dropdown-item { padding: 14px 16px; border-bottom: 1px solid #f3f4f6; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: var(--text-gray); transition: 0.2s; }
         .dropdown-item:last-child { border-bottom: none; }
-        .dropdown-item:hover { background: #f9fafb; }
         .dropdown-item.active { color: var(--brand); font-weight: 700; background: var(--brand-light); }
 
-        /* Grid de Produtos Otimizado (content-visibility acelera o render) */
         .main-content { padding: 32px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
         .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
         .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 16px; }
         @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
         @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
 
-        /* Cards Sem Bordas */
+        /* Cards Base */
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; }
-        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; }
-        .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; }
+        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden;}
+        .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
-        /* Fonte menor (0.75rem) e mais leve */
         .card-title { font-size: 0.75rem; font-weight: 500; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 4.2em; }
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
         .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
         .old-price { font-size: 0.8rem; color: #9ca3af; text-decoration: line-through; }
         
+        /* OVERRIDES PARA A CESTA BÁSICA */
+        .card-basket .card-img-wrap { background: transparent; padding: 0; }
+        .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
+        .card-basket .card-title { -webkit-line-clamp: 1; height: auto; white-space: nowrap; }
+
         /* Botões */
-        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
+        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); }
-        .qty-control button:active { background: #e5e7eb; }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
         /* Sacola Flutuante */
-        .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--text-dark); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
         .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
         .fc-total { font-size: 1.15rem; font-weight: 800; }
@@ -101,11 +106,10 @@
         .drawer.open { transform: translateX(0); }
         
         .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; }
-        .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--brand); }
         .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
         .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; }
         
-        /* Listas Internas (Kits e Checkout) - Foto Maior e Texto Menor */
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
         .list-img-wrap { width: 85px; height: 85px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
@@ -114,14 +118,13 @@
         .list-name { font-size: 0.8rem; font-weight: 500; color: var(--text-gray); line-height: 1.35; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); }
         
-        /* Checkout Forms */
         .chk-section { margin-bottom: 32px; }
-        .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; }
+        .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
         .input-text { width: 100%; padding: 14px; border: none; background: var(--bg-img); border-radius: 12px; margin-bottom: 12px; font-size: 1rem; outline: none; transition: 0.2s; }
-        .input-text:focus { box-shadow: 0 0 0 2px var(--text-dark); background: #fff; }
+        .input-text:focus { box-shadow: 0 0 0 2px var(--brand); background: #fff; }
         .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .pay-btn { padding: 14px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-weight: 500; color: var(--text-gray); transition: 0.2s; }
-        .pay-btn.selected { border-color: var(--text-dark); background: var(--text-dark); color: #fff; }
+        .pay-btn.selected { border-color: var(--brand); background: var(--brand); color: #fff; }
         
         .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); }
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; color: var(--text-gray); font-weight: 500;}
@@ -140,7 +143,7 @@
 <div class="app-container">
 
     <header class="top-bar">
-        <img src="../img/logoantonia.png" alt="Dona Antônia" class="logo">
+        <img src="../site/img/produtos/logoantonia.png" alt="Dona Antônia" class="logo">
         <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
     </header>
 
@@ -156,8 +159,7 @@
                 <span id="dropdown-label">Carregando...</span>
                 <svg class="dropdown-icon" id="dropdown-icon" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
             </div>
-            <div class="dropdown-menu" id="dropdown-menu">
-                </div>
+            <div class="dropdown-menu" id="dropdown-menu"></div>
         </div>
     </div>
 
@@ -242,9 +244,6 @@
 </div>
 
 <script>
-// ==========================================
-// ESTADO E LÓGICA
-// ==========================================
 const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
 const MIN_ORDER = 75.00;
 const $ = id => document.getElementById(id);
@@ -254,30 +253,23 @@ const STATE = {
     cart: {}, cartOrder: [],
     basketExtraFee: 0, atacadoDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-    activeCat: 'ofertas' // Inicia em Ofertas
+    activeCat: 'ofertas'
 };
 
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
-// Drawers e Dropdown
 function openDrawer(id) { $('overlay').classList.add('open'); $(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
 function closeDrawer(id) { $(id).classList.remove('open'); checkDrawers(); }
 function closeAllDrawers() { document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); checkDrawers(); }
 function checkDrawers() { if (!document.querySelector('.drawer.open')) { $('overlay').classList.remove('open'); document.body.style.overflow = ''; } }
 
 function toggleDropdown() {
-    const menu = $('dropdown-menu');
-    const icon = $('dropdown-icon');
-    const isOpen = menu.classList.contains('open');
-    if(isOpen) {
-        menu.classList.remove('open'); icon.style.transform = 'rotate(0deg)';
-    } else {
-        menu.classList.add('open'); icon.style.transform = 'rotate(180deg)';
-    }
+    const menu = $('dropdown-menu'); const icon = $('dropdown-icon');
+    if(menu.classList.contains('open')) { menu.classList.remove('open'); icon.style.transform = 'rotate(0deg)'; } 
+    else { menu.classList.add('open'); icon.style.transform = 'rotate(180deg)'; }
 }
 
-// Fechar dropdown clicando fora
 document.addEventListener('click', (e) => {
     if (!e.target.closest('#category-dropdown-container')) {
         $('dropdown-menu').classList.remove('open');
@@ -285,9 +277,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// ==========================================
-// RENDERIZAÇÃO E BUSCA DEBOUNCED
-// ==========================================
 function setupDropdown() {
     const priority = ['ofertas', 'cestas', 'cat_mercearia_basica', 'cat_limpeza', 'cat_higiene', 'cat_beleza', 'cat_cafe_da_manha'];
     STATE.categoriesList = [
@@ -303,75 +292,58 @@ function setupDropdown() {
         if(idxB !== -1) return 1;
         return a.title.localeCompare(b.title);
     });
-
     renderDropdownItems();
 }
 
 function renderDropdownItems() {
-    $('dropdown-menu').innerHTML = STATE.categoriesList.map(c => 
-        `<div class="dropdown-item ${STATE.activeCat === c.id ? 'active' : ''}" onclick="selectCategory('${c.id}')">${c.title}</div>`
-    ).join('');
-    
+    $('dropdown-menu').innerHTML = STATE.categoriesList.map(c => `<div class="dropdown-item ${STATE.activeCat === c.id ? 'active' : ''}" onclick="selectCategory('${c.id}')">${c.title}</div>`).join('');
     let activeObj = STATE.categoriesList.find(c => c.id === STATE.activeCat);
     if(activeObj) $('dropdown-label').innerText = activeObj.title;
 }
 
 function selectCategory(id) {
-    STATE.activeCat = id; 
-    renderDropdownItems(); 
-    clearSearch(false); // Limpa busca sem refazer a pesquisa
-    $('dropdown-menu').classList.remove('open');
-    $('dropdown-icon').style.transform = 'rotate(0deg)';
+    STATE.activeCat = id; renderDropdownItems(); clearSearch(false);
+    $('dropdown-menu').classList.remove('open'); $('dropdown-icon').style.transform = 'rotate(0deg)';
     
     if (id === 'cestas') { $('grid-title').innerText = "Cestas Básicas"; renderGrid(STATE.baskets, 'BASKET'); }
     else if (id === 'ofertas') { $('grid-title').innerText = "Ofertas"; renderGrid(STATE.prods.filter(p => p.price < p.oldPrice), 'PROD'); }
     else { $('grid-title').innerText = STATE.deptos[id].title; renderGrid(STATE.deptos[id].data, 'PROD'); }
-    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 let searchTimeout;
 function handleSearchInput() {
-    const val = $('search-input').value;
-    $('search-clear').style.display = val.length > 0 ? 'flex' : 'none';
-    
+    const val = $('search-input').value; $('search-clear').style.display = val.length > 0 ? 'flex' : 'none';
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
         let q = norm(val);
-        if(q.length < 2) {
-            selectCategory(STATE.activeCat); // Retorna à categoria se limpar
-        } else {
-            $('grid-title').innerText = "Resultados da Busca";
-            $('dropdown-label').innerText = "Resultados...";
+        if(q.length < 2) { selectCategory(STATE.activeCat); } 
+        else {
+            $('grid-title').innerText = "Resultados da Busca"; $('dropdown-label').innerText = "Resultados...";
             document.querySelectorAll('.dropdown-item').forEach(el => el.classList.remove('active'));
             renderGrid(STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q)), 'PROD');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-    }, 300); // 300ms debounce
+    }, 300);
 }
 
 function clearSearch(triggerSearch = true) {
-    $('search-input').value = '';
-    $('search-clear').style.display = 'none';
-    if(triggerSearch) {
-        clearTimeout(searchTimeout);
-        selectCategory(STATE.activeCat);
-    }
+    $('search-input').value = ''; $('search-clear').style.display = 'none';
+    if(triggerSearch) { clearTimeout(searchTimeout); selectCategory(STATE.activeCat); }
 }
 
 function renderGrid(items, type) {
-    if (!items || items.length === 0) { $('main-grid').innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#9ca3af; margin-top: 40px;">Nenhum produto encontrado.</p>'; return; }
+    if (!items || items.length === 0) { $('main-grid').innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:var(--text-gray); margin-top: 40px;">Nenhum produto encontrado.</p>'; return; }
     
-    // Performance: string unica e lazy loading
     let html = '';
+    let isBasket = type === 'BASKET';
+    
     for(let i=0; i<items.length; i++) {
-        let p = items[i];
-        let q = STATE.cart[p.id] || 0;
-        let isBasket = type === 'BASKET';
+        let p = items[i]; let q = STATE.cart[p.id] || 0;
         let acaoHTML = isBasket ? `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>` : (q > 0 ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`);
 
         html += `
-        <div class="card">
+        <div class="card ${isBasket ? 'card-basket' : ''}">
             <div class="card-img-wrap"><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" alt="Foto" loading="lazy" decoding="async"></div>
             <div class="card-title">${p.name || p.nome}</div>
             <div class="card-price-row">
@@ -384,9 +356,6 @@ function renderGrid(items, type) {
     $('main-grid').innerHTML = html;
 }
 
-// ==========================================
-// CESTAS EDITÁVEIS (EXPANDER)
-// ==========================================
 let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
 window.openKitLateralView = function(id) {
@@ -443,12 +412,11 @@ window.commitExpander = function() {
     });
     if(!added) return alert("Cesta vazia.");
     STATE.basketExtraFee += expanderState.priceOffset;
-    updateTotals(); closeDrawer('kit-drawer');
+    updateTotals(); 
+    closeDrawer('kit-drawer');
+    selectCategory('ofertas'); // Retorna para ofertas
 };
 
-// ==========================================
-// CARRINHO E CHECKOUT
-// ==========================================
 function upd(id, delta) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
     let n = Math.max(0, (STATE.cart[id] || 0) + delta);
@@ -540,9 +508,6 @@ function sendOrder() {
     setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar pelo WhatsApp`; }, 3000);
 }
 
-// ==========================================
-// INICIALIZAÇÃO
-// ==========================================
 async function fetchWithCache(url, key) {
     try {
         let cached = localStorage.getItem(key); let cacheTime = localStorage.getItem(key + '_time'); let now = Date.now();
@@ -578,7 +543,6 @@ async function init() {
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
-        // Inicia na categoria Ofertas
         selectCategory('ofertas');
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
