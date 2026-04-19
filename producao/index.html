@@ -803,16 +803,13 @@
  */
 function sanitizeProductsForExport(prods) {
     const camposPermitidos = [
-        'id', // <-- Mantenha este como o primeiro da lista
-        'codigo', 
-        'nome',
-        'gtin', 'preco', 'preco_custo', 
+        'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
         'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
         'subcategoria', 'gondola', 'prateleira', 'localizacao',
-        'tags', 'last_update', 'marca' // <--- INCLUÍDO CAMPO MARCA AQUI
+        'tags', 'last_update', 'marca'
     ];
 
-   return prods.map(p => {
+    return prods.map(p => {
         let cleanP = {};
         
         // TRAVA DE SEGURANÇA: Se não tiver ID, gera um numérico único agora
@@ -827,7 +824,6 @@ function sanitizeProductsForExport(prods) {
                 // CORREÇÃO CRÍTICA: Se for validade e estiver no formato AAAA-MM-DD, converte para DD/MM/AAAA
                 if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) {
                     const partes = valor.split('-');
-                    // Verifica se a primeira parte é o ano (4 dígitos)
                     if (partes[0].length === 4) {
                         valor = `${partes[2]}/${partes[1]}/${partes[0]}`;
                     }
@@ -837,23 +833,13 @@ function sanitizeProductsForExport(prods) {
             }
         });
 
-        // Copia as Imagens (até 3)
-        [1, 2, 3].forEach(i => {
-            const prop = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
-            if (p[prop]) {
-                if (p[prop].startsWith('data:image')) {
-                    const sufix = i === 1 ? '' : `_${i}`; 
-                    cleanP[prop] = `../site/img/produtos/${cleanP.codigo}${sufix}.webp`;
-                } else {
-                    cleanP[prop] = p[prop];
-                }
+        // Copia APENAS a Imagem Principal (Slot 1)
+        if (p.url_imagem) {
+            if (p.url_imagem.startsWith('data:image')) {
+                cleanP.url_imagem = `../site/img/produtos/${cleanP.codigo}.webp`;
+            } else {
+                cleanP.url_imagem = p.url_imagem;
             }
-        });
-
-        // Copia os Vídeos
-        for (let i = 1; i <= 10; i++) {
-            const prop = i === 1 ? 'link_video' : `link_video_${i}`;
-            if (p[prop]) cleanP[prop] = p[prop];
         }
 
         return cleanP;
@@ -867,30 +853,30 @@ function sanitizeProductsForExport(prods) {
             }, true);
         }
 
-        function uploadImagens() {
-            if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
+       function uploadImagens() {
+    if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
+    
+    const queueCopy = [...imageQueue]; 
+    imageQueue = []; 
+    updateImageBadge();
+    
+    queueCopy.forEach(img => {
+        enqueueTask(`Imagem ${img.sku}`, async () => {
+            // Removido o sufixo, sempre usa o formato base
+            const fileName = `${img.sku}.webp`; 
+            const githubFolderPath = "site/img/produtos"; 
+            const localFolderPath = "../site/img/produtos";
             
-            const queueCopy = [...imageQueue]; 
-            imageQueue = []; 
-            updateImageBadge();
-            
-            queueCopy.forEach(img => {
-                enqueueTask(`Imagem ${img.sku}`, async () => {
-                    const sufix = img.slot === 1 ? '' : `_${img.slot}`; 
-                    const fileName = `${img.sku}${sufix}.webp`; 
-                    const githubFolderPath = "site/img/produtos"; 
-                    const localFolderPath = "../site/img/produtos";
-                    
-                    await GitHubAPI.saveFile(`${githubFolderPath}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
-                    const pRef = products.find(x => x.codigo === img.sku); 
-                    if(pRef) { 
-                        pRef[img.prop] = `${localFolderPath}/${fileName}?v=${Date.now()}`; 
-                        pRef.last_update = Date.now(); 
-                        await saveDataLocally(); 
-                    }
-                }, false);
-            });
-        }
+            await GitHubAPI.saveFile(`${githubFolderPath}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
+            const pRef = products.find(x => x.codigo === img.sku); 
+            if(pRef) { 
+                pRef.url_imagem = `${localFolderPath}/${fileName}?v=${Date.now()}`; 
+                pRef.last_update = Date.now(); 
+                await saveDataLocally(); 
+            }
+        }, false);
+    });
+}
 
         function uploadFilaPedidosGithub(btn = null) {
             enqueueTask('Forçar Fila de Pedidos', async () => { 
@@ -1883,54 +1869,62 @@ function sanitizeProductsForExport(prods) {
             }
         }
 
-        function openEditSidebar(sku) {
-            currentEditingSku = sku; const p = products.find(x => x.codigo === sku); if(!p) return;
-            const isInactive = p.situacao === 'I';
-            const imgVars = [1,2,3].map(i => { const prop = i===1 ? 'url_imagem' : `url_imagem_${i}`; return p[prop] || ''; });
-            const vidVars = [1,2,3,4,5,6,7,8,9,10].map(i => { const prop = i===1 ? 'link_video' : `link_video_${i}`; return p[prop] || ''; });
-            const safeName = (p.nome||'').replace(/'/g, "\\'");
+     function openEditSidebar(sku) {
+    currentEditingSku = sku; 
+    const p = products.find(x => x.codigo === sku); 
+    if(!p) return;
+    
+    const isInactive = p.situacao === 'I';
+    const safeName = (p.nome||'').replace(/'/g, "\\'");
 
-            let htmlImages = '';
-            for(let i=1; i<=3; i++) { const src = imgVars[i-1] ? `<img src="${imgVars[i-1]}">` : `<i data-lucide="image-plus" size="20" style="color:#a1a1aa"></i>`; htmlImages += `<div class="img-slot" onclick="openCanvasSidebar('${p.codigo}', ${i})">${src}<div class="slot-num">${i}</div></div>`; }
+    // Configuração para APENAS 1 imagem
+    let htmlImages = '';
+    const imgSrc = p.url_imagem ? `<img src="${p.url_imagem}">` : `<i data-lucide="image-plus" size="20" style="color:#a1a1aa"></i>`; 
+    htmlImages = `<div class="img-slot" style="width: 120px;" onclick="openCanvasSidebar('${p.codigo}', 1)">${imgSrc}</div>`;
 
-            let htmlVideos = '';
-            for(let i=1; i<=10; i++) { const prop = i===1 ? 'link_video' : `link_video_${i}`; htmlVideos += `<input type="text" class="form-input" style="margin-bottom:6px;" value="${vidVars[i-1]}" placeholder="Url YouTube Shorts ${i}" onchange="updateField('${p.codigo}', '${prop}', this.value)">`; }
+    // Editor de Tags
+    let htmlEditorTags = ''; 
+    const tags = p.tags || [];
+    if (p.tag_texto && tags.length === 0) { 
+        p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => { tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); 
+        p.tag_texto = ''; 
+        p.tags = tags; 
+    }
+    tags.forEach((t, idx) => {
+        htmlEditorTags += `<div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
+            <input type="text" class="form-input" style="flex-grow:1; padding:6px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)">
+            <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" title="Fundo" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
+            <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.txt}" title="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
+            <input type="number" class="form-input" style="width: 50px; height:24px; padding: 4px; font-size:11px;" value="${t.tam}" title="Tam." onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)">
+            <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button></div>`;
+    });
+    htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG</button>`;
 
-            let htmlEditorTags = ''; const tags = p.tags || [];
-            if (p.tag_texto && tags.length === 0) { p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => { tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); p.tag_texto = ''; p.tags = tags; }
-            tags.forEach((t, idx) => {
-                htmlEditorTags += `<div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
-                    <input type="text" class="form-input" style="flex-grow:1; padding:6px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)">
-                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" title="Fundo" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
-                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.txt}" title="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
-                    <input type="number" class="form-input" style="width: 50px; height:24px; padding: 4px; font-size:11px;" value="${t.tam}" title="Tam." onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)">
-                    <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button></div>`;
-            });
-            htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG</button>`;
+    const sidebarBody = document.getElementById('sidebar-body');
+    sidebarBody.innerHTML = `
+        <div class="form-section"><div class="section-title">Identificação</div><div class="form-grid">
+                <div class="form-group"><label class="form-label">SKU (Código)</label><input type="text" class="form-input" style="font-weight:900; color:var(--accent)" value="${p.codigo}" onchange="updateSku('${p.codigo}', this.value)"></div>
+                <div class="form-group"><label class="form-label">ID (Sistema)</label><input type="text" class="form-input" value="${p.id || ''}" onchange="updateField('${p.codigo}', 'id', this.value)"></div>
+        </div></div>
+        
+        <div class="form-section"><div class="section-title">Apresentação Principal</div>
+            <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '"')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
+            <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;"><label class="form-label">Tags da Imagem (Independentes)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div>
+        </div>
 
-            const sidebarBody = document.getElementById('sidebar-body');
-            sidebarBody.innerHTML = `
-                <div class="form-section"><div class="section-title">Identificação</div><div class="form-grid">
-                        <div class="form-group"><label class="form-label">SKU (Código)</label><input type="text" class="form-input" style="font-weight:900; color:var(--accent)" value="${p.codigo}" onchange="updateSku('${p.codigo}', this.value)"></div>
-                        <div class="form-group"><label class="form-label">ID (Sistema)</label><input type="text" class="form-input" value="${p.id || ''}" onchange="updateField('${p.codigo}', 'id', this.value)"></div>
-                </div></div>
-                <div class="form-section"><div class="section-title">Apresentação Principal</div>
-                    <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '"')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
-                    <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;"><label class="form-label">Tags da Imagem (Independentes)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div>
-                </div>
-
-                <div class="form-section"><div class="section-title">Média Rica (Vitrine)</div><div class="image-slots">${htmlImages}</div>
-                    <div style="margin-top:15px; border:1px dashed var(--border); padding:12px; border-radius:8px; background:#fafafa; max-height:220px; overflow-y:auto;"><button class="nav-btn" style="width:100%; justify-content:center; color:#dc2626; border-color:#fecaca; background:#fef2f2; margin-bottom:12px;" onclick="searchYoutubeShorts('${safeName}')"><i data-lucide="youtube" size="16"></i> PESQUISAR SHORTS NO YOUTUBE</button>${htmlVideos}</div>
-                </div>
-                
-                <div class="form-section"><div class="section-title">Controles Avançados</div><div class="form-grid">
-                        <div class="form-group"><label class="form-label">Estoque</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
-                        <div class="form-group"><label class="form-label">Status</label><button class="nav-btn ${isInactive ? '' : 'primary'}" style="width:100%; height:38px; justify-content:center;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="14"></i> ${isInactive ? 'INATIVO' : 'ATIVO'}</button></div>
-                        <div class="form-group full"><label class="form-label">NCM</label><div class="input-wrapper"><input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"><button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Procurar NCM"><i data-lucide="search" size="16"></i></button></div></div>
-                </div></div>
-            `;
-            lucide.createIcons(); openSidebar('edit-sidebar');
-        }
+        <div class="form-section"><div class="section-title">Foto do Produto</div>
+            <div style="display: flex; justify-content: center;">${htmlImages}</div>
+        </div>
+        
+        <div class="form-section"><div class="section-title">Controles Avançados</div><div class="form-grid">
+                <div class="form-group"><label class="form-label">Estoque</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
+                <div class="form-group"><label class="form-label">Status</label><button class="nav-btn ${isInactive ? '' : 'primary'}" style="width:100%; height:38px; justify-content:center;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="14"></i> ${isInactive ? 'INATIVO' : 'ATIVO'}</button></div>
+                <div class="form-group full"><label class="form-label">NCM</label><div class="input-wrapper"><input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"><button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Procurar NCM"><i data-lucide="search" size="16"></i></button></div></div>
+        </div></div>
+    `;
+    lucide.createIcons(); 
+    openSidebar('edit-sidebar');
+}
 
      async function updateField(sku, field, value) { 
     const p = products.find(x => x.codigo === sku); 
@@ -1969,11 +1963,22 @@ function sanitizeProductsForExport(prods) {
         const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
 
         function openCanvasSidebar(sku, slot) {
-            const p = products.find(x => x.codigo === sku); if(!p) return; currentImageSlot = slot; imgOffsetX = 0; imgOffsetY = 0; 
-            document.getElementById('zoomRange').value = 1; document.getElementById('brightnessRange').value = 1; document.getElementById('sharpenRange').value = 0;
-            const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`; const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p[prop] || ""; 
-            img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
-        }
+    const p = products.find(x => x.codigo === sku); 
+    if(!p) return; 
+    currentImageSlot = 1; // Força slot 1
+    imgOffsetX = 0; imgOffsetY = 0; 
+    
+    document.getElementById('zoomRange').value = 1; 
+    document.getElementById('brightnessRange').value = 1; 
+    document.getElementById('sharpenRange').value = 0;
+    
+    const img = new Image(); 
+    img.crossOrigin = "Anonymous"; 
+    img.src = p.url_imagem || ""; 
+    
+    img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; 
+    img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
+}
 
         function applySharpen(context, w, h, mix) {
             if (mix <= 0) return;
@@ -2003,28 +2008,26 @@ function sanitizeProductsForExport(prods) {
         }
 
         async function saveImageToQueue() {
-            if(!currentEditingSku) return; 
-            
-            const sku = currentEditingSku; 
-            const slot = currentImageSlot;
-            
-            const base64full = canvas.toDataURL('image/webp', 0.9); 
-            const base64data = base64full.split(',')[1];
-            
-            const p = products.find(x => x.codigo === sku); 
-            const prop = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`; 
-            
-            p[prop] = base64full; 
-            p.last_update = Date.now();
-            await saveDataLocally(); 
-            
-            imageQueue.push({ sku: sku, slot: slot, prop: prop, base64data: base64data }); 
-            updateImageBadge(); 
-            
-            openEditSidebar(sku); 
-            closeSidebar('editor-sidebar');
-            renderGrid(document.getElementById('search-input').value, true);
-        }
+    if(!currentEditingSku) return; 
+    
+    const sku = currentEditingSku; 
+    
+    const base64full = canvas.toDataURL('image/webp', 0.9); 
+    const base64data = base64full.split(',')[1];
+    
+    const p = products.find(x => x.codigo === sku); 
+    
+    p.url_imagem = base64full; 
+    p.last_update = Date.now();
+    await saveDataLocally(); 
+    
+    imageQueue.push({ sku: sku, base64data: base64data }); 
+    updateImageBadge(); 
+    
+    openEditSidebar(sku); 
+    closeSidebar('editor-sidebar');
+    renderGrid(document.getElementById('search-input').value, true);
+}
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
@@ -2572,14 +2575,12 @@ linha['Marca'] = p.marca || "";
 function obterImagensEmUso() {
     const imagensSet = new Set();
     products.forEach(p => {
-        // Verifica os 3 slots de imagem
-        [p.url_imagem, p.url_imagem_2, p.url_imagem_3].forEach(url => {
-            if (url && typeof url === 'string' && url.includes('.webp')) {
-                // Extrai apenas o nome do arquivo (ex: 1001.webp) do caminho completo
-                const nomeArquivo = url.split('/').pop().split('?')[0];
-                imagensSet.add(nomeArquivo);
-            }
-        });
+        // Verifica apenas a imagem principal
+        if (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.includes('.webp')) {
+            // Extrai apenas o nome do arquivo (ex: 1001.webp) do caminho completo
+            const nomeArquivo = p.url_imagem.split('/').pop().split('?')[0];
+            imagensSet.add(nomeArquivo);
+        }
     });
     return imagensSet;
 }
