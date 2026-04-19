@@ -806,7 +806,7 @@ function renderKitList() {
     let currentSum = 0;
     $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => {
         let p = STATE.prods.find(x => String(x.id) === pId); 
-        if (!p) return ''; // Proteção extra caso falte algum produto
+        if (!p) return ''; 
         
         let qty = expanderState.items[pId];
         currentSum += p.price * qty;
@@ -814,12 +814,17 @@ function renderKitList() {
         let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
 
+        // [NOVO] Lógica para exibir o preço antigo riscado nas listas
+        let priceDisplay = p.oldPrice > p.price 
+            ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
+            : fmt(p.price);
+
         return `
         <div class="list-item">
             <div class="list-img-wrap" onclick="openQuickView('${pId}', 'KIT')"><img src="${p.img}" loading="lazy" decoding="async"></div>
             <div class="list-info" onclick="openQuickView('${pId}', 'KIT')">
                 <div class="list-name">${p.name}</div>
-                <div class="list-price">${fmt(p.price)}${lbl10}</div>
+                <div class="list-price">${priceDisplay}${lbl10}</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
                 <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
@@ -835,7 +840,6 @@ function renderKitList() {
     expanderState.currentDisplayPrice = currentSum + expanderState.priceOffset;
     let precoFormatado = fmt(expanderState.currentDisplayPrice);
     
-    // [Ajuste] Atualiza o botão com o preço para compensar a remoção da linha de Total
     let totalEl = $('kit-total-price');
     if (totalEl) {
         totalEl.innerText = precoFormatado;
@@ -939,7 +943,12 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
         let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
         
         let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
-        let tagHtml = ""; let priceHtml = fmt(p.price);
+        let tagHtml = ""; 
+        
+        // [NOVO] Configuração padrão de exibição do preço com desconto
+        let priceHtml = p.oldPrice > p.price 
+            ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
+            : fmt(p.price);
 
         if (promoSpecialType === 'LEVE5') {
             addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;";
@@ -947,7 +956,7 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
             priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`;
         } else if (promoSpecialType === 'LEVE2') {
             addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;";
-            tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 10% DE DESCONTO/div><br>`;
+            tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 10% DE DESCONTO</div><br>`;
             let tf = p.price * 2; let to = tf * 0.8;
             priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(tf)}</span>${fmt(to)}`;
         }
@@ -997,18 +1006,24 @@ window.openSwapView = function(oldPId, context = 'KIT') {
 
     let html = '';
 
-    if(similarProds.length > 0) {
+   if(similarProds.length > 0) {
         html += `
         <div style="margin-bottom: 24px;">
             <h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>
             ${similarProds.map(p => {
                 let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+                
+                // [NOVO] Lógica para exibir o preço original riscado se houver desconto
+                let priceDisplay = p.oldPrice > p.price 
+                    ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
+                    : fmt(p.price);
+
                 return `
                 <div class="list-item">
                     <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')"><img src="${p.img}" loading="lazy" decoding="async"></div>
                     <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                         <div class="list-name">${p.name}</div>
-                        <div class="list-price">${fmt(p.price)}${lbl10}</div>
+                        <div class="list-price">${priceDisplay}${lbl10}</div>
                     </div>
                     <div style="display:flex; align-items:center; justify-content:flex-end;">
                         <button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">Escolher</button>
@@ -1089,12 +1104,15 @@ function buildSwapSuggestions(cat) {
 
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
 
+        // [NOVO]
+        let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+
         return `
         <div class="list-item">
             <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')"><img src="${p.img}" loading="lazy" decoding="async"></div>
             <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                 <div class="list-name">${p.name}</div>
-                <div class="list-price">${fmt(p.price)}${lbl10}</div>
+                <div class="list-price">${priceDisplay}${lbl10}</div>
             </div>
             <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
                 ${acaoHTML}
@@ -1277,12 +1295,17 @@ function renderCheckoutItems() {
         let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
 
+        // [NOVO] Lógica para exibir o preço antigo riscado no Checkout
+        let priceDisplay = p.oldPrice > p.price 
+            ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
+            : fmt(p.price);
+
         return `
         <div class="list-item">
             <div class="list-img-wrap" onclick="openQuickView('${id}', 'CART')"><img src="${p.img}" loading="lazy" decoding="async"></div>
             <div class="list-info" onclick="openQuickView('${id}', 'CART')">
                 <div class="list-name">${p.name}</div>
-                <div class="list-price">${fmt(p.price)}${lbl10}</div>
+                <div class="list-price">${priceDisplay}${lbl10}</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
                 <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
