@@ -4,479 +4,182 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
-    <meta name="theme-color" content="#ffffff">
     <title>Dona Antônia | Super Cestas Básicas</title>
 
-    <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '913298841339644'); 
-      fbq('track', 'PageView');
-    </script>
-    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1" alt="Facebook Pixel"/></noscript>
-
     <style>
+        /* ========================================================
+           DESIGN CONSOLIDADO DE E-COMMERCE (TIPO IFOOD/RAPPI)
+           ======================================================== */
         :root {
             --brand: #e11d48;
-            --brand-hover: #be123c;
             --brand-light: #fff1f2;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --bg-body: #f8fafc;
+            --bg-page: #f9fafb;
             --bg-card: #ffffff;
-            --border: #f1f5f9;
+            --text-dark: #111827;
+            --text-gray: #6b7280;
+            --border: #e5e7eb;
             --success: #10b981;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --radius: 16px;
-            --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --radius: 8px;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        
-        body { 
-            font-family: var(--font); 
-            background: var(--bg-body); 
-            color: var(--text-main); 
-            line-height: 1.5; 
-            overflow: hidden; 
-            height: 100dvh;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-page); color: var(--text-dark); overflow-x: hidden; padding-bottom: 80px; }
+        button { border: none; background: none; cursor: pointer; font-weight: 600; }
+        img { max-width: 100%; height: auto; }
 
-        button { cursor: pointer; border: none; background: none; font-family: inherit; }
+        /* Container Limitador para Desktop (mantém proporção de App) */
+        .app-container { max-width: 600px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
 
-        /* Layout Principal */
-        .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100dvh;
-            max-width: 600px; /* Limitador para parecer App em telas grandes */
-            margin: 0 auto;
-            background: #fff;
-            position: relative;
-        }
+        /* Cabeçalho Fixo */
+        .header { background: #fff; padding: 16px; text-align: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; display: flex; flex-direction: column; gap: 12px;}
+        .logo { height: 45px; object-fit: contain; }
+        .search-bar { width: 100%; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-page); font-size: 0.95rem; outline: none; }
+        .search-bar:focus { border-color: var(--brand); }
 
-        /* Header e Logo Horizontal */
-        .main-header {
-            padding: 12px 16px;
-            background: #fff;
-            z-index: 100;
-        }
-
-        .logo-area {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding-bottom: 8px;
-        }
-
-        .logo-horizontal {
-            height: 40px; /* Ajuste conforme necessário */
-            width: auto;
-            object-fit: contain;
-        }
-
-        /* Stories / Categorias */
-        .stories-container {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding: 8px 0;
-            scrollbar-width: none;
-        }
-        .stories-container::-webkit-scrollbar { display: none; }
-
-        .story-circle {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 72px;
-            transition: 0.2s;
-        }
-
-        .story-img-box {
-            width: 64px;
-            height: 64px;
-            border-radius: 50%;
-            padding: 2px;
-            border: 2px solid var(--border);
-            margin-bottom: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #fff;
-        }
-
-        .story-circle.active .story-img-box { border-color: var(--brand); }
-        .story-circle.active span { color: var(--brand); font-weight: 700; }
-
-        .story-img-box img, .story-img-box .emoji {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .story-circle span { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
-
-        /* Chips de Sub-departamento */
-        .chips-container {
-            padding: 8px 16px;
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            background: #fff;
-            border-bottom: 1px solid var(--border);
-            scrollbar-width: none;
-        }
-        .chips-container::-webkit-scrollbar { display: none; }
-
-        .chip {
-            padding: 6px 14px;
-            background: var(--bg-body);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            color: var(--text-muted);
-            font-weight: 600;
-            border: 1px solid var(--border);
-        }
-
-        .chip.active {
-            background: var(--brand);
-            color: #fff;
-            border-color: var(--brand);
-        }
-
-        /* Palco Principal (Scroll) */
-        .main-content {
-            flex: 1;
-            overflow-y: auto;
-            background: var(--bg-body);
-            padding-bottom: 80px;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .section-title {
-            padding: 16px;
-            font-size: 1.1rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
+        /* Barra de Categorias Horizontal (Sticky) */
+        .category-nav { background: #fff; padding: 12px 16px; display: flex; gap: 12px; overflow-x: auto; white-space: nowrap; position: sticky; top: 125px; z-index: 40; border-bottom: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); scrollbar-width: none; }
+        .category-nav::-webkit-scrollbar { display: none; }
+        .cat-chip { padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; color: var(--text-gray); font-weight: 600; background: var(--bg-page); transition: 0.2s; }
+        .cat-chip.active { background: var(--brand); color: #fff; }
 
         /* Grid de Produtos */
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            padding: 0 16px 16px;
-        }
+        .main-content { padding: 16px; }
+        .section-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 16px; color: var(--text-dark); }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
 
-        .product-card {
-            background: var(--bg-card);
-            border-radius: var(--radius);
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            transition: 0.2s;
-            position: relative;
-        }
+        /* Cards de Produto (Padrão Catálogo) */
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; display: flex; flex-direction: column; position: relative; }
+        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+        .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
+        .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text-dark); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em; }
+        .card-price-row { display: flex; align-items: baseline; gap: 6px; margin-top: auto; margin-bottom: 12px; flex-wrap: wrap; }
+        .price { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); }
+        .old-price { font-size: 0.8rem; color: var(--text-gray); text-decoration: line-through; }
+        .atacado-tag { font-size: 0.7rem; color: var(--success); background: #ecfdf5; padding: 2px 6px; border-radius: 4px; font-weight: 700; width: fit-content;}
 
-        .product-card:active { transform: scale(0.98); }
+        /* Ações de Compra no Card */
+        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(225,29,72,0.2); }
+        .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; border: 1px solid var(--border); border-radius: 6px; height: 38px; }
+        .qty-control button { width: 38px; height: 100%; font-size: 1.2rem; color: var(--brand); }
+        .qty-control span { font-weight: 700; font-size: 0.95rem; }
 
-        .product-img-wrap {
-            aspect-ratio: 1/1;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        /* Sacola Flutuante (Floating Cart) */
+        .floating-cart { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 568px; background: var(--brand); color: #fff; padding: 16px 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(225,29,72,0.4); z-index: 90; cursor: pointer; transition: transform 0.3s; }
+        .floating-cart.hidden { transform: translate(-50%, 150%); }
+        .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+        .fc-total { font-size: 1.1rem; font-weight: 800; }
 
-        .product-img-wrap img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        .product-info .name {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-main);
-            height: 2.6em;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            margin-bottom: 4px;
-        }
-
-        .price-area { margin-top: auto; }
-        .current-price { color: var(--brand); font-weight: 800; font-size: 1.1rem; }
-        .old-price { font-size: 0.75rem; color: var(--text-muted); text-decoration: line-through; margin-right: 4px; }
-
-        /* Botão Adicionar */
-        .btn-add-simple {
-            width: 100%;
-            background: var(--brand-light);
-            color: var(--brand);
-            padding: 8px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 0.85rem;
-            margin-top: 10px;
-        }
-
-        .qty-controls {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: var(--brand);
-            border-radius: 10px;
-            margin-top: 10px;
-            color: #fff;
-            overflow: hidden;
-        }
-
-        .qty-controls button {
-            color: #fff;
-            width: 32px;
-            height: 36px;
-            font-size: 1.2rem;
-            font-weight: 800;
-        }
-
-        .qty-controls span { font-weight: 700; font-size: 0.95rem; }
-
-        /* Bottom Nav */
-        .bottom-nav {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 64px;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            border-top: 1px solid var(--border);
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: var(--text-muted);
-            position: relative;
-        }
-
-        .nav-btn.active { color: var(--brand); }
-
-        .nav-btn svg { width: 24px; height: 24px; margin-bottom: 2px; }
-        .nav-btn span { font-size: 0.65rem; font-weight: 600; }
-
-        .cart-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--brand);
-            color: #fff;
-            font-size: 0.6rem;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 800;
-            border: 2px solid #fff;
-        }
-
-        /* Modais / Drawers Laterais */
-        .drawer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #fff;
-            z-index: 200;
-            transform: translateX(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .drawer.open { transform: translateX(0); }
-
-        .drawer-header {
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .btn-back { margin-right: 12px; color: var(--text-main); }
-        .drawer-title { font-weight: 800; font-size: 1.1rem; flex: 1; text-align: center; margin-right: 36px; }
-
-        .drawer-content { flex: 1; overflow-y: auto; padding: 16px; background: var(--bg-body); }
-
-        /* Checkout Footer */
-        .checkout-footer {
-            padding: 16px;
-            background: #fff;
-            border-top: 1px solid var(--border);
-            box-shadow: 0 -10px 20px rgba(0,0,0,0.03);
-        }
-
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            margin-bottom: 12px;
-        }
-
-        .total-row .label { color: var(--text-muted); font-weight: 600; }
-        .total-row .value { font-size: 1.5rem; font-weight: 900; color: var(--brand); }
-
-        .btn-finish {
-            width: 100%;
-            background: var(--brand);
-            color: #fff;
-            padding: 16px;
-            border-radius: 12px;
-            font-weight: 800;
-            font-size: 1.1rem;
-            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
-        }
-
-        /* Utilitários */
-        .hidden { display: none !important; }
+        /* Drawer / Modal Lateral para Sacola e Kits */
+        .drawer { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; display: flex; justify-content: flex-end; }
+        .drawer.open { opacity: 1; pointer-events: auto; }
+        .drawer-content { width: 100%; max-width: 400px; background: #fff; height: 100%; transform: translateX(100%); transition: 0.3s; display: flex; flex-direction: column; }
+        .drawer.open .drawer-content { transform: translateX(0); }
         
-        /* Loader Inicial */
-        #loader {
-            position: fixed; inset: 0; background: #fff; z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--brand); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .drawer-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 16px; background: #fff; }
+        .drawer-title { font-weight: 800; font-size: 1.2rem; }
+        .btn-close { font-size: 1.5rem; color: var(--text-dark); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+        
+        .drawer-body { flex: 1; overflow-y: auto; padding: 16px; background: var(--bg-page); }
+        
+        /* Checkout Form */
+        .chk-section { background: #fff; padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px; }
+        .chk-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
+        .input-text { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 12px; font-size: 1rem; outline: none; }
+        .input-text:focus { border-color: var(--brand); }
+        .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .pay-btn { padding: 12px; border: 1px solid var(--border); border-radius: 6px; background: #fff; font-weight: 600; color: var(--text-gray); }
+        .pay-btn.selected { border-color: var(--brand); background: var(--brand-light); color: var(--brand); }
+        
+        .drawer-footer { padding: 16px; background: #fff; border-top: 1px solid var(--border); box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem; color: var(--text-gray); }
+        .summary-row.total { font-size: 1.3rem; font-weight: 800; color: var(--text-dark); margin-bottom: 16px; }
+        .btn-checkout { width: 100%; background: var(--success); color: #fff; padding: 16px; border-radius: 8px; font-weight: 800; font-size: 1.1rem; }
 
-        /* Estilo do Input de Checkout */
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 0.85rem; font-weight: 700; margin-bottom: 6px; color: var(--text-main); }
-        .form-input { 
-            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid var(--border); 
-            background: #fff; font-size: 1rem; outline: none; transition: 0.2s;
-        }
-        .form-input:focus { border-color: var(--brand); }
-
-        .pay-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .pay-btn {
-            padding: 12px; border: 1px solid var(--border); border-radius: 10px;
-            font-size: 0.9rem; font-weight: 600; text-align: center; background: #fff;
-        }
-        .pay-btn.selected { background: var(--brand); color: #fff; border-color: var(--brand); }
+        /* Loader */
+        #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--text-gray); }
     </style>
 </head>
 <body>
 
-<div id="loader">
-    <div class="spinner"></div>
-    <p style="margin-top: 15px; font-weight: 600; font-size: 0.9rem; color: var(--text-muted);">Sincronizando estoque...</p>
-</div>
+<div id="loader">Carregando loja...</div>
 
 <div class="app-container">
-    
-    <header class="main-header">
-        <div class="logo-area">
-            <img src="/site/img/produtos/logo-super-cesta-basica-dona-antonia-cuiaba-varzea-grande.avif" alt="Dona Antônia" class="logo-horizontal">
-        </div>
-        
-        <div class="stories-container" id="stories-bar">
-            </div>
+
+    <header class="header">
+        <img src="/site/img/produtos/logoantonia.png" alt="Dona Antônia" class="logo">
+        <input type="text" id="search-input" class="search-bar" placeholder="Buscar produtos..." oninput="doSearch()">
     </header>
 
-    <div class="chips-container" id="chips-bar">
-        </div>
+    <nav class="category-nav" id="cat-nav">
+        </nav>
 
-    <main class="main-content" id="scroll-area">
-        <h2 class="section-title" id="page-title">Cestas Básicas</h2>
+    <main class="main-content">
+        <h2 class="section-title" id="grid-title">Carregando...</h2>
         <div class="product-grid" id="main-grid">
             </div>
     </main>
 
-    <nav class="bottom-nav">
-        <button class="nav-btn active" onclick="goToHome()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
-            <span>Início</span>
-        </button>
-        <button class="nav-btn" onclick="openSearch()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span>Busca</span>
-        </button>
-        <button class="nav-btn" onclick="openCheckout()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg>
-            <div class="cart-badge hidden" id="cart-count">0</div>
-            <span>Sacola</span>
-        </button>
-        <button class="nav-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975', '_blank')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-            <span>Suporte</span>
-        </button>
-    </nav>
-
-    <div id="checkout-drawer" class="drawer">
-        <div class="drawer-header">
-            <button class="btn-back" onclick="closeDrawer('checkout-drawer')">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            </button>
-            <div class="drawer-title">Minha Sacola</div>
+    <div class="floating-cart hidden" id="floating-cart" onclick="openCheckout()">
+        <div class="fc-info">
+            <span id="fc-qtd" style="background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 20px;">0 itens</span>
+            <span>Ver Sacola</span>
         </div>
+        <div class="fc-total" id="fc-total">R$ 0,00</div>
+    </div>
+
+    <div class="drawer" id="checkout-drawer">
         <div class="drawer-content">
-            <div id="checkout-items-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
-            
-            <div style="margin-top: 24px;">
-                <h3 style="font-size: 1rem; margin-bottom: 12px;">Agendar Entrega</h3>
-                <div id="delivery-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <div class="drawer-header">
+                <button class="btn-close" onclick="closeCheckout()">×</button>
+                <div class="drawer-title">Finalizar Pedido</div>
             </div>
+            <div class="drawer-body">
+                <div class="chk-section" id="chk-items-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+                
+                <div class="chk-section">
+                    <div class="chk-title">Agendamento</div>
+                    <div class="pay-options" id="delivery-options-list"></div>
+                </div>
 
-            <div style="margin-top: 24px;">
-                <h3 style="font-size: 1rem; margin-bottom: 12px;">Dados do Pedido</h3>
-                <div class="form-group">
-                    <label>Seu Nome</label>
-                    <input type="text" id="chk-nome" class="form-input" placeholder="Ex: João Silva">
+                <div class="chk-section">
+                    <div class="chk-title">Seus Dados</div>
+                    <input type="text" id="chk-nome" class="input-text" placeholder="Nome Completo">
+                    <input type="text" id="chk-cpf" class="input-text" placeholder="CPF (Opcional)" style="margin-bottom:0;">
                 </div>
-                <div class="form-group">
-                    <label>CPF (Opcional)</label>
-                    <input type="text" id="chk-cpf" class="form-input" placeholder="000.000.000-00">
-                </div>
-                <div class="form-group">
-                    <label>Forma de Pagamento</label>
-                    <div class="pay-grid" id="payment-options">
-                        <div class="pay-btn" onclick="selectPay('Dinheiro', this)">Dinheiro</div>
-                        <div class="pay-btn" onclick="selectPay('PIX', this)">PIX</div>
-                        <div class="pay-btn" onclick="selectPay('Cartão', this)">Cartão</div>
-                        <div class="pay-btn" onclick="selectPay('Vale', this)">Vale Refeição</div>
+
+                <div class="chk-section">
+                    <div class="chk-title">Pagamento na Entrega</div>
+                    <div class="pay-options">
+                        <button class="pay-btn" onclick="selectPayment('Dinheiro', this)">Dinheiro</button>
+                        <button class="pay-btn" onclick="selectPayment('PIX', this)">PIX</button>
+                        <button class="pay-btn" onclick="selectPayment('Débito', this)">Débito</button>
+                        <button class="pay-btn" onclick="selectPayment('Crédito', this)">Crédito</button>
+                        <button class="pay-btn" onclick="selectPayment('Alimentação', this)" style="grid-column: span 2;">Vale Alimentação</button>
                     </div>
+                    <input type="hidden" id="chk-pagamento">
                 </div>
+            </div>
+            <div class="drawer-footer">
+                <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos</span><span id="sum-desc">R$ 0,00</span></div>
+                <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
+                <button class="btn-checkout" id="btn-send-order" onclick="sendOrder()">Enviar pelo WhatsApp</button>
             </div>
         </div>
-        <div class="checkout-footer">
-            <div class="total-row">
-                <span class="label">Total do Pedido</span>
-                <span class="value" id="final-total">R$ 0,00</span>
+    </div>
+
+    <div class="drawer" id="kit-drawer">
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <button class="btn-close" onclick="closeKit()">×</button>
+                <div class="drawer-title" id="kit-title">Itens do Kit</div>
             </div>
-            <button class="btn-finish" id="btn-send" onclick="sendOrder()">Finalizar via WhatsApp</button>
+            <div class="drawer-body" id="kit-items-grid" style="display:flex; flex-direction:column; gap:12px;"></div>
+            <div class="drawer-footer">
+                <div class="summary-row total"><span>Total do Kit</span><span id="kit-total-price">R$ 0,00</span></div>
+                <button class="btn-checkout" style="background: var(--brand);" onclick="commitExpander()">Adicionar Kit</button>
+            </div>
         </div>
     </div>
 
@@ -484,292 +187,343 @@
 
 <script>
 // ==========================================
-// ESTADO E LOGICA (MANTIDA DO ORIGINAL)
+// ESTADO E LÓGICA PRESERVADOS
 // ==========================================
-const CONFIG = { horaCorte: 10, minOrder: 75.00 };
+const CONFIG_ENTREGA = { horaCorteHoje: 10, descontoOpcao2: 3.00, descontoOpcao3: 6.00, diasSemanaInativos: [0] };
+const MIN_ORDER = 75.00;
 const $ = id => document.getElementById(id);
 
 const STATE = {
-    data: { baskets: [], prods: [], combos: [] },
-    cart: {}, cartOrder: [], 
-    deptos: {}, activeCat: 'cestas',
-    delivery: { options: [], selected: 0 },
-    payment: ''
+    prods: [], baskets: [], combos: [], deptos: {},
+    cart: {}, cartOrder: [],
+    baseBasket: null, basketExtraFee: 0, comboDiscount: 0, atacadoDiscount: 0,
+    deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
+    activeCat: 'cestas'
 };
 
-// Funções de Formatação
+// Formatação
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
-// Renderização de UI
-function renderStories() {
+// ==========================================
+// RENDERIZAÇÃO DA INTERFACE (APP STYLE)
+// ==========================================
+function renderCategories() {
     const cats = [
-        { id: 'home', title: 'Início', emoji: '🏠' },
-        { id: 'cestas', title: 'Cestas', emoji: '🛒' },
-        { id: 'mercado', title: 'Mercado', emoji: '🛍️' },
-        { id: 'ofertas', title: 'Ofertas', emoji: '🔥' },
-        { id: 'kits', title: 'Kits', emoji: '🎁' }
+        { id: 'cestas', title: 'Cestas Básicas' },
+        { id: 'ofertas', title: 'Ofertas 🔥' },
+        { id: 'kits', title: 'Kits Promo' },
+        ...Object.keys(STATE.deptos).filter(k => k.startsWith('cat_')).map(k => ({ id: k, title: STATE.deptos[k].title }))
     ];
 
-    $('stories-bar').innerHTML = cats.map(c => `
-        <div class="story-circle ${STATE.activeCat === c.id ? 'active' : ''}" onclick="selectCategory('${c.id}')">
-            <div class="story-img-box">
-                <span class="emoji">${c.emoji}</span>
-            </div>
-            <span>${c.title}</span>
-        </div>
-    `).join('');
+    $('cat-nav').innerHTML = cats.map(c => 
+        `<button class="cat-chip ${STATE.activeCat === c.id ? 'active' : ''}" onclick="selectCategory('${c.id}')">${c.title}</button>`
+    ).join('');
 }
 
-function selectCategory(catId) {
-    STATE.activeCat = catId;
-    renderStories();
-    $('scroll-area').scrollTo(0,0);
-
-    if(catId === 'cestas') {
-        $('page-title').innerText = "Cestas Básicas";
-        renderGrid(STATE.data.baskets, 'BASKET');
-        $('chips-bar').innerHTML = "";
-    } else if(catId === 'kits') {
-        $('page-title').innerText = "Kits Promocionais";
-        renderGrid(STATE.data.combos, 'COMBO');
-        $('chips-bar').innerHTML = "";
-    } else if(catId === 'ofertas') {
-        $('page-title').innerText = "Ofertas Imperdíveis";
-        const ofertas = STATE.data.prods.filter(p => p.price < p.oldPrice);
-        renderGrid(ofertas, 'PROD');
-        $('chips-bar').innerHTML = "";
-    } else if(catId === 'mercado') {
-        $('page-title').innerText = "Supermercado";
-        const keys = Object.keys(STATE.deptos).filter(k => k.startsWith('cat_'));
-        renderChips(keys);
-        if(keys.length > 0) selectChip(keys[0]);
-    } else {
-        selectCategory('cestas');
-    }
-}
-
-function renderChips(keys) {
-    $('chips-bar').innerHTML = keys.map(k => `
-        <div class="chip" id="chip-${k}" onclick="selectChip('${k}')">${STATE.deptos[k].title}</div>
-    `).join('');
-}
-
-function selectChip(k) {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    $( 'chip-'+k ).classList.add('active');
-    renderGrid(STATE.deptos[k].data, 'PROD');
+function selectCategory(id) {
+    STATE.activeCat = id;
+    renderCategories();
+    $('search-input').value = '';
+    
+    if (id === 'cestas') { $('grid-title').innerText = "Cestas Básicas"; renderGrid(STATE.baskets, 'BASKET'); }
+    else if (id === 'kits') { $('grid-title').innerText = "Kits Promocionais"; renderGrid(STATE.combos, 'COMBO'); }
+    else if (id === 'ofertas') { $('grid-title').innerText = "Ofertas (Vencimento Próximo)"; renderGrid(STATE.prods.filter(p => p.price < p.oldPrice), 'PROD'); }
+    else { $('grid-title').innerText = STATE.deptos[id].title; renderGrid(STATE.deptos[id].data, 'PROD'); }
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function renderGrid(items, type) {
-    const grid = $('main-grid');
-    if(!items || items.length === 0) { grid.innerHTML = "<p style='grid-column:1/-1; text-align:center; padding:40px;'>Nenhum item encontrado.</p>"; return; }
+    if (!items || items.length === 0) { $('main-grid').innerHTML = '<p style="grid-column: 1/-1; text-align:center; color:#6b7280; padding: 20px;">Nenhum produto encontrado.</p>'; return; }
     
-    grid.innerHTML = items.map(p => {
-        const id = p.id;
-        const q = STATE.cart[id] || 0;
+    $('main-grid').innerHTML = items.map(p => {
+        let q = STATE.cart[p.id] || 0;
+        let isKit = type === 'BASKET' || type === 'COMBO';
+        
+        let acaoHTML = '';
+        if (isKit) {
+            acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}', '${type}')">Ver Itens</button>`;
+        } else {
+            acaoHTML = q > 0 
+                ? `<div class="qty-control"><button onclick="upd('${p.id}', -1)">-</button><span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`
+                : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`;
+        }
+
         return `
-        <div class="product-card">
-            <div class="product-img-wrap">
-                <img src="${p.img}" alt="${p.name}" loading="lazy">
+        <div class="card">
+            <div class="card-img-wrap"><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" alt="${p.name || p.nome}" loading="lazy"></div>
+            <div class="card-title">${p.name || p.nome}</div>
+            <div class="card-price-row">
+                ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
+                <span class="price">${fmt(p.price || p.preco)}</span>
+                ${type === 'PROD' && !isKit && p.price ? `<div class="atacado-tag">3+ por ${fmt(p.price * 0.90)}</div>` : ''}
             </div>
-            <div class="product-info">
-                <div class="name">${p.name}</div>
-                <div class="price-area">
-                    ${p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
-                    <div class="current-price">${fmt(p.price)}</div>
-                </div>
-                
-                <div id="ctrl-${id}">
-                    ${q > 0 ? `
-                        <div class="qty-controls">
-                            <button onclick="upd('${id}', -1)">-</button>
-                            <span>${q}</span>
-                            <button onclick="upd('${id}', 1)">+</button>
-                        </div>
-                    ` : `
-                        <button class="btn-add-simple" onclick="upd('${id}', 1)">Adicionar</button>
-                    `}
-                </div>
-            </div>
-        </div>
-        `;
+            <div id="card-act-${p.id}">${acaoHTML}</div>
+        </div>`;
     }).join('');
 }
 
-// Carrinho
+// Busca Simples
+function doSearch() {
+    let q = norm($('search-input').value);
+    if(q.length < 2) return selectCategory('cestas');
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    $('grid-title').innerText = "Resultados da Busca";
+    renderGrid(STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q)), 'PROD');
+}
+
+// ==========================================
+// LÓGICA DE CARRINHO (REUTILIZADA INTACTA)
+// ==========================================
 function upd(id, delta) {
-    const prodsAll = [...STATE.data.prods, ...STATE.data.baskets, ...STATE.data.combos];
-    const p = prodsAll.find(x => String(x.id) === String(id));
-    if(!p) return;
-
-    let q = (STATE.cart[id] || 0) + delta;
-    if(q < 0) q = 0;
-    if(q > p.stock && type === 'PROD') { alert("Estoque máximo atingido"); return; }
-
-    if(q === 0) {
-        delete STATE.cart[id];
-        STATE.cartOrder = STATE.cartOrder.filter(x => x !== id);
-    } else {
-        if(!STATE.cart[id]) STATE.cartOrder.push(id);
-        STATE.cart[id] = q;
-    }
-
-    updateTotals();
+    let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
+    let cur = STATE.cart[id] || 0; let n = Math.max(0, cur + delta);
+    if (n > p.stock) return alert("Estoque insuficiente");
     
-    // Atualiza apenas o card se estiver na tela
-    const ctrl = $('ctrl-'+id);
-    if(ctrl) {
-        ctrl.innerHTML = q > 0 ? `
-            <div class="qty-controls">
-                <button onclick="upd('${id}', -1)">-</button>
-                <span>${q}</span>
-                <button onclick="upd('${id}', 1)">+</button>
-            </div>
-        ` : `<button class="btn-add-simple" onclick="upd('${id}', 1)">Adicionar</button>`;
+    if (cur === 0 && n > 0) STATE.cartOrder.push(id);
+    STATE.cart[id] = n;
+    if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); }
+    
+    // Atualiza apenas a área de ação do card (Rápido e limpo)
+    let actBox = $(`card-act-${id}`);
+    if (actBox) {
+        actBox.innerHTML = n > 0 
+            ? `<div class="qty-control"><button onclick="upd('${id}', -1)">-</button><span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>`
+            : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
     }
-
-    if($('checkout-drawer').classList.contains('open')) renderCheckoutList();
+    
+    updateTotals();
+    if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
 }
 
 function updateTotals() {
-    let total = 0;
-    let count = 0;
-    const prodsAll = [...STATE.data.prods, ...STATE.data.baskets, ...STATE.data.combos];
-    
-    Object.entries(STATE.cart).forEach(([id, q]) => {
-        const p = prodsAll.find(x => String(x.id) === String(id));
-        if(p) {
-            total += p.price * q;
-            count += q;
-        }
+    let sum = 0; let count = 0; let atacadoDiscount = 0;
+    Object.entries(STATE.cart).forEach(([id, q]) => { 
+        let p = STATE.prods.find(x => String(x.id) === String(id)); 
+        if (p) { sum += p.price * q; count += q; if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; } 
     });
-
-    $('cart-count').innerText = count;
-    $('cart-count').classList.toggle('hidden', count === 0);
-    $('final-total').innerText = fmt(total);
-
-    const btn = $('btn-send');
-    if(total < CONFIG.minOrder) {
-        btn.disabled = true;
-        btn.innerText = `Mínimo ${fmt(CONFIG.minOrder)}`;
-        btn.style.opacity = '0.5';
+    
+    STATE.atacadoDiscount = atacadoDiscount;
+    let subtotal = sum + STATE.basketExtraFee;
+    let final = subtotal - STATE.deliveryDiscount - STATE.comboDiscount - STATE.atacadoDiscount;
+    
+    // Mostra/Esconde Sacola Flutuante
+    let fc = $('floating-cart');
+    if (count > 0) {
+        fc.classList.remove('hidden');
+        $('fc-qtd').innerText = `${count} item(s)`;
+        $('fc-total').innerText = fmt(final);
     } else {
-        btn.disabled = false;
-        btn.innerText = "Finalizar via WhatsApp";
-        btn.style.opacity = '1';
+        fc.classList.add('hidden');
     }
 }
 
-// Checkout
+// ==========================================
+// CHECKOUT E ENVIO MAKE + WHATSAPP (INTACTO)
+// ==========================================
 function openCheckout() {
-    if(STATE.cartOrder.length === 0) { alert("Sua sacola está vazia!"); return; }
-    renderCheckoutList();
-    renderDeliveryOptions();
+    if (STATE.cartOrder.length === 0) return;
+    
+    // Opções de Entrega
+    let options = []; let date = new Date(); let checkDate = new Date(date);
+    if (date.getHours() < CONFIG_ENTREGA.horaCorteHoje && !CONFIG_ENTREGA.diasSemanaInativos.includes(date.getDay())) 
+        options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
+    
+    while(options.length < 3) { 
+        checkDate.setDate(checkDate.getDate() + 1); 
+        if(!CONFIG_ENTREGA.diasSemanaInativos.includes(checkDate.getDay())) { 
+            let desc = options.length === 0 ? 0 : (options.length === 1 ? CONFIG_ENTREGA.descontoOpcao2 : CONFIG_ENTREGA.descontoOpcao3); 
+            options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); 
+        } 
+    }
+    STATE.deliveryOptions = options;
+    let sel = options[STATE.selectedDeliveryIndex || 0]; 
+    STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
+    
+    $('delivery-options-list').innerHTML = options.map((opt, i) => 
+        `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">
+            ${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}
+        </button>`
+    ).join('');
+
+    renderCheckoutItems();
     $('checkout-drawer').classList.add('open');
 }
 
-function renderCheckoutList() {
-    const prodsAll = [...STATE.data.prods, ...STATE.data.baskets, ...STATE.data.combos];
-    $('checkout-items-list').innerHTML = STATE.cartOrder.map(id => {
-        const p = prodsAll.find(x => String(x.id) === String(id));
-        const q = STATE.cart[id];
+function closeCheckout() { $('checkout-drawer').classList.remove('open'); }
+
+function selectDelivery(idx) {
+    STATE.selectedDeliveryIndex = idx;
+    let sel = STATE.deliveryOptions[idx];
+    STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
+    openCheckout(); // Re-renderiza para atualizar seleções
+    updateTotals();
+}
+
+function selectPayment(metodo, btn) {
+    $('chk-pagamento').value = metodo;
+    document.querySelectorAll('#checkout-drawer .pay-btn').forEach(el => el.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function renderCheckoutItems() {
+    $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
+        let p = STATE.prods.find(x => String(x.id) === String(id));
+        let q = STATE.cart[id];
         return `
-            <div style="display:flex; align-items:center; background:#fff; padding:10px; border-radius:12px; gap:12px;">
-                <img src="${p.img}" style="width:50px; height:50px; object-fit:contain;">
-                <div style="flex:1;">
-                    <div style="font-size:0.85rem; font-weight:600;">${p.name}</div>
-                    <div style="color:var(--brand); font-weight:800; font-size:0.9rem;">${fmt(p.price * q)}</div>
-                </div>
-                <div class="qty-controls" style="margin:0; width:90px;">
-                    <button onclick="upd('${id}', -1)">-</button>
-                    <span>${q}</span>
-                    <button onclick="upd('${id}', 1)">+</button>
-                </div>
+        <div style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+            <img src="${p.img}" style="width:40px; height:40px; object-fit:contain; border-radius:4px;">
+            <div style="flex:1;">
+                <div style="font-size:0.9rem; font-weight:600;">${p.name}</div>
+                <div style="font-size:0.85rem; color:var(--text-gray);">${fmt(p.price)} un</div>
             </div>
-        `;
+            <div class="qty-control" style="width: 80px; height: 32px;">
+                <button onclick="upd('${id}', -1)">-</button><span style="font-size:0.9rem;">${q}</span><button onclick="upd('${id}', 1)">+</button>
+            </div>
+        </div>`;
     }).join('');
-}
 
-function renderDeliveryOptions() {
-    // Lógica simplificada de datas
-    let options = [];
-    let date = new Date();
-    if(date.getHours() < CONFIG.horaCorte) options.push({ label: 'Hoje', date: date.toLocaleDateString() });
-    
-    for(let i=1; i<=2; i++) {
-        let d = new Date(); d.setDate(d.getDate() + i);
-        if(d.getDay() !== 0) options.push({ label: 'Agendar', date: d.toLocaleDateString() });
-    }
-    
-    $('delivery-list').innerHTML = options.map((opt, i) => `
-        <div class="pay-btn ${STATE.delivery.selected === i ? 'selected' : ''}" onclick="STATE.delivery.selected=${i}; renderDeliveryOptions();">
-            ${opt.label} (${opt.date})
-        </div>
-    `).join('');
-}
+    let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
+    let totalDesc = STATE.comboDiscount + STATE.atacadoDiscount + STATE.deliveryDiscount;
+    let subtotal = sum + STATE.basketExtraFee;
+    let final = subtotal - totalDesc;
 
-function selectPay(m, el) {
-    STATE.payment = m;
-    document.querySelectorAll('#payment-options .pay-btn').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-}
+    $('sum-sub').innerText = fmt(subtotal);
+    $('sum-desc').innerText = `- ${fmt(totalDesc)}`;
+    $('sum-desc-row').style.display = totalDesc > 0 ? 'flex' : 'none';
+    $('sum-total').innerText = fmt(final);
 
-function closeDrawer(id) { $(id).classList.remove('open'); }
-function goToHome() { closeDrawer('checkout-drawer'); selectCategory('cestas'); }
-
-async function init() {
-    try {
-        const res = await fetch('/site/produtos.json').then(r => r.json());
-        const baskets = await fetch('/site/produtos-cesta-basica.json').then(r => r.json());
-        const combos = await fetch('/site/combos.json').then(r => r.json());
-
-        STATE.data.prods = res.map(p => ({
-            id: p.codigo || p.id,
-            name: p.nome,
-            price: parseFloat(p.preco),
-            oldPrice: parseFloat(p.preco),
-            img: p.url_imagem || `/site/img/produtos/${p.codigo}.webp`,
-            stock: parseInt(p.estoque),
-            cat: p.categoria || 'Geral'
-        }));
-
-        STATE.data.baskets = baskets;
-        STATE.data.combos = combos;
-
-        // Categorizar
-        STATE.data.prods.forEach(p => {
-            const cId = 'cat_' + norm(p.cat).replace(/\s/g, '_');
-            if(!STATE.deptos[cId]) STATE.deptos[cId] = { title: p.cat, data: [] };
-            STATE.deptos[cId].data.push(p);
-        });
-
-        $('loader').style.display = 'none';
-        selectCategory('cestas');
-    } catch(e) { console.error(e); }
+    let btn = $('btn-send-order');
+    if (final < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-gray)'; }
+    else { btn.disabled = false; btn.innerText = 'Enviar pelo WhatsApp'; btn.style.background = 'var(--success)'; }
 }
 
 function sendOrder() {
-    const nome = $('chk-nome').value;
-    if(!nome || !STATE.payment) { alert("Preencha seu nome e pagamento"); return; }
+    const btnSubmit = $('btn-send-order'); if (btnSubmit.disabled) return;
+    const nomeCliente = $('chk-nome').value.trim(); const cpfCliente = $('chk-cpf').value.trim(); const formaPagamento = $('chk-pagamento').value;
+
+    if (!nomeCliente) return alert("Preencha seu nome.");
+    if (!formaPagamento) return alert("Escolha o pagamento.");
+
+    btnSubmit.disabled = true; btnSubmit.innerText = "Processando...";
+
+    const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let itensParaNuvem = []; let totalBruto = 0; 
+    Object.entries(STATE.cart).forEach(([cartId, q]) => { 
+        const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
+        if (p) { 
+            let unitPrice = p.price; totalBruto += unitPrice * q; itemsTxt += `${q}x ${p.name}\n`; 
+            apiItens.push({ id: String(p.blingId || p.id), nome: p.name, qtd: q, price: unitPrice });
+            itensParaNuvem.push({ qtd: q, nomeOriginal: p.name, sku: p.codigo || p.id, precoUnitario: unitPrice, imagem: p.img });
+        } 
+    });
+      
+    let totalDesc = STATE.comboDiscount + STATE.deliveryDiscount + STATE.atacadoDiscount;
+    let final = totalBruto + STATE.basketExtraFee - totalDesc;
+    let obs = `Pedido: #${orderId} | Entrega: ${STATE.deliveryDateStr}`; 
+
+    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO ATACADO: -${fmt(STATE.atacadoDiscount)}`;
+    if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     
-    let msg = `*PEDIDO DONA ANTÔNIA*\n\n`;
-    msg += `*Cliente:* ${nome}\n`;
-    msg += `*Pagamento:* ${STATE.payment}\n\n`;
-    msg += `*Itens:*\n`;
+    const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nomeCliente}\n*PAGAMENTO:* ${formaPagamento}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
-    const prodsAll = [...STATE.data.prods, ...STATE.data.baskets, ...STATE.data.combos];
-    let total = 0;
-    STATE.cartOrder.forEach(id => {
-        const p = prodsAll.find(x => String(x.id) === String(id));
-        const q = STATE.cart[id];
-        msg += `${q}x ${p.name} - ${fmt(p.price * q)}\n`;
-        total += p.price * q;
+    const payload = { 
+        cliente: { nome: nomeCliente, cpf: cpfCliente, pagamento: formaPagamento }, 
+        pedido: { itens: apiItens, total: Number(final), outras_despesas: Number(STATE.basketExtraFee), desconto: Number(totalDesc), observacoes: obs },
+        registroNuvem: { id: Date.now(), status: "PENDENTE", orderNum: `#${orderId}`, cliente: nomeCliente, entrega: STATE.deliveryDateStr, valorTotal: final.toFixed(2), itens: itensParaNuvem }
+    };
+    
+    fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
+  
+    window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
+    setTimeout(() => { btnSubmit.disabled = false; btnSubmit.innerText = `Enviar pelo WhatsApp`; }, 3000);
+}
+
+// ==========================================
+// LÓGICA DE KITS E EXPANDER (MANTIDA)
+// ==========================================
+let expanderState = { items: {}, sourceObj: null, type: null, orderedIds: [] };
+
+window.openKitLateralView = function(id, type) {
+    let sourceObj = type === 'BASKET' ? STATE.baskets.find(x => String(x.id) === String(id)) : STATE.combos.find(x => String(x.id) === String(id)); if (!sourceObj) return;
+    expanderState = { items: {}, sourceObj, type, orderedIds: [] };
+
+    sourceObj.produtos.forEach(s => {
+        let partes = String(s).split('x');
+        if (partes.length > 1) { 
+            let pId = partes[1].trim(); let qty = parseInt(partes[0]); 
+            let p = STATE.prods.find(x => String(x.id) === pId); 
+            if (p) { expanderState.items[pId] = qty; expanderState.orderedIds.push(pId); } 
+        }
     });
 
-    msg += `\n*TOTAL: ${fmt(total)}*`;
+    $('kit-title').innerText = sourceObj.nome || sourceObj.name;
+    $('kit-total-price').innerText = fmt(sourceObj.preco || sourceObj.price);
     
-    window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
+    $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => {
+        let p = STATE.prods.find(x => String(x.id) === pId);
+        let qty = expanderState.items[pId];
+        return `
+        <div style="display:flex; align-items:center; gap:12px; background:#fff; padding:12px; border-radius:8px; border:1px solid var(--border);">
+            <img src="${p.img}" style="width:50px; height:50px; object-fit:contain;">
+            <div style="flex:1;">
+                <div style="font-weight:600; font-size:0.9rem;">${p.name}</div>
+                <div style="color:var(--text-gray); font-size:0.8rem;">Qtd inclusa: ${qty} un</div>
+            </div>
+        </div>`;
+    }).join('');
+
+    $('kit-drawer').classList.add('open');
+};
+
+function closeKit() { $('kit-drawer').classList.remove('open'); }
+
+function commitExpander() {
+    Object.entries(expanderState.items).forEach(([pId, qty]) => {
+        if (qty > 0) { 
+            if (!STATE.cart[pId]) STATE.cartOrder.push(pId); 
+            STATE.cart[pId] = (STATE.cart[pId] || 0) + qty; 
+        }
+    });
+    updateTotals(); closeKit(); 
+    $('floating-cart').classList.add('shake'); // Efeito visual sutil
+    setTimeout(() => $('floating-cart').classList.remove('shake'), 300);
+}
+
+// ==========================================
+// INICIALIZAÇÃO DE DADOS JSON
+// ==========================================
+async function fetchWithCache(url, key) {
+    try {
+        let cached = localStorage.getItem(key); let cacheTime = localStorage.getItem(key + '_time'); let now = Date.now();
+        if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached);
+        let res = await fetch(url).then(r => r.json()); localStorage.setItem(key, JSON.stringify(res)); localStorage.setItem(key + '_time', now); return res;
+    } catch (e) { return fetch(url).then(r => r.json()).catch(() => []); }
+}
+
+async function init() {
+    try {
+        const [r1, r2, r3] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods'), fetchWithCache('/site/combos.json', 'cache_combos') ]);
+        STATE.baskets = r1 || []; STATE.combos = r3 || [];
+
+        if (r2 && r2.length > 0) {
+            STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
+                const pBase = parseFloat(p.preco) * 1.01;
+                return { id: String(p.codigo || p.id), blingId: p.id, name: p.nome, price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, categoria: p.categoria || "Outros" };
+            });
+
+            // Agrupa Departamentos
+            STATE.prods.forEach(p => { 
+                let cId = 'cat_' + norm(p.categoria).replace(/[^a-z0-9]/g, '_');
+                if (!STATE.deptos[cId]) STATE.deptos[cId] = { title: p.categoria || "Outros", data: [] };
+                STATE.deptos[cId].data.push(p); 
+            });
+        }
+        
+        $('loader').style.display = 'none';
+        selectCategory('cestas');
+
+    } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
 }
 
 document.addEventListener('DOMContentLoaded', init);
