@@ -72,7 +72,6 @@
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
-        /* Ajuste do Título do Card: Fonte menor e até 4 linhas */
         .card-title { font-size: 0.65rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; height: 5.2em; text-transform: uppercase; cursor: pointer; }
         
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
@@ -115,12 +114,17 @@
         .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
         .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; }
         
+        /* Ajuste do Card Horizontal */
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
-        .list-img-wrap { width: 100px; height: 100px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
+        
+        /* Aumento da altura vertical da foto */
+        .list-img-wrap { width: 100px; height: 140px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-        .list-name { font-size: 0.75rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-transform: uppercase; height: 4.2em; }
+        
+        /* Permitindo até 4 linhas e ajustando a altura proporcionalmente */
+        .list-name { font-size: 0.75rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; text-transform: uppercase; height: 5.6em; }
         .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; }
         
         .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
@@ -352,8 +356,6 @@ function openDrawer(id) {
 }
 
 function closeDrawer(id) { 
-    // Em vez de fechar e depois dar back, apenas disparamos o back nativo.
-    // O evento popstate (logo abaixo) garantirá que apenas a última aba feche corretamente.
     if (modalStack.includes(id)) {
         history.back();
     }
@@ -363,7 +365,6 @@ function closeAllDrawers() {
     let count = modalStack.length;
     if(count > 0) history.go(-count);
 
-    // Limpeza forçada de segurança
     document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); 
     modalStack = [];
     $('overlay').classList.remove('open'); 
@@ -385,7 +386,6 @@ window.addEventListener('popstate', (e) => {
     } else {
         if (STATE.activeCat !== 'cestas') { 
             selectCategory('cestas');
-            // Não fazemos pushState aqui para não quebrar o fluxo de "Voltar" nativo do celular
         }
     }
 });
@@ -552,7 +552,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
 
         let tagHTML = '';
-        if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% de Desconto</div>`;
+        if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% OFF (Vencimento Próximo)</div>`;
         
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
 
@@ -694,10 +694,60 @@ window.commitExpander = function() {
 };
 
 // ==========================================
-// INTELIGÊNCIA DE SUBSTITUIÇÃO (TROCA GERAL)
+// INTELIGÊNCIA DE SUBSTITUIÇÃO (TROCA GERAL E HORIZONTAL DE OFERTAS)
 // ==========================================
 let swapContext = 'KIT';
 let currentSwapOldId = null;
+
+// Helper para construir os cards horizontais do menu de ofertas na tela de Troca
+function buildSwapHorizontalCards(items, promoSpecialType = null) {
+    let similarIds = STATE.swapSimilarProds ? STATE.swapSimilarProds.map(s => s.id) : [];
+    let validItems = (items || []).filter(p => p && p.id !== currentSwapOldId && !similarIds.includes(p.id) && p.stock > 0);
+    if(validItems.length === 0) return '';
+
+    return validItems.map(p => {
+        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+        
+        let addQty = 1;
+        let addText = "Adicionar";
+        let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
+        let tagHtml = "";
+        let priceHtml = fmt(p.price);
+
+        if (promoSpecialType === 'LEVE5') {
+            addQty = 5; addText = "Add 5 un.";
+            btnStyle = "background: var(--brand); color: #fff;";
+            tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 5 PAGUE 4</div><br>`;
+            priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`;
+        } else if (promoSpecialType === 'LEVE2') {
+            addQty = 2; addText = "Add 2 un.";
+            btnStyle = "background: var(--brand); color: #fff;";
+            tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 20% OFF</div><br>`;
+            let tf = p.price * 2; let to = tf * 0.8;
+            priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(tf)}</span>${fmt(to)}`;
+        } else if (p._is30Off && promoSpecialType !== 'APROVEITE') {
+            tagHtml = `<div style="font-size: 0.65rem; color: var(--brand); background: var(--brand-light); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">30% OFF (Vencimento)</div><br>`;
+        }
+
+        let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>` 
+                             : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${p.id}', ${addQty})">${addText}</button>`;
+
+        return `
+        <div class="list-item">
+            <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-info">
+                ${tagHtml}
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${priceHtml}</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                ${acaoHTML}
+            </div>
+        </div>`;
+    }).join('');
+}
+
 
 window.openSwapView = function(oldPId, context = 'KIT') {
     swapContext = context;
@@ -771,14 +821,36 @@ window.selectSwapCategory = function(cat) {
 };
 
 function buildSwapSuggestions(cat) {
-    let similarIds = STATE.swapSimilarProds.map(s => s.id);
-    let suggestionProds = [];
+    if (cat === 'Ofertas') {
+        let html = '';
+        
+        // 1. 30% OFF
+        let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6);
+        let h1 = buildSwapHorizontalCards(off30Items, null);
+        if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 30% de Desconto</h4>${h1}</div>`;
 
-    if(cat === 'Ofertas') {
-        suggestionProds = STATE.maisOfertas.filter(p => !similarIds.includes(p.id) && p.id !== currentSwapOldId);
-    } else {
-        suggestionProds = STATE.prods.filter(p => p.categoria === cat && p.id !== currentSwapOldId && !similarIds.includes(p.id) && p.stock > 0);
+        // 2. Aproveite
+        let h2 = buildSwapHorizontalCards(PROMO_CONFIG.aproveite.map(findItem), 'APROVEITE');
+        if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Aproveite a viagem, talvez você precise</h4>${h2}</div>`;
+
+        // 3. Leve 5
+        let h3 = buildSwapHorizontalCards(PROMO_CONFIG.leve5pague4.map(findItem), 'LEVE5');
+        if(h3) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Promoção Exclusiva: Leve 5 pague 4</h4>${h3}</div>`;
+
+        // 4. Leve 2
+        let h4 = buildSwapHorizontalCards(PROMO_CONFIG.leve2.map(findItem), 'LEVE2');
+        if(h4) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 2 e economize 20%</h4>${h4}</div>`;
+
+        // 5. Mais ofertas
+        let h5 = buildSwapHorizontalCards(STATE.maisOfertas, null);
+        if(h5) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Mais Ofertas Imperdíveis</h4>${h5}</div>`;
+
+        if(!html) return `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhuma oferta disponível no momento.</p>`;
+        return html;
     }
+
+    let similarIds = STATE.swapSimilarProds.map(s => s.id);
+    let suggestionProds = STATE.prods.filter(p => p.categoria === cat && p.id !== currentSwapOldId && !similarIds.includes(p.id) && p.stock > 0);
     
     if(suggestionProds.length === 0) return `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhum produto extra nesta categoria.</p>`;
 
@@ -847,8 +919,14 @@ window.addSuggestionToKit = function(newPId, delta) {
         
         let q = expanderState.items[newPId] || 0;
         let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
+        
+        // Rebuild dinamico do botão caso volte a 0
+        let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
+        if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+        else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+
         let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>` 
-                             : `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${newPId}', 1)">Adicionar</button>`;
+                             : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
         document.querySelectorAll(`#swap-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
 
     } else if (swapContext === 'CART') {
@@ -868,8 +946,13 @@ window.addSuggestionToKit = function(newPId, delta) {
         
         let q = STATE.cart[newPId] || 0;
         let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
+        
+        let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
+        if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+        else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+
         let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>` 
-                             : `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${newPId}', 1)">Adicionar</button>`;
+                             : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
         document.querySelectorAll(`#swap-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
         document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML.replace("addSuggestionToKit", "upd"));
     }
@@ -1074,14 +1157,13 @@ async function init() {
             STATE.maisOfertas = maisOfertas;
         }
         
-        loadCart(); // ← Carrega o carrinho salvo no navegador
+        loadCart(); 
         updateTotals(); 
         setupDropdown();
         
         $('loader').style.opacity = '0';
         setTimeout(() => $('loader').style.display = 'none', 300);
         
-        // Empurra a primeira rota no histórico
         history.replaceState({home: true}, "");
         selectCategory('cestas'); 
 
