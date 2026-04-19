@@ -1332,7 +1332,22 @@ function renderCheckoutItems() {
 function sendOrder() {
     const btn = $('btn-send-order'); if (btn.disabled) return;
     const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.trim(); const pag = $('chk-pagamento').value;
-    if (!nome) return alert("Preencha seu nome."); if (!pag) return alert("Escolha o pagamento.");
+    
+    // [NOVO] Validação com rolagem automática para o campo vazio
+    if (!nome) {
+        alert("Preencha seu nome.");
+        let campoNome = $('chk-nome');
+        campoNome.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Rola suavemente até o campo
+        setTimeout(() => campoNome.focus(), 300); // Foca no campo após o scroll (abre o teclado)
+        return;
+    }
+    
+    if (!pag) {
+        alert("Escolha o pagamento.");
+        // O input de pagamento é invisível, então rolamos para o elemento "pai" dele (a div das opções)
+        $('chk-pagamento').parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
 
     btn.disabled = true; btn.innerText = "Processando...";
     const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
