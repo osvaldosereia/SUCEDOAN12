@@ -47,7 +47,6 @@
         .search-input { width: 100%; padding: 14px 44px; border-radius: 12px; border: 1px solid var(--border-light); background: #f9fafb; font-size: 0.95rem; outline: none; transition: 0.2s; }
         .search-input:focus { border-color: var(--brand); background: #fff; }
 
-        /* Novos Botões de Navegação no Topo */
         .nav-buttons { display: flex; gap: 8px; width: 100%; overflow-x: auto; scrollbar-width: none; }
         .nav-buttons::-webkit-scrollbar { display: none; }
         .nav-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; background: #fff; color: var(--text-gray); border: 1px solid var(--border-light); transition: 0.2s; white-space: nowrap; text-align: center; }
@@ -69,7 +68,7 @@
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
-        .card-title { font-size: 0.65rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; height: 5.2em; text-transform: uppercase; cursor: pointer; }
+        .card-title { font-size: 0.8rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 3.9em; text-transform: none; cursor: pointer; }
         
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
         .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
@@ -88,7 +87,7 @@
 
         .card-basket .card-img-wrap { background: transparent; padding: 0; }
         .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
-        .card-basket .card-title { -webkit-line-clamp: 1; height: auto; white-space: nowrap; font-weight: 700;}
+        .card-basket .card-title { -webkit-line-clamp: 2; height: auto; white-space: normal;}
 
         .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
@@ -109,31 +108,32 @@
         .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
         .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--brand); }
         .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
-        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; position: relative; }
         
-        /* Ajuste do Card Horizontal */
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
         
-        /* Aumento da altura vertical da foto */
-        .list-img-wrap { width: 100px; height: 140px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; }
+        .list-img-wrap { width: 100px; height: 140px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; cursor: pointer; }
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
         
-        /* Permitindo até 4 linhas e ajustando a altura proporcionalmente */
-        .list-name { font-size: 0.75rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; text-transform: uppercase; height: 5.6em; }
-        .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; }
+        .list-name { font-size: 0.9rem; font-weight: 600; color: var(--text-gray); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-transform: none; height: 3.9em; }
+        .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; display: flex; flex-direction: column; }
         
         .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
         .btn-swap:active { background: var(--brand-light); }
         
         .swap-hint { font-size: 0.75rem; color: var(--text-gray); margin-bottom: 8px; display:flex; align-items:center; gap:4px; font-weight: 600; }
         
-        /* Estilos dos Chips reutilizados no menu principal de produtos */
         .swap-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 8px; scrollbar-width: none; }
         .swap-chips::-webkit-scrollbar { display: none; }
-        .swap-chip { padding: 8px 16px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; }
+        .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
         .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+        /* Estilos CSS para Chips Fixos (Sticky) */
+        #main-category-chips { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
+        @media(min-width: 768px) { #main-category-chips { top: 72px; } }
+        #swap-chips-container { position: sticky; top: 0; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); }
 
         .chk-section { margin-bottom: 32px; }
         .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
@@ -302,6 +302,18 @@ const swapIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
+function formatName(name) {
+    if(!name) return "";
+    let words = name.toLowerCase().split(/\s+/);
+    return words.map(w => {
+        let clean = w.replace(/[.,]/g, '');
+        if(clean === "bak") return w.replace("bak", "Bak");
+        if(clean === "ype" || clean === "ypê") return w.replace(clean, "Ypê");
+        if(w.length <= 3) return w;
+        return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+}
+
 // ==========================================
 // PERSISTÊNCIA DE CARRINHO (LOCAL STORAGE)
 // ==========================================
@@ -333,8 +345,6 @@ window.clearCart = function() {
         saveCart();
         updateTotals();
         closeDrawer('checkout-drawer');
-        
-        // Atualiza a interface da página principal
         if(!$('search-input').value) renderMainPage();
     }
 };
@@ -415,7 +425,7 @@ function renderMainPage() {
         <div id="secao-produtos" style="scroll-margin-top: 140px; border-top: 2px dashed var(--border-light); padding-top: 32px;">
             <h2 class="section-title" style="margin-bottom: 12px;">Produtos</h2>
             
-            <div class="swap-chips" id="main-category-chips" style="margin-bottom: 24px;">
+            <div class="swap-chips" id="main-category-chips">
                 ${buildMainChipsHTML()}
             </div>
 
@@ -454,7 +464,6 @@ function getProdutosHTML(id) {
     }
 }
 
-// Botões de Scroll do Topo
 window.scrollToCestas = function() {
     let el = $('secao-cestas');
     if(el) el.scrollIntoView({behavior: 'smooth'});
@@ -472,7 +481,6 @@ function updateNavButtons(activeId) {
     $('btn-nav-produtos').classList.toggle('active', activeId === 'produtos');
 }
 
-// Atualiza o botão ativo no topo baseado no scroll da página
 window.addEventListener('scroll', () => {
     let prods = $('secao-produtos');
     if(!prods) return;
@@ -484,7 +492,6 @@ window.addEventListener('scroll', () => {
     }
 }, {passive: true});
 
-// Lógica de Busca
 let searchTimeout;
 function handleSearchInput() {
     const val = $('search-input').value; $('search-clear').style.display = val.length > 0 ? 'flex' : 'none';
@@ -522,21 +529,35 @@ function findItem(idStr) {
 }
 
 // ==========================================
-// QUICK VIEW (DETALHES DO PRODUTO APRIMORADO)
+// QUICK VIEW COM SUPORTE A CONTEXTOS
 // ==========================================
-window.openQuickView = function(id) {
+window.openQuickView = function(id, swapCtx = null) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
-    let q = STATE.cart[p.id] || 0;
-    
-    let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
-    let acaoHTML = q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`;
+    let q = 0;
+    let fnAdd = `upd('${p.id}', 1)`;
+    let fnMinus = `upd('${p.id}', -1)`;
+
+    if (swapCtx === 'KIT') {
+        q = expanderState.items[p.id] || 0;
+        fnAdd = `addSuggestionToKit('${p.id}', 1)`;
+        fnMinus = `addSuggestionToKit('${p.id}', -1)`;
+    } else if (swapCtx === 'CART') {
+        q = STATE.cart[p.id] || 0;
+        fnAdd = `addSuggestionToKit('${p.id}', 1)`;
+        fnMinus = `addSuggestionToKit('${p.id}', -1)`;
+    } else {
+        q = STATE.cart[p.id] || 0;
+    }
+
+    let minusBtnGrid = q === 1 ? `<button onclick="${fnMinus}" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="${fnMinus}">-</button>`;
+    let acaoHTML = q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="${fnAdd}">+</button></div>` : `<button class="btn-add" onclick="${fnAdd}">Adicionar</button>`;
     
     $('quick-content').innerHTML = `
         <div style="width:100%; height: 350px; background:var(--bg-img); display:flex; align-items:center; justify-content:center; padding:10px;">
             <img src="${p.img}" style="max-height:100%; max-width:100%; mix-blend-mode:multiply; object-fit:contain;">
         </div>
         <div style="padding: 24px 20px;">
-            <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; text-transform: uppercase; line-height: 1.3;">${p.name}</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; line-height: 1.3;">${p.name}</div>
             <div style="display:flex; align-items:baseline; gap:8px; margin-bottom: 24px;">
                 <div style="font-size: 1.8rem; font-weight: 900; color: var(--brand);">${fmt(p.price)}</div>
                 ${p.oldPrice > p.price ? `<div style="font-size:1rem; color:var(--text-gray); text-decoration:line-through;">${fmt(p.oldPrice)}</div>` : ''}
@@ -607,6 +628,8 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         let tagHTML = '';
         if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% de Desconto</div>`;
         
+        let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
 
         html += `
@@ -616,6 +639,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
             <div class="card-price-row">
                 ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
                 <span class="price">${fmt(p.price || p.preco)}</span>
+                ${lbl10}
                 ${tagHTML}
             </div>
             <div id="card-act-${p.id}">${acaoHTML}</div>
@@ -694,13 +718,14 @@ function renderKitList() {
         currentSum += p.price * qty;
         
         let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
 
         return `
         <div class="list-item">
-            <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
-            <div class="list-info">
+            <div class="list-img-wrap" onclick="openQuickView('${pId}', 'KIT')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-info" onclick="openQuickView('${pId}', 'KIT')">
                 <div class="list-name">${p.name}</div>
-                <div class="list-price">${fmt(p.price)}</div>
+                <div class="list-price">${fmt(p.price)}${lbl10}</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
                 <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
@@ -741,8 +766,6 @@ window.commitExpander = function() {
     updateTotals(); 
     saveCart();
     closeDrawer('kit-drawer'); 
-    
-    // Rola para a área de produtos complementares
     selectMainCategory('ofertas'); 
     scrollToProdutos();
 };
@@ -778,13 +801,16 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
             tagHtml = `<div style="font-size: 0.65rem; color: var(--brand); background: var(--brand-light); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">30% de Desconto</div><br>`;
         }
 
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        priceHtml += lbl10;
+
         let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>` 
                              : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${p.id}', ${addQty})">${addText}</button>`;
 
         return `
         <div class="list-item">
-            <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
-            <div class="list-info">
+            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                 ${tagHtml}
                 <div class="list-name">${p.name}</div>
                 <div class="list-price">${priceHtml}</div>
@@ -795,7 +821,6 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
         </div>`;
     }).join('');
 }
-
 
 window.openSwapView = function(oldPId, context = 'KIT') {
     swapContext = context;
@@ -825,18 +850,20 @@ window.openSwapView = function(oldPId, context = 'KIT') {
         html += `
         <div style="margin-bottom: 24px;">
             <h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>
-            ${similarProds.map(p => `
+            ${similarProds.map(p => {
+                let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+                return `
                 <div class="list-item">
-                    <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
-                    <div class="list-info">
+                    <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+                    <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                         <div class="list-name">${p.name}</div>
-                        <div class="list-price">${fmt(p.price)}</div>
+                        <div class="list-price">${fmt(p.price)}${lbl10}</div>
                     </div>
                     <div style="display:flex; align-items:center; justify-content:flex-end;">
                         <button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">Escolher</button>
                     </div>
                 </div>
-            `).join('')}
+            `}).join('')}
         </div>`;
     } else {
         html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto similar disponível para troca no momento.</p>`;
@@ -844,7 +871,6 @@ window.openSwapView = function(oldPId, context = 'KIT') {
 
     html += `
         <div style="padding-top: 16px; border-top: 1px dashed var(--border-light);">
-            <div class="swap-hint">Deslize para ver mais categorias ➔</div>
             <div class="swap-chips" id="swap-chips-container">
                 ${STATE.swapCats.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
             </div>
@@ -861,7 +887,7 @@ window.openSwapView = function(oldPId, context = 'KIT') {
 
 window.selectSwapCategory = function(cat) {
     document.querySelectorAll('#swap-chips-container .swap-chip').forEach(el => {
-        if(el.innerText === cat) el.classList.add('active');
+        if(el.innerText === cat.toUpperCase()) el.classList.add('active');
         else el.classList.remove('active');
     });
     $('swap-suggestions-list').innerHTML = buildSwapSuggestions(cat);
@@ -902,12 +928,14 @@ function buildSwapSuggestions(cat) {
         let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>` 
                              : `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>`;
 
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+
         return `
         <div class="list-item">
-            <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
-            <div class="list-info">
+            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                 <div class="list-name">${p.name}</div>
-                <div class="list-price">${fmt(p.price)}</div>
+                <div class="list-price">${fmt(p.price)}${lbl10}</div>
             </div>
             <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
                 ${acaoHTML}
@@ -968,7 +996,7 @@ window.addSuggestionToKit = function(newPId, delta) {
 
         let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>` 
                              : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
-        document.querySelectorAll(`#swap-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
+        document.querySelectorAll(`#swap-act-${newPId}, #quick-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
 
     } else if (swapContext === 'CART') {
         let next = Math.max(0, (STATE.cart[newPId] || 0) + delta);
@@ -994,8 +1022,8 @@ window.addSuggestionToKit = function(newPId, delta) {
 
         let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>` 
                              : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
-        document.querySelectorAll(`#swap-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
-        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML.replace("addSuggestionToKit", "upd"));
+        document.querySelectorAll(`#swap-act-${newPId}, #quick-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
+        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML.replace(/addSuggestionToKit/g, "upd"));
     }
 };
 
@@ -1029,8 +1057,8 @@ function updateTotals() {
                 customPromoDiscount += (itemsGratis * p.price);
             } else if (STATE.promoIds.leve2.includes(p.id)) {
                 if (q >= 2) customPromoDiscount += (p.price * 0.20) * q;
-            } else {
-                if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; 
+            } else if (!p._isPromo) {
+                if (q >= 2) atacadoDiscount += (p.price * 0.10) * q; 
             }
         } 
     });
@@ -1066,13 +1094,14 @@ function renderCheckoutItems() {
         let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
         
         let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
 
         return `
         <div class="list-item">
-            <div class="list-img-wrap"><img src="${p.img}" loading="lazy" decoding="async"></div>
-            <div class="list-info">
+            <div class="list-img-wrap" onclick="openQuickView('${id}', 'CART')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-info" onclick="openQuickView('${id}', 'CART')">
                 <div class="list-name">${p.name}</div>
-                <div class="list-price">${fmt(p.price)}</div>
+                <div class="list-price">${fmt(p.price)}${lbl10}</div>
             </div>
             <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
                 <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
@@ -1136,10 +1165,11 @@ async function fetchWithCache(url, key) {
 async function init() {
     try {
         const [r1, r2] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods') ]);
+        
         STATE.baskets = r1 || [];
+        STATE.baskets.forEach(b => b.nome = formatName(b.nome));
 
         if (r2 && r2.length > 0) {
-            let hTime = new Date().getTime();
             
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                 let pBase = parseFloat(p.preco) * 1.01;
@@ -1147,10 +1177,10 @@ async function init() {
                 let price = pBase;
                 
                 return { 
-                    id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), name: p.nome, 
-                    price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
+                    id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), 
+                    name: formatName(p.nome), price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                    categoria: p.categoria || "Outros", _is30Off: false, _valTime: validade
+                    categoria: p.categoria || "Outros", _is30Off: false, _isPromo: false, _valTime: validade
                 };
             });
 
@@ -1159,11 +1189,12 @@ async function init() {
             produtosComValidade.slice(0, 6).forEach(p => {
                 p.price = p.oldPrice * 0.70;
                 p._is30Off = true;
+                p._isPromo = true;
             });
 
             PROMO_CONFIG.aproveite.forEach(idStr => {
                 let p = findItem(idStr);
-                if(p) { p.price = p.oldPrice * 0.90; } 
+                if(p) { p.price = p.oldPrice * 0.90; p._isPromo = true; } 
             });
 
             STATE.prods.forEach(p => { 
@@ -1172,8 +1203,8 @@ async function init() {
                 STATE.deptos[cId].data.push(p); 
             });
 
-            STATE.promoIds.leve5 = PROMO_CONFIG.leve5pague4.map(findItem).filter(Boolean).map(p => p.id);
-            STATE.promoIds.leve2 = PROMO_CONFIG.leve2.map(findItem).filter(Boolean).map(p => p.id);
+            STATE.promoIds.leve5 = PROMO_CONFIG.leve5pague4.map(findItem).filter(Boolean).map(p => { p._isPromo = true; return p.id; });
+            STATE.promoIds.leve2 = PROMO_CONFIG.leve2.map(findItem).filter(Boolean).map(p => { p._isPromo = true; return p.id; });
 
             let usedIds = new Set([...STATE.promoIds.leve5, ...STATE.promoIds.leve2, ...PROMO_CONFIG.aproveite.map(findItem).filter(Boolean).map(p => p.id)]);
             STATE.prods.forEach(p => { if (p._is30Off) usedIds.add(p.id); }); 
@@ -1189,6 +1220,7 @@ async function init() {
                     let p = byCat[cat].shift();
                     let desc = 0.05 + (Math.random() * 0.05);
                     p.price = p.oldPrice * (1 - desc);
+                    p._isPromo = true;
                     maisOfertas.push(p);
                     availableProds = availableProds.filter(x => x.id !== p.id);
                 }
