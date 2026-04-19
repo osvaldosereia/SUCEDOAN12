@@ -552,7 +552,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
 
         let tagHTML = '';
-        if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% OFF (Vencimento Próximo)</div>`;
+        if (!isBasket && p._is30Off && promoSpecialType !== 'APROVEITE') tagHTML = `<div class="promo-tag exp">30% de Desconto</div>`;
         
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
 
@@ -727,7 +727,7 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
             let tf = p.price * 2; let to = tf * 0.8;
             priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(tf)}</span>${fmt(to)}`;
         } else if (p._is30Off && promoSpecialType !== 'APROVEITE') {
-            tagHtml = `<div style="font-size: 0.65rem; color: var(--brand); background: var(--brand-light); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">30% OFF (Vencimento)</div><br>`;
+            tagHtml = `<div style="font-size: 0.65rem; color: var(--brand); background: var(--brand-light); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">30% de Desconto</div><br>`;
         }
 
         let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>` 
