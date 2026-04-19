@@ -752,7 +752,7 @@ function getHomeHTML() {
 
     html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
     html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
-    html += buildSection("Leve 2 e economize 20%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
+    html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
     
     if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
         html += `
@@ -1067,7 +1067,7 @@ function buildSwapSuggestions(cat) {
         if(h3) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 5 pague 4</h4>${h3}</div>`;
 
         let h4 = buildSwapHorizontalCards(PROMO_CONFIG.leve2.map(findItem), 'LEVE2');
-        if(h4) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 2 e economize 20%</h4>${h4}</div>`;
+        if(h4) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 2 e economize 10%</h4>${h4}</div>`;
 
         let h5 = buildSwapHorizontalCards(STATE.maisOfertas, null);
         if(h5) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Mais Ofertas Imperdíveis</h4>${h5}</div>`;
@@ -1215,9 +1215,9 @@ function updateTotals() {
                 let itemsGratis = Math.floor(q / 5);
                 customPromoDiscount += (itemsGratis * p.price);
             } else if (STATE.promoIds.leve2.includes(p.id)) {
-                if (q >= 2) customPromoDiscount += (p.price * 0.20) * q;
+                if (q >= 2) customPromoDiscount += (p.price * 0.10) * q;
             } else if (!p._isPromo) {
-                if (q >= 2) atacadoDiscount += (p.price * 0.10) * q; 
+                if (q >= 2) atacadoDiscount += (p.price * 0.05) * q; 
             }
         } 
     });
