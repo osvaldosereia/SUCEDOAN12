@@ -376,6 +376,31 @@ const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
+// ==========================================
+// SISTEMA DE URLS AMIGÁVEIS (SEO)
+// ==========================================
+
+function createSlug(text) {
+    if (!text) return "";
+    return text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+               .trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
+}
+
+function updateURL(type, slug) {
+    const url = new URL(window.location);
+    url.search = ''; // Limpa antes de setar novo
+    if (type !== 'home') {
+        url.searchParams.set(type, slug); 
+    }
+    window.history.pushState({ modal: slug }, "", url);
+}
+
+function removeURLParam() {
+    const url = new URL(window.location);
+    url.search = ''; 
+    window.history.pushState({}, "", url);
+}
+
 function formatName(name) {
     if(!name) return "";
     let words = name.toLowerCase().split(/\s+/);
@@ -446,6 +471,9 @@ function closeDrawer(id) {
     if (modalStack.includes(id)) {
         history.back();
     }
+    if (id === 'quick-drawer' || id === 'kit-drawer') {
+        removeURLParam();
+    }
 }
 
 function closeAllDrawers() { 
@@ -456,6 +484,7 @@ function closeAllDrawers() {
     modalStack = [];
     $('overlay').classList.remove('open'); 
     document.body.style.overflow = ''; 
+    removeURLParam();
 }
 
 function checkDrawers() { 
@@ -527,6 +556,8 @@ function buildMainChipsHTML() {
 
 window.selectMainCategory = function(id) {
     STATE.activeCat = id;
+    updateURL('cat', id);
+
     let chipsContainer = $('main-category-chips-container');
     if(chipsContainer) chipsContainer.innerHTML = buildMainChipsHTML();
     
@@ -616,6 +647,8 @@ function findItem(idStr) {
 
 window.openQuickView = function(id, swapCtx = null) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
+    updateURL('p', p.slug);
+
     let q = 0; let fnAdd = `upd('${p.id}', 1)`; let fnMinus = `upd('${p.id}', -1)`;
 
     if (swapCtx === 'KIT' || swapCtx === 'CART') {
@@ -730,6 +763,8 @@ let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0
 
 window.openKitLateralView = function(id) {
     let sourceObj = STATE.baskets.find(x => String(x.id) === String(id)); if (!sourceObj) return;
+    updateURL('p', sourceObj.slug);
+
     expanderState = { items: {}, sourceObj, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
     sourceObj.produtos.forEach(s => {
@@ -1325,7 +1360,10 @@ async function init() {
         const [r1, r2] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods') ]);
         
         STATE.baskets = r1 || [];
-        STATE.baskets.forEach(b => b.nome = formatName(b.nome));
+        STATE.baskets.forEach(b => {
+            b.nome = formatName(b.nome);
+            b.slug = createSlug(b.nome);
+        });
 
         if (r2 && r2.length > 0) {
             
@@ -1335,7 +1373,9 @@ async function init() {
                 
                 return { 
                     id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), 
-                    name: formatName(p.nome), price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
+                    name: formatName(p.nome), 
+                    slug: createSlug(p.nome),
+                    price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                     categoria: p.categoria || "Outros", 
                     embalagem: p.embalagem || "", 
@@ -1391,6 +1431,30 @@ async function init() {
         
         $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
         history.replaceState({home: true}, ""); renderMainPage(); 
+
+        // ==========================================
+        // LEITURA DA URL PARA O GOOGLE E COMPARTILHAMENTO
+        // ==========================================
+        setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const catId = urlParams.get('cat');
+            const pSlug = urlParams.get('p');
+
+            if (catId) {
+                selectMainCategory(catId);
+            }
+
+            if (pSlug) {
+                let produtoAlvo = STATE.prods.find(x => x.slug === pSlug);
+                let cestaAlvo = STATE.baskets.find(x => x.slug === pSlug);
+
+                if (produtoAlvo) {
+                    openQuickView(produtoAlvo.id);
+                } else if (cestaAlvo) {
+                    openKitLateralView(cestaAlvo.id);
+                }
+            }
+        }, 150);
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
 }
