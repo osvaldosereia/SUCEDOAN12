@@ -73,7 +73,6 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { animation: spin 2s linear infinite; }
 
-        /* NOVO LAYOUT DO CARTÃO E GRID - 3 Colunas no Computador */
         .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
         .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
         
@@ -187,7 +186,7 @@
         .checklist-item { border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; color:var(--accent); }
         .checklist-item:last-child { border-bottom: none; }
 
-    /* =========================================================
+        /* =========================================================
            BALANÇO DE ESTOQUE (NOVO LAYOUT MOBILE/TECLADO)
            ========================================================= */
         #balanco-screen { display: none; flex-direction: column; height: 100vh; overflow: hidden; background: #fff; }
@@ -528,10 +527,9 @@
             <div class="form-section" style="margin-top:15px;">
                 <div class="section-title">Ações Manuais GitHub</div>
                 <button id="btnSyncFila" class="nav-btn sync-btn" style="height:44px; justify-content:center;" onclick="uploadFilaPedidosGithub(this)"><i data-lucide="upload-cloud" size="14"></i> FORÇAR PEDIDOS_FILA</button>
-           <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top: 10px;" onclick="executarLimpezaImagens()">
-    <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO)
-</button>
-            
+                <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top: 10px;" onclick="executarLimpezaImagens()">
+                    <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO)
+                </button>
             </div>
         </div>
         <div class="sidebar-footer">
@@ -797,54 +795,58 @@
 
         // ==========================================================
         // FUNÇÕES ESPECÍFICAS DE SALVAMENTO
-   /**
- * Sanitiza os produtos para o produtos.json
- * Força o formato DD/MM/AAAA na validade antes do envio.
- */
-function sanitizeProductsForExport(prods) {
-    const camposPermitidos = [
-        'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
-        'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
-        'subcategoria', 'gondola', 'prateleira', 'localizacao',
-        'tags', 'last_update', 'marca'
-    ];
+        // ==========================================================
 
-    return prods.map(p => {
-        let cleanP = {};
-        
-        if (!p.id) {
-            p.id = Math.floor(Date.now() + Math.random() * 10000);
-        }
-        
-        camposPermitidos.forEach(campo => {
-            if (p[campo] !== undefined && p[campo] !== null) {
-                let valor = p[campo];
+        /**
+         * Sanitiza os produtos para o produtos.json
+         * Força o formato DD/MM/AAAA na validade antes do envio e inclui até 5 imagens e Embalagem.
+         */
+        function sanitizeProductsForExport(prods) {
+            const camposPermitidos = [
+                'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
+                'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
+                'subcategoria', 'gondola', 'prateleira', 'localizacao',
+                'tags', 'last_update', 'marca', 'embalagem' // <-- NOVO CAMPO: Embalagem
+            ];
 
-                if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) {
-                    const partes = valor.split('-');
-                    if (partes[0].length === 4) {
-                        valor = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                    }
+            return prods.map(p => {
+                let cleanP = {};
+                
+                if (!p.id) {
+                    p.id = Math.floor(Date.now() + Math.random() * 10000);
                 }
+                
+                camposPermitidos.forEach(campo => {
+                    if (p[campo] !== undefined && p[campo] !== null) {
+                        let valor = p[campo];
+                        if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) {
+                            const partes = valor.split('-');
+                            if (partes[0].length === 4) {
+                                valor = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                            }
+                        }
+                        cleanP[campo] = valor;
+                    }
+                });
 
-                cleanP[campo] = valor;
-            }
-        });
+                // Lidar com as 5 imagens de forma inteligente
+                const camposImagem = ['url_imagem', 'url_imagem_2', 'url_imagem_3', 'url_imagem_4', 'url_imagem_5'];
+                camposImagem.forEach((campoImg, index) => {
+                    if (p[campoImg]) {
+                        if (p[campoImg].startsWith('data:image')) {
+                            // Se o utilizador não fez upload, cria um caminho de base para não quebrar
+                            const sufixo = index === 0 ? '' : `_${index + 1}`;
+                            cleanP[campoImg] = `../site/img/produtos/${cleanP.codigo}${sufixo}.webp`;
+                        } else {
+                            // Limpa o "?v=123" do final da URL, mantendo a pasta correta
+                            cleanP[campoImg] = p[campoImg].split('?')[0]; 
+                        }
+                    }
+                });
 
-        // Modificação: Respeitar a pasta exata onde a imagem foi guardada
-        if (p.url_imagem) {
-            if (p.url_imagem.startsWith('data:image')) {
-                // Se a pessoa salvar o JSON sem clicar em Upload, assumimos a pasta padrão para não quebrar
-                cleanP.url_imagem = `../site/img/produtos/${cleanP.codigo}.webp`;
-            } else {
-                // Limpa o "?v=123" do final da URL, mas MATÉM a pasta correta que foi gerada no Upload
-                cleanP.url_imagem = p.url_imagem.split('?')[0]; 
-            }
+                return cleanP;
+            });
         }
-
-        return cleanP;
-    });
-}
 
         function salvarProdutosJSON() {
             enqueueTask("Produtos.json (Site & Base)", async () => {
@@ -853,73 +855,72 @@ function sanitizeProductsForExport(prods) {
             }, true);
         }
 
-// ==========================================================
-// GESTOR DE PASTAS INTELIGENTE (LIMITE DE 990 FOTOS)
-// ==========================================================
-async function getPastaUploadAtiva() {
-    let limit = 990;
-    let folderIndex = 1;
-    
-    while (true) {
-        // Define o nome da pasta: a primeira é normal, as seguintes levam _2, _3, etc.
-        let folderName = folderIndex === 1 ? "site/img/produtos" : `site/img/produtos_${folderIndex}`;
-        
-        try {
-            const files = await GitHubAPI.getFileData(folderName);
+        // ==========================================================
+        // GESTOR DE PASTAS INTELIGENTE (LIMITE DE 990 FOTOS)
+        // ==========================================================
+        async function getPastaUploadAtiva() {
+            let limit = 990;
+            let folderIndex = 1;
             
-            // Se o GitHub retornar null, significa que a pasta ainda não existe (está vazia). Perfeito, usamos esta!
-            if (!files) {
-                return folderName;
-            }
-            
-            // Se a pasta existe (é um array), contamos os ficheiros
-            if (Array.isArray(files)) {
-                if (files.length < limit) {
-                    return folderName; // Tem espaço, usamos esta!
+            while (true) {
+                // Define o nome da pasta: a primeira é normal, as seguintes levam _2, _3, etc.
+                let folderName = folderIndex === 1 ? "site/img/produtos" : `site/img/produtos_${folderIndex}`;
+                
+                try {
+                    const files = await GitHubAPI.getFileData(folderName);
+                    
+                    // Se o GitHub retornar null, significa que a pasta ainda não existe (está vazia). Perfeito, usamos esta!
+                    if (!files) {
+                        return folderName;
+                    }
+                    
+                    // Se a pasta existe (é um array), contamos os ficheiros
+                    if (Array.isArray(files)) {
+                        if (files.length < limit) {
+                            return folderName; // Tem espaço, usamos esta!
+                        }
+                    }
+                } catch (e) {
+                    console.error("Erro ao verificar pasta", e);
+                    return folderName; // Em caso de falha de rede, tenta enviar para a atual para não travar
                 }
+                
+                // Se a pasta tinha 990 ou mais ficheiros, o ciclo (while) repete e soma +1 ao folderIndex
+                folderIndex++;
             }
-        } catch (e) {
-            console.error("Erro ao verificar pasta", e);
-            return folderName; // Em caso de falha de rede, tenta enviar para a atual para não travar
         }
         
-        // Se a pasta tinha 990 ou mais ficheiros, o ciclo (while) repete e soma +1 ao folderIndex
-        folderIndex++;
-    }
-}
-        
-
-       async function uploadImagens() {
-    if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
-    
-    const queueCopy = [...imageQueue]; 
-    imageQueue = []; 
-    updateImageBadge();
-    
-    // Mostra um aviso enquanto o sistema conta as pastas no GitHub
-    mostrarAlerta("A verificar espaço nas pastas de imagens do GitHub...", "aviso");
-    
-    // 1. O sistema descobre automaticamente qual pasta tem espaço (ex: site/img/produtos_2)
-    const pastaDestinoGithub = await getPastaUploadAtiva();
-    const pastaDestinoLocal = "../" + pastaDestinoGithub; 
-    
-    queueCopy.forEach(img => {
-        enqueueTask(`Imagem ${img.sku}`, async () => {
-            const fileName = `${img.sku}.webp`; 
+        async function uploadImagens() {
+            if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
             
-            // 2. Salva no GitHub na pasta que tem espaço
-            await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName} na pasta ${pastaDestinoGithub}`, true);
+            const queueCopy = [...imageQueue]; 
+            imageQueue = []; 
+            updateImageBadge();
             
-            const pRef = products.find(x => x.codigo === img.sku); 
-            if(pRef) { 
-                // 3. Atualiza o cadastro do produto com a nova pasta exata!
-                pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
-                pRef.last_update = Date.now(); 
-                await saveDataLocally(); 
-            }
-        }, false);
-    });
-}
+            mostrarAlerta("A enviar imagens de forma inteligente para o GitHub...", "aviso");
+            
+            queueCopy.forEach(img => {
+                enqueueTask(`Imagem ${img.sku} (Posição ${img.slot})`, async () => {
+                    // INTELIGÊNCIA: Verifica a pasta PARA CADA IMAGEM INDIVIDUAL. 
+                    const pastaDestinoGithub = await getPastaUploadAtiva();
+                    const pastaDestinoLocal = "../" + pastaDestinoGithub; 
+                    
+                    // O nome do ficheiro reflete o slot (ex: 1234.webp ou 1234_2.webp)
+                    const sufixo = img.slot === 1 ? "" : `_${img.slot}`;
+                    const fileName = `${img.sku}${sufixo}.webp`; 
+                    
+                    await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName} na pasta ${pastaDestinoGithub}`, true);
+                    
+                    const pRef = products.find(x => x.codigo === img.sku); 
+                    if(pRef) { 
+                        const fieldName = img.slot === 1 ? 'url_imagem' : `url_imagem_${img.slot}`;
+                        pRef[fieldName] = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
+                        pRef.last_update = Date.now(); 
+                        await saveDataLocally(); 
+                    }
+                }, false);
+            });
+        }
 
         function uploadFilaPedidosGithub(btn = null) {
             enqueueTask('Forçar Fila de Pedidos', async () => { 
@@ -986,7 +987,6 @@ async function getPastaUploadAtiva() {
             await baixarBaseSilencioso();
         }
 
-        // Nova função para baixar do GitHub sem popups/confirmações
         async function baixarBaseSilencioso() {
             try {
                 const cfg = GitHubAPI.getConfig();
@@ -1102,8 +1102,6 @@ async function getPastaUploadAtiva() {
             let p = products.find(x => x.codigo === sku);
             if(!p) return;
 
-            // TRADUTOR DE DATA PARA O VISUAL
-            // Se a data tiver "/", inverte para AAAA-MM-DD para o <input type="date"> conseguir ler
             let dataValidadeFormulario = p.validade || '';
             if (dataValidadeFormulario.includes('/')) {
                 dataValidadeFormulario = dataValidadeFormulario.split('/').reverse().join('-');
@@ -1167,8 +1165,6 @@ async function getPastaUploadAtiva() {
             let newVal = document.getElementById(`bal-val-${oldSku}`).value;
             let newEst = parseFloat(document.getElementById(`bal-est-${oldSku}`).value) || 0;
 
-            // TRADUTOR DE DATA PARA GRAVAR
-            // Converte de AAAA-MM-DD para DD/MM/AAAA para o sistema entender
             let dataValidadeSalvar = newVal;
             if (newVal && newVal.includes('-')) {
                 let partes = newVal.split('-');
@@ -1188,7 +1184,7 @@ async function getPastaUploadAtiva() {
             p.gondola = newGon;
             p.prateleira = newPra;
             p.localizacao = (newGon || newPra) ? `${newGon}-${newPra}` : "SEM LOC";
-            p.validade = dataValidadeSalvar; // Guardamos a data já convertida
+            p.validade = dataValidadeSalvar;
             p.estoque = newEst;
             p.last_update = Date.now();
 
@@ -1200,7 +1196,6 @@ async function getPastaUploadAtiva() {
             closeSidebar('balanco-sidebar');
             clearNumpad(); 
 
-            // Sistema Automático: Envia a cada 3 edições
             if (balancoEditsCount >= 3) {
                 mostrarAlerta("Enviando lote de 3 alterações para o site...", "aviso");
                 
@@ -1208,7 +1203,6 @@ async function getPastaUploadAtiva() {
                     const vitrine = sanitizeProductsForExport(products);
                     await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `Balanço: Atualização automática de 3 produtos`);
                     
-                    // Zera a contagem apenas depois de enviar com sucesso
                     balancoEditsCount = 0;
                     document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
                 }, true);
@@ -1743,7 +1737,6 @@ async function getPastaUploadAtiva() {
             try { const savedCats = await localforage.getItem(CATEGORIAS_KEY); if(savedCats && Array.isArray(savedCats)) categoriasDoSistema = savedCats; } catch (err) {}
             try { const savedMarcas = await localforage.getItem(MARCAS_KEY); if(savedMarcas && Array.isArray(savedMarcas)) marcasDoSistema = savedMarcas; } catch (err) {}
             
-            // Extrai as marcas caso haja marcas nos produtos que não estejam salvas no localstorage
             if (products.length > 0) {
                 const marcasExistentes = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))];
                 let marcasAdicionadas = false;
@@ -1769,7 +1762,7 @@ async function getPastaUploadAtiva() {
         window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
 
         // ==========================================================
-        // LAZY LOADING E CARTÕES DO PRODUTO (ATUALIZADO COM MARCA)
+        // LAZY LOADING E CARTÕES DO PRODUTO 
         // ==========================================================
         function renderGrid(filter = "", keepLoaded = false) {
             const gridContainer = document.getElementById('product-grid');
@@ -1782,7 +1775,6 @@ async function getPastaUploadAtiva() {
 
             let filtered = products;
             
-            // BUSCA MULTICAMPO: Nome, SKU e EAN
             if(filter) { 
                 const term = filter.toLowerCase().trim(); 
                 filtered = filtered.filter(p => {
@@ -1831,7 +1823,6 @@ async function getPastaUploadAtiva() {
                 
                 const safeNameForInput = (p.nome || '').replace(/"/g, '"');
 
-                // Início do bloco do Card (INCLUSÃO DO CAMPO MARCA AQUI)
                 card.innerHTML = `
                     <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
                         <div class="card-img-wrapper" style="width:100px; height:100px; padding:5px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border);" onclick="openEditSidebar('${p.codigo}')" title="Editar Imagens e Tags">
@@ -1895,6 +1886,11 @@ async function getPastaUploadAtiva() {
                                 <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Marca</label>
                                 <input type="text" list="lista-marcas-global" class="form-input card-mini-input" placeholder="Ex: Sony" value="${p.marca || ''}" onchange="updateMarca('${p.codigo}', this.value)">
                             </div>
+                            
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Embalagem</label>
+                                <input type="text" class="form-input card-mini-input" placeholder="Ex: Caixa 10x10" value="${p.embalagem || ''}" onchange="updateField('${p.codigo}', 'embalagem', this.value)">
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1912,84 +1908,89 @@ async function getPastaUploadAtiva() {
             }
         }
 
-     function openEditSidebar(sku) {
-    currentEditingSku = sku; 
-    const p = products.find(x => x.codigo === sku); 
-    if(!p) return;
-    
-    const isInactive = p.situacao === 'I';
-    const safeName = (p.nome||'').replace(/'/g, "\\'");
+        function openEditSidebar(sku) {
+            currentEditingSku = sku; 
+            const p = products.find(x => x.codigo === sku); 
+            if(!p) return;
+            
+            const isInactive = p.situacao === 'I';
+            const safeName = (p.nome||'').replace(/'/g, "\\'");
 
-    // Configuração para APENAS 1 imagem
-    let htmlImages = '';
-    const imgSrc = p.url_imagem ? `<img src="${p.url_imagem}">` : `<i data-lucide="image-plus" size="20" style="color:#a1a1aa"></i>`; 
-    htmlImages = `<div class="img-slot" style="width: 120px;" onclick="openCanvasSidebar('${p.codigo}', 1)">${imgSrc}</div>`;
+            // 5 Slots de Imagem
+            let htmlImages = '<div class="image-slots">';
+            for (let i = 1; i <= 5; i++) {
+                let fieldName = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
+                let imgSrc = p[fieldName] ? `<img src="${p[fieldName]}">` : `<i data-lucide="image-plus" size="20" style="color:#a1a1aa"></i>`; 
+                htmlImages += `<div class="img-slot" style="width: 100%; aspect-ratio: 1;" onclick="openCanvasSidebar('${p.codigo}', ${i})"><span class="slot-num">${i}</span>${imgSrc}</div>`;
+            }
+            htmlImages += '</div>';
 
-    // Editor de Tags
-    let htmlEditorTags = ''; 
-    const tags = p.tags || [];
-    if (p.tag_texto && tags.length === 0) { 
-        p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => { tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); 
-        p.tag_texto = ''; 
-        p.tags = tags; 
-    }
-    tags.forEach((t, idx) => {
-        htmlEditorTags += `<div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
-            <input type="text" class="form-input" style="flex-grow:1; padding:6px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)">
-            <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" title="Fundo" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
-            <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.txt}" title="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
-            <input type="number" class="form-input" style="width: 50px; height:24px; padding: 4px; font-size:11px;" value="${t.tam}" title="Tam." onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)">
-            <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button></div>`;
-    });
-    htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG</button>`;
+            let htmlEditorTags = ''; 
+            const tags = p.tags || [];
+            if (p.tag_texto && tags.length === 0) { 
+                p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => { tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); 
+                p.tag_texto = ''; 
+                p.tags = tags; 
+            }
+            tags.forEach((t, idx) => {
+                htmlEditorTags += `<div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
+                    <input type="text" class="form-input" style="flex-grow:1; padding:6px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)">
+                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" title="Fundo" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
+                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.txt}" title="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
+                    <input type="number" class="form-input" style="width: 50px; height:24px; padding: 4px; font-size:11px;" value="${t.tam}" title="Tam." onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)">
+                    <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button></div>`;
+            });
+            htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG</button>`;
 
-    const sidebarBody = document.getElementById('sidebar-body');
-    sidebarBody.innerHTML = `
-        <div class="form-section"><div class="section-title">Identificação</div><div class="form-grid">
-                <div class="form-group"><label class="form-label">SKU (Código)</label><input type="text" class="form-input" style="font-weight:900; color:var(--accent)" value="${p.codigo}" onchange="updateSku('${p.codigo}', this.value)"></div>
-                <div class="form-group"><label class="form-label">ID (Sistema)</label><input type="text" class="form-input" value="${p.id || ''}" onchange="updateField('${p.codigo}', 'id', this.value)"></div>
-        </div></div>
-        
-        <div class="form-section"><div class="section-title">Apresentação Principal</div>
-            <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '"')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
-            <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;"><label class="form-label">Tags da Imagem (Independentes)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div>
-        </div>
+            const sidebarBody = document.getElementById('sidebar-body');
+            sidebarBody.innerHTML = `
+                <div class="form-section"><div class="section-title">Identificação</div><div class="form-grid">
+                        <div class="form-group"><label class="form-label">SKU (Código)</label><input type="text" class="form-input" style="font-weight:900; color:var(--accent)" value="${p.codigo}" onchange="updateSku('${p.codigo}', this.value)"></div>
+                        <div class="form-group"><label class="form-label">ID (Sistema)</label><input type="text" class="form-input" value="${p.id || ''}" onchange="updateField('${p.codigo}', 'id', this.value)"></div>
+                </div></div>
+                
+                <div class="form-section"><div class="section-title">Apresentação Principal</div>
+                    <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '"')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
+                    
+                    <div class="form-group" style="margin-top: 5px;"><label class="form-label">Embalagem</label><input type="text" class="form-input" value="${p.embalagem || ''}" placeholder="Ex: Caixa Parda 20x20" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
+                    
+                    <div class="form-group full" style="border-top: 1px dashed var(--border); padding-top: 10px; margin-top: 5px;"><label class="form-label">Tags da Imagem (Independentes)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div>
+                </div>
 
-        <div class="form-section"><div class="section-title">Foto do Produto</div>
-            <div style="display: flex; justify-content: center;">${htmlImages}</div>
-        </div>
-        
-        <div class="form-section"><div class="section-title">Controles Avançados</div><div class="form-grid">
-                <div class="form-group"><label class="form-label">Estoque</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
-                <div class="form-group"><label class="form-label">Status</label><button class="nav-btn ${isInactive ? '' : 'primary'}" style="width:100%; height:38px; justify-content:center;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="14"></i> ${isInactive ? 'INATIVO' : 'ATIVO'}</button></div>
-                <div class="form-group full"><label class="form-label">NCM</label><div class="input-wrapper"><input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"><button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Procurar NCM"><i data-lucide="search" size="16"></i></button></div></div>
-        </div></div>
-    `;
-    lucide.createIcons(); 
-    openSidebar('edit-sidebar');
-}
-
-     async function updateField(sku, field, value) { 
-    const p = products.find(x => x.codigo === sku); 
-    if(!p) return; 
-    
-    let finalVal = value; 
-
-    // Se estivermos editando a validade via input date (que retorna AAAA-MM-DD)
-    if(field === 'validade' && typeof value === 'string' && value.includes('-')) {
-        const partes = value.split('-');
-        if(partes[0].length === 4) {
-            finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                <div class="form-section"><div class="section-title">Fotos do Produto (Até 5)</div>
+                    ${htmlImages}
+                </div>
+                
+                <div class="form-section"><div class="section-title">Controles Avançados</div><div class="form-grid">
+                        <div class="form-group"><label class="form-label">Estoque</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
+                        <div class="form-group"><label class="form-label">Status</label><button class="nav-btn ${isInactive ? '' : 'primary'}" style="width:100%; height:38px; justify-content:center;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="14"></i> ${isInactive ? 'INATIVO' : 'ATIVO'}</button></div>
+                        <div class="form-group full"><label class="form-label">NCM</label><div class="input-wrapper"><input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"><button class="btn-smart" onclick="window.open('https://www.google.com/search?q=NCM+${encodeURIComponent(p.nome)}', '_blank')" title="Procurar NCM"><i data-lucide="search" size="16"></i></button></div></div>
+                </div></div>
+            `;
+            lucide.createIcons(); 
+            openSidebar('edit-sidebar');
         }
-    } 
-    else if(['preco','estoque','preco_custo'].includes(field)) {
-        finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
-    }
 
-    p[field] = finalVal; 
-    p.last_update = Date.now(); 
-    await saveDataLocally(); 
-}
+        async function updateField(sku, field, value) { 
+            const p = products.find(x => x.codigo === sku); 
+            if(!p) return; 
+            
+            let finalVal = value; 
+
+            if(field === 'validade' && typeof value === 'string' && value.includes('-')) {
+                const partes = value.split('-');
+                if(partes[0].length === 4) {
+                    finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                }
+            } 
+            else if(['preco','estoque','preco_custo'].includes(field)) {
+                finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
+            }
+
+            p[field] = finalVal; 
+            p.last_update = Date.now(); 
+            await saveDataLocally(); 
+        }
         
         async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(document.getElementById('search-input').value, true); } }
         
@@ -2006,22 +2007,24 @@ async function getPastaUploadAtiva() {
         const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
 
         function openCanvasSidebar(sku, slot) {
-    const p = products.find(x => x.codigo === sku); 
-    if(!p) return; 
-    currentImageSlot = 1; // Força slot 1
-    imgOffsetX = 0; imgOffsetY = 0; 
-    
-    document.getElementById('zoomRange').value = 1; 
-    document.getElementById('brightnessRange').value = 1; 
-    document.getElementById('sharpenRange').value = 0;
-    
-    const img = new Image(); 
-    img.crossOrigin = "Anonymous"; 
-    img.src = p.url_imagem || ""; 
-    
-    img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; 
-    img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
-}
+            const p = products.find(x => x.codigo === sku); 
+            if(!p) return; 
+            currentImageSlot = slot; 
+            imgOffsetX = 0; imgOffsetY = 0; 
+            
+            document.getElementById('zoomRange').value = 1; 
+            document.getElementById('brightnessRange').value = 1; 
+            document.getElementById('sharpenRange').value = 0;
+            
+            const fieldName = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
+            
+            const img = new Image(); 
+            img.crossOrigin = "Anonymous"; 
+            img.src = p[fieldName] || ""; 
+            
+            img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; 
+            img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
+        }
 
         function applySharpen(context, w, h, mix) {
             if (mix <= 0) return;
@@ -2045,32 +2048,34 @@ async function getPastaUploadAtiva() {
             window.addEventListener('paste', e => { 
                 const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open'); const isEditOpen = document.getElementById('edit-sidebar').classList.contains('open'); if(!isEditorOpen && !isEditOpen) return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items; 
-                for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); if(!isEditorOpen && currentEditingSku) openCanvasSidebar(currentEditingSku, 1); }; img.src = event.target.result; }; reader.readAsDataURL(blob); } } 
+                for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); if(!isEditorOpen && currentEditingSku) openCanvasSidebar(currentEditingSku, currentImageSlot); }; img.src = event.target.result; }; reader.readAsDataURL(blob); } } 
             });
             canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
         }
 
         async function saveImageToQueue() {
-    if(!currentEditingSku) return; 
-    
-    const sku = currentEditingSku; 
-    
-    const base64full = canvas.toDataURL('image/webp', 0.9); 
-    const base64data = base64full.split(',')[1];
-    
-    const p = products.find(x => x.codigo === sku); 
-    
-    p.url_imagem = base64full; 
-    p.last_update = Date.now();
-    await saveDataLocally(); 
-    
-    imageQueue.push({ sku: sku, base64data: base64data }); 
-    updateImageBadge(); 
-    
-    openEditSidebar(sku); 
-    closeSidebar('editor-sidebar');
-    renderGrid(document.getElementById('search-input').value, true);
-}
+            if(!currentEditingSku) return; 
+            
+            const sku = currentEditingSku; 
+            const slot = currentImageSlot;
+            
+            const base64full = canvas.toDataURL('image/webp', 0.9); 
+            const base64data = base64full.split(',')[1];
+            
+            const p = products.find(x => x.codigo === sku); 
+            const fieldName = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
+            
+            p[fieldName] = base64full; 
+            p.last_update = Date.now();
+            await saveDataLocally(); 
+            
+            imageQueue.push({ sku: sku, base64data: base64data, slot: slot }); 
+            updateImageBadge(); 
+            
+            openEditSidebar(sku); 
+            closeSidebar('editor-sidebar');
+            renderGrid(document.getElementById('search-input').value, true);
+        }
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
@@ -2106,7 +2111,6 @@ async function getPastaUploadAtiva() {
 
                        if (produtoExistente) {
                             produtoFinal = { ...produtoExistente }; 
-                            // CORREÇÃO: O ID do Bling (d['ID']) agora tem prioridade absoluta!
                             produtoFinal.id = d['ID'] || produtoExistente.id || timestamp + atualizados;
                             atualizados++;
                         } else {
@@ -2120,7 +2124,7 @@ async function getPastaUploadAtiva() {
                         produtoFinal.preco_custo = parseFloat(d['Preço de custo']?.replace(',','.')) || 0;
                         produtoFinal.estoque = parseFloat(d['Estoque']?.replace(',','.')) || 0;
                         produtoFinal.categoria = d['Categoria do produto'] || produtoFinal.categoria || '';
-                        produtoFinal.marca = d['Marca'] || produtoFinal.marca || ''; // Adicionado extração da Marca no CSV
+                        produtoFinal.marca = d['Marca'] || produtoFinal.marca || ''; 
                         produtoFinal.gtin = ean;
                         produtoFinal.ncm = d['NCM'] || produtoFinal.ncm || '';
                         produtoFinal.validade = d['Data Validade'] || produtoFinal.validade || '';
@@ -2176,7 +2180,7 @@ async function getPastaUploadAtiva() {
                                 preco_custo: parseFloat(d['Preço de custo']?.replace(',','.')) || 0, 
                                 estoque: parseFloat(d['Estoque']?.replace(',','.')) || 0, 
                                 categoria: d['Categoria do produto'] || '', 
-                                marca: d['Marca'] || '', // Adicionado extração da Marca no CSV
+                                marca: d['Marca'] || '', 
                                 gtin: d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '', 
                                 ncm: d['NCM'] || '', 
                                 validade: d['Data Validade'] || '',
@@ -2230,10 +2234,8 @@ async function getPastaUploadAtiva() {
                     
                     products = parsedData;
 
-                    // Extrair categorias únicas dos produtos carregados
                     const catsEncontradas = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))];
                     
-                    // Atualiza categoriasDoSistema preservando as subcategorias se já existirem
                     catsEncontradas.forEach(catNome => {
                         const existe = categoriasDoSistema.find(c => c.nome.toLowerCase() === catNome.toLowerCase());
                         if (!existe) {
@@ -2241,7 +2243,6 @@ async function getPastaUploadAtiva() {
                         }
                     });
 
-                    // Extrair marcas únicas para carregar no localstorage
                     const marcasEncontradas = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))];
                     marcasEncontradas.forEach(m => {
                         if (!marcasDoSistema.includes(m)) marcasDoSistema.push(m);
@@ -2311,9 +2312,9 @@ async function getPastaUploadAtiva() {
                 linha['Preço de custo'] = p.preco_custo || 0;
                 linha['Localização'] = p.localizacao || "";
                 linha['GTIN/EAN'] = p.gtin || "";
-               linha['Data Validade'] = p.validade || "";
-linha['Categoria do produto'] = ""; // FORÇADO A FICAR VAZIO
-linha['Marca'] = p.marca || "";
+                linha['Data Validade'] = p.validade || "";
+                linha['Categoria do produto'] = ""; 
+                linha['Marca'] = p.marca || "";
 
                 let codigoOuId = p.codigo || p.id || "";
                 let img = p.url_imagem || `../site/img/produtos/${codigoOuId}.webp`;
@@ -2339,7 +2340,7 @@ linha['Marca'] = p.marca || "";
             closeSidebar('config-sidebar');
         }
 
-        // --- FUNÇÕES EXCLUSIVAS PARA A META (FACEBOOK / INSTAGRAM) ATUALIZADO ---
+        // --- FUNÇÕES EXCLUSIVAS PARA A META (FACEBOOK / INSTAGRAM) ---
 
         function limparTextoParaURL(texto) {
             if (!texto) return "";
@@ -2350,11 +2351,9 @@ linha['Marca'] = p.marca || "";
             const container = document.getElementById('meta-cat-list');
             container.innerHTML = "";
             
-            // Extrai as Categorias (Sessões) e Marcas únicas presentes nos produtos atuais
             const catsEncontradas = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))].sort();
             const marcasEncontradas = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))].sort();
             
-            // Monta o layout HTML de Categorias
             let htmlCategorias = catsEncontradas.length === 0 ? 
                 "<div style='font-size:12px; color:#666;'>Nenhuma categoria preenchida nos produtos.</div>" : 
                 catsEncontradas.map(cat => `
@@ -2366,7 +2365,6 @@ linha['Marca'] = p.marca || "";
                     </div>
                 `).join('');
 
-            // Monta o layout HTML de Marcas
             let htmlMarcas = marcasEncontradas.length === 0 ? 
                 "<div style='font-size:12px; color:#666;'>Nenhuma marca preenchida nos produtos.</div>" : 
                 marcasEncontradas.map(marca => `
@@ -2378,7 +2376,6 @@ linha['Marca'] = p.marca || "";
                     </div>
                 `).join('');
 
-            // Junta as listas no Modal
             container.innerHTML = `
                 <div style="margin-bottom: 8px; font-size: 11px; font-weight: 900; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Sessões (Por Categoria)</div>
                 <div style="display:flex; flex-direction:column; gap:6px; max-height: 200px; overflow-y:auto; margin-bottom: 20px; padding-right: 5px;">
@@ -2400,7 +2397,6 @@ linha['Marca'] = p.marca || "";
             document.getElementById('modal-meta-export').style.display = 'none';
         }
 
-       // Função Nova para gerar o CSV filtrando ou por Categoria ou por Marca
        function gerarCSVMetaFiltro(tipoFiltro, valorFiltro) {
             let produtosExportar = products.filter(p => p.situacao !== 'I'); 
             
@@ -2458,13 +2454,12 @@ linha['Marca'] = p.marca || "";
                 }
 
                 linha['image_link'] = encodeURI(img);
-                linha['brand'] = p.marca || "Dona Antonia"; // Atualizado com Marca
+                linha['brand'] = p.marca || "Dona Antonia"; 
                 linha['gtin'] = p.gtin || "";
                 
                 return linha;
             });
 
-            // GERAÇÃO E DOWNLOAD DO ARQUIVO NOMEADO COM A SELEÇÃO
             const prefixoNome = valorFiltro.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
             const nomeFicheiro = `catalogo_meta_${tipoFiltro}_${prefixoNome}_${new Date().getTime()}.csv`;
 
@@ -2612,97 +2607,93 @@ linha['Marca'] = p.marca || "";
             const subCatSelectGrid = document.getElementById(`sel-subcat-grid-${sku}`);
             if (subCatSelectGrid) subCatSelectGrid.innerHTML = getOpcoesSubcategoria(novaCategoria, '');
         }
+
         // --- MÓDULO DE LIMPEZA INTELIGENTE ---
-
-// 1. Identifica quais imagens realmente pertencem a produtos existentes
-function obterImagensEmUso() {
-    const imagensSet = new Set();
-    products.forEach(p => {
-        // Verifica apenas a imagem principal
-        if (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.includes('.webp')) {
-            // Extrai apenas o nome do arquivo (ex: 1001.webp) do caminho completo
-            const nomeArquivo = p.url_imagem.split('/').pop().split('?')[0];
-            imagensSet.add(nomeArquivo);
-        }
-    });
-    return imagensSet;
-}
-
-// 2. Extensão da sua GitHubAPI para deletar arquivos
-GitHubAPI.deleteFile = async function(path, sha, message) {
-    const cfg = this.getConfig();
-    if (!cfg) throw new Error("Credenciais ausentes");
-    
-    const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-    const body = {
-        message: message,
-        sha: sha
-    };
-    
-    const res = await fetch(url, { 
-        method: 'DELETE', 
-        headers: this.getHeaders(cfg), 
-        body: JSON.stringify(body) 
-    });
-    
-    if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(`Erro ao deletar: ${errorData.message}`);
-    }
-    return await res.json();
-};
-
-// 3. Função principal de Varredura e Limpeza
-async function executarLimpezaImagens() {
-    if (!confirm("⚠️ CUIDADO: Esta ação apagará permanentemente do GitHub todas as fotos que não estão vinculadas a nenhum produto. Deseja continuar?")) return;
-
-    mostrarAlerta("Iniciando varredura no GitHub...", "aviso");
-    
-    try {
-        const imagensEmUso = obterImagensEmUso();
-        const pastaImagens = "site/img/produtos";
-        
-        // Busca a lista de arquivos na pasta do GitHub
-        const arquivosNoGithub = await GitHubAPI.getFileData(pastaImagens);
-        
-        if (!Array.isArray(arquivosNoGithub)) {
-            alert("Não foi possível ler a lista de arquivos ou a pasta está vazia.");
-            return;
+        function obterImagensEmUso() {
+            const imagensSet = new Set();
+            products.forEach(p => {
+                const camposImagem = ['url_imagem', 'url_imagem_2', 'url_imagem_3', 'url_imagem_4', 'url_imagem_5'];
+                camposImagem.forEach(campo => {
+                    if (p[campo] && typeof p[campo] === 'string' && p[campo].includes('.webp')) {
+                        const nomeArquivo = p[campo].split('/').pop().split('?')[0];
+                        imagensSet.add(nomeArquivo);
+                    }
+                });
+            });
+            return imagensSet;
         }
 
-        // Filtra quais arquivos do GitHub NÃO estão na nossa lista de uso
-        const arquivosParaDeletar = arquivosNoGithub.filter(arq => {
-            return arq.type === 'file' && !imagensEmUso.has(arq.name);
-        });
+        GitHubAPI.deleteFile = async function(path, sha, message) {
+            const cfg = this.getConfig();
+            if (!cfg) throw new Error("Credenciais ausentes");
+            
+            const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
+            const body = {
+                message: message,
+                sha: sha
+            };
+            
+            const res = await fetch(url, { 
+                method: 'DELETE', 
+                headers: this.getHeaders(cfg), 
+                body: JSON.stringify(body) 
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(`Erro ao deletar: ${errorData.message}`);
+            }
+            return await res.json();
+        };
 
-        if (arquivosParaDeletar.length === 0) {
-            alert("🎉 Excelente! Não foram encontradas imagens inúteis. O seu repositório está limpo.");
-            return;
-        }
+        async function executarLimpezaImagens() {
+            if (!confirm("⚠️ CUIDADO: Esta ação apagará permanentemente do GitHub todas as fotos que não estão vinculadas a nenhum produto. Deseja continuar?")) return;
 
-        if (!confirm(`Foram encontradas ${arquivosParaDeletar.length} imagens sem uso. Deseja apagá-las agora?`)) return;
-
-        // Processa a deleção em lotes para não sobrecarregar
-        let deletados = 0;
-        for (const arq of arquivosParaDeletar) {
+            mostrarAlerta("Iniciando varredura no GitHub...", "aviso");
+            
             try {
-                await GitHubAPI.deleteFile(arq.path, arq.sha, `Limpeza PIM: Removendo imagem órfã ${arq.name}`);
-                deletados++;
-                console.log(`Deletado: ${arq.name}`);
-                // Pequena pausa para evitar Rate Limit da API
-                await new Promise(r => setTimeout(r, 300)); 
-            } catch (err) {
-                console.error(`Falha ao deletar ${arq.name}:`, err);
+                const imagensEmUso = obterImagensEmUso();
+                let arquivosParaDeletar = [];
+
+                // Fazemos varredura num número estimado de pastas (ex: 1 até 5) para encontrar os ficheiros inúteis.
+                // Ajusta o "maxFolders" dependendo de quão grande for o teu repositório a longo prazo.
+                const maxFolders = 5; 
+                for(let i = 1; i <= maxFolders; i++) {
+                    const pastaImagens = i === 1 ? "site/img/produtos" : `site/img/produtos_${i}`;
+                    const arquivosNoGithub = await GitHubAPI.getFileData(pastaImagens);
+                    
+                    if (Array.isArray(arquivosNoGithub)) {
+                        const inuteisDaPasta = arquivosNoGithub.filter(arq => arq.type === 'file' && !imagensEmUso.has(arq.name));
+                        arquivosParaDeletar = arquivosParaDeletar.concat(inuteisDaPasta);
+                    }
+                }
+
+                if (arquivosParaDeletar.length === 0) {
+                    alert("🎉 Excelente! Não foram encontradas imagens inúteis. O seu repositório está limpo.");
+                    return;
+                }
+
+                if (!confirm(`Foram encontradas ${arquivosParaDeletar.length} imagens sem uso. Deseja apagá-las agora?`)) return;
+
+                let deletados = 0;
+                for (const arq of arquivosParaDeletar) {
+                    try {
+                        await GitHubAPI.deleteFile(arq.path, arq.sha, `Limpeza PIM: Removendo imagem órfã ${arq.name}`);
+                        deletados++;
+                        console.log(`Deletado: ${arq.name}`);
+                        await new Promise(r => setTimeout(r, 300)); 
+                    } catch (err) {
+                        console.error(`Falha ao deletar ${arq.name}:`, err);
+                    }
+                }
+
+                alert(`✅ Limpeza concluída! ${deletados} imagens inúteis foram removidas do GitHub.`);
+                closeSidebar('config-sidebar');
+
+            } catch (e) {
+                alert("Erro durante a limpeza: " + e.message);
             }
         }
-
-        alert(`✅ Limpeza concluída! ${deletados} imagens inúteis foram removidas do GitHub.`);
-        closeSidebar('config-sidebar');
-
-    } catch (e) {
-        alert("Erro durante a limpeza: " + e.message);
-    }
-}
     </script>
 </body>
 </html>
