@@ -18,10 +18,8 @@
             --bg-page: #ffffff;
             --bg-img: #f3f4f6;       
             --text-dark: #291F1A;    
-            /* Ajuste de Contraste PageSpeed: Cinza mais legível */
             --text-gray: #5A504A;    
             --border-light: #e5e7eb;
-            /* Ajuste de Contraste PageSpeed: Verde levemente mais escuro para passar no teste AA */
             --success: #059669;
             --radius-img: 16px;
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -665,7 +663,8 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
             acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; 
         }
 
-        let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        // Trocado para 3+
+        let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
         let tagEmbalagem = p.embalagem && !isBasket ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -706,7 +705,7 @@ function getHomeHTML() {
         </div>`;
     }
 
-    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
+    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is20Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
     html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
     html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
     html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
@@ -749,7 +748,8 @@ function renderKitList() {
         let qty = expanderState.items[pId]; currentSum += p.price * qty;
         
         let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        // Trocado para 3+
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
         let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -867,7 +867,8 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
                 </div>`;
         }
 
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        // Trocado para 3+
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
         priceHtml += lbl10;
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -904,7 +905,8 @@ window.openSwapView = function(oldPId, context = 'KIT') {
     if(similarProds.length > 0) {
         html += `<div style="margin-bottom: 24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>`;
         html += similarProds.map(p => {
-            let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+            // Trocado para 3+
+            let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
             let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
             let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
             let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
@@ -972,8 +974,8 @@ window.selectSwapCategory = function(cat) {
 function buildSwapSuggestions(cat) {
     if (cat === 'Ofertas') {
         let html = '';
-        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is20Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6), null);
-        if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 30% de Desconto</h4>${h1}</div>`;
+        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is20Off).sort((a,b) => a._valTime - b._valTime).slice(0, 12), null);
+        if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 20% de Desconto</h4>${h1}</div>`;
         let h2 = buildSwapHorizontalCards(PROMO_CONFIG.aproveite.map(findItem), 'APROVEITE');
         if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Dicas de Hoje</h4>${h2}</div>`;
         let h3 = buildSwapHorizontalCards(PROMO_CONFIG.leve5pague4.map(findItem), 'LEVE5');
@@ -993,7 +995,8 @@ function buildSwapSuggestions(cat) {
     return suggestionProds.map(p => {
         let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        // Trocado para 3+
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
         let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
 
         let acaoHTML = '';
@@ -1120,9 +1123,16 @@ function updateTotals() {
         let p = STATE.prods.find(x => String(x.id) === String(id)); 
         if (p) { 
             sum += p.price * q; count += q; 
-            if (STATE.promoIds.leve5.includes(p.id)) customPromoDiscount += (Math.floor(q / 5) * p.price);
-            else if (STATE.promoIds.leve2.includes(p.id)) { if (q >= 2) customPromoDiscount += (p.price * 0.10) * q; } 
-            else if (!p._isPromo) { if (q >= 2) atacadoDiscount += (p.price * 0.05) * q; }
+            if (STATE.promoIds.leve5.includes(p.id)) {
+                customPromoDiscount += (Math.floor(q / 5) * p.price);
+            }
+            else if (STATE.promoIds.leve2.includes(p.id)) { 
+                if (q >= 2) customPromoDiscount += (p.price * 0.10) * q; 
+            } 
+            // AQUI ESTÁ A NOVA REGRA DE 3 OU MAIS!
+            else if (!p._isPromo) { 
+                if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; 
+            }
         } 
     });
     
@@ -1161,7 +1171,8 @@ function renderCheckoutItems() {
     $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
         let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
         let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        // Trocado para 3+
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
         let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -1263,15 +1274,16 @@ async function init() {
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                     categoria: p.categoria || "Outros", 
                     embalagem: p.embalagem || "", 
-                    _is30Off: false, _isPromo: false, _valTime: validade
+                    _is20Off: false, _isPromo: false, _valTime: validade
                 };
             });
 
             let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
             produtosComValidade.sort((a, b) => a._valTime - b._valTime);
+            // Aplicando o limite de 12 e desconto de 20%
             produtosComValidade.slice(0, 12).forEach(p => {
                 p.price = p.oldPrice * 0.80;
-                p._is30Off = true;
+                p._is20Off = true;
                 p._isPromo = true;
             });
 
