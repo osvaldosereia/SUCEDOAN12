@@ -1269,7 +1269,7 @@ async function init() {
 
             let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
             produtosComValidade.sort((a, b) => a._valTime - b._valTime);
-            produtosComValidade.slice(0, 6).forEach(p => {
+            produtosComValidade.slice(0, 12).forEach(p => {
                 p.price = p.oldPrice * 0.70;
                 p._is30Off = true;
                 p._isPromo = true;
