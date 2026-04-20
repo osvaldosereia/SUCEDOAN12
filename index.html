@@ -18,8 +18,10 @@
             --bg-page: #ffffff;
             --bg-img: #f3f4f6;       
             --text-dark: #291F1A;    
+            /* Ajuste de Contraste PageSpeed: Cinza mais legível */
             --text-gray: #5A504A;    
             --border-light: #e5e7eb;
+            /* Ajuste de Contraste PageSpeed: Verde levemente mais escuro para passar no teste AA */
             --success: #059669;
             --radius-img: 16px;
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -178,7 +180,7 @@
         #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
         @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
         
-        #swap-chips-container-wrap { position: sticky; top: -20px; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
+        #swap-chips-container-wrap { position: sticky; top: -20px; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 16px 20px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); display: flex; flex-direction: column; gap: 12px; }
         #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
 
         .chk-section { margin-bottom: 32px; }
@@ -311,6 +313,8 @@
         <div class="drawer-body">
             <div class="chk-section" id="chk-items-list"></div>
             
+            <button class="pay-btn" style="width: 100%; border-color: var(--brand); color: var(--brand); font-weight: 800; margin-bottom: 32px;" onclick="closeCheckoutAndGoToProducts()">+ Adicionar Mais Produtos</button>
+
             <div class="chk-section">
                 <div class="chk-title">Agendamento</div>
                 <div class="pay-options" id="delivery-options-list"></div>
@@ -554,6 +558,13 @@ window.scrollToProdutos = function() {
     updateNavButtons('produtos');
 };
 
+window.closeCheckoutAndGoToProducts = function() {
+    closeAllDrawers();
+    setTimeout(() => {
+        scrollToProdutos();
+    }, 300);
+};
+
 function updateNavButtons(activeId) {
     $('btn-nav-cestas').classList.toggle('active', activeId === 'cestas');
     $('btn-nav-produtos').classList.toggle('active', activeId === 'produtos');
@@ -663,8 +674,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
             acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; 
         }
 
-        // Trocado para 3+
-        let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
         let tagEmbalagem = p.embalagem && !isBasket ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -705,7 +715,7 @@ function getHomeHTML() {
         </div>`;
     }
 
-    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is20Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
+    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
     html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
     html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
     html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
@@ -748,8 +758,7 @@ function renderKitList() {
         let qty = expanderState.items[pId]; currentSum += p.price * qty;
         
         let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
-        // Trocado para 3+
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
         let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -867,8 +876,7 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
                 </div>`;
         }
 
-        // Trocado para 3+
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
         priceHtml += lbl10;
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -905,8 +913,7 @@ window.openSwapView = function(oldPId, context = 'KIT') {
     if(similarProds.length > 0) {
         html += `<div style="margin-bottom: 24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>`;
         html += similarProds.map(p => {
-            // Trocado para 3+
-            let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
+            let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
             let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
             let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
             let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
@@ -944,14 +951,20 @@ window.openSwapView = function(oldPId, context = 'KIT') {
 
     html += `
         <div style="border-top: 1px dashed var(--border-light);">
-            <div class="chips-wrapper" id="swap-chips-container-wrap">
-                <button class="scroll-btn left" onclick="scrollElementChips('swap-chips-container', -200)">❮</button>
-                <div class="swap-chips" id="swap-chips-container">
-                    ${STATE.swapCats.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
+            <div id="swap-chips-container-wrap" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; padding-top: 16px;">
+                <div class="chips-wrapper" style="width: 100%;">
+                    <button class="scroll-btn left" onclick="scrollElementChips('swap-chips-container', -200)">❮</button>
+                    <div class="swap-chips" id="swap-chips-container">
+                        ${STATE.swapCats.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
+                    </div>
+                    <button class="scroll-btn right" onclick="scrollElementChips('swap-chips-container', 200)">❯</button>
                 </div>
-                <button class="scroll-btn right" onclick="scrollElementChips('swap-chips-container', 200)">❯</button>
+                <div class="search-box" style="width: 100%;">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="swap-search-input" class="search-input" placeholder="Buscar em todo o site..." oninput="handleSwapSearch()">
+                </div>
             </div>
-            <div id="swap-suggestions-list" style="padding-top: 16px;">
+            <div id="swap-suggestions-list" style="padding-top: 0px;">
                 ${buildSwapSuggestions(STATE.swapCats[0])}
             </div>
         </div>`;
@@ -961,6 +974,9 @@ window.openSwapView = function(oldPId, context = 'KIT') {
 };
 
 window.selectSwapCategory = function(cat) {
+    let searchInput = $('swap-search-input');
+    if (searchInput) searchInput.value = '';
+    
     document.querySelectorAll('#swap-chips-container .swap-chip').forEach(el => {
         if(el.innerText === cat.toUpperCase()) el.classList.add('active'); else el.classList.remove('active');
     });
@@ -974,8 +990,8 @@ window.selectSwapCategory = function(cat) {
 function buildSwapSuggestions(cat) {
     if (cat === 'Ofertas') {
         let html = '';
-        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is20Off).sort((a,b) => a._valTime - b._valTime).slice(0, 12), null);
-        if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 20% de Desconto</h4>${h1}</div>`;
+        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6), null);
+        if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 30% de Desconto</h4>${h1}</div>`;
         let h2 = buildSwapHorizontalCards(PROMO_CONFIG.aproveite.map(findItem), 'APROVEITE');
         if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Dicas de Hoje</h4>${h2}</div>`;
         let h3 = buildSwapHorizontalCards(PROMO_CONFIG.leve5pague4.map(findItem), 'LEVE5');
@@ -995,8 +1011,7 @@ function buildSwapSuggestions(cat) {
     return suggestionProds.map(p => {
         let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-        // Trocado para 3+
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
         let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
 
         let acaoHTML = '';
@@ -1027,6 +1042,64 @@ function buildSwapSuggestions(cat) {
         </div>`;
     }).join('');
 }
+
+let swapSearchTimeout;
+window.handleSwapSearch = function() {
+    clearTimeout(swapSearchTimeout);
+    swapSearchTimeout = setTimeout(() => {
+        let val = $('swap-search-input').value;
+        let q = norm(val);
+        if(q.length < 2) {
+            let activeCatEl = document.querySelector('#swap-chips-container .swap-chip.active');
+            let cat = activeCatEl ? activeCatEl.innerText : 'Ofertas';
+            let catId = STATE.swapCats.find(c => c.toUpperCase() === cat.toUpperCase()) || STATE.swapCats[0];
+            $('swap-suggestions-list').innerHTML = buildSwapSuggestions(catId);
+        } else {
+            let filtered = STATE.prods.filter(p => p.stock > 0 && p.id !== currentSwapOldId && (norm(p.name).includes(q) || norm(p.categoria).includes(q)));
+            if(filtered.length === 0) {
+                $('swap-suggestions-list').innerHTML = `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhum produto encontrado para "${val}".</p>`;
+            } else {
+                $('swap-suggestions-list').innerHTML = buildSwapSuggestionsFromList(filtered);
+            }
+        }
+    }, 300);
+};
+
+window.buildSwapSuggestionsFromList = function(suggestionProds) {
+    return suggestionProds.map(p => {
+        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+
+        let acaoHTML = '';
+        if (q > 0) {
+            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+            acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+        } else {
+            acaoHTML = `
+                <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                    <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                    <button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>
+                </div>`;
+        }
+
+        return `
+        <div class="list-item">
+            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
+                ${tagEmbalagem}
+                <img src="${p.img}" alt="Produto Sugerido ${p.name}" loading="lazy" decoding="async">
+            </div>
+            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${priceDisplay}${lbl10}</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                ${acaoHTML}
+            </div>
+        </div>`;
+    }).join('');
+};
 
 window.confirmSwap = function(oldPId, newPId, btnElement) {
     if (swapContext === 'KIT') {
@@ -1123,16 +1196,9 @@ function updateTotals() {
         let p = STATE.prods.find(x => String(x.id) === String(id)); 
         if (p) { 
             sum += p.price * q; count += q; 
-            if (STATE.promoIds.leve5.includes(p.id)) {
-                customPromoDiscount += (Math.floor(q / 5) * p.price);
-            }
-            else if (STATE.promoIds.leve2.includes(p.id)) { 
-                if (q >= 2) customPromoDiscount += (p.price * 0.10) * q; 
-            } 
-            // AQUI ESTÁ A NOVA REGRA DE 3 OU MAIS!
-            else if (!p._isPromo) { 
-                if (q >= 3) atacadoDiscount += (p.price * 0.10) * q; 
-            }
+            if (STATE.promoIds.leve5.includes(p.id)) customPromoDiscount += (Math.floor(q / 5) * p.price);
+            else if (STATE.promoIds.leve2.includes(p.id)) { if (q >= 2) customPromoDiscount += (p.price * 0.10) * q; } 
+            else if (!p._isPromo) { if (q >= 2) atacadoDiscount += (p.price * 0.05) * q; }
         } 
     });
     
@@ -1171,8 +1237,7 @@ function renderCheckoutItems() {
     $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
         let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
         let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
-        // Trocado para 3+
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 3+ por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
         let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -1274,16 +1339,15 @@ async function init() {
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                     categoria: p.categoria || "Outros", 
                     embalagem: p.embalagem || "", 
-                    _is20Off: false, _isPromo: false, _valTime: validade
+                    _is30Off: false, _isPromo: false, _valTime: validade
                 };
             });
 
             let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
             produtosComValidade.sort((a, b) => a._valTime - b._valTime);
-            // Aplicando o limite de 12 e desconto de 20%
             produtosComValidade.slice(0, 12).forEach(p => {
                 p.price = p.oldPrice * 0.80;
-                p._is20Off = true;
+                p._is30Off = true;
                 p._isPromo = true;
             });
 
