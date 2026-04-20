@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Super Cestas Básicas Dona Antônia - Qualidade e preço justo.">
     <title>Dona Antônia | Super Cestas Básicas</title>
 
@@ -18,15 +18,17 @@
             --bg-page: #ffffff;
             --bg-img: #f3f4f6;       
             --text-dark: #291F1A;    
-            --text-gray: #6B5C55;    
+            /* Ajuste de Contraste PageSpeed: Cinza mais legível */
+            --text-gray: #5A504A;    
             --border-light: #e5e7eb;
-            --success: #10b981;
+            /* Ajuste de Contraste PageSpeed: Verde levemente mais escuro para passar no teste AA */
+            --success: #059669;
             --radius-img: 16px;
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-page); color: var(--text-dark); overflow-x: hidden; padding-bottom: 90px; }
+        body { background-color: var(--bg-page); color: var(--text-dark); overflow-x: hidden; padding-bottom: 90px; line-height: 1.5; }
         button { border: none; background: none; cursor: pointer; font-weight: 600; outline: none; }
         img { max-width: 100%; height: auto; }
 
@@ -64,15 +66,20 @@
         @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
         .show-all .card { display: flex !important; } 
 
-        .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
-        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
+        .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; height: 100%; }
+        
+        /* Ajuste de Proporção: Transformando em imagem mais vertical (3/4) */
+        .card-img-wrap { width: 100%; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
-        .card-title { font-size: 0.8rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 3.9em; text-transform: none; cursor: pointer; }
+        /* Padronização Tipográfica: Altura fixa em 2 linhas garantida */
+        .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em; text-transform: none; cursor: pointer; }
         
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
         .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
-        .old-price { font-size: 0.8rem; color: #9ca3af; text-decoration: line-through; }
+        
+        /* Ajuste PageSpeed: Contraste do preço antigo melhorado */
+        .old-price { font-size: 0.8rem; color: var(--text-gray); opacity: 0.8; text-decoration: line-through; }
         
         .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
         .promo-tag.exp { background: var(--brand-light); color: var(--brand); }
@@ -87,7 +94,6 @@
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
-        /* [NOVO] Botões padronizados para a tela de Trocar */
         .btn-action-gray {
             width: 100%;
             padding: 8px 6px;
@@ -103,7 +109,6 @@
         }
         .btn-action-gray:active { background: var(--border-light); }
 
-        /* [NOVA ETIQUETA] Etiqueta de Embalagem */
         .embalagem-tag {
             position: absolute;
             top: 12px;
@@ -119,7 +124,6 @@
             letter-spacing: -0.2px;
         }
 
-        /* Etiqueta menor para listas */
         .list-img-wrap .embalagem-tag {
             top: 6px;
             left: 6px;
@@ -151,7 +155,8 @@
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
         
-        .list-name { font-size: 0.9rem; font-weight: 600; color: var(--text-gray); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-transform: none; height: 3.9em; }
+        /* Padronização Tipográfica na Lista */
+        .list-name { font-size: 0.9rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-transform: none; height: 2.8em; }
         .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; display: flex; flex-direction: column; }
         
         .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
@@ -173,11 +178,9 @@
         #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
         @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
         
-        /* [CORREÇÃO CHIPS SWAP] Modificado o top para compensar o padding do drawer-body */
         #swap-chips-container-wrap { position: sticky; top: -20px; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
         #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
 
-        
         .chk-section { margin-bottom: 32px; }
         .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
         .input-text { width: 100%; padding: 14px; border: none; background: var(--bg-img); border-radius: 12px; margin-bottom: 12px; font-size: 1rem; outline: none; transition: 0.2s; }
@@ -213,7 +216,7 @@
 <div class="app-container">
 
     <header class="top-bar">
-        <img src="../img/logoantonia2.png" alt="Dona Antônia" class="logo" onclick="goToHome()" style="cursor: pointer;" aria-label="Voltar para Início">
+        <img src="../img/logoantonia2.png" alt="Logomarca Dona Antônia" class="logo" onclick="goToHome()" style="cursor: pointer;" aria-label="Voltar para Início">
         <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
     </header>
 
@@ -221,7 +224,7 @@
         <div class="search-box">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input type="text" id="search-input" class="search-input" placeholder="O que você precisa hoje?" oninput="handleSearchInput()">
-            <div class="search-clear" id="search-clear" onclick="clearSearch()">✕</div>
+            <div class="search-clear" id="search-clear" onclick="clearSearch()" aria-label="Limpar busca">✕</div>
         </div>
 
         <div class="nav-buttons" id="nav-buttons-container">
@@ -248,7 +251,7 @@
     <div class="drawer" id="main-menu">
         <div class="drawer-header">
             <div class="drawer-title">Dona Antônia</div>
-            <button class="btn-close" onclick="closeDrawer('main-menu')">✕</button>
+            <button class="btn-close" onclick="closeDrawer('main-menu')" aria-label="Fechar menu">✕</button>
         </div>
         <div class="drawer-body">
             <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('ofertas'); scrollToProdutos();">🔥 Destaques e Ofertas</a>
@@ -260,7 +263,7 @@
     <div class="drawer" id="quick-drawer" style="z-index: 105;">
         <div class="drawer-header">
             <div class="drawer-title">Detalhes do Produto</div>
-            <button class="btn-close" onclick="closeDrawer('quick-drawer')">✕</button>
+            <button class="btn-close" onclick="closeDrawer('quick-drawer')" aria-label="Fechar detalhes">✕</button>
         </div>
         <div class="drawer-body" id="quick-content" style="padding: 0;"></div>
     </div>
@@ -268,7 +271,7 @@
     <div class="drawer" id="kit-drawer">
         <div class="drawer-header">
             <div class="drawer-title" id="kit-title">Personalizar Cesta</div>
-            <button class="btn-close" onclick="closeDrawer('kit-drawer')">✕</button>
+            <button class="btn-close" onclick="closeDrawer('kit-drawer')" aria-label="Fechar personalização">✕</button>
         </div>
         <div class="drawer-body" style="padding: 0;">
             <div id="kit-items-grid" style="padding: 20px;"></div>
@@ -295,7 +298,7 @@
     <div class="drawer" id="swap-drawer" style="z-index: 102;">
         <div class="drawer-header">
             <div class="drawer-title" style="font-size: 1.1rem;">Trocar ou Adicionar</div>
-            <button class="btn-close" onclick="closeDrawer('swap-drawer')">✕</button>
+            <button class="btn-close" onclick="closeDrawer('swap-drawer')" aria-label="Fechar trocas">✕</button>
         </div>
         <div class="drawer-body" id="swap-items-grid"></div>
     </div>
@@ -303,7 +306,7 @@
     <div class="drawer" id="checkout-drawer">
         <div class="drawer-header">
             <div class="drawer-title">Finalizar Pedido</div>
-            <button class="btn-close" onclick="closeDrawer('checkout-drawer')">✕</button>
+            <button class="btn-close" onclick="closeDrawer('checkout-drawer')" aria-label="Fechar finalização">✕</button>
         </div>
         <div class="drawer-body">
             <div class="chk-section" id="chk-items-list"></div>
@@ -619,13 +622,13 @@ window.openQuickView = function(id, swapCtx = null) {
     $('quick-content').innerHTML = `
         <div style="width:100%; height: 350px; background:var(--bg-img); position: relative; display:flex; align-items:center; justify-content:center; padding:10px;">
             ${tagEmbalagem}
-            <img src="${p.img}" style="max-height:100%; max-width:100%; mix-blend-mode:multiply; object-fit:contain;">
+            <img src="${p.img}" alt="Imagem de ${p.name}" style="max-height:100%; max-width:100%; mix-blend-mode:multiply; object-fit:contain;">
         </div>
         <div style="padding: 24px 20px;">
             <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; line-height: 1.3;">${p.name}</div>
             <div style="display:flex; align-items:baseline; gap:8px; margin-bottom: 24px;">
                 <div style="font-size: 1.8rem; font-weight: 900; color: var(--brand);">${fmt(p.price)}</div>
-                ${p.oldPrice > p.price ? `<div style="font-size:1rem; color:var(--text-gray); text-decoration:line-through;">${fmt(p.oldPrice)}</div>` : ''}
+                ${p.oldPrice > p.price ? `<div class="old-price">${fmt(p.oldPrice)}</div>` : ''}
             </div>
             <div id="quick-act-${p.id}">${acaoHTML}</div>
         </div>
@@ -668,7 +671,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         <div class="card ${isBasket ? 'card-basket' : ''}" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
             <div class="card-img-wrap" ${clickEvt}>
                 ${tagEmbalagem}
-                <img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" loading="lazy" decoding="async">
+                <img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" alt="Foto de ${p.name || p.nome}" loading="lazy" decoding="async">
             </div>
             <div class="card-title" ${clickEvt}>${p.name || p.nome}</div>
             <div class="card-price-row">
@@ -745,14 +748,14 @@ function renderKitList() {
         
         let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
         return `
         <div class="list-item">
             <div class="list-img-wrap" onclick="openQuickView('${pId}', 'KIT')">
                 ${tagEmbalagem}
-                <img src="${p.img}" loading="lazy" decoding="async">
+                <img src="${p.img}" alt="Produto ${p.name}" loading="lazy" decoding="async">
             </div>
             <div class="list-info" onclick="openQuickView('${pId}', 'KIT')">
                 <div class="list-name">${p.name}</div>
@@ -834,7 +837,7 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
     return validItems.map(p => {
         let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
         let tagHtml = ""; 
-        let priceHtml = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+        let priceHtml = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
 
         let acaoHTML = '';
         if (q > 0) {
@@ -844,10 +847,10 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
             let addQty = promoSpecialType === 'LEVE5' ? 5 : 2; let addText = promoSpecialType === 'LEVE5' ? "Add 5 un." : "Add 2 un.";
             if(promoSpecialType === 'LEVE5') {
                 tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 5 PAGUE 4</div><br>`;
-                priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`;
+                priceHtml = `<span class="old-price" style="margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`;
             } else {
                 tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 10% OFF</div><br>`;
-                priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(p.price*2)}</span>${fmt((p.price*2)*0.8)}`;
+                priceHtml = `<span class="old-price" style="margin-right:6px;">${fmt(p.price*2)}</span>${fmt((p.price*2)*0.8)}`;
             }
             acaoHTML = `
                 <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
@@ -870,7 +873,7 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
         <div class="list-item">
             <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
                 ${tagEmbalagem}
-                <img src="${p.img}" loading="lazy" decoding="async">
+                <img src="${p.img}" alt="Imagem do item ${p.name}" loading="lazy" decoding="async">
             </div>
             <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                 ${tagHtml}
@@ -900,7 +903,7 @@ window.openSwapView = function(oldPId, context = 'KIT') {
         html += `<div style="margin-bottom: 24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>`;
         html += similarProds.map(p => {
             let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-            let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+            let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
             let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
             let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
             
@@ -920,7 +923,7 @@ window.openSwapView = function(oldPId, context = 'KIT') {
             <div class="list-item">
                 <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
                     ${tagEmbalagem}
-                    <img src="${p.img}" loading="lazy" decoding="async">
+                    <img src="${p.img}" alt="Produto similar ${p.name}" loading="lazy" decoding="async">
                 </div>
                 <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                     <div class="list-name">${p.name}</div>
@@ -989,7 +992,7 @@ function buildSwapSuggestions(cat) {
         let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
 
         let acaoHTML = '';
         if (q > 0) {
@@ -1007,7 +1010,7 @@ function buildSwapSuggestions(cat) {
         <div class="list-item">
             <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
                 ${tagEmbalagem}
-                <img src="${p.img}" loading="lazy" decoding="async">
+                <img src="${p.img}" alt="Produto Sugerido ${p.name}" loading="lazy" decoding="async">
             </div>
             <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                 <div class="list-name">${p.name}</div>
@@ -1157,14 +1160,14 @@ function renderCheckoutItems() {
         let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
         let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
         return `
         <div class="list-item">
             <div class="list-img-wrap" onclick="openQuickView('${id}', 'CART')">
                 ${tagEmbalagem}
-                <img src="${p.img}" loading="lazy" decoding="async">
+                <img src="${p.img}" alt="Produto Final ${p.name}" loading="lazy" decoding="async">
             </div>
             <div class="list-info" onclick="openQuickView('${id}', 'CART')">
                 <div class="list-name">${p.name}</div>
