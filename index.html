@@ -972,7 +972,7 @@ window.selectSwapCategory = function(cat) {
 function buildSwapSuggestions(cat) {
     if (cat === 'Ofertas') {
         let html = '';
-        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6), null);
+        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is20Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6), null);
         if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 30% de Desconto</h4>${h1}</div>`;
         let h2 = buildSwapHorizontalCards(PROMO_CONFIG.aproveite.map(findItem), 'APROVEITE');
         if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Dicas de Hoje</h4>${h2}</div>`;
