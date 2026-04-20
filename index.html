@@ -65,7 +65,7 @@
         .show-all .card { display: flex !important; } 
 
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; }
-        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; }
+        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
         .card-title { font-size: 0.8rem; font-weight: 600; line-height: 1.3; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 3.9em; text-transform: none; cursor: pointer; }
@@ -82,10 +82,51 @@
         .card-basket .card-title { -webkit-line-clamp: 2; height: auto; white-space: normal;}
 
         .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
-        .btn-add.special { background: var(--brand); color: #fff; } /* [Ajuste] Mantemos isso para os botões das promos */
+        .btn-add.special { background: var(--brand); color: #fff; } 
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
+
+        /* [NOVO] Botões padronizados para a tela de Trocar */
+        .btn-action-gray {
+            width: 100%;
+            padding: 8px 6px;
+            background: var(--bg-img);
+            color: var(--text-dark);
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 8px;
+            border: none;
+            transition: 0.2s;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-action-gray:active { background: var(--border-light); }
+
+        /* [NOVA ETIQUETA] Etiqueta de Embalagem */
+        .embalagem-tag {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--brand);
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            z-index: 2;
+            letter-spacing: -0.2px;
+        }
+
+        /* Etiqueta menor para listas */
+        .list-img-wrap .embalagem-tag {
+            top: 6px;
+            left: 6px;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
 
         .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
@@ -106,7 +147,7 @@
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
         
-        .list-img-wrap { width: 100px; height: 140px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; cursor: pointer; }
+        .list-img-wrap { width: 100px; height: 140px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; cursor: pointer; position: relative; }
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
         
@@ -116,7 +157,6 @@
         .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
         .btn-swap:active { background: var(--brand-light); }
         
-        /* [Ajuste] CSS novo para os Wrappers e setas (Chips) */
         .chips-wrapper { position: relative; display: flex; align-items: center; width: 100%; background: transparent; }
         .scroll-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); z-index: 5; background: #fff; border: 1px solid var(--border-light); border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; justify-content: center; align-items: center; color: var(--brand); font-size: 0.9rem;}
         .scroll-btn.left { left: 0px; }
@@ -130,12 +170,11 @@
         .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
         .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
-        /* [Ajuste] Estilos CSS para Chips Fixos colados sem espaços vazios */
-        /* O topo é regulado com base na .controls-wrapper (aprox 72px) para a página principal */
         #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
         @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
-        /* No drawer, o chip deve colar no topo (0px) de forma precisa */
-        #swap-chips-container-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
+        
+        /* [CORREÇÃO CHIPS SWAP] Modificado o top para compensar o padding do drawer-body */
+        #swap-chips-container-wrap { position: sticky; top: -20px; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
         #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
 
         
@@ -156,64 +195,14 @@
         
         #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-gray); transition: opacity 0.3s; }
 
-        /* ========================================================
-           AJUSTES GAVETA E BANNER
-           ======================================================== */
-        /* Grid de produtos na gaveta (limitar a 3 colunas no desktop) */
-        #kit-extra-grid .product-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 16px !important;
-        }
-        @media(min-width: 768px) {
-            #kit-extra-grid .product-grid {
-                grid-template-columns: repeat(3, 1fr) !important;
-                gap: 20px !important;
-            }
-        }
+        #kit-extra-grid .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+        @media(min-width: 768px) { #kit-extra-grid .product-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; } }
 
-        /* Banner destacado para "Adicione mais produtos" */
-        .banner-destaque {
-            background: var(--brand);
-            color: #fff;
-            padding: 14px 20px;
-            border-radius: 12px;
-            text-align: center;
-            font-weight: 800;
-            font-size: 1.15rem;
-            box-shadow: 0 4px 15px rgba(90, 56, 38, 0.2);
-            letter-spacing: -0.3px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+        .banner-destaque { background: var(--brand); color: #fff; padding: 14px 20px; border-radius: 12px; text-align: center; font-weight: 800; font-size: 1.15rem; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.2); letter-spacing: -0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        /* Estilo para o botão de sacola dentro da gaveta (padrão do site) */
-        .drawer-cart-display {
-            background: var(--brand);
-            color: #fff;
-            padding: 16px 24px;
-            border-radius: 100px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            width: 100%;
-            border: none;
-            transition: 0.3s;
-        }
+        .drawer-cart-display { background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; border: none; transition: 0.3s; }
 
-        /* Etiqueta de economia nos cards */
-        .economia-tag {
-            font-size: 0.75rem;
-            color: var(--success);
-            font-weight: 800;
-            background: #ecfdf5;
-            padding: 4px 10px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 4px;
-        }
+        .economia-tag { font-size: 0.75rem; color: var(--success); font-weight: 800; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 4px; }
         
     </style>
 </head>
@@ -376,7 +365,6 @@ const STATE = {
 };
 
 const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px; height:16px; display:block; margin:auto;"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>`;
-const swapIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:14px; height:14px;"><path d="M17 1l4 4-4 4"></path><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><path d="M7 23l-4-4 4-4"></path><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>`;
 
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
@@ -393,13 +381,11 @@ function formatName(name) {
     }).join(' ');
 }
 
-// [Ajuste] Função genérica de rolagem para setas no desktop
 window.scrollElementChips = function(id, amount) {
     let el = document.getElementById(id);
     if(el) el.scrollBy({ left: amount, behavior: 'smooth' });
 };
 
-// [Ajuste] Função para retornar ao Home clicando na Logo
 window.goToHome = function() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     clearSearch(false);
@@ -408,9 +394,6 @@ window.goToHome = function() {
     updateNavButtons('cestas');
 };
 
-// ==========================================
-// PERSISTÊNCIA DE CARRINHO (LOCAL STORAGE)
-// ==========================================
 function saveCart() {
     localStorage.setItem('dona_antonia_cart', JSON.stringify({
         cart: STATE.cart,
@@ -443,9 +426,6 @@ window.clearCart = function() {
     }
 };
 
-// ==========================================
-// HISTORY API (BOTÃO VOLTAR NATIVO)
-// ==========================================
 let modalStack = [];
 function openDrawer(id) { 
     $('overlay').classList.add('open'); 
@@ -486,9 +466,6 @@ window.addEventListener('popstate', (e) => {
     }
 });
 
-// ==========================================
-// NAVEGAÇÃO PRINCIPAL (PÁGINA ÚNICA)
-// ==========================================
 function setupCategories() {
     const priority = ['ofertas', 'cat_mercearia_basica', 'cat_limpeza', 'cat_higiene', 'cat_beleza', 'cat_cafe_da_manha'];
     STATE.categoriesList = [
@@ -507,8 +484,6 @@ function setupCategories() {
 
 function renderMainPage() {
     $('grid-title').style.display = "none";
-    
-    // [Ajuste] Incorporamos o wrapper com botões e setas no desktop
     let html = `
         <div id="secao-cestas" style="scroll-margin-top: 140px; margin-bottom: 48px;">
             <h2 class="section-title">Cestas Básicas</h2>
@@ -551,7 +526,6 @@ window.selectMainCategory = function(id) {
     let gridContainer = $('produtos-grid-container');
     if(gridContainer) gridContainer.innerHTML = getProdutosHTML(id);
 
-    // [Ajuste] Reset de scroll ao mudar de chip na página principal (puxa pro inicio da lista de produtos)
     let secaoProd = document.getElementById('secao-produtos');
     if(secaoProd) {
         let pos = secaoProd.getBoundingClientRect().top + window.scrollY - 130;
@@ -560,14 +534,9 @@ window.selectMainCategory = function(id) {
 };
 
 function getProdutosHTML(id) {
-    if (id === 'ofertas') {
-        return getHomeHTML();
-    } else {
-        if(STATE.deptos[id]) {
-            return `<div class="product-grid">${buildCardsHTML(STATE.deptos[id].data, 'PROD')}</div>`;
-        }
-        return '';
-    }
+    if (id === 'ofertas') return getHomeHTML();
+    else if(STATE.deptos[id]) return `<div class="product-grid">${buildCardsHTML(STATE.deptos[id].data, 'PROD')}</div>`;
+    return '';
 }
 
 window.scrollToCestas = function() {
@@ -591,11 +560,8 @@ window.addEventListener('scroll', () => {
     let prods = $('secao-produtos');
     if(!prods) return;
     let rect = prods.getBoundingClientRect();
-    if(rect.top < 200) {
-        updateNavButtons('produtos');
-    } else {
-        updateNavButtons('cestas');
-    }
+    if(rect.top < 200) updateNavButtons('produtos');
+    else updateNavButtons('cestas');
 }, {passive: true});
 
 let searchTimeout;
@@ -634,21 +600,12 @@ function findItem(idStr) {
     return STATE.prods.find(p => p.id === target || p.blingId === target || p.codigo === target);
 }
 
-// ==========================================
-// QUICK VIEW COM SUPORTE A CONTEXTOS
-// ==========================================
 window.openQuickView = function(id, swapCtx = null) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
-    let q = 0;
-    let fnAdd = `upd('${p.id}', 1)`;
-    let fnMinus = `upd('${p.id}', -1)`;
+    let q = 0; let fnAdd = `upd('${p.id}', 1)`; let fnMinus = `upd('${p.id}', -1)`;
 
-    if (swapCtx === 'KIT') {
-        q = expanderState.items[p.id] || 0;
-        fnAdd = `addSuggestionToKit('${p.id}', 1)`;
-        fnMinus = `addSuggestionToKit('${p.id}', -1)`;
-    } else if (swapCtx === 'CART') {
-        q = STATE.cart[p.id] || 0;
+    if (swapCtx === 'KIT' || swapCtx === 'CART') {
+        q = (swapCtx === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
         fnAdd = `addSuggestionToKit('${p.id}', 1)`;
         fnMinus = `addSuggestionToKit('${p.id}', -1)`;
     } else {
@@ -657,9 +614,11 @@ window.openQuickView = function(id, swapCtx = null) {
 
     let minusBtnGrid = q === 1 ? `<button onclick="${fnMinus}" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="${fnMinus}">-</button>`;
     let acaoHTML = q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="${fnAdd}">+</button></div>` : `<button class="btn-add" onclick="${fnAdd}">Adicionar</button>`;
-    
+    let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+
     $('quick-content').innerHTML = `
-        <div style="width:100%; height: 350px; background:var(--bg-img); display:flex; align-items:center; justify-content:center; padding:10px;">
+        <div style="width:100%; height: 350px; background:var(--bg-img); position: relative; display:flex; align-items:center; justify-content:center; padding:10px;">
+            ${tagEmbalagem}
             <img src="${p.img}" style="max-height:100%; max-width:100%; mix-blend-mode:multiply; object-fit:contain;">
         </div>
         <div style="padding: 24px 20px;">
@@ -678,15 +637,12 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
     let html = '';
     let isBasket = type === 'BASKET';
     
-   // [Ajuste] Unificamos a lógica para que promos (LEVE5 / LEVE2) utilizem o design padrão de cards
     for(let i=0; i<items.length; i++) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
         let isEsgotado = p.stock <= 0 && !isBasket;
 
         let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
-
-        let acaoHTML = '';
-        let economiaHTML = ''; // [Ajuste] Variável para guardar a tag de economia
+        let acaoHTML = ''; let economiaHTML = ''; 
 
         if (isEsgotado) { 
             acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; 
@@ -695,25 +651,25 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         } else if (q > 0) { 
             acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; 
         } else if (promoSpecialType === 'LEVE5') {
-            // [Ajuste] O card não tem layout diferente, apenas o texto e lógica do botão
             acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`;
-            economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(p.price)}!</div>`; // Economia de 1 unidade
+            economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(p.price)}!</div>`;
         } else if (promoSpecialType === 'LEVE2') {
             acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`;
-            let valEcon = (p.price * 2) * 0.10; // 10% de desconto sobre 2 unidades
-            economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(valEcon)}!</div>`;
+            economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt((p.price * 2) * 0.10)}!</div>`;
         } else { 
             acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; 
         }
 
-        // [Ajuste] Removemos a tag "30% de Desconto" de dentro do card
         let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
+        let tagEmbalagem = p.embalagem && !isBasket ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
         html += `
         <div class="card ${isBasket ? 'card-basket' : ''}" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
-            <div class="card-img-wrap" ${clickEvt}><img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" loading="lazy" decoding="async"></div>
+            <div class="card-img-wrap" ${clickEvt}>
+                ${tagEmbalagem}
+                <img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" loading="lazy" decoding="async">
+            </div>
             <div class="card-title" ${clickEvt}>${p.name || p.nome}</div>
             <div class="card-price-row">
                 ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
@@ -729,13 +685,11 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
 
 function getHomeHTML() {
     let html = ''; 
-
     function buildSection(title, items, isPromoRow = true, promoType = null, forceShowAll = false) {
         let validItems = (items || []).filter(p => p !== undefined && p !== null);
         if(validItems.length === 0) return '';
         let classRow = isPromoRow ? "promo-row" : "";
         if(forceShowAll) classRow += " show-all"; 
-        
         let displayItems = forceShowAll ? validItems.slice(0, 6) : validItems.slice(0, 5);
 
         return `
@@ -747,29 +701,17 @@ function getHomeHTML() {
         </div>`;
     }
 
-    let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
-    html += buildSection("Produtos com 30% de Desconto", off30Items, false, null, true);
-
+    html += buildSection("Produtos com 30% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
     html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
     html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
     html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
     
     if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
-        html += `
-        <div class="home-section">
-            <h3 class="home-section-title">Mais Ofertas Imperdíveis</h3>
-            <div class="product-grid">
-                ${buildCardsHTML(STATE.maisOfertas, 'PROD')}
-            </div>
-        </div>`;
+        html += `<div class="home-section"><h3 class="home-section-title">Mais Ofertas Imperdíveis</h3><div class="product-grid">${buildCardsHTML(STATE.maisOfertas, 'PROD')}</div></div>`;
     }
-
     return html || "<p style='text-align:center;'>Nenhuma oferta disponível no momento.</p>";
 }
 
-// ==========================================
-// CESTA BÁSICA (EXPANDER) E SUBSTITUIÇÕES
-// ==========================================
 let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
 window.openKitLateralView = function(id) {
@@ -787,41 +729,31 @@ window.openKitLateralView = function(id) {
 
     expanderState.priceOffset = Math.max(0, sourceObj.preco - expanderState.originalSum);
     $('kit-title').innerText = sourceObj.nome;
-    
-    // [Ajuste] Reseta o botão do rodapé para o estado inicial sempre que abrir uma nova cesta
     $('kit-footer-container').innerHTML = `<button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>`;
     
     renderKitList(); 
-    
     setupKitExtraCategory('ofertas', false);
     openDrawer('kit-drawer');
-    
-    setTimeout(() => { 
-        let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
-        if (bodyDrawer) bodyDrawer.scrollTop = 0; 
-    }, 50);
+    setTimeout(() => { let b = $('kit-drawer').querySelector('.drawer-body'); if(b) b.scrollTop = 0; }, 50);
 };
 
 function renderKitList() {
     let currentSum = 0;
     $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => {
-        let p = STATE.prods.find(x => String(x.id) === pId); 
-        if (!p) return ''; 
-        
-        let qty = expanderState.items[pId];
-        currentSum += p.price * qty;
+        let p = STATE.prods.find(x => String(x.id) === pId); if (!p) return ''; 
+        let qty = expanderState.items[pId]; currentSum += p.price * qty;
         
         let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-
-        // [NOVO] Lógica para exibir o preço antigo riscado nas listas
-        let priceDisplay = p.oldPrice > p.price 
-            ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
-            : fmt(p.price);
+        let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
         return `
         <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${pId}', 'KIT')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-img-wrap" onclick="openQuickView('${pId}', 'KIT')">
+                ${tagEmbalagem}
+                <img src="${p.img}" loading="lazy" decoding="async">
+            </div>
             <div class="list-info" onclick="openQuickView('${pId}', 'KIT')">
                 <div class="list-name">${p.name}</div>
                 <div class="list-price">${priceDisplay}${lbl10}</div>
@@ -830,48 +762,31 @@ function renderKitList() {
                 <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
                     ${minusBtn}<span>${qty}</span><button onclick="changeKitQty('${pId}', 1)">+</button>
                 </div>
-                <button class="btn-swap" onclick="openSwapView('${p.id}', 'KIT')">
-                    ${swapIcon} Trocar
+                <button class="btn-swap" style="background:var(--bg-img); border:none; color:var(--text-dark);" onclick="openSwapView('${p.id}', 'KIT')">
+                    Trocar
                 </button>
             </div>
         </div>`;
     }).join('');
     
     expanderState.currentDisplayPrice = currentSum + expanderState.priceOffset;
-    let precoFormatado = fmt(expanderState.currentDisplayPrice);
+    let pf = fmt(expanderState.currentDisplayPrice);
     
-    let totalEl = $('kit-total-price');
-    if (totalEl) {
-        totalEl.innerText = precoFormatado;
-    } else {
-        let btnCheckout = document.querySelector('#kit-footer-container .btn-checkout');
-        if (btnCheckout) btnCheckout.innerText = `Adicionar à Sacola • ${precoFormatado}`;
-    }
+    let totalEl = $('kit-total-price'); if (totalEl) totalEl.innerText = pf;
+    else { let btnCheckout = document.querySelector('#kit-footer-container .btn-checkout'); if (btnCheckout) btnCheckout.innerText = `Adicionar à Sacola • ${pf}`; }
 }
 
-// [Ajuste] Adicionamos o parâmetro shouldScroll (por padrão é true)
 window.setupKitExtraCategory = function(catId, shouldScroll = true) {
     STATE.activeKitCat = catId;
-    
-    // Quando clicar num chip, passamos true para ele rolar a tela para o início da grade
-    let chipsHtml = STATE.categoriesList.map(c => 
-        `<div class="swap-chip ${catId === c.id ? 'active' : ''}" 
-              onclick="setupKitExtraCategory('${c.id}', true)">${c.title}</div>`
-    ).join('');
-    
     let chipsContainer = $('kit-extra-chips-container');
-    if (chipsContainer) chipsContainer.innerHTML = chipsHtml;
-    
+    if (chipsContainer) chipsContainer.innerHTML = STATE.categoriesList.map(c => `<div class="swap-chip ${catId === c.id ? 'active' : ''}" onclick="setupKitExtraCategory('${c.id}', true)">${c.title}</div>`).join('');
     let gridContainer = $('kit-extra-grid');
     if (gridContainer) gridContainer.innerHTML = getProdutosHTML(catId);
     
-    // [Ajuste] Só rola a tela para os extras se a permissão shouldScroll for verdadeira
     if (shouldScroll) {
         let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
         let offsetTarget = $('kit-extra-section');
-        if(bodyDrawer && offsetTarget) {
-            bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
-        }
+        if(bodyDrawer && offsetTarget) bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
     }
 };
 
@@ -879,13 +794,8 @@ window.changeKitQty = function(pId, delta) {
     let p = STATE.prods.find(x => String(x.id) === pId); if(!p) return;
     let next = Math.max(0, (expanderState.items[pId] || 0) + delta);
     if (next > p.stock) return alert("Estoque insuficiente");
-    
-    if (next === 0) {
-        delete expanderState.items[pId];
-        expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== pId);
-    } else {
-        expanderState.items[pId] = next; 
-    }
+    if (next === 0) { delete expanderState.items[pId]; expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== pId); } 
+    else expanderState.items[pId] = next; 
     renderKitList();
 }
 
@@ -894,42 +804,25 @@ window.commitExpander = function() {
     Object.entries(expanderState.items).forEach(([pId, qty]) => {
         if (qty > 0) { 
             if (!STATE.cart[pId]) STATE.cartOrder.push(pId); 
-            STATE.cart[pId] = (STATE.cart[pId] || 0) + qty; 
-            added = true; 
+            STATE.cart[pId] = (STATE.cart[pId] || 0) + qty; added = true; 
         }
     });
     
     if(!added) return alert("Cesta vazia.");
-    STATE.basketExtraFee += expanderState.priceOffset;
-    
-    updateTotals(); 
-    saveCart();
+    STATE.basketExtraFee += expanderState.priceOffset; updateTotals(); saveCart();
 
-    let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
-    let offsetTarget = $('kit-extra-section');
-    if(bodyDrawer && offsetTarget) {
-        bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
-    }
+    let bodyDrawer = $('kit-drawer').querySelector('.drawer-body'); let offsetTarget = $('kit-extra-section');
+    if(bodyDrawer && offsetTarget) bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
 
-    // [Ajuste] Colocamos IDs "drawer-fc-qtd" e "drawer-fc-total" para podermos modificar ao vivo
     let footer = $('kit-footer-container');
-    let totalFormatado = $('fc-total').innerText; 
-    let itensFormatado = $('fc-qtd').innerText;
-
     footer.innerHTML = `
         <button class="drawer-cart-display" onclick="openCheckout()">
-            <div class="fc-info">
-                <span id="drawer-fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${itensFormatado}</span>
-                <span>Ver Sacola</span>
-            </div>
-            <div class="fc-total" id="drawer-fc-total">${totalFormatado}</div>
+            <div class="fc-info"><span id="drawer-fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${$('fc-qtd').innerText}</span><span>Ver Sacola</span></div>
+            <div class="fc-total" id="drawer-fc-total">${$('fc-total').innerText}</div>
         </button>
     `;
 };
 
-// ==========================================
-// INTELIGÊNCIA DE SUBSTITUIÇÃO
-// ==========================================
 let swapContext = 'KIT';
 let currentSwapOldId = null;
 
@@ -940,36 +833,45 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
 
     return validItems.map(p => {
         let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
-        
-        let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
         let tagHtml = ""; 
-        
-        // [NOVO] Configuração padrão de exibição do preço com desconto
-        let priceHtml = p.oldPrice > p.price 
-            ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
-            : fmt(p.price);
+        let priceHtml = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
 
-        if (promoSpecialType === 'LEVE5') {
-            addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;";
-            tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 5 PAGUE 4</div><br>`;
-            priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`;
-        } else if (promoSpecialType === 'LEVE2') {
-            addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;";
-            tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 10% DE DESCONTO</div><br>`;
-            let tf = p.price * 2; let to = tf * 0.8;
-            priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(tf)}</span>${fmt(to)}`;
+        let acaoHTML = '';
+        if (q > 0) {
+            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+            acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+        } else if (promoSpecialType === 'LEVE5' || promoSpecialType === 'LEVE2') {
+            let addQty = promoSpecialType === 'LEVE5' ? 5 : 2; let addText = promoSpecialType === 'LEVE5' ? "Add 5 un." : "Add 2 un.";
+            if(promoSpecialType === 'LEVE5') {
+                tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 5 PAGUE 4</div><br>`;
+                priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`;
+            } else {
+                tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 10% OFF</div><br>`;
+                priceHtml = `<span style="font-size:0.8rem; text-decoration:line-through; color:var(--text-gray); margin-right:6px;">${fmt(p.price*2)}</span>${fmt((p.price*2)*0.8)}`;
+            }
+            acaoHTML = `
+                <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                    <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                    <button class="btn-action-gray" style="background:var(--brand); color:#fff;" onclick="addSuggestionToKit('${p.id}', ${addQty})">${addText}</button>
+                </div>`;
+        } else {
+            acaoHTML = `
+                <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                    <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                    <button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>
+                </div>`;
         }
 
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
         priceHtml += lbl10;
-
-        let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>` 
-                             : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${p.id}', ${addQty})">${addText}</button>`;
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
         return `
         <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
+                ${tagEmbalagem}
+                <img src="${p.img}" loading="lazy" decoding="async">
+            </div>
             <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                 ${tagHtml}
                 <div class="list-name">${p.name}</div>
@@ -983,79 +885,58 @@ function buildSwapHorizontalCards(items, promoSpecialType = null) {
 }
 
 window.openSwapView = function(oldPId, context = 'KIT') {
-    swapContext = context;
-    currentSwapOldId = oldPId;
-    let oldProd = STATE.prods.find(x => String(x.id) === String(oldPId));
-    if(!oldProd) return;
+    swapContext = context; currentSwapOldId = oldPId;
+    let oldProd = STATE.prods.find(x => String(x.id) === String(oldPId)); if(!oldProd) return;
 
     let firstWord = norm(oldProd.name).split(' ')[0];
-    
-    let similarProds = STATE.prods.filter(p => 
-        p.id !== oldProd.id && p.categoria === oldProd.categoria &&
-        norm(p.name).split(' ')[0] === firstWord && p.stock > 0
-    );
+    let similarProds = STATE.prods.filter(p => p.id !== oldProd.id && p.categoria === oldProd.categoria && norm(p.name).split(' ')[0] === firstWord && p.stock > 0);
 
-    let allCats = new Set();
-    STATE.prods.forEach(p => { if(p.stock > 0) allCats.add(p.categoria); });
-    
-    let catArr = Array.from(allCats).filter(c => c !== oldProd.categoria);
-    catArr.sort((a, b) => a.localeCompare(b));
-    
-    STATE.swapCats = [oldProd.categoria, 'Ofertas', ...catArr];
-    STATE.swapSimilarProds = similarProds;
+    let allCats = new Set(); STATE.prods.forEach(p => { if(p.stock > 0) allCats.add(p.categoria); });
+    let catArr = Array.from(allCats).filter(c => c !== oldProd.categoria).sort((a, b) => a.localeCompare(b));
+    STATE.swapCats = [oldProd.categoria, 'Ofertas', ...catArr]; STATE.swapSimilarProds = similarProds;
 
     let html = '';
+    if(similarProds.length > 0) {
+        html += `<div style="margin-bottom: 24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>`;
+        html += similarProds.map(p => {
+            let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+            let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+            let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+            let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+            
+            let acaoHTML = '';
+            if (q > 0) {
+                let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+                acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+            } else {
+                acaoHTML = `
+                    <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                        <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                        <button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>
+                    </div>`;
+            }
 
-   if(similarProds.length > 0) {
-        html += `
-        <div style="margin-bottom: 24px;">
-            <h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>
-            ${similarProds.map(p => {
-                let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-                
-                let priceDisplay = p.oldPrice > p.price 
-                    ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
-                    : fmt(p.price);
-
-                // [NOVO] Verificamos se o produto já foi adicionado
-                let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-                
-                // [NOVO] Lógica de Ações (Trocar vs Adicionar vs Controle de Quantidade)
-                let acaoHTML = '';
-                if (q > 0) {
-                    let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
-                    acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
-                } else {
-                    // [AJUSTE] Flex-direction: column para empilhar os botões e larguras iguais
-                    acaoHTML = `
-                        <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
-                            <button class="btn-swap" style="width: 100%; padding: 8px; border-color: var(--border-light); color: var(--text-gray); font-size: 0.75rem;" onclick="confirmSwap('${oldPId}', '${p.id}')">🔄 Trocar</button>
-                            <button class="btn-add special" style="width: 100%; padding: 8px; font-size: 0.75rem;" onclick="addSuggestionToKit('${p.id}', 1)">➕ Adicionar</button>
-                        </div>
-                    `;
-                }
-
-                return `
-                <div class="list-item">
-                    <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')"><img src="${p.img}" loading="lazy" decoding="async"></div>
-                    <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
-                        <div class="list-name">${p.name}</div>
-                        <div class="list-price">${priceDisplay}${lbl10}</div>
-                    </div>
-                    <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
-                        ${acaoHTML}
-                    </div>
+            return `
+            <div class="list-item">
+                <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
+                    ${tagEmbalagem}
+                    <img src="${p.img}" loading="lazy" decoding="async">
                 </div>
-            `}).join('')}
-        </div>`;
+                <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
+                    <div class="list-name">${p.name}</div>
+                    <div class="list-price">${priceDisplay}${lbl10}</div>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                    ${acaoHTML}
+                </div>
+            </div>`}).join('');
+        html += `</div>`;
     } else {
         html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto similar disponível para troca no momento.</p>`;
     }
-    
 
-    // [Ajuste] Incorporamos o botão de arrasto/rolagem no wrapper nas guias de troca com layout "sem vazios"
     html += `
-        <div style="padding-top: 16px; border-top: 1px dashed var(--border-light);">
+        <div style="border-top: 1px dashed var(--border-light);">
             <div class="chips-wrapper" id="swap-chips-container-wrap">
                 <button class="scroll-btn left" onclick="scrollElementChips('swap-chips-container', -200)">❮</button>
                 <div class="swap-chips" id="swap-chips-container">
@@ -1063,57 +944,40 @@ window.openSwapView = function(oldPId, context = 'KIT') {
                 </div>
                 <button class="scroll-btn right" onclick="scrollElementChips('swap-chips-container', 200)">❯</button>
             </div>
-            <div id="swap-suggestions-list">
+            <div id="swap-suggestions-list" style="padding-top: 16px;">
                 ${buildSwapSuggestions(STATE.swapCats[0])}
             </div>
         </div>`;
 
-    $('swap-items-grid').innerHTML = html;
-    openDrawer('swap-drawer');
-    
+    $('swap-items-grid').innerHTML = html; openDrawer('swap-drawer');
     setTimeout(() => { $('swap-drawer').querySelector('.drawer-body').scrollTop = 0; }, 50);
 };
 
 window.selectSwapCategory = function(cat) {
     document.querySelectorAll('#swap-chips-container .swap-chip').forEach(el => {
-        if(el.innerText === cat.toUpperCase()) el.classList.add('active');
-        else el.classList.remove('active');
+        if(el.innerText === cat.toUpperCase()) el.classList.add('active'); else el.classList.remove('active');
     });
     $('swap-suggestions-list').innerHTML = buildSwapSuggestions(cat);
     
-    // [NOVO] Lógica para rolar a gaveta exatamente até a barra de chips
     let drawerBody = $('swap-drawer').querySelector('.drawer-body');
     let chipsWrap = $('swap-chips-container-wrap');
-    
-    if (drawerBody && chipsWrap) {
-        // Usamos o offsetTop do wrapper para rolar exatamente até onde ele está.
-        // Subtraímos 16px para compensar o padding e deixar coladinho no cabeçalho.
-        drawerBody.scrollTo({ top: chipsWrap.offsetTop - 16, behavior: 'smooth' });
-    }
+    if (drawerBody && chipsWrap) drawerBody.scrollTo({ top: chipsWrap.offsetTop - 16, behavior: 'smooth' });
 };
 
 function buildSwapSuggestions(cat) {
     if (cat === 'Ofertas') {
         let html = '';
-        
-        let off30Items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6);
-        let h1 = buildSwapHorizontalCards(off30Items, null);
+        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6), null);
         if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 30% de Desconto</h4>${h1}</div>`;
-
         let h2 = buildSwapHorizontalCards(PROMO_CONFIG.aproveite.map(findItem), 'APROVEITE');
         if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Dicas de Hoje</h4>${h2}</div>`;
-
         let h3 = buildSwapHorizontalCards(PROMO_CONFIG.leve5pague4.map(findItem), 'LEVE5');
         if(h3) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 5 pague 4</h4>${h3}</div>`;
-
         let h4 = buildSwapHorizontalCards(PROMO_CONFIG.leve2.map(findItem), 'LEVE2');
         if(h4) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 2 e economize 10%</h4>${h4}</div>`;
-
         let h5 = buildSwapHorizontalCards(STATE.maisOfertas, null);
         if(h5) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Mais Ofertas Imperdíveis</h4>${h5}</div>`;
-
-        if(!html) return `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhuma oferta disponível no momento.</p>`;
-        return html;
+        return html || `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhuma oferta disponível no momento.</p>`;
     }
 
     let similarIds = STATE.swapSimilarProds.map(s => s.id);
@@ -1123,18 +987,28 @@ function buildSwapSuggestions(cat) {
 
     return suggestionProds.map(p => {
         let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
-        let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>` 
-                             : `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.85rem; background: var(--bg-img); color: var(--text-dark);" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>`;
-
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-
-        // [NOVO]
         let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+
+        let acaoHTML = '';
+        if (q > 0) {
+            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+            acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+        } else {
+            acaoHTML = `
+                <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                    <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                    <button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>
+                </div>`;
+        }
 
         return `
         <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
+                ${tagEmbalagem}
+                <img src="${p.img}" loading="lazy" decoding="async">
+            </div>
             <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
                 <div class="list-name">${p.name}</div>
                 <div class="list-price">${priceDisplay}${lbl10}</div>
@@ -1146,31 +1020,30 @@ function buildSwapSuggestions(cat) {
     }).join('');
 }
 
-window.confirmSwap = function(oldPId, newPId) {
+window.confirmSwap = function(oldPId, newPId, btnElement) {
     if (swapContext === 'KIT') {
-        let qty = expanderState.items[oldPId] || 0;
+        let qty = expanderState.items[oldPId] || 1;
         delete expanderState.items[oldPId]; 
-        
         let index = expanderState.orderedIds.indexOf(oldPId);
         if(index !== -1) expanderState.orderedIds[index] = newPId;
         else expanderState.orderedIds.push(newPId);
-        
         expanderState.items[newPId] = qty;
         renderKitList();
     } else if (swapContext === 'CART') {
-        let qty = STATE.cart[oldPId] || 0;
+        let qty = STATE.cart[oldPId] || 1;
         delete STATE.cart[oldPId]; 
-        
         let index = STATE.cartOrder.indexOf(oldPId);
         if(index !== -1) STATE.cartOrder[index] = newPId;
         else STATE.cartOrder.push(newPId);
-        
         STATE.cart[newPId] = qty;
-        updateTotals();
-        saveCart();
-        renderCheckoutItems();
+        updateTotals(); saveCart(); renderCheckoutItems();
     }
-    closeDrawer('swap-drawer');
+    
+    currentSwapOldId = newPId;
+    if (btnElement) {
+        btnElement.innerHTML = `Troca <span style="color: var(--success); font-weight: 900; margin-left: 4px;">OK</span>`;
+        btnElement.disabled = true;
+    }
 };
 
 window.addSuggestionToKit = function(newPId, delta) {
@@ -1180,58 +1053,47 @@ window.addSuggestionToKit = function(newPId, delta) {
         let next = Math.max(0, (expanderState.items[newPId] || 0) + delta);
         if (next > p.stock) return alert("Estoque insuficiente");
         
-        if(next === 0) {
-            delete expanderState.items[newPId];
-            expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== newPId);
-        } else {
-            if (!expanderState.orderedIds.includes(newPId)) expanderState.orderedIds.push(newPId);
-            expanderState.items[newPId] = next; 
-        }
+        if(next === 0) { delete expanderState.items[newPId]; expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== newPId); } 
+        else { if (!expanderState.orderedIds.includes(newPId)) expanderState.orderedIds.push(newPId); expanderState.items[newPId] = next; }
         renderKitList();
         
         let q = expanderState.items[newPId] || 0;
         let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
         
-        let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
-        if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;"; }
-        else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;"; }
-
-        let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>` 
-                             : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
+        let acaoHTML = '';
+        if (q > 0) acaoHTML = `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>`;
+        else {
+            let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
+            if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+            else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+            acaoHTML = `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
+        }
         document.querySelectorAll(`#swap-act-${newPId}, #quick-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
 
     } else if (swapContext === 'CART') {
         let next = Math.max(0, (STATE.cart[newPId] || 0) + delta);
         if (next > p.stock) return alert("Estoque insuficiente");
 
-        if(next === 0) {
-            delete STATE.cart[newPId];
-            STATE.cartOrder = STATE.cartOrder.filter(id => id !== newPId);
-        } else {
-            if (!STATE.cartOrder.includes(newPId)) STATE.cartOrder.push(newPId);
-            STATE.cart[newPId] = next;
-        }
-        updateTotals();
-        saveCart();
-        renderCheckoutItems();
+        if(next === 0) { delete STATE.cart[newPId]; STATE.cartOrder = STATE.cartOrder.filter(id => id !== newPId); } 
+        else { if (!STATE.cartOrder.includes(newPId)) STATE.cartOrder.push(newPId); STATE.cart[newPId] = next; }
+        updateTotals(); saveCart(); renderCheckoutItems();
         
         let q = STATE.cart[newPId] || 0;
         let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
         
-        let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
-        if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;"; }
-        else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;"; }
-
-        let acaoHTML = q > 0 ? `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>` 
-                             : `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
+        let acaoHTML = '';
+        if (q > 0) acaoHTML = `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>`;
+        else {
+            let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
+            if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+            else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+            acaoHTML = `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
+        }
         document.querySelectorAll(`#swap-act-${newPId}, #quick-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
         document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML.replace(/addSuggestionToKit/g, "upd"));
     }
 };
 
-// ==========================================
-// CARRINHO GERAL E CHECKOUT
-// ==========================================
 function upd(id, delta) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
     let n = Math.max(0, (STATE.cart[id] || 0) + delta);
@@ -1253,49 +1115,26 @@ function updateTotals() {
         let p = STATE.prods.find(x => String(x.id) === String(id)); 
         if (p) { 
             sum += p.price * q; count += q; 
-            
-            if (STATE.promoIds.leve5.includes(p.id)) {
-                let itemsGratis = Math.floor(q / 5);
-                customPromoDiscount += (itemsGratis * p.price);
-            } else if (STATE.promoIds.leve2.includes(p.id)) {
-                if (q >= 2) customPromoDiscount += (p.price * 0.10) * q;
-            } else if (!p._isPromo) {
-                if (q >= 2) atacadoDiscount += (p.price * 0.05) * q; 
-            }
+            if (STATE.promoIds.leve5.includes(p.id)) customPromoDiscount += (Math.floor(q / 5) * p.price);
+            else if (STATE.promoIds.leve2.includes(p.id)) { if (q >= 2) customPromoDiscount += (p.price * 0.10) * q; } 
+            else if (!p._isPromo) { if (q >= 2) atacadoDiscount += (p.price * 0.05) * q; }
         } 
     });
     
-    STATE.atacadoDiscount = atacadoDiscount;
-    STATE.customPromoDiscount = customPromoDiscount;
-    
-    let subtotal = sum + STATE.basketExtraFee;
-    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount;
+    STATE.atacadoDiscount = atacadoDiscount; STATE.customPromoDiscount = customPromoDiscount;
+    let subtotal = sum + STATE.basketExtraFee; let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount;
     let final = subtotal - totalDesc;
     
     let fc = $('floating-cart');
     if (count > 0) { 
-        fc.classList.remove('hidden'); 
-        $('fc-qtd').innerText = `${count} item(s)`; 
-        $('fc-total').innerText = fmt(final); 
-        
-        // [Ajuste] Atualiza em tempo real o botão flutuante que fica dentro da gaveta da cesta
-        let dfcQtd = document.getElementById('drawer-fc-qtd');
-        let dfcTotal = document.getElementById('drawer-fc-total');
-        if (dfcQtd && dfcTotal) {
-            dfcQtd.innerText = `${count} item(s)`;
-            dfcTotal.innerText = fmt(final);
-        }
+        fc.classList.remove('hidden'); $('fc-qtd').innerText = `${count} item(s)`; $('fc-total').innerText = fmt(final); 
+        let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
+        if (dfcQtd && dfcTotal) { dfcQtd.innerText = `${count} item(s)`; dfcTotal.innerText = fmt(final); }
     } 
     else { 
         fc.classList.add('hidden'); 
-        
-        // [Ajuste] Zera o botão dentro da gaveta caso o carrinho fique vazio
-        let dfcQtd = document.getElementById('drawer-fc-qtd');
-        let dfcTotal = document.getElementById('drawer-fc-total');
-        if (dfcQtd && dfcTotal) {
-            dfcQtd.innerText = `0 itens`;
-            dfcTotal.innerText = fmt(0);
-        }
+        let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
+        if (dfcQtd && dfcTotal) { dfcQtd.innerText = `0 itens`; dfcTotal.innerText = fmt(0); }
     }
 }
 
@@ -1316,18 +1155,17 @@ function selectPayment(metodo, btn) { $('chk-pagamento').value = metodo; documen
 function renderCheckoutItems() {
     $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
         let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
-        
         let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-
-        // [NOVO] Lógica para exibir o preço antigo riscado no Checkout
-        let priceDisplay = p.oldPrice > p.price 
-            ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` 
-            : fmt(p.price);
+        let priceDisplay = p.oldPrice > p.price ? `<span style="font-size:0.8rem; text-decoration:line-through; color:#9ca3af; margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
         return `
         <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${id}', 'CART')"><img src="${p.img}" loading="lazy" decoding="async"></div>
+            <div class="list-img-wrap" onclick="openQuickView('${id}', 'CART')">
+                ${tagEmbalagem}
+                <img src="${p.img}" loading="lazy" decoding="async">
+            </div>
             <div class="list-info" onclick="openQuickView('${id}', 'CART')">
                 <div class="list-name">${p.name}</div>
                 <div class="list-price">${priceDisplay}${lbl10}</div>
@@ -1336,8 +1174,8 @@ function renderCheckoutItems() {
                 <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
                     ${minusBtn}<span>${q}</span><button onclick="upd('${id}', 1)">+</button>
                 </div>
-                <button class="btn-swap" onclick="openSwapView('${id}', 'CART')">
-                    ${swapIcon} Trocar
+                <button class="btn-swap" style="background:var(--bg-img); border:none; color:var(--text-dark);" onclick="openSwapView('${id}', 'CART')">
+                    Trocar
                 </button>
             </div>
         </div>`;
@@ -1358,20 +1196,15 @@ function sendOrder() {
     const btn = $('btn-send-order'); if (btn.disabled) return;
     const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.trim(); const pag = $('chk-pagamento').value;
     
-    // [NOVO] Validação com rolagem automática para o campo vazio
     if (!nome) {
-        alert("Preencha seu nome.");
-        let campoNome = $('chk-nome');
-        campoNome.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Rola suavemente até o campo
-        setTimeout(() => campoNome.focus(), 300); // Foca no campo após o scroll (abre o teclado)
-        return;
+        alert("Preencha seu nome."); let campoNome = $('chk-nome');
+        campoNome.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+        setTimeout(() => campoNome.focus(), 300); return;
     }
     
     if (!pag) {
         alert("Escolha o pagamento.");
-        // O input de pagamento é invisível, então rolamos para o elemento "pai" dele (a div das opções)
-        $('chk-pagamento').parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
+        $('chk-pagamento').parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
     }
 
     btn.disabled = true; btn.innerText = "Processando...";
@@ -1418,13 +1251,14 @@ async function init() {
             STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                 let pBase = parseFloat(p.preco) * 1.01;
                 let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
-                let price = pBase;
                 
                 return { 
                     id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), 
-                    name: formatName(p.nome), price: price, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
+                    name: formatName(p.nome), price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
                     img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                    categoria: p.categoria || "Outros", _is30Off: false, _isPromo: false, _valTime: validade
+                    categoria: p.categoria || "Outros", 
+                    embalagem: p.embalagem || "", 
+                    _is30Off: false, _isPromo: false, _valTime: validade
                 };
             });
 
@@ -1462,8 +1296,7 @@ async function init() {
                 let cat = cats[i % cats.length];
                 if(byCat[cat].length > 0) {
                     let p = byCat[cat].shift();
-                    let desc = 0.05 + (Math.random() * 0.05);
-                    p.price = p.oldPrice * (1 - desc);
+                    p.price = p.oldPrice * (1 - (0.05 + (Math.random() * 0.05)));
                     p._isPromo = true;
                     maisOfertas.push(p);
                     availableProds = availableProds.filter(x => x.id !== p.id);
@@ -1473,15 +1306,10 @@ async function init() {
             STATE.maisOfertas = maisOfertas;
         }
         
-        loadCart(); 
-        updateTotals(); 
-        setupCategories();
+        loadCart(); updateTotals(); setupCategories();
         
-        $('loader').style.opacity = '0';
-        setTimeout(() => $('loader').style.display = 'none', 300);
-        
-        history.replaceState({home: true}, "");
-        renderMainPage(); 
+        $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
+        history.replaceState({home: true}, ""); renderMainPage(); 
 
     } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
 }
