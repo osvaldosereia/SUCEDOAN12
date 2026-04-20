@@ -706,7 +706,7 @@ function getHomeHTML() {
         </div>`;
     }
 
-    html += buildSection("Produtos com 30% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
+    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
     html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
     html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
     html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
@@ -1270,7 +1270,7 @@ async function init() {
             let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
             produtosComValidade.sort((a, b) => a._valTime - b._valTime);
             produtosComValidade.slice(0, 12).forEach(p => {
-                p.price = p.oldPrice * 0.70;
+                p.price = p.oldPrice * 0.80;
                 p._is30Off = true;
                 p._isPromo = true;
             });
@@ -1290,7 +1290,7 @@ async function init() {
             STATE.promoIds.leve2 = PROMO_CONFIG.leve2.map(findItem).filter(Boolean).map(p => { p._isPromo = true; return p.id; });
 
             let usedIds = new Set([...STATE.promoIds.leve5, ...STATE.promoIds.leve2, ...PROMO_CONFIG.aproveite.map(findItem).filter(Boolean).map(p => p.id)]);
-            STATE.prods.forEach(p => { if (p._is30Off) usedIds.add(p.id); }); 
+            STATE.prods.forEach(p => { if (p._is20Off) usedIds.add(p.id); }); 
 
             let availableProds = STATE.prods.filter(p => !usedIds.has(p.id) && p.stock > 0);
             let byCat = {};
