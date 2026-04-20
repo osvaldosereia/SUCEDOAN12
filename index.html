@@ -695,7 +695,7 @@ function getHomeHTML() {
         if(validItems.length === 0) return '';
         let classRow = isPromoRow ? "promo-row" : "";
         if(forceShowAll) classRow += " show-all"; 
-        let displayItems = forceShowAll ? validItems.slice(0, 6) : validItems.slice(0, 5);
+        let displayItems = forceShowAll ? validItems.slice(0, 12) : validItems.slice(0, 10);
 
         return `
         <div class="home-section">
