@@ -70,7 +70,7 @@
         
         .card-mini-input { padding: 4px 8px; font-size: 11px; min-height: 28px; border-radius: 6px; background: #fafafa; border: 1px solid #e4e4e7; width: 100%; box-sizing: border-box; }
         .card-mini-input:focus { background: #ffffff; border-color: var(--accent); outline: none; }
-        select.card-mini-input { cursor: pointer; }
+        select.card-mini-input { cursor: pointer; text-overflow: ellipsis; }
         
         .tags-container { position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 4px; z-index: 5; align-items: flex-start; pointer-events: none;}
         .product-tag { font-weight: 600; padding: 4px 8px; border-radius: 6px; line-height: 1.2; box-shadow: 0 2px 5px rgba(0,0,0,0.2); word-break: break-word; }
@@ -83,7 +83,7 @@
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 380px; }
         #menu-sidebar { z-index: 1014; width: 300px; }
-        #categorias-sidebar { z-index: 1015; width: 450px; }
+        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar { z-index: 1015; width: 450px; }
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -161,11 +161,10 @@
         let categoriasDoSistema = []; 
         let marcasDoSistema = [];
         let filtroAtivo = { tipo: null, valor: null };
+        let advancedFilters = { cat: '', sub: '', marca: '', gondola: '', prat: '', ncm: '', stock: '', validade: '' };
         
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
-
-    <datalist id="lista-marcas-global"></datalist>
 
     <div id="alerta-customizado">Mensagem</div>
 
@@ -182,6 +181,7 @@
             <div id="queue-status"></div>
             
             <button class="nav-btn desktop-only" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias();"><i data-lucide="tags" size="14"></i> CATEGORIAS</button>
+            <button class="nav-btn desktop-only" onclick="openSidebar('marcas-sidebar'); renderizarSidebarMarcas();"><i data-lucide="tag" size="14"></i> MARCAS</button>
             <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES & DADOS</button>
             <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
         </header>
@@ -192,6 +192,9 @@
                     <i data-lucide="search" class="search-icon"></i>
                     <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU, Nome ou EAN...">
                 </div>
+                <button class="nav-btn" style="color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="openSidebar('filtros-sidebar'); renderizarFiltrosAvancados();">
+                    <i data-lucide="filter" size="14"></i> FILTROS
+                </button>
                 <button class="nav-btn desktop-only" id="btn-24h" onclick="toggleFilter24h()" title="Mostrar produtos adicionados/editados nas últimas 24h">
                     <i data-lucide="clock" size="14"></i> ÚLTIMAS 24H
                 </button>
@@ -206,7 +209,7 @@
         </div>
 
         <div id="active-filter-banner">
-            <span>Filtro Ativo: <span id="filter-text-display"></span></span>
+            <span>Filtro Ativo: <span id="filter-text-display" style="text-transform: capitalize;"></span></span>
             <button class="nav-btn" style="height: 28px; border-color: #0284c7; color: #0284c7;" onclick="limparFiltroGrid()"><i data-lucide="x" size="12"></i> LIMPAR FILTRO</button>
         </div>
         
@@ -256,8 +259,58 @@
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="settings" size="14"></i> DEFINIÇÕES E DADOS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias(); closeSidebar('menu-sidebar');"><i data-lucide="tags" size="14"></i> GERIR CATEGORIAS</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('marcas-sidebar'); renderizarSidebarMarcas(); closeSidebar('menu-sidebar');"><i data-lucide="tag" size="14"></i> GERIR MARCAS</button>
                 <button class="nav-btn menu-sidebar-btn" id="btn-24h-mobile" onclick="toggleFilter24h(); closeSidebar('menu-sidebar');"><i data-lucide="clock" size="14"></i> FILTRAR ÚLTIMAS 24H</button>
             </div>
+        </div>
+    </div>
+
+    <div class="sidebar" id="filtros-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Filtros Avançados</div>
+            <button class="btn-icon" onclick="closeSidebar('filtros-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body">
+            <div class="form-section">
+                <div class="form-group"><label class="form-label">Categoria</label>
+                    <select class="form-input" id="flt-cat" onchange="atualizarOpcoesSubcatFiltro(this.value)"></select>
+                </div>
+                <div class="form-group"><label class="form-label">Subcategoria</label>
+                    <select class="form-input" id="flt-sub"><option value="">Todas</option></select>
+                </div>
+                <div class="form-group"><label class="form-label">Marca</label>
+                    <select class="form-input" id="flt-marca"></select>
+                </div>
+                <div class="form-group"><label class="form-label">Gôndola</label>
+                    <select class="form-input" id="flt-gondola"></select>
+                </div>
+                <div class="form-group"><label class="form-label">Prateleira</label>
+                    <select class="form-input" id="flt-prat"></select>
+                </div>
+                <div class="form-group"><label class="form-label">Estoque</label>
+                    <select class="form-input" id="flt-stock">
+                        <option value="">Todos</option><option value="zero">Estoque = 0</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">NCM</label>
+                    <select class="form-input" id="flt-ncm">
+                        <option value="">Todos</option><option value="sem">Sem NCM cadastrado</option>
+                    </select>
+                </div>
+                <div class="form-group"><label class="form-label">Validade (Vencimento)</label>
+                    <select class="form-input" id="flt-val">
+                        <option value="">Todas as validades</option>
+                        <option value="30">Próximos 30 dias</option>
+                        <option value="60">Próximos 60 dias</option>
+                        <option value="90">Próximos 90 dias</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="aplicarFiltrosAvancados()">
+                <i data-lucide="filter" size="14"></i> APLICAR FILTROS
+            </button>
         </div>
     </div>
 
@@ -368,6 +421,20 @@
         </div>
     </div>
 
+    <div class="sidebar" id="marcas-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Gestão de Marcas</div>
+            <button class="btn-icon" onclick="closeSidebar('marcas-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body" id="lista-marcas-container" style="gap:10px;">
+        </div>
+        <div class="sidebar-footer">
+            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaMarca()">
+                <i data-lucide="plus" size="14"></i> NOVA MARCA
+            </button>
+        </div>
+    </div>
+
     <script>
         // ==========================================================
         // VARIÁVEIS GLOBAIS DO PIM
@@ -380,7 +447,7 @@
         // Variáveis do Lazy Loading
         let produtosFiltrados = [];
         let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 15; // Aumentado um pouco por não ter módulos extras
+        const ITENS_POR_PAGINA = 15; 
 
         // ==========================================================
         // FUNÇÕES GERAIS E OPÇÕES
@@ -391,7 +458,7 @@
         }
 
         function getGondolaOptions(selectedValue) {
-            let optionsHtml = '<option value="">Sel. Gôndola</option>';
+            let optionsHtml = '<option value="">Todas</option>';
             for(let i = 0; i <= 20; i++) {
                 let val = i.toString().padStart(2, '0');
                 let selected = (selectedValue === val) ? 'selected' : '';
@@ -401,7 +468,7 @@
         }
 
         function getPrateleiraOptions(selectedValue) {
-            let optionsHtml = '<option value="">Sel. Prateleira</option>';
+            let optionsHtml = '<option value="">Todas</option>';
             const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
             letras.forEach(l => {
                 let p1 = `${l}1`; let p2 = `${l}2`;
@@ -465,23 +532,26 @@
         };
 
         // ==========================================================
-        // SISTEMA DE FILA E SALVAMENTO
+        // SISTEMA DE FILA E SALVAMENTO OTIMIZADO (PRIORIDADES)
         // ==========================================================
         let syncQueue = [];
         let isSyncing = false;
         let countdownTimer = 0;
         let countdownInterval = null;
+        let lastTaskWasJson = false;
 
         function renderQueueStatus() {
             const el = document.getElementById('queue-status');
             if (!el) return;
             if (isSyncing && countdownTimer > 0) {
                 el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="clock" size="14"></i> <span>Aguarde <b>${countdownTimer}s</b>... (Fila: ${syncQueue.length})</span>`;
+                let iconStr = syncQueue[0]?.type === 'json' ? '<i data-lucide="database" size="14"></i>' : '<i data-lucide="image-up" size="14"></i>';
+                if(syncQueue.length === 0 && lastTaskWasJson) iconStr = '<i data-lucide="lock" size="14"></i>'; // Bloqueio
+                el.innerHTML = `${iconStr} <span>Espera <b>${countdownTimer}s</b> (Fila: ${syncQueue.length})</span>`;
                 lucide.createIcons();
             } else if (isSyncing && countdownTimer === 0) {
                 el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>Processando...</span>`;
+                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>Enviando Nuvem...</span>`;
                 lucide.createIcons();
             } else if (syncQueue.length > 0) {
                 el.style.display = 'flex';
@@ -492,32 +562,105 @@
             }
         }
 
-        function startQueueCountdown() {
+        function startQueueCountdown(duration) {
             if (countdownInterval) clearInterval(countdownInterval);
-            countdownTimer = 60;
+            countdownTimer = duration;
             isSyncing = true;
             renderQueueStatus();
             countdownInterval = setInterval(() => {
                 countdownTimer--;
                 renderQueueStatus();
-                if (countdownTimer <= 0) { clearInterval(countdownInterval); processNextInQueue(); }
+                if (countdownTimer <= 0) { 
+                    clearInterval(countdownInterval); 
+                    executeNextInQueue(); 
+                }
             }, 1000);
         }
 
-        async function processNextInQueue() {
-            if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
-            isSyncing = true; countdownTimer = 0; renderQueueStatus();
+        async function executeNextInQueue() {
+            if (syncQueue.length === 0) { 
+                isSyncing = false; 
+                renderQueueStatus(); 
+                return; 
+            }
+            
             const task = syncQueue.shift();
-            try { await task.fn(); mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso'); } 
-            catch (e) { console.error(e); mostrarAlerta(`❌ Erro em ${task.name}`, 'erro'); }
-            if (syncQueue.length > 0) { startQueueCountdown(); } else { isSyncing = false; renderQueueStatus(); }
+            isSyncing = true; countdownTimer = 0; renderQueueStatus();
+            
+            try { 
+                await task.fn(); 
+                mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso'); 
+            } catch (e) { 
+                console.error(e); 
+                mostrarAlerta(`❌ Erro em ${task.name}`, 'erro'); 
+            }
+            
+            if (task.type === 'json') {
+                lastTaskWasJson = true;
+            } else {
+                lastTaskWasJson = false;
+            }
+            
+            processQueueLoop();
         }
 
-        async function enqueueTask(taskName, taskFn, immediate = false) {
+        function processQueueLoop() {
+            if (syncQueue.length === 0) { 
+                isSyncing = false; 
+                renderQueueStatus(); 
+                return; 
+            }
+
+            // Ordena fila: imagens/outros primeiro, json sempre por último
+            syncQueue.sort((a, b) => {
+                if (a.type === 'json' && b.type !== 'json') return 1;
+                if (a.type !== 'json' && b.type === 'json') return -1;
+                return 0;
+            });
+
+            const nextTask = syncQueue[0];
+            let waitTime = 0;
+            
+            if (lastTaskWasJson) {
+                waitTime = 60; // Cooldown após o json ser enviado
+                lastTaskWasJson = false; // Consome a flag para os próximos
+            } else if (nextTask.type === 'json') {
+                waitTime = 30; // Tempo de espera para o json
+            } else if (nextTask.type === 'image') {
+                waitTime = 20; // Tempo de espera entre imagens
+            }
+
+            startQueueCountdown(waitTime);
+        }
+
+        async function enqueueTask(taskName, taskFn, taskType = 'other') {
             await saveDataLocally(); 
-            syncQueue.push({ name: taskName, fn: taskFn });
-            if (!isSyncing) { if (immediate) processNextInQueue(); else startQueueCountdown(); } 
-            else renderQueueStatus(); 
+            
+            if (taskType === 'json') {
+                syncQueue = syncQueue.filter(t => t.type !== 'json'); // Evita JSONs duplicados na fila
+            }
+
+            syncQueue.push({ name: taskName, fn: taskFn, type: taskType });
+            
+            if (!isSyncing) {
+                processQueueLoop();
+            } else {
+                // Re-ordena caso tenha chegado no meio do timer
+                syncQueue.sort((a, b) => {
+                    if (a.type === 'json' && b.type !== 'json') return 1;
+                    if (a.type !== 'json' && b.type === 'json') return -1;
+                    return 0;
+                });
+                
+                const currentFront = syncQueue[0];
+                // Se a fila estava esperando o JSON (30s) e agora o topo virou Imagem, corta o timer para 20s
+                if (currentFront.type === 'image' && syncQueue.some(t => t.type === 'json')) {
+                    if (countdownTimer > 20) {
+                        startQueueCountdown(20);
+                    }
+                }
+                renderQueueStatus(); 
+            }
         }
 
         function sanitizeProductsForExport(prods) {
@@ -557,7 +700,7 @@
             enqueueTask("Produtos.json (Site & Base)", async () => {
                 const vitrine = sanitizeProductsForExport(products);
                 await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos (Base Unificada)`);
-            }, true);
+            }, 'json');
         }
 
         async function getPastaUploadAtiva() {
@@ -576,7 +719,7 @@
         async function uploadImagens() {
             if (imageQueue.length === 0) return alert("Não existem imagens na fila.");
             const queueCopy = [...imageQueue]; imageQueue = []; updateImageBadge();
-            mostrarAlerta("Enviando imagens...", "aviso");
+            mostrarAlerta("Enviando imagens para a fila...", "aviso");
             queueCopy.forEach(img => {
                 enqueueTask(`Imagem ${img.sku} (Slot ${img.slot})`, async () => {
                     const pastaDestinoGithub = await getPastaUploadAtiva();
@@ -591,7 +734,7 @@
                         pRef.last_update = Date.now(); 
                         await saveDataLocally(); 
                     }
-                }, false);
+                }, 'image');
             });
         }
 
@@ -607,6 +750,11 @@
             document.getElementById('modal-foto-full').classList.remove('hidden');
         }
         function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
+
+        function searchGoogleShopping(nome) { 
+            if(!nome) return; 
+            window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(nome)}`, '_blank'); 
+        }
 
         // ==========================================================
         // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS)
@@ -633,7 +781,12 @@
                 if(openSidebars.length === 0) { 
                     document.getElementById('sidebar-overlay').style.opacity = '0'; 
                     setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
-                    if(id === 'edit-sidebar') { currentEditingSku = null; renderGrid(null, true); } 
+                    
+                    if(id === 'edit-sidebar' || id === 'categorias-sidebar' || id === 'marcas-sidebar' || id === 'filtros-sidebar') { 
+                        // Remove renderGrid automático com perda de DOM, usamos lógica focada no Scroll Safe Update
+                        if(id === 'edit-sidebar') { currentEditingSku = null; }
+                        renderGrid(null, true);
+                    } 
                 } 
             }, 50); 
         }
@@ -650,7 +803,6 @@
             lucide.createIcons(); 
             await loadData(); 
             document.getElementById('search-input').addEventListener('input', debounce((e) => {
-                // Se estiver pesquisando, limpa os filtros ativos de categoria/marca
                 if(e.target.value.trim() !== "") {
                     filtroAtivo = { tipo: null, valor: null };
                     document.getElementById('active-filter-banner').style.display = 'none';
@@ -671,39 +823,15 @@
         
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
-        function renderizarDatalistMarcas() {
-            let dl = document.getElementById('lista-marcas-global');
-            if(dl) {
-                // Garante ordenação alfabética
-                marcasDoSistema.sort((a, b) => a.localeCompare(b));
-                dl.innerHTML = marcasDoSistema.map(m => `<option value="${m}">`).join('');
-            }
-        }
-
-        window.updateMarca = async function(sku, novaMarca) {
-            // Força Caixa Alta e remove espaços extras
-            novaMarca = novaMarca.toUpperCase().trim();
-            updateField(sku, 'marca', novaMarca);
-            
-            if (novaMarca && !marcasDoSistema.includes(novaMarca)) {
-                marcasDoSistema.push(novaMarca);
-                marcasDoSistema.sort((a, b) => a.localeCompare(b));
-                await localforage.setItem(MARCAS_KEY, marcasDoSistema);
-                renderizarDatalistMarcas();
-            }
-        };
-
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
             try { const savedCats = await localforage.getItem(CATEGORIAS_KEY); if(savedCats && Array.isArray(savedCats)) categoriasDoSistema = savedCats; } catch (err) {}
             try { const savedMarcas = await localforage.getItem(MARCAS_KEY); if(savedMarcas && Array.isArray(savedMarcas)) marcasDoSistema = savedMarcas; } catch (err) {}
             
-            // Higienização inicial de Categorias e Marcas
             let marcasAdicionadas = false;
             products.forEach(p => {
                 if (p.marca) p.marca = p.marca.toUpperCase().trim();
                 if (p.categoria) p.categoria = p.categoria.trim();
-
                 if (p.marca && !marcasDoSistema.includes(p.marca)) {
                     marcasDoSistema.push(p.marca);
                     marcasAdicionadas = true;
@@ -715,8 +843,6 @@
                 await localforage.setItem(MARCAS_KEY, marcasDoSistema);
             }
             
-            renderizarDatalistMarcas();
-
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
             renderGrid();
         }
@@ -724,21 +850,21 @@
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
         async function saveDataLocally() { try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} }
 
-        window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true); }
+        window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
         window.addTag = async function(sku) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
         window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
 
         // ==========================================================
-        // FILTRO GLOBAL (GRID)
+        // FILTROS AVANÇADOS E FILTRO GLOBAL (GRID)
         // ==========================================================
         window.filtrarNaGrid = function(tipo, valor) {
             filtroAtivo = { tipo: tipo, valor: valor };
-            document.getElementById('search-input').value = ""; // Limpa a barra de pesquisa textual
+            document.getElementById('search-input').value = ""; 
             closeAllSidebars();
             
             const banner = document.getElementById('active-filter-banner');
             banner.style.display = 'flex';
-            document.getElementById('filter-text-display').innerText = `${tipo === 'categoria' ? 'Categoria' : 'Marca'}: ${valor}`;
+            document.getElementById('filter-text-display').innerText = `${tipo}: ${valor}`;
             
             renderGrid();
         }
@@ -749,28 +875,76 @@
             renderGrid();
         }
 
+        function renderizarFiltrosAvancados() {
+            document.getElementById('flt-cat').innerHTML = getOpcoesCategoria('');
+            document.getElementById('flt-sub').innerHTML = '<option value="">Todas</option>';
+            document.getElementById('flt-marca').innerHTML = getOpcoesMarca('');
+            document.getElementById('flt-gondola').innerHTML = getGondolaOptions('');
+            document.getElementById('flt-prat').innerHTML = getPrateleiraOptions('');
+        }
+
+        function atualizarOpcoesSubcatFiltro(catVal) {
+            document.getElementById('flt-sub').innerHTML = getOpcoesSubcategoria(catVal, '');
+        }
+
+        window.aplicarFiltrosAvancados = function() {
+            advancedFilters.cat = document.getElementById('flt-cat').value;
+            advancedFilters.sub = document.getElementById('flt-sub').value;
+            advancedFilters.marca = document.getElementById('flt-marca').value;
+            advancedFilters.gondola = document.getElementById('flt-gondola').value;
+            advancedFilters.prat = document.getElementById('flt-prat').value;
+            advancedFilters.ncm = document.getElementById('flt-ncm').value;
+            advancedFilters.stock = document.getElementById('flt-stock').value;
+            advancedFilters.validade = document.getElementById('flt-val').value;
+            
+            filtroAtivo = { tipo: 'avancado', valor: 'Filtros Combinados' };
+            document.getElementById('active-filter-banner').style.display = 'flex';
+            document.getElementById('filter-text-display').innerText = 'Filtros Avançados Ativos';
+            closeSidebar('filtros-sidebar');
+            renderGrid();
+        }
+
         // ==========================================================
-        // LAZY LOADING E CARTÕES DO PRODUTO 
+        // LAZY LOADING E CARTÕES DO PRODUTO (Manutenção de Scroll)
         // ==========================================================
         function renderGrid(searchTerm = null, keepLoaded = false) {
             const gridContainer = document.getElementById('product-grid');
             const mainContent = document.getElementById('main-content-pim');
             const currentScroll = mainContent ? mainContent.scrollTop : 0;
             
-            gridContainer.innerHTML = "";
             const oldItemsCarregados = keepLoaded ? Math.max(itemsCarregados, ITENS_POR_PAGINA) : ITENS_POR_PAGINA;
-            itemsCarregados = 0; 
 
             let filtered = products;
 
-            // Filtro por Categoria ou Marca
+            // Lógica Unificada de Filtro
             if (filtroAtivo.tipo === 'categoria') {
                 filtered = filtered.filter(p => (p.categoria || "").trim() === filtroAtivo.valor);
             } else if (filtroAtivo.tipo === 'marca') {
                 filtered = filtered.filter(p => (p.marca || "").trim().toUpperCase() === filtroAtivo.valor);
+            } else if (filtroAtivo.tipo === 'avancado') {
+                filtered = filtered.filter(p => {
+                    if(advancedFilters.cat && p.categoria !== advancedFilters.cat) return false;
+                    if(advancedFilters.sub && p.subcategoria !== advancedFilters.sub) return false;
+                    if(advancedFilters.marca && p.marca !== advancedFilters.marca) return false;
+                    if(advancedFilters.gondola && p.gondola !== advancedFilters.gondola) return false;
+                    if(advancedFilters.prat && p.prateleira !== advancedFilters.prat) return false;
+                    if(advancedFilters.ncm === 'sem' && p.ncm && p.ncm.trim() !== '') return false;
+                    if(advancedFilters.stock === 'zero' && parseFloat(p.estoque) !== 0) return false;
+                    if(advancedFilters.validade) {
+                        if(!p.validade) return false;
+                        const partes = p.validade.split('/');
+                        if(partes.length === 3) {
+                            const dataVal = new Date(partes[2], partes[1] - 1, partes[0]).getTime();
+                            const hoje = Date.now();
+                            const diffDias = (dataVal - hoje) / (1000 * 60 * 60 * 24);
+                            const limite = parseInt(advancedFilters.validade);
+                            if (diffDias < 0 || diffDias > limite) return false;
+                        } else { return false; }
+                    }
+                    return true;
+                });
             }
             
-            // Filtro de Busca Textual
             if(searchTerm) { 
                 const term = searchTerm.toLowerCase().trim(); 
                 filtered = filtered.filter(p => {
@@ -781,13 +955,15 @@
                 }); 
             }
 
-            // Filtro 24h
             if(isFilter24hActive) { 
                 const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); 
                 filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); 
             }
             
             produtosFiltrados = filtered;
+
+            gridContainer.innerHTML = "";
+            itemsCarregados = 0; 
 
             if (produtosFiltrados.length === 0) { 
                 gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto encontrado</h3><p>Verifique os filtros ou termos de busca.</p></div>`; 
@@ -797,8 +973,13 @@
 
             carregarMaisCards(oldItemsCarregados);
 
+            // Restauração de scroll exata
             if (keepLoaded && mainContent) {
-                setTimeout(() => { mainContent.scrollTop = currentScroll; }, 10);
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        mainContent.scrollTop = currentScroll;
+                    });
+                });
             }
         }
 
@@ -817,7 +998,8 @@
                 if (p.tag_texto && tagsToRender.length === 0) { p.tag_texto.split('\n').filter(l => l.trim() !== '').forEach(l => { tagsToRender.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); }
                 if (tagsToRender.length > 0) { const tagsGeradas = tagsToRender.map(t => `<div class="product-tag" style="background-color: ${t.bg}; color: ${t.txt}; font-size: ${Math.max(t.tam-2, 8)}px;">${t.texto}</div>`).join(''); htmlTag = `<div class="tags-container">${tagsGeradas}</div>`; }
                 
-                const safeNameForInput = (p.nome || '').replace(/"/g, '"');
+                const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
+                const safeNomeGoogle = (p.nome || '').replace(/'/g, "\\'");
 
                 card.innerHTML = `
                     <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
@@ -830,7 +1012,10 @@
                     
                     <div class="card-info" style="flex-grow:1; display:flex; flex-direction:column; gap:6px; padding:0; text-align:left;">
                         <div style="display:flex; flex-direction:column; gap:2px;">
-                            <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px;" placeholder="Nome do Produto" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
+                            <div style="display:flex; gap: 4px;">
+                                <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px; flex-grow:1;" placeholder="Nome do Produto" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
+                                <button class="btn-smart" style="height:28px; width:28px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Pesquisar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i></button>
+                            </div>
                         </div>
                         
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
@@ -868,21 +1053,33 @@
                             </div>
                             
                             <div style="display:flex; flex-direction:column; gap:2px;">
-                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Estoque Qtde</label>
-                                <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
-                            </div>
-                            <div style="display:flex; flex-direction:column; gap:2px;">
                                 <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Categoria</label>
                                 <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">
                                     ${getOpcoesCategoria(p.categoria)}
                                 </select>
                             </div>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Subcat.</label>
+                                <select class="form-input card-mini-input" id="sel-subcat-grid-${p.codigo}" onchange="updateField('${p.codigo}', 'subcategoria', this.value)">
+                                    ${getOpcoesSubcategoria(p.categoria, p.subcategoria)}
+                                </select>
+                            </div>
+
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Estoque Qtde</label>
+                                <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">NCM</label>
+                                <input type="text" class="form-input card-mini-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)">
+                            </div>
 
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Marca</label>
-                                <input type="text" list="lista-marcas-global" class="form-input card-mini-input" placeholder="Ex: SONY" value="${p.marca || ''}" onchange="updateMarca('${p.codigo}', this.value)">
+                                <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'marca', this.value)">
+                                    ${getOpcoesMarca(p.marca)}
+                                </select>
                             </div>
-                            
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Embalagem</label>
                                 <input type="text" class="form-input card-mini-input" placeholder="Ex: Caixa 10x10" value="${p.embalagem || ''}" onchange="updateField('${p.codigo}', 'embalagem', this.value)">
@@ -944,7 +1141,7 @@
                 </div></div>
                 
                 <div class="form-section"><div class="section-title">Apresentação Principal</div>
-                    <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '"')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
+                    <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '&quot;')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens Alta Definição"><i data-lucide="image" size="16"></i></button></div></div>
                     
                     <div class="form-group" style="margin-top: 5px;"><label class="form-label">Embalagem</label><input type="text" class="form-input" value="${p.embalagem || ''}" placeholder="Ex: Caixa Parda 20x20" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
                     
@@ -1127,7 +1324,6 @@
                     if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
                     products = parsedData;
                     
-                    // Tratamento e higienização automática ao baixar
                     products.forEach(p => {
                         if (p.marca) p.marca = p.marca.toUpperCase().trim();
                         if (p.categoria) p.categoria = p.categoria.trim();
@@ -1141,7 +1337,7 @@
                     marcasDoSistema.sort((a, b) => a.localeCompare(b));
 
                     await saveDataLocally(); await salvarCategoriasLocalmente(); await localforage.setItem(MARCAS_KEY, marcasDoSistema);
-                    renderGrid(); renderizarSidebarCategorias(); renderizarDatalistMarcas();
+                    renderGrid(); renderizarSidebarCategorias(); 
                     alert("Atualização concluída!"); closeSidebar('config-sidebar');
                 } else { alert("Formato inesperado."); }
             } catch(e) { alert("Erro: " + e.message); }
@@ -1222,14 +1418,12 @@
 
         function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
 
-        // NOVA FUNÇÃO: Exportar TUDO para o Meta
         function gerarCSVMetaCompleto() {
             let produtosExportar = products.filter(p => p.situacao !== 'I');
             if (produtosExportar.length === 0) return alert("Nenhum produto ativo.");
             exportarCSVArrayParaMeta(produtosExportar, "catalogo_meta_completo");
         }
 
-        // NOVA FUNÇÃO: Exportar em fila a cada 5 segundos
         function gerarCSVMetaFila(tipoFiltro) {
             let lista = [];
             if(tipoFiltro === 'categoria') {
@@ -1244,7 +1438,7 @@
 
             lista.forEach((item, index) => {
                 setTimeout(() => {
-                    gerarCSVMetaFiltro(tipoFiltro, item, true); // true = silent, não exibe alert se não achar produto
+                    gerarCSVMetaFiltro(tipoFiltro, item, true);
                     mostrarAlerta(`Baixando (${index + 1}/${lista.length}): ${item}`, 'aviso');
                 }, index * 5000);
             });
@@ -1269,7 +1463,6 @@
             exportarCSVArrayParaMeta(produtosExportar, nomeFicheiro);
         }
 
-        // Função de base de exportação para evitar repetição de código
         function exportarCSVArrayParaMeta(produtosArray, nomeFicheiroBase) {
             const colunasMeta = ["id", "title", "description", "availability", "condition", "price", "link", "image_link", "brand", "gtin"];
 
@@ -1314,6 +1507,81 @@
         }
 
         // ==========================================================
+        // MÓDULO: GESTÃO DE MARCAS (CRUD)
+        // ==========================================================
+
+        function renderizarSidebarMarcas() {
+            const container = document.getElementById('lista-marcas-container');
+            container.innerHTML = "";
+
+            if (marcasDoSistema.length === 0) {
+                container.innerHTML = `<p style="text-align:center; color:var(--text-secondary); font-size:12px; margin-top:20px;">Nenhuma marca registada.</p>`;
+                return;
+            }
+
+            marcasDoSistema.sort((a, b) => a.localeCompare(b));
+
+            marcasDoSistema.forEach((marca, index) => {
+                container.innerHTML += `
+                <div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="color:var(--accent); font-size:13px; flex-grow:1;">${marca}</strong>
+                        <div style="display:flex; gap:6px;">
+                            <button class="btn-smart" style="height:28px; width:28px; color:#0284c7;" onclick="filtrarNaGrid('marca', '${marca.replace(/'/g, "\\'")}')" title="Ver Produtos"><i data-lucide="eye" size="12"></i></button>
+                            <button class="btn-smart" style="height:28px; width:28px;" onclick="editarMarca(${index})" title="Renomear"><i data-lucide="edit-2" size="12"></i></button>
+                            <button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerMarca(${index})" title="Apagar"><i data-lucide="trash-2" size="12"></i></button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            lucide.createIcons();
+        }
+
+        async function criarNovaMarca() {
+            const nome = prompt("Digite o nome da nova Marca:");
+            if (!nome || nome.trim() === "") return;
+            const nm = nome.toUpperCase().trim();
+            if(marcasDoSistema.includes(nm)) return alert("Esta marca já existe!");
+            marcasDoSistema.push(nm);
+            await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+            renderizarSidebarMarcas(); renderGrid(null, true);
+        }
+
+        async function editarMarca(index) {
+            const novoNome = prompt("Renomear marca para:", marcasDoSistema[index]);
+            if (!novoNome || novoNome.trim() === "" || novoNome.toUpperCase() === marcasDoSistema[index]) return;
+            const old = marcasDoSistema[index];
+            const nm = novoNome.toUpperCase().trim();
+            marcasDoSistema[index] = nm;
+            
+            // Atualiza produtos automaticamente
+            products.forEach(p => { if(p.marca === old) p.marca = nm; });
+            await saveDataLocally();
+            await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+            renderizarSidebarMarcas(); renderGrid(null, true);
+        }
+
+        async function removerMarca(index) {
+            if (!confirm(`Tem certeza que deseja apagar a marca "${marcasDoSistema[index]}"?`)) return;
+            const old = marcasDoSistema[index];
+            marcasDoSistema.splice(index, 1);
+            
+            products.forEach(p => { if(p.marca === old) p.marca = ""; });
+            await saveDataLocally();
+            await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+            renderizarSidebarMarcas(); renderGrid(null, true);
+        }
+
+        function getOpcoesMarca(marcaSelecionada) {
+            let options = '<option value="">Sel. Marca</option>';
+            [...marcasDoSistema].sort((a,b)=>a.localeCompare(b)).forEach(m => {
+                let selected = (m === marcaSelecionada) ? 'selected' : '';
+                options += `<option value="${m}" ${selected}>${m}</option>`;
+            });
+            return options;
+        }
+
+        // ==========================================================
         // MÓDULO: GESTÃO DE CATEGORIAS E SUBCATEGORIAS
         // ==========================================================
 
@@ -1330,7 +1598,6 @@
                 return;
             }
 
-            // Ordena as categorias sempre antes de renderizar
             categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
 
             categoriasDoSistema.forEach((cat, indexCat) => {
@@ -1339,9 +1606,10 @@
                     htmlSub = cat.subcategorias.map((sub, indexSub) => `
                         <div style="display:flex; justify-content:space-between; align-items:center; background:#f4f4f5; padding:6px 10px; border-radius:6px; margin-top:4px; font-size:11px;">
                             <span>└ ${sub}</span>
-                            <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removerSubcategoria(${indexCat}, ${indexSub})" title="Apagar Subcategoria">
-                                <i data-lucide="trash-2" size="12"></i>
-                            </button>
+                            <div style="display:flex; gap:4px;">
+                                <button class="btn-smart" style="height:24px; width:24px;" onclick="editarSubcategoria(${indexCat}, ${indexSub})" title="Renomear Subcategoria"><i data-lucide="edit-2" size="12"></i></button>
+                                <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removerSubcategoria(${indexCat}, ${indexSub})" title="Apagar Subcategoria"><i data-lucide="trash-2" size="12"></i></button>
+                            </div>
                         </div>
                     `).join('');
                 } else { htmlSub = `<div style="font-size:10px; color:#888; padding:5px;">Sem subcategorias</div>`; }
@@ -1376,14 +1644,20 @@
         async function editarCategoria(index) {
             const novoNome = prompt("Renomear categoria para:", categoriasDoSistema[index].nome);
             if (!novoNome || novoNome.trim() === "" || novoNome === categoriasDoSistema[index].nome) return;
+            const old = categoriasDoSistema[index].nome;
             categoriasDoSistema[index].nome = novoNome.trim();
-            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid();
+            products.forEach(p => { if(p.categoria === old) p.categoria = novoNome.trim(); });
+            await saveDataLocally();
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid(null, true);
         }
 
         async function removerCategoria(index) {
             if (!confirm(`Tem certeza que deseja apagar a categoria "${categoriasDoSistema[index].nome}" e todas as suas subcategorias?`)) return;
+            const old = categoriasDoSistema[index].nome;
             categoriasDoSistema.splice(index, 1);
-            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid();
+            products.forEach(p => { if(p.categoria === old) { p.categoria = ""; p.subcategoria = ""; } });
+            await saveDataLocally();
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid(null, true);
         }
 
         async function criarNovaSubcategoria(indexCat) {
@@ -1394,16 +1668,28 @@
             categoriasDoSistema[indexCat].subcategorias.push(nome.trim());
             await salvarCategoriasLocalmente(); renderizarSidebarCategorias();
         }
+        
+        async function editarSubcategoria(indexCat, indexSub) {
+            const old = categoriasDoSistema[indexCat].subcategorias[indexSub];
+            const nome = prompt(`Renomear subcategoria para:`, old);
+            if (!nome || nome.trim() === "" || nome === old) return;
+            categoriasDoSistema[indexCat].subcategorias[indexSub] = nome.trim();
+            products.forEach(p => { if(p.categoria === categoriasDoSistema[indexCat].nome && p.subcategoria === old) p.subcategoria = nome.trim(); });
+            await saveDataLocally();
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid(null, true);
+        }
 
         async function removerSubcategoria(indexCat, indexSub) {
             if (!confirm(`Tem certeza que deseja apagar esta subcategoria?`)) return;
+            const old = categoriasDoSistema[indexCat].subcategorias[indexSub];
             categoriasDoSistema[indexCat].subcategorias.splice(indexSub, 1);
-            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid();
+            products.forEach(p => { if(p.categoria === categoriasDoSistema[indexCat].nome && p.subcategoria === old) p.subcategoria = ""; });
+            await saveDataLocally();
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid(null, true);
         }
 
         function getOpcoesCategoria(categoriaSelecionada) {
             let options = '<option value="">Sel. Categoria</option>';
-            // Garante ordenação alfabética nas opções também
             [...categoriasDoSistema].sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(cat => {
                 let selected = (cat.nome === categoriaSelecionada) ? 'selected' : '';
                 options += `<option value="${cat.nome}" ${selected}>${cat.nome}</option>`;
