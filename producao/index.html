@@ -418,6 +418,11 @@
             window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(nome)}`, '_blank'); 
         }
 
+        window.searchYoutube = function(nome) { 
+    if(!nome) return; 
+    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome)}`, '_blank'); 
+}
+
         // ==========================================================
         // GESTOR DE COMUNICAÇÃO COM GITHUB
         // ==========================================================
@@ -887,10 +892,11 @@
                                 <label>Nome do Produto</label>
                                 <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px;" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
                                 <div style="display: flex; gap: 4px; margin-top: 4px;">
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
-                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
-                                </div>
+    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
+    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
+    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
+    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #ef4444; border-color: #fecaca;" onclick="searchYoutube('${safeNomeGoogle}')" title="Buscar Vídeo no YouTube"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
+</div>
                             </div>
                             <div class="field-group">
                                 <label>Link do YouTube</label>
