@@ -673,43 +673,50 @@
 
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
-            try { const c = await localforage.getItem(CATEGORIAS_KEY); if(c && Array.isArray(c)) categoriasDoSistema = c; } catch (err) {}
+            try { 
+                const c = await localforage.getItem(CATEGORIAS_KEY); 
+                if(c && Array.isArray(c)) {
+                    // Prevenção: Se o cache antigo for uma lista de textos simples, ignoramos para recriar a estrutura correta de 3 níveis
+                    if(c.length > 0 && typeof c[0] === 'string') { categoriasDoSistema = []; } 
+                    else { categoriasDoSistema = c; }
+                } 
+            } catch (err) {}
             try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             
-            // Puxar dados que já existam nos produtos se as listas locais estiverem vazias
+            // Varre todos os produtos para reconstruir a árvore de categorias, subs e sub-subs
             let precisaSalvarCat = false, precisaSalvarMarca = false;
 
             products.forEach(p => {
                 if (p.marca) p.marca = p.marca.toUpperCase().trim();
                 if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvarMarca = true; }
                 
-                // Recuperação/Migração segura para o modelo 3 níveis
-                if (p.categoria && typeof p.categoria === 'string' && p.categoria.includes('>')) {
-                    let parts = p.categoria.split('>').map(x => x.trim());
-                    p.categoria = parts[0] || "";
-                    p.subcategoria = parts[1] || "";
-                    p.subsubcategoria = parts[2] || "";
-                }
-
                 if (p.categoria) {
                     p.categoria = p.categoria.toUpperCase().trim();
-                    let catObj = categoriasDoSistema.find(c => c.nome === p.categoria);
+                    
+                    // Garante que a categoria principal existe
+                    let catObj = categoriasDoSistema.find(c => c && c.nome === p.categoria);
                     if (!catObj) {
                         catObj = { nome: p.categoria, subcategorias: [] };
                         categoriasDoSistema.push(catObj);
                         precisaSalvarCat = true;
                     }
+                    
                     if (p.subcategoria) {
                         p.subcategoria = p.subcategoria.toUpperCase().trim();
-                        let subObj = catObj.subcategorias.find(s => s.nome === p.subcategoria);
+                        
+                        // Garante que a subcategoria existe dentro da categoria
+                        let subObj = catObj.subcategorias.find(s => s && s.nome === p.subcategoria);
                         if (!subObj) {
                             subObj = { nome: p.subcategoria, subsubcategorias: [] };
                             catObj.subcategorias.push(subObj);
                             precisaSalvarCat = true;
                         }
+                        
                         if (p.subsubcategoria) {
                             p.subsubcategoria = p.subsubcategoria.toUpperCase().trim();
+                            
+                            // Garante que a sub-subcategoria existe dentro da subcategoria
                             if (!subObj.subsubcategorias.includes(p.subsubcategoria)) {
                                 subObj.subsubcategorias.push(p.subsubcategoria);
                                 precisaSalvarCat = true;
@@ -722,12 +729,18 @@
             if (precisaSalvarMarca) await localforage.setItem(MARCAS_KEY, marcasDoSistema);
             if (precisaSalvarCat) await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
 
-            // Ordem Alfabética Geral
-            categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
-            categoriasDoSistema.forEach(c => {
-                c.subcategorias.sort((a, b) => a.nome.localeCompare(b.nome));
-                c.subcategorias.forEach(s => s.subsubcategorias.sort((a,b) => a.localeCompare(b)));
-            });
+            // Ordem Alfabética Segura
+            if(categoriasDoSistema.length > 0) {
+                categoriasDoSistema.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+                categoriasDoSistema.forEach(c => {
+                    if(c.subcategorias) {
+                        c.subcategorias.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+                        c.subcategorias.forEach(s => {
+                            if(s.subsubcategorias) s.subsubcategorias.sort((a,b) => a.localeCompare(b));
+                        });
+                    }
+                });
+            }
 
             [marcasDoSistema, tagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
 
