@@ -81,12 +81,12 @@
         .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; z-index: 1005; }
         .sidebar.open { transform: translateX(0); }
         
-        #edit-sidebar { z-index: 1010; width: 600px; } /* Edit mais largo */
+        #edit-sidebar { z-index: 1010; width: 600px; } 
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 450px; }
         #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar { z-index: 1015; width: 450px; }
-        #pedidos-sidebar { z-index: 1015; width: 600px; } /* Área de texto grande */
-        #metricas-sidebar { z-index: 1015; width: 800px; } /* Relatórios bem amplos */
+        #pedidos-sidebar { z-index: 1015; width: 600px; } 
+        #metricas-sidebar { z-index: 1015; width: 800px; } 
         
         .sidebar-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 15px; font-weight: 900; }
@@ -246,9 +246,10 @@
         <div class="sidebar-body">
             <div class="form-section" style="flex-grow: 1; display: flex; flex-direction: column;">
                 <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 15px;">
-                    Cole o texto recebido do cliente (WhatsApp/Bling). O sistema vai ler a quantidade e abater do estoque baseado no <b>nome exato</b> do produto. Cada baixa será registrada no <b>Histórico de Estratégia</b>.
+                    Cole o texto recebido do cliente (WhatsApp/Bling). O sistema vai ler a quantidade e abater do estoque baseado no <b>nome</b> do produto.<br><br>
+                    <i>Dica: O sistema agora ignora asteriscos do WhatsApp e tenta buscar mesmo se o nome não for 100% exato.</i>
                 </p>
-                <textarea id="order-text-input" class="form-input" style="flex-grow: 1; min-height: 400px; font-family: monospace; font-size: 13px; line-height: 1.6; padding: 15px; background: #f8fafc;" placeholder="Exemplo do formato aceito:\n1x Bucha de Lavar Louça\n2x Macarrão Lámen Apti Galinha 70g Miojo\n1x Qboa Água Sanitária 1l"></textarea>
+                <textarea id="order-text-input" class="form-input" style="flex-grow: 1; min-height: 400px; font-family: monospace; font-size: 13px; line-height: 1.6; padding: 15px; background: #f8fafc;" placeholder="Exemplo do formato aceito:\n1x Bucha de Lavar Louça\n*2x Macarrão Lámen Apti*\n1 Qboa Água Sanitária 1l"></textarea>
             </div>
         </div>
         <div class="sidebar-footer">
@@ -392,7 +393,7 @@
         // Variáveis do Lazy Loading
         let produtosFiltrados = [];
         let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 24; // Aumentado para Desktop
+        const ITENS_POR_PAGINA = 24; 
 
         // ==========================================================
         // FUNÇÕES GERAIS E OPÇÕES
@@ -416,7 +417,6 @@
                 valor_novo: valorNovo
             });
             
-            // Mantém apenas os últimos 2000 logs para não pesar o GitHub (limpeza de buffer)
             if(logAtividades.length > 2000) logAtividades = logAtividades.slice(0, 2000);
             
             try { await localforage.setItem(HISTORICO_KEY, logAtividades); } catch (e) {}
@@ -443,6 +443,13 @@
                 const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
                 if (!res.ok) { const errorData = await res.json(); throw new Error(`Erro do GitHub: ${errorData.message}`); }
                 return await res.json();
+            },
+            deleteFile: async function(path, sha, message) {
+                const cfg = this.getConfig(); if (!cfg) throw new Error("Credenciais ausentes");
+                const body = { message: message, sha: sha };
+                const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`, { method: 'DELETE', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
+                if (!res.ok) throw new Error("Falha ao deletar arquivo");
+                return true;
             }
         };
 
@@ -478,7 +485,6 @@
         function salvarTudoNuvem() {
             enqueueTask("Sincronização PIM (Múltiplos Arquivos)", async () => {
                 const vitrine = sanitizeProductsForExport(products);
-                // Salva todos os arquivos sequencialmente para garantir a integridade da Omnichannel
                 await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Update Produtos`);
                 await GitHubAPI.saveFile(`site/categorias.json`, categoriasDoSistema, `PIM: Update Categorias`);
                 await GitHubAPI.saveFile(`site/marcas.json`, marcasDoSistema, `PIM: Update Marcas`);
@@ -520,14 +526,12 @@
             try { const savedTags = await localforage.getItem(TAGS_KEY); if(savedTags && Array.isArray(savedTags)) tagsDoSistema = savedTags; } catch (err) {} 
             try { const savedHist = await localforage.getItem(HISTORICO_KEY); if(savedHist && Array.isArray(savedHist)) logAtividades = savedHist; } catch (err) {}
             
-            // INTEGRIDADE DE DADOS: Garante que todos os produtos antigos tenham os campos novos (MIGRATION)
             let precisaSalvar = false;
             products.forEach(p => {
                 if (p.marca) p.marca = p.marca.toUpperCase().trim();
                 if (p.categoria) p.categoria = p.categoria.trim();
                 if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvar = true; }
                 
-                // Injeta defaults se não existirem
                 if (!p.tags_globais) { p.tags_globais = []; precisaSalvar = true; }
                 if (!p.tags) { p.tags = []; precisaSalvar = true; }
                 if (p.gondola === undefined) { p.gondola = ""; precisaSalvar = true; }
@@ -686,7 +690,6 @@
             
             p[field] = finalVal; p.last_update = Date.now(); 
             
-            // GRAVAÇÃO DE HISTÓRICO (ESTRATÉGIA)
             if(oldVal !== finalVal && ['preco', 'preco_custo', 'estoque', 'validade'].includes(field)) {
                 let acao = `Alteração de ${field.toUpperCase()}`;
                 await registrarLogAtividade(p.codigo, acao, `Modificado via painel`, oldVal, finalVal);
@@ -721,7 +724,6 @@
                 const fetchOpts = { headers: { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Accept": "application/vnd.github.v3.raw" }, cache: "no-store" };
                 const baseUrl = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/`;
 
-                // Busca todos em paralelo
                 const [resProd, resCat, resMarc, resTag, resHist] = await Promise.all([
                     fetch(`${baseUrl}produtos.json?t=${Date.now()}`, fetchOpts).catch(e=>null),
                     fetch(`${baseUrl}categorias.json?t=${Date.now()}`, fetchOpts).catch(e=>null),
@@ -770,42 +772,73 @@
         window.mudarCategoriaDoProduto = async function(sku, novaCategoria) { updateField(sku, 'categoria', novaCategoria); updateField(sku, 'subcategoria', ''); }
 
         // ==========================================================
-        // MÓDULO: BAIXAR PEDIDO POR TEXTO
+        // MÓDULO: BAIXAR PEDIDO POR TEXTO (INTELIGENTE)
         // ==========================================================
         async function processarBaixaPedidoTexto() {
             const texto = document.getElementById('order-text-input').value;
             if(!texto) return alert("Cole o texto do pedido primeiro.");
 
             const linhas = texto.split('\n');
-            let encontrados = 0; let falhas = []; let infoBaixa = [];
+            let encontrados = 0; 
+            let falhas = []; 
+            let infoBaixa = [];
 
             linhas.forEach(linha => {
-                const match = linha.match(/^(\d+)x?\s+(.+)$/i);
+                // Remove asteriscos do WhatsApp e limpa espaços inúteis nas pontas
+                let linhaLimpa = linha.replace(/\*/g, '').trim();
+                if(!linhaLimpa) return;
+
+                // Captura: (número) seguido opcionalmente de 'x', seguido de espaços, e o resto da linha (nome do produto)
+                const match = linhaLimpa.match(/^(\d+)\s*[xX]?\s+(.+)$/i);
+                
                 if(match) {
-                    const qtd = parseInt(match[1]); const nomeProcurado = match[2].trim().toLowerCase();
-                    const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
+                    const qtd = parseInt(match[1]); 
+                    let nomeProcurado = match[2].trim().toLowerCase();
+                    
+                    // Remove eventuais traços ou pontos soltos no final da string
+                    nomeProcurado = nomeProcurado.replace(/[-.\s]+$/, '');
+
+                    const p = products.find(prod => {
+                        if(!prod.nome) return false;
+                        const nomeSistema = prod.nome.trim().toLowerCase();
+                        // Tenta achar exatamente o nome ou se um contêm parte significativa do outro
+                        return nomeSistema === nomeProcurado || nomeProcurado.includes(nomeSistema) || nomeSistema.includes(nomeProcurado);
+                    });
+
                     if(p) {
                         const estoqueAntigo = p.estoque || 0;
                         p.estoque = Math.max(0, estoqueAntigo - qtd);
                         p.last_update = Date.now();
                         encontrados++;
                         infoBaixa.push({ sku: p.codigo, de: estoqueAntigo, para: p.estoque, nome: p.nome, qtd: qtd });
-                    } else { falhas.push(match[2]); }
+                    } else { 
+                        falhas.push(match[2]); 
+                    }
                 }
             });
 
             if(encontrados > 0) {
-                // Registrar log para cada item
-                for(const b of infoBaixa) { await registrarLogAtividade(b.sku, "Baixa de Venda", `Pedido: -${b.qtd} unid.`, b.de, b.para); }
+                // Registrar histórico de cada baixa efetuada
+                for(const b of infoBaixa) { 
+                    await registrarLogAtividade(b.sku, "Venda / Baixa via Texto", `Pedido: -${b.qtd} unid.`, b.de, b.para); 
+                }
                 await saveDataLocally(); renderGrid();
-                alert(`✅ Sucesso! ${encontrados} itens atualizados e registrados no histórico.`);
-                if(falhas.length > 0) console.warn("Produtos não encontrados:", falhas);
+                
+                if(falhas.length > 0) {
+                    alert(`✅ ${encontrados} itens atualizados com sucesso!\n\n⚠️ Atenção: ${falhas.length} itens não foram encontrados e foram ignorados. Verifique se o nome confere.`);
+                    console.warn("Estes produtos não foram encontrados na sua base de dados:", falhas);
+                } else {
+                    alert(`✅ Sucesso Absoluto! Todos os ${encontrados} itens foram encontrados e o estoque foi abatido.`);
+                }
+                
                 closeSidebar('pedidos-sidebar'); document.getElementById('order-text-input').value = "";
-            } else { alert("❌ Não achei nenhum produto. O nome no texto deve ser IGUAL ao cadastro no sistema."); }
+            } else { 
+                alert("❌ Não encontrei nenhum produto. O sistema tentou procurar nomes próximos, mas nada combinou com o texto fornecido."); 
+            }
         }
 
         // ==========================================================
-        // MÓDULO: DASHBOARD E ESTRATÉGIAS (AMPLIADO PARA DESKTOP)
+        // MÓDULO: DASHBOARD E ESTRATÉGIAS 
         // ==========================================================
         function renderizarMetricas() {
             const container = document.getElementById('metricas-container');
@@ -843,7 +876,6 @@
                     </tr>`;
                 }).join('') : '<tr><td colspan="8" style="text-align:center; color:var(--success);">Nenhum produto próximo ao vencimento.</td></tr>';
 
-            // Logs recentes
             let logsFiltrados = logAtividades.slice(0, 15);
             let htmlLogs = logsFiltrados.length > 0 ? logsFiltrados.map(l => {
                 const data = new Date(l.data_hora).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
@@ -880,10 +912,10 @@
                 </div>
 
                 <div class="form-section" style="background:#fff; padding:20px; border-radius:12px; border:1px solid var(--border);">
-                    <div class="section-title"><i data-lucide="history" size="16"></i> Histórico Recente de Operações</div>
+                    <div class="section-title"><i data-lucide="history" size="16"></i> Histórico Recente de Operações (Preços, Status e Pedidos)</div>
                     <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; margin-top:10px;">
                         <table class="data-table">
-                            <thead><tr><th>Data</th><th>SKU</th><th>Operação</th><th>Detalhe</th><th>Alteração (De -> Para)</th></tr></thead>
+                            <thead><tr><th>Data/Hora</th><th>SKU do Produto</th><th>Operação Realizada</th><th>Detalhe da Ação</th><th>Variação (De -> Para)</th></tr></thead>
                             <tbody>${htmlLogs}</tbody>
                         </table>
                     </div>
@@ -891,13 +923,209 @@
             `; lucide.createIcons();
         }
 
-        // CSV IMPORTS E EXPORTS (MANTIDOS)
-        document.getElementById('csv-file-substituir').addEventListener('change', function(e) { if(!e.target.files[0]) return; if(!confirm("⚠️ ATENÇÃO: Substituir base?")) return; Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(), complete: async (r) => { /* Lógica mantida internamente */ products = r.data.map(d=>({codigo:d['Código'],nome:d['Descrição'],preco:parseFloat(d['Preço'])||0})); await saveDataLocally(); renderGrid(); alert("Base Substituída."); } }); });
-        document.getElementById('csv-file-adicionar').addEventListener('change', function(e) { if(!e.target.files[0]) return; Papa.parse(e.target.files[0], { header: true, skipEmptyLines: true, delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(), complete: async (r) => { r.data.forEach(d=>{ if(!products.find(p=>p.codigo===d['Código'])) products.push({codigo:d['Código'],nome:d['Descrição'],preco:parseFloat(d['Preço'])||0}); }); await saveDataLocally(); renderGrid(); alert("Novos Adicionados."); } }); });
-        function exportarCSVCompleto() { if (products.length === 0) return alert("Vazio."); const csv = Papa.unparse(products, { delimiter: ";" }); const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `export.csv`; l.click(); }
-        function abrirModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display='flex'; } function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display='none'; }
-        function gerarCSVMetaCompleto() { alert("Gerando Meta completo..."); } function gerarCSVMetaFila(tipo) { alert("Gerando Meta dividido..."); }
-        function obterImagensEmUso() { return new Set(); } async function executarLimpezaImagens() { alert("Limpeza simulada."); }
+        // ==========================================================
+        // IMPORTAÇÕES, EXPORTAÇÕES E CSV 
+        // ==========================================================
+        document.getElementById('csv-file-substituir').addEventListener('change', function(e) {
+            if(!e.target.files[0]) return;
+            if(!confirm("⚠️ ATENÇÃO: Essa ação vai APAGAR todos os produtos atuais e substituir pelo CSV. Tem certeza?")) return;
+            
+            Papa.parse(e.target.files[0], {
+                header: true, skipEmptyLines: true, delimiter: ";",
+                transformHeader: h => h.replace(/"/g, '').trim(),
+                complete: async (r) => {
+                    products = r.data.map(d => {
+                        return {
+                            id: Date.now() + Math.random(),
+                            codigo: d['Código'] || d['codigo'] || Date.now().toString(),
+                            nome: d['Descrição'] || d['nome'] || 'Produto Sem Nome',
+                            preco: parseFloat((d['Preço'] || d['preco'] || "0").replace(',', '.')) || 0,
+                            preco_custo: parseFloat((d['Preço de Custo'] || d['preco_custo'] || "0").replace(',', '.')) || 0,
+                            estoque: parseInt(d['Estoque'] || d['estoque']) || 0,
+                            situacao: d['Situação'] || d['situacao'] || 'A',
+                            categoria: d['Categoria'] || '',
+                            marca: d['Marca'] || '',
+                            gtin: d['GTIN/EAN'] || d['gtin'] || '',
+                            last_update: Date.now()
+                        };
+                    });
+                    await saveDataLocally(); renderGrid(); alert("Base Substituída com sucesso!");
+                }
+            });
+        });
+
+        document.getElementById('csv-file-adicionar').addEventListener('change', function(e) {
+            if(!e.target.files[0]) return;
+            Papa.parse(e.target.files[0], {
+                header: true, skipEmptyLines: true, delimiter: ";",
+                transformHeader: h => h.replace(/"/g, '').trim(),
+                complete: async (r) => {
+                    let adicionados = 0;
+                    r.data.forEach(d => {
+                        const cod = d['Código'] || d['codigo'];
+                        if(cod && !products.find(p => p.codigo === cod)) {
+                            products.push({
+                                id: Date.now() + Math.random(),
+                                codigo: cod,
+                                nome: d['Descrição'] || d['nome'] || 'Produto Sem Nome',
+                                preco: parseFloat((d['Preço'] || d['preco'] || "0").replace(',', '.')) || 0,
+                                preco_custo: parseFloat((d['Preço de Custo'] || d['preco_custo'] || "0").replace(',', '.')) || 0,
+                                estoque: parseInt(d['Estoque'] || d['estoque']) || 0,
+                                situacao: d['Situação'] || d['situacao'] || 'A',
+                                categoria: d['Categoria'] || '',
+                                marca: d['Marca'] || '',
+                                gtin: d['GTIN/EAN'] || d['gtin'] || '',
+                                last_update: Date.now()
+                            });
+                            adicionados++;
+                        }
+                    });
+                    await saveDataLocally(); renderGrid(); alert(`${adicionados} produtos adicionados com sucesso!`);
+                }
+            });
+        });
+
+        function exportarCSVCompleto() {
+            if (products.length === 0) return alert("Não há produtos para exportar.");
+            const exportData = products.map(p => {
+                return {
+                    "Código": p.codigo,
+                    "Descrição": p.nome,
+                    "Preço": p.preco,
+                    "Preço de Custo": p.preco_custo,
+                    "Estoque": p.estoque,
+                    "Situação": p.situacao,
+                    "Categoria": p.categoria,
+                    "Marca": p.marca,
+                    "GTIN/EAN": p.gtin
+                };
+            });
+            const csv = Papa.unparse(exportData, { delimiter: ";" });
+            const l = document.createElement("a");
+            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
+            l.download = `sucedoan_export_${new Date().getTime()}.csv`;
+            l.click();
+        }
+
+        function abrirModalExportacaoMeta() {
+            document.getElementById('meta-cat-list').innerHTML = "";
+            document.getElementById('modal-meta-export').style.display = 'flex';
+        }
+        function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
+
+        function formatarParaMeta(lista) {
+            return lista.map(p => {
+                return {
+                    "id": p.codigo,
+                    "title": p.nome,
+                    "description": p.nome,
+                    "availability": (p.estoque > 0 && p.situacao === 'A') ? "in stock" : "out of stock",
+                    "condition": "new",
+                    "price": `${p.preco} BRL`,
+                    "link": `https://sucedoan.com/produto/${p.codigo}`,
+                    "image_link": p.url_imagem && p.url_imagem.startsWith('http') ? p.url_imagem : `https://sucedoan.com/${p.url_imagem ? p.url_imagem.replace('../site/','') : ''}`,
+                    "brand": p.marca || "Sucedoan"
+                };
+            });
+        }
+
+        function downloadMetaCSV(dados, nomeArquivo) {
+            const csv = Papa.unparse(dados, { delimiter: "," });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
+            link.download = nomeArquivo; link.click();
+        }
+
+        function gerarCSVMetaCompleto() {
+            if (products.length === 0) return alert("Nenhum produto cadastrado.");
+            const dadosMeta = formatarParaMeta(products);
+            downloadMetaCSV(dadosMeta, "catalogo_meta_completo.csv");
+            fecharModalExportacaoMeta();
+        }
+
+        function gerarCSVMetaFila(tipoFiltro) {
+            const container = document.getElementById('meta-cat-list'); container.innerHTML = "";
+            let agrupado = {};
+            products.forEach(p => {
+                let chave = tipoFiltro === 'categoria' ? (p.categoria || 'Sem Categoria') : (p.marca || 'Sem Marca');
+                if (!agrupado[chave]) agrupado[chave] = [];
+                agrupado[chave].push(p);
+            });
+
+            const chaves = Object.keys(agrupado);
+            if (chaves.length === 0) return alert("Nenhum produto para exportar.");
+
+            let i = 0;
+            container.innerHTML = "<p style='font-size:12px; font-weight:bold; color:var(--info);'>Iniciando download em fila (1 por vez para não travar o navegador)...</p>";
+
+            function baixarProximo() {
+                if (i >= chaves.length) {
+                    container.innerHTML += "<p style='color:var(--success); font-weight:bold;'>Todos os arquivos foram baixados!</p>";
+                    return;
+                }
+                const chaveAtual = chaves[i];
+                const nomeArq = `meta_${tipoFiltro}_${limparTexto(chaveAtual).replace(/\s/g, '_')}.csv`;
+                downloadMetaCSV(formatarParaMeta(agrupado[chaveAtual]), nomeArq);
+                container.innerHTML += `<div style="font-size:11px;">Baixado: ${nomeArq} (${agrupado[chaveAtual].length} itens)</div>`;
+                i++;
+                setTimeout(baixarProximo, 1500); 
+            }
+            baixarProximo();
+        }
+
+        // LIMPEZA INTELIGENTE
+        function obterImagensEmUso() {
+            let inUse = new Set();
+            products.forEach(p => {
+                ['url_imagem','url_imagem_2','url_imagem_3','url_imagem_4','url_imagem_5'].forEach(f => {
+                    if (p[f] && typeof p[f] === 'string' && !p[f].startsWith('data:image')) {
+                        const parts = p[f].split('?')[0].split('/');
+                        inUse.add(parts[parts.length - 1]);
+                    }
+                });
+            });
+            return inUse;
+        }
+
+        async function executarLimpezaImagens() {
+            try {
+                mostrarAlerta("Analisando imagens no GitHub...", "aviso");
+                const imagensEmUso = obterImagensEmUso();
+                let arquivosParaDeletar = [];
+                
+                const maxFolders = 5; 
+                for(let i = 1; i <= maxFolders; i++) {
+                    const pastaImagens = i === 1 ? "site/img/produtos" : `site/img/produtos_${i}`;
+                    const arquivosNoGithub = await GitHubAPI.getFileData(pastaImagens);
+                    if (Array.isArray(arquivosNoGithub)) {
+                        const inuteisDaPasta = arquivosNoGithub.filter(arq => arq.type === 'file' && !imagensEmUso.has(arq.name));
+                        arquivosParaDeletar = arquivosParaDeletar.concat(inuteisDaPasta);
+                    }
+                }
+                
+                if (arquivosParaDeletar.length === 0) return alert("🎉 Excelente! O seu repositório de imagens já está limpo. Nenhuma imagem órfã.");
+                if (!confirm(`Foram encontradas ${arquivosParaDeletar.length} imagens no GitHub que não estão sendo usadas por nenhum produto. Deseja apagá-las para liberar espaço?`)) return;
+                
+                let deletados = 0;
+                document.getElementById('queue-status').style.display = 'flex';
+                
+                for (const arq of arquivosParaDeletar) {
+                    try { 
+                        document.getElementById('queue-status').innerHTML = `<i data-lucide="trash" size="14"></i> <span>Deletando ${deletados}/${arquivosParaDeletar.length}</span>`;
+                        await GitHubAPI.deleteFile(arq.path, arq.sha, `Limpeza Automática: Removendo imagem órfã ${arq.name}`); 
+                        deletados++; 
+                        await new Promise(r => setTimeout(r, 400)); // Delay para não estourar limite do GitHub
+                    } 
+                    catch (err) { console.error(`Falha ao deletar ${arq.name}:`, err); }
+                }
+                document.getElementById('queue-status').style.display = 'none';
+                alert(`✅ Limpeza concluída! ${deletados} imagens inúteis foram apagadas da nuvem.`);
+                closeSidebar('config-sidebar');
+            } catch (e) { 
+                alert("Erro ao executar limpeza: " + e.message); 
+                document.getElementById('queue-status').style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>
