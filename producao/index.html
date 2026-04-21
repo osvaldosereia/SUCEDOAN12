@@ -64,9 +64,10 @@
         .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
         .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; margin-top: 15px; }
         
-        .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: row; padding: 12px; gap: 12px; align-items: stretch; transition: box-shadow 0.2s, transform 0.2s; }
+        .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: row; padding: 12px; gap: 12px; align-items: stretch; transition: box-shadow 0.2s, transform 0.2s; position: relative; }
         .product-card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: #d4d4d8; }
         .product-card.inactive { opacity: 0.5; filter: grayscale(1); }
+        .product-card.is-destaque { border: 2px solid var(--warning); background: #fffbeb; }
         
         .card-mini-input { padding: 4px 8px; font-size: 11px; min-height: 28px; border-radius: 6px; background: #fafafa; border: 1px solid #e4e4e7; width: 100%; box-sizing: border-box; }
         .card-mini-input:focus { background: #ffffff; border-color: var(--info); outline: none; }
@@ -75,6 +76,7 @@
         .tags-container { position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 4px; z-index: 5; align-items: flex-start; pointer-events: none;}
         .product-tag { font-weight: 600; padding: 4px 8px; border-radius: 6px; line-height: 1.2; box-shadow: 0 2px 5px rgba(0,0,0,0.2); word-break: break-word; }
         .global-tag-pill { font-size: 9px; font-weight: 800; padding: 3px 6px; border-radius: 4px; background: #e2e8f0; color: #334155; margin-right: 4px; display: inline-block; margin-bottom: 4px;}
+        .badge-destaque { position: absolute; top: -8px; right: -8px; background: var(--warning); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 10; }
 
         /* SIDEBARS ALARGADAS PARA DESKTOP */
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
@@ -86,7 +88,7 @@
         #config-sidebar { z-index: 1012; width: 450px; }
         #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar { z-index: 1015; width: 450px; }
         #pedidos-sidebar { z-index: 1015; width: 600px; } 
-        #metricas-sidebar { z-index: 1015; width: 800px; } 
+        #metricas-sidebar, #produto-relatorio-sidebar { z-index: 1015; width: 800px; } 
         
         .sidebar-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 15px; font-weight: 900; }
@@ -139,7 +141,7 @@
 <body id="body-app">
 
     <script>
-        const STORAGE_KEY = 'sucedoan_pim_v5'; 
+        const STORAGE_KEY = 'sucedoan_pim_v6'; 
         const CONFIG_KEY = 'sucedoan_config';
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
         const MARCAS_KEY = 'sucedoan_marcas';
@@ -148,7 +150,7 @@
         
         let categoriasDoSistema = []; 
         let marcasDoSistema = [];
-        let tagsDoSistema = []; 
+        let tagsDoSistema = []; // Agora será um Array de Objetos: { nome: "X", subtags: ["Y"] }
         let logAtividades = []; 
         let filtroAtivo = { tipo: null, valor: null };
         let advancedFilters = { cat: '', sub: '', marca: '', gondola: '', prat: '', ncm: '', stock: '', validade: '', tag: '' };
@@ -170,10 +172,12 @@
             <div class="brand"><i data-lucide="shield-check" size="22" style="color:var(--info)"></i> SUCEDOAN <span>PIM PRO</span></div>
             <div id="queue-status"></div>
             
-            <button class="nav-btn" onclick="openSidebar('metricas-sidebar'); renderizarMetricas();"><i data-lucide="line-chart" size="14"></i> DASHBOARD & ESTRATÉGIA</button>
-            <button class="nav-btn success-btn" onclick="openSidebar('pedidos-sidebar')"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
+            <button class="nav-btn" onclick="openSidebar('metricas-sidebar'); renderizarMetricas();"><i data-lucide="line-chart" size="14"></i> DASHBOARD GERAL</button>
+            <button class="nav-btn success-btn" onclick="openSidebar('pedidos-sidebar')"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO / VENDA</button>
             
-            <div style="width: 1px; height: 24px; background: var(--border); margin: 0 10px;"></div> <button class="nav-btn" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias();"><i data-lucide="folder-tree" size="14"></i> CATEGORIAS</button>
+            <div style="width: 1px; height: 24px; background: var(--border); margin: 0 10px;"></div>
+
+            <button class="nav-btn" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias();"><i data-lucide="folder-tree" size="14"></i> CATEGORIAS</button>
             <button class="nav-btn" onclick="openSidebar('marcas-sidebar'); renderizarSidebarMarcas();"><i data-lucide="tag" size="14"></i> MARCAS</button>
             <button class="nav-btn" onclick="openSidebar('tags-sidebar'); renderizarSidebarTags();"><i data-lucide="hash" size="14"></i> TAGS GLOBAIS</button>
             
@@ -219,18 +223,11 @@
     <div id="modal-meta-export" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index: 10000; opacity:1;">
         <div style="background: white; padding: 24px; border-radius: 16px; width: 95%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
             <h3 style="margin: 0; font-size: 16px; color: var(--accent); display:flex; align-items:center; gap:8px;"><i data-lucide="share-2" size="18"></i> Exportar Catálogo Meta</h3>
-            
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button class="nav-btn primary" style="justify-content:center; height: 44px;" onclick="gerarCSVMetaCompleto()">
-                    <i data-lucide="database" size="16"></i> EXPORTAR TUDO (ÚNICO ARQUIVO)
-                </button>
+                <button class="nav-btn primary" style="justify-content:center; height: 44px;" onclick="gerarCSVMetaCompleto()"><i data-lucide="database" size="16"></i> EXPORTAR TUDO (ÚNICO ARQUIVO)</button>
                 <div style="display: flex; gap: 10px;">
-                    <button class="nav-btn success-btn" style="flex:1; justify-content:center; height: 40px;" onclick="gerarCSVMetaFila('categoria')">
-                        <i data-lucide="folder-output" size="14"></i> DIVIDIR POR CATEGORIA
-                    </button>
-                    <button class="nav-btn success-btn" style="flex:1; justify-content:center; height: 40px;" onclick="gerarCSVMetaFila('marca')">
-                        <i data-lucide="tags" size="14"></i> DIVIDIR POR MARCA
-                    </button>
+                    <button class="nav-btn success-btn" style="flex:1; justify-content:center; height: 40px;" onclick="gerarCSVMetaFila('categoria')"><i data-lucide="folder-output" size="14"></i> DIVIDIR POR CATEGORIA</button>
+                    <button class="nav-btn success-btn" style="flex:1; justify-content:center; height: 40px;" onclick="gerarCSVMetaFila('marca')"><i data-lucide="tags" size="14"></i> DIVIDIR POR MARCA</button>
                 </div>
             </div>
             <div id="meta-cat-list" style="display: flex; flex-direction: column; margin-top: 10px;"></div>
@@ -238,34 +235,41 @@
         </div>
     </div>
 
+    <div class="sidebar" id="produto-relatorio-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title" style="display:flex; align-items:center; gap:8px;"><i data-lucide="activity" size="18" style="color:var(--info)"></i> Relatório e Histórico do Produto</div>
+            <button class="btn-icon" onclick="closeSidebar('produto-relatorio-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body" id="produto-relatorio-container" style="background:#f1f5f9; padding: 24px;">
+            </div>
+    </div>
+
     <div class="sidebar" id="pedidos-sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title" style="display:flex; align-items:center; gap:8px;"><i data-lucide="clipboard-list" size="18" style="color:var(--success)"></i> Baixa Rápida de Pedidos (Estoque)</div>
+            <div class="sidebar-title" style="display:flex; align-items:center; gap:8px;"><i data-lucide="clipboard-list" size="18" style="color:var(--success)"></i> Processar Venda / Baixa de Estoque via Texto</div>
             <button class="btn-icon" onclick="closeSidebar('pedidos-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
         <div class="sidebar-body">
             <div class="form-section" style="flex-grow: 1; display: flex; flex-direction: column;">
                 <p style="font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 15px;">
-                    Cole o texto recebido do cliente (WhatsApp/Bling). O sistema vai ler a quantidade e abater do estoque baseado no <b>nome</b> do produto.<br><br>
-                    <i>Dica: O sistema agora ignora asteriscos do WhatsApp e tenta buscar mesmo se o nome não for 100% exato.</i>
+                    Cole o texto recebido (ex: WhatsApp/Bling). O sistema lerá a quantidade, abaterá do estoque e <b>registrará a Venda no histórico do produto</b>, informando a quantidade e o preço vendido no dia para compor os relatórios de estratégia financeira.
                 </p>
                 <textarea id="order-text-input" class="form-input" style="flex-grow: 1; min-height: 400px; font-family: monospace; font-size: 13px; line-height: 1.6; padding: 15px; background: #f8fafc;" placeholder="Exemplo do formato aceito:\n1x Bucha de Lavar Louça\n*2x Macarrão Lámen Apti*\n1 Qboa Água Sanitária 1l"></textarea>
             </div>
         </div>
         <div class="sidebar-footer">
             <button class="nav-btn success-btn" style="width:100%; height:48px; justify-content:center; font-size:13px;" onclick="processarBaixaPedidoTexto()">
-                <i data-lucide="check-square" size="16"></i> ANALISAR E ABATER ESTOQUE
+                <i data-lucide="check-square" size="16"></i> ANALISAR, REGISTRAR VENDA E ABATER ESTOQUE
             </button>
         </div>
     </div>
 
     <div class="sidebar" id="metricas-sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title" style="display:flex; align-items:center; gap:8px;"><i data-lucide="pie-chart" size="18" style="color:var(--info)"></i> Painel de Estratégia e Dados</div>
+            <div class="sidebar-title" style="display:flex; align-items:center; gap:8px;"><i data-lucide="pie-chart" size="18" style="color:var(--info)"></i> Painel Geral de Estratégia e Dados</div>
             <button class="btn-icon" onclick="closeSidebar('metricas-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
-        <div class="sidebar-body" id="metricas-container" style="background:#f1f5f9; padding: 24px;">
-            </div>
+        <div class="sidebar-body" id="metricas-container" style="background:#f1f5f9; padding: 24px;"></div>
     </div>
 
     <div class="sidebar" id="filtros-sidebar">
@@ -291,7 +295,7 @@
     </div>
 
     <div class="sidebar" id="edit-sidebar">
-        <div class="sidebar-header"><div class="sidebar-title">Edição Avançada & Mídia</div><button class="btn-icon" onclick="closeSidebar('edit-sidebar')"><i data-lucide="x" size="16"></i></button></div>
+        <div class="sidebar-header"><div class="sidebar-title">Edição Avançada do Produto</div><button class="btn-icon" onclick="closeSidebar('edit-sidebar')"><i data-lucide="x" size="16"></i></button></div>
         <div class="sidebar-body" id="sidebar-body"></div>
         <div class="sidebar-footer">
             <button class="nav-btn primary" style="flex:2; height:48px;" onclick="closeSidebar('edit-sidebar')"><i data-lucide="check" size="16"></i> CONCLUIR EDIÇÃO</button>
@@ -307,7 +311,7 @@
                 <div class="slider-group"><label title="Zoom"><i data-lucide="zoom-in" size="14"></i></label><input type="range" id="zoomRange" min="0.1" max="3" step="0.01" value="1"></div>
                 <div class="slider-group"><label title="Brilho"><i data-lucide="sun" size="14"></i></label><input type="range" id="brightnessRange" min="0.1" max="2" step="0.05" value="1"></div>
                 <div class="slider-group"><label title="Nitidez"><i data-lucide="focus" size="14"></i></label><input type="range" id="sharpenRange" min="0" max="5" step="0.1" value="0"></div>
-                <div style="font-size:11px; text-align:center; color:var(--text-secondary); margin-top:10px; background:#f4f4f5; padding:8px; border-radius:6px;">DICA PRO: Aperte <b>Ctrl+V</b> para colar uma foto direto do Google Imagens.</div>
+                <div style="font-size:11px; text-align:center; color:var(--text-secondary); margin-top:10px; background:#f4f4f5; padding:8px; border-radius:6px;">DICA PRO: Aperte <b>Ctrl+V</b> para colar uma foto direto da internet.</div>
             </div>
         </div>
         <div class="sidebar-footer">
@@ -322,16 +326,10 @@
         <div class="sidebar-body" style="gap:20px;">
             <div class="form-section">
                 <div class="section-title">Nuvem e Portabilidade (Omnichannel)</div>
-                <p style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">O sistema envia e recebe múltiplos arquivos (Produtos, Categorias, Marcas, Tags e Histórico) garantindo a integridade dos dados em qualquer computador.</p>
-                <button class="nav-btn sync-btn" style="height:44px; justify-content:center; margin-bottom: 8px;" onclick="salvarTudoNuvem()">
-                    <i data-lucide="cloud-upload" size="14"></i> 1. ENVIAR TUDO PARA O GITHUB
-                </button>
-                <button class="nav-btn" style="height:44px; justify-content:center; margin-bottom: 8px;" onclick="uploadImagens()">
-                    <i data-lucide="image-up" size="14"></i> 2. ENVIAR IMAGENS PENDENTES <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:4px;">(0)</span>
-                </button>
-                <button class="nav-btn" style="height:44px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
-                    <i data-lucide="cloud-download" size="14"></i> 3. BAIXAR DADOS DO GITHUB (ATUALIZAR PC)
-                </button>
+                <p style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">O sistema envia e recebe múltiplos arquivos (Produtos, Categorias, Marcas, Tags e Histórico) garantindo a integridade dos dados.</p>
+                <button class="nav-btn sync-btn" style="height:44px; justify-content:center; margin-bottom: 8px;" onclick="salvarTudoNuvem()"><i data-lucide="cloud-upload" size="14"></i> 1. ENVIAR TUDO PARA O GITHUB</button>
+                <button class="nav-btn" style="height:44px; justify-content:center; margin-bottom: 8px;" onclick="uploadImagens()"><i data-lucide="image-up" size="14"></i> 2. ENVIAR IMAGENS PENDENTES <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 6px; border-radius:4px; font-size:10px; margin-left:4px;">(0)</span></button>
+                <button class="nav-btn" style="height:44px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()"><i data-lucide="cloud-download" size="14"></i> 3. BAIXAR DADOS DO GITHUB (ATUALIZAR PC)</button>
             </div>
 
             <div class="form-section" style="border-top: 1px dashed var(--border); padding-top: 15px;">
@@ -342,7 +340,7 @@
                     <input type="file" id="csv-file-adicionar" accept=".csv" style="display:none">
                     <button class="nav-btn success-btn" style="height:40px; justify-content:center;" onclick="document.getElementById('csv-file-adicionar').click()">IMPORTAR: SOMAR</button>
                 </div>
-                <button class="nav-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="exportarCSVCompleto()"><i data-lucide="file-down" size="14"></i> EXPORTAR CSV BLING</button>
+                <button class="nav-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="exportarCSVCompleto()"><i data-lucide="file-down" size="14"></i> EXPORTAR CSV BLING PADRÃO</button>
                 <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()"><i data-lucide="share-2" size="14"></i> GERADOR DE CATÁLOGO META</button>
             </div>
 
@@ -364,7 +362,7 @@
     </div>
 
     <div class="sidebar" id="categorias-sidebar">
-        <div class="sidebar-header"><div class="sidebar-title">Gestão de Categorias</div><button class="btn-icon" onclick="closeSidebar('categorias-sidebar')"><i data-lucide="x" size="16"></i></button></div>
+        <div class="sidebar-header"><div class="sidebar-title">Gestão de Categorias e Subcategorias</div><button class="btn-icon" onclick="closeSidebar('categorias-sidebar')"><i data-lucide="x" size="16"></i></button></div>
         <div class="sidebar-body" id="lista-categorias-container" style="gap:10px;"></div>
         <div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaCategoria()"><i data-lucide="plus" size="14"></i> NOVA CATEGORIA PRINCIPAL</button></div>
     </div>
@@ -376,21 +374,35 @@
     </div>
 
     <div class="sidebar" id="tags-sidebar">
-        <div class="sidebar-header"><div class="sidebar-title">Classificação (Tags Globais)</div><button class="btn-icon" onclick="closeSidebar('tags-sidebar')"><i data-lucide="x" size="16"></i></button></div>
+        <div class="sidebar-header"><div class="sidebar-title">Segmentação (Tags e Subtags)</div><button class="btn-icon" onclick="closeSidebar('tags-sidebar')"><i data-lucide="x" size="16"></i></button></div>
         <div class="sidebar-body" id="lista-tags-container" style="gap:10px;"></div>
-        <div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaTag()"><i data-lucide="plus" size="14"></i> CRIAR TAG GLOBAL</button></div>
+        <div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaTag()"><i data-lucide="plus" size="14"></i> CRIAR TAG PRINCIPAL</button></div>
     </div>
 
     <script>
         // ==========================================================
         // VARIÁVEIS GLOBAIS DO PIM
         // ==========================================================
+        const STORAGE_KEY = 'sucedoan_pim_v7'; 
+        const CONFIG_KEY = 'sucedoan_config';
+        const CATEGORIAS_KEY = 'sucedoan_categorias'; 
+        const MARCAS_KEY = 'sucedoan_marcas';
+        const TAGS_KEY = 'sucedoan_tags_globais_v2'; 
+        const HISTORICO_KEY = 'sucedoan_historico_atividades';
+
         let products = [];
+        let categoriasDoSistema = []; 
+        let marcasDoSistema = [];
+        let tagsDoSistema = []; // Agora é um array de objetos: { nome: "Tag", subtags: ["Sub1", "Sub2"] }
+        let logAtividades = []; 
+        
         let currentEditingSku = null;
         let currentImageSlot = 1; 
         let imageQueue = [];
 
-        // Variáveis do Lazy Loading
+        let filtroAtivo = { tipo: null, valor: null };
+        let advancedFilters = { cat: '', sub: '', marca: '', gondola: '', prat: '', ncm: '', stock: '', validade: '', tag: '' };
+        
         let produtosFiltrados = [];
         let itemsCarregados = 0;
         const ITENS_POR_PAGINA = 24; 
@@ -404,9 +416,9 @@
         function getPrateleiraOptions(selectedValue) { let optionsHtml = '<option value="">Todas</option>'; const letras = ['A', 'B', 'C', 'D', 'E', 'F']; letras.forEach(l => { let p1 = `${l}1`; let p2 = `${l}2`; optionsHtml += `<option value="${p1}" ${selectedValue === p1 ? 'selected' : ''}>Prat ${p1}</option>`; optionsHtml += `<option value="${p2}" ${selectedValue === p2 ? 'selected' : ''}>Prat ${p2}</option>`; }); return optionsHtml; }
 
         // ==========================================================
-        // SISTEMA DE HISTÓRICO E LOGS ESTRATÉGICOS
+        // SISTEMA DE HISTÓRICO E LOGS ESTRATÉGICOS (MANTÉM VENDAS E PREÇOS)
         // ==========================================================
-        async function registrarLogAtividade(sku, acao, detalhe, valorAntigo, valorNovo) {
+        async function registrarLogAtividade(sku, acao, detalhe, valorAntigo, valorNovo, precoVenda = 0, qtdVenda = 0) {
             logAtividades.unshift({
                 id_log: Date.now(),
                 data_hora: new Date().toISOString(),
@@ -414,11 +426,12 @@
                 acao: acao,
                 detalhe: detalhe,
                 valor_antigo: valorAntigo,
-                valor_novo: valorNovo
+                valor_novo: valorNovo,
+                preco_venda: precoVenda,
+                qtd: qtdVenda
             });
             
-            if(logAtividades.length > 2000) logAtividades = logAtividades.slice(0, 2000);
-            
+            if(logAtividades.length > 2500) logAtividades = logAtividades.slice(0, 2500); // Mantém os últimos 2500 eventos
             try { await localforage.setItem(HISTORICO_KEY, logAtividades); } catch (e) {}
         }
 
@@ -474,7 +487,7 @@
         async function enqueueTask(taskName, taskFn, taskType = 'other') { await saveDataLocally(); if (taskType === 'json') syncQueue = syncQueue.filter(t => t.type !== 'json'); syncQueue.push({ name: taskName, fn: taskFn, type: taskType }); if (!isSyncing) processQueueLoop(); else { syncQueue.sort((a, b) => { if (a.type === 'json' && b.type !== 'json') return 1; if (a.type !== 'json' && b.type === 'json') return -1; return 0; }); if (syncQueue[0].type === 'image' && syncQueue.some(t => t.type === 'json') && countdownTimer > 20) startQueueCountdown(20); renderQueueStatus(); } }
 
         function sanitizeProductsForExport(prods) {
-            const camposPermitidos = [ 'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 'estoque', 'situacao', 'ncm', 'validade', 'categoria', 'subcategoria', 'gondola', 'prateleira', 'localizacao', 'tags', 'tags_globais', 'last_update', 'marca', 'embalagem' ];
+            const camposPermitidos = [ 'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 'estoque', 'situacao', 'ncm', 'validade', 'categoria', 'subcategoria', 'gondola', 'prateleira', 'localizacao', 'tags', 'tags_globais', 'destaque', 'last_update', 'marca', 'embalagem' ];
             return prods.map(p => {
                 let cleanP = {}; if (!p.id) p.id = Math.floor(Date.now() + Math.random() * 10000);
                 camposPermitidos.forEach(campo => { if (p[campo] !== undefined && p[campo] !== null) { let valor = p[campo]; if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) { const partes = valor.split('-'); if (partes[0].length === 4) valor = `${partes[2]}/${partes[1]}/${partes[0]}`; } cleanP[campo] = valor; } });
@@ -488,7 +501,7 @@
                 await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Update Produtos`);
                 await GitHubAPI.saveFile(`site/categorias.json`, categoriasDoSistema, `PIM: Update Categorias`);
                 await GitHubAPI.saveFile(`site/marcas.json`, marcasDoSistema, `PIM: Update Marcas`);
-                await GitHubAPI.saveFile(`site/tags.json`, tagsDoSistema, `PIM: Update Tags Globais`);
+                await GitHubAPI.saveFile(`site/tags.json`, tagsDoSistema, `PIM: Update Tags Globais (Hierarquia)`);
                 await GitHubAPI.saveFile(`site/historico.json`, logAtividades, `PIM: Update Logs de Estratégia`);
             }, 'json');
         }
@@ -502,7 +515,7 @@
         function searchGoogleShopping(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(nome)}`, '_blank'); }
 
         // ==========================================================
-        // PIM CORE UI & CONTROLES
+        // PIM CORE UI & CONTROLES GERAIS
         // ==========================================================
         let isFilter24hActive = false;
         function toggleFilter24h() { isFilter24hActive = !isFilter24hActive; const btn = document.getElementById('btn-24h'); if(isFilter24hActive) { btn.classList.add('primary'); } else { btn.classList.remove('primary'); } renderGrid(); }
@@ -526,7 +539,14 @@
             try { const savedTags = await localforage.getItem(TAGS_KEY); if(savedTags && Array.isArray(savedTags)) tagsDoSistema = savedTags; } catch (err) {} 
             try { const savedHist = await localforage.getItem(HISTORICO_KEY); if(savedHist && Array.isArray(savedHist)) logAtividades = savedHist; } catch (err) {}
             
+            // INTEGRIDADE E MIGRAÇÃO: Transforma arrays antigos de strings num sistema de tags organizado
             let precisaSalvar = false;
+
+            tagsDoSistema = tagsDoSistema.map(t => {
+                if (typeof t === 'string') { precisaSalvar = true; return { nome: t, subtags: [] }; }
+                return t;
+            });
+
             products.forEach(p => {
                 if (p.marca) p.marca = p.marca.toUpperCase().trim();
                 if (p.categoria) p.categoria = p.categoria.trim();
@@ -536,11 +556,12 @@
                 if (!p.tags) { p.tags = []; precisaSalvar = true; }
                 if (p.gondola === undefined) { p.gondola = ""; precisaSalvar = true; }
                 if (p.prateleira === undefined) { p.prateleira = ""; precisaSalvar = true; }
+                if (p.destaque === undefined) { p.destaque = false; precisaSalvar = true; }
             });
 
             if (precisaSalvar) { marcasDoSistema.sort((a, b) => a.localeCompare(b)); await saveDataLocally(); }
             
-            tagsDoSistema.sort((a, b) => a.localeCompare(b)); categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
+            tagsDoSistema.sort((a, b) => a.nome.localeCompare(b.nome)); categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
             renderGrid();
         }
@@ -555,10 +576,13 @@
         window.filtrarNaGrid = function(tipo, valor) { filtroAtivo = { tipo: tipo, valor: valor }; document.getElementById('search-input').value = ""; closeAllSidebars(); const banner = document.getElementById('active-filter-banner'); banner.style.display = 'flex'; document.getElementById('filter-text-display').innerText = `${tipo}: ${valor}`; renderGrid(); }
         window.limparFiltroGrid = function() { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; renderGrid(); }
 
-        function renderizarFiltrosAvancados() { document.getElementById('flt-cat').innerHTML = getOpcoesCategoria(''); document.getElementById('flt-sub').innerHTML = '<option value="">Todas</option>'; document.getElementById('flt-marca').innerHTML = getOpcoesMarca(''); document.getElementById('flt-gondola').innerHTML = getGondolaOptions(''); document.getElementById('flt-prat').innerHTML = getPrateleiraOptions(''); let optionsTag = '<option value="">Todas</option>'; [...tagsDoSistema].sort((a,b)=>a.localeCompare(b)).forEach(t => { optionsTag += `<option value="${t}">${t}</option>`; }); document.getElementById('flt-tag').innerHTML = optionsTag; }
+        function renderizarFiltrosAvancados() { document.getElementById('flt-cat').innerHTML = getOpcoesCategoria(''); document.getElementById('flt-sub').innerHTML = '<option value="">Todas</option>'; document.getElementById('flt-marca').innerHTML = getOpcoesMarca(''); document.getElementById('flt-gondola').innerHTML = getGondolaOptions(''); document.getElementById('flt-prat').innerHTML = getPrateleiraOptions(''); let optionsTag = '<option value="">Todas</option>'; [...tagsDoSistema].sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(t => { optionsTag += `<option value="${t.nome}">${t.nome}</option>`; }); document.getElementById('flt-tag').innerHTML = optionsTag; }
         function atualizarOpcoesSubcatFiltro(catVal) { document.getElementById('flt-sub').innerHTML = getOpcoesSubcategoria(catVal, ''); }
         window.aplicarFiltrosAvancados = function() { advancedFilters.cat = document.getElementById('flt-cat').value; advancedFilters.sub = document.getElementById('flt-sub').value; advancedFilters.marca = document.getElementById('flt-marca').value; advancedFilters.gondola = document.getElementById('flt-gondola').value; advancedFilters.prat = document.getElementById('flt-prat').value; advancedFilters.ncm = document.getElementById('flt-ncm').value; advancedFilters.stock = document.getElementById('flt-stock').value; advancedFilters.validade = document.getElementById('flt-val').value; advancedFilters.tag = document.getElementById('flt-tag').value; filtroAtivo = { tipo: 'avancado', valor: 'Filtros Combinados' }; document.getElementById('active-filter-banner').style.display = 'flex'; document.getElementById('filter-text-display').innerText = 'Filtros Avançados Ativos'; closeSidebar('filtros-sidebar'); renderGrid(); }
 
+        // ==========================================================
+        // LAZY LOADING E GRID DO PRODUTO (UI PRINCIPAL)
+        // ==========================================================
         function renderGrid(searchTerm = null, keepLoaded = false) {
             const gridContainer = document.getElementById('product-grid'); const mainContent = document.getElementById('main-content-pim'); const currentScroll = mainContent ? mainContent.scrollTop : 0; const oldItemsCarregados = keepLoaded ? Math.max(itemsCarregados, ITENS_POR_PAGINA) : ITENS_POR_PAGINA;
             let filtered = products;
@@ -587,7 +611,9 @@
             const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
             
             nextBatch.forEach(p => {
-                const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
+                const isDestaque = p.destaque === true;
+                const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''} ${isDestaque ? 'is-destaque' : ''}`;
+                
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 let htmlTag = ''; let tagsToRender = p.tags ? [...p.tags] : [];
                 if (tagsToRender.length > 0) { const tagsGeradas = tagsToRender.map(t => `<div class="product-tag" style="background-color: ${t.bg}; color: ${t.txt}; font-size: ${Math.max(t.tam-2, 8)}px;">${t.texto}</div>`).join(''); htmlTag = `<div class="tags-container">${tagsGeradas}</div>`; }
@@ -595,9 +621,12 @@
 
                 const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;'); const safeNomeGoogle = (p.nome || '').replace(/'/g, "\\'");
 
+                let destaqueBadgeHtml = isDestaque ? `<div class="badge-destaque" title="Produto em Destaque"><i data-lucide="star" size="14"></i></div>` : '';
+
                 card.innerHTML = `
+                    ${destaqueBadgeHtml}
                     <div style="width: 110px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
-                        <div class="card-img-wrapper" style="width:110px; height:110px; padding:5px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border); background:#fafafa;" onclick="openEditSidebar('${p.codigo}')">
+                        <div class="card-img-wrapper" style="width:110px; height:110px; padding:5px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border); background:#fafafa; position:relative;" onclick="openEditSidebar('${p.codigo}')">
                             ${htmlTag}
                             <img src="${imgUrl}" class="card-img" style="object-fit: contain; width: 100%; height: 100%; mix-blend-mode: multiply;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
                         </div>
@@ -608,18 +637,20 @@
                         <div style="display:flex; flex-direction:column; gap:2px;">
                             <div style="display:flex; gap: 4px;">
                                 <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:13px; flex-grow:1; color:var(--text-primary);" placeholder="Nome do Produto" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
-                                <button class="btn-smart" style="height:32px; width:32px; background:#f0f9ff; color:#0284c7; border-color:#bae6fd;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Analisar Concorrência"><i data-lucide="bar-chart-2" size="14"></i></button>
+                                <button class="btn-smart" style="height:32px; width:32px; background:#f0f9ff; color:#0284c7; border-color:#bae6fd;" onclick="abrirRelatorioProduto('${p.codigo}')" title="Relatório e Histórico Completo do Produto"><i data-lucide="bar-chart" size="14"></i></button>
                             </div>
-                            <div style="margin-top:2px;">${htmlTagsGlobais}</div>
+                            <div style="margin-top:2px; max-height:36px; overflow:hidden;">${htmlTagsGlobais}</div>
                         </div>
                         
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:10px; color:var(--text-secondary); font-weight:800;">EAN / GTIN</label><input type="text" class="form-input card-mini-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
-                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:10px; color:var(--text-secondary); font-weight:800;">Validade</label><input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onchange="let d=this.value.split('-'); updateField('${p.codigo}', 'validade', d[2]+'/'+d[1]+'/'+d[0])"></div>
-                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:10px; color:var(--text-secondary); font-weight:800;">Custo (R$)</label><input type="number" step="0.01" class="form-input card-mini-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
-                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:10px; color:var(--text-secondary); font-weight:800;">Venda (R$)</label><input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:900; font-size:12px; border-color:#a7f3d0; background:#f0fdf4;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
-                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:10px; color:var(--text-secondary); font-weight:800;">Categoria</label><select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">${getOpcoesCategoria(p.categoria)}</select></div>
-                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:10px; color:var(--text-secondary); font-weight:800;">Estoque Qtde</label><input type="number" step="1" class="form-input card-mini-input" style="color:var(--info); font-weight:900; border-color:#bae6fd; background:#f0f9ff;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
+                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:9px; color:var(--text-secondary); font-weight:800;">EAN / GTIN</label><input type="text" class="form-input card-mini-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
+                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:9px; color:var(--text-secondary); font-weight:800;">NCM</label><input type="text" class="form-input card-mini-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
+                            
+                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Custo (R$)</label><input type="number" step="0.01" class="form-input card-mini-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
+                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Venda (R$)</label><input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:900; border-color:#a7f3d0; background:#f0fdf4;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)"></div>
+                            
+                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Categoria</label><select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">${getOpcoesCategoria(p.categoria)}</select></div>
+                            <div style="display:flex; flex-direction:column; gap:2px;"><label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Estoque Qtde</label><input type="number" step="1" class="form-input card-mini-input" style="color:var(--info); font-weight:900; border-color:#bae6fd; background:#f0f9ff;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
                         </div>
                     </div>
                 `; gridContainer.appendChild(card); itemsCarregados++;
@@ -628,8 +659,13 @@
 
         async function updateLocalizacao(sku) { const p = products.find(x => x.codigo === sku); if(p) { p.localizacao = (p.gondola || p.prateleira) ? `${p.gondola || ''}-${p.prateleira || ''}` : "SEM LOC"; await saveDataLocally(); } }
 
+        // ==========================================================
+        // UI DE EDIÇÃO AVANÇADA DO PRODUTO (SIDEBAR)
+        // ==========================================================
         function openEditSidebar(sku) {
-            currentEditingSku = sku; const p = products.find(x => x.codigo === sku); if(!p) return; const isInactive = p.situacao === 'I'; const safeName = (p.nome||'').replace(/'/g, "\\'");
+            currentEditingSku = sku; const p = products.find(x => x.codigo === sku); if(!p) return; 
+            const isInactive = p.situacao === 'I'; const isDestaque = p.destaque === true; 
+            const safeName = (p.nome||'').replace(/'/g, "\\'");
 
             let htmlImages = '<div class="image-slots">';
             for (let i = 1; i <= 5; i++) {
@@ -641,9 +677,23 @@
             tags.forEach((t, idx) => { htmlEditorTags += `<div style="display:flex; gap: 6px; align-items: center; background: #fafafa; padding: 8px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 6px;"><input type="text" class="form-input" style="flex-grow:1; padding:8px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)"><input type="color" class="form-input" style="width: 32px; padding: 0; cursor:pointer; height:32px; border:none;" value="${t.bg}" onchange="updateTag('${p.codigo}', ${idx}, 'bg', this.value)"><input type="color" class="form-input" style="width: 32px; padding: 0; cursor:pointer; height:32px; border:none;" value="${t.txt}" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)"><input type="number" class="form-input" style="width: 60px; height:32px; padding: 6px; font-size:12px;" value="${t.tam}" onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)"><button class="btn-smart" style="height:32px; width:32px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="14"></i></button></div>`; });
             htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px; height:40px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG VISUAL (FOTO)</button>`;
 
+            // Tags Hierárquicas (Checks no Cadastro)
             let tagsGlobaisHtml = tagsDoSistema.map(tg => {
-                const checked = (p.tags_globais || []).includes(tg) ? 'checked' : '';
-                return `<label style="display:flex; align-items:center; gap:8px; font-size:12px; cursor:pointer; padding: 8px; background: #f8fafc; border-radius: 6px; border: 1px solid var(--border);"><input type="checkbox" value="${tg}" onchange="updateTagsGlobaisProduto('${p.codigo}', this.value, this.checked)" ${checked}> ${tg}</label>`;
+                let html = `<div style="margin-bottom:10px; background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--border);">`;
+                const checkedTag = (p.tags_globais || []).includes(tg.nome) ? 'checked' : '';
+                html += `<label style="display:flex; align-items:center; gap:8px; font-weight:800; font-size:12px; cursor:pointer; color:var(--info);"><input type="checkbox" value="${tg.nome}" onchange="updateTagsGlobaisProduto('${p.codigo}', this.value, this.checked)" ${checkedTag}> ${tg.nome}</label>`;
+                
+                if (tg.subtags && tg.subtags.length > 0) {
+                    html += `<div style="padding-left: 24px; display:flex; flex-direction:column; gap:6px; margin-top:8px;">`;
+                    tg.subtags.forEach(sub => {
+                        const tagSub = `${tg.nome} > ${sub}`;
+                        const checkedSub = (p.tags_globais || []).includes(tagSub) ? 'checked' : '';
+                        html += `<label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer; font-weight:600;"><input type="checkbox" value="${tagSub}" onchange="updateTagsGlobaisProduto('${p.codigo}', this.value, this.checked)" ${checkedSub}> ${sub}</label>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+                return html;
             }).join('');
 
             const sidebarBody = document.getElementById('sidebar-body');
@@ -656,11 +706,23 @@
                 <div class="form-section"><div class="section-title">Apresentação para o Cliente</div>
                     <div class="form-group"><label class="form-label">Nome Completo</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:800; font-size:14px;" value="${(p.nome || '').replace(/"/g, '&quot;')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" style="height:44px; width:44px;" onclick="searchGoogleHD('${safeName}')" title="Buscar Imagens Alta Definição"><i data-lucide="image" size="18"></i></button></div></div>
                     <div class="form-group"><label class="form-label">Embalagem (Ex: 100ml, 5kg)</label><input type="text" class="form-input" value="${p.embalagem || ''}" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
-                    <div class="form-group" style="margin-top:10px;"><label class="form-label">Estratégia de Filtros (Tags Globais)</label><div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px;">${tagsGlobaisHtml || '<p style="font-size:11px; color:var(--text-secondary);">Nenhuma tag global criada no menu lateral.</p>'}</div></div>
+                    <div class="form-group"><label class="form-label">NCM Fiscal</label><input type="text" class="form-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
+                    
+                    <div class="form-grid" style="margin-top:10px;">
+                        <div class="form-group"><label class="form-label">Categoria Principal</label><select class="form-input" onchange="atualizarOpcoesSubcatEdicao('${p.codigo}', this.value)">${getOpcoesCategoria(p.categoria)}</select></div>
+                        <div class="form-group"><label class="form-label">Subcategoria</label><select class="form-input" id="edit-subcat" onchange="updateField('${p.codigo}', 'subcategoria', this.value)">${getOpcoesSubcategoria(p.categoria, p.subcategoria)}</select></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <div class="section-title">Segmentação & Destaque</div>
+                    <button class="nav-btn ${isDestaque ? 'warning' : ''}" style="width:100%; height:44px; justify-content:center; margin-bottom:10px; font-size:13px;" onclick="toggleDestaque('${p.codigo}')"><i data-lucide="star" size="16"></i> ${isDestaque ? 'REMOVER DESTAQUE' : 'MARCAR COMO PRODUTO DESTAQUE NO SITE'}</button>
+                    <label class="form-label">Tags e Subtags Globais</label>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">${tagsGlobaisHtml || '<p style="font-size:11px; color:var(--text-secondary);">Nenhuma tag global criada no menu lateral.</p>'}</div>
                 </div>
 
                 <div class="form-section"><div class="section-title">Gerenciador de Mídia</div>${htmlImages}</div>
-                <div class="form-section"><div class="form-group full"><label class="form-label">Badges Promocionais (Na Foto)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div></div>
+                <div class="form-section"><div class="form-group full"><label class="form-label">Badges Promocionais (Tags de Foto)</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div></div>
                 
                 <div class="form-section"><div class="section-title">Estoque e Logística</div><div class="form-grid-3">
                         <div class="form-group"><label class="form-label">Estoque Fisico</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
@@ -675,12 +737,24 @@
             lucide.createIcons(); openSidebar('edit-sidebar');
         }
 
+        window.atualizarOpcoesSubcatEdicao = function(sku, catNome) {
+            updateField(sku, 'categoria', catNome);
+            updateField(sku, 'subcategoria', ''); 
+            document.getElementById('edit-subcat').innerHTML = getOpcoesSubcategoria(catNome, '');
+        };
+
         window.updateTagsGlobaisProduto = async function(sku, tagNome, isChecked) {
             const p = products.find(x => x.codigo === sku); if(!p) return;
             if(!p.tags_globais) p.tags_globais = [];
             if(isChecked && !p.tags_globais.includes(tagNome)) p.tags_globais.push(tagNome);
             else if(!isChecked) p.tags_globais = p.tags_globais.filter(t => t !== tagNome);
             p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true);
+        }
+
+        window.toggleDestaque = async function(sku) {
+            const p = products.find(x => x.codigo === sku); if (!p) return; 
+            p.destaque = !p.destaque; p.last_update = Date.now(); 
+            await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); 
         }
 
         async function updateField(sku, field, value) { 
@@ -694,14 +768,13 @@
                 let acao = `Alteração de ${field.toUpperCase()}`;
                 await registrarLogAtividade(p.codigo, acao, `Modificado via painel`, oldVal, finalVal);
             }
-
             await saveDataLocally(); 
         }
         
         async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("SKU em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(null, true); } }
         async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await registrarLogAtividade(p.codigo, "Status Alterado", "Site", p.situacao === 'A'?'Inativo':'Ativo', p.situacao); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
         async function deleteCurrentProduct() { if(!currentEditingSku) return; if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== currentEditingSku); await saveDataLocally(); closeSidebar('edit-sidebar'); renderGrid(null, true); }
-        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); await registrarLogAtividade(sku, "Criação de Produto", "Painel", "", ""); await saveDataLocally(); renderGrid(); openEditSidebar(sku); }
+        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp, destaque: false }); await registrarLogAtividade(sku, "Criação de Produto", "Painel", "", ""); await saveDataLocally(); renderGrid(); openEditSidebar(sku); }
         function searchGoogleHD(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); }
 
         const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
@@ -748,17 +821,14 @@
 
         async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
 
-        // MÓDULOS DE GESTÃO - Marcas, Categorias e Tags
+        // ==========================================================
+        // MÓDULOS DE GESTÃO - CATEGORIAS, MARCAS E TAGS HIERÁRQUICAS
+        // ==========================================================
         function renderizarSidebarMarcas() { const container = document.getElementById('lista-marcas-container'); container.innerHTML = ""; marcasDoSistema.sort((a, b) => a.localeCompare(b)); marcasDoSistema.forEach((marca, index) => { container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color:var(--accent); font-size:13px; flex-grow:1;">${marca}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px;" onclick="editarMarca(${index})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerMarca(${index})"><i data-lucide="trash-2" size="12"></i></button></div></div></div>`; }); lucide.createIcons(); }
-        async function criarNovaMarca() { const nome = prompt("Nova Marca:"); if (!nome) return; const nm = nome.toUpperCase().trim(); if(marcasDoSistema.includes(nm)) return; marcasDoSistema.push(nm); await localforage.setItem(MARCAS_KEY, marcasDoSistema); renderizarSidebarMarcas(); renderGrid(null, true); }
-        async function editarMarca(index) { const novoNome = prompt("Renomear:", marcasDoSistema[index]); if (!novoNome) return; const old = marcasDoSistema[index]; const nm = novoNome.toUpperCase().trim(); marcasDoSistema[index] = nm; products.forEach(p => { if(p.marca === old) p.marca = nm; }); await saveDataLocally(); await localforage.setItem(MARCAS_KEY, marcasDoSistema); renderizarSidebarMarcas(); renderGrid(null, true); }
-        async function removerMarca(index) { if (!confirm(`Apagar "${marcasDoSistema[index]}"?`)) return; const old = marcasDoSistema[index]; marcasDoSistema.splice(index, 1); products.forEach(p => { if(p.marca === old) p.marca = ""; }); await saveDataLocally(); await localforage.setItem(MARCAS_KEY, marcasDoSistema); renderizarSidebarMarcas(); renderGrid(null, true); }
+        async function criarNovaMarca() { const nome = prompt("Nova Marca:"); if (!nome) return; const nm = nome.toUpperCase().trim(); if(marcasDoSistema.includes(nm)) return; marcasDoSistema.push(nm); await saveDataLocally(); renderizarSidebarMarcas(); renderGrid(null, true); }
+        async function editarMarca(index) { const novoNome = prompt("Renomear:", marcasDoSistema[index]); if (!novoNome) return; const old = marcasDoSistema[index]; const nm = novoNome.toUpperCase().trim(); marcasDoSistema[index] = nm; products.forEach(p => { if(p.marca === old) p.marca = nm; }); await saveDataLocally(); renderizarSidebarMarcas(); renderGrid(null, true); }
+        async function removerMarca(index) { if (!confirm(`Apagar "${marcasDoSistema[index]}"?`)) return; const old = marcasDoSistema[index]; marcasDoSistema.splice(index, 1); products.forEach(p => { if(p.marca === old) p.marca = ""; }); await saveDataLocally(); renderizarSidebarMarcas(); renderGrid(null, true); }
         function getOpcoesMarca(marcaSelecionada) { let options = '<option value="">Sel. Marca</option>'; [...marcasDoSistema].sort((a,b)=>a.localeCompare(b)).forEach(m => { let selected = (m === marcaSelecionada) ? 'selected' : ''; options += `<option value="${m}" ${selected}>${m}</option>`; }); return options; }
-
-        function renderizarSidebarTags() { const container = document.getElementById('lista-tags-container'); container.innerHTML = ""; tagsDoSistema.sort((a, b) => a.localeCompare(b)); tagsDoSistema.forEach((tag, index) => { container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color:var(--info); font-size:13px; flex-grow:1;">${tag}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px; color:#0284c7;" onclick="filtrarNaGrid('tag', '${tag}')"><i data-lucide="eye" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px;" onclick="editarTag(${index})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerTagGlobalCRUD(${index})"><i data-lucide="trash-2" size="12"></i></button></div></div></div>`; }); lucide.createIcons(); }
-        async function criarNovaTag() { const nome = prompt("Nova Tag Global:"); if (!nome) return; const nm = nome.trim().toUpperCase(); if(tagsDoSistema.includes(nm)) return; tagsDoSistema.push(nm); await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true); }
-        async function editarTag(index) { const novoNome = prompt("Renomear tag:", tagsDoSistema[index]); if (!novoNome) return; const old = tagsDoSistema[index]; const nm = novoNome.toUpperCase().trim(); tagsDoSistema[index] = nm; products.forEach(p => { if(p.tags_globais && p.tags_globais.includes(old)) p.tags_globais = p.tags_globais.map(t => t === old ? nm : t); }); await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true); }
-        async function removerTagGlobalCRUD(index) { if (!confirm(`Apagar tag "${tagsDoSistema[index]}" de todos os produtos?`)) return; const old = tagsDoSistema[index]; tagsDoSistema.splice(index, 1); products.forEach(p => { if(p.tags_globais && p.tags_globais.includes(old)) p.tags_globais = p.tags_globais.filter(t => t !== old); }); await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true); }
 
         function renderizarSidebarCategorias() { const container = document.getElementById('lista-categorias-container'); container.innerHTML = ""; categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome)); categoriasDoSistema.forEach((cat, indexCat) => { let htmlSub = ''; if (cat.subcategorias && cat.subcategorias.length > 0) { htmlSub = cat.subcategorias.map((sub, indexSub) => `<div style="display:flex; justify-content:space-between; align-items:center; background:#f4f4f5; padding:6px 10px; border-radius:6px; margin-top:4px; font-size:11px;"><span>└ ${sub}</span><div style="display:flex; gap:4px;"><button class="btn-smart" style="height:24px; width:24px;" onclick="editarSubcategoria(${indexCat}, ${indexSub})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removerSubcategoria(${indexCat}, ${indexSub})"><i data-lucide="trash-2" size="12"></i></button></div></div>`).join(''); } container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px;"><strong style="color:var(--accent); font-size:13px; flex-grow:1;">${cat.nome}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px; color:#0284c7;" onclick="filtrarNaGrid('categoria', '${cat.nome.replace(/'/g, "\\'")}')"><i data-lucide="eye" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px;" onclick="editarCategoria(${indexCat})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerCategoria(${indexCat})"><i data-lucide="trash-2" size="12"></i></button></div></div><div style="margin-bottom: 8px;">${htmlSub}</div><button class="nav-btn" style="width:100%; height:32px; font-size:10px; justify-content:center;" onclick="criarNovaSubcategoria(${indexCat})"><i data-lucide="plus" size="12"></i> ADICIONAR SUBCATEGORIA</button></div>`; }); lucide.createIcons(); }
         async function criarNovaCategoria() { const nome = prompt("Nova Categoria:"); if (!nome) return; if(categoriasDoSistema.find(c => c.nome.toLowerCase() === nome.toLowerCase().trim())) return; categoriasDoSistema.push({ nome: nome.trim(), subcategorias: [] }); await saveDataLocally(); renderizarSidebarCategorias(); }
@@ -769,39 +839,51 @@
         async function removerSubcategoria(indexCat, indexSub) { const old = categoriasDoSistema[indexCat].subcategorias[indexSub]; categoriasDoSistema[indexCat].subcategorias.splice(indexSub, 1); products.forEach(p => { if(p.categoria === categoriasDoSistema[indexCat].nome && p.subcategoria === old) p.subcategoria = ""; }); await saveDataLocally(); renderizarSidebarCategorias(); renderGrid(null, true); }
         function getOpcoesCategoria(cat) { let options = '<option value="">Sel. Categoria</option>'; [...categoriasDoSistema].sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(c => { let selected = (c.nome === cat) ? 'selected' : ''; options += `<option value="${c.nome}" ${selected}>${c.nome}</option>`; }); return options; }
         function getOpcoesSubcategoria(cat, subcat) { let options = '<option value="">Sel. Subcat</option>'; if (!cat) return options; const catObj = categoriasDoSistema.find(c => c.nome === cat); if (catObj && catObj.subcategorias) { catObj.subcategorias.forEach(s => { let selected = (s === subcat) ? 'selected' : ''; options += `<option value="${s}" ${selected}>${s}</option>`; }); } return options; }
-        window.mudarCategoriaDoProduto = async function(sku, novaCategoria) { updateField(sku, 'categoria', novaCategoria); updateField(sku, 'subcategoria', ''); }
+        
+        // Tags Hierárquicas
+        function renderizarSidebarTags() { 
+            const container = document.getElementById('lista-tags-container'); container.innerHTML = ""; 
+            tagsDoSistema.sort((a, b) => a.nome.localeCompare(b.nome)); 
+            tagsDoSistema.forEach((tag, indexCat) => { 
+                let htmlSub = ''; 
+                if (tag.subtags && tag.subtags.length > 0) { 
+                    htmlSub = tag.subtags.map((sub, indexSub) => `<div style="display:flex; justify-content:space-between; align-items:center; background:#f0f9ff; padding:6px 10px; border-radius:6px; margin-top:4px; font-size:11px;"><span>└ ${sub}</span><div style="display:flex; gap:4px;"><button class="btn-smart" style="height:24px; width:24px;" onclick="editarSubtag(${indexCat}, ${indexSub})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removerSubtag(${indexCat}, ${indexSub})"><i data-lucide="trash-2" size="12"></i></button></div></div>`).join(''); 
+                } 
+                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px;"><strong style="color:var(--info); font-size:13px; flex-grow:1;">${tag.nome}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px; color:#0284c7;" onclick="filtrarNaGrid('tag', '${tag.nome.replace(/'/g, "\\'")}')"><i data-lucide="eye" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px;" onclick="editarTag(${indexCat})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerTagGlobalCRUD(${indexCat})"><i data-lucide="trash-2" size="12"></i></button></div></div><div style="margin-bottom: 8px;">${htmlSub}</div><button class="nav-btn" style="width:100%; height:32px; font-size:10px; justify-content:center;" onclick="criarNovaSubtag(${indexCat})"><i data-lucide="plus" size="12"></i> ADICIONAR SUBTAG</button></div>`; 
+            }); 
+            lucide.createIcons(); 
+        }
+
+        async function criarNovaTag() { const nome = prompt("Nova Tag Principal:"); if (!nome) return; const nm = nome.trim().toUpperCase(); if(tagsDoSistema.find(t => t.nome === nm)) return; tagsDoSistema.push({ nome: nm, subtags: [] }); await saveDataLocally(); renderizarSidebarTags(); }
+        async function editarTag(index) { const novoNome = prompt("Renomear Tag:", tagsDoSistema[index].nome); if (!novoNome) return; const old = tagsDoSistema[index].nome; const nm = novoNome.toUpperCase().trim(); tagsDoSistema[index].nome = nm; products.forEach(p => { if(p.tags_globais) p.tags_globais = p.tags_globais.map(t => t === old ? nm : (t.startsWith(`${old} > `) ? t.replace(`${old} > `, `${nm} > `) : t)); }); await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true); }
+        async function removerTagGlobalCRUD(index) { if (!confirm(`Apagar tag "${tagsDoSistema[index].nome}" e suas subtags de todos os produtos?`)) return; const old = tagsDoSistema[index].nome; tagsDoSistema.splice(index, 1); products.forEach(p => { if(p.tags_globais) p.tags_globais = p.tags_globais.filter(t => t !== old && !t.startsWith(`${old} > `)); }); await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true); }
+        
+        async function criarNovaSubtag(indexTag) { const nome = prompt("Nova Subtag:"); if (!nome) return; const nm = nome.trim().toUpperCase(); if (!tagsDoSistema[indexTag].subtags) tagsDoSistema[indexTag].subtags = []; if(tagsDoSistema[indexTag].subtags.includes(nm)) return; tagsDoSistema[indexTag].subtags.push(nm); await saveDataLocally(); renderizarSidebarTags(); }
+        async function editarSubtag(indexTag, indexSub) { const old = tagsDoSistema[indexTag].subtags[indexSub]; const nome = prompt("Renomear Subtag:", old); if (!nome) return; const nm = nome.toUpperCase().trim(); tagsDoSistema[indexTag].subtags[indexSub] = nm; const tagPai = tagsDoSistema[indexTag].nome; const oldStr = `${tagPai} > ${old}`; const newStr = `${tagPai} > ${nm}`; products.forEach(p => { if(p.tags_globais) p.tags_globais = p.tags_globais.map(t => t === oldStr ? newStr : t); }); await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true); }
+        async function removerSubtag(indexTag, indexSub) { const old = tagsDoSistema[indexTag].subtags[indexSub]; const tagPai = tagsDoSistema[indexTag].nome; const oldStr = `${tagPai} > ${old}`; tagsDoSistema[indexTag].subtags.splice(indexSub, 1); products.forEach(p => { if(p.tags_globais) p.tags_globais = p.tags_globais.filter(t => t !== oldStr); }); await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true); }
 
         // ==========================================================
-        // MÓDULO: BAIXAR PEDIDO POR TEXTO (INTELIGENTE)
+        // MÓDULO: BAIXAR PEDIDO POR TEXTO (INTELIGENTE E COM REGISTRO DE VENDA)
         // ==========================================================
         async function processarBaixaPedidoTexto() {
             const texto = document.getElementById('order-text-input').value;
             if(!texto) return alert("Cole o texto do pedido primeiro.");
 
             const linhas = texto.split('\n');
-            let encontrados = 0; 
-            let falhas = []; 
-            let infoBaixa = [];
+            let encontrados = 0; let falhas = []; let infoBaixa = [];
 
             linhas.forEach(linha => {
-                // Remove asteriscos do WhatsApp e limpa espaços inúteis nas pontas
                 let linhaLimpa = linha.replace(/\*/g, '').trim();
                 if(!linhaLimpa) return;
-
-                // Captura: (número) seguido opcionalmente de 'x', seguido de espaços, e o resto da linha (nome do produto)
                 const match = linhaLimpa.match(/^(\d+)\s*[xX]?\s+(.+)$/i);
                 
                 if(match) {
                     const qtd = parseInt(match[1]); 
-                    let nomeProcurado = match[2].trim().toLowerCase();
-                    
-                    // Remove eventuais traços ou pontos soltos no final da string
-                    nomeProcurado = nomeProcurado.replace(/[-.\s]+$/, '');
+                    let nomeProcurado = match[2].trim().toLowerCase().replace(/[-.\s]+$/, '');
 
                     const p = products.find(prod => {
                         if(!prod.nome) return false;
                         const nomeSistema = prod.nome.trim().toLowerCase();
-                        // Tenta achar exatamente o nome ou se um contêm parte significativa do outro
                         return nomeSistema === nomeProcurado || nomeProcurado.includes(nomeSistema) || nomeSistema.includes(nomeProcurado);
                     });
 
@@ -810,35 +892,99 @@
                         p.estoque = Math.max(0, estoqueAntigo - qtd);
                         p.last_update = Date.now();
                         encontrados++;
-                        infoBaixa.push({ sku: p.codigo, de: estoqueAntigo, para: p.estoque, nome: p.nome, qtd: qtd });
-                    } else { 
-                        falhas.push(match[2]); 
-                    }
+                        infoBaixa.push({ sku: p.codigo, de: estoqueAntigo, para: p.estoque, nome: p.nome, qtd: qtd, preco_venda: p.preco });
+                    } else { falhas.push(match[2]); }
                 }
             });
 
             if(encontrados > 0) {
-                // Registrar histórico de cada baixa efetuada
+                // Registrar histórico de cada baixa efetuada COM os dados financeiros
                 for(const b of infoBaixa) { 
-                    await registrarLogAtividade(b.sku, "Venda / Baixa via Texto", `Pedido: -${b.qtd} unid.`, b.de, b.para); 
+                    await registrarLogAtividade(b.sku, "Venda Realizada", `Baixa via Pedido de Texto`, b.de, b.para, b.preco_venda, b.qtd); 
                 }
                 await saveDataLocally(); renderGrid();
                 
                 if(falhas.length > 0) {
                     alert(`✅ ${encontrados} itens atualizados com sucesso!\n\n⚠️ Atenção: ${falhas.length} itens não foram encontrados e foram ignorados. Verifique se o nome confere.`);
-                    console.warn("Estes produtos não foram encontrados na sua base de dados:", falhas);
-                } else {
-                    alert(`✅ Sucesso Absoluto! Todos os ${encontrados} itens foram encontrados e o estoque foi abatido.`);
-                }
+                    console.warn("Produtos não encontrados na base de dados:", falhas);
+                } else { alert(`✅ Sucesso Absoluto! Todos os ${encontrados} itens foram encontrados e o estoque foi abatido.`); }
                 
                 closeSidebar('pedidos-sidebar'); document.getElementById('order-text-input').value = "";
-            } else { 
-                alert("❌ Não encontrei nenhum produto. O sistema tentou procurar nomes próximos, mas nada combinou com o texto fornecido."); 
-            }
+            } else { alert("❌ Não encontrei nenhum produto. Tentei buscar por semelhança, mas nada combinou com o texto fornecido."); }
         }
 
         // ==========================================================
-        // MÓDULO: DASHBOARD E ESTRATÉGIAS 
+        // MÓDULO: RELATÓRIO INDIVIDUAL DO PRODUTO (NOVO)
+        // ==========================================================
+        window.abrirRelatorioProduto = function(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            
+            const logsProd = logAtividades.filter(l => l.sku === sku);
+            const vendas = logsProd.filter(l => l.acao === 'Venda Realizada');
+            
+            let unidadesVendidas = 0; let receitaTotal = 0; let menorPreco = Infinity; let maiorPreco = 0;
+
+            vendas.forEach(v => {
+                const qtd = v.qtd || 0; const preco = v.preco_venda || 0;
+                unidadesVendidas += qtd; receitaTotal += (qtd * preco);
+                if (preco < menorPreco && preco > 0) menorPreco = preco;
+                if (preco > maiorPreco) maiorPreco = preco;
+            });
+
+            if (menorPreco === Infinity) menorPreco = 0;
+            const precoMedio = unidadesVendidas > 0 ? receitaTotal / unidadesVendidas : 0;
+            
+            let htmlLogs = logsProd.length > 0 ? logsProd.map(l => {
+                const data = new Date(l.data_hora).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+                let highlight = l.acao.includes('Venda') ? 'color:var(--success); font-weight:bold;' : '';
+                return `<tr><td>${data}</td><td style="${highlight}">${l.acao}</td><td>${l.detalhe}</td><td>${l.valor_antigo||''} ➔ ${l.valor_novo||''}</td><td>${l.qtd ? l.qtd+' unid' : '-'}</td><td>${l.preco_venda ? 'R$ '+l.preco_venda : '-'}</td></tr>`;
+            }).join('') : '<tr><td colspan="6" style="text-align:center;">Nenhum histórico registrado para este produto ainda.</td></tr>';
+
+            document.getElementById('produto-relatorio-container').innerHTML = `
+                <div style="background:#fff; padding:20px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px; display:flex; gap:20px; align-items:center;">
+                    <img src="${p.url_imagem || 'https://placehold.co/100?text=SEM+FOTO'}" style="width:80px; height:80px; object-fit:contain; border-radius:8px; border:1px solid var(--border);">
+                    <div>
+                        <h2 style="margin:0 0 5px 0; font-size:18px;">${p.nome}</h2>
+                        <div style="font-size:12px; color:var(--text-secondary);">SKU: <b>${p.codigo}</b> | Estoque Atual: <b>${p.estoque}</b> | Preço Atual: <b>R$ ${p.preco}</b></div>
+                    </div>
+                </div>
+
+                <div class="section-title">Análise Financeira de Vendas</div>
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:15px; margin-bottom: 25px; margin-top:10px;">
+                    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid var(--border);">
+                        <div style="font-size:10px; color:var(--text-secondary); font-weight:800;">UNIDADES VENDIDAS</div>
+                        <div style="font-size:20px; font-weight:900; color:var(--accent);">${unidadesVendidas}</div>
+                    </div>
+                    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid var(--border);">
+                        <div style="font-size:10px; color:var(--text-secondary); font-weight:800;">RECEITA GERADA</div>
+                        <div style="font-size:20px; font-weight:900; color:var(--success);">R$ ${receitaTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                    </div>
+                    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid var(--border);">
+                        <div style="font-size:10px; color:var(--text-secondary); font-weight:800;">PREÇO MÉDIO VENDIDO</div>
+                        <div style="font-size:20px; font-weight:900; color:var(--info);">R$ ${precoMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                    </div>
+                    <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid var(--border);">
+                        <div style="font-size:10px; color:var(--text-secondary); font-weight:800;">MAIOR / MENOR PREÇO</div>
+                        <div style="font-size:14px; font-weight:900; color:var(--text-primary); margin-top:5px;">↑ R$ ${maiorPreco} | ↓ R$ ${menorPreco}</div>
+                    </div>
+                </div>
+
+                <div class="section-title">Timeline do Produto</div>
+                <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background:#fff; margin-top:10px;">
+                    <table class="data-table">
+                        <thead style="position:sticky; top:0; z-index:10;">
+                            <tr><th>Data</th><th>Ação / Evento</th><th>Detalhe</th><th>Alteração (Variação)</th><th>Qtd Venda</th><th>Preço Venda</th></tr>
+                        </thead>
+                        <tbody>${htmlLogs}</tbody>
+                    </table>
+                </div>
+            `;
+            openSidebar('produto-relatorio-sidebar');
+        }
+
+        // ==========================================================
+        // MÓDULO: DASHBOARD E ESTRATÉGIAS GERAL
         // ==========================================================
         function renderizarMetricas() {
             const container = document.getElementById('metricas-container');
@@ -912,7 +1058,7 @@
                 </div>
 
                 <div class="form-section" style="background:#fff; padding:20px; border-radius:12px; border:1px solid var(--border);">
-                    <div class="section-title"><i data-lucide="history" size="16"></i> Histórico Recente de Operações (Preços, Status e Pedidos)</div>
+                    <div class="section-title"><i data-lucide="history" size="16"></i> Histórico Recente Geral de Operações</div>
                     <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; margin-top:10px;">
                         <table class="data-table">
                             <thead><tr><th>Data/Hora</th><th>SKU do Produto</th><th>Operação Realizada</th><th>Detalhe da Ação</th><th>Variação (De -> Para)</th></tr></thead>
@@ -924,7 +1070,7 @@
         }
 
         // ==========================================================
-        // IMPORTAÇÕES, EXPORTAÇÕES E CSV 
+        // IMPORTAÇÕES E EXPORTAÇÕES (CSV COMPLETO BLING E META)
         // ==========================================================
         document.getElementById('csv-file-substituir').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
@@ -946,6 +1092,9 @@
                             categoria: d['Categoria'] || '',
                             marca: d['Marca'] || '',
                             gtin: d['GTIN/EAN'] || d['gtin'] || '',
+                            ncm: d['NCM'] || d['ncm'] || '',
+                            url_imagem: d['URL Imagem 1'] || d['url_imagem'] || '',
+                            url_imagem_2: d['URL Imagem 2'] || '',
                             last_update: Date.now()
                         };
                     });
@@ -975,6 +1124,9 @@
                                 categoria: d['Categoria'] || '',
                                 marca: d['Marca'] || '',
                                 gtin: d['GTIN/EAN'] || d['gtin'] || '',
+                                ncm: d['NCM'] || d['ncm'] || '',
+                                url_imagem: d['URL Imagem 1'] || d['url_imagem'] || '',
+                                url_imagem_2: d['URL Imagem 2'] || '',
                                 last_update: Date.now()
                             });
                             adicionados++;
@@ -987,26 +1139,42 @@
 
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Não há produtos para exportar.");
+            
+            // MAPA DE EXPORTAÇÃO EXATO PADRÃO BLING ERP
             const exportData = products.map(p => {
                 return {
-                    "Código": p.codigo,
-                    "Descrição": p.nome,
-                    "Preço": p.preco,
-                    "Preço de Custo": p.preco_custo,
-                    "Estoque": p.estoque,
-                    "Situação": p.situacao,
-                    "Categoria": p.categoria,
-                    "Marca": p.marca,
-                    "GTIN/EAN": p.gtin
+                    "Código": p.codigo || "",
+                    "Descrição": p.nome || "",
+                    "Unidade": "UN",
+                    "Situação": p.situacao === 'I' ? 'Inativo' : 'Ativo',
+                    "Preço": p.preco || 0,
+                    "Preço de Custo": p.preco_custo || 0,
+                    "Peso líquido": "",
+                    "Peso bruto": "",
+                    "Estoque mínimo": "",
+                    "Estoque máximo": "",
+                    "GTIN/EAN": p.gtin || "",
+                    "NCM": p.ncm || "",
+                    "Marca": p.marca || "",
+                    "Categoria": p.categoria || "",
+                    "Estoque": p.estoque || 0,
+                    "URL Imagem 1": p.url_imagem || "",
+                    "URL Imagem 2": p.url_imagem_2 || "",
+                    "URL Imagem 3": p.url_imagem_3 || "",
+                    "URL Imagem 4": p.url_imagem_4 || "",
+                    "URL Imagem 5": p.url_imagem_5 || ""
                 };
             });
             const csv = Papa.unparse(exportData, { delimiter: ";" });
             const l = document.createElement("a");
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' }));
-            l.download = `sucedoan_export_${new Date().getTime()}.csv`;
+            l.download = `bling_export_${new Date().getTime()}.csv`;
             l.click();
         }
 
+        // ==========================================================
+        // EXPORTADOR META CATALOG (INTEGRAL MANTIDO)
+        // ==========================================================
         function abrirModalExportacaoMeta() {
             document.getElementById('meta-cat-list').innerHTML = "";
             document.getElementById('modal-meta-export').style.display = 'flex';
@@ -1073,7 +1241,9 @@
             baixarProximo();
         }
 
-        // LIMPEZA INTELIGENTE
+        // ==========================================================
+        // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB
+        // ==========================================================
         function obterImagensEmUso() {
             let inUse = new Set();
             products.forEach(p => {
@@ -1114,7 +1284,7 @@
                         document.getElementById('queue-status').innerHTML = `<i data-lucide="trash" size="14"></i> <span>Deletando ${deletados}/${arquivosParaDeletar.length}</span>`;
                         await GitHubAPI.deleteFile(arq.path, arq.sha, `Limpeza Automática: Removendo imagem órfã ${arq.name}`); 
                         deletados++; 
-                        await new Promise(r => setTimeout(r, 400)); // Delay para não estourar limite do GitHub
+                        await new Promise(r => setTimeout(r, 400)); 
                     } 
                     catch (err) { console.error(`Falha ao deletar ${arq.name}:`, err); }
                 }
