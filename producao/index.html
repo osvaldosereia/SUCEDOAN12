@@ -400,7 +400,7 @@
             return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
         }
 
-        // Funções de Pesquisa
+        // Funções de Pesquisa no Google
         window.searchGoogleNCM = function(nome) { 
             if(!nome) return; 
             window.open(`https://www.google.com/search?q=NCM+${encodeURIComponent(nome)}`, '_blank'); 
@@ -413,6 +413,7 @@
             if(!nome) return; 
             window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(nome)}`, '_blank'); 
         }
+
         window.searchYoutube = function(nome) { 
             if(!nome) return; 
             window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome)}`, '_blank'); 
@@ -676,7 +677,7 @@
             try { 
                 const c = await localforage.getItem(CATEGORIAS_KEY); 
                 if(c && Array.isArray(c)) {
-                    // Prevenção: Se o cache antigo for uma lista de textos simples, ignoramos para recriar a estrutura correta de 3 níveis
+                    // Prevenção: Se o cache antigo for texto, ignoramos para recriar a estrutura de 3 níveis do zero
                     if(c.length > 0 && typeof c[0] === 'string') { categoriasDoSistema = []; } 
                     else { categoriasDoSistema = c; }
                 } 
@@ -684,17 +685,28 @@
             try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             
-            // Varre todos os produtos para reconstruir a árvore de categorias, subs e sub-subs
-            let precisaSalvarCat = false, precisaSalvarMarca = false;
+            // Varre os produtos e extrai as seleções existentes na base (Marcas, Tags e as Categorias de 3 níveis)
+            let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
 
             products.forEach(p => {
+                // Extrai Marcas
                 if (p.marca) p.marca = p.marca.toUpperCase().trim();
                 if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvarMarca = true; }
                 
+                // Extrai Tags Globais
+                if (p.tag_global && Array.isArray(p.tag_global)) {
+                    p.tag_global.forEach(t => {
+                        if (t) {
+                            let tUp = t.toUpperCase().trim();
+                            if(!tagsDoSistema.includes(tUp)) { tagsDoSistema.push(tUp); precisaSalvarTag = true; }
+                        }
+                    });
+                }
+                
+                // Extrai Categorias de 3 Níveis
                 if (p.categoria) {
                     p.categoria = p.categoria.toUpperCase().trim();
                     
-                    // Garante que a categoria principal existe
                     let catObj = categoriasDoSistema.find(c => c && c.nome === p.categoria);
                     if (!catObj) {
                         catObj = { nome: p.categoria, subcategorias: [] };
@@ -705,7 +717,6 @@
                     if (p.subcategoria) {
                         p.subcategoria = p.subcategoria.toUpperCase().trim();
                         
-                        // Garante que a subcategoria existe dentro da categoria
                         let subObj = catObj.subcategorias.find(s => s && s.nome === p.subcategoria);
                         if (!subObj) {
                             subObj = { nome: p.subcategoria, subsubcategorias: [] };
@@ -716,7 +727,6 @@
                         if (p.subsubcategoria) {
                             p.subsubcategoria = p.subsubcategoria.toUpperCase().trim();
                             
-                            // Garante que a sub-subcategoria existe dentro da subcategoria
                             if (!subObj.subsubcategorias.includes(p.subsubcategoria)) {
                                 subObj.subsubcategorias.push(p.subsubcategoria);
                                 precisaSalvarCat = true;
@@ -727,6 +737,7 @@
             });
 
             if (precisaSalvarMarca) await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+            if (precisaSalvarTag) await localforage.setItem(TAGS_KEY, tagsDoSistema);
             if (precisaSalvarCat) await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
 
             // Ordem Alfabética Segura
@@ -1365,9 +1376,23 @@
                 if (!response.ok) throw new Error("Falha na comunicação.");
                 const parsedData = await response.json();
                 if (parsedData && Array.isArray(parsedData)) {
-                    if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
+                    if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem? Isso vai recalcular todas as categorias baseadas no arquivo.")) return; }
+                    
                     products = parsedData;
-                    await saveDataLocally(); renderGrid(); alert("Atualização concluída!"); closeSidebar('config-sidebar');
+                    
+                    // LIMPEZA FORÇADA PARA RECALCULAR DA NUVEM
+                    categoriasDoSistema = [];
+                    marcasDoSistema = [];
+                    tagsDoSistema = [];
+                    await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
+                    await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+                    await localforage.setItem(TAGS_KEY, tagsDoSistema);
+                    
+                    await saveDataLocally(); 
+                    await loadData(); // Recarrega e extrai tudo do zero!
+                    
+                    alert("Atualização concluída! Categorias e tags sincronizadas."); 
+                    closeSidebar('config-sidebar');
                 } else { alert("Formato inesperado."); }
             } catch(e) { alert("Erro: " + e.message); }
         }
