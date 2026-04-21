@@ -367,7 +367,7 @@
                 <div class="section-title">Nuvem e Sincronização</div>
                 <button class="nav-btn sync-btn" style="justify-content:center;" onclick="salvarProdutosJSON()">1. SALVAR JSON NO GITHUB</button>
                 <button class="nav-btn" style="justify-content:center;" onclick="uploadImagens()">2. ENVIAR FOTOS <span id="img-badge">(0)</span></button>
-                <button class="nav-btn" style="justify-content:center; color:#b45309;" onclick="fetchFromGithub()">3. RESTAURAR DA NUVEM</button>
+                <button class="nav-btn" style="justify-content:center; color:#b45309; border-color:#fde68a; background:#fffbeb;" onclick="fetchFromGithub()">3. RESTAURAR DA NUVEM</button>
             </div>
             <div class="form-section">
                 <div class="section-title">Importar / Exportar (Bling e Meta)</div>
@@ -840,7 +840,7 @@
                 container.innerHTML += `<div style="border:1px solid var(--border); padding:10px; border-radius:6px; margin-bottom:8px;"><div style="display:flex; justify-content:space-between; font-weight:800; font-size:12px;">${cat.nome} <i data-lucide="trash-2" size="14" style="cursor:pointer; color:red;" onclick="removerCat(${idx})"></i></div><div style="margin-top:4px;">${subs}</div><button class="nav-btn" style="width:100%; margin-top:6px; padding:4px; font-size:10px;" onclick="adicionarSubcat(${idx})">+ SUBCATEGORIA</button></div>`;
             }); lucide.createIcons();
         }
-        async function criarNovaCategoria() { const n = prompt("Nova Categoria:"); if(n) { categoriasDoSistema.push({nome: n.toUpperCase().trim(), subcategorias: []}); await saveDataLocally(); renderizarSidebarCategorias(); renderGrid(null, true); } }
+        async function criarNovaCategoria() { const n = prompt("Nova Categoria Principal:"); if(n) { categoriasDoSistema.push({nome: n.toUpperCase().trim(), subcategorias: []}); await saveDataLocally(); renderizarSidebarCategorias(); renderGrid(null, true); } }
         async function removerCat(idx) { if(confirm("Apagar categoria?")) { categoriasDoSistema.splice(idx,1); await saveDataLocally(); renderizarSidebarCategorias(); renderGrid(null, true); } }
         async function adicionarSubcat(idx) { const n = prompt("Nova Subcategoria:"); if(n) { if(!categoriasDoSistema[idx].subcategorias) categoriasDoSistema[idx].subcategorias = []; categoriasDoSistema[idx].subcategorias.push(n.toUpperCase().trim()); await saveDataLocally(); renderizarSidebarCategorias(); renderGrid(null, true); } }
         async function removerSubcat(idx, sidx) { categoriasDoSistema[idx].subcategorias.splice(sidx,1); await saveDataLocally(); renderizarSidebarCategorias(); renderGrid(null, true); }
@@ -911,6 +911,75 @@
         }
 
         // ==========================================
+        // API GITHUB ROBUSTA PARA DOWNLOAD DA NUVEM (FALLBACK)
+        // ==========================================
+        async function fetchFromGithub() {
+            try {
+                const cfg = GitHubAPI.getConfig(); if(!cfg) return;
+                
+                document.getElementById('queue-status').style.display = 'flex';
+                document.getElementById('queue-status').innerHTML = `<i data-lucide="loader" class="spin-icon"></i> Baixando dados...`;
+                lucide.createIcons();
+
+                // Função auxiliar que tenta baixar o raw, e se falhar decodifica o base64 nativo
+                const downloadJson = async (path) => {
+                    const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}?t=${Date.now()}`;
+                    const res = await fetch(url, { 
+                        headers: { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Accept": "application/vnd.github.v3.raw" },
+                        cache: "no-store"
+                    });
+                    
+                    if (res.status === 404) return null;
+                    if (res.status === 401) throw new Error("Token Inválido ou Expirado.");
+                    if (!res.ok) throw new Error(`Erro API GitHub: ${res.status} no arquivo ${path}`);
+                    
+                    const text = await res.text();
+                    try {
+                        return JSON.parse(text); // Se vier o raw direto
+                    } catch(e) {
+                        // Se o navegador/github ignorou o "Accept raw", ele vem um JSON com a string base64 dentro do "content"
+                        const jsonObj = JSON.parse(text);
+                        if (jsonObj.content && jsonObj.encoding === "base64") {
+                            return JSON.parse(decodeURIComponent(escape(atob(jsonObj.content))));
+                        }
+                        throw new Error(`Erro ao interpretar o arquivo ${path}`);
+                    }
+                };
+
+                const produtosNuvem = await downloadJson('site/produtos.json');
+                
+                if (produtosNuvem && Array.isArray(produtosNuvem)) {
+                    if(products.length > 0) {
+                        if(!confirm("Substituir a base local pelos dados da nuvem?")) {
+                            document.getElementById('queue-status').style.display = 'none';
+                            return;
+                        }
+                    }
+                    products = produtosNuvem;
+                    
+                    // Puxa as outras configurações vitais da nuvem silenciosamente
+                    const cats = await downloadJson('site/categorias.json');
+                    if (cats && Array.isArray(cats)) categoriasDoSistema = cats;
+
+                    const tgs = await downloadJson('site/tags.json');
+                    if (tgs && Array.isArray(tgs)) tagsDoSistema = tgs;
+                    
+                    await saveDataLocally(); 
+                    renderGrid(); 
+                    alert("Base de dados restaurada da nuvem com sucesso!");
+                } else {
+                    alert("O arquivo de produtos não foi encontrado na nuvem ou está vazio.");
+                }
+            } catch(e) { 
+                console.error(e);
+                alert("Erro ao restaurar: " + e.message); 
+            } finally {
+                document.getElementById('queue-status').style.display = 'none';
+                closeSidebar('config-sidebar');
+            }
+        }
+
+        // ==========================================
         // IMPORTAÇÃO E EXPORTAÇÃO CSV
         // ==========================================
         document.getElementById('csv-file-adicionar').addEventListener('change', function(e) {
@@ -929,26 +998,17 @@
 
         function exportarCSVCompleto() {
             const csv = Papa.unparse(products.map(p => ({ codigo: p.codigo, descricao: p.nome, preco: p.preco, preco_custo: p.preco_custo, estoque: p.estoque, situacao: p.situacao, gtin: p.gtin, ncm: p.ncm, marca: p.marca, categoria: p.categoria, subcategoria: p.subcategoria, tag: p.tag })));
-            const b = new Blob([csv], {type: 'text/csv;charset=utf-8;'}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "produtos_bling.csv"; a.click();
+            const b = new Blob(['\uFEFF' + csv], {type: 'text/csv;charset=utf-8;'}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "produtos_bling.csv"; a.click();
         }
 
         function gerarCSVMetaCompleto() {
             const csv = Papa.unparse(products.filter(p=>p.situacao==='A' && p.url_imagem).map(p => ({ id: p.codigo, title: p.nome, description: p.nome, availability: p.estoque > 0 ? "in stock" : "out of stock", condition: "new", price: `${p.preco} BRL`, link: `https://seusite.com.br/produto/${p.codigo}`, image_link: p.url_imagem, brand: p.marca })));
-            const b = new Blob([csv], {type: 'text/csv;charset=utf-8;'}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "catalogo_meta.csv"; a.click();
+            const b = new Blob(['\uFEFF' + csv], {type: 'text/csv;charset=utf-8;'}); const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "catalogo_meta.csv"; a.click();
         }
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); alert("Salvo!"); }
         
-        async function fetchFromGithub() {
-            try {
-                const cfg = GitHubAPI.getConfig(); if(!cfg) return;
-                const res = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}`, "Accept": "application/vnd.github.v3.raw" }});
-                if(!res.ok) throw new Error("Erro de comunicação.");
-                products = await res.json(); await saveDataLocally(); renderGrid(); alert("Base restaurada da nuvem!");
-            } catch(e) { alert("Erro: " + e.message); }
-        }
-
-        async function limparSistema() { if(confirm("APAGAR TUDO LOCALMENTE?")) { await localforage.clear(); location.reload(); } }
+        async function limparSistema() { if(confirm("APAGAR TUDO LOCALMENTE? (Não apaga a nuvem)")) { await localforage.clear(); location.reload(); } }
     </script>
 </body>
 </html>
