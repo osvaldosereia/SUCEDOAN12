@@ -400,6 +400,20 @@
             return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
         }
 
+        // Funções de Pesquisa no Google
+        window.searchGoogleNCM = function(nome) { 
+            if(!nome) return; 
+            window.open(`https://www.google.com/search?q=NCM+${encodeURIComponent(nome)}`, '_blank'); 
+        }
+        window.searchGoogleHD = function(nome) { 
+            if(!nome) return; 
+            window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); 
+        }
+        window.searchGoogleShopping = function(nome) { 
+            if(!nome) return; 
+            window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(nome)}`, '_blank'); 
+        }
+
         // ==========================================================
         // GESTOR DE COMUNICAÇÃO COM GITHUB
         // ==========================================================
@@ -737,6 +751,7 @@
                 
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
                 const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
+                const safeNomeGoogle = (p.nome || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 
                 let custo = parseFloat(p.preco_custo) || 0;
                 let venda = parseFloat(p.preco) || 0;
@@ -756,6 +771,11 @@
                             <div class="field-group">
                                 <label>Nome do Produto</label>
                                 <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px;" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
+                                <div style="display: flex; gap: 4px; margin-top: 4px;">
+                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
+                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
+                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
+                                </div>
                             </div>
                             <div class="field-group">
                                 <label>Link do YouTube</label>
