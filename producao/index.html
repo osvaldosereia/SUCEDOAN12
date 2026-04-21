@@ -82,7 +82,7 @@
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 380px; }
         #menu-sidebar { z-index: 1014; width: 300px; }
-        #categorias-sidebar, #subcategorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #subtags-sidebar, #pedidos-sidebar { z-index: 1015; width: 450px; }
+        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #subtags-sidebar, #pedidos-sidebar { z-index: 1015; width: 450px; }
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -140,13 +140,11 @@
         const STORAGE_KEY = 'sucedoan_pim_v37'; 
         const CONFIG_KEY = 'sucedoan_config';
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
-        const SUBCATEGORIAS_KEY = 'sucedoan_subcategorias'; 
         const MARCAS_KEY = 'sucedoan_marcas';
         const TAGS_KEY = 'sucedoan_tags_globais'; 
         const SUBTAGS_KEY = 'sucedoan_subtags'; 
         
         let categoriasDoSistema = []; 
-        let subcategoriasDoSistema = []; 
         let marcasDoSistema = [];
         let tagsDoSistema = []; 
         let subtagsDoSistema = []; 
@@ -252,8 +250,7 @@
             </div>
             <div class="form-section" style="margin-top: 15px;">
                 <div class="section-title">Gestão de Seletores</div>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('categorias-sidebar'); renderizarCRUD(categoriasDoSistema, 'categorias-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="folder-tree" size="14"></i> CATEGORIAS</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('subcategorias-sidebar'); renderizarCRUD(subcategoriasDoSistema, 'subcategorias-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="folder-open" size="14"></i> SUBCATEGORIAS</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias(); closeSidebar('menu-sidebar');"><i data-lucide="folder-tree" size="14"></i> CATEGORIAS E SUBS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('marcas-sidebar'); renderizarCRUD(marcasDoSistema, 'marcas-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="tag" size="14"></i> MARCAS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('tags-sidebar'); renderizarCRUD(tagsDoSistema, 'tags-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="hash" size="14"></i> TAGS GLOBAIS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('subtags-sidebar'); renderizarCRUD(subtagsDoSistema, 'subtags-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="list-tree" size="14"></i> SUBTAGS</button>
@@ -261,9 +258,16 @@
         </div>
     </div>
 
-    <div class="sidebar" id="categorias-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Categorias</div><button class="btn-icon" onclick="closeSidebar('categorias-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-categorias-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(categoriasDoSistema, CATEGORIAS_KEY, 'categorias-sidebar')"><i data-lucide="plus" size="14"></i> NOVA CATEGORIA</button></div></div>
-    
-    <div class="sidebar" id="subcategorias-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Subcategorias</div><button class="btn-icon" onclick="closeSidebar('subcategorias-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-subcategorias-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(subcategoriasDoSistema, SUBCATEGORIAS_KEY, 'subcategorias-sidebar')"><i data-lucide="plus" size="14"></i> NOVA SUBCATEGORIA</button></div></div>
+    <div class="sidebar" id="categorias-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Gestão de Categorias e Subs</div>
+            <button class="btn-icon" onclick="closeSidebar('categorias-sidebar')"><i data-lucide="x" size="16"></i></button>
+        </div>
+        <div class="sidebar-body" id="lista-categorias-container" style="gap:10px;"></div>
+        <div class="sidebar-footer">
+            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaCategoria()"><i data-lucide="plus" size="14"></i> NOVA CATEGORIA PRINCIPAL</button>
+        </div>
+    </div>
     
     <div class="sidebar" id="marcas-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Marcas</div><button class="btn-icon" onclick="closeSidebar('marcas-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-marcas-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(marcasDoSistema, MARCAS_KEY, 'marcas-sidebar')"><i data-lucide="plus" size="14"></i> NOVA MARCA</button></div></div>
     
@@ -295,8 +299,8 @@
         </div>
         <div class="sidebar-body">
             <div class="form-section">
-                <div class="form-group"><label class="form-label">Categoria</label><select class="form-input" id="flt-cat"></select></div>
-                <div class="form-group"><label class="form-label">Subcategoria</label><select class="form-input" id="flt-sub"></select></div>
+                <div class="form-group"><label class="form-label">Categoria</label><select class="form-input" id="flt-cat" onchange="atualizarSubcatsFiltro(this.value)"></select></div>
+                <div class="form-group"><label class="form-label">Subcategoria</label><select class="form-input" id="flt-sub"><option value="">Todas as Subcategorias</option></select></div>
                 <div class="form-group"><label class="form-label">Marca</label><select class="form-input" id="flt-marca"></select></div>
                 <div class="form-group"><label class="form-label">Tag Global</label><select class="form-input" id="flt-tag"></select></div>
                 <div class="form-group"><label class="form-label">Estoque</label>
@@ -642,13 +646,40 @@
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
             try { const c = await localforage.getItem(CATEGORIAS_KEY); if(c && Array.isArray(c)) categoriasDoSistema = c; } catch (err) {}
-            try { const sc = await localforage.getItem(SUBCATEGORIAS_KEY); if(sc && Array.isArray(sc)) subcategoriasDoSistema = sc; } catch (err) {}
             try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             try { const stg = await localforage.getItem(SUBTAGS_KEY); if(stg && Array.isArray(stg)) subtagsDoSistema = stg; } catch (err) {} 
             
+            // Puxar dados que já existam nos produtos se as listas locais estiverem vazias
+            let precisaSalvarCat = false, precisaSalvarMarca = false;
+            products.forEach(p => {
+                if (p.marca) p.marca = p.marca.toUpperCase().trim();
+                if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvarMarca = true; }
+                
+                if (p.categoria) {
+                    p.categoria = p.categoria.toUpperCase().trim();
+                    let catObj = categoriasDoSistema.find(c => c.nome === p.categoria);
+                    if (!catObj) {
+                        catObj = { nome: p.categoria, subcategorias: [] };
+                        categoriasDoSistema.push(catObj);
+                        precisaSalvarCat = true;
+                    }
+                    if (p.subcategoria) {
+                        p.subcategoria = p.subcategoria.toUpperCase().trim();
+                        if (!catObj.subcategorias.includes(p.subcategoria)) {
+                            catObj.subcategorias.push(p.subcategoria);
+                            precisaSalvarCat = true;
+                        }
+                    }
+                }
+            });
+
+            if (precisaSalvarMarca) await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+            if (precisaSalvarCat) await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
+
             // Ordem Alfabética Geral
-            [categoriasDoSistema, subcategoriasDoSistema, marcasDoSistema, tagsDoSistema, subtagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
+            categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
+            [marcasDoSistema, tagsDoSistema, subtagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
 
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
             renderGrid();
@@ -672,14 +703,51 @@
             return html;
         }
 
+        // ====== GERADORES DE OPÇÕES PARA CATEGORIAS/SUBCATEGORIAS ======
+        function gerarOptionsCategorias(selecionado) {
+            let html = `<option value="">Sel. Categoria</option>`;
+            categoriasDoSistema.forEach(c => {
+                let sel = (c.nome === selecionado) ? 'selected' : '';
+                html += `<option value="${c.nome}" ${sel}>${c.nome}</option>`;
+            });
+            return html;
+        }
+
+        function gerarOptionsSubcategorias(catNome, selecionado) {
+            let html = `<option value="">Sel. Subcategoria</option>`;
+            if (!catNome) return html;
+            const catObj = categoriasDoSistema.find(c => c.nome === catNome);
+            if (catObj && catObj.subcategorias) {
+                catObj.subcategorias.sort().forEach(sub => {
+                    let sel = (sub === selecionado) ? 'selected' : '';
+                    html += `<option value="${sub}" ${sel}>${sub}</option>`;
+                });
+            }
+            return html;
+        }
+
+        window.mudarCategoriaDoProduto = async function(sku, novaCategoria) { 
+            const p = products.find(x => x.codigo === sku); if(!p) return;
+            p.categoria = novaCategoria;
+            p.subcategoria = ''; // Limpa a subcategoria se mudar a categoria mãe
+            p.last_update = Date.now();
+            await saveDataLocally();
+            const subSelect = document.getElementById(`subcat-${sku}`);
+            if(subSelect) subSelect.innerHTML = gerarOptionsSubcategorias(novaCategoria, '');
+        }
+
+        window.atualizarSubcatsFiltro = function(catNome) {
+            document.getElementById('flt-sub').innerHTML = gerarOptionsSubcategorias(catNome, '');
+        }
+
         // ==========================================================
         // FILTROS AVANÇADOS E GLOBAIS
         // ==========================================================
         window.limparFiltroGrid = function() { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; renderGrid(); }
 
         function renderizarFiltrosAvancados() {
-            document.getElementById('flt-cat').innerHTML = gerarOptions(categoriasDoSistema, '', 'Todas as Categorias');
-            document.getElementById('flt-sub').innerHTML = gerarOptions(subcategoriasDoSistema, '', 'Todas as Subcategorias');
+            document.getElementById('flt-cat').innerHTML = gerarOptionsCategorias('');
+            document.getElementById('flt-sub').innerHTML = `<option value="">Todas as Subcategorias</option>`;
             document.getElementById('flt-marca').innerHTML = gerarOptions(marcasDoSistema, '', 'Todas as Marcas');
             document.getElementById('flt-tag').innerHTML = gerarOptions(tagsDoSistema, '', 'Todas as Tags Globais');
         }
@@ -786,9 +854,9 @@
 
                     <div class="card-grid-fields">
                         <div class="field-group"><label>Categoria</label>
-                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'categoria', this.value)">${gerarOptions(categoriasDoSistema, p.categoria, 'Sel. Categoria')}</select></div>
+                            <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">${gerarOptionsCategorias(p.categoria)}</select></div>
                         <div class="field-group"><label>Subcategoria</label>
-                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'subcategoria', this.value)">${gerarOptions(subcategoriasDoSistema, p.subcategoria, 'Sel. Subcategoria')}</select></div>
+                            <select class="form-input card-mini-input" id="subcat-${p.codigo}" onchange="updateField('${p.codigo}', 'subcategoria', this.value)">${gerarOptionsSubcategorias(p.categoria, p.subcategoria)}</select></div>
                         
                         <div class="field-group"><label>Marca</label>
                             <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'marca', this.value)">${gerarOptions(marcasDoSistema, p.marca, 'Sel. Marca')}</select></div>
@@ -884,8 +952,80 @@
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
+        // ====== CRUD DE CATEGORIAS E SUBCATEGORIAS JUNTAS ======
+        window.renderizarSidebarCategorias = function() {
+            const container = document.getElementById('lista-categorias-container'); if(!container) return;
+            container.innerHTML = ""; categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
+            
+            categoriasDoSistema.forEach((cat, cIndex) => {
+                let subsHtml = '';
+                if (cat.subcategorias && cat.subcategorias.length > 0) {
+                    cat.subcategorias.sort().forEach((sub, sIndex) => {
+                        subsHtml += `<div style="display:flex; justify-content:space-between; align-items:center; padding: 6px 10px; background:#f8fafc; border-radius:6px; margin-top:4px; margin-left: 15px; border:1px solid var(--border); font-size:11px;">
+                            <span>${sub}</span>
+                            <div style="display:flex; gap:4px;">
+                                <button class="btn-smart" style="height:24px; width:24px;" onclick="editarSubcategoria(${cIndex}, ${sIndex})"><i data-lucide="edit-2" size="10"></i></button>
+                                <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removerSubcategoria(${cIndex}, ${sIndex})"><i data-lucide="trash-2" size="10"></i></button>
+                            </div>
+                        </div>`;
+                    });
+                }
+
+                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: ${subsHtml ? '8px' : '0'};">
+                        <strong style="color:var(--accent); font-size:13px; flex-grow:1;">${cat.nome}</strong>
+                        <div style="display:flex; gap:6px;">
+                            <button class="nav-btn success-btn" style="height:28px; font-size:10px; padding:0 8px;" onclick="criarNovaSubcategoria(${cIndex})"><i data-lucide="plus" size="12"></i> SUB</button>
+                            <button class="btn-smart" style="height:28px; width:28px;" onclick="editarCategoria(${cIndex})"><i data-lucide="edit-2" size="12"></i></button>
+                            <button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerCategoria(${cIndex})"><i data-lucide="trash-2" size="12"></i></button>
+                        </div>
+                    </div>
+                    ${subsHtml}
+                </div>`;
+            }); lucide.createIcons();
+        }
+
+        window.criarNovaCategoria = async function() { 
+            const nome = prompt("Nova Categoria:"); if (!nome) return; const nm = nome.toUpperCase().trim(); 
+            if(categoriasDoSistema.find(c => c.nome === nm)) return alert("Já existe!"); 
+            categoriasDoSistema.push({ nome: nm, subcategorias: [] }); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
+            renderizarSidebarCategorias(); renderGrid(null, true); 
+        }
+        window.editarCategoria = async function(index) { 
+            const novoNome = prompt("Renomear categoria para:", categoriasDoSistema[index].nome); if (!novoNome) return; 
+            const old = categoriasDoSistema[index].nome; const nm = novoNome.toUpperCase().trim(); categoriasDoSistema[index].nome = nm; 
+            products.forEach(p => { if(p.categoria === old) p.categoria = nm; }); 
+            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
+            renderizarSidebarCategorias(); renderGrid(null, true); 
+        }
+        window.removerCategoria = async function(index) { 
+            if (!confirm(`Apagar a categoria "${categoriasDoSistema[index].nome}" e todas as suas subcategorias?`)) return; 
+            const old = categoriasDoSistema[index].nome; categoriasDoSistema.splice(index, 1); 
+            products.forEach(p => { if(p.categoria === old) { p.categoria = ""; p.subcategoria = ""; } }); 
+            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); 
+            renderizarSidebarCategorias(); renderGrid(null, true); 
+        }
+        window.criarNovaSubcategoria = async function(cIndex) {
+            const nome = prompt(`Nova Subcategoria para ${categoriasDoSistema[cIndex].nome}:`); if (!nome) return;
+            const nm = nome.toUpperCase().trim(); if (!categoriasDoSistema[cIndex].subcategorias) categoriasDoSistema[cIndex].subcategorias = [];
+            if (categoriasDoSistema[cIndex].subcategorias.includes(nm)) return alert("Já existe nesta categoria!");
+            categoriasDoSistema[cIndex].subcategorias.push(nm); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias();
+        }
+        window.editarSubcategoria = async function(cIndex, sIndex) {
+            const old = categoriasDoSistema[cIndex].subcategorias[sIndex]; const novoNome = prompt("Renomear subcategoria para:", old); if (!novoNome) return;
+            const nm = novoNome.toUpperCase().trim(); categoriasDoSistema[cIndex].subcategorias[sIndex] = nm; const catName = categoriasDoSistema[cIndex].nome;
+            products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) p.subcategoria = nm; });
+            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(null, true);
+        }
+        window.removerSubcategoria = async function(cIndex, sIndex) {
+            const old = categoriasDoSistema[cIndex].subcategorias[sIndex]; if (!confirm(`Apagar a subcategoria "${old}"?`)) return;
+            const catName = categoriasDoSistema[cIndex].nome; categoriasDoSistema[cIndex].subcategorias.splice(sIndex, 1);
+            products.forEach(p => { if(p.categoria === catName && p.subcategoria === old) p.subcategoria = ""; });
+            await saveDataLocally(); await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema); renderizarSidebarCategorias(); renderGrid(null, true);
+        }
+
         // ==========================================================
-        // SISTEMA GENÉRICO DE CRUD PARA SELETORES
+        // SISTEMA GENÉRICO DE CRUD PARA SELETORES RESTANTES
         // ==========================================================
         window.renderizarCRUD = function(lista, containerId) {
             const container = document.getElementById(`lista-${containerId}`); container.innerHTML = "";
@@ -896,8 +1036,6 @@
         }
 
         function getListaByKey(sidebarId) {
-            if(sidebarId.includes('categorias')) return { arr: categoriasDoSistema, key: CATEGORIAS_KEY, prop: 'categoria' };
-            if(sidebarId.includes('subcategorias')) return { arr: subcategoriasDoSistema, key: SUBCATEGORIAS_KEY, prop: 'subcategoria' };
             if(sidebarId.includes('marcas')) return { arr: marcasDoSistema, key: MARCAS_KEY, prop: 'marca' };
             if(sidebarId.includes('tags')) return { arr: tagsDoSistema, key: TAGS_KEY, prop: 'tag_global' };
             if(sidebarId.includes('subtags')) return { arr: subtagsDoSistema, key: SUBTAGS_KEY, prop: 'subtag' };
