@@ -528,7 +528,7 @@
             else { renderQueueStatus(); }
         }
 
-        function sanitizeProductsForExport(prods) {
+       function sanitizeProductsForExport(prods) {
             const camposPermitidos = [
                 'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
                 'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
@@ -540,10 +540,39 @@
                 camposPermitidos.forEach(campo => {
                     if (p[campo] !== undefined && p[campo] !== null) {
                         cleanP[campo] = p[campo];
-                        if (campo === 'url_imagem' && p[campo].startsWith('data:image')) cleanP[campo] = "";
-                        else if (campo === 'url_imagem') cleanP[campo] = p[campo].split('?')[0]; 
+                        if (campo === 'url_imagem' && typeof p[campo] === 'string' && p[campo].startsWith('data:image')) cleanP[campo] = "";
+                        else if (campo === 'url_imagem' && typeof p[campo] === 'string') cleanP[campo] = p[campo].split('?')[0]; 
                     }
                 });
+
+                // ==========================================
+                // LIMPEZA PROFUNDA DE FANTASMAS ANTES DE EXPORTAR
+                // ==========================================
+                
+                // Limpa Tags e Subtags que já não existem no sistema
+                if (Array.isArray(cleanP.tag_global)) {
+                    cleanP.tag_global = cleanP.tag_global.filter(t => tagsDoSistema.includes(t));
+                }
+                if (Array.isArray(cleanP.subtag)) {
+                    cleanP.subtag = cleanP.subtag.filter(t => subtagsDoSistema.includes(t));
+                }
+                
+                // Limpa Categorias e Subcategorias que foram apagadas
+                if (cleanP.categoria && !categoriasDoSistema.find(c => c.nome === cleanP.categoria)) {
+                    cleanP.categoria = "";
+                    cleanP.subcategoria = "";
+                } else if (cleanP.categoria && cleanP.subcategoria) {
+                    const catObj = categoriasDoSistema.find(c => c.nome === cleanP.categoria);
+                    if (!catObj || !catObj.subcategorias.includes(cleanP.subcategoria)) {
+                        cleanP.subcategoria = "";
+                    }
+                }
+
+                // Limpa Marcas Fantasmas
+                if (cleanP.marca && !marcasDoSistema.includes(cleanP.marca)) {
+                    cleanP.marca = "";
+                }
+
                 return cleanP;
             });
         }
