@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sucedoan PIM & picking PRO</title>
+    <title>Sucedoan PIM Administrativo</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -24,10 +24,6 @@
             --bg-body: #f4f4f5; --bg-card: #ffffff; --text-primary: #0f172a; --text-secondary: #64748b;
             --accent: #000000; --accent-hover: #27272a; --success: #10b981; --warning: #f59e0b;
             --danger: #ef4444; --border: #e4e4e7; --radius: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.04);
-            
-            /* Variáveis do Separador */
-            --sep-primary: #4CAF50; --sep-secondary: #2196F3; --sep-danger: #f44336; 
-            --sep-warning: #ff9800; --sep-dark: #111; --sep-light: #f4f4f4;
         }
         
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
@@ -35,16 +31,6 @@
         /* SISTEMA DE TELAS VIRTUAIS */
         .app-screen { display: none; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; }
         .app-screen.active { display: flex; }
-
-        /* TELA INICIAL (LANDING) */
-        #landing-screen { background: var(--accent); color: white; justify-content: center; align-items: center; padding: 20px; }
-        .landing-title { font-size: 24px; font-weight: 900; margin-bottom: 40px; text-align: center; letter-spacing: -1px; }
-        .landing-btn-group { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 320px; }
-        .landing-btn { width: 100%; padding: 20px; font-size: 16px; font-weight: 900; border-radius: 16px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: flex-start; gap: 15px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); transition: 0.2s; min-height: 64px; }
-        .landing-btn:active { transform: scale(0.96); }
-        .landing-btn-admin { background: #ffffff; color: var(--accent); }
-        .landing-btn-sep { background: var(--sep-primary); color: white; }
-        .landing-btn-bal { background: var(--warning); color: #000; }
 
         header { background: #ffffff; min-height: 54px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); gap: 15px; z-index: 10; }
         .brand { font-weight: 900; font-size: 16px; letter-spacing: -0.5px; margin-right: auto; display: flex; align-items: center; gap: 8px; }
@@ -73,8 +59,10 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
         .spin-icon { animation: spin 2s linear infinite; }
 
+        #active-filter-banner { display: none; align-items: center; justify-content: space-between; background: #e0f2fe; border: 1px solid #bae6fd; padding: 10px 20px; color: #0369a1; font-weight: 800; font-size: 12px; }
+
         .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
-        .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 15px; }
         
         .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: row; padding: 12px; gap: 12px; align-items: stretch; transition: box-shadow 0.2s, transform 0.2s; }
         .product-card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: #d4d4d8; }
@@ -94,9 +82,8 @@
         #edit-sidebar { z-index: 1010; width: 480px; }
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 380px; }
-        #whatsapp-sidebar { z-index: 1013; width: 420px; } 
         #menu-sidebar { z-index: 1014; width: 300px; }
-        #categorias-sidebar { z-index: 1015; width: 400px; }
+        #categorias-sidebar { z-index: 1015; width: 450px; }
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -136,80 +123,8 @@
         .slider-group label { width: 16px; color: var(--text-secondary); display: flex; justify-content: center;}
         input[type=range] { flex-grow: 1; accent-color: var(--accent); }
 
-        .cartao-pedido { background-color: #ffffff; border: 1px solid var(--border); padding: 12px; border-radius: 8px; margin-bottom: 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: stretch; box-shadow: 0 2px 5px rgba(0,0,0,0.02); gap: 10px; }
-        .cartao-info { display: flex; flex-direction: column; gap: 4px; flex-grow:1; min-width: 0;}
-        .cartao-info strong { font-size: 12px; color: var(--accent); }
-        .cartao-acoes { display: flex; flex-direction: column; gap: 6px; justify-content: space-between; width: 110px; flex-shrink: 0;}
-        
-        /* =========================================================
-           CSS DO SEPARADOR DE PEDIDOS E BALANÇO MODO FOCO
-           ========================================================= */
-        #separador-overlay { position: fixed; inset: 0; background: var(--bg-body); z-index: 2000; display: none; flex-direction: column; overflow-y: auto; }
-        
-        .sep-btn { border: none; border-radius: 12px; font-weight: bold; color: white; cursor: pointer; transition: transform 0.1s; min-height: 44px;}
-        .sep-btn:active { transform: scale(0.96); }
-        .sep-btn-primary { background-color: var(--sep-primary); } .sep-btn-secondary { background-color: var(--sep-secondary); }
-        .sep-btn-danger { background-color: var(--sep-danger); } .sep-btn-print { background-color: #000; }
-        
-        .sep-container { max-width: 600px; margin: 0 auto; background: white; padding: 15px; height: 100vh; overflow-y: auto; box-sizing: border-box; width: 100%; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
-        
-        .tela-foco { min-height: 100vh; height: auto; display: flex; flex-direction: column; padding: 10px 10px 40px 10px; box-sizing: border-box; background: #fff; max-width: 600px; margin: 0 auto; width:100%; box-shadow: 0 0 40px rgba(0,0,0,0.1); }
-        
-        .foco-topo-split { display: flex; gap: 10px; height: 20vh; min-height: 120px; margin-bottom: 8px; flex-shrink: 0; }
-        .foco-img-container { flex: 1; border: 2px solid #ddd; border-radius: 12px; background: #fafafa; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; padding: 5px; }
-        .foco-img-container img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        
-        .foco-info-container { flex: 1; background: var(--sep-dark); color: white; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-        .foco-pedido-info { font-size: 13px; color: #ccc; font-weight: bold; }
-        .foco-loc { color: var(--sep-warning); font-size: 34px; font-weight: 900; letter-spacing: 1px; line-height: 1; margin: 6px 0; }
-        .foco-qtd-box { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 8px; font-size: 12px; }
-        .foco-qtd-box span { font-size: 18px; font-weight: bold; color: var(--sep-secondary); }
-
-        .foco-nome { font-size: 16px; font-weight: bold; text-align: center; margin-bottom: 4px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; padding: 0 5px; flex-shrink: 0; color:var(--accent); }
-        .foco-sku { font-size: 20px; color: #b71c1c; text-align: center; margin-bottom: 6px; font-weight: 900; flex-shrink: 0; background: #ffcdd2; border: 2px dashed #f44336; border-radius: 8px; padding: 4px; letter-spacing: 1px; }
-        
-        .ticks-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-bottom: 8px; flex-shrink: 0; }
-        .tick-box { width: 22px; height: 22px; border-radius: 4px; background-color: #e0e0e0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; color: transparent; border: 1px solid #ccc; }
-        .tick-box.active { background-color: var(--sep-primary); color: white; border-color: var(--sep-primary); }
-
-        .area-interacao { flex: 1; display: flex; flex-direction: column; min-height: 0; } 
-        .botoes-acao-foco { display: flex; gap: 6px; margin-bottom: 8px; flex-shrink: 0; }
-        .btn-acao { flex: 1; padding: 10px 4px; font-size: 13px; font-weight: bold; border-radius: 8px; color: white; border: none; cursor: pointer; text-align: center; display: flex; align-items: center; justify-content: center; line-height: 1.2; min-height:44px;}
-        .btn-acao-voltar { background-color: #607d8b; }
-        .btn-acao-pular { background-color: #ff9800; color: #000; }
-        .btn-acao-inicio { background-color: #d32f2f; }
-
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .alerta-erro { background-color: var(--sep-danger); } .alerta-sucesso { background-color: var(--sep-primary); } .alerta-aviso { background-color: var(--sep-warning); color: #000; }
-
-        .checklist-box { background: #f9f9f9; border: 2px solid #eee; border-radius: 12px; padding: 15px; margin-top: 15px; max-height: 40vh; overflow-y: auto; text-align: left; }
-        .checklist-item { border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 14px; font-weight: bold; display: flex; justify-content: space-between; color:var(--accent); }
-        .checklist-item:last-child { border-bottom: none; }
-
-        /* =========================================================
-           BALANÇO DE ESTOQUE (NOVO LAYOUT MOBILE/TECLADO)
-           ========================================================= */
-        #balanco-screen { display: none; flex-direction: column; height: 100vh; overflow: hidden; background: #fff; }
-        #balanco-screen.active { display: flex; }
-        .balanco-view { flex: 1; display: flex; flex-direction: column; padding: 10px 10px 40px 10px; min-height: 0; max-width: 600px; margin: 0 auto; width: 100%; box-sizing: border-box; justify-content: flex-start; }
-        .balanco-slider-area { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; min-height: 120px; max-height: 160px; margin-bottom: 15px; background: var(--bg-body); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; flex-shrink: 1; }
-        .balanco-slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 20px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 10; transition: 0.2s;}
-        .balanco-slider-btn:active { transform: translateY(-50%) scale(0.9); }
-        .balanco-slider-btn.left { left: 10px; }
-        .balanco-slider-btn.right { right: 10px; }
-        .balanco-slide { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; cursor: pointer; padding: 10px; text-align: center; }
-        .balanco-slide img { max-width: 100%; max-height: 100px; object-fit: contain; mix-blend-mode: multiply; margin-bottom: 10px; }
-        .balanco-slide-sku { font-size: 13px; font-weight: 900; color: var(--accent); background: #f4f4f5; padding: 6px 12px; border-radius: 6px; }
-
-        .balanco-display-area { text-align: center; margin-bottom: 15px; flex-shrink: 0; }
-        .balanco-display-input { width: 100%; max-width: 300px; font-size: 28px; font-weight: 900; text-align: center; letter-spacing: 5px; border: 2px solid var(--accent); border-radius: 12px; padding: 8px; outline: none; background: #fafafa; color: var(--accent); margin: 0 auto; display: block;}
-        .balanco-display-input::placeholder { color: #d4d4d8; letter-spacing: normal; font-size: 16px; font-weight: 600; }
-
-        .balanco-numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; flex-shrink: 0; padding-bottom: 10px; }
-        .numpad-btn { background: var(--bg-card); border: 1px solid var(--border); font-size: 24px; font-weight: 900; color: var(--accent); height: 55px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: 0.1s; }
-        .numpad-btn:active { transform: scale(0.95); background: #f4f4f5; }
-        .numpad-btn.action { background: #f4f4f5; color: var(--text-secondary); }
-        .numpad-btn.action-clear { color: var(--danger); }
+        .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--success); } .alerta-aviso { background-color: var(--warning); color: #000; }
 
         /* =========================================================
            ADAPTAÇÕES MOBILE PRODUTIVAS E MEDIA QUERIES
@@ -221,7 +136,6 @@
         }
 
         @media (max-width: 768px) {
-            #balanco-sidebar-footer { padding-bottom: 80px !important; }
             .desktop-only { display: none !important; }
             .mobile-only { display: flex !important; }
             header { padding: 10px 15px; flex-wrap: nowrap; justify-content: space-between; }
@@ -233,14 +147,6 @@
             .card-grid { grid-template-columns: 1fr; gap: 10px; }
             .image-slots { grid-template-columns: repeat(3, 1fr); }
             .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
-            
-            .balanco-view { padding: 10px 10px 50px 10px; } 
-            .balanco-slider-area { min-height: 110px; max-height: 140px; margin-bottom: 10px; }
-            .balanco-slide img { max-height: 85px; margin-bottom: 5px; }
-            .balanco-display-input { font-size: 24px; height: 45px; padding: 4px; }
-            .numpad-btn { height: 50px; font-size: 22px; } 
-            .balanco-numpad { gap: 8px; padding-bottom: 10px;}
-            .balanco-display-input { font-size: 28px; }
         }
     </style>
 </head>
@@ -249,12 +155,12 @@
     <script>
         const STORAGE_KEY = 'sucedoan_pim_v37'; 
         const CONFIG_KEY = 'sucedoan_config';
-        const PEDIDOS_KEY = 'sucedoan_pedidos';
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
         const MARCAS_KEY = 'sucedoan_marcas';
         
         let categoriasDoSistema = []; 
         let marcasDoSistema = [];
+        let filtroAtivo = { tipo: null, valor: null };
         
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
@@ -267,27 +173,15 @@
         <div style="flex:1; display:flex; align-items:center; justify-content:center; overflow:hidden;">
             <img id="img-full" src="" style="max-width:100%; max-height:100%; object-fit:contain;">
         </div>
-        <button class="sep-btn sep-btn-danger" style="padding:25px; font-size:22px; margin-top:15px; font-weight:900;" onclick="fecharFotoTelaCheia()">❌ FECHAR FOTO</button>
+        <button class="nav-btn" style="padding:25px; font-size:22px; margin-top:15px; font-weight:900; background: var(--danger); color: white;" onclick="fecharFotoTelaCheia()">❌ FECHAR FOTO</button>
     </div>
 
-    <div id="landing-screen" class="app-screen active">
-        <div class="landing-title"><i data-lucide="boxes" size="48" style="margin-bottom:15px; display:block; margin:0 auto;"></i> SUCEDOAN<br>OPERACIONAL</div>
-        <div class="landing-btn-group">
-            <button class="landing-btn landing-btn-admin" onclick="startAdmin()"><i data-lucide="database" size="24"></i> Administrador PIM</button>
-            <button class="landing-btn landing-btn-sep" onclick="startSeparador()"><i data-lucide="shopping-cart" size="24"></i> Separador (Picking)</button>
-            <button class="landing-btn landing-btn-bal" onclick="startBalanco()"><i data-lucide="scale" size="24"></i> Balanço de Estoque</button>
-        </div>
-    </div>
-
-    <div id="pim-screen" class="app-screen">
+    <div id="pim-screen" class="app-screen active">
         <header>
-            <button class="btn-icon" onclick="goToLanding()" title="Voltar ao Início"><i data-lucide="home" size="18"></i></button>
-            <div class="brand">ADMINISTRADOR</div>
+            <div class="brand"><i data-lucide="boxes" size="20"></i> SUCEDOAN PIM</div>
             <div id="queue-status"></div>
-            <button class="nav-btn primary desktop-only" onclick="openSidebar('whatsapp-sidebar')"><i data-lucide="shopping-cart" size="14"></i> PEDIDOS</button>
             
             <button class="nav-btn desktop-only" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias();"><i data-lucide="tags" size="14"></i> CATEGORIAS</button>
-            
             <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DEFINIÇÕES & DADOS</button>
             <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
         </header>
@@ -296,7 +190,7 @@
             <div class="toolbar-group" style="flex-grow: 1;">
                 <div class="search-container">
                     <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU ou Nome...">
+                    <input type="text" class="search-input" id="search-input" placeholder="Procurar por SKU, Nome ou EAN...">
                 </div>
                 <button class="nav-btn desktop-only" id="btn-24h" onclick="toggleFilter24h()" title="Mostrar produtos adicionados/editados nas últimas 24h">
                     <i data-lucide="clock" size="14"></i> ÚLTIMAS 24H
@@ -310,93 +204,44 @@
                 <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
             </div>
         </div>
+
+        <div id="active-filter-banner">
+            <span>Filtro Ativo: <span id="filter-text-display"></span></span>
+            <button class="nav-btn" style="height: 28px; border-color: #0284c7; color: #0284c7;" onclick="limparFiltroGrid()"><i data-lucide="x" size="12"></i> LIMPAR FILTRO</button>
+        </div>
         
         <div class="main-content" id="main-content-pim">
             <div class="card-grid" id="product-grid"></div>
         </div>
     </div>
 
-    <div id="balanco-screen" class="app-screen">
-        <header>
-            <button class="btn-icon" onclick="goToLanding()" title="Voltar ao Início"><i data-lucide="home" size="18"></i></button>
-            <div class="brand">BALANÇO</div>
-            <div style="font-size:11px; font-weight:900; background:#fffbeb; color:#b45309; padding:6px 12px; border-radius:20px; border:1px solid #fde68a;">
-                FILA DE EDIÇÕES: <span id="balanco-fila-count" style="font-size:14px;">0</span>
-            </div>
-        </header>
-
-        <div class="balanco-view">
-            <div class="balanco-slider-area" id="balanco-slider-container">
-                </div>
-
-            <div class="balanco-display-area">
-                <input type="text" id="balanco-ean-input" class="balanco-display-input" placeholder="Digite 4 dígitos..." readonly>
-            </div>
-
-            <div class="balanco-numpad">
-                <button class="numpad-btn" onclick="addNumpad('1')">1</button>
-                <button class="numpad-btn" onclick="addNumpad('2')">2</button>
-                <button class="numpad-btn" onclick="addNumpad('3')">3</button>
-                <button class="numpad-btn" onclick="addNumpad('4')">4</button>
-                <button class="numpad-btn" onclick="addNumpad('5')">5</button>
-                <button class="numpad-btn" onclick="addNumpad('6')">6</button>
-                <button class="numpad-btn" onclick="addNumpad('7')">7</button>
-                <button class="numpad-btn" onclick="addNumpad('8')">8</button>
-                <button class="numpad-btn" onclick="addNumpad('9')">9</button>
-                <button class="numpad-btn action action-clear" onclick="clearNumpad()">C</button>
-                <button class="numpad-btn" onclick="addNumpad('0')">0</button>
-                <button class="numpad-btn action" onclick="backspaceNumpad()"><i data-lucide="delete" size="24"></i></button>
-            </div>
-        </div>
-    </div>
-
-    <div id="pedidos-screen" class="app-screen">
-        <header>
-            <button class="btn-icon" onclick="goToLanding()" title="Voltar ao Início"><i data-lucide="home" size="18"></i></button>
-            <div class="brand">FILA DE SEPARAÇÃO</div>
-        </header>
-
-        <div style="padding: 15px; background: #fff; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
-            <div style="font-size: 11px; font-weight: 800; color: var(--text-secondary);">COLE O PEDIDO DO WHATSAPP AQUI:</div>
-            <textarea id="textoPedidoWhatsappGeral" class="form-input" rows="4" placeholder="*PEDIDO #..." style="resize:vertical;"></textarea>
-            <div style="display: flex; gap: 10px;">
-                <button class="nav-btn primary" style="flex: 1; justify-content:center; height: 44px;" onclick="gerarPedidoWhatsapp()">
-                    <i data-lucide="arrow-down-to-line" size="14"></i> LANÇAR NA FILA
-                </button>
-                <button class="nav-btn sync-btn" style="flex: 1; justify-content:center; height: 44px;" onclick="baixarFilaNuvem()">
-                    <i data-lucide="cloud-download" size="14"></i> ATUALIZAR NUVEM
-                </button>
-            </div>
-        </div>
-        
-        <div class="main-content" style="padding: 15px; display: flex; flex-direction: column; gap: 15px; max-width: 800px; margin: 0 auto; width: 100%;">
-            <div id="grid-pedidos-screen" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 30px;">
-                </div>
-        </div>
-    </div>
-
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeAllSidebars()"></div>
 
     <div id="modal-meta-export" class="sidebar-overlay" style="display:none; align-items:center; justify-content:center; z-index: 10000; opacity:1;">
-        <div style="background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+        <div style="background: white; padding: 20px; border-radius: 12px; width: 95%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
             <h3 style="margin: 0; font-size: 16px; color: var(--accent);">Exportar Catálogo Meta</h3>
-            <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Escolha a Sessão (Categoria) ou Marca para baixar o arquivo CSV com os respectivos produtos.</p>
-            <div id="meta-cat-list" style="display: flex; flex-direction: column;">
+            
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <button class="nav-btn primary" style="justify-content:center; height: 44px;" onclick="gerarCSVMetaCompleto()">
+                    <i data-lucide="database" size="16"></i> EXPORTAR TUDO (ÚNICO ARQUIVO)
+                </button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="nav-btn success-btn" style="flex:1; justify-content:center; height: 40px;" onclick="gerarCSVMetaFila('categoria')">
+                        <i data-lucide="folder-output" size="14"></i> TODAS AS CATEGORIAS
+                    </button>
+                    <button class="nav-btn success-btn" style="flex:1; justify-content:center; height: 40px;" onclick="gerarCSVMetaFila('marca')">
+                        <i data-lucide="tags" size="14"></i> TODAS AS MARCAS
+                    </button>
                 </div>
+                <div style="font-size: 10px; color: var(--text-secondary); text-align: center;">As opções divididas baixarão um arquivo a cada 5 segundos.</div>
+            </div>
+
+            <div id="meta-cat-list" style="display: flex; flex-direction: column; margin-top: 10px;">
+                </div>
+            
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button class="nav-btn" style="flex:1; justify-content:center; height:40px;" onclick="fecharModalExportacaoMeta()">FECHAR MÓDULO</button>
             </div>
-        </div>
-    </div>
-
-    <div class="sidebar" id="balanco-sidebar" style="z-index: 1016; width: 400px;">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Editar Balanço</div>
-            <button class="btn-icon" onclick="closeSidebar('balanco-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" id="balanco-sidebar-body" style="gap: 15px;">
-        </div>
-        <div class="sidebar-footer" id="balanco-sidebar-footer">
         </div>
     </div>
 
@@ -408,38 +253,11 @@
         <div class="sidebar-body">
             <div class="form-section">
                 <div class="section-title">Navegação Principal</div>
-                <button class="nav-btn primary menu-sidebar-btn" onclick="startSeparador();"><i data-lucide="shopping-cart" size="14"></i> FILA DE SEPARAÇÃO</button>
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="settings" size="14"></i> DEFINIÇÕES E DADOS</button>
                 <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias(); closeSidebar('menu-sidebar');"><i data-lucide="tags" size="14"></i> GERIR CATEGORIAS</button>
                 <button class="nav-btn menu-sidebar-btn" id="btn-24h-mobile" onclick="toggleFilter24h(); closeSidebar('menu-sidebar');"><i data-lucide="clock" size="14"></i> FILTRAR ÚLTIMAS 24H</button>
             </div>
-        </div>
-    </div>
-
-    <div class="sidebar" id="whatsapp-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Fila de Pedidos Rápida</div>
-            <button class="btn-icon" onclick="closeSidebar('whatsapp-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" style="gap:16px;">
-            <div class="form-section">
-                <div class="section-title">Importar do WhatsApp</div>
-                <textarea id="textoPedidoWhatsapp" class="form-input" rows="6" placeholder="Cole o pedido aqui... (*PEDIDO #...)" style="resize:vertical;"></textarea>
-                <button class="nav-btn primary" style="justify-content:center; height:36px; margin-top: 5px;" onclick="gerarPedidoWhatsapp()">
-                    <i data-lucide="arrow-down-to-line" size="14"></i> TRADUZIR PEDIDO
-                </button>
-            </div>
-            
-            <div class="form-section" style="border-top: 1px solid var(--border); padding-top: 15px;">
-                <div class="section-title">Fila Pendente</div>
-                <div id="containerPedidosCards"></div>
-            </div>
-        </div>
-        <div class="sidebar-footer" style="flex-direction:column; gap:8px;">
-            <button class="nav-btn primary" style="width:100%; height:40px; justify-content:center;" onclick="startSeparador();">
-                <i data-lucide="external-link" size="14"></i> ABRIR TELA DE SEPARAÇÃO
-            </button>
         </div>
     </div>
 
@@ -525,8 +343,7 @@
             </div>
 
             <div class="form-section" style="margin-top:15px;">
-                <div class="section-title">Ações Manuais GitHub</div>
-                <button id="btnSyncFila" class="nav-btn sync-btn" style="height:44px; justify-content:center;" onclick="uploadFilaPedidosGithub(this)"><i data-lucide="upload-cloud" size="14"></i> FORÇAR PEDIDOS_FILA</button>
+                <div class="section-title">Ações de Manutenção</div>
                 <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top: 10px;" onclick="executarLimpezaImagens()">
                     <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO)
                 </button>
@@ -543,56 +360,13 @@
             <button class="btn-icon" onclick="closeSidebar('categorias-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
         <div class="sidebar-body" id="lista-categorias-container" style="gap:10px;">
-            </div>
+        </div>
         <div class="sidebar-footer">
             <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaCategoria()">
                 <i data-lucide="plus" size="14"></i> NOVA CATEGORIA PRINCIPAL
             </button>
         </div>
     </div>
-
-    <div id="separador-overlay">
-        <div class="tela-foco hidden" id="tela-separacao-foco">
-            <div class="foco-topo-split">
-                <div class="foco-img-container" onclick="abrirFotoTelaCheia()"><div class="icone-lupa">🔍</div><img id="foco-img" src=""></div>
-                <div class="foco-info-container">
-                    <div class="foco-pedido-info" id="foco-pedido-info">Ped: 000</div>
-                    <div class="foco-loc" id="foco-loc">A1</div>
-                    <div class="foco-qtd-box">Lidos <span id="span-lidos">0</span>/<span id="span-total">0</span></div>
-                </div>
-            </div>
-
-            <div class="foco-nome" id="foco-nome">Nome do Produto</div>
-            <div class="foco-sku" id="foco-sku">SKU: ---</div>
-            <div class="ticks-container" id="foco-ticks"></div>
-            
-            <div class="area-interacao">
-                <div style="width: 100%; display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-                    <button id="btn-marcar-separado" class="sep-btn sep-btn-primary" style="font-size: 22px; padding: 22px; border-radius: 16px; width: 100%; box-shadow: 0 6px 0 #388E3C; transition: 0.2s;" onclick="registrarUnidadeFocoSimples()">
-                        ✅ SEPARAR (1 UN)
-                    </button>
-                    
-                    <div style="display: flex; gap: 10px; width: 100%; margin-top: 8px;">
-                        <button class="btn-acao btn-acao-voltar" style="flex:1;" onclick="voltarProdutoAnterior()">⬅️ Anterior</button>
-                        <button class="btn-acao btn-acao-pular" style="flex:1;" onclick="avancarProduto()">Próximo ➡️</button>
-                    </div>
-                    <button class="btn-acao btn-acao-inicio" style="width:100%; margin-top: 5px;" onclick="fecharSeparador()">🏠 Sair e Guardar Progresso</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="sep-container hidden" id="tela-conclusao">
-            <h2 style="color:var(--sep-primary); font-size: 28px; text-align: center;">🎉 Pedido Separado!</h2>
-            <p style="text-align:center; color:#666;">Confira a lista abaixo antes de imprimir.</p>
-            
-            <div class="checklist-box" id="area-checklist"></div>
-
-            <button class="sep-btn sep-btn-print" style="padding: 20px; font-size: 16px; width:100%; margin-top:20px;" onclick="imprimirEtiquetaBluetooth()">🖨️ Imprimir Etiqueta (48mm)</button>
-            <button class="nav-btn success-btn" style="padding: 20px; font-size: 16px; width:100%; margin-top:15px; justify-content:center;" onclick="finalizarEDarBaixaPedidoAtual()">📦 CONCLUIR E DAR BAIXA NO ESTOQUE</button>
-            <button class="sep-btn sep-btn-danger" style="padding: 15px; font-size: 14px; width:100%; margin-top:15px;" onclick="fecharSeparador()">Sair (Guardar na Fila)</button>
-        </div>
-    </div>
-
 
     <script>
         // ==========================================================
@@ -602,33 +376,18 @@
         let currentEditingSku = null;
         let currentImageSlot = 1; 
         let imageQueue = [];
-        let filaDePedidos = []; 
 
         // Variáveis do Lazy Loading
         let produtosFiltrados = [];
         let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 9;
+        const ITENS_POR_PAGINA = 15; // Aumentado um pouco por não ter módulos extras
 
         // ==========================================================
-        // VARIÁVEIS DO SEPARADOR DE PEDIDOS E BALANÇO
-        // ==========================================================
-        let listaDeSeparacao = []; 
-        let indexAtualPicking = 0; 
-        let pedidoAtualParaSeparacao = null; 
-        let audioCtx = null;
-
-        let balancoEditsCount = 0;
-        let balancoSearchTerm = "";
-        let balancoResultados = [];
-        let balancoSlideIndex = 0;
-
-        // ==========================================================
-        // FUNÇÃO GLOBAL DE LIMPEZA DE TEXTO E GERADORES DE OPÇÕES
+        // FUNÇÕES GERAIS E OPÇÕES
         // ==========================================================
         function limparTexto(texto) {
             if (!texto) return "";
-            let textoLimpo = texto.replace(/\(oferta\)/gi, '').replace(/oferta/gi, '');
-            return textoLimpo.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
+            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
         }
 
         function getGondolaOptions(selectedValue) {
@@ -706,7 +465,7 @@
         };
 
         // ==========================================================
-        // SISTEMA INTELIGENTE DE FILA (ESPERA 60 SEGUNDOS)
+        // SISTEMA DE FILA E SALVAMENTO
         // ==========================================================
         let syncQueue = [];
         let isSyncing = false;
@@ -716,18 +475,17 @@
         function renderQueueStatus() {
             const el = document.getElementById('queue-status');
             if (!el) return;
-            
             if (isSyncing && countdownTimer > 0) {
                 el.style.display = 'flex';
                 el.innerHTML = `<i data-lucide="clock" size="14"></i> <span>Aguarde <b>${countdownTimer}s</b>... (Fila: ${syncQueue.length})</span>`;
                 lucide.createIcons();
             } else if (isSyncing && countdownTimer === 0) {
                 el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>A processar na nuvem...</span>`;
+                el.innerHTML = `<i data-lucide="loader" class="spin-icon" size="14"></i> <span>Processando...</span>`;
                 lucide.createIcons();
             } else if (syncQueue.length > 0) {
                 el.style.display = 'flex';
-                el.innerHTML = `<i data-lucide="list" size="14"></i> <span>Fila: ${syncQueue.length} items</span>`;
+                el.innerHTML = `<i data-lucide="list" size="14"></i> <span>Fila: ${syncQueue.length}</span>`;
                 lucide.createIcons();
             } else {
                 el.style.display = 'none';
@@ -739,111 +497,58 @@
             countdownTimer = 60;
             isSyncing = true;
             renderQueueStatus();
-            
             countdownInterval = setInterval(() => {
                 countdownTimer--;
                 renderQueueStatus();
-                if (countdownTimer <= 0) {
-                    clearInterval(countdownInterval);
-                    processNextInQueue();
-                }
+                if (countdownTimer <= 0) { clearInterval(countdownInterval); processNextInQueue(); }
             }, 1000);
         }
 
         async function processNextInQueue() {
-            if (syncQueue.length === 0) {
-                isSyncing = false;
-                renderQueueStatus();
-                return;
-            }
-            
-            isSyncing = true;
-            countdownTimer = 0;
-            renderQueueStatus();
-            
+            if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
+            isSyncing = true; countdownTimer = 0; renderQueueStatus();
             const task = syncQueue.shift();
-            try {
-                await task.fn();
-                mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso');
-            } catch (e) {
-                console.error(e);
-                mostrarAlerta(`❌ Erro em ${task.name}`, 'erro');
-            }
-            
-            if (syncQueue.length > 0) {
-                startQueueCountdown();
-            } else {
-                isSyncing = false;
-                renderQueueStatus();
-            }
+            try { await task.fn(); mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso'); } 
+            catch (e) { console.error(e); mostrarAlerta(`❌ Erro em ${task.name}`, 'erro'); }
+            if (syncQueue.length > 0) { startQueueCountdown(); } else { isSyncing = false; renderQueueStatus(); }
         }
 
         async function enqueueTask(taskName, taskFn, immediate = false) {
             await saveDataLocally(); 
             syncQueue.push({ name: taskName, fn: taskFn });
-            
-            if (!isSyncing) {
-                if (immediate) {
-                    processNextInQueue(); 
-                } else {
-                    startQueueCountdown(); 
-                }
-            } else {
-                renderQueueStatus(); 
-            }
+            if (!isSyncing) { if (immediate) processNextInQueue(); else startQueueCountdown(); } 
+            else renderQueueStatus(); 
         }
 
-        // ==========================================================
-        // FUNÇÕES ESPECÍFICAS DE SALVAMENTO
-        // ==========================================================
-
-        /**
-         * Sanitiza os produtos para o produtos.json
-         * Força o formato DD/MM/AAAA na validade antes do envio e inclui até 5 imagens e Embalagem.
-         */
         function sanitizeProductsForExport(prods) {
             const camposPermitidos = [
                 'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
                 'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
                 'subcategoria', 'gondola', 'prateleira', 'localizacao',
-                'tags', 'last_update', 'marca', 'embalagem' // <-- NOVO CAMPO: Embalagem
+                'tags', 'last_update', 'marca', 'embalagem'
             ];
-
             return prods.map(p => {
                 let cleanP = {};
-                
-                if (!p.id) {
-                    p.id = Math.floor(Date.now() + Math.random() * 10000);
-                }
-                
+                if (!p.id) p.id = Math.floor(Date.now() + Math.random() * 10000);
                 camposPermitidos.forEach(campo => {
                     if (p[campo] !== undefined && p[campo] !== null) {
                         let valor = p[campo];
                         if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) {
                             const partes = valor.split('-');
-                            if (partes[0].length === 4) {
-                                valor = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                            }
+                            if (partes[0].length === 4) valor = `${partes[2]}/${partes[1]}/${partes[0]}`;
                         }
                         cleanP[campo] = valor;
                     }
                 });
-
-                // Lidar com as 5 imagens de forma inteligente
                 const camposImagem = ['url_imagem', 'url_imagem_2', 'url_imagem_3', 'url_imagem_4', 'url_imagem_5'];
                 camposImagem.forEach((campoImg, index) => {
                     if (p[campoImg]) {
                         if (p[campoImg].startsWith('data:image')) {
-                            // Se o utilizador não fez upload, cria um caminho de base para não quebrar
                             const sufixo = index === 0 ? '' : `_${index + 1}`;
                             cleanP[campoImg] = `../site/img/produtos/${cleanP.codigo}${sufixo}.webp`;
-                        } else {
-                            // Limpa o "?v=123" do final da URL, mantendo a pasta correta
-                            cleanP[campoImg] = p[campoImg].split('?')[0]; 
-                        }
+                        } else { cleanP[campoImg] = p[campoImg].split('?')[0]; }
                     }
                 });
-
                 return cleanP;
             });
         }
@@ -855,62 +560,30 @@
             }, true);
         }
 
-        // ==========================================================
-        // GESTOR DE PASTAS INTELIGENTE (LIMITE DE 990 FOTOS)
-        // ==========================================================
         async function getPastaUploadAtiva() {
-            let limit = 990;
-            let folderIndex = 1;
-            
+            let limit = 990; let folderIndex = 1;
             while (true) {
-                // Define o nome da pasta: a primeira é normal, as seguintes levam _2, _3, etc.
                 let folderName = folderIndex === 1 ? "site/img/produtos" : `site/img/produtos_${folderIndex}`;
-                
                 try {
                     const files = await GitHubAPI.getFileData(folderName);
-                    
-                    // Se o GitHub retornar null, significa que a pasta ainda não existe (está vazia). Perfeito, usamos esta!
-                    if (!files) {
-                        return folderName;
-                    }
-                    
-                    // Se a pasta existe (é um array), contamos os ficheiros
-                    if (Array.isArray(files)) {
-                        if (files.length < limit) {
-                            return folderName; // Tem espaço, usamos esta!
-                        }
-                    }
-                } catch (e) {
-                    console.error("Erro ao verificar pasta", e);
-                    return folderName; // Em caso de falha de rede, tenta enviar para a atual para não travar
-                }
-                
-                // Se a pasta tinha 990 ou mais ficheiros, o ciclo (while) repete e soma +1 ao folderIndex
+                    if (!files) return folderName;
+                    if (Array.isArray(files) && files.length < limit) return folderName;
+                } catch (e) { return folderName; }
                 folderIndex++;
             }
         }
         
         async function uploadImagens() {
-            if (imageQueue.length === 0) return alert("Não existem imagens na fila para enviar.");
-            
-            const queueCopy = [...imageQueue]; 
-            imageQueue = []; 
-            updateImageBadge();
-            
-            mostrarAlerta("A enviar imagens de forma inteligente para o GitHub...", "aviso");
-            
+            if (imageQueue.length === 0) return alert("Não existem imagens na fila.");
+            const queueCopy = [...imageQueue]; imageQueue = []; updateImageBadge();
+            mostrarAlerta("Enviando imagens...", "aviso");
             queueCopy.forEach(img => {
-                enqueueTask(`Imagem ${img.sku} (Posição ${img.slot})`, async () => {
-                    // INTELIGÊNCIA: Verifica a pasta PARA CADA IMAGEM INDIVIDUAL. 
+                enqueueTask(`Imagem ${img.sku} (Slot ${img.slot})`, async () => {
                     const pastaDestinoGithub = await getPastaUploadAtiva();
                     const pastaDestinoLocal = "../" + pastaDestinoGithub; 
-                    
-                    // O nome do ficheiro reflete o slot (ex: 1234.webp ou 1234_2.webp)
                     const sufixo = img.slot === 1 ? "" : `_${img.slot}`;
                     const fileName = `${img.sku}${sufixo}.webp`; 
-                    
-                    await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName} na pasta ${pastaDestinoGithub}`, true);
-                    
+                    await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
                     const pRef = products.find(x => x.codigo === img.sku); 
                     if(pRef) { 
                         const fieldName = img.slot === 1 ? 'url_imagem' : `url_imagem_${img.slot}`;
@@ -922,751 +595,36 @@
             });
         }
 
-        function uploadFilaPedidosGithub(btn = null) {
-            enqueueTask('Forçar Fila de Pedidos', async () => { 
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaDePedidos, `PIM Sync: Fila Forçada`); 
-            }, true);
+        function mostrarAlerta(msg, tipo = 'sucesso') { 
+            let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
+            if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
+            a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 3000); 
         }
-
-        async function baixarFilaNuvem() {
-            try {
-                const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
-                if (data && data.content) {
-                    const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent);
-                    if(Array.isArray(parsedData)) { 
-                        filaDePedidos = parsedData; 
-                        await localforage.setItem(PEDIDOS_KEY, filaDePedidos); 
-                        renderizarCartoes(); 
-                        if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen(); 
-                        alert("Fila sincronizada com a nuvem com sucesso!"); return; 
-                    }
-                }
-                alert("O ficheiro pedidos_fila.json não tem o formato esperado ou está vazio.");
-            } catch(e) { alert("Erro ao baixar a fila: " + e.message); }
-        }
-
-        async function getFilaRemota() {
-            try {
-                const data = await GitHubAPI.getFileData(`site/pedidos_fila.json`);
-                if (data && data.content) { const decodedContent = decodeURIComponent(escape(atob(data.content))); const parsedData = JSON.parse(decodedContent); if(Array.isArray(parsedData)) return parsedData; }
-            } catch(e) { console.warn("Aviso: Fila remota não encontrada, a iniciar nova."); }
-            return [];
-        }
-
-        // ==========================================================
-        // NAVEGAÇÃO ENTRE TELAS DO APP
-        // ==========================================================
-        function showScreen(screenId) {
-            document.querySelectorAll('.app-screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
-            closeAllSidebars();
-            document.getElementById('separador-overlay').style.display = 'none';
-        }
-
-        function goToLanding() { showScreen('landing-screen'); }
-        function startAdmin() { showScreen('pim-screen'); renderGrid(document.getElementById('search-input').value); }
-        function startSeparador() { showScreen('pedidos-screen'); renderizarPedidosScreen(); }
 
         function abrirModalFoto(src) {
             if(!src || src.includes("SEM+FOTO") || src === 'caminho_invalido') return;
             document.getElementById('img-full').src = src;
             document.getElementById('modal-foto-full').classList.remove('hidden');
         }
-
         function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
-        function abrirFotoTelaCheia() { const tag = document.getElementById('foco-img'); if(tag) abrirModalFoto(tag.src); }
 
         // ==========================================================
-        // MÓDULO: BALANÇO DE ESTOQUE (NOVO LAYOUT)
-        // ==========================================================
-        
-        async function startBalanco() {
-            showScreen('balanco-screen');
-            clearNumpad();
-            mostrarAlerta("Atualizando base com o site...", "aviso");
-            await baixarBaseSilencioso();
-        }
-
-        async function baixarBaseSilencioso() {
-            try {
-                const cfg = GitHubAPI.getConfig();
-                if (!cfg) return;
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
-                const response = await fetch(url, { 
-                    headers: { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Accept": "application/vnd.github.v3.raw" }, 
-                    cache: "no-store" 
-                });
-                
-                if (!response.ok) throw new Error("Falha na comunicação");
-                
-                const parsedData = await response.json();
-                if (parsedData && Array.isArray(parsedData)) {
-                    products = parsedData;
-                    await saveDataLocally();
-                    mostrarAlerta("Estoque sincronizado com sucesso!", "sucesso");
-                }
-            } catch(e) {
-                mostrarAlerta("Erro ao baixar base. Usando modo offline.", "erro");
-            }
-        }
-
-        function addNumpad(num) {
-            if (balancoSearchTerm.length < 15) { 
-                balancoSearchTerm += num;
-                updateBalancoDisplay();
-                searchBalanco();
-            }
-        }
-
-        function clearNumpad() {
-            balancoSearchTerm = "";
-            updateBalancoDisplay();
-            searchBalanco();
-        }
-
-        function backspaceNumpad() {
-            balancoSearchTerm = balancoSearchTerm.slice(0, -1);
-            updateBalancoDisplay();
-            searchBalanco();
-        }
-
-        function updateBalancoDisplay() {
-            document.getElementById('balanco-ean-input').value = balancoSearchTerm;
-        }
-
-        function searchBalanco() {
-            let term = balancoSearchTerm.trim().toLowerCase();
-            let container = document.getElementById('balanco-slider-container');
-            
-            if (term.length < 3) {
-                balancoResultados = [];
-                container.innerHTML = '<div class="balanco-slide" style="cursor:default;"><i data-lucide="scan-barcode" size="64" style="opacity:0.2; margin-bottom:15px;"></i><p style="color:var(--text-secondary); font-weight:600;">Digite ao menos 3 números...</p></div>';
-                lucide.createIcons();
-                return;
-            }
-
-            balancoResultados = products.filter(p => {
-                let ean = String(p.gtin || "").replace(/\D/g, "");
-                let sku = String(p.codigo || "").toLowerCase();
-                
-                if (ean.length > 0 && ean.endsWith(term)) return true;
-                if (sku.includes(term)) return true; 
-                return false;
-            }).slice(0, 10); 
-
-            balancoSlideIndex = 0;
-            renderBalancoSlider();
-        }
-
-        function renderBalancoSlider() {
-            let container = document.getElementById('balanco-slider-container');
-            if(balancoResultados.length === 0) {
-                container.innerHTML = '<div class="balanco-slide" style="cursor:default;"><i data-lucide="package-x" size="64" style="opacity:0.2; margin-bottom:15px;"></i><p style="color:var(--text-secondary); font-weight:600;">Nenhum produto encontrado.</p></div>';
-                lucide.createIcons();
-                return;
-            }
-
-            let p = balancoResultados[balancoSlideIndex];
-            let img = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
-            
-            let arrowsHtml = '';
-            if (balancoResultados.length > 1) {
-                arrowsHtml = `
-                    <button class="balanco-slider-btn left" onclick="mudarSlideBalanco(-1, event)"><i data-lucide="chevron-left" size="32"></i></button>
-                    <button class="balanco-slider-btn right" onclick="mudarSlideBalanco(1, event)"><i data-lucide="chevron-right" size="32"></i></button>
-                    <div style="position:absolute; bottom: 5px; font-size:11px; font-weight:900; background:rgba(0,0,0,0.5); color:white; padding: 4px 10px; border-radius:12px; z-index:5;">
-                        ${balancoSlideIndex + 1} / ${balancoResultados.length}
-                    </div>
-                `;
-            }
-
-            container.innerHTML = `
-                ${arrowsHtml}
-                <div class="balanco-slide" onclick="abrirSidebarBalanco('${p.codigo}')">
-                    <img src="${img}" onerror="this.src='https://placehold.co/300x300/f4f4f5/ef4444?text=ERRO'">
-                    <div class="balanco-slide-sku">SKU: ${p.codigo} | EAN: ${p.gtin || '---'}</div>
-                </div>
-            `;
-            lucide.createIcons();
-        }
-
-        function mudarSlideBalanco(dir, event) {
-            if (event) event.stopPropagation(); 
-            balancoSlideIndex += dir;
-            if (balancoSlideIndex < 0) balancoSlideIndex = balancoResultados.length - 1;
-            if (balancoSlideIndex >= balancoResultados.length) balancoSlideIndex = 0;
-            renderBalancoSlider();
-        }
-
-       function abrirSidebarBalanco(sku) {
-            let p = products.find(x => x.codigo === sku);
-            if(!p) return;
-
-            let dataValidadeFormulario = p.validade || '';
-            if (dataValidadeFormulario.includes('/')) {
-                dataValidadeFormulario = dataValidadeFormulario.split('/').reverse().join('-');
-            }
-
-            let body = document.getElementById('balanco-sidebar-body');
-            body.innerHTML = `
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label class="form-label" style="font-size: 11px;">Nome do Produto</label>
-                    <input type="text" id="bal-nome-${p.codigo}" value="${(p.nome || '').replace(/"/g, '"')}" class="form-input" style="padding: 12px; font-weight: 800; font-size: 14px;">
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label class="form-label" style="font-size: 11px;">SKU</label>
-                    <input type="text" id="bal-sku-${p.codigo}" value="${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px;">
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label class="form-label" style="font-size: 11px;">EAN</label>
-                    <input type="text" id="bal-ean-${p.codigo}" value="${p.gtin||''}" class="form-input" style="padding: 12px; font-size: 14px;">
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label class="form-label" style="font-size: 11px;">Gôndola</label>
-                    <select id="bal-gon-${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
-                        ${getGondolaOptions(p.gondola)}
-                    </select>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label class="form-label" style="font-size: 11px;">Prateleira</label>
-                    <select id="bal-pra-${p.codigo}" class="form-input" style="padding: 12px; font-size: 14px; font-weight: bold; color: #1e3a8a;">
-                        ${getPrateleiraOptions(p.prateleira)}
-                    </select>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label class="form-label" style="font-size: 11px;">Validade</label>
-                    <input type="date" id="bal-val-${p.codigo}" value="${dataValidadeFormulario}" class="form-input" style="padding: 12px; font-size: 14px;">
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
-                    <label class="form-label" style="color: var(--sep-primary); font-size: 13px; font-weight: 900; text-align:center;">ESTOQUE REAL CONTADO</label>
-                    <input type="number" id="bal-est-${p.codigo}" value="${p.estoque||0}" class="form-input" style="padding: 15px; font-weight: 900; font-size: 32px; text-align: center; color: var(--sep-primary); border: 2px solid var(--sep-primary); background: #ffffff;">
-                </div>
-            `;
-            
-            let footer = document.getElementById('balanco-sidebar-footer');
-            footer.innerHTML = `
-                <button class="nav-btn primary" style="width: 100%; justify-content: center; height: 50px; font-size: 14px; font-weight: 900;" onclick="salvarBalanco('${p.codigo}', false, this)">
-                    <i data-lucide="save" size="18"></i> SALVAR ALTERAÇÕES
-                </button>
-            `;
-
-            openSidebar('balanco-sidebar');
-        }
-
-     async function salvarBalanco(oldSku, forceSync, btnElement) {
-            let p = products.find(x => x.codigo === oldSku);
-            if(!p) return;
-
-            let newNome = document.getElementById(`bal-nome-${oldSku}`).value;
-            let newSku = document.getElementById(`bal-sku-${oldSku}`).value.trim().toUpperCase();
-            let newEan = document.getElementById(`bal-ean-${oldSku}`).value.trim();
-            let newGon = document.getElementById(`bal-gon-${oldSku}`).value;
-            let newPra = document.getElementById(`bal-pra-${oldSku}`).value;
-            let newVal = document.getElementById(`bal-val-${oldSku}`).value;
-            let newEst = parseFloat(document.getElementById(`bal-est-${oldSku}`).value) || 0;
-
-            let dataValidadeSalvar = newVal;
-            if (newVal && newVal.includes('-')) {
-                let partes = newVal.split('-');
-                if (partes[0].length === 4) {
-                    dataValidadeSalvar = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                }
-            }
-
-            if(newSku !== oldSku && products.find(x => x.codigo === newSku)) {
-                mostrarAlerta("Este SKU já está em uso!", "erro");
-                return;
-            }
-
-            p.nome = newNome;
-            p.codigo = newSku;
-            p.gtin = newEan;
-            p.gondola = newGon;
-            p.prateleira = newPra;
-            p.localizacao = (newGon || newPra) ? `${newGon}-${newPra}` : "SEM LOC";
-            p.validade = dataValidadeSalvar;
-            p.estoque = newEst;
-            p.last_update = Date.now();
-
-            await saveDataLocally();
-            
-            balancoEditsCount++;
-            document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
-
-            closeSidebar('balanco-sidebar');
-            clearNumpad(); 
-
-            if (balancoEditsCount >= 3) {
-                mostrarAlerta("Enviando lote de 3 alterações para o site...", "aviso");
-                
-                enqueueTask("Autosync Balanço", async () => {
-                    const vitrine = sanitizeProductsForExport(products);
-                    await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `Balanço: Atualização automática de 3 produtos`);
-                    
-                    balancoEditsCount = 0;
-                    document.getElementById('balanco-fila-count').innerText = balancoEditsCount;
-                }, true);
-            } else {
-                mostrarAlerta(`Salvo localmente! (${balancoEditsCount}/3 para envio)`, "sucesso");
-            }
-        }
-
-        // ==========================================================
-        // WHATSAPP E GESTÃO DE FILA (PEDIDOS)
-        // ==========================================================
-
-        async function gerarPedidoWhatsapp() {
-            const textAreaPrincipal = document.getElementById('textoPedidoWhatsappGeral');
-            const textAreaSidebar = document.getElementById('textoPedidoWhatsapp');
-            const texto = textAreaPrincipal ? textAreaPrincipal.value : (textAreaSidebar ? textAreaSidebar.value : "");
-            
-            if (!texto) { alert("Por favor, cole o texto do pedido primeiro!"); return; }
-
-            const linhas = texto.split('\n');
-            let novoPedido = { id: Date.now(), status: "PENDENTE", orderNumMatch: [], orderNum: "", cliente: "", entrega: "", valorTotal: "", itens: [] };
-            let lendoItens = false;
-
-            linhas.forEach(linha => {
-                const textoLinha = linha.trim();
-                if (textoLinha.includes('*PEDIDO #')) { const match = textoLinha.match(/#(\d+)/); if (match) { novoPedido.orderNum = `#${match[1]}`; novoPedido.orderNumMatch = [textoLinha, novoPedido.orderNum]; }
-                } else if (textoLinha.includes('*CLIENTE:*')) { novoPedido.cliente = textoLinha.replace('*CLIENTE:*', '').trim();
-                } else if (textoLinha.includes('*ENTREGA:*')) { novoPedido.entrega = textoLinha.replace('*ENTREGA:*', '').trim();
-                } else if (textoLinha.includes('*TOTAL:')) { const match = textoLinha.match(/R\$\s?([\d.,]+)/); if (match) novoPedido.valorTotal = match[1];
-                } else if (textoLinha.includes('*ITENS:*')) { lendoItens = true;
-                } else if (lendoItens && textoLinha.match(/^\d+\s*[xX]/)) {
-                    const matchItem = textoLinha.match(/^(\d+)\s*[xX]\s*(.+)$/);
-                    if (matchItem) {
-                        const qtd = parseInt(matchItem[1]);
-                        const nomeProduto = matchItem[2].trim();
-                        let nomeZapLimpo = limparTexto(nomeProduto);
-                        
-                        let produtoEncontrado = products.find(p => { let nomeBancoLimpo = limparTexto(p.nome || ""); return nomeBancoLimpo === nomeZapLimpo; });
-                        if (!produtoEncontrado) {
-                            produtoEncontrado = products.find(p => {
-                                let nomeBancoLimpo = limparTexto(p.nome || "");
-                                if (nomeZapLimpo.length > 5 && nomeBancoLimpo.length > 5) { return nomeBancoLimpo.includes(nomeZapLimpo) || nomeZapLimpo.includes(nomeBancoLimpo); }
-                                return false;
-                            });
-                        }
-                        
-                        novoPedido.itens.push({ 
-                            qtd: qtd, 
-                            nomeOriginal: nomeProduto,
-                            sku: produtoEncontrado ? produtoEncontrado.codigo : "---",           
-                            imagem: produtoEncontrado ? (produtoEncontrado.url_imagem || "") : ""      
-                        });
-                    }
-                } else if (textoLinha === '' || textoLinha.includes('------')) { lendoItens = false; }
-            });
-
-            filaDePedidos.push(novoPedido); 
-            if(textAreaPrincipal) textAreaPrincipal.value = "";
-            if(textAreaSidebar) textAreaSidebar.value = "";
-            
-            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-            
-            renderizarCartoes(); 
-            if(typeof renderizarPedidosScreen === "function") renderizarPedidosScreen();
-
-            enqueueTask('Novo Pedido (Nuvem)', async () => {
-                let filaRemota = await getFilaRemota();
-                if (!filaRemota.find(p => p.id === novoPedido.id)) { filaRemota.push(novoPedido); }
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Adicionado`);
-            }, true);
-        }
-
-        function renderizarPedidosScreen() {
-            const container = document.getElementById('grid-pedidos-screen');
-            if(!container) return;
-            container.innerHTML = "";
-            
-            if (filaDePedidos.length === 0) {
-                container.innerHTML = '<p style="text-align:center; color:#888; margin-top: 20px;">Nenhum pedido na fila.</p>';
-                return;
-            }
-
-            let filaOrdenada = [...filaDePedidos].sort((a,b) => (a.status === "PENDENTE" ? -1 : 1));
-
-            filaOrdenada.forEach(pedido => {
-                let totalItensDiferentes = pedido.itens ? pedido.itens.length : 0;
-                let totalProdutos = pedido.itens ? pedido.itens.reduce((acc, curr) => acc + curr.qtd, 0) : 0;
-                let dataEntrega = pedido.entrega || 'Não informada';
-                let isSeparado = pedido.status === "SEPARADO" || pedido.status === "CONCLUIDO";
-
-                container.innerHTML += `
-                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; opacity: ${isSeparado ? '0.6' : '1'}; flex-shrink: 0; min-height: max-content;">
-                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); padding-bottom: 8px;">
-                        <strong style="font-size: 15px; color: var(--accent);">${pedido.orderNum || '#...'}</strong>
-                        <span style="font-size: 10px; font-weight: 900; padding: 4px 8px; border-radius: 6px; background: ${isSeparado ? '#e0f2fe' : '#fef3c7'}; color: ${isSeparado ? '#0369a1' : '#b45309'};">${isSeparado ? 'SEPARADO' : 'PENDENTE'}</span>
-                    </div>
-                    <div style="font-size: 12px; display: flex; flex-direction: column; gap: 6px; color: var(--text-secondary);">
-                        <div>👤 <strong style="color:var(--text-primary);">Cliente:</strong> ${pedido.cliente || 'Desconhecido'}</div>
-                        <div>🚚 <strong style="color:var(--text-primary);">Data de Entrega:</strong> <span style="color:var(--danger); font-weight:bold;">${dataEntrega}</span></div>
-                        <div style="background: #f4f4f5; padding: 6px; border-radius: 6px; margin-top: 4px;">📦 <strong>Volume:</strong> ${totalProdutos} produtos (${totalItensDiferentes} itens diferentes)</div>
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-top: 5px;">
-                        ${!isSeparado ? `
-                            <button class="nav-btn success-btn" style="flex:2; justify-content:center; height:40px;" onclick="abrirSeparador(${pedido.id})"><i data-lucide="package-check" size="14"></i> SEPARAR AGORA</button>
-                            <button class="nav-btn" style="flex:1; justify-content:center; height:40px; color: var(--danger); border-color: #fecaca;" onclick="apagarPedido(${pedido.id})"><i data-lucide="trash-2" size="14"></i></button>
-                        ` : `
-                            <button class="nav-btn" style="flex:1; justify-content:center; height:40px; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="estornarPedido(${pedido.id})"><i data-lucide="rotate-ccw" size="14"></i> ESTORNAR ESTOQUE</button>
-                        `}
-                    </div>
-                </div>`;
-            });
-            lucide.createIcons();
-        }
-
-        function renderizarCartoes() {
-            const container = document.getElementById('containerPedidosCards'); 
-            if(!container) return;
-            container.innerHTML = "";
-            const pendentes = filaDePedidos.filter(p => p.status === "PENDENTE");
-            if (pendentes.length === 0) { container.innerHTML = '<p class="texto-vazio">Nenhum pedido pendente na fila.</p>'; return; }
-            pendentes.forEach((pedido) => {
-                const cartao = document.createElement('div'); cartao.className = 'cartao-pedido';
-                cartao.innerHTML = `
-                    <div class="cartao-info">
-                        <strong>Pedido ${pedido.orderNum || '#...'}</strong>
-                        <span>👤 ${pedido.cliente || 'Desconhecido'}</span>
-                        <span>📦 ${pedido.itens ? pedido.itens.length : 0} Produtos</span>
-                        <span>💰 R$ ${pedido.valorTotal || '0,00'}</span>
-                    </div>
-                    <div class="cartao-acoes">
-                        <button class="nav-btn success-btn" style="width:100%; justify-content:center; padding:10px 0;" onclick="abrirSeparador(${pedido.id})">
-                            <i data-lucide="package-check" size="14"></i> SEPARAR
-                        </button>
-                        <button class="nav-btn" style="width:100%; justify-content:center; color:var(--danger); border-color:#fecaca;" onclick="apagarPedido(${pedido.id})">
-                            <i data-lucide="trash-2" size="14"></i> APAGAR
-                        </button>
-                    </div>
-                `;
-                container.appendChild(cartao);
-            });
-            lucide.createIcons();
-        }
-
-        async function apagarPedido(pedidoId) {
-            if(!confirm("Tem certeza que deseja apagar este pedido da fila?")) return;
-            filaDePedidos = filaDePedidos.filter(p => p.id !== pedidoId); 
-            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-            
-            renderizarCartoes(); if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
-            
-            enqueueTask('Apagar Pedido (Nuvem)', async () => {
-                let filaRemota = await getFilaRemota();
-                filaRemota = filaRemota.filter(p => p.id !== pedidoId);
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido Removido`);
-            }, true);
-        }
-
-        function processarBaixaEstoqueLocal(itensVendidosMap) {
-            let mudouAlgo = false;
-            for (const [idVendido, qtdVendida] of Object.entries(itensVendidosMap)) {
-                let p = products.find(prod => prod.codigo === idVendido);
-                if (!p) {
-                    let idLimpo = limparTexto(idVendido);
-                    p = products.find(prod => limparTexto(prod.nome || "") === idLimpo);
-                }
-                if (p) { p.estoque = (parseFloat(p.estoque) || 0) - qtdVendida; p.last_update = Date.now(); mudouAlgo = true; }
-            }
-            return mudouAlgo;
-        }
-
-        async function darBaixaEstoqueMaster() {
-            if(filaDePedidos.filter(p => p.status === "PENDENTE").length === 0) { return alert("Não há pedidos PENDENTES na fila."); }
-            if(!confirm("Atenção: Isto vai dar baixa em TODOS os pedidos pendentes sem separar. Continuar?")) return;
-            
-            let itensVendidos = {}; let countBaixas = 0;
-            filaDePedidos.forEach(pedido => {
-                if (pedido.status === "PENDENTE") {
-                    let listaItens = pedido.items || pedido.itens; 
-                    if (listaItens) {
-                        listaItens.forEach(item => { const skuOrNome = item.sku && item.sku !== "---" ? item.sku : item.nomeOriginal; itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + item.qtd; });
-                    }
-                    pedido.status = "CONCLUIDO"; countBaixas++;
-                }
-            });
-
-            if(countBaixas === 0) return alert("Nenhum item processado.");
-            let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
-
-            filaDePedidos = filaDePedidos.filter(p => p.status !== "CONCLUIDO");
-            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-            
-            enqueueTask("Baixa Geral Pedidos (Nuvem)", async () => {
-                let filaRemota = await getFilaRemota();
-                filaRemota = filaRemota.filter(p => p.status !== "PENDENTE");
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Baixa Geral`);
-            }, true);
-
-            renderGrid(document.getElementById('search-input').value);
-            renderizarCartoes(); 
-            mostrarAlerta("Sucesso! Baixa geral efetuada. Não se esqueça de salvar o banco.");
-        }
-
-        // ==========================================================
-        // MODO DE SEPARAÇÃO (PICKING / FULLSCREEN) 
-        // ==========================================================
-
-        function mostrarAlerta(msg, tipo = 'sucesso') { 
-            let a = document.getElementById('alerta-customizado'); a.innerText = msg; a.className = ''; 
-            if(tipo === 'erro') a.classList.add('alerta-erro'); else if(tipo === 'aviso') a.classList.add('alerta-aviso'); else a.classList.add('alerta-sucesso'); 
-            a.style.display = 'block'; setTimeout(() => a.style.display = 'none', 2000); 
-        }
-        
-        function inicializarAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-        
-        function tocarBipe(tipo) { 
-            if (!audioCtx) return; try { 
-                const osc = audioCtx.createOscillator(); const ganho = audioCtx.createGain(); osc.connect(ganho); ganho.connect(audioCtx.destination); 
-                if(tipo === 'sucesso'){ osc.type = 'sine'; osc.frequency.setValueAtTime(900, audioCtx.currentTime); ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
-                else { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(250, audioCtx.currentTime); ganho.gain.setValueAtTime(0.5, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.5); } 
-            } catch(e){} 
-        }
-
-        function abrirSeparador(pedidoId) {
-            const pedido = filaDePedidos.find(p => p.id === pedidoId);
-            if (!pedido) return alert("Erro: Pedido não encontrado.");
-            
-            inicializarAudio();
-            closeAllSidebars(); 
-            document.getElementById('separador-overlay').style.display = 'flex';
-            
-            listaDeSeparacao = []; pedidoAtualParaSeparacao = pedido; 
-            
-            if(pedido.itens) {
-                pedido.itens.forEach(item => { 
-                    let skuRecebido = item.sku || "---";
-                    let produtoDb = products.find(p => (p.codigo || "").toString().trim().toUpperCase() === skuRecebido );
-                    
-                    if (!produtoDb && skuRecebido === "---") {
-                        let nomeZapLimpo = limparTexto(item.nomeOriginal);
-                        produtoDb = products.find(p => {
-                            let nBanco = limparTexto(p.nome || "");
-                            return nBanco === nomeZapLimpo || (nomeZapLimpo.length > 5 && nBanco.includes(nomeZapLimpo));
-                        });
-                    }
-
-                    if (produtoDb) {
-                        item.sku = produtoDb.codigo;
-                        if (item.imagem && item.imagem.length > 5) { 
-                            produtoDb.url_imagem = item.imagem; 
-                        } else {
-                            item.imagem = produtoDb.url_imagem;
-                        }
-                    } else {
-                        produtoDb = { codigo: skuRecebido, localizacao: "SEM LOC", url_imagem: item.imagem };
-                    }
-
-                    listaDeSeparacao.push({ 
-                        quantidadeTotal: item.qtd, unidadesLidas: 0, nomePedido: item.nomeOriginal, produtoDb: produtoDb, 
-                        imagemOriginalDoPedido: item.imagem, localizacao: produtoDb.localizacao || "SEM LOC", status: 'pendente' 
-                    }); 
-                });
-            }
-            
-            listaDeSeparacao.sort((a, b) => a.localizacao.localeCompare(b.localizacao)); 
-            indexAtualPicking = 0; 
-            
-            document.getElementById('tela-separacao-foco').classList.remove('hidden');
-            document.getElementById('tela-conclusao').classList.add('hidden');
-            renderizarItemFoco();
-        }
-
-        function fecharSeparador() {
-            document.getElementById('separador-overlay').style.display = 'none';
-        }
-
-        function resolverImagemProdutoSep(produtoDb, imagemFallback) {
-            let url = imagemFallback || produtoDb.url_imagem;
-            if (url && url.length > 5) return url;
-            let sku = (produtoDb.codigo || "---").toString().trim().toUpperCase();
-            if (sku !== "---") return `../site/img/produtos/${sku}.webp`;
-            return null;
-        }
-
-        function renderizarItemFoco() {
-            if (indexAtualPicking >= listaDeSeparacao.length) { finalizarModoPicking(); return; }
-            
-            let item = listaDeSeparacao[indexAtualPicking]; 
-            let skuItem = item.produtoDb.codigo || "---";
-            
-            document.getElementById('foco-pedido-info').innerText = `Pedido: ${pedidoAtualParaSeparacao.orderNum}`; 
-            document.getElementById('foco-loc').innerText = `${item.localizacao}`; 
-            
-            let imgTag = document.getElementById('foco-img');
-            let urlCorreta = resolverImagemProdutoSep(item.produtoDb, item.imagemOriginalDoPedido);
-            if (urlCorreta) { imgTag.src = urlCorreta; } else { imgTag.src = 'caminho_invalido'; }
-            imgTag.onerror = function() { this.onerror = null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22100%25%22%20height%3D%22200%22%20style%3D%22background%3A%23f4f4f4%22%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20dominant-baseline%3D%22middle%22%20text-anchor%3D%22middle%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20fill%3D%22%23aaa%22%3ESem%20Foto%3C%2Ftext%3E%3C%2Fsvg%3E'; };
-
-            document.getElementById('foco-nome').innerText = item.nomePedido; 
-            document.getElementById('foco-sku').innerText = `SKU: ${skuItem}`;
-            
-            document.getElementById('span-lidos').innerText = item.unidadesLidas;
-            document.getElementById('span-total').innerText = item.quantidadeTotal;
-            
-            let cTicks = document.getElementById('foco-ticks'); cTicks.innerHTML = '';
-            for(let i=0; i<item.quantidadeTotal; i++) { 
-                let tick = document.createElement('div'); tick.className = 'tick-box'; 
-                if(i<item.unidadesLidas) { tick.classList.add('active'); tick.innerHTML='✓'; } 
-                cTicks.appendChild(tick); 
-            }
-            
-            const btnSeparar = document.getElementById('btn-marcar-separado');
-            if (item.unidadesLidas >= item.quantidadeTotal) {
-                btnSeparar.innerHTML = "✔️ CONCLUÍDO (Avançar)";
-                btnSeparar.className = "sep-btn sep-btn-secondary";
-                btnSeparar.style.boxShadow = "0 6px 0 #1976D2";
-                btnSeparar.onclick = avancarProduto;
-            } else {
-                btnSeparar.innerHTML = `✅ SEPARAR (1 UN)`;
-                btnSeparar.className = "sep-btn sep-btn-primary";
-                btnSeparar.style.boxShadow = "0 6px 0 #388E3C";
-                btnSeparar.onclick = registrarUnidadeFocoSimples;
-            }
-        }
-
-        function registrarUnidadeFocoSimples() {
-            let item = listaDeSeparacao[indexAtualPicking];
-            if (item.unidadesLidas < item.quantidadeTotal) {
-                item.unidadesLidas++;
-                tocarBipe('sucesso');
-                
-                if (item.unidadesLidas >= item.quantidadeTotal) {
-                    item.status = 'concluido';
-                    renderizarItemFoco();
-                    setTimeout(() => { avancarProduto(); }, 400);
-                } else {
-                    renderizarItemFoco();
-                }
-            }
-        }
-
-        function voltarProdutoAnterior() { 
-            if (indexAtualPicking > 0) { 
-                indexAtualPicking--; 
-                renderizarItemFoco(); 
-            } else { 
-                mostrarAlerta("Este já é o primeiro produto!", "aviso"); 
-            } 
-        }
-
-        function avancarProduto() { 
-            if (indexAtualPicking < listaDeSeparacao.length - 1) { 
-                indexAtualPicking++; 
-                renderizarItemFoco(); 
-            } else { 
-                let pendentes = listaDeSeparacao.findIndex(i => i.unidadesLidas < i.quantidadeTotal);
-                if (pendentes === -1) {
-                    finalizarModoPicking(); 
-                } else {
-                    mostrarAlerta("Ainda há itens incompletos na lista!", "aviso");
-                    indexAtualPicking = pendentes; 
-                    renderizarItemFoco();
-                }
-            } 
-        }
-
-        function finalizarModoPicking() {
-            document.getElementById('tela-separacao-foco').classList.add('hidden');
-            let areaCheck = document.getElementById('area-checklist'); areaCheck.innerHTML = '';
-            
-            listaDeSeparacao.forEach(i => { 
-                let imgUrl = resolverImagemProdutoSep(i.produtoDb, i.imagemOriginalDoPedido) || 'https://placehold.co/100x100/f4f4f5/a1a1aa?text=SEM+FOTO';
-                areaCheck.innerHTML += `
-                <div class="checklist-item" style="display:flex; align-items:center; gap:10px; margin-bottom:10px; border-bottom:1px dashed #ccc; padding-bottom:10px;">
-                    <img src="${imgUrl}" style="width:60px; height:60px; object-fit:contain; background:#fff; border-radius:6px; border:1px solid #ddd; flex-shrink:0;">
-                    <div style="flex-grow:1; font-size:13px; line-height:1.2; font-weight:bold;">${i.nomePedido}</div>
-                    <div style="font-size:18px; font-weight:900; color:var(--sep-primary);">${i.quantidadeTotal}x</div>
-                </div>`; 
-            });
-            document.getElementById('tela-conclusao').classList.remove('hidden');
-        }
-
-        function imprimirEtiquetaBluetooth() {
-            let n = pedidoAtualParaSeparacao ? (pedidoAtualParaSeparacao.orderNum || 'N/A') : 'N/A'; let dataHora = new Date().toLocaleString('pt-BR');
-            let iframe = document.getElementById('f-print') || document.createElement('iframe'); iframe.id = 'f-print'; iframe.style.display = 'none'; document.body.appendChild(iframe);
-            let doc = iframe.contentWindow.document; doc.open();
-            let html = `<html><head><style>@page { margin: 0; size: 48mm auto; } body { width: 48mm; font-family: 'Courier New', monospace; font-size: 11px; margin: 0; padding: 2mm 0; color: #000; text-align: center; } h2 { font-size: 18px; font-weight: 900; margin: 0 0 5px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; padding: 5px 0; } .data { font-size: 10px; margin-bottom: 10px; font-weight: bold; } .item { text-align: left; border-bottom: 1px dashed #000; padding: 4px 0; display: flex; justify-content: space-between; font-weight: bold; } .nome-item { width: 80%; display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .qtd-item { width: 20%; text-align: right; font-size: 14px; } .fim { margin-top: 15px; text-align: center; font-size: 12px; border-bottom: 2px dashed #000; padding-bottom: 20px;}</style></head><body><h2>PEDIDO<br>${n}</h2><div class="data">Expedição:<br>${dataHora}</div><div style="border-top: 1px solid #000; margin-bottom: 5px;"></div><div style="text-align:left; font-weight:900; margin-bottom:2px;">Qtd  - Produto</div>`;
-            listaDeSeparacao.forEach(i => { html += `<div class="item"><span class="qtd-item">${i.quantidadeTotal}x</span> <span class="nome-item" style="margin-left:5px;">${i.nomePedido}</span></div>`; });
-            doc.write(html + `<div class="fim">SEPARAÇÃO CONCLUÍDA</div><br><br><br></body></html>`); doc.close(); setTimeout(() => iframe.contentWindow.print(), 800);
-        }
-
-        function finalizarEDarBaixaPedidoAtual() {
-            let pIndex = filaDePedidos.findIndex(p => p.id === pedidoAtualParaSeparacao.id);
-            if(pIndex !== -1) filaDePedidos[pIndex].status = "SEPARADO";
-
-            let itensVendidos = {};
-            listaDeSeparacao.forEach(i => {
-                const skuOrNome = i.produtoDb.codigo !== "---" ? i.produtoDb.codigo : i.nomePedido;
-                itensVendidos[skuOrNome] = (itensVendidos[skuOrNome] || 0) + i.quantidadeTotal;
-            });
-
-            let mudouAlgoLocalmente = processarBaixaEstoqueLocal(itensVendidos);
-
-            localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-
-            enqueueTask("Fila Pedidos (Nuvem)", async () => {
-                let filaRemota = await getFilaRemota();
-                let idx = filaRemota.findIndex(p => p.id === pedidoAtualParaSeparacao.id);
-                if(idx !== -1) filaRemota[idx].status = "SEPARADO";
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Pedido ${pedidoAtualParaSeparacao.orderNum} Separado`);
-            }, true);
-
-            renderizarCartoes();
-            if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
-            fecharSeparador();
-            mostrarAlerta(`✅ Pedido ${pedidoAtualParaSeparacao.orderNum} concluído! Estoque baixado no sistema. Clique em "SALVAR PRODUTOS.JSON" depois.`, "sucesso");
-        }
-
-        async function estornarPedido(pedidoId) {
-            if(!confirm("Atenção: Isto vai devolver os produtos deste pedido ao estoque e cancelar a separação. Continuar?")) return;
-            
-            let pIndex = filaDePedidos.findIndex(p => p.id === pedidoId);
-            if(pIndex === -1) return alert("Pedido não encontrado na fila local.");
-            
-            let pedido = filaDePedidos[pIndex];
-            let mudouAlgoLocalmente = false;
-
-            if (pedido.itens) {
-                pedido.itens.forEach(item => {
-                    let skuRecebido = item.sku || "---";
-                    let p = products.find(prod => prod.codigo === skuRecebido);
-                    if (!p) {
-                        let idLimpo = limparTexto(item.nomeOriginal);
-                        p = products.find(prod => limparTexto(prod.nome || "") === idLimpo);
-                    }
-                    if (p) {
-                        p.estoque = (parseFloat(p.estoque) || 0) + item.qtd; 
-                        p.last_update = Date.now();
-                        mudouAlgoLocalmente = true;
-                    }
-                });
-            }
-
-            filaDePedidos = filaDePedidos.filter(p => p.id !== pedidoId);
-            await localforage.setItem(PEDIDOS_KEY, filaDePedidos);
-
-            enqueueTask("Fila Pedidos (Estorno)", async () => {
-                let filaRemota = await getFilaRemota();
-                filaRemota = filaRemota.filter(p => p.id !== pedidoId);
-                await GitHubAPI.saveFile(`site/pedidos_fila.json`, filaRemota, `PIM Sync: Estorno do Pedido ${pedido.orderNum}`);
-            }, true);
-
-            renderizarCartoes();
-            renderGrid(document.getElementById('search-input').value, true);
-            if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
-            mostrarAlerta(`🔄 Estorno concluído. Clique em "SALVAR PRODUTOS.JSON" para confirmar os estoques.`, "sucesso");
-        }
-
-        // ==========================================================
-        // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS GERAIS E MARCA)
+        // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS)
         // ==========================================================
         
         let isFilter24hActive = false;
-        function toggleFilter24h() { isFilter24hActive = !isFilter24hActive; const btn = document.getElementById('btn-24h'); const btnMobile = document.getElementById('btn-24h-mobile'); if(isFilter24hActive) { btn.classList.add('primary'); btnMobile.classList.add('primary'); } else { btn.classList.remove('primary'); btnMobile.classList.remove('primary'); } renderGrid(document.getElementById('search-input').value); }
-        function openSidebar(id) { document.getElementById('sidebar-overlay').style.display = 'block'; setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); }
+        function toggleFilter24h() { 
+            isFilter24hActive = !isFilter24hActive; 
+            const btn = document.getElementById('btn-24h'); const btnMobile = document.getElementById('btn-24h-mobile'); 
+            if(isFilter24hActive) { btn.classList.add('primary'); btnMobile.classList.add('primary'); } 
+            else { btn.classList.remove('primary'); btnMobile.classList.remove('primary'); } 
+            renderGrid(); 
+        }
+        
+        function openSidebar(id) { 
+            document.getElementById('sidebar-overlay').style.display = 'block'; 
+            setTimeout(() => { document.getElementById('sidebar-overlay').style.opacity = '1'; document.getElementById(id).classList.add('open'); }, 10); 
+        }
         
         function closeSidebar(id) { 
             document.getElementById(id).classList.remove('open'); 
@@ -1675,10 +633,7 @@
                 if(openSidebars.length === 0) { 
                     document.getElementById('sidebar-overlay').style.opacity = '0'; 
                     setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
-                    if(id === 'edit-sidebar') { 
-                        currentEditingSku = null; 
-                        renderGrid(document.getElementById('search-input').value, true); 
-                    } 
+                    if(id === 'edit-sidebar') { currentEditingSku = null; renderGrid(null, true); } 
                 } 
             }, 50); 
         }
@@ -1688,16 +643,22 @@
             document.getElementById('sidebar-overlay').style.opacity = '0'; 
             setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
             currentEditingSku = null; 
-            renderGrid(document.getElementById('search-input').value, true); 
+            renderGrid(null, true); 
         }
 
         window.onload = async function() { 
             lucide.createIcons(); 
             await loadData(); 
-            document.getElementById('search-input').addEventListener('input', debounce((e) => renderGrid(e.target.value), 300)); 
+            document.getElementById('search-input').addEventListener('input', debounce((e) => {
+                // Se estiver pesquisando, limpa os filtros ativos de categoria/marca
+                if(e.target.value.trim() !== "") {
+                    filtroAtivo = { tipo: null, valor: null };
+                    document.getElementById('active-filter-banner').style.display = 'none';
+                }
+                renderGrid(e.target.value);
+            }, 300)); 
             setupEditorEvents(); 
             
-            // LAZY LOADING EVENT LISTENER
             const mainContent = document.getElementById('main-content-pim');
             if (mainContent) {
                 mainContent.addEventListener('scroll', () => {
@@ -1710,22 +671,23 @@
         
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
-        // MÓDULO MARCAS: Função para preencher a Datalist de autocomplete
         function renderizarDatalistMarcas() {
             let dl = document.getElementById('lista-marcas-global');
             if(dl) {
+                // Garante ordenação alfabética
+                marcasDoSistema.sort((a, b) => a.localeCompare(b));
                 dl.innerHTML = marcasDoSistema.map(m => `<option value="${m}">`).join('');
             }
         }
 
-        // MÓDULO MARCAS: Função especial para salvar Marca e atualizar a lista global
         window.updateMarca = async function(sku, novaMarca) {
-            novaMarca = novaMarca.trim();
+            // Força Caixa Alta e remove espaços extras
+            novaMarca = novaMarca.toUpperCase().trim();
             updateField(sku, 'marca', novaMarca);
             
             if (novaMarca && !marcasDoSistema.includes(novaMarca)) {
                 marcasDoSistema.push(novaMarca);
-                marcasDoSistema.sort();
+                marcasDoSistema.sort((a, b) => a.localeCompare(b));
                 await localforage.setItem(MARCAS_KEY, marcasDoSistema);
                 renderizarDatalistMarcas();
             }
@@ -1733,38 +695,64 @@
 
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
-            try { const savedPedidos = await localforage.getItem(PEDIDOS_KEY); if(savedPedidos && Array.isArray(savedPedidos)) filaDePedidos = savedPedidos; } catch (err) {}
             try { const savedCats = await localforage.getItem(CATEGORIAS_KEY); if(savedCats && Array.isArray(savedCats)) categoriasDoSistema = savedCats; } catch (err) {}
             try { const savedMarcas = await localforage.getItem(MARCAS_KEY); if(savedMarcas && Array.isArray(savedMarcas)) marcasDoSistema = savedMarcas; } catch (err) {}
             
-            if (products.length > 0) {
-                const marcasExistentes = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))];
-                let marcasAdicionadas = false;
-                marcasExistentes.forEach(m => {
-                    if (!marcasDoSistema.includes(m)) { marcasDoSistema.push(m); marcasAdicionadas = true; }
-                });
-                if (marcasAdicionadas) {
-                    marcasDoSistema.sort();
-                    await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+            // Higienização inicial de Categorias e Marcas
+            let marcasAdicionadas = false;
+            products.forEach(p => {
+                if (p.marca) p.marca = p.marca.toUpperCase().trim();
+                if (p.categoria) p.categoria = p.categoria.trim();
+
+                if (p.marca && !marcasDoSistema.includes(p.marca)) {
+                    marcasDoSistema.push(p.marca);
+                    marcasAdicionadas = true;
                 }
+            });
+
+            if (marcasAdicionadas) {
+                marcasDoSistema.sort((a, b) => a.localeCompare(b));
+                await localforage.setItem(MARCAS_KEY, marcasDoSistema);
             }
+            
             renderizarDatalistMarcas();
 
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
-            renderGrid(); renderizarCartoes(); if(typeof renderizarPedidosScreen === 'function') renderizarPedidosScreen();
+            renderGrid();
         }
         
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
         async function saveDataLocally() { try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} }
 
-        window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); renderGrid(document.getElementById('search-input').value, true); }
-        window.addTag = async function(sku) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
-        window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
+        window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true); }
+        window.addTag = async function(sku) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
+        window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
+
+        // ==========================================================
+        // FILTRO GLOBAL (GRID)
+        // ==========================================================
+        window.filtrarNaGrid = function(tipo, valor) {
+            filtroAtivo = { tipo: tipo, valor: valor };
+            document.getElementById('search-input').value = ""; // Limpa a barra de pesquisa textual
+            closeAllSidebars();
+            
+            const banner = document.getElementById('active-filter-banner');
+            banner.style.display = 'flex';
+            document.getElementById('filter-text-display').innerText = `${tipo === 'categoria' ? 'Categoria' : 'Marca'}: ${valor}`;
+            
+            renderGrid();
+        }
+
+        window.limparFiltroGrid = function() {
+            filtroAtivo = { tipo: null, valor: null };
+            document.getElementById('active-filter-banner').style.display = 'none';
+            renderGrid();
+        }
 
         // ==========================================================
         // LAZY LOADING E CARTÕES DO PRODUTO 
         // ==========================================================
-        function renderGrid(filter = "", keepLoaded = false) {
+        function renderGrid(searchTerm = null, keepLoaded = false) {
             const gridContainer = document.getElementById('product-grid');
             const mainContent = document.getElementById('main-content-pim');
             const currentScroll = mainContent ? mainContent.scrollTop : 0;
@@ -1774,18 +762,26 @@
             itemsCarregados = 0; 
 
             let filtered = products;
+
+            // Filtro por Categoria ou Marca
+            if (filtroAtivo.tipo === 'categoria') {
+                filtered = filtered.filter(p => (p.categoria || "").trim() === filtroAtivo.valor);
+            } else if (filtroAtivo.tipo === 'marca') {
+                filtered = filtered.filter(p => (p.marca || "").trim().toUpperCase() === filtroAtivo.valor);
+            }
             
-            if(filter) { 
-                const term = filter.toLowerCase().trim(); 
+            // Filtro de Busca Textual
+            if(searchTerm) { 
+                const term = searchTerm.toLowerCase().trim(); 
                 filtered = filtered.filter(p => {
                     const nome = (p.nome || "").toLowerCase();
                     const sku = (p.codigo || "").toLowerCase();
                     const ean = (p.gtin || "").toLowerCase();
-                    
                     return nome.includes(term) || sku.includes(term) || ean.includes(term);
                 }); 
             }
 
+            // Filtro 24h
             if(isFilter24hActive) { 
                 const oneDay = 24 * 60 * 60 * 1000; const now = Date.now(); 
                 filtered = filtered.filter(p => { const time = p.last_update || p.id || 0; return (now - time) <= oneDay; }); 
@@ -1794,7 +790,7 @@
             produtosFiltrados = filtered;
 
             if (produtosFiltrados.length === 0) { 
-                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto encontrado</h3><p>Tente outro termo de busca</p></div>`; 
+                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto encontrado</h3><p>Verifique os filtros ou termos de busca.</p></div>`; 
                 lucide.createIcons(); 
                 return; 
             }
@@ -1829,7 +825,7 @@
                             ${htmlTag}
                             <img src="${imgUrl}" class="card-img" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
                         </div>
-                        <button class="nav-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="openEditSidebar('${p.codigo}')"><i data-lucide="edit" size="12"></i> MAIS OPÇÕES</button>
+                        <button class="nav-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="openEditSidebar('${p.codigo}')"><i data-lucide="edit" size="12"></i> OPÇÕES</button>
                     </div>
                     
                     <div class="card-info" style="flex-grow:1; display:flex; flex-direction:column; gap:6px; padding:0; text-align:left;">
@@ -1884,7 +880,7 @@
 
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Marca</label>
-                                <input type="text" list="lista-marcas-global" class="form-input card-mini-input" placeholder="Ex: Sony" value="${p.marca || ''}" onchange="updateMarca('${p.codigo}', this.value)">
+                                <input type="text" list="lista-marcas-global" class="form-input card-mini-input" placeholder="Ex: SONY" value="${p.marca || ''}" onchange="updateMarca('${p.codigo}', this.value)">
                             </div>
                             
                             <div style="display:flex; flex-direction:column; gap:2px;">
@@ -1916,7 +912,6 @@
             const isInactive = p.situacao === 'I';
             const safeName = (p.nome||'').replace(/'/g, "\\'");
 
-            // 5 Slots de Imagem
             let htmlImages = '<div class="image-slots">';
             for (let i = 1; i <= 5; i++) {
                 let fieldName = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
@@ -1929,8 +924,7 @@
             const tags = p.tags || [];
             if (p.tag_texto && tags.length === 0) { 
                 p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => { tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); 
-                p.tag_texto = ''; 
-                p.tags = tags; 
+                p.tag_texto = ''; p.tags = tags; 
             }
             tags.forEach((t, idx) => {
                 htmlEditorTags += `<div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
@@ -1979,9 +973,7 @@
 
             if(field === 'validade' && typeof value === 'string' && value.includes('-')) {
                 const partes = value.split('-');
-                if(partes[0].length === 4) {
-                    finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                }
+                if(partes[0].length === 4) finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`;
             } 
             else if(['preco','estoque','preco_custo'].includes(field)) {
                 finalVal = parseFloat(value.toString().replace(',','.')) || 0; 
@@ -1992,36 +984,22 @@
             await saveDataLocally(); 
         }
         
-        async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(document.getElementById('search-input').value, true); } }
-        
-        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(document.getElementById('search-input').value, true); }
-        
-        async function deleteCurrentProduct() { if(!currentEditingSku) return; if(!confirm(`ATENÇÃO: Deseja apagar este produto permanentemente?`)) return; products = products.filter(p => p.codigo !== currentEditingSku); await saveDataLocally(); closeSidebar('edit-sidebar'); renderGrid(document.getElementById('search-input').value, true); }
-        
-        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); await saveDataLocally(); renderGrid(document.getElementById('search-input').value); openEditSidebar(sku); }
+        async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("Este SKU já está em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(null, true); } }
+        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
+        async function deleteCurrentProduct() { if(!currentEditingSku) return; if(!confirm(`ATENÇÃO: Deseja apagar este produto permanentemente?`)) return; products = products.filter(p => p.codigo !== currentEditingSku); await saveDataLocally(); closeSidebar('edit-sidebar'); renderGrid(null, true); }
+        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); await saveDataLocally(); renderGrid(); openEditSidebar(sku); }
 
         function searchGoogleHD(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); }
-        function searchAIReview(nome) { if(!nome) return; const prompt = `Pesquise sobre o produto "${nome}" no site do fabricante, no youtube e em sites especializados. Escreva uma resenha com até 100 palavras e com 4 paragrafos. Não use listas, apenas texto, não use links.`; window.open(`https://www.google.com/search?q=${encodeURIComponent(prompt)}&udm=50`, '_blank'); }
-        function searchYoutubeShorts(nome) { if(!nome) return alert("Preencha o nome do produto primeiro."); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome + ' shorts')}`, '_blank'); }
 
         const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
 
         function openCanvasSidebar(sku, slot) {
             const p = products.find(x => x.codigo === sku); 
             if(!p) return; 
-            currentImageSlot = slot; 
-            imgOffsetX = 0; imgOffsetY = 0; 
-            
-            document.getElementById('zoomRange').value = 1; 
-            document.getElementById('brightnessRange').value = 1; 
-            document.getElementById('sharpenRange').value = 0;
-            
+            currentImageSlot = slot; imgOffsetX = 0; imgOffsetY = 0; 
+            document.getElementById('zoomRange').value = 1; document.getElementById('brightnessRange').value = 1; document.getElementById('sharpenRange').value = 0;
             const fieldName = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
-            
-            const img = new Image(); 
-            img.crossOrigin = "Anonymous"; 
-            img.src = p[fieldName] || ""; 
-            
+            const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p[fieldName] || ""; 
             img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; 
             img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
         }
@@ -2055,289 +1033,135 @@
 
         async function saveImageToQueue() {
             if(!currentEditingSku) return; 
-            
-            const sku = currentEditingSku; 
-            const slot = currentImageSlot;
-            
-            const base64full = canvas.toDataURL('image/webp', 0.9); 
-            const base64data = base64full.split(',')[1];
-            
-            const p = products.find(x => x.codigo === sku); 
-            const fieldName = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
-            
-            p[fieldName] = base64full; 
-            p.last_update = Date.now();
+            const sku = currentEditingSku; const slot = currentImageSlot;
+            const base64full = canvas.toDataURL('image/webp', 0.9); const base64data = base64full.split(',')[1];
+            const p = products.find(x => x.codigo === sku); const fieldName = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
+            p[fieldName] = base64full; p.last_update = Date.now();
             await saveDataLocally(); 
-            
-            imageQueue.push({ sku: sku, base64data: base64data, slot: slot }); 
-            updateImageBadge(); 
-            
-            openEditSidebar(sku); 
-            closeSidebar('editor-sidebar');
-            renderGrid(document.getElementById('search-input').value, true);
+            imageQueue.push({ sku: sku, base64data: base64data, slot: slot }); updateImageBadge(); 
+            openEditSidebar(sku); closeSidebar('editor-sidebar'); renderGrid(null, true);
         }
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
         // ==========================================================
-        // 4. IMPORTAR CSV: SUBSTITUIR BASE (PRESERVANDO MÍDIAS)
+        // IMPORTAR CSV: SUBSTITUIR BASE & CADASTRAR NOVOS
         // ==========================================================
         document.getElementById('csv-file-substituir').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
-            
-            if(!confirm("⚠️ ATENÇÃO: Os produtos do CSV vão atualizar os preços e estoques atuais. Produtos que não estiverem no CSV serão apagados, mas IMAGENS e TAGS dos produtos existentes serão mantidas. Deseja continuar?")) {
-                e.target.value = ''; 
-                return;
-            }
-
+            if(!confirm("⚠️ ATENÇÃO: Os produtos do CSV vão atualizar os preços e estoques atuais. Produtos que não estiverem no CSV serão apagados, mas IMAGENS e TAGS dos produtos existentes serão mantidas. Deseja continuar?")) { e.target.value = ''; return; }
             Papa.parse(e.target.files[0], { 
                 header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: async (results) => {
-                    
-                    let novaBase = []; 
-                    let atualizados = 0;
-                    let novos = 0;
-                    const timestamp = Date.now();
-
+                    let novaBase = []; let atualizados = 0; let novos = 0; const timestamp = Date.now();
                     results.data.forEach(d => {
                         const ean = d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '';
                         const fallbackSku = d['Código'] ? d['Código'].trim() : Date.now().toString().slice(-8) + Math.floor(Math.random() * 1000);
-                        
                         let produtoExistente = null;
-                        if (ean !== '') { produtoExistente = products.find(p => p.gtin === ean); }
-                        if (!produtoExistente && d['Código']) { produtoExistente = products.find(p => p.codigo === fallbackSku); }
+                        if (ean !== '') produtoExistente = products.find(p => p.gtin === ean);
+                        if (!produtoExistente && d['Código']) produtoExistente = products.find(p => p.codigo === fallbackSku);
 
                         let produtoFinal = {};
-
-                       if (produtoExistente) {
-                            produtoFinal = { ...produtoExistente }; 
-                            produtoFinal.id = d['ID'] || produtoExistente.id || timestamp + atualizados;
-                            atualizados++;
-                        } else {
-                            produtoFinal = { id: d['ID'] || timestamp + novos, tags: [] };
-                            novos++;
-                        }
+                       if (produtoExistente) { produtoFinal = { ...produtoExistente }; produtoFinal.id = d['ID'] || produtoExistente.id || timestamp + atualizados; atualizados++; } 
+                       else { produtoFinal = { id: d['ID'] || timestamp + novos, tags: [] }; novos++; }
 
                         produtoFinal.codigo = fallbackSku;
                         produtoFinal.nome = d['Descrição'] || produtoFinal.nome || '';
                         produtoFinal.preco = parseFloat(d['Preço']?.replace(',','.')) || 0;
                         produtoFinal.preco_custo = parseFloat(d['Preço de custo']?.replace(',','.')) || 0;
                         produtoFinal.estoque = parseFloat(d['Estoque']?.replace(',','.')) || 0;
-                        produtoFinal.categoria = d['Categoria do produto'] || produtoFinal.categoria || '';
-                        produtoFinal.marca = d['Marca'] || produtoFinal.marca || ''; 
+                        produtoFinal.categoria = (d['Categoria do produto'] || produtoFinal.categoria || '').trim();
+                        produtoFinal.marca = (d['Marca'] || produtoFinal.marca || '').toUpperCase().trim(); 
                         produtoFinal.gtin = ean;
                         produtoFinal.ncm = d['NCM'] || produtoFinal.ncm || '';
                         produtoFinal.validade = d['Data Validade'] || produtoFinal.validade || '';
-                        
-                        if (d['Situação']) {
-                            produtoFinal.situacao = d['Situação'].trim().toUpperCase() === 'INATIVO' ? 'I' : 'A';
-                        } else if (!produtoFinal.situacao) {
-                            produtoFinal.situacao = 'A';
-                        }
-
+                        if (d['Situação']) produtoFinal.situacao = d['Situação'].trim().toUpperCase() === 'INATIVO' ? 'I' : 'A';
+                        else if (!produtoFinal.situacao) produtoFinal.situacao = 'A';
                         produtoFinal.last_update = Date.now();
                         novaBase.push(produtoFinal);
                     });
-                    
                     products = novaBase;
-                    
-                    await saveDataLocally(); 
-                    renderGrid(document.getElementById('search-input').value); 
-                    
-                    alert(`✅ Base atualizada com sucesso!\n\n🔄 Produtos atualizados (fotos mantidas): ${atualizados}\n✨ Novos produtos criados: ${novos}`); 
-                    closeSidebar('config-sidebar');
-                    e.target.value = ''; 
+                    await saveDataLocally(); renderGrid(); 
+                    alert(`✅ Base atualizada com sucesso!\n\n🔄 Produtos atualizados: ${atualizados}\n✨ Novos produtos criados: ${novos}`); 
+                    closeSidebar('config-sidebar'); e.target.value = ''; 
                 }
             });
         });
 
-        // ==========================================================
-        // 5. IMPORTAR CSV: CADASTRAR APENAS NOVOS PRODUTOS
-        // ==========================================================
         document.getElementById('csv-file-adicionar').addEventListener('change', function(e) {
             if(!e.target.files[0]) return;
-
             Papa.parse(e.target.files[0], { 
                 header: true, skipEmptyLines: true, encoding: "UTF-8", delimiter: ";", transformHeader: h => h.replace(/"/g, '').trim(),
                 complete: async (results) => {
-                    let produtosCriados = 0;
-                    let ignorados = 0;
-                    const timestamp = Date.now();
-
+                    let produtosCriados = 0; let ignorados = 0; const timestamp = Date.now();
                     results.data.forEach(d => {
                         const fallbackSku = d['Código'] ? d['Código'].trim() : timestamp.toString().slice(-8) + Math.floor(Math.random() * 1000);
-                        
                         let pIdx = products.findIndex(p => p.codigo === fallbackSku);
-
-                        if(pIdx !== -1) {
-                            ignorados++;
-                        } else {
-                            let novoProduto = { 
-                                id: d['ID'] || timestamp + produtosCriados,
-                                codigo: fallbackSku, 
-                                nome: d['Descrição'] || '', 
-                                preco: parseFloat(d['Preço']?.replace(',','.')) || 0, 
-                                preco_custo: parseFloat(d['Preço de custo']?.replace(',','.')) || 0, 
-                                estoque: parseFloat(d['Estoque']?.replace(',','.')) || 0, 
-                                categoria: d['Categoria do produto'] || '', 
-                                marca: d['Marca'] || '', 
-                                gtin: d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '', 
-                                ncm: d['NCM'] || '', 
-                                validade: d['Data Validade'] || '',
-                                situacao: d['Situação'] ? (d['Situação'].trim().toUpperCase() === 'INATIVO' ? 'I' : 'A') : 'A',
-                                last_update: Date.now() 
-                            };
-                            products.unshift(novoProduto);
+                        if(pIdx !== -1) { ignorados++; } 
+                        else {
+                            products.unshift({ 
+                                id: d['ID'] || timestamp + produtosCriados, codigo: fallbackSku, nome: d['Descrição'] || '', 
+                                preco: parseFloat(d['Preço']?.replace(',','.')) || 0, preco_custo: parseFloat(d['Preço de custo']?.replace(',','.')) || 0, 
+                                estoque: parseFloat(d['Estoque']?.replace(',','.')) || 0, categoria: (d['Categoria do produto'] || '').trim(), 
+                                marca: (d['Marca'] || '').toUpperCase().trim(), gtin: d['GTIN/EAN'] ? d['GTIN/EAN'].trim() : '', ncm: d['NCM'] || '', validade: d['Data Validade'] || '',
+                                situacao: d['Situação'] ? (d['Situação'].trim().toUpperCase() === 'INATIVO' ? 'I' : 'A') : 'A', last_update: Date.now() 
+                            });
                             produtosCriados++;
                         }
                     });
-
-                    await saveDataLocally(); 
-                    renderGrid(document.getElementById('search-input').value); 
-                    
-                    alert(`✅ Importação de Adição Concluída!\n\n✨ Novos produtos cadastrados: ${produtosCriados}\n⏭️ Produtos já existentes ignorados: ${ignorados}`); 
-                    closeSidebar('config-sidebar');
-                    e.target.value = ''; 
+                    await saveDataLocally(); renderGrid(); 
+                    alert(`✅ Importação de Adição Concluída!\n\n✨ Novos produtos: ${produtosCriados}\n⏭️ Ignorados: ${ignorados}`); 
+                    closeSidebar('config-sidebar'); e.target.value = ''; 
                 }
             });
         });
 
-       // ==========================================================
-        // 3. ATUALIZAR LOCAL STORAGE DA NUVEM (produtos.json)
-        // ==========================================================
         async function fetchFromGithub() {
             try {
-                const cfg = GitHubAPI.getConfig();
-                if (!cfg) return;
-
-                const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`;
-                
-                const response = await fetch(url, {
-                    headers: { 
-                        "Authorization": `Bearer ${cfg.token}`,
-                        "X-GitHub-Api-Version": "2022-11-28",
-                        "Accept": "application/vnd.github.v3.raw" 
-                    },
-                    cache: "no-store" 
-                });
-
-                if (response.status === 404) {
-                    return alert("O ficheiro 'site/produtos.json' não foi encontrado.");
-                }
-
-                if (!response.ok) throw new Error("Falha na comunicação com o GitHub.");
-
+                const cfg = GitHubAPI.getConfig(); if (!cfg) return;
+                const response = await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/site/produtos.json?t=${Date.now()}`, { headers: { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Accept": "application/vnd.github.v3.raw" }, cache: "no-store" });
+                if (response.status === 404) return alert("Arquivo não encontrado.");
+                if (!response.ok) throw new Error("Falha na comunicação.");
                 const parsedData = await response.json();
-
                 if (parsedData && Array.isArray(parsedData)) {
                     if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
-                    
                     products = parsedData;
+                    
+                    // Tratamento e higienização automática ao baixar
+                    products.forEach(p => {
+                        if (p.marca) p.marca = p.marca.toUpperCase().trim();
+                        if (p.categoria) p.categoria = p.categoria.trim();
+                    });
 
                     const catsEncontradas = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))];
+                    catsEncontradas.forEach(catNome => { if (!categoriasDoSistema.find(c => c.nome.toLowerCase() === catNome.toLowerCase())) categoriasDoSistema.push({ nome: catNome, subcategorias: [] }); });
                     
-                    catsEncontradas.forEach(catNome => {
-                        const existe = categoriasDoSistema.find(c => c.nome.toLowerCase() === catNome.toLowerCase());
-                        if (!existe) {
-                            categoriasDoSistema.push({ nome: catNome, subcategorias: [] });
-                        }
-                    });
-
                     const marcasEncontradas = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))];
-                    marcasEncontradas.forEach(m => {
-                        if (!marcasDoSistema.includes(m)) marcasDoSistema.push(m);
-                    });
-                    marcasDoSistema.sort();
+                    marcasEncontradas.forEach(m => { if (!marcasDoSistema.includes(m)) marcasDoSistema.push(m); });
+                    marcasDoSistema.sort((a, b) => a.localeCompare(b));
 
-                    await saveDataLocally();
-                    await salvarCategoriasLocalmente(); 
-                    await localforage.setItem(MARCAS_KEY, marcasDoSistema);
-                    
-                    renderGrid(document.getElementById('search-input').value);
-                    renderizarSidebarCategorias();
-                    renderizarDatalistMarcas();
-                    
-                    alert("Atualização concluída! Categorias e Marcas sincronizadas da nuvem.");
-                    closeSidebar('config-sidebar');
-                } else {
-                    alert("O ficheiro transferido não tem o formato esperado.");
-                }
-            } catch(e) { 
-                alert("Erro ao descarregar a base da nuvem: " + e.message); 
-            }
+                    await saveDataLocally(); await salvarCategoriasLocalmente(); await localforage.setItem(MARCAS_KEY, marcasDoSistema);
+                    renderGrid(); renderizarSidebarCategorias(); renderizarDatalistMarcas();
+                    alert("Atualização concluída!"); closeSidebar('config-sidebar');
+                } else { alert("Formato inesperado."); }
+            } catch(e) { alert("Erro: " + e.message); }
         }
 
-        async function limparSistema() { 
-            if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { 
-                await localforage.clear(); 
-                location.reload(); 
-            } 
-        }
+        async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
 
-        // ==========================================================
-        // 6. EXPORTAR CSV PADRÃO EXATO BLING
-        // ==========================================================
         function exportarCSVCompleto() {
             if (products.length === 0) return alert("Não há produtos para exportar.");
-            
-            const colunasModelo = [
-                "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", 
-                "Observações", "Situação", "Estoque", "Preço de custo", "Cód no fornecedor", 
-                "Fornecedor", "Localização", "Estoque maximo", "Estoque minimo", "Peso líquido (Kg)", 
-                "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da embalagem", "Largura do Produto", 
-                "Altura do Produto", "Profundidade do produto", "Data Validade", 
-                "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", 
-                "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", 
-                "Código da lista de serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", 
-                "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", 
-                "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", 
-                "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do produto", 
-                "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de medida", 
-                "Preço de compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", 
-                "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"
-            ];
-
+            const colunasModelo = ["ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", "Estoque", "Preço de custo", "Cód no fornecedor", "Fornecedor", "Localização", "Estoque maximo", "Estoque minimo", "Peso líquido (Kg)", "Peso bruto (Kg)", "GTIN/EAN", "GTIN/EAN da embalagem", "Largura do Produto", "Altura do Produto", "Profundidade do produto", "Data Validade", "Descrição do Produto no Fornecedor", "Descrição Complementar", "Itens p/ caixa", "Produto Variação", "Tipo Produção", "Classe de enquadramento do IPI", "Código da lista de serviços", "Tipo do item", "Grupo de Tags/Tags", "Tributos", "Código Pai", "Código Integração", "Grupo de produtos", "Marca", "CEST", "Volumes", "Descrição Curta", "Cross-Docking", "URL Imagens Externas", "Link Externo", "Meses Garantia no Fornecedor", "Clonar dados do pai", "Condição do produto", "Frete Grátis", "Número FCI", "Vídeo", "Departamento", "Unidade de medida", "Preço de compra", "Valor base ICMS ST para retenção", "Valor ICMS ST para retenção", "Valor ICMS próprio do substituto", "Categoria do produto", "Informações Adicionais"];
             const dadosParaExportar = products.map(p => {
                 const linha = {};
-                
-                linha['ID'] = p.id || "";
-                linha['Código'] = p.codigo || "";
-                linha['Descrição'] = p.nome || "";
-                linha['Unidade'] = "UN";
-                linha['NCM'] = p.ncm || "";
-                linha['Origem'] = "0";
-                linha['Preço'] = p.preco || 0;
-                linha['Situação'] = p.situacao === 'I' ? 'Inativo' : 'Ativo';
-                linha['Estoque'] = p.estoque || 0;
-                linha['Preço de custo'] = p.preco_custo || 0;
-                linha['Localização'] = p.localizacao || "";
-                linha['GTIN/EAN'] = p.gtin || "";
-                linha['Data Validade'] = p.validade || "";
-                linha['Categoria do produto'] = ""; 
-                linha['Marca'] = p.marca || "";
-
-                let codigoOuId = p.codigo || p.id || "";
-                let img = p.url_imagem || `../site/img/produtos/${codigoOuId}.webp`;
-                if (img.startsWith("../site/")) {
-                    img = img.replace("../site/", "https://donaantonia.com.br/site/");
-                } else if (img.startsWith("/site/")) {
-                    img = "https://donaantonia.com.br" + img;
-                } else if (!img.startsWith("http")) {
-                    img = `https://donaantonia.com.br/site/img/produtos/${img}`;
-                }
+                linha['ID'] = p.id || ""; linha['Código'] = p.codigo || ""; linha['Descrição'] = p.nome || ""; linha['Unidade'] = "UN"; linha['NCM'] = p.ncm || ""; linha['Origem'] = "0"; linha['Preço'] = p.preco || 0; linha['Situação'] = p.situacao === 'I' ? 'Inativo' : 'Ativo'; linha['Estoque'] = p.estoque || 0; linha['Preço de custo'] = p.preco_custo || 0; linha['Localização'] = p.localizacao || ""; linha['GTIN/EAN'] = p.gtin || ""; linha['Data Validade'] = p.validade || ""; linha['Categoria do produto'] = ""; linha['Marca'] = p.marca || "";
+                let codigoOuId = p.codigo || p.id || ""; let img = p.url_imagem || `../site/img/produtos/${codigoOuId}.webp`;
+                if (img.startsWith("../site/")) img = img.replace("../site/", "https://donaantonia.com.br/site/"); else if (img.startsWith("/site/")) img = "https://donaantonia.com.br" + img; else if (!img.startsWith("http")) img = `https://donaantonia.com.br/site/img/produtos/${img}`;
                 if (img.includes("?")) img = img.split("?")[0];
-                
-                linha['URL Imagens Externas'] = img;
-                
-                return linha;
+                linha['URL Imagens Externas'] = img; return linha;
             });
-
             const csv = Papa.unparse({ fields: colunasModelo, data: dadosParaExportar }, { quotes: true, delimiter: ";" }); 
-            const l = document.createElement("a"); 
-            l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
-            l.download = `produtos_bling_${new Date().getTime()}.csv`; 
-            l.click(); 
-            closeSidebar('config-sidebar');
+            const l = document.createElement("a"); l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); l.download = `produtos_bling_${new Date().getTime()}.csv`; l.click(); closeSidebar('config-sidebar');
         }
 
         // --- FUNÇÕES EXCLUSIVAS PARA A META (FACEBOOK / INSTAGRAM) ---
@@ -2352,17 +1176,18 @@
             const container = document.getElementById('meta-cat-list');
             container.innerHTML = "";
             
-            const catsEncontradas = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))].sort();
-            const marcasEncontradas = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))].sort();
+            const catsEncontradas = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))].sort((a, b) => a.localeCompare(b));
+            const marcasEncontradas = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))].sort((a, b) => a.localeCompare(b));
             
             let htmlCategorias = catsEncontradas.length === 0 ? 
                 "<div style='font-size:12px; color:#666;'>Nenhuma categoria preenchida nos produtos.</div>" : 
                 catsEncontradas.map(cat => `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
-                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${cat}</span>
-                        <button class="nav-btn success-btn" style="height:28px; padding: 0 10px; font-size:10px; flex-shrink:0;" onclick="gerarCSVMetaFiltro('categoria', '${cat.replace(/'/g, "\\'")}')">
-                            <i data-lucide="download" size="12"></i> BAIXAR
-                        </button>
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); flex-grow: 1;">${cat}</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="nav-btn" style="height:28px; padding: 0 10px; font-size:10px;" onclick="filtrarNaGrid('categoria', '${cat.replace(/'/g, "\\'")}')">VER</button>
+                            <button class="nav-btn success-btn" style="height:28px; padding: 0 10px; font-size:10px;" onclick="gerarCSVMetaFiltro('categoria', '${cat.replace(/'/g, "\\'")}')">BAIXAR</button>
+                        </div>
                     </div>
                 `).join('');
 
@@ -2370,10 +1195,11 @@
                 "<div style='font-size:12px; color:#666;'>Nenhuma marca preenchida nos produtos.</div>" : 
                 marcasEncontradas.map(marca => `
                     <div style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);">
-                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${marca}</span>
-                        <button class="nav-btn primary" style="height:28px; padding: 0 10px; font-size:10px; flex-shrink:0;" onclick="gerarCSVMetaFiltro('marca', '${marca.replace(/'/g, "\\'")}')">
-                            <i data-lucide="download" size="12"></i> BAIXAR
-                        </button>
+                        <span style="font-size: 13px; font-weight: 600; color: var(--text-primary); flex-grow: 1;">${marca}</span>
+                        <div style="display: flex; gap: 6px;">
+                            <button class="nav-btn" style="height:28px; padding: 0 10px; font-size:10px;" onclick="filtrarNaGrid('marca', '${marca.replace(/'/g, "\\'")}')">VER</button>
+                            <button class="nav-btn primary" style="height:28px; padding: 0 10px; font-size:10px;" onclick="gerarCSVMetaFiltro('marca', '${marca.replace(/'/g, "\\'")}')">BAIXAR</button>
+                        </div>
                     </div>
                 `).join('');
 
@@ -2394,11 +1220,37 @@
             closeSidebar('config-sidebar'); 
         }
 
-        function fecharModalExportacaoMeta() {
-            document.getElementById('modal-meta-export').style.display = 'none';
+        function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
+
+        // NOVA FUNÇÃO: Exportar TUDO para o Meta
+        function gerarCSVMetaCompleto() {
+            let produtosExportar = products.filter(p => p.situacao !== 'I');
+            if (produtosExportar.length === 0) return alert("Nenhum produto ativo.");
+            exportarCSVArrayParaMeta(produtosExportar, "catalogo_meta_completo");
         }
 
-       function gerarCSVMetaFiltro(tipoFiltro, valorFiltro) {
+        // NOVA FUNÇÃO: Exportar em fila a cada 5 segundos
+        function gerarCSVMetaFila(tipoFiltro) {
+            let lista = [];
+            if(tipoFiltro === 'categoria') {
+                lista = [...new Set(products.map(p => p.categoria).filter(c => c && c.trim() !== ""))].sort((a, b) => a.localeCompare(b));
+            } else {
+                lista = [...new Set(products.map(p => p.marca).filter(m => m && m.trim() !== ""))].sort((a, b) => a.localeCompare(b));
+            }
+
+            if(lista.length === 0) return alert("Nenhuma " + tipoFiltro + " encontrada.");
+
+            alert(`Iniciando exportação de ${lista.length} arquivos.\nUm download começará a cada 5 segundos.\nPor favor, aguarde e permita múltiplos downloads no seu navegador.`);
+
+            lista.forEach((item, index) => {
+                setTimeout(() => {
+                    gerarCSVMetaFiltro(tipoFiltro, item, true); // true = silent, não exibe alert se não achar produto
+                    mostrarAlerta(`Baixando (${index + 1}/${lista.length}): ${item}`, 'aviso');
+                }, index * 5000);
+            });
+        }
+
+       function gerarCSVMetaFiltro(tipoFiltro, valorFiltro, silent = false) {
             let produtosExportar = products.filter(p => p.situacao !== 'I'); 
             
             if (tipoFiltro === 'categoria') {
@@ -2408,18 +1260,21 @@
             }
 
             if (produtosExportar.length === 0) {
-                alert("Nenhum produto ativo encontrado para esta seleção.");
+                if(!silent) alert("Nenhum produto ativo encontrado para esta seleção.");
                 return;
             }
 
-            const colunasMeta = [
-                "id", "title", "description", "availability", "condition", "price", 
-                "link", "image_link", "brand", "gtin"
-            ];
+            const prefixoNome = valorFiltro.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
+            const nomeFicheiro = `catalogo_meta_${tipoFiltro}_${prefixoNome}`;
+            exportarCSVArrayParaMeta(produtosExportar, nomeFicheiro);
+        }
 
-            const dadosParaExportar = produtosExportar.map(p => {
+        // Função de base de exportação para evitar repetição de código
+        function exportarCSVArrayParaMeta(produtosArray, nomeFicheiroBase) {
+            const colunasMeta = ["id", "title", "description", "availability", "condition", "price", "link", "image_link", "brand", "gtin"];
+
+            const dadosParaExportar = produtosArray.map(p => {
                 const linha = {};
-                
                 const formatarTextoMeta = (texto) => {
                     if (!texto) return "";
                     let minusculo = texto.toLowerCase();
@@ -2431,27 +1286,17 @@
                 linha['description'] = formatarTextoMeta(p.nome || "Produto de alta qualidade").substring(0, 5000);
                 linha['availability'] = (parseFloat(p.estoque) > 0) ? 'in stock' : 'out of stock';
                 linha['condition'] = 'new'; 
-                
                 let precoFmt = parseFloat(p.preco || 0).toFixed(2);
                 linha['price'] = `${precoFmt} BRL`;
-                
                 let slug = createSlug(p.nome);
                 linha['link'] = `https://donaantonia.com.br/?p=${slug}`;
-                
                 let codigoOuId = p.codigo || p.id || "";
                 let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
 
-                if (img.startsWith("../site/")) {
-                    img = img.replace("../site/", "https://donaantonia.com.br/site/");
-                } else if (img.startsWith("/site/")) {
-                    img = "https://donaantonia.com.br" + img;
-                } else if (!img.startsWith("http")) {
-                    img = `https://donaantonia.com.br/site/img/produtos/${img}`;
-                }
-
-                if (img.includes("?")) {
-                    img = img.split("?")[0];
-                }
+                if (img.startsWith("../site/")) img = img.replace("../site/", "https://donaantonia.com.br/site/");
+                else if (img.startsWith("/site/")) img = "https://donaantonia.com.br" + img;
+                else if (!img.startsWith("http")) img = `https://donaantonia.com.br/site/img/produtos/${img}`;
+                if (img.includes("?")) img = img.split("?")[0];
 
                 linha['image_link'] = encodeURI(img);
                 linha['brand'] = p.marca || "Dona Antonia"; 
@@ -2460,9 +1305,7 @@
                 return linha;
             });
 
-            const prefixoNome = valorFiltro.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_");
-            const nomeFicheiro = `catalogo_meta_${tipoFiltro}_${prefixoNome}_${new Date().getTime()}.csv`;
-
+            const nomeFicheiro = `${nomeFicheiroBase}_${new Date().getTime()}.csv`;
             const csv = Papa.unparse({ fields: colunasMeta, data: dadosParaExportar }, { quotes: true, delimiter: "," }); 
             const l = document.createElement("a"); 
             l.href = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' })); 
@@ -2487,6 +1330,9 @@
                 return;
             }
 
+            // Ordena as categorias sempre antes de renderizar
+            categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
+
             categoriasDoSistema.forEach((cat, indexCat) => {
                 let htmlSub = '';
                 if (cat.subcategorias && cat.subcategorias.length > 0) {
@@ -2498,17 +1344,16 @@
                             </button>
                         </div>
                     `).join('');
-                } else {
-                    htmlSub = `<div style="font-size:10px; color:#888; padding:5px;">Sem subcategorias</div>`;
-                }
+                } else { htmlSub = `<div style="font-size:10px; color:#888; padding:5px;">Sem subcategorias</div>`; }
 
                 container.innerHTML += `
                 <div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 8px;">
-                        <strong style="color:var(--accent); font-size:13px;">${cat.nome}</strong>
+                        <strong style="color:var(--accent); font-size:13px; flex-grow:1;">${cat.nome}</strong>
                         <div style="display:flex; gap:6px;">
-                            <button class="btn-smart" style="height:28px; width:28px;" onclick="editarCategoria(${indexCat})" title="Renomear Categoria"><i data-lucide="edit-2" size="12"></i></button>
-                            <button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerCategoria(${indexCat})" title="Apagar Categoria"><i data-lucide="trash-2" size="12"></i></button>
+                            <button class="btn-smart" style="height:28px; width:28px; color:#0284c7;" onclick="filtrarNaGrid('categoria', '${cat.nome.replace(/'/g, "\\'")}')" title="Ver Produtos"><i data-lucide="eye" size="12"></i></button>
+                            <button class="btn-smart" style="height:28px; width:28px;" onclick="editarCategoria(${indexCat})" title="Renomear"><i data-lucide="edit-2" size="12"></i></button>
+                            <button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerCategoria(${indexCat})" title="Apagar"><i data-lucide="trash-2" size="12"></i></button>
                         </div>
                     </div>
                     <div style="margin-bottom: 8px;">${htmlSub}</div>
@@ -2523,60 +1368,43 @@
         async function criarNovaCategoria() {
             const nome = prompt("Digite o nome da nova Categoria Principal:");
             if (!nome || nome.trim() === "") return;
-            
-            if(categoriasDoSistema.find(c => c.nome.toLowerCase() === nome.toLowerCase().trim())) {
-                return alert("Esta categoria já existe!");
-            }
-
+            if(categoriasDoSistema.find(c => c.nome.toLowerCase() === nome.toLowerCase().trim())) return alert("Esta categoria já existe!");
             categoriasDoSistema.push({ nome: nome.trim(), subcategorias: [] });
-            await salvarCategoriasLocalmente();
-            renderizarSidebarCategorias();
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias();
         }
 
         async function editarCategoria(index) {
             const novoNome = prompt("Renomear categoria para:", categoriasDoSistema[index].nome);
             if (!novoNome || novoNome.trim() === "" || novoNome === categoriasDoSistema[index].nome) return;
-            
             categoriasDoSistema[index].nome = novoNome.trim();
-            await salvarCategoriasLocalmente();
-            renderizarSidebarCategorias();
-            renderGrid(document.getElementById('search-input').value, true);
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid();
         }
 
         async function removerCategoria(index) {
             if (!confirm(`Tem certeza que deseja apagar a categoria "${categoriasDoSistema[index].nome}" e todas as suas subcategorias?`)) return;
             categoriasDoSistema.splice(index, 1);
-            await salvarCategoriasLocalmente();
-            renderizarSidebarCategorias();
-            renderGrid(document.getElementById('search-input').value, true);
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid();
         }
 
         async function criarNovaSubcategoria(indexCat) {
             const nome = prompt(`Digite o nome da nova subcategoria para "${categoriasDoSistema[indexCat].nome}":`);
             if (!nome || nome.trim() === "") return;
-
             if (!categoriasDoSistema[indexCat].subcategorias) categoriasDoSistema[indexCat].subcategorias = [];
-            
-            if(categoriasDoSistema[indexCat].subcategorias.find(s => s.toLowerCase() === nome.toLowerCase().trim())) {
-                return alert("Esta subcategoria já existe!");
-            }
-
+            if(categoriasDoSistema[indexCat].subcategorias.find(s => s.toLowerCase() === nome.toLowerCase().trim())) return alert("Esta subcategoria já existe!");
             categoriasDoSistema[indexCat].subcategorias.push(nome.trim());
-            await salvarCategoriasLocalmente();
-            renderizarSidebarCategorias();
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias();
         }
 
         async function removerSubcategoria(indexCat, indexSub) {
             if (!confirm(`Tem certeza que deseja apagar esta subcategoria?`)) return;
             categoriasDoSistema[indexCat].subcategorias.splice(indexSub, 1);
-            await salvarCategoriasLocalmente();
-            renderizarSidebarCategorias();
-            renderGrid(document.getElementById('search-input').value, true);
+            await salvarCategoriasLocalmente(); renderizarSidebarCategorias(); renderGrid();
         }
 
         function getOpcoesCategoria(categoriaSelecionada) {
             let options = '<option value="">Sel. Categoria</option>';
-            categoriasDoSistema.forEach(cat => {
+            // Garante ordenação alfabética nas opções também
+            [...categoriasDoSistema].sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(cat => {
                 let selected = (cat.nome === categoriaSelecionada) ? 'selected' : '';
                 options += `<option value="${cat.nome}" ${selected}>${cat.nome}</option>`;
             });
@@ -2586,7 +1414,6 @@
         function getOpcoesSubcategoria(categoriaAtual, subcategoriaSelecionada) {
             let options = '<option value="">Sel. Subcat</option>';
             if (!categoriaAtual) return options;
-
             const catObj = categoriasDoSistema.find(c => c.nome === categoriaAtual);
             if (catObj && catObj.subcategorias) {
                 catObj.subcategorias.forEach(sub => {
@@ -2600,10 +1427,8 @@
         window.mudarCategoriaDoProduto = async function(sku, novaCategoria) {
             updateField(sku, 'categoria', novaCategoria);
             updateField(sku, 'subcategoria', ''); 
-            
             const subCatSelectSidebar = document.getElementById(`sel-subcat-${sku}`);
             if (subCatSelectSidebar) subCatSelectSidebar.innerHTML = getOpcoesSubcategoria(novaCategoria, '');
-            
             const subCatSelectGrid = document.getElementById(`sel-subcat-grid-${sku}`);
             if (subCatSelectGrid) subCatSelectGrid.innerHTML = getOpcoesSubcategoria(novaCategoria, '');
         }
@@ -2624,75 +1449,36 @@
         }
 
         GitHubAPI.deleteFile = async function(path, sha, message) {
-            const cfg = this.getConfig();
-            if (!cfg) throw new Error("Credenciais ausentes");
-            
+            const cfg = this.getConfig(); if (!cfg) throw new Error("Credenciais ausentes");
             const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
-            const body = {
-                message: message,
-                sha: sha
-            };
-            
-            const res = await fetch(url, { 
-                method: 'DELETE', 
-                headers: this.getHeaders(cfg), 
-                body: JSON.stringify(body) 
-            });
-            
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(`Erro ao deletar: ${errorData.message}`);
-            }
+            const res = await fetch(url, { method: 'DELETE', headers: this.getHeaders(cfg), body: JSON.stringify({message: message, sha: sha}) });
+            if (!res.ok) { const errorData = await res.json(); throw new Error(`Erro ao deletar: ${errorData.message}`); }
             return await res.json();
         };
 
         async function executarLimpezaImagens() {
             if (!confirm("⚠️ CUIDADO: Esta ação apagará permanentemente do GitHub todas as fotos que não estão vinculadas a nenhum produto. Deseja continuar?")) return;
-
             mostrarAlerta("Iniciando varredura no GitHub...", "aviso");
-            
             try {
-                const imagensEmUso = obterImagensEmUso();
-                let arquivosParaDeletar = [];
-
-                // Fazemos varredura num número estimado de pastas (ex: 1 até 5) para encontrar os ficheiros inúteis.
-                // Ajusta o "maxFolders" dependendo de quão grande for o teu repositório a longo prazo.
-                const maxFolders = 5; 
+                const imagensEmUso = obterImagensEmUso(); let arquivosParaDeletar = []; const maxFolders = 5; 
                 for(let i = 1; i <= maxFolders; i++) {
                     const pastaImagens = i === 1 ? "site/img/produtos" : `site/img/produtos_${i}`;
                     const arquivosNoGithub = await GitHubAPI.getFileData(pastaImagens);
-                    
                     if (Array.isArray(arquivosNoGithub)) {
                         const inuteisDaPasta = arquivosNoGithub.filter(arq => arq.type === 'file' && !imagensEmUso.has(arq.name));
                         arquivosParaDeletar = arquivosParaDeletar.concat(inuteisDaPasta);
                     }
                 }
-
-                if (arquivosParaDeletar.length === 0) {
-                    alert("🎉 Excelente! Não foram encontradas imagens inúteis. O seu repositório está limpo.");
-                    return;
-                }
-
+                if (arquivosParaDeletar.length === 0) return alert("🎉 Excelente! Não foram encontradas imagens inúteis. O seu repositório está limpo.");
                 if (!confirm(`Foram encontradas ${arquivosParaDeletar.length} imagens sem uso. Deseja apagá-las agora?`)) return;
-
                 let deletados = 0;
                 for (const arq of arquivosParaDeletar) {
-                    try {
-                        await GitHubAPI.deleteFile(arq.path, arq.sha, `Limpeza PIM: Removendo imagem órfã ${arq.name}`);
-                        deletados++;
-                        console.log(`Deletado: ${arq.name}`);
-                        await new Promise(r => setTimeout(r, 300)); 
-                    } catch (err) {
-                        console.error(`Falha ao deletar ${arq.name}:`, err);
-                    }
+                    try { await GitHubAPI.deleteFile(arq.path, arq.sha, `Limpeza PIM: Removendo imagem órfã ${arq.name}`); deletados++; await new Promise(r => setTimeout(r, 300)); } 
+                    catch (err) { console.error(`Falha ao deletar ${arq.name}:`, err); }
                 }
-
                 alert(`✅ Limpeza concluída! ${deletados} imagens inúteis foram removidas do GitHub.`);
                 closeSidebar('config-sidebar');
-
-            } catch (e) {
-                alert("Erro durante a limpeza: " + e.message);
-            }
+            } catch (e) { alert("Erro durante a limpeza: " + e.message); }
         }
     </script>
 </body>
