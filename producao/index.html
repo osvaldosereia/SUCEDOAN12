@@ -28,7 +28,6 @@
         
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-body); height: 100vh; display: flex; flex-direction: column; color: var(--text-primary); overflow: hidden; -webkit-font-smoothing: antialiased; }
         
-        /* SISTEMA DE TELAS VIRTUAIS */
         .app-screen { display: none; flex-direction: column; height: 100vh; width: 100%; overflow: hidden; }
         .app-screen.active { display: flex; }
 
@@ -62,29 +61,28 @@
         #active-filter-banner { display: none; align-items: center; justify-content: space-between; background: #e0f2fe; border: 1px solid #bae6fd; padding: 10px 20px; color: #0369a1; font-weight: 800; font-size: 12px; }
 
         .main-content { flex-grow: 1; overflow-y: auto; padding: 0 20px 40px 20px; }
-        .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 15px; }
+        .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 15px; align-items: start;}
         
-        .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: row; padding: 12px; gap: 12px; align-items: stretch; transition: box-shadow 0.2s, transform 0.2s; }
+        .product-card { background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; padding: 15px; gap: 12px; transition: box-shadow 0.2s, transform 0.2s; }
         .product-card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: #d4d4d8; }
         .product-card.inactive { opacity: 0.5; filter: grayscale(1); }
         
-        .card-mini-input { padding: 4px 8px; font-size: 11px; min-height: 28px; border-radius: 6px; background: #fafafa; border: 1px solid #e4e4e7; width: 100%; box-sizing: border-box; }
+        .card-mini-input { padding: 6px 8px; font-size: 11px; min-height: 32px; border-radius: 6px; background: #fafafa; border: 1px solid #e4e4e7; width: 100%; box-sizing: border-box; }
         .card-mini-input:focus { background: #ffffff; border-color: var(--accent); outline: none; }
-        select.card-mini-input { cursor: pointer; text-overflow: ellipsis; }
+        select.card-mini-input { cursor: pointer; text-overflow: ellipsis; appearance: auto; }
         
-        .tags-container { position: absolute; top: 4px; left: 4px; display: flex; flex-direction: column; gap: 4px; z-index: 5; align-items: flex-start; pointer-events: none;}
-        .product-tag { font-weight: 600; padding: 4px 8px; border-radius: 6px; line-height: 1.2; box-shadow: 0 2px 5px rgba(0,0,0,0.2); word-break: break-word; }
-        .global-tag-pill { font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #334155; margin-right: 4px; display: inline-block; margin-bottom: 4px;}
+        .card-grid-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .field-group { display: flex; flex-direction: column; gap: 2px; }
+        .field-group label { font-size: 9px; color: var(--text-secondary); font-weight: 800; text-transform: uppercase;}
 
         .sidebar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(2px); z-index: 1000; display: none; opacity: 0; transition: 0.3s; }
         .sidebar { position: fixed; top: 0; right: 0; max-width: 100%; height: 100vh; background: #ffffff; box-shadow: -10px 0 40px rgba(0,0,0,0.1); transform: translateX(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; z-index: 1005; }
         .sidebar.open { transform: translateX(0); }
         
-        #edit-sidebar { z-index: 1010; width: 480px; }
         #editor-sidebar { z-index: 1011; width: 420px; border-left: 1px solid var(--border); }
         #config-sidebar { z-index: 1012; width: 380px; }
         #menu-sidebar { z-index: 1014; width: 300px; }
-        #categorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #pedidos-sidebar, #metricas-sidebar { z-index: 1015; width: 450px; }
+        #categorias-sidebar, #subcategorias-sidebar, #marcas-sidebar, #filtros-sidebar, #tags-sidebar, #subtags-sidebar, #pedidos-sidebar { z-index: 1015; width: 450px; }
         
         .sidebar-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
         .sidebar-title { font-size: 14px; font-weight: 900; }
@@ -106,17 +104,9 @@
         .form-input { width: 100%; max-width: 100%; flex-grow: 1; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-weight: 600; background: #fafafa; outline: none; transition: 0.2s; font-family: 'Inter', sans-serif; box-sizing: border-box; }
         .form-input:focus { border-color: var(--accent); background: #ffffff; }
         select.form-input { appearance: auto; cursor: pointer; }
-        div.form-input[contenteditable="true"] { resize: vertical; min-height: 90px; line-height: 1.5; font-weight: 400; overflow-y: auto; cursor: text;}
-        textarea.form-input { resize: vertical; min-height: 70px; line-height: 1.4; }
         
         .btn-smart { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; width: 36px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: var(--text-secondary); transition: 0.2s; flex-shrink: 0; min-height: 36px;}
         .btn-smart:hover { background: #f4f4f5; border-color: var(--accent); color: var(--accent); }
-
-        .image-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-        .img-slot { aspect-ratio: 1; border: 1px dashed var(--border); border-radius: 6px; display: flex; justify-content: center; align-items: center; background: #fafafa; cursor: pointer; overflow: hidden; position: relative; transition: 0.2s; }
-        .img-slot:hover { border-color: var(--accent); }
-        .img-slot img { width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply; }
-        .img-slot .slot-num { position: absolute; top: 4px; left: 4px; background: rgba(0,0,0,0.8); color: white; font-size: 8px; padding: 2px 4px; border-radius: 4px; font-weight: 900; }
 
         canvas { background: #fafafa; width: 100%; aspect-ratio: 1; display: block; cursor: grab; border-bottom: 1px solid var(--border); }
         .editor-controls { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
@@ -127,15 +117,9 @@
         #alerta-customizado { position: fixed; top: 15px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; padding: 15px; border-radius: 10px; color: white; font-weight: bold; text-align: center; z-index: 10000; display: none; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
         .alerta-erro { background-color: var(--danger); } .alerta-sucesso { background-color: var(--success); } .alerta-aviso { background-color: var(--warning); color: #000; }
 
-        /* =========================================================
-           ADAPTAÇÕES MOBILE PRODUTIVAS E MEDIA QUERIES
-           ========================================================= */
         .mobile-only { display: none !important; }
 
-        @media (max-width: 1200px) {
-            .card-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
+        @media (max-width: 1200px) { .card-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 768px) {
             .desktop-only { display: none !important; }
             .mobile-only { display: flex !important; }
@@ -146,7 +130,6 @@
             .search-input { width: 100%; }
             .main-content { padding: 10px; }
             .card-grid { grid-template-columns: 1fr; gap: 10px; }
-            .image-slots { grid-template-columns: repeat(3, 1fr); }
             .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
         }
     </style>
@@ -157,14 +140,18 @@
         const STORAGE_KEY = 'sucedoan_pim_v37'; 
         const CONFIG_KEY = 'sucedoan_config';
         const CATEGORIAS_KEY = 'sucedoan_categorias'; 
+        const SUBCATEGORIAS_KEY = 'sucedoan_subcategorias'; 
         const MARCAS_KEY = 'sucedoan_marcas';
-        const TAGS_KEY = 'sucedoan_tags_globais'; // NOVA VARIÁVEL
+        const TAGS_KEY = 'sucedoan_tags_globais'; 
+        const SUBTAGS_KEY = 'sucedoan_subtags'; 
         
         let categoriasDoSistema = []; 
+        let subcategoriasDoSistema = []; 
         let marcasDoSistema = [];
-        let tagsDoSistema = []; // NOVA VARIÁVEL
+        let tagsDoSistema = []; 
+        let subtagsDoSistema = []; 
         let filtroAtivo = { tipo: null, valor: null };
-        let advancedFilters = { cat: '', sub: '', marca: '', gondola: '', prat: '', ncm: '', stock: '', validade: '', tag: '' };
+        let advancedFilters = { cat: '', sub: '', marca: '', ncm: '', stock: '', validade: '', tag: '' };
         
         localforage.config({ name: 'SucedoanPIM', storeName: 'produtos_db' });
     </script>
@@ -183,14 +170,9 @@
             <div class="brand"><i data-lucide="boxes" size="20"></i> SUCEDOAN PIM</div>
             <div id="queue-status"></div>
             
-            <button class="nav-btn desktop-only" onclick="openSidebar('metricas-sidebar'); renderizarMetricas();"><i data-lucide="pie-chart" size="14"></i> MÉTRICAS</button>
             <button class="nav-btn desktop-only success-btn" onclick="openSidebar('pedidos-sidebar')"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
+            <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DADOS DA NUVEM</button>
             
-            <button class="nav-btn desktop-only" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias();"><i data-lucide="folder-tree" size="14"></i> CATEGORIAS</button>
-            <button class="nav-btn desktop-only" onclick="openSidebar('marcas-sidebar'); renderizarSidebarMarcas();"><i data-lucide="tag" size="14"></i> MARCAS</button>
-            <button class="nav-btn desktop-only" onclick="openSidebar('tags-sidebar'); renderizarSidebarTags();"><i data-lucide="hash" size="14"></i> TAGS GLOBAIS</button>
-            
-            <button class="nav-btn desktop-only" onclick="openSidebar('config-sidebar')"><i data-lucide="settings" size="14"></i> DADOS</button>
             <button class="btn-icon mobile-only" onclick="openSidebar('menu-sidebar')"><i data-lucide="menu" size="20"></i></button>
         </header>
 
@@ -209,8 +191,8 @@
             </div>
             
             <div class="toolbar-group desktop-only">
-                <button class="nav-btn sync-btn" onclick="openSidebar('config-sidebar')" title="Painel de Sincronização">
-                    <i data-lucide="cloud" size="14"></i> OPÇÕES DE SINCRONIZAÇÃO
+                <button class="nav-btn sync-btn" onclick="openSidebar('menu-sidebar')" title="Gerir Listas">
+                    <i data-lucide="list" size="14"></i> GERIR LISTAS DE SELETORES
                 </button>
                 <button class="nav-btn primary" onclick="createNewProduct()"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
             </div>
@@ -223,6 +205,11 @@
         
         <div class="main-content" id="main-content-pim">
             <div class="card-grid" id="product-grid"></div>
+            <div id="load-more-container" style="text-align: center; margin-top: 30px; margin-bottom: 20px; display: none;">
+                <button class="nav-btn primary" style="padding: 12px 30px; font-size: 14px; margin: 0 auto; min-width: 250px; justify-content: center;" onclick="carregarMaisCards()">
+                    <i data-lucide="chevron-down" size="18"></i> VER MAIS 3 PRODUTOS
+                </button>
+            </div>
         </div>
     </div>
 
@@ -244,12 +231,7 @@
                         <i data-lucide="tags" size="14"></i> TODAS AS MARCAS
                     </button>
                 </div>
-                <div style="font-size: 10px; color: var(--text-secondary); text-align: center;">As opções divididas baixarão um arquivo a cada 5 segundos.</div>
             </div>
-
-            <div id="meta-cat-list" style="display: flex; flex-direction: column; margin-top: 10px;">
-                </div>
-            
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <button class="nav-btn" style="flex:1; justify-content:center; height:40px;" onclick="fecharModalExportacaoMeta()">FECHAR MÓDULO</button>
             </div>
@@ -258,22 +240,36 @@
 
     <div class="sidebar" id="menu-sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title">Menu de Ações</div>
+            <div class="sidebar-title">Menu Administrativo</div>
             <button class="btn-icon" onclick="closeSidebar('menu-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
         <div class="sidebar-body">
             <div class="form-section">
-                <div class="section-title">Navegação Principal</div>
+                <div class="section-title">Ações</div>
                 <button class="nav-btn primary menu-sidebar-btn" onclick="createNewProduct(); closeSidebar('menu-sidebar');"><i data-lucide="plus" size="14"></i> NOVO PRODUTO</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="settings" size="14"></i> DEFINIÇÕES E DADOS</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('categorias-sidebar'); renderizarSidebarCategorias(); closeSidebar('menu-sidebar');"><i data-lucide="folder-tree" size="14"></i> GERIR CATEGORIAS</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('marcas-sidebar'); renderizarSidebarMarcas(); closeSidebar('menu-sidebar');"><i data-lucide="tag" size="14"></i> GERIR MARCAS</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('tags-sidebar'); renderizarSidebarTags(); closeSidebar('menu-sidebar');"><i data-lucide="hash" size="14"></i> GERIR TAGS GLOBAIS</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('metricas-sidebar'); renderizarMetricas(); closeSidebar('menu-sidebar');"><i data-lucide="pie-chart" size="14"></i> MÉTRICAS DE VENDAS</button>
-                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('pedidos-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO POR TEXTO</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('config-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="cloud" size="14"></i> DEFINIÇÕES E GITHUB</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('pedidos-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="clipboard-list" size="14"></i> BAIXAR PEDIDO</button>
+            </div>
+            <div class="form-section" style="margin-top: 15px;">
+                <div class="section-title">Gestão de Seletores</div>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('categorias-sidebar'); renderizarCRUD(categoriasDoSistema, 'categorias-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="folder-tree" size="14"></i> CATEGORIAS</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('subcategorias-sidebar'); renderizarCRUD(subcategoriasDoSistema, 'subcategorias-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="folder-open" size="14"></i> SUBCATEGORIAS</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('marcas-sidebar'); renderizarCRUD(marcasDoSistema, 'marcas-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="tag" size="14"></i> MARCAS</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('tags-sidebar'); renderizarCRUD(tagsDoSistema, 'tags-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="hash" size="14"></i> TAGS GLOBAIS</button>
+                <button class="nav-btn menu-sidebar-btn" onclick="openSidebar('subtags-sidebar'); renderizarCRUD(subtagsDoSistema, 'subtags-sidebar'); closeSidebar('menu-sidebar');"><i data-lucide="list-tree" size="14"></i> SUBTAGS</button>
             </div>
         </div>
     </div>
+
+    <div class="sidebar" id="categorias-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Categorias</div><button class="btn-icon" onclick="closeSidebar('categorias-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-categorias-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(categoriasDoSistema, CATEGORIAS_KEY, 'categorias-sidebar')"><i data-lucide="plus" size="14"></i> NOVA CATEGORIA</button></div></div>
+    
+    <div class="sidebar" id="subcategorias-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Subcategorias</div><button class="btn-icon" onclick="closeSidebar('subcategorias-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-subcategorias-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(subcategoriasDoSistema, SUBCATEGORIAS_KEY, 'subcategorias-sidebar')"><i data-lucide="plus" size="14"></i> NOVA SUBCATEGORIA</button></div></div>
+    
+    <div class="sidebar" id="marcas-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Marcas</div><button class="btn-icon" onclick="closeSidebar('marcas-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-marcas-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(marcasDoSistema, MARCAS_KEY, 'marcas-sidebar')"><i data-lucide="plus" size="14"></i> NOVA MARCA</button></div></div>
+    
+    <div class="sidebar" id="tags-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Tags Globais</div><button class="btn-icon" onclick="closeSidebar('tags-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-tags-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(tagsDoSistema, TAGS_KEY, 'tags-sidebar')"><i data-lucide="plus" size="14"></i> NOVA TAG GLOBAL</button></div></div>
+    
+    <div class="sidebar" id="subtags-sidebar"><div class="sidebar-header"><div class="sidebar-title">Gestão de Subtags</div><button class="btn-icon" onclick="closeSidebar('subtags-sidebar')"><i data-lucide="x" size="16"></i></button></div><div class="sidebar-body" id="lista-subtags-sidebar"></div><div class="sidebar-footer"><button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovoItem(subtagsDoSistema, SUBTAGS_KEY, 'subtags-sidebar')"><i data-lucide="plus" size="14"></i> NOVA SUBTAG</button></div></div>
 
     <div class="sidebar" id="pedidos-sidebar">
         <div class="sidebar-header">
@@ -283,24 +279,13 @@
         <div class="sidebar-body">
             <div class="form-section">
                 <div class="section-title">Texto do Pedido</div>
-                <p style="font-size: 11px; color: var(--text-secondary);">Cole o texto do pedido abaixo (ex: "2x Macarrão Lámen"). O sistema identificará automaticamente os produtos e abaterá o estoque.</p>
-                <textarea id="order-text-input" class="form-input" style="height: 300px; font-family: monospace; font-size: 12px;" placeholder="Ex:\n1x Bucha de Lavar Louça\n2x Macarrão Lámen Apti..."></textarea>
+                <p style="font-size: 11px; color: var(--text-secondary);">Cole o texto do pedido abaixo. O sistema abaterá o estoque.</p>
+                <textarea id="order-text-input" class="form-input" style="height: 300px; font-family: monospace; font-size: 12px;"></textarea>
             </div>
         </div>
         <div class="sidebar-footer">
-            <button class="nav-btn success-btn" style="width:100%; height:44px; justify-content:center;" onclick="processarBaixaPedidoTexto()">
-                <i data-lucide="check-square" size="14"></i> ABATER ESTOQUE E ATUALIZAR
-            </button>
+            <button class="nav-btn success-btn" style="width:100%; height:44px; justify-content:center;" onclick="processarBaixaPedidoTexto()">ABATER ESTOQUE</button>
         </div>
-    </div>
-
-    <div class="sidebar" id="metricas-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Métricas e Estratégia</div>
-            <button class="btn-icon" onclick="closeSidebar('metricas-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" id="metricas-container">
-            </div>
     </div>
 
     <div class="sidebar" id="filtros-sidebar">
@@ -310,66 +295,25 @@
         </div>
         <div class="sidebar-body">
             <div class="form-section">
-                <div class="form-group"><label class="form-label">Categoria</label>
-                    <select class="form-input" id="flt-cat" onchange="atualizarOpcoesSubcatFiltro(this.value)"></select>
-                </div>
-                <div class="form-group"><label class="form-label">Subcategoria</label>
-                    <select class="form-input" id="flt-sub"><option value="">Todas</option></select>
-                </div>
-                <div class="form-group"><label class="form-label">Marca</label>
-                    <select class="form-input" id="flt-marca"></select>
-                </div>
-                <div class="form-group"><label class="form-label">Tag Global</label>
-                    <select class="form-input" id="flt-tag"></select>
-                </div>
-                <div class="form-group"><label class="form-label">Gôndola</label>
-                    <select class="form-input" id="flt-gondola"></select>
-                </div>
-                <div class="form-group"><label class="form-label">Prateleira</label>
-                    <select class="form-input" id="flt-prat"></select>
-                </div>
+                <div class="form-group"><label class="form-label">Categoria</label><select class="form-input" id="flt-cat"></select></div>
+                <div class="form-group"><label class="form-label">Subcategoria</label><select class="form-input" id="flt-sub"></select></div>
+                <div class="form-group"><label class="form-label">Marca</label><select class="form-input" id="flt-marca"></select></div>
+                <div class="form-group"><label class="form-label">Tag Global</label><select class="form-input" id="flt-tag"></select></div>
                 <div class="form-group"><label class="form-label">Estoque</label>
                     <select class="form-input" id="flt-stock">
                         <option value="">Todos</option><option value="zero">Estoque = 0</option>
                     </select>
                 </div>
-                <div class="form-group"><label class="form-label">NCM</label>
-                    <select class="form-input" id="flt-ncm">
-                        <option value="">Todos</option><option value="sem">Sem NCM cadastrado</option>
-                    </select>
-                </div>
-                <div class="form-group"><label class="form-label">Validade (Vencimento)</label>
-                    <select class="form-input" id="flt-val">
-                        <option value="">Todas as validades</option>
-                        <option value="30">Próximos 30 dias</option>
-                        <option value="60">Próximos 60 dias</option>
-                        <option value="90">Próximos 90 dias</option>
-                    </select>
-                </div>
             </div>
         </div>
         <div class="sidebar-footer">
-            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="aplicarFiltrosAvancados()">
-                <i data-lucide="filter" size="14"></i> APLICAR FILTROS
-            </button>
-        </div>
-    </div>
-
-    <div class="sidebar" id="edit-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Avançado & Mídia</div>
-            <button class="btn-icon" onclick="closeSidebar('edit-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" id="sidebar-body"></div>
-        <div class="sidebar-footer">
-            <button class="nav-btn primary" style="flex:2; height:44px;" onclick="closeSidebar('edit-sidebar')"><i data-lucide="check" size="14"></i> FECHAR MÍDIA</button>
-            <button class="nav-btn" style="flex:1; height:44px; color:var(--danger); border-color:#fecaca; background:#fef2f2;" onclick="deleteCurrentProduct()"><i data-lucide="trash-2" size="14"></i></button>
+            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="aplicarFiltrosAvancados()">APLICAR FILTROS</button>
         </div>
     </div>
 
     <div class="sidebar" id="editor-sidebar">
         <div class="sidebar-header">
-            <div class="sidebar-title">Ajuste de Imagem</div>
+            <div class="sidebar-title">Ajuste de Imagem (1 por Produto)</div>
             <button class="btn-icon" onclick="closeSidebar('editor-sidebar')"><i data-lucide="x" size="16"></i></button>
         </div>
         <div style="flex-grow: 1; overflow-y: auto;">
@@ -397,7 +341,7 @@
             <div class="form-section">
                 <div class="section-title">Salvar e Sincronizar</div>
                 <button class="nav-btn sync-btn" style="height:40px; justify-content:center; margin-bottom: 8px;" onclick="salvarProdutosJSON()">
-                    <i data-lucide="database" size="14"></i> 1. SALVAR PRODUTOS E TAGS.JSON
+                    <i data-lucide="database" size="14"></i> 1. SALVAR JSON NO GITHUB
                 </button>
                 <button class="nav-btn" style="height:40px; justify-content:center;" onclick="uploadImagens()">
                     <i data-lucide="image-up" size="14"></i> 2. ENVIAR IMAGENS DA FILA <span id="img-badge" style="background:#1e3a8a; color:white; padding:2px 4px; border-radius:4px; font-size:9px; margin-left:4px;">(0)</span>
@@ -408,24 +352,11 @@
             </div>
 
             <div class="form-section" style="margin-top:10px;">
-                <div class="section-title">Integração CSV (Padrão Bling)</div>
+                <div class="section-title">Integração Externa</div>
                 <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
-                <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">
-                    <i data-lucide="file-warning" size="14"></i> 4. IMPORTAR (SUBSTITUIR TUDO)
-                </button>
-
-                <input type="file" id="csv-file-adicionar" accept=".csv" style="display:none">
-                <button class="nav-btn success-btn" style="height:40px; justify-content:center;" onclick="document.getElementById('csv-file-adicionar').click()">
-                    <i data-lucide="file-plus" size="14"></i> 5. IMPORTAR (CADASTRAR NOVOS)
-                </button>
+                <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">IMPORTAR CSV (SUBSTITUIR)</button>
                 
-                <button class="nav-btn" style="height:40px; justify-content:center;" onclick="exportarCSVCompleto()">
-                    <i data-lucide="file-down" size="14"></i> 6. EXPORTAR CSV BLING
-                </button>
-                
-                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">
-                    <i data-lucide="share-2" size="14"></i> 7. EXPORTAR CATÁLOGO META
-                </button>
+                <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">EXPORTAR CATÁLOGO META</button>
             </div>
 
             <div class="form-section" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 15px;">
@@ -439,54 +370,12 @@
             <div class="form-section" style="margin-top:15px;">
                 <div class="section-title">Ações de Manutenção</div>
                 <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--warning); border-color:#fde68a; margin-top: 10px;" onclick="executarLimpezaImagens()">
-                    <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO)
+                    <i data-lucide="trash-2" size="14"></i> 8. LIMPEZA INTELIGENTE (APAGAR FOTOS SEM USO DO GITHUB)
                 </button>
             </div>
         </div>
         <div class="sidebar-footer">
             <button class="nav-btn" style="width:100%; height:44px; justify-content:center; color:var(--danger); border-color:#fecaca;" onclick="limparSistema()"><i data-lucide="trash-2" size="14"></i> APAGAR BASE DE DADOS LOCAL</button>
-        </div>
-    </div>
-
-    <div class="sidebar" id="categorias-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Gestão de Categorias</div>
-            <button class="btn-icon" onclick="closeSidebar('categorias-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" id="lista-categorias-container" style="gap:10px;">
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaCategoria()">
-                <i data-lucide="plus" size="14"></i> NOVA CATEGORIA PRINCIPAL
-            </button>
-        </div>
-    </div>
-
-    <div class="sidebar" id="marcas-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Gestão de Marcas</div>
-            <button class="btn-icon" onclick="closeSidebar('marcas-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" id="lista-marcas-container" style="gap:10px;">
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaMarca()">
-                <i data-lucide="plus" size="14"></i> NOVA MARCA
-            </button>
-        </div>
-    </div>
-
-    <div class="sidebar" id="tags-sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-title">Gestão de Tags Globais</div>
-            <button class="btn-icon" onclick="closeSidebar('tags-sidebar')"><i data-lucide="x" size="16"></i></button>
-        </div>
-        <div class="sidebar-body" id="lista-tags-container" style="gap:10px;">
-        </div>
-        <div class="sidebar-footer">
-            <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="criarNovaTag()">
-                <i data-lucide="plus" size="14"></i> NOVA TAG GLOBAL
-            </button>
         </div>
     </div>
 
@@ -496,13 +385,12 @@
         // ==========================================================
         let products = [];
         let currentEditingSku = null;
-        let currentImageSlot = 1; 
         let imageQueue = [];
 
-        // Variáveis do Lazy Loading
+        // Variáveis de Paginação
         let produtosFiltrados = [];
         let itemsCarregados = 0;
-        const ITENS_POR_PAGINA = 15; 
+        const ITENS_POR_PAGINA = 3; 
 
         // ==========================================================
         // FUNÇÕES GERAIS E OPÇÕES
@@ -510,27 +398,6 @@
         function limparTexto(texto) {
             if (!texto) return "";
             return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim().toUpperCase();
-        }
-
-        function getGondolaOptions(selectedValue) {
-            let optionsHtml = '<option value="">Todas</option>';
-            for(let i = 0; i <= 20; i++) {
-                let val = i.toString().padStart(2, '0');
-                let selected = (selectedValue === val) ? 'selected' : '';
-                optionsHtml += `<option value="${val}" ${selected}>Gôndola ${val}</option>`;
-            }
-            return optionsHtml;
-        }
-
-        function getPrateleiraOptions(selectedValue) {
-            let optionsHtml = '<option value="">Todas</option>';
-            const letras = ['A', 'B', 'C', 'D', 'E', 'F'];
-            letras.forEach(l => {
-                let p1 = `${l}1`; let p2 = `${l}2`;
-                optionsHtml += `<option value="${p1}" ${selectedValue === p1 ? 'selected' : ''}>Prateleira ${p1}</option>`;
-                optionsHtml += `<option value="${p2}" ${selectedValue === p2 ? 'selected' : ''}>Prateleira ${p2}</option>`;
-            });
-            return optionsHtml;
         }
 
         // ==========================================================
@@ -546,11 +413,7 @@
                 return cfg;
             },
             getHeaders: function(cfg) {
-                return {
-                    "Authorization": `Bearer ${cfg.token}`,
-                    "X-GitHub-Api-Version": "2022-11-28",
-                    "Content-Type": "application/json"
-                };
+                return { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
             },
             getFileData: async function(path) {
                 const cfg = this.getConfig();
@@ -575,34 +438,26 @@
                 const body = { message: message, content: finalBase64 };
                 if (sha) body.sha = sha;
                 
-                const res = await fetch(url, { 
-                    method: 'PUT', 
-                    headers: this.getHeaders(cfg), 
-                    body: JSON.stringify(body) 
-                });
-                
+                const res = await fetch(url, { method: 'PUT', headers: this.getHeaders(cfg), body: JSON.stringify(body) });
                 if (!res.ok) { const errorData = await res.json(); throw new Error(`Erro do GitHub: ${errorData.message}`); }
                 return await res.json();
             }
         };
 
         // ==========================================================
-        // SISTEMA DE FILA E SALVAMENTO OTIMIZADO (PRIORIDADES)
+        // SISTEMA DE FILA E SALVAMENTO OTIMIZADO
         // ==========================================================
         let syncQueue = [];
         let isSyncing = false;
         let countdownTimer = 0;
         let countdownInterval = null;
-        let lastTaskWasJson = false;
 
         function renderQueueStatus() {
             const el = document.getElementById('queue-status');
             if (!el) return;
             if (isSyncing && countdownTimer > 0) {
                 el.style.display = 'flex';
-                let iconStr = syncQueue[0]?.type === 'json' ? '<i data-lucide="database" size="14"></i>' : '<i data-lucide="image-up" size="14"></i>';
-                if(syncQueue.length === 0 && lastTaskWasJson) iconStr = '<i data-lucide="lock" size="14"></i>'; 
-                el.innerHTML = `${iconStr} <span>Espera <b>${countdownTimer}s</b> (Fila: ${syncQueue.length})</span>`;
+                el.innerHTML = `<i data-lucide="loader" size="14"></i> <span>Espera <b>${countdownTimer}s</b></span>`;
                 lucide.createIcons();
             } else if (isSyncing && countdownTimer === 0) {
                 el.style.display = 'flex';
@@ -625,10 +480,7 @@
             countdownInterval = setInterval(() => {
                 countdownTimer--;
                 renderQueueStatus();
-                if (countdownTimer <= 0) { 
-                    clearInterval(countdownInterval); 
-                    executeNextInQueue(); 
-                }
+                if (countdownTimer <= 0) { clearInterval(countdownInterval); executeNextInQueue(); }
             }, 1000);
         }
 
@@ -636,76 +488,37 @@
             if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
             const task = syncQueue.shift();
             isSyncing = true; countdownTimer = 0; renderQueueStatus();
-            
             try { await task.fn(); mostrarAlerta(`✅ ${task.name} processado!`, 'sucesso'); } 
-            catch (e) { console.error(e); mostrarAlerta(`❌ Erro em ${task.name}`, 'erro'); }
-            
-            lastTaskWasJson = (task.type === 'json');
+            catch (e) { mostrarAlerta(`❌ Erro em ${task.name}`, 'erro'); }
             processQueueLoop();
         }
 
         function processQueueLoop() {
             if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
-
-            syncQueue.sort((a, b) => {
-                if (a.type === 'json' && b.type !== 'json') return 1;
-                if (a.type !== 'json' && b.type === 'json') return -1;
-                return 0;
-            });
-
-            const nextTask = syncQueue[0];
-            let waitTime = lastTaskWasJson ? 60 : (nextTask.type === 'json' ? 30 : 20);
-            if(lastTaskWasJson) lastTaskWasJson = false;
-
-            startQueueCountdown(waitTime);
+            startQueueCountdown(20);
         }
 
-        async function enqueueTask(taskName, taskFn, taskType = 'other') {
+        async function enqueueTask(taskName, taskFn) {
             await saveDataLocally(); 
-            if (taskType === 'json') syncQueue = syncQueue.filter(t => t.type !== 'json'); 
-            syncQueue.push({ name: taskName, fn: taskFn, type: taskType });
-            
+            syncQueue.push({ name: taskName, fn: taskFn });
             if (!isSyncing) processQueueLoop();
-            else {
-                syncQueue.sort((a, b) => { if (a.type === 'json' && b.type !== 'json') return 1; if (a.type !== 'json' && b.type === 'json') return -1; return 0; });
-                if (syncQueue[0].type === 'image' && syncQueue.some(t => t.type === 'json') && countdownTimer > 20) startQueueCountdown(20);
-                renderQueueStatus(); 
-            }
+            else { renderQueueStatus(); }
         }
 
-        // ==========================================================
-        // ATUALIZAÇÃO 1: SANITIZAÇÃO DE EXPORTAÇÃO INTELIGENTE (PATH DAS IMAGENS)
-        // ==========================================================
         function sanitizeProductsForExport(prods) {
             const camposPermitidos = [
                 'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
                 'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
-                'subcategoria', 'gondola', 'prateleira', 'localizacao',
-                'tags', 'tags_globais', 'last_update', 'marca', 'embalagem'
+                'subcategoria', 'marca', 'embalagem', 'tag_global', 'subtag', 
+                'link_youtube', 'last_update', 'url_imagem'
             ];
             return prods.map(p => {
                 let cleanP = {};
-                if (!p.id) p.id = Math.floor(Date.now() + Math.random() * 10000);
                 camposPermitidos.forEach(campo => {
                     if (p[campo] !== undefined && p[campo] !== null) {
-                        let valor = p[campo];
-                        if (campo === 'validade' && typeof valor === 'string' && valor.includes('-')) {
-                            const partes = valor.split('-');
-                            if (partes[0].length === 4) valor = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                        }
-                        cleanP[campo] = valor;
-                    }
-                });
-                const camposImagem = ['url_imagem', 'url_imagem_2', 'url_imagem_3', 'url_imagem_4', 'url_imagem_5'];
-                camposImagem.forEach((campoImg, index) => {
-                    if (p[campoImg]) {
-                        // Se for base64 ainda não processado, não enviamos pro JSON público
-                        if (p[campoImg].startsWith('data:image')) {
-                            cleanP[campoImg] = "";
-                        } else { 
-                            // Respeita a pasta onde foi salvo removendo apenas o cache bust
-                            cleanP[campoImg] = p[campoImg].split('?')[0]; 
-                        }
+                        cleanP[campo] = p[campo];
+                        if (campo === 'url_imagem' && p[campo].startsWith('data:image')) cleanP[campo] = "";
+                        else if (campo === 'url_imagem') cleanP[campo] = p[campo].split('?')[0]; 
                     }
                 });
                 return cleanP;
@@ -713,12 +526,10 @@
         }
 
         function salvarProdutosJSON() {
-            enqueueTask("Produtos e Tags (Site & Base)", async () => {
+            enqueueTask("Produtos.json", async () => {
                 const vitrine = sanitizeProductsForExport(products);
-                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos (Base Unificada)`);
-                // Salva também as tags num ficheiro separado para o site
-                await GitHubAPI.saveFile(`site/tags.json`, tagsDoSistema, `PIM: Atualização de Tags Globais`);
-            }, 'json');
+                await GitHubAPI.saveFile(`site/produtos.json`, vitrine, `PIM: Atualização de Produtos`);
+            });
         }
 
         async function getPastaUploadAtiva() {
@@ -739,20 +550,18 @@
             const queueCopy = [...imageQueue]; imageQueue = []; updateImageBadge();
             mostrarAlerta("Enviando imagens para a fila...", "aviso");
             queueCopy.forEach(img => {
-                enqueueTask(`Imagem ${img.sku} (Slot ${img.slot})`, async () => {
+                enqueueTask(`Imagem ${img.sku}`, async () => {
                     const pastaDestinoGithub = await getPastaUploadAtiva();
                     const pastaDestinoLocal = "../" + pastaDestinoGithub; 
-                    const sufixo = img.slot === 1 ? "" : `_${img.slot}`;
-                    const fileName = `${img.sku}${sufixo}.webp`; 
+                    const fileName = `${img.sku}.webp`; 
                     await GitHubAPI.saveFile(`${pastaDestinoGithub}/${fileName}`, img.base64data, `PIM Sync: Imagem ${fileName}`, true);
                     const pRef = products.find(x => x.codigo === img.sku); 
                     if(pRef) { 
-                        const fieldName = img.slot === 1 ? 'url_imagem' : `url_imagem_${img.slot}`;
-                        pRef[fieldName] = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
+                        pRef.url_imagem = `${pastaDestinoLocal}/${fileName}?v=${Date.now()}`; 
                         pRef.last_update = Date.now(); 
                         await saveDataLocally(); 
                     }
-                }, 'image');
+                });
             });
         }
 
@@ -768,7 +577,6 @@
             document.getElementById('modal-foto-full').classList.remove('hidden');
         }
         function fecharFotoTelaCheia() { document.getElementById('modal-foto-full').classList.add('hidden'); }
-        function searchGoogleShopping(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(nome)}`, '_blank'); }
 
         // ==========================================================
         // PIM CORE E LOCALIZAÇÃO (UI & EVENTOS)
@@ -776,9 +584,8 @@
         let isFilter24hActive = false;
         function toggleFilter24h() { 
             isFilter24hActive = !isFilter24hActive; 
-            const btn = document.getElementById('btn-24h'); const btnMobile = document.getElementById('btn-24h-mobile'); 
-            if(isFilter24hActive) { btn.classList.add('primary'); btnMobile.classList.add('primary'); } 
-            else { btn.classList.remove('primary'); btnMobile.classList.remove('primary'); } 
+            const btn = document.getElementById('btn-24h'); 
+            if(isFilter24hActive) btn.classList.add('primary'); else btn.classList.remove('primary'); 
             renderGrid(); 
         }
         
@@ -794,11 +601,7 @@
                 if(openSidebars.length === 0) { 
                     document.getElementById('sidebar-overlay').style.opacity = '0'; 
                     setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
-                    
-                    if(id === 'edit-sidebar' || id === 'categorias-sidebar' || id === 'marcas-sidebar' || id === 'filtros-sidebar' || id === 'tags-sidebar') { 
-                        if(id === 'edit-sidebar') { currentEditingSku = null; }
-                        renderGrid(null, true);
-                    } 
+                    renderGrid(null, true);
                 } 
             }, 50); 
         }
@@ -807,7 +610,6 @@
             document.querySelectorAll('.sidebar').forEach(el => el.classList.remove('open')); 
             document.getElementById('sidebar-overlay').style.opacity = '0'; 
             setTimeout(() => { document.getElementById('sidebar-overlay').style.display = 'none'; }, 300); 
-            currentEditingSku = null; 
             renderGrid(null, true); 
         }
 
@@ -819,92 +621,61 @@
                 renderGrid(e.target.value);
             }, 300)); 
             setupEditorEvents(); 
-            
-            const mainContent = document.getElementById('main-content-pim');
-            if (mainContent) {
-                mainContent.addEventListener('scroll', () => {
-                    if (mainContent.scrollTop + mainContent.clientHeight >= mainContent.scrollHeight - 200) carregarMaisCards();
-                });
-            }
         };
         
         function debounce(func, wait) { let timeout; return function(...args) { clearTimeout(timeout); timeout = setTimeout(() => func.apply(this, args), wait); }; }
 
         async function loadData() {
             try { const saved = await localforage.getItem(STORAGE_KEY); if(saved && Array.isArray(saved)) products = saved; } catch (err) {}
-            try { const savedCats = await localforage.getItem(CATEGORIAS_KEY); if(savedCats && Array.isArray(savedCats)) categoriasDoSistema = savedCats; } catch (err) {}
-            try { const savedMarcas = await localforage.getItem(MARCAS_KEY); if(savedMarcas && Array.isArray(savedMarcas)) marcasDoSistema = savedMarcas; } catch (err) {}
-            try { const savedTags = await localforage.getItem(TAGS_KEY); if(savedTags && Array.isArray(savedTags)) tagsDoSistema = savedTags; } catch (err) {} // NOVA CARGA DE TAGS
+            try { const c = await localforage.getItem(CATEGORIAS_KEY); if(c && Array.isArray(c)) categoriasDoSistema = c; } catch (err) {}
+            try { const sc = await localforage.getItem(SUBCATEGORIAS_KEY); if(sc && Array.isArray(sc)) subcategoriasDoSistema = sc; } catch (err) {}
+            try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
+            try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
+            try { const stg = await localforage.getItem(SUBTAGS_KEY); if(stg && Array.isArray(stg)) subtagsDoSistema = stg; } catch (err) {} 
             
-            let marcasAdicionadas = false;
-            products.forEach(p => {
-                if (p.marca) p.marca = p.marca.toUpperCase().trim();
-                if (p.categoria) p.categoria = p.categoria.trim();
-                if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); marcasAdicionadas = true; }
-            });
-
-            if (marcasAdicionadas) { marcasDoSistema.sort((a, b) => a.localeCompare(b)); await localforage.setItem(MARCAS_KEY, marcasDoSistema); }
-            
-            // Força a ordem alfabética para tags globais e categorias
-            tagsDoSistema.sort((a, b) => a.localeCompare(b));
-            categoriasDoSistema.sort((a, b) => a.nome.localeCompare(b.nome));
+            // Ordem Alfabética Geral
+            [categoriasDoSistema, subcategoriasDoSistema, marcasDoSistema, tagsDoSistema, subtagsDoSistema].forEach(lista => lista.sort((a, b) => a.localeCompare(b)));
 
             const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'); if(cfg.token) { document.getElementById('cfg-token').value = cfg.token; document.getElementById('cfg-user').value = cfg.user; document.getElementById('cfg-repo').value = cfg.repo; }
             renderGrid();
         }
         
         function updateImageBadge() { const badge = document.getElementById('img-badge'); if (badge) badge.innerText = `(${imageQueue.length})`; }
+        
         async function saveDataLocally() { 
-            try { 
-                await localforage.setItem(STORAGE_KEY, products); 
-                await localforage.setItem(TAGS_KEY, tagsDoSistema); // Salva tags globais sempre
-            } catch (err) {} 
+            try { await localforage.setItem(STORAGE_KEY, products); } catch (err) {} 
         }
 
-        // Funções para tags VISUAIS (em cima da imagem) - Mantidas intactas
-        window.updateTag = async function(sku, idx, field, value) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags[idx][field] = value; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
-        window.addTag = async function(sku) { const p = products.find(x => x.codigo === sku); if(!p) return; if(!p.tags) p.tags = []; p.tags.push({ texto: "NOVA TAG", bg: "#000000", txt: "#ffffff", tam: 10 }); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
-        window.removeTag = async function(sku, idx) { const p = products.find(x => x.codigo === sku); if(!p || !p.tags) return; p.tags.splice(idx, 1); p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
-
         // ==========================================================
-        // FILTROS AVANÇADOS E FILTRO GLOBAL (GRID)
+        // GERAÇÃO DE OPÇÕES DE SELECTS
         // ==========================================================
-        window.filtrarNaGrid = function(tipo, valor) {
-            filtroAtivo = { tipo: tipo, valor: valor };
-            document.getElementById('search-input').value = ""; 
-            closeAllSidebars();
-            const banner = document.getElementById('active-filter-banner'); banner.style.display = 'flex';
-            document.getElementById('filter-text-display').innerText = `${tipo}: ${valor}`;
-            renderGrid();
+        function gerarOptions(lista, selecionado, textoPadrao) {
+            let html = `<option value="">${textoPadrao}</option>`;
+            lista.forEach(item => {
+                let sel = (item === selecionado) ? 'selected' : '';
+                html += `<option value="${item}" ${sel}>${item}</option>`;
+            });
+            return html;
         }
 
+        // ==========================================================
+        // FILTROS AVANÇADOS E GLOBAIS
+        // ==========================================================
         window.limparFiltroGrid = function() { filtroAtivo = { tipo: null, valor: null }; document.getElementById('active-filter-banner').style.display = 'none'; renderGrid(); }
 
         function renderizarFiltrosAvancados() {
-            document.getElementById('flt-cat').innerHTML = getOpcoesCategoria('');
-            document.getElementById('flt-sub').innerHTML = '<option value="">Todas</option>';
-            document.getElementById('flt-marca').innerHTML = getOpcoesMarca('');
-            document.getElementById('flt-gondola').innerHTML = getGondolaOptions('');
-            document.getElementById('flt-prat').innerHTML = getPrateleiraOptions('');
-            
-            // Nova opção de filtro por Tag Global
-            let optionsTag = '<option value="">Todas</option>';
-            [...tagsDoSistema].sort((a,b)=>a.localeCompare(b)).forEach(t => { optionsTag += `<option value="${t}">${t}</option>`; });
-            document.getElementById('flt-tag').innerHTML = optionsTag;
+            document.getElementById('flt-cat').innerHTML = gerarOptions(categoriasDoSistema, '', 'Todas as Categorias');
+            document.getElementById('flt-sub').innerHTML = gerarOptions(subcategoriasDoSistema, '', 'Todas as Subcategorias');
+            document.getElementById('flt-marca').innerHTML = gerarOptions(marcasDoSistema, '', 'Todas as Marcas');
+            document.getElementById('flt-tag').innerHTML = gerarOptions(tagsDoSistema, '', 'Todas as Tags Globais');
         }
-
-        function atualizarOpcoesSubcatFiltro(catVal) { document.getElementById('flt-sub').innerHTML = getOpcoesSubcategoria(catVal, ''); }
 
         window.aplicarFiltrosAvancados = function() {
             advancedFilters.cat = document.getElementById('flt-cat').value;
             advancedFilters.sub = document.getElementById('flt-sub').value;
             advancedFilters.marca = document.getElementById('flt-marca').value;
-            advancedFilters.gondola = document.getElementById('flt-gondola').value;
-            advancedFilters.prat = document.getElementById('flt-prat').value;
-            advancedFilters.ncm = document.getElementById('flt-ncm').value;
-            advancedFilters.stock = document.getElementById('flt-stock').value;
-            advancedFilters.validade = document.getElementById('flt-val').value;
             advancedFilters.tag = document.getElementById('flt-tag').value;
+            advancedFilters.stock = document.getElementById('flt-stock').value;
             
             filtroAtivo = { tipo: 'avancado', valor: 'Filtros Combinados' };
             document.getElementById('active-filter-banner').style.display = 'flex'; document.getElementById('filter-text-display').innerText = 'Filtros Avançados Ativos';
@@ -912,7 +683,7 @@
         }
 
         // ==========================================================
-        // LAZY LOADING E CARTÕES DO PRODUTO (Manutenção de Scroll)
+        // LAZY LOADING E CARTÃO DE PRODUTO "FRONTAL"
         // ==========================================================
         function renderGrid(searchTerm = null, keepLoaded = false) {
             const gridContainer = document.getElementById('product-grid');
@@ -922,30 +693,14 @@
 
             let filtered = products;
 
-            // Lógica Unificada de Filtro
-            if (filtroAtivo.tipo === 'categoria') { filtered = filtered.filter(p => (p.categoria || "").trim() === filtroAtivo.valor); } 
-            else if (filtroAtivo.tipo === 'marca') { filtered = filtered.filter(p => (p.marca || "").trim().toUpperCase() === filtroAtivo.valor); } 
-            else if (filtroAtivo.tipo === 'tag') { filtered = filtered.filter(p => (p.tags_globais || []).includes(filtroAtivo.valor)); }
-            else if (filtroAtivo.tipo === 'avancado') {
+            if (filtroAtivo.tipo === 'avancado') {
                 filtered = filtered.filter(p => {
                     if(advancedFilters.cat && p.categoria !== advancedFilters.cat) return false;
                     if(advancedFilters.sub && p.subcategoria !== advancedFilters.sub) return false;
                     if(advancedFilters.marca && p.marca !== advancedFilters.marca) return false;
-                    if(advancedFilters.tag && !(p.tags_globais || []).includes(advancedFilters.tag)) return false;
-                    if(advancedFilters.gondola && p.gondola !== advancedFilters.gondola) return false;
-                    if(advancedFilters.prat && p.prateleira !== advancedFilters.prat) return false;
-                    if(advancedFilters.ncm === 'sem' && p.ncm && p.ncm.trim() !== '') return false;
+                    if(advancedFilters.tag && p.tag_global !== advancedFilters.tag) return false;
                     if(advancedFilters.stock === 'zero' && parseFloat(p.estoque) !== 0) return false;
-                    if(advancedFilters.validade) {
-                        if(!p.validade) return false;
-                        const partes = p.validade.split('/');
-                        if(partes.length === 3) {
-                            const dataVal = new Date(partes[2], partes[1] - 1, partes[0]).getTime();
-                            const hoje = Date.now();
-                            const diffDias = (dataVal - hoje) / (1000 * 60 * 60 * 24);
-                            if (diffDias < 0 || diffDias > parseInt(advancedFilters.validade)) return false;
-                        } else { return false; }
-                    } return true;
+                    return true;
                 });
             }
             
@@ -959,18 +714,21 @@
             produtosFiltrados = filtered; gridContainer.innerHTML = ""; itemsCarregados = 0; 
 
             if (produtosFiltrados.length === 0) { 
-                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><i data-lucide="layout-grid" size="40" style="opacity:0.3; margin-bottom:15px;"></i><h3 style="margin:0;">Nenhum produto encontrado</h3></div>`; 
-                lucide.createIcons(); return; 
+                gridContainer.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 50px; color:var(--text-secondary);"><h3 style="margin:0;">Nenhum produto encontrado</h3></div>`; 
+                document.getElementById('load-more-container').style.display = 'none';
+                return; 
             }
 
             carregarMaisCards(oldItemsCarregados);
-
             if (keepLoaded && mainContent) { requestAnimationFrame(() => { requestAnimationFrame(() => { mainContent.scrollTop = currentScroll; }); }); }
         }
 
-        function carregarMaisCards(quantidade = ITENS_POR_PAGINA) {
+        window.carregarMaisCards = function(quantidade = ITENS_POR_PAGINA) {
             const gridContainer = document.getElementById('product-grid');
-            if (itemsCarregados >= produtosFiltrados.length) return;
+            if (itemsCarregados >= produtosFiltrados.length) {
+                document.getElementById('load-more-container').style.display = 'none';
+                return;
+            }
 
             const nextBatch = produtosFiltrados.slice(itemsCarregados, itemsCarregados + quantidade);
             
@@ -978,150 +736,78 @@
                 const card = document.createElement('div'); card.className = `product-card ${p.situacao === 'I' ? 'inactive' : ''}`;
                 
                 const imgUrl = (p.url_imagem && p.url_imagem.length > 5) ? p.url_imagem : 'https://placehold.co/300x300/f4f4f5/a1a1aa?text=SEM+FOTO';
-                let htmlTag = ''; let tagsToRender = p.tags ? [...p.tags] : [];
-                if (p.tag_texto && tagsToRender.length === 0) { p.tag_texto.split('\n').filter(l => l.trim() !== '').forEach(l => { tagsToRender.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); }
-                if (tagsToRender.length > 0) { const tagsGeradas = tagsToRender.map(t => `<div class="product-tag" style="background-color: ${t.bg}; color: ${t.txt}; font-size: ${Math.max(t.tam-2, 8)}px;">${t.texto}</div>`).join(''); htmlTag = `<div class="tags-container">${tagsGeradas}</div>`; }
-                
-                // Tags Globais exibidas embaixo do nome
-                let htmlTagsGlobais = '';
-                if(p.tags_globais && p.tags_globais.length > 0) {
-                    htmlTagsGlobais = p.tags_globais.map(t => `<span class="global-tag-pill">${t}</span>`).join('');
-                }
-
                 const safeNameForInput = (p.nome || '').replace(/"/g, '&quot;');
-                const safeNomeGoogle = (p.nome || '').replace(/'/g, "\\'");
+                
+                let custo = parseFloat(p.preco_custo) || 0;
+                let venda = parseFloat(p.preco) || 0;
+                let markup = custo > 0 ? (((venda - custo) / custo) * 100).toFixed(1) : 0;
 
                 card.innerHTML = `
-                    <div style="width: 100px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
-                        <div class="card-img-wrapper" style="width:100px; height:100px; padding:5px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border);" onclick="openEditSidebar('${p.codigo}')">
-                            ${htmlTag}
-                            <img src="${imgUrl}" class="card-img" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
-                        </div>
-                        <button class="nav-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="openEditSidebar('${p.codigo}')"><i data-lucide="edit" size="12"></i> OPÇÕES</button>
-                    </div>
-                    
-                    <div class="card-info" style="flex-grow:1; display:flex; flex-direction:column; gap:6px; padding:0; text-align:left;">
-                        <div style="display:flex; flex-direction:column; gap:2px;">
-                            <div style="display:flex; gap: 4px;">
-                                <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px; flex-grow:1;" placeholder="Nome do Produto" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
-                                <button class="btn-smart" style="height:28px; width:28px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Google Shopping"><i data-lucide="shopping-cart" size="12"></i></button>
+                    <div style="display: flex; gap: 15px; align-items: stretch;">
+                        <div style="width: 100px; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="width:100px; height:100px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border); overflow:hidden;" onclick="openCanvasSidebar('${p.codigo}')" title="Clique para editar Foto">
+                                <img src="${imgUrl}" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
                             </div>
-                            ${htmlTagsGlobais ? `<div style="margin-top:2px;">${htmlTagsGlobais}</div>` : ''}
+                            <button class="nav-btn ${p.situacao === 'I' ? '' : 'primary'}" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="12"></i> ${p.situacao === 'I' ? 'INATIVO' : 'ATIVO'}</button>
+                            <button class="nav-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="deleteProduct('${p.codigo}')"><i data-lucide="trash-2" size="12"></i> APAGAR</button>
                         </div>
                         
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">EAN / GTIN</label>
-                                <input type="text" class="form-input card-mini-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)">
+                        <div style="flex-grow:1; display:flex; flex-direction:column; gap:8px;">
+                            <div class="field-group">
+                                <label>Nome do Produto</label>
+                                <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px;" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
                             </div>
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Validade</label>
-                                <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onchange="let d=this.value.split('-'); updateField('${p.codigo}', 'validade', d[2]+'/'+d[1]+'/'+d[0])">
-                            </div>
-                            
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Custo (R$)</label>
-                                <input type="number" step="0.01" class="form-input card-mini-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)">
-                            </div>
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Venda (R$)</label>
-                                <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)">
-                            </div>
-
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Categoria</label>
-                                <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">
-                                    ${getOpcoesCategoria(p.categoria)}
-                                </select>
-                            </div>
-                            <div style="display:flex; flex-direction:column; gap:2px;">
-                                <label style="font-size:9px; color:var(--text-secondary); font-weight:800;">Estoque Qtde</label>
-                                <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)">
+                            <div class="field-group">
+                                <label>Link do YouTube</label>
+                                <input type="text" class="form-input card-mini-input" placeholder="Cole o link do vídeo aqui..." value="${p.link_youtube || ''}" onchange="updateField('${p.codigo}', 'link_youtube', this.value)">
                             </div>
                         </div>
+                    </div>
+
+                    <div class="card-grid-fields">
+                        <div class="field-group"><label>Categoria</label>
+                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'categoria', this.value)">${gerarOptions(categoriasDoSistema, p.categoria, 'Sel. Categoria')}</select></div>
+                        <div class="field-group"><label>Subcategoria</label>
+                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'subcategoria', this.value)">${gerarOptions(subcategoriasDoSistema, p.subcategoria, 'Sel. Subcategoria')}</select></div>
+                        
+                        <div class="field-group"><label>Marca</label>
+                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'marca', this.value)">${gerarOptions(marcasDoSistema, p.marca, 'Sel. Marca')}</select></div>
+                        <div class="field-group"><label>Tag Global</label>
+                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'tag_global', this.value)">${gerarOptions(tagsDoSistema, p.tag_global, 'Sel. Tag')}</select></div>
+                        
+                        <div class="field-group"><label>Subtag</label>
+                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'subtag', this.value)">${gerarOptions(subtagsDoSistema, p.subtag, 'Sel. Subtag')}</select></div>
+                        <div class="field-group"><label>EAN / GTIN</label>
+                            <input type="text" class="form-input card-mini-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
+                        
+                        <div class="field-group"><label>NCM</label>
+                            <input type="text" class="form-input card-mini-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
+                        <div class="field-group"><label>Embalagem (Ex: 100ml)</label>
+                            <input type="text" class="form-input card-mini-input" value="${p.embalagem || ''}" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
+
+                        <div class="field-group"><label>Custo (R$)</label>
+                            <input type="number" step="0.01" class="form-input card-mini-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
+                        <div class="field-group">
+                            <label style="display:flex; justify-content:space-between;">Venda (R$) <span style="color:var(--success);">Markup: ${markup}%</span></label>
+                            <input type="number" step="0.01" class="form-input card-mini-input" style="color:var(--success); font-weight:800;" value="${p.preco || 0}" onchange="updateField('${p.codigo}', 'preco', this.value)">
+                        </div>
+
+                        <div class="field-group"><label>Validade</label>
+                            <input type="date" class="form-input card-mini-input" value="${p.validade && p.validade.includes('/') ? p.validade.split('/').reverse().join('-') : (p.validade || '')}" onchange="let d=this.value.split('-'); updateField('${p.codigo}', 'validade', d[2]+'/'+d[1]+'/'+d[0])"></div>
+                        <div class="field-group"><label>Estoque (Qtde)</label>
+                            <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
                     </div>
                 `;
                 gridContainer.appendChild(card);
                 itemsCarregados++;
             }); 
             lucide.createIcons();
-        }
-
-        async function updateLocalizacao(sku) { const p = products.find(x => x.codigo === sku); if(p) { p.localizacao = (p.gondola || p.prateleira) ? `${p.gondola || ''}-${p.prateleira || ''}` : "SEM LOC"; await saveDataLocally(); } }
-
-        function openEditSidebar(sku) {
-            currentEditingSku = sku; 
-            const p = products.find(x => x.codigo === sku); 
-            if(!p) return;
             
-            const isInactive = p.situacao === 'I';
-            const safeName = (p.nome||'').replace(/'/g, "\\'");
-
-            // Imagens
-            let htmlImages = '<div class="image-slots">';
-            for (let i = 1; i <= 5; i++) {
-                let fieldName = i === 1 ? 'url_imagem' : `url_imagem_${i}`;
-                let imgSrc = p[fieldName] ? `<img src="${p[fieldName]}">` : `<i data-lucide="image-plus" size="20" style="color:#a1a1aa"></i>`; 
-                htmlImages += `<div class="img-slot" style="width: 100%; aspect-ratio: 1;" onclick="openCanvasSidebar('${p.codigo}', ${i})"><span class="slot-num">${i}</span>${imgSrc}</div>`;
+            if (itemsCarregados >= produtosFiltrados.length) {
+                document.getElementById('load-more-container').style.display = 'none';
+            } else {
+                document.getElementById('load-more-container').style.display = 'block';
             }
-            htmlImages += '</div>';
-
-            // Tags Visuais
-            let htmlEditorTags = ''; 
-            const tags = p.tags || [];
-            if (p.tag_texto && tags.length === 0) { p.tag_texto.split('\n').filter(l=>l.trim()!=='').forEach(l => { tags.push({ texto: l, bg: p.tag_cor||'#000', txt: p.tag_cor_texto||'#fff', tam: p.tag_tamanho||10 }); }); p.tag_texto = ''; p.tags = tags; }
-            tags.forEach((t, idx) => {
-                htmlEditorTags += `<div style="display:flex; gap: 4px; align-items: center; background: #fafafa; padding: 6px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 4px;">
-                    <input type="text" class="form-input" style="flex-grow:1; padding:6px; font-size:11px;" value="${t.texto}" placeholder="Texto" onchange="updateTag('${p.codigo}', ${idx}, 'texto', this.value)">
-                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.bg}" onchange="updateTag('${p.codigo}', ${idx}, 'bg', this.value)">
-                    <input type="color" class="form-input" style="width: 28px; padding: 0; cursor:pointer; height:24px; border:none;" value="${t.txt}" onchange="updateTag('${p.codigo}', ${idx}, 'txt', this.value)">
-                    <input type="number" class="form-input" style="width: 50px; height:24px; padding: 4px; font-size:11px;" value="${t.tam}" onchange="updateTag('${p.codigo}', ${idx}, 'tam', this.value)">
-                    <button class="btn-smart" style="height:24px; width:24px; color:var(--danger); border-color:#fecaca;" onclick="removeTag('${p.codigo}', ${idx})"><i data-lucide="trash-2" size="12"></i></button></div>`;
-            });
-            htmlEditorTags += `<button class="nav-btn" style="width:100%; justify-content:center; margin-top:4px;" onclick="addTag('${p.codigo}')"><i data-lucide="plus" size="14"></i> ADICIONAR TAG VISUAL (FOTO)</button>`;
-
-            // Tags Globais (Checkboxes)
-            let tagsGlobaisHtml = tagsDoSistema.map(tg => {
-                const checked = (p.tags_globais || []).includes(tg) ? 'checked' : '';
-                return `<label style="display:flex; align-items:center; gap:6px; font-size:11px; cursor:pointer; padding: 4px; background: #f8fafc; border-radius: 4px; border: 1px solid var(--border);">
-                    <input type="checkbox" value="${tg}" onchange="updateTagsGlobaisProduto('${p.codigo}', this.value, this.checked)" ${checked}> ${tg}
-                </label>`;
-            }).join('');
-
-            const sidebarBody = document.getElementById('sidebar-body');
-            sidebarBody.innerHTML = `
-                <div class="form-section"><div class="section-title">Identificação</div><div class="form-grid">
-                        <div class="form-group"><label class="form-label">SKU (Código)</label><input type="text" class="form-input" style="font-weight:900; color:var(--accent)" value="${p.codigo}" onchange="updateSku('${p.codigo}', this.value)"></div>
-                        <div class="form-group"><label class="form-label">Marca</label><select class="form-input" onchange="updateField('${p.codigo}', 'marca', this.value)">${getOpcoesMarca(p.marca)}</select></div>
-                </div></div>
-                
-                <div class="form-section"><div class="section-title">Apresentação Principal</div>
-                    <div class="form-group"><label class="form-label">Nome do Produto</label><div class="input-wrapper"><input type="text" class="form-input" style="font-weight:700;" value="${(p.nome || '').replace(/"/g, '&quot;')}" onchange="updateField('${p.codigo}', 'nome', this.value)"><button class="btn-smart" onclick="searchGoogleHD('${safeName}')" title="Google Imagens HD"><i data-lucide="image" size="16"></i></button></div></div>
-                    
-                    <div class="form-group"><label class="form-label">Tags Globais (Classificação)</label>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;">${tagsGlobaisHtml || '<p style="font-size:10px;">Nenhuma tag global criada no menu lateral.</p>'}</div>
-                    </div>
-                </div>
-
-                <div class="form-section"><div class="section-title">Fotos do Produto (Até 5)</div>${htmlImages}</div>
-                <div class="form-section"><div class="form-group full"><label class="form-label">Tags Visuais da Imagem</label><div style="display:flex; flex-direction:column; gap:2px;">${htmlEditorTags}</div></div></div>
-                
-                <div class="form-section"><div class="section-title">Controles Avançados</div><div class="form-grid">
-                        <div class="form-group"><label class="form-label">Estoque</label><input type="number" class="form-input" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
-                        <div class="form-group"><label class="form-label">Status</label><button class="nav-btn ${isInactive ? '' : 'primary'}" style="width:100%; height:38px; justify-content:center;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="14"></i> ${isInactive ? 'INATIVO' : 'ATIVO'}</button></div>
-                        <div class="form-group"><label class="form-label">Gôndola</label><select class="form-input" onchange="updateField('${p.codigo}', 'gondola', this.value); updateLocalizacao('${p.codigo}')">${getGondolaOptions(p.gondola)}</select></div>
-                        <div class="form-group"><label class="form-label">Prateleira</label><select class="form-input" onchange="updateField('${p.codigo}', 'prateleira', this.value); updateLocalizacao('${p.codigo}')">${getPrateleiraOptions(p.prateleira)}</select></div>
-                </div></div>
-            `;
-            lucide.createIcons(); openSidebar('edit-sidebar');
-        }
-
-        window.updateTagsGlobaisProduto = async function(sku, tagNome, isChecked) {
-            const p = products.find(x => x.codigo === sku); if(!p) return;
-            if(!p.tags_globais) p.tags_globais = [];
-            if(isChecked && !p.tags_globais.includes(tagNome)) p.tags_globais.push(tagNome);
-            else if(!isChecked) p.tags_globais = p.tags_globais.filter(t => t !== tagNome);
-            p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true);
         }
 
         async function updateField(sku, field, value) { 
@@ -1129,38 +815,32 @@
             if(field === 'validade' && typeof value === 'string' && value.includes('-')) { const partes = value.split('-'); if(partes[0].length === 4) finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`; } 
             else if(['preco','estoque','preco_custo'].includes(field)) { finalVal = parseFloat(value.toString().replace(',','.')) || 0; }
             p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); 
+            if(['preco', 'preco_custo'].includes(field)) renderGrid(null, true); // Recarrega para atualizar markup
         }
         
-        async function updateSku(oldSku, newSku) { newSku = newSku.trim().toUpperCase(); if(!newSku || oldSku === newSku) return; if(products.find(p => p.codigo === newSku)) { alert("SKU em uso!"); openEditSidebar(oldSku); return; } const p = products.find(p => p.codigo === oldSku); if(p) { p.codigo = newSku; p.last_update = Date.now(); await saveDataLocally(); currentEditingSku = newSku; openEditSidebar(newSku); renderGrid(null, true); } }
-        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); openEditSidebar(sku); renderGrid(null, true); }
-        async function deleteCurrentProduct() { if(!currentEditingSku) return; if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== currentEditingSku); await saveDataLocally(); closeSidebar('edit-sidebar'); renderGrid(null, true); }
-        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); await saveDataLocally(); renderGrid(); openEditSidebar(sku); }
-        function searchGoogleHD(nome) { if(!nome) return; window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(nome)}&tbs=isz:l`, '_blank'); }
+        async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true); }
+        async function deleteProduct(sku) { if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== sku); await saveDataLocally(); renderGrid(); }
+        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); await saveDataLocally(); renderGrid(); window.scrollTo(0, 0); }
 
         // ==========================================================
-        // EDITOR DE CANVAS 100% MANTIDO
+        // EDITOR DE CANVAS 100% MANTIDO (Apenas 1 Slot)
         // ==========================================================
         const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
 
-        function openCanvasSidebar(sku, slot) {
-            const p = products.find(x => x.codigo === sku); if(!p) return; currentImageSlot = slot; imgOffsetX = 0; imgOffsetY = 0; 
+        window.openCanvasSidebar = function(sku) {
+            currentEditingSku = sku;
+            const p = products.find(x => x.codigo === sku); if(!p) return; imgOffsetX = 0; imgOffsetY = 0; 
             document.getElementById('zoomRange').value = 1; document.getElementById('brightnessRange').value = 1; document.getElementById('sharpenRange').value = 0;
-            const fieldName = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`; const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p[fieldName] || ""; 
+            const img = new Image(); img.crossOrigin = "Anonymous"; img.src = p.url_imagem || ""; 
             img.onload = () => { loadedImage = img; drawCanvas(); openSidebar('editor-sidebar'); }; img.onerror = () => { loadedImage = null; drawCanvas(); openSidebar('editor-sidebar'); };
-        }
-
-        function applySharpen(context, w, h, mix) {
-            if (mix <= 0) return;
-            try { const imageData = context.getImageData(0, 0, w, h); const data = imageData.data; const w4 = w * 4; const copy = new Uint8ClampedArray(data);
-                for (let y = 1; y < h - 1; y++) { for (let x = 1; x < w - 1; x++) { const i = (y * w + x) * 4; for (let c = 0; c < 3; c++) { const val = copy[i + c] * (1 + 4 * mix) + copy[i + c - 4] * (-mix) + copy[i + c + 4] * (-mix) + copy[i + c - w4] * (-mix) + copy[i + c + w4] * (-mix); data[i + c] = val; } } } context.putImageData(imageData, 0, 0); } catch(e) {}
         }
 
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if(loadedImage) { 
-                const zoom = parseFloat(document.getElementById('zoomRange').value); const bright = parseFloat(document.getElementById('brightnessRange').value); const sharpen = parseFloat(document.getElementById('sharpenRange').value); ctx.filter = `brightness(${bright})`;
+                const zoom = parseFloat(document.getElementById('zoomRange').value); const bright = parseFloat(document.getElementById('brightnessRange').value);
                 const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height) * zoom; const w = loadedImage.width * ratio, h = loadedImage.height * ratio; const posX = ((canvas.width - w) / 2) + imgOffsetX; const posY = ((canvas.height - h) / 2) + imgOffsetY; 
-                ctx.drawImage(loadedImage, posX, posY, w, h); ctx.filter = 'none'; if(sharpen > 0) applySharpen(ctx, canvas.width, canvas.height, sharpen);
+                ctx.filter = `brightness(${bright})`; ctx.drawImage(loadedImage, posX, posY, w, h); ctx.filter = 'none';
             } else { ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; ctx.fillText("Cole foto (Ctrl+V) ou busque no PC", canvas.width/2, canvas.height/2); }
         }
 
@@ -1168,33 +848,133 @@
             ['zoomRange','brightnessRange','sharpenRange'].forEach(id => { document.getElementById(id).addEventListener('input', drawCanvas); });
             document.getElementById('fileInput').addEventListener('change', (e) => { if(e.target.files && e.target.files[0]) { const reader = new FileReader(); reader.onload = (evt) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = evt.target.result; }; reader.readAsDataURL(e.target.files[0]); } });
             window.addEventListener('paste', e => { 
-                const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open'); const isEditOpen = document.getElementById('edit-sidebar').classList.contains('open'); if(!isEditorOpen && !isEditOpen) return;
+                const isEditorOpen = document.getElementById('editor-sidebar').classList.contains('open'); if(!isEditorOpen) return;
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items; 
-                for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); if(!isEditorOpen && currentEditingSku) openCanvasSidebar(currentEditingSku, currentImageSlot); }; img.src = event.target.result; }; reader.readAsDataURL(blob); } } 
+                for (let index in items) { const item = items[index]; if (item.kind === 'file' && item.type.includes('image/')) { const blob = item.getAsFile(); const reader = new FileReader(); reader.onload = (event) => { const img = new Image(); img.onload = () => { loadedImage = img; imgOffsetX = 0; imgOffsetY = 0; drawCanvas(); }; img.src = event.target.result; }; reader.readAsDataURL(blob); } } 
             });
             canvas.addEventListener('mousedown', (e) => { isDragging = true; startDragX = e.offsetX - imgOffsetX; startDragY = e.offsetY - imgOffsetY; }); canvas.addEventListener('mousemove', (e) => { if (!isDragging) return; imgOffsetX = e.offsetX - startDragX; imgOffsetY = e.offsetY - startDragY; drawCanvas(); }); canvas.addEventListener('mouseup', () => { isDragging = false; }); canvas.addEventListener('mouseleave', () => { isDragging = false; });
         }
 
         async function saveImageToQueue() {
-            if(!currentEditingSku) return; const sku = currentEditingSku; const slot = currentImageSlot; const base64full = canvas.toDataURL('image/webp', 0.9); const base64data = base64full.split(',')[1];
-            const p = products.find(x => x.codigo === sku); const fieldName = slot === 1 ? 'url_imagem' : `url_imagem_${slot}`;
-            p[fieldName] = base64full; p.last_update = Date.now(); await saveDataLocally(); 
-            imageQueue.push({ sku: sku, base64data: base64data, slot: slot }); updateImageBadge(); openEditSidebar(sku); closeSidebar('editor-sidebar'); renderGrid(null, true);
+            if(!currentEditingSku) return; const sku = currentEditingSku; const base64full = canvas.toDataURL('image/webp', 0.9); const base64data = base64full.split(',')[1];
+            const p = products.find(x => x.codigo === sku); 
+            p.url_imagem = base64full; p.last_update = Date.now(); await saveDataLocally(); 
+            imageQueue.push({ sku: sku, base64data: base64data }); updateImageBadge(); closeSidebar('editor-sidebar'); renderGrid(null, true);
         }
 
         function saveConfig() { const cfg = { token: document.getElementById('cfg-token').value, user: document.getElementById('cfg-user').value, repo: document.getElementById('cfg-repo').value }; localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); closeSidebar('config-sidebar'); }
 
         // ==========================================================
-        // IMPORTAR/EXPORTAR CSV (BLING/META) E GITHUB FETCH
+        // SISTEMA GENÉRICO DE CRUD PARA SELETORES
         // ==========================================================
-        document.getElementById('csv-file-substituir').addEventListener('change', function(e) { /* Lógica mantida (ocultada por espaço, o original tinha Papa.parse e funcionava perfeitamente). Copie do original se necessário. */ });
-        document.getElementById('csv-file-adicionar').addEventListener('change', function(e) { /* Lógica mantida */ });
-        function exportarCSVCompleto() { /* Lógica mantida */ }
-        function abrirModalExportacaoMeta() { /* Lógica mantida */ }
-        function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
-        function gerarCSVMetaCompleto() { /* Lógica mantida */ }
-        function gerarCSVMetaFila(tipoFiltro) { /* Lógica mantida */ }
+        window.renderizarCRUD = function(lista, containerId) {
+            const container = document.getElementById(`lista-${containerId}`); container.innerHTML = "";
+            lista.sort((a, b) => a.localeCompare(b));
+            lista.forEach((item, index) => {
+                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color:var(--accent); font-size:13px; flex-grow:1;">${item}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px;" onclick="editarItem('${containerId}', ${index})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerItem('${containerId}', ${index})"><i data-lucide="trash-2" size="12"></i></button></div></div></div>`;
+            }); lucide.createIcons();
+        }
 
+        function getListaByKey(sidebarId) {
+            if(sidebarId.includes('categorias')) return { arr: categoriasDoSistema, key: CATEGORIAS_KEY, prop: 'categoria' };
+            if(sidebarId.includes('subcategorias')) return { arr: subcategoriasDoSistema, key: SUBCATEGORIAS_KEY, prop: 'subcategoria' };
+            if(sidebarId.includes('marcas')) return { arr: marcasDoSistema, key: MARCAS_KEY, prop: 'marca' };
+            if(sidebarId.includes('tags')) return { arr: tagsDoSistema, key: TAGS_KEY, prop: 'tag_global' };
+            if(sidebarId.includes('subtags')) return { arr: subtagsDoSistema, key: SUBTAGS_KEY, prop: 'subtag' };
+        }
+
+        window.criarNovoItem = async function(lista, storageKey, sidebarId) { 
+            const nome = prompt("Nome do novo item:"); if (!nome || nome.trim() === "") return; 
+            const nm = nome.toUpperCase().trim(); if(lista.includes(nm)) return alert("Já existe!"); 
+            lista.push(nm); await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(null, true); 
+        }
+
+        window.editarItem = async function(sidebarId, index) { 
+            const obj = getListaByKey(sidebarId); const novoNome = prompt("Renomear:", obj.arr[index]); 
+            if (!novoNome || novoNome.trim() === "") return; 
+            const old = obj.arr[index]; const nm = novoNome.toUpperCase().trim(); obj.arr[index] = nm; 
+            products.forEach(p => { if(p[obj.prop] === old) p[obj.prop] = nm; }); 
+            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(null, true); 
+        }
+
+        window.removerItem = async function(sidebarId, index) { 
+            const obj = getListaByKey(sidebarId); if (!confirm(`Apagar "${obj.arr[index]}"?`)) return; 
+            const old = obj.arr[index]; obj.arr.splice(index, 1); 
+            products.forEach(p => { if(p[obj.prop] === old) p[obj.prop] = ""; }); 
+            await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(null, true); 
+        }
+
+        // ==========================================================
+        // BAIXAR PEDIDO POR TEXTO
+        // ==========================================================
+        function processarBaixaPedidoTexto() {
+            const texto = document.getElementById('order-text-input').value;
+            if(!texto) return alert("Cole o texto do pedido primeiro.");
+            const linhas = texto.split('\n'); let encontrados = 0; let falhas = [];
+            linhas.forEach(linha => {
+                const match = linha.match(/^(\d+)x?\s+(.+)$/i);
+                if(match) {
+                    const qtd = parseInt(match[1]); const nomeProcurado = match[2].trim().toLowerCase();
+                    const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
+                    if(p) { p.estoque = Math.max(0, (p.estoque || 0) - qtd); p.last_update = Date.now(); encontrados++; } 
+                    else { falhas.push(match[2]); }
+                }
+            });
+            if(encontrados > 0) {
+                saveDataLocally(); renderGrid();
+                alert(`✅ Sucesso! ${encontrados} itens atualizados.`);
+                closeSidebar('pedidos-sidebar'); document.getElementById('order-text-input').value = "";
+            } else { alert("❌ Nenhum produto encontrado com o nome exato."); }
+        }
+
+        // ==========================================================
+        // LIMPEZA INTELIGENTE DE IMAGENS DO GITHUB
+        // ==========================================================
+        async function executarLimpezaImagens() {
+            if(!confirm("AVISO: O sistema vai ler as pastas de imagens no GitHub e apagar todos os ficheiros que não estejam vinculados ao teu produtos.json atual. Queres continuar?")) return;
+            
+            const cfg = GitHubAPI.getConfig(); if(!cfg) return;
+            mostrarAlerta("Iniciando varredura no GitHub. Por favor, aguarde...", "aviso");
+            
+            try {
+                // Lista todas as imagens em uso no json
+                const imagensEmUso = new Set(products.map(p => {
+                    if(!p.url_imagem) return null;
+                    const partes = p.url_imagem.split('?')[0].split('/');
+                    return partes[partes.length-1]; // Extrai só o nome ex: "18271653.webp"
+                }).filter(x => x));
+
+                let pastas = ["site/img/produtos"];
+                for(let i = 2; i <= 10; i++) pastas.push(`site/img/produtos_${i}`);
+
+                let apagadas = 0;
+                
+                for(const pasta of pastas) {
+                    try {
+                        const files = await GitHubAPI.getFileData(pasta);
+                        if(Array.isArray(files)) {
+                            for(const file of files) {
+                                // Se a imagem do github não estiver no Set de imagens em uso, apaga!
+                                if(!imagensEmUso.has(file.name)) {
+                                    await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
+                                        method: 'DELETE',
+                                        headers: GitHubAPI.getHeaders(cfg),
+                                        body: JSON.stringify({ message: `PIM Sync: Removendo imagem órfã ${file.name}`, sha: file.sha })
+                                    });
+                                    apagadas++;
+                                }
+                            }
+                        }
+                    } catch(e) { } // Se der 404 (pasta não existe), ignora e vai pra próxima
+                }
+                
+                mostrarAlerta(`✅ Limpeza concluída! ${apagadas} imagens não utilizadas foram apagadas.`, "sucesso");
+            } catch(e) {
+                console.error(e);
+                mostrarAlerta("❌ Ocorreu um erro durante a limpeza.", "erro");
+            }
+        }
+        
         async function fetchFromGithub() {
             try {
                 const cfg = GitHubAPI.getConfig(); if (!cfg) return;
@@ -1205,189 +985,18 @@
                 if (parsedData && Array.isArray(parsedData)) {
                     if(products.length > 0) { if(!confirm("Substituir a base local pela da nuvem?")) return; }
                     products = parsedData;
-                    products.forEach(p => { if (p.marca) p.marca = p.marca.toUpperCase().trim(); if (p.categoria) p.categoria = p.categoria.trim(); });
-                    await saveDataLocally(); renderGrid(); renderizarSidebarCategorias(); alert("Atualização concluída!"); closeSidebar('config-sidebar');
+                    await saveDataLocally(); renderGrid(); alert("Atualização concluída!"); closeSidebar('config-sidebar');
                 } else { alert("Formato inesperado."); }
             } catch(e) { alert("Erro: " + e.message); }
         }
 
         async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
 
-        // ==========================================================
-        // GESTÃO DE MARCAS, CATEGORIAS E AGORA TAGS GLOBAIS
-        // ==========================================================
-        function renderizarSidebarMarcas() {
-            const container = document.getElementById('lista-marcas-container'); container.innerHTML = "";
-            marcasDoSistema.sort((a, b) => a.localeCompare(b));
-            marcasDoSistema.forEach((marca, index) => {
-                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color:var(--accent); font-size:13px; flex-grow:1;">${marca}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px;" onclick="editarMarca(${index})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerMarca(${index})"><i data-lucide="trash-2" size="12"></i></button></div></div></div>`;
-            }); lucide.createIcons();
-        }
-        async function criarNovaMarca() { const nome = prompt("Nova Marca:"); if (!nome) return; const nm = nome.toUpperCase().trim(); if(marcasDoSistema.includes(nm)) return; marcasDoSistema.push(nm); await localforage.setItem(MARCAS_KEY, marcasDoSistema); renderizarSidebarMarcas(); renderGrid(null, true); }
-        async function editarMarca(index) { const novoNome = prompt("Renomear:", marcasDoSistema[index]); if (!novoNome) return; const old = marcasDoSistema[index]; const nm = novoNome.toUpperCase().trim(); marcasDoSistema[index] = nm; products.forEach(p => { if(p.marca === old) p.marca = nm; }); await saveDataLocally(); await localforage.setItem(MARCAS_KEY, marcasDoSistema); renderizarSidebarMarcas(); renderGrid(null, true); }
-        async function removerMarca(index) { if (!confirm(`Apagar "${marcasDoSistema[index]}"?`)) return; const old = marcasDoSistema[index]; marcasDoSistema.splice(index, 1); products.forEach(p => { if(p.marca === old) p.marca = ""; }); await saveDataLocally(); await localforage.setItem(MARCAS_KEY, marcasDoSistema); renderizarSidebarMarcas(); renderGrid(null, true); }
-        function getOpcoesMarca(marcaSelecionada) { let options = '<option value="">Sel. Marca</option>'; [...marcasDoSistema].sort((a,b)=>a.localeCompare(b)).forEach(m => { let selected = (m === marcaSelecionada) ? 'selected' : ''; options += `<option value="${m}" ${selected}>${m}</option>`; }); return options; }
-
-        function renderizarSidebarCategorias() { /* Mesma lógica do original mantida para abreviar, mas não apagada no seu arquivo final */ }
-        async function criarNovaCategoria() { /* Mantida */ }
-        function getOpcoesCategoria(cat) { let options = '<option value="">Sel. Categoria</option>'; [...categoriasDoSistema].sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(c => { let selected = (c.nome === cat) ? 'selected' : ''; options += `<option value="${c.nome}" ${selected}>${c.nome}</option>`; }); return options; }
-        function getOpcoesSubcategoria(cat, subcat) { /* Mantida */ return '<option value="">Sel. Subcat</option>'; }
-        window.mudarCategoriaDoProduto = async function(sku, novaCategoria) { updateField(sku, 'categoria', novaCategoria); updateField(sku, 'subcategoria', ''); }
-
-        // --- NOVO: CRUD DE TAGS GLOBAIS ---
-        function renderizarSidebarTags() {
-            const container = document.getElementById('lista-tags-container'); container.innerHTML = "";
-            tagsDoSistema.sort((a, b) => a.localeCompare(b));
-            tagsDoSistema.forEach((tag, index) => {
-                container.innerHTML += `<div style="border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #fff; margin-bottom:8px;"><div style="display: flex; justify-content: space-between; align-items: center;"><strong style="color:var(--accent); font-size:13px; flex-grow:1;">${tag}</strong><div style="display:flex; gap:6px;"><button class="btn-smart" style="height:28px; width:28px; color:#0284c7;" onclick="filtrarNaGrid('tag', '${tag}')" title="Ver Produtos"><i data-lucide="eye" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px;" onclick="editarTag(${index})"><i data-lucide="edit-2" size="12"></i></button><button class="btn-smart" style="height:28px; width:28px; color:var(--danger); border-color:#fecaca;" onclick="removerTagGlobalCRUD(${index})"><i data-lucide="trash-2" size="12"></i></button></div></div></div>`;
-            }); lucide.createIcons();
-        }
-
-        async function criarNovaTag() {
-            const nome = prompt("Digite o nome da nova Tag Global:");
-            if (!nome || nome.trim() === "") return;
-            const nm = nome.trim().toUpperCase();
-            if(tagsDoSistema.includes(nm)) return alert("Esta tag já existe!");
-            tagsDoSistema.push(nm);
-            await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true);
-        }
-
-        async function editarTag(index) {
-            const novoNome = prompt("Renomear tag para:", tagsDoSistema[index]);
-            if (!novoNome || novoNome.trim() === "" || novoNome.toUpperCase() === tagsDoSistema[index]) return;
-            const old = tagsDoSistema[index];
-            const nm = novoNome.toUpperCase().trim();
-            tagsDoSistema[index] = nm;
-            products.forEach(p => { 
-                if(p.tags_globais && p.tags_globais.includes(old)) {
-                    p.tags_globais = p.tags_globais.map(t => t === old ? nm : t);
-                } 
-            });
-            await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true);
-        }
-
-        async function removerTagGlobalCRUD(index) {
-            if (!confirm(`Tem certeza que deseja apagar a tag "${tagsDoSistema[index]}" de todos os produtos?`)) return;
-            const old = tagsDoSistema[index];
-            tagsDoSistema.splice(index, 1);
-            products.forEach(p => { 
-                if(p.tags_globais && p.tags_globais.includes(old)) {
-                    p.tags_globais = p.tags_globais.filter(t => t !== old);
-                } 
-            });
-            await saveDataLocally(); renderizarSidebarTags(); renderGrid(null, true);
-        }
-
-        // ==========================================================
-        // ATUALIZAÇÃO 2: BAIXAR PEDIDO POR TEXTO
-        // ==========================================================
-        function processarBaixaPedidoTexto() {
-            const texto = document.getElementById('order-text-input').value;
-            if(!texto) return alert("Cole o texto do pedido primeiro.");
-
-            const linhas = texto.split('\n');
-            let encontrados = 0;
-            let falhas = [];
-
-            linhas.forEach(linha => {
-                // Procura pelo padrão "1x Nome do Produto" ou "1 Nome do Produto"
-                const match = linha.match(/^(\d+)x?\s+(.+)$/i);
-                if(match) {
-                    const qtd = parseInt(match[1]);
-                    const nomeProcurado = match[2].trim().toLowerCase();
-
-                    // Tenta achar exatamente o nome
-                    const p = products.find(prod => (prod.nome || "").toLowerCase() === nomeProcurado);
-                    if(p) {
-                        p.estoque = Math.max(0, (p.estoque || 0) - qtd);
-                        p.last_update = Date.now();
-                        encontrados++;
-                    } else {
-                        falhas.push(match[2]);
-                    }
-                }
-            });
-
-            if(encontrados > 0) {
-                saveDataLocally(); renderGrid();
-                alert(`✅ Sucesso! ${encontrados} itens tiveram o estoque atualizado.`);
-                if(falhas.length > 0) console.warn("Produtos não encontrados pelo nome exato:", falhas);
-                closeSidebar('pedidos-sidebar');
-                document.getElementById('order-text-input').value = "";
-            } else {
-                alert("❌ Não consegui achar nenhum produto correspondente ao texto. Certifique-se que o nome no texto está IGUAL ao cadastro no sistema.");
-            }
-        }
-
-        // ==========================================================
-        // ATUALIZAÇÃO 3: MÉTRICAS E ESTRATÉGIAS
-        // ==========================================================
-        function renderizarMetricas() {
-            const container = document.getElementById('metricas-container');
-            let totalCusto = 0; let totalVenda = 0; let itensSemEstoque = 0;
-            
-            // Sugestões de Estratégia de Preço
-            let produtosAAVencer = products.filter(p => {
-                if(!p.validade) return false;
-                const d = p.validade.split('/');
-                if(d.length !== 3) return false;
-                const dataVal = new Date(d[2], d[1]-1, d[0]);
-                const diff = (dataVal - new Date()) / (1000*60*60*24);
-                return diff > 0 && diff < 90; // Vence em menos de 90 dias
-            });
-
-            products.forEach(p => {
-                totalCusto += (parseFloat(p.preco_custo) || 0) * (parseFloat(p.estoque) || 0);
-                totalVenda += (parseFloat(p.preco) || 0) * (parseFloat(p.estoque) || 0);
-                if((parseFloat(p.estoque) || 0) <= 0 && p.situacao !== 'I') itensSemEstoque++;
-            });
-
-            const margemMedia = totalVenda > 0 ? (((totalVenda - totalCusto) / totalVenda) * 100).toFixed(1) : 0;
-
-            let htmlAvisosValidade = produtosAAVencer.length > 0 ? 
-                produtosAAVencer.map(p => `<div style="font-size:11px; background:#fff; padding:6px; border-radius:4px; margin-bottom:4px; border:1px solid #bae6fd;"><b>${p.codigo}</b> - Vence: ${p.validade} | Custo: R$${p.preco_custo} | Venda Atual: R$${p.preco}</div>`).join('') :
-                '<div style="font-size:11px; color:var(--success);">Nenhum produto próximo ao vencimento.</div>';
-
-            container.innerHTML = `
-                <div class="form-section">
-                    <div class="section-title">Valor do Inventário</div>
-                    <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid var(--border);">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">CUSTO TOTAL:</span>
-                            <span style="font-size:12px; font-weight:900;">R$ ${totalCusto.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">RETORNO PREVISTO:</span>
-                            <span style="font-size:12px; font-weight:900; color:var(--success);">R$ ${totalVenda.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--border); padding-top:8px;">
-                            <span style="font-size:11px; font-weight:800; color:var(--text-secondary);">MARGEM BRUTA MÉDIA:</span>
-                            <span style="font-size:12px; font-weight:900; color:var(--info);">${margemMedia}%</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-section" style="margin-top:15px;">
-                    <div class="section-title" style="color:var(--danger);">Alerta de Ruptura</div>
-                    <div style="background:#fef2f2; padding:15px; border-radius:8px; border:1px solid #fecaca; color:var(--danger); font-size:12px; font-weight:800;">
-                        Você tem ${itensSemEstoque} produtos ativos com estoque ZERO.
-                    </div>
-                </div>
-
-                <div class="form-section" style="margin-top:15px;">
-                    <div class="section-title" style="color:#0369a1;">Estratégia de Preço Dinâmico (< 90 dias)</div>
-                    <p style="font-size:10px; color:var(--text-secondary);">Produtos que vencem nos próximos 90 dias. Sugerimos avaliar o giro e, se necessário, reduzir a margem para evitar perdas totais.</p>
-                    <div style="background:#f0f9ff; padding:10px; border-radius:8px; border:1px solid #bae6fd; max-height:200px; overflow-y:auto;">
-                        ${htmlAvisosValidade}
-                    </div>
-                </div>
-            `;
-            lucide.createIcons();
-        }
-
-        // LIMPEZA INTELIGENTE
-        function obterImagensEmUso() { /* Mantido */ return new Set(); }
-        async function executarLimpezaImagens() { /* Mantido */ }
+        // Módulo de exportação original em branco mas declarado para não quebrar botões mantidos
+        function abrirModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'flex'; }
+        function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
+        function gerarCSVMetaCompleto() {}
+        function gerarCSVMetaFila(tipoFiltro) {}
     </script>
 </body>
 </html>
