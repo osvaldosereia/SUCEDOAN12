@@ -726,6 +726,48 @@
             return html;
         }
 
+        // ====== GERADORES PARA MÚLTIPLAS TAGS/SUBTAGS ======
+        function gerarCheckboxes(lista, selecionados, sku, campo) {
+            let selecoes = [];
+            if (Array.isArray(selecionados)) {
+                selecoes = selecionados;
+            } else if (selecionados && typeof selecionados === 'string') {
+                selecoes = selecionados.split(',').map(s => s.trim());
+            }
+
+            let html = '';
+            lista.forEach(item => {
+                let isChecked = selecoes.includes(item) ? 'checked' : '';
+                html += `
+                    <label style="display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 4px; cursor:pointer; font-weight: 600; text-transform:none; color: var(--text-primary);">
+                        <input type="checkbox" value="${item}" ${isChecked} onchange="toggleMultiSelect('${sku}', '${campo}', this.value, this.checked)" style="cursor:pointer;">
+                        ${item}
+                    </label>
+                `;
+            });
+            if(lista.length === 0) html = '<span style="font-size:9px; color:var(--text-secondary);">Nenhuma cadastrada</span>';
+            return html;
+        }
+
+        window.toggleMultiSelect = async function(sku, campo, valor, isChecked) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return;
+            
+            let atual = [];
+            if (Array.isArray(p[campo])) atual = p[campo];
+            else if (p[campo] && typeof p[campo] === 'string') atual = p[campo].split(',').map(s => s.trim());
+            
+            if (isChecked) {
+                if (!atual.includes(valor)) atual.push(valor);
+            } else {
+                atual = atual.filter(v => v !== valor);
+            }
+            
+            p[campo] = atual;
+            p.last_update = Date.now();
+            await saveDataLocally();
+        }
+
         window.mudarCategoriaDoProduto = async function(sku, novaCategoria) { 
             const p = products.find(x => x.codigo === sku); if(!p) return;
             p.categoria = novaCategoria;
@@ -780,7 +822,12 @@
                     if(advancedFilters.cat && p.categoria !== advancedFilters.cat) return false;
                     if(advancedFilters.sub && p.subcategoria !== advancedFilters.sub) return false;
                     if(advancedFilters.marca && p.marca !== advancedFilters.marca) return false;
-                    if(advancedFilters.tag && p.tag_global !== advancedFilters.tag) return false;
+                    
+                    if(advancedFilters.tag) {
+                        let pTags = Array.isArray(p.tag_global) ? p.tag_global : (p.tag_global ? p.tag_global.split(',').map(s=>s.trim()) : []);
+                        if(!pTags.includes(advancedFilters.tag)) return false;
+                    }
+                    
                     if(advancedFilters.stock === 'zero' && parseFloat(p.estoque) !== 0) return false;
                     return true;
                 });
@@ -855,16 +902,22 @@
                     <div class="card-grid-fields">
                         <div class="field-group"><label>Categoria</label>
                             <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">${gerarOptionsCategorias(p.categoria)}</select></div>
-                        <div class="field-group"><label>Subcategoria</label>
-                            <select class="form-input card-mini-input" id="subcat-${p.codigo}" onchange="updateField('${p.codigo}', 'subcategoria', this.value)">${gerarOptionsSubcategorias(p.categoria, p.subcategoria)}</select></div>
+                        
+                        <div class="field-group"><label>Tags Globais</label>
+                            <div class="form-input card-mini-input" style="height: 65px; overflow-y: auto; padding: 6px; background: #fafafa;">
+                                ${gerarCheckboxes(tagsDoSistema, p.tag_global, p.codigo, 'tag_global')}
+                            </div>
+                        </div>
                         
                         <div class="field-group"><label>Marca</label>
                             <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'marca', this.value)">${gerarOptions(marcasDoSistema, p.marca, 'Sel. Marca')}</select></div>
-                        <div class="field-group"><label>Tag Global</label>
-                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'tag_global', this.value)">${gerarOptions(tagsDoSistema, p.tag_global, 'Sel. Tag')}</select></div>
+                            
+                        <div class="field-group"><label>Subtags</label>
+                            <div class="form-input card-mini-input" style="height: 65px; overflow-y: auto; padding: 6px; background: #fafafa;">
+                                ${gerarCheckboxes(subtagsDoSistema, p.subtag, p.codigo, 'subtag')}
+                            </div>
+                        </div>
                         
-                        <div class="field-group"><label>Subtag</label>
-                            <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'subtag', this.value)">${gerarOptions(subtagsDoSistema, p.subtag, 'Sel. Subtag')}</select></div>
                         <div class="field-group"><label>EAN / GTIN</label>
                             <input type="text" class="form-input card-mini-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
                         
