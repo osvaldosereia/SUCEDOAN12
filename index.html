@@ -18,8 +18,10 @@
             --bg-page: #ffffff;
             --bg-img: #f3f4f6;       
             --text-dark: #291F1A;    
+            /* Ajuste de Contraste PageSpeed: Cinza mais legível */
             --text-gray: #5A504A;    
             --border-light: #e5e7eb;
+            /* Ajuste de Contraste PageSpeed: Verde levemente mais escuro para passar no teste AA */
             --success: #059669;
             --radius-img: 16px;
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -39,13 +41,7 @@
         @media(min-width: 768px) { .logo { height: 65px; } }
 
         .controls-wrapper { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        
-        /* Ajuste Desktop: Tudo na mesma linha */
-        @media(min-width: 768px) { 
-            .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; flex-wrap: nowrap;} 
-            .search-box { flex: 1; } 
-            .nav-buttons { flex: initial; width: auto; } 
-        }
+        @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } .search-box { flex: 1; } .nav-buttons { flex: 1; width: auto; } }
 
         .search-box { position: relative; display: flex; align-items: center; width: 100%; }
         .search-icon { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--text-gray); }
@@ -57,28 +53,6 @@
         .nav-buttons::-webkit-scrollbar { display: none; }
         .nav-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; background: #fff; color: var(--text-gray); border: 1px solid var(--border-light); transition: 0.2s; white-space: nowrap; text-align: center; }
         .nav-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
-
-        /* Estilos do novo botão "Lista de Compras" */
-        .btn-lista-compras {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            background: #fff;
-            color: var(--brand);
-            border: 2px dashed var(--brand);
-            transition: 0.2s;
-            text-align: center;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-lista-compras:active { background: var(--brand-light); }
-        @media(min-width: 768px) {
-            .btn-lista-compras { width: auto; flex-shrink: 0; white-space: nowrap; padding: 12px 20px;}
-        }
 
         .main-content { padding: 32px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
         .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
@@ -94,13 +68,17 @@
 
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; height: 100%; }
         
+        /* Ajuste de Proporção: Transformando em imagem mais vertical (3/4) */
         .card-img-wrap { width: 100%; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
+        /* Padronização Tipográfica: Altura fixa em 2 linhas garantida */
         .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em; text-transform: none; cursor: pointer; }
         
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
         .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
+        
+        /* Ajuste PageSpeed: Contraste do preço antigo melhorado */
         .old-price { font-size: 0.8rem; color: var(--text-gray); opacity: 0.8; text-decoration: line-through; }
         
         .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
@@ -116,11 +94,43 @@
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
-        .btn-action-gray { width: 100%; padding: 8px 6px; background: var(--bg-img); color: var(--text-dark); font-size: 0.75rem; font-weight: 700; border-radius: 8px; border: none; transition: 0.2s; cursor: pointer; text-align: center; }
+        .btn-action-gray {
+            width: 100%;
+            padding: 8px 6px;
+            background: var(--bg-img);
+            color: var(--text-dark);
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 8px;
+            border: none;
+            transition: 0.2s;
+            cursor: pointer;
+            text-align: center;
+        }
         .btn-action-gray:active { background: var(--border-light); }
 
-        .embalagem-tag { position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.95); color: var(--brand); font-size: 0.65rem; font-weight: 800; padding: 4px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 2; letter-spacing: -0.2px; }
-        .list-img-wrap .embalagem-tag { top: 6px; left: 6px; font-size: 0.6rem; padding: 2px 6px; border-radius: 6px; }
+        .embalagem-tag {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--brand);
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            z-index: 2;
+            letter-spacing: -0.2px;
+        }
+
+        .list-img-wrap .embalagem-tag {
+            top: 6px;
+            left: 6px;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
 
         .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
@@ -130,8 +140,10 @@
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         
-        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; }
-        .drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
+        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; /* <-- Sombra desligada no modo escondido */ }
+
+.drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); /* <-- Sombra ligada quando a gaveta abre */ }
+        
         
         .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
         .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--brand); }
@@ -145,6 +157,7 @@
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
         
+        /* Padronização Tipográfica na Lista */
         .list-name { font-size: 0.9rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-transform: none; height: 2.8em; }
         .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; display: flex; flex-direction: column; }
         
@@ -155,13 +168,16 @@
         .scroll-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); z-index: 5; background: #fff; border: 1px solid var(--border-light); border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; justify-content: center; align-items: center; color: var(--brand); font-size: 0.9rem;}
         .scroll-btn.left { left: 0px; }
         .scroll-btn.right { right: 0px; }
-        @media(min-width: 768px) { .scroll-btn { display: flex; } .swap-chips::-webkit-scrollbar { display: none; } }
+        @media(min-width: 768px) {
+            .scroll-btn { display: flex; }
+            .swap-chips::-webkit-scrollbar { display: none; }
+        }
 
         .swap-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; padding: 0 4px; scroll-behavior: smooth;}
         .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
         .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
-        #main-category-chips-wrap { position: sticky; top: 185px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
+        #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
         @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
         
         #swap-chips-container-wrap { position: sticky; top: -20px; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 16px 20px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); display: flex; flex-direction: column; gap: 12px; }
@@ -193,21 +209,6 @@
 
         .economia-tag { font-size: 0.75rem; color: var(--success); font-weight: 800; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 4px; }
         
-        /* ========================================================
-           ESTILOS: LISTA DE COMPRAS
-           ======================================================== */
-        .lista-section-title { font-size: 1rem; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px; }
-        .lista-chips-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
-        .lista-chip { padding: 10px 16px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); border: 1px solid var(--border-light); cursor: pointer; transition: 0.2s; user-select: none; }
-        .lista-chip.selected { background: var(--brand); color: #fff; border-color: var(--brand); }
-        
-        .product-carousel { display: flex; gap: 16px; overflow-x: auto; scrollbar-width: none; padding: 4px 20px 24px 20px; margin: 0 -20px; scroll-snap-type: x mandatory; }
-        .product-carousel::-webkit-scrollbar { display: none; }
-        .product-carousel .card { min-width: 150px; width: 150px; flex-shrink: 0; scroll-snap-align: start; }
-        @media(min-width: 768px) { .product-carousel .card { min-width: 180px; width: 180px; } }
-
-        .action-buttons-row { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-        .btn-action-outline { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.9rem; font-weight: 700; padding: 10px 16px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border-light); transition: 0.2s; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -232,8 +233,6 @@
             <button id="btn-nav-cestas" class="nav-btn active" onclick="scrollToCestas()">Cestas Básicas</button>
             <button id="btn-nav-produtos" class="nav-btn" onclick="scrollToProdutos()">Produtos</button>
         </div>
-        
-        <button id="btn-lista-compras" class="btn-lista-compras" onclick="openListaCompras()">📝 Criar Lista de Compras</button>
     </div>
 
     <main class="main-content">
@@ -306,18 +305,6 @@
         <div class="drawer-body" id="swap-items-grid"></div>
     </div>
 
-    <div class="drawer" id="lista-drawer">
-        <div class="drawer-header">
-            <div class="drawer-title">Minha Lista</div>
-            <button class="btn-close" onclick="closeDrawer('lista-drawer')" aria-label="Fechar lista">✕</button>
-        </div>
-        <div class="drawer-body" id="lista-body">
-            </div>
-        <div class="drawer-footer">
-            <button class="btn-checkout" id="btn-buscar-lista" onclick="buildListaCarousels()">Buscar Itens</button>
-        </div>
-    </div>
-
     <div class="drawer" id="checkout-drawer">
         <div class="drawer-header">
             <div class="drawer-title">Finalizar Pedido</div>
@@ -372,17 +359,6 @@ const PROMO_CONFIG = {
     leve5pague4: ["1775965599401", "1776338131591", "1776338131018", "1776338123831", "1776338125770", "1776338132236", "1776031547894"]
 };
 
-// ==========================================
-// CONFIGURAÇÕES DA LISTA DE COMPRAS
-// ==========================================
-const LISTA_CATEGORIAS = [
-    { nome: "Comida e Bebida", termos: ["Arroz", "Feijão", "Café", "Óleo", "Macarrão", "Açúcar", "Leite", "Biscoito", "Farinha", "Sal", "Massa", "Molho"] },
-    { nome: "Limpeza e Lavanderia", termos: ["Sabão em Pó", "Amaciante", "Detergente", "Desinfetante", "Água Sanitária", "Esponja", "Limpa Vidros"] },
-    { nome: "Higiene e Beleza", termos: ["Papel Higiênico", "Sabonete", "Creme Dental", "Shampoo", "Condicionador", "Absorvente", "Desodorante"] },
-    { nome: "Casa e Pet", termos: ["Saco de Lixo", "Ração Cães", "Ração Gatos", "Inseticida", "Fósforo", "Vela"] }
-];
-let selectedListaTerms = [];
-
 const MIN_ORDER = 75.00;
 const $ = id => document.getElementById(id);
 
@@ -400,6 +376,10 @@ const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
+// ==========================================
+// SISTEMA DE URLS AMIGÁVEIS (SEO)
+// ==========================================
+
 function createSlug(text) {
     if (!text) return "";
     return text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -408,8 +388,10 @@ function createSlug(text) {
 
 function updateURL(type, slug) {
     const url = new URL(window.location);
-    url.search = ''; 
-    if (type !== 'home') url.searchParams.set(type, slug); 
+    url.search = ''; // Limpa antes de setar novo
+    if (type !== 'home') {
+        url.searchParams.set(type, slug); 
+    }
     window.history.pushState({ modal: slug }, "", url);
 }
 
@@ -464,114 +446,6 @@ function loadCart() {
     } catch(e) { console.error("Erro ao carregar carrinho", e); }
 }
 
-// ==========================================
-// FUNÇÕES DA LISTA DE COMPRAS (LOCAL STORAGE E LÓGICA)
-// ==========================================
-function saveLista() { localStorage.setItem('dona_antonia_lista', JSON.stringify(selectedListaTerms)); }
-
-function loadLista() {
-    try {
-        let saved = localStorage.getItem('dona_antonia_lista');
-        if (saved) selectedListaTerms = JSON.parse(saved);
-    } catch(e) { console.error("Erro ao carregar lista", e); }
-}
-
-window.openListaCompras = function() {
-    let html = '';
-    LISTA_CATEGORIAS.forEach(cat => {
-        html += `<div class="lista-section-title">${cat.nome}</div>`;
-        html += `<div class="lista-chips-container">`;
-        cat.termos.forEach(termo => {
-            let isSelected = selectedListaTerms.includes(termo);
-            html += `<div class="lista-chip ${isSelected ? 'selected' : ''}" onclick="toggleListaTerm('${termo}', this)">${termo}</div>`;
-        });
-        html += `</div>`;
-    });
-    $('lista-body').innerHTML = html;
-    updateListaBtn();
-    openDrawer('lista-drawer');
-};
-
-window.toggleListaTerm = function(termo, el) {
-    let idx = selectedListaTerms.indexOf(termo);
-    if (idx > -1) {
-        selectedListaTerms.splice(idx, 1);
-        el.classList.remove('selected');
-    } else {
-        selectedListaTerms.push(termo);
-        el.classList.add('selected');
-    }
-    saveLista();
-    updateListaBtn();
-};
-
-function updateListaBtn() {
-    let qtd = selectedListaTerms.length;
-    let btn = $('btn-buscar-lista');
-    if (qtd === 0) {
-        btn.innerText = `Selecione os Itens`;
-        btn.style.background = 'var(--text-gray)';
-    } else {
-        btn.innerText = `Buscar ${qtd} Item${qtd !== 1 ? 's' : ''}`;
-        btn.style.background = 'var(--brand)';
-    }
-}
-
-window.buildListaCarousels = function() {
-    if (selectedListaTerms.length === 0) {
-        alert("Sua lista está vazia. Selecione pelo menos um item.");
-        return;
-    }
-    closeDrawer('lista-drawer');
-    
-    // Esconder a navegação normal
-    $('nav-buttons-container').style.display = 'none';
-    $('btn-lista-compras').style.display = 'none';
-    
-    $('grid-title').style.display = "block";
-    $('grid-title').innerText = "Sua Lista de Compras";
-
-    let htmlFinal = `
-        <div class="action-buttons-row">
-            <button class="btn-action-outline" style="background:#f9fafb; color:var(--text-dark);" onclick="voltarDaLista()">🔙 Voltar para a Loja</button>
-            <button class="btn-action-outline" style="color:#ef4444; border-color:#fecaca; background:#fef2f2;" onclick="limparListaDeCompras()">🗑️ Esvaziar Lista</button>
-        </div>`;
-
-    selectedListaTerms.forEach(termo => {
-        let q = norm(termo);
-        let filtered = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
-        
-        if (filtered.length > 0) {
-            htmlFinal += `
-            <div class="home-section" style="margin-bottom: 32px;">
-                <h3 class="home-section-title" style="margin-bottom: 12px; border-bottom:none; color:var(--text-dark);">${termo}</h3>
-                <div class="product-carousel">
-                    ${buildCardsHTML(filtered, 'PROD')}
-                </div>
-            </div>`;
-        }
-    });
-
-    $('main-grid').innerHTML = htmlFinal;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-window.voltarDaLista = function() {
-    // Retorna para a página principal mantendo a lista salva no Storage
-    $('nav-buttons-container').style.display = 'flex';
-    let btnLista = $('btn-lista-compras');
-    if (btnLista) btnLista.style.display = 'flex';
-    clearSearch(true);
-};
-
-window.limparListaDeCompras = function() {
-    if(confirm("Tem certeza que deseja esvaziar sua lista?")) {
-        selectedListaTerms = [];
-        saveLista();
-        voltarDaLista();
-    }
-};
-
 window.clearCart = function() {
     if(confirm("Tem certeza que deseja limpar o carrinho?")) {
         STATE.cart = {};
@@ -580,7 +454,7 @@ window.clearCart = function() {
         saveCart();
         updateTotals();
         closeDrawer('checkout-drawer');
-        if(!$('search-input').value && $('nav-buttons-container').style.display !== 'none') renderMainPage();
+        if(!$('search-input').value) renderMainPage();
     }
 };
 
@@ -743,12 +617,10 @@ function handleSearchInput() {
         let q = norm(val);
         if(q.length < 2) { 
             $('nav-buttons-container').style.display = 'flex';
-            let btnLista = $('btn-lista-compras'); if(btnLista) btnLista.style.display = 'flex';
             renderMainPage(); 
         } 
         else {
             $('nav-buttons-container').style.display = 'none';
-            let btnLista = $('btn-lista-compras'); if(btnLista) btnLista.style.display = 'none';
             $('grid-title').style.display = "block"; $('grid-title').innerText = "Resultados da Busca";
             
             let filtered = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
@@ -763,7 +635,6 @@ function clearSearch(triggerSearch = true) {
     if(triggerSearch) { 
         clearTimeout(searchTimeout); 
         $('nav-buttons-container').style.display = 'flex';
-        let btnLista = $('btn-lista-compras'); if(btnLista) btnLista.style.display = 'flex';
         renderMainPage(); 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -1556,14 +1427,14 @@ async function init() {
             STATE.maisOfertas = maisOfertas;
         }
         
-        loadCart(); 
-        loadLista(); // Carrega a lista salva no Storage
-        updateTotals(); 
-        setupCategories();
+        loadCart(); updateTotals(); setupCategories();
         
         $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
         history.replaceState({home: true}, ""); renderMainPage(); 
 
+        // ==========================================
+        // LEITURA DA URL PARA O GOOGLE E COMPARTILHAMENTO
+        // ==========================================
         setTimeout(() => {
             const urlParams = new URLSearchParams(window.location.search);
             const catId = urlParams.get('cat');
