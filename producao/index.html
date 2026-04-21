@@ -902,6 +902,9 @@
                     <div class="card-grid-fields">
                         <div class="field-group"><label>Categoria</label>
                             <select class="form-input card-mini-input" onchange="mudarCategoriaDoProduto('${p.codigo}', this.value)">${gerarOptionsCategorias(p.categoria)}</select></div>
+<div class="field-group"><label>Subcategoria</label>
+    <select class="form-input card-mini-input" id="subcat-${p.codigo}" onchange="updateField('${p.codigo}', 'subcategoria', this.value)">${gerarOptionsSubcategorias(p.categoria, p.subcategoria)}</select>
+</div>
                         
                         <div class="field-group"><label>Tags Globais</label>
                             <div class="form-input card-mini-input" style="height: 65px; overflow-y: auto; padding: 6px; background: #fafafa;">
