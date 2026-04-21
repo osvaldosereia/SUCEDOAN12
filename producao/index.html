@@ -1138,18 +1138,35 @@
             lista.push(nm); await localforage.setItem(storageKey, lista); renderizarCRUD(lista, sidebarId); renderGrid(null, true); 
         }
 
-        window.editarItem = async function(sidebarId, index) { 
+      window.editarItem = async function(sidebarId, index) { 
             const obj = getListaByKey(sidebarId); const novoNome = prompt("Renomear:", obj.arr[index]); 
             if (!novoNome || novoNome.trim() === "") return; 
             const old = obj.arr[index]; const nm = novoNome.toUpperCase().trim(); obj.arr[index] = nm; 
-            products.forEach(p => { if(p[obj.prop] === old) p[obj.prop] = nm; }); 
+            
+            products.forEach(p => { 
+                if (Array.isArray(p[obj.prop])) {
+                    let idx = p[obj.prop].indexOf(old);
+                    if (idx > -1) p[obj.prop][idx] = nm; // Atualiza a tag no Array
+                } else if (p[obj.prop] === old) {
+                    p[obj.prop] = nm; 
+                }
+            }); 
+            
             await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(null, true); 
         }
 
         window.removerItem = async function(sidebarId, index) { 
             const obj = getListaByKey(sidebarId); if (!confirm(`Apagar "${obj.arr[index]}"?`)) return; 
             const old = obj.arr[index]; obj.arr.splice(index, 1); 
-            products.forEach(p => { if(p[obj.prop] === old) p[obj.prop] = ""; }); 
+            
+            products.forEach(p => { 
+                if (Array.isArray(p[obj.prop])) {
+                    p[obj.prop] = p[obj.prop].filter(t => t !== old); // Remove a tag do Array
+                } else if (p[obj.prop] === old) {
+                    p[obj.prop] = ""; 
+                }
+            }); 
+            
             await saveDataLocally(); await localforage.setItem(obj.key, obj.arr); renderizarCRUD(obj.arr, sidebarId); renderGrid(null, true); 
         }
 
