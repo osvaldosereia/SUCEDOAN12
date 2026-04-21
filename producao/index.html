@@ -2342,9 +2342,10 @@
 
         // --- FUNÇÕES EXCLUSIVAS PARA A META (FACEBOOK / INSTAGRAM) ---
 
-        function limparTextoParaURL(texto) {
-            if (!texto) return "";
-            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        function createSlug(text) {
+            if (!text) return "";
+            return text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+                       .trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-');
         }
 
         function abrirModalExportacaoMeta() {
@@ -2434,9 +2435,8 @@
                 let precoFmt = parseFloat(p.preco || 0).toFixed(2);
                 linha['price'] = `${precoFmt} BRL`;
                 
-                let slug = limparTextoParaURL(p.nome);
-                let codigo = p.codigo || '';
-                linha['link'] = `https://donaantonia.com.br/?p=${slug}-${codigo}`;
+                let slug = createSlug(p.nome);
+                linha['link'] = `https://donaantonia.com.br/?p=${slug}`;
                 
                 let codigoOuId = p.codigo || p.id || "";
                 let img = p.url_imagem || `/site/img/produtos/${codigoOuId}.webp`;
