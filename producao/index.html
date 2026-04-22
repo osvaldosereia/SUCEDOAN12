@@ -1442,6 +1442,16 @@
                 localizacaoStr = `Gôndola: ${p.gondola || '-'} | Prateleira: ${p.prateleira || '-'}`;
             }
 
+            // Tratamento dinâmico da URL da Imagem (Preserva a pasta correta: produtos, produtos_2, etc)
+            let urlImagemBling = "";
+            if (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.includes('../')) {
+                // Remove o timestamp de cache (?v=...) para o Bling e troca o "../" pelo seu domínio
+                urlImagemBling = p.url_imagem.split('?')[0].replace("../", "https://donaantonia.com.br/");
+            } else if (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.startsWith('http')) {
+                // Caso a imagem já tenha sido salva com link completo de outro lugar
+                urlImagemBling = p.url_imagem.split('?')[0];
+            }
+
             return {
                 "ID": "", 
                 "Código": p.codigo || "",
@@ -1486,7 +1496,7 @@
                 "Volumes": "",
                 "Descrição Curta": "",
                 "Cross-Docking": "",
-                "URL Imagens Externas": "",
+                "URL Imagens Externas": p.url_imagem ? p.url_imagem.split('?')[0].replace("../", "https://donaantonia.com.br/") : "",
                 "Link Externo": "",
                 "Meses Garantia no Fornecedor": "",
                 "Clonar dados do pai": "",
