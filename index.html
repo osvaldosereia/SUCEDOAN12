@@ -323,7 +323,16 @@
             <div class="chk-section">
                 <div class="chk-title">Seus Dados</div>
                 <input type="text" id="chk-nome" class="input-text" placeholder="Nome Completo">
-                <input type="text" id="chk-cpf" class="input-text" placeholder="CPF (Opcional)">
+                <input type="text" id="chk-cpf" class="input-text" placeholder="CPF">
+            </div>
+
+            <div class="chk-section">
+                <div class="chk-title">Cupom de Desconto</div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="chk-cupom" class="input-text" placeholder="CUPOMVIP" style="margin-bottom: 0; text-transform: uppercase;">
+                    <button class="pay-btn" style="background: var(--brand-light); color: var(--brand); border-color: var(--brand-light); font-weight: 800; width: auto; padding: 0 20px;" onclick="aplicarCupom()">Aplicar</button>
+                </div>
+                <div id="cupom-msg" style="font-size: 0.85rem; margin-top: 8px; font-weight: 700;"></div>
             </div>
 
             <div class="chk-section">
@@ -366,6 +375,7 @@ const STATE = {
     prods: [], baskets: [], deptos: {}, categoriesList: [],
     cart: {}, cartOrder: [], maisOfertas: [], swapSimilarProds: [], swapCats: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
+    couponCode: '', couponDiscount: 0, // <-- LINHA NOVA
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
     activeCat: 'ofertas', activeKitCat: 'ofertas',
     promoIds: { leve5: [], leve2: [] }
@@ -493,6 +503,26 @@ function checkDrawers() {
         document.body.style.overflow = ''; 
     } 
 }
+
+    window.aplicarCupom = function() {
+    let code = $('chk-cupom').value.trim().toUpperCase();
+    let msgEl = $('cupom-msg');
+
+    if (code === 'CUPOMVIP') {
+        STATE.couponCode = code;
+        msgEl.innerText = "Cupom de 7% aplicado!";
+        msgEl.style.color = "var(--success)";
+    } else if (code === '') {
+        STATE.couponCode = '';
+        msgEl.innerText = "";
+    } else {
+        STATE.couponCode = '';
+        msgEl.innerText = "Cupom inválido ou expirado.";
+        msgEl.style.color = "#ef4444";
+    }
+    updateTotals();
+    if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
+};
 
 window.addEventListener('popstate', (e) => {
     if(modalStack.length > 0) {
@@ -1241,8 +1271,18 @@ function updateTotals() {
         } 
     });
     
-    STATE.atacadoDiscount = atacadoDiscount; STATE.customPromoDiscount = customPromoDiscount;
-    let subtotal = sum + STATE.basketExtraFee; let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount;
+   STATE.atacadoDiscount = atacadoDiscount; STATE.customPromoDiscount = customPromoDiscount;
+    
+    // NOVO: Cálculo do cupom (7% com limite de R$ 35)
+    let couponDiscount = 0;
+    if (STATE.couponCode === 'CUPOMVIP') {
+        couponDiscount = sum * 0.07;
+        if (couponDiscount > 35) couponDiscount = 35;
+    }
+    STATE.couponDiscount = couponDiscount;
+
+    let subtotal = sum + STATE.basketExtraFee; 
+    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.couponDiscount;
     let final = subtotal - totalDesc;
     
     let fc = $('floating-cart');
@@ -1302,7 +1342,17 @@ function renderCheckoutItems() {
     }).join('');
 
     let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
-    let totalDesc = STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.deliveryDiscount; 
+    
+    // NOVO: Cálculo do cupom de desconto (7% com limite de R$ 35)
+    let couponDiscount = 0;
+    if (STATE.couponCode === 'CUPOMVIP') {
+        couponDiscount = sum * 0.07;
+        if (couponDiscount > 35) couponDiscount = 35;
+    }
+    STATE.couponDiscount = couponDiscount;
+
+    // A variável totalDesc agora soma também o STATE.couponDiscount
+    let totalDesc = STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.deliveryDiscount + STATE.couponDiscount; 
     let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
 
     $('sum-sub').innerText = fmt(subtotal); $('sum-desc').innerText = `- ${fmt(totalDesc)}`; $('sum-desc-row').style.display = totalDesc > 0 ? 'flex' : 'none'; $('sum-total').innerText = fmt(final);
@@ -1335,12 +1385,13 @@ function sendOrder() {
         if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; apiItens.push({ id: String(p.blingId || p.id), nome: p.name, qtd: q, price: p.price }); } 
     });
       
-    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount; 
+   let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + (STATE.couponDiscount || 0); 
     let final = totalBruto + STATE.basketExtraFee - totalDesc;
     
     if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO VOLUME: -${fmt(STATE.atacadoDiscount)}`;
     if (STATE.customPromoDiscount > 0) itemsTxt += `\n🎁 DESCONTOS PROMOCIONAIS: -${fmt(STATE.customPromoDiscount)}`;
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+    if (STATE.couponDiscount > 0) itemsTxt += `\n🏷️ CUPOM (${STATE.couponCode}): -${fmt(STATE.couponDiscount)}`;
     
     const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
