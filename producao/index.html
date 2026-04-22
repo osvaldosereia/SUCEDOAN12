@@ -53,6 +53,8 @@
         .nav-btn.sync-btn:hover:not(:disabled) { background: #dbeafe; }
         .nav-btn.success-btn { background: var(--success); color: white; border-color: var(--success); }
         .nav-btn.success-btn:hover:not(:disabled) { background: #059669; }
+        .nav-btn.bling-btn { background: #e6fffa; color: #047857; border-color: #b9fbc0; }
+        .nav-btn.bling-btn:hover { background: #b9fbc0; }
         .nav-btn:disabled { opacity: 0.6; cursor: not-allowed; }
         
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -306,8 +308,11 @@
                 </div>
             </div>
         </div>
-        <div class="sidebar-footer">
+        <div class="sidebar-footer" style="flex-direction: column; gap: 8px;">
             <button class="nav-btn primary" style="width:100%; height:44px; justify-content:center;" onclick="aplicarFiltrosAvancados()">APLICAR FILTROS</button>
+            <button class="nav-btn bling-btn" style="width:100%; height:44px; justify-content:center;" onclick="exportarCategoriaBling()">
+                <i data-lucide="download" size="14"></i> EXPORTAR ESTA CATEGORIA (BLING)
+            </button>
         </div>
     </div>
 
@@ -349,6 +354,14 @@
                 <button class="nav-btn" style="height:40px; justify-content:center; color: #b45309; border-color: #fde68a; background: #fffbeb;" onclick="fetchFromGithub()">
                     <i data-lucide="cloud-download" size="14"></i> 3. ATUALIZAR LOCAL DA NUVEM
                 </button>
+            </div>
+
+            <div class="form-section" style="margin-top:10px;">
+                <div class="section-title">Exportação Bling ERP</div>
+                <button class="nav-btn bling-btn" style="height:44px; justify-content:center; font-weight: 900;" onclick="exportarTudoBling()">
+                    <i data-lucide="file-spreadsheet" size="18"></i> EXPORTAR BANCO COMPLETO (BLING CSV)
+                </button>
+                <p style="font-size: 9px; color: var(--text-secondary); text-align: center; margin: 0;">Gera arquivo compatível com 59 colunas do Bling.</p>
             </div>
 
             <div class="form-section" style="margin-top:10px;">
@@ -677,7 +690,6 @@
             try { 
                 const c = await localforage.getItem(CATEGORIAS_KEY); 
                 if(c && Array.isArray(c)) {
-                    // Prevenção: Se o cache antigo for texto, ignoramos para recriar a estrutura de 3 níveis do zero
                     if(c.length > 0 && typeof c[0] === 'string') { categoriasDoSistema = []; } 
                     else { categoriasDoSistema = c; }
                 } 
@@ -685,15 +697,12 @@
             try { const m = await localforage.getItem(MARCAS_KEY); if(m && Array.isArray(m)) marcasDoSistema = m; } catch (err) {}
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             
-            // Varre os produtos e extrai as seleções existentes na base (Marcas, Tags e as Categorias de 3 níveis)
             let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
 
             products.forEach(p => {
-                // Extrai Marcas (Adicionado String() para evitar crash)
                 if (p.marca) p.marca = String(p.marca).toUpperCase().trim();
                 if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvarMarca = true; }
                 
-                // Extrai Tags Globais
                 if (p.tag_global && Array.isArray(p.tag_global)) {
                     p.tag_global.forEach(t => {
                         if (t) {
@@ -703,7 +712,6 @@
                     });
                 }
                 
-                // Extrai Categorias de 3 Níveis (Protegido com String())
                 if (p.categoria) {
                     p.categoria = String(p.categoria).toUpperCase().trim();
                     
@@ -740,7 +748,6 @@
             if (precisaSalvarTag) await localforage.setItem(TAGS_KEY, tagsDoSistema);
             if (precisaSalvarCat) await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
 
-            // Ordem Alfabética Segura
             if(categoriasDoSistema.length > 0) {
                 categoriasDoSistema.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
                 categoriasDoSistema.forEach(c => {
@@ -777,7 +784,6 @@
             return html;
         }
 
-        // ====== GERADORES DE OPÇÕES PARA CATEGORIAS/SUBCATEGORIAS 3 NÍVEIS ======
         function gerarOptionsCategorias(selecionado) {
             let html = `<option value="">Sel. Categoria</option>`;
             categoriasDoSistema.forEach(c => {
@@ -848,7 +854,6 @@
             document.getElementById('flt-subsub').innerHTML = gerarOptionsSubSubcategorias(catNome, subNome, '') || `<option value="">Todas as Sub-subcategorias</option>`;
         }
 
-        // ====== GERADORES PARA MÚLTIPLAS TAGS ======
         function gerarCheckboxes(lista, selecionados, sku, campo) {
             let selecoes = [];
             if (Array.isArray(selecionados)) {
@@ -989,6 +994,7 @@
                             <div style="width:100px; height:100px; cursor:pointer; border-radius: 6px; border: 1px solid var(--border); overflow:hidden;" onclick="openCanvasSidebar('${p.codigo}')" title="Clique para editar Foto">
                                 <img src="${imgUrl}" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
                             </div>
+                            <button class="nav-btn bling-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="exportarProdutoBling('${p.codigo}')"><i data-lucide="download" size="12"></i> EXP. BLING</button>
                             <button class="nav-btn ${p.situacao === 'I' ? '' : 'primary'}" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="12"></i> ${p.situacao === 'I' ? 'INATIVO' : 'ATIVO'}</button>
                             <button class="nav-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="deleteProduct('${p.codigo}')"><i data-lucide="trash-2" size="12"></i> APAGAR</button>
                         </div>
@@ -1035,6 +1041,11 @@
                             <input type="text" class="form-input card-mini-input" value="${p.ncm || ''}" onchange="updateField('${p.codigo}', 'ncm', this.value)"></div>
                         <div class="field-group"><label>Embalagem (Ex: 100ml)</label>
                             <input type="text" class="form-input card-mini-input" value="${p.embalagem || ''}" onchange="updateField('${p.codigo}', 'embalagem', this.value)"></div>
+
+                        <div class="field-group"><label>Gôndola</label>
+                            <input type="text" class="form-input card-mini-input" value="${p.gondola || ''}" onchange="updateField('${p.codigo}', 'gondola', this.value)"></div>
+                        <div class="field-group"><label>Prateleira</label>
+                            <input type="text" class="form-input card-mini-input" value="${p.prateleira || ''}" onchange="updateField('${p.codigo}', 'prateleira', this.value)"></div>
 
                         <div class="field-group"><label>Custo (R$)</label>
                             <input type="number" step="0.01" class="form-input card-mini-input" value="${p.preco_custo || 0}" onchange="updateField('${p.codigo}', 'preco_custo', this.value)"></div>
@@ -1421,6 +1432,114 @@
         function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
         function gerarCSVMetaCompleto() {}
         function gerarCSVMetaFila(tipoFiltro) {}
+
+        // ==========================================================
+        // MÓDULO DE EXPORTAÇÃO BLING V3 (59 COLUNAS)
+        // ==========================================================
+        function mapearProdutoParaBling(p) {
+            let localizacaoStr = "";
+            if(p.gondola || p.prateleira) {
+                localizacaoStr = `Gôndola: ${p.gondola || '-'} | Prateleira: ${p.prateleira || '-'}`;
+            }
+
+            return {
+                "ID": "", 
+                "Código": p.codigo || "",
+                "Descrição": p.nome || "",
+                "Unidade": "UN",
+                "NCM": p.ncm || "",
+                "Origem": "0",
+                "Preço": p.preco || 0,
+                "Valor IPI fixo": "",
+                "Observações": "",
+                "Situação": p.situacao === 'I' ? 'Inativo' : 'Ativo',
+                "Estoque": p.estoque || 0,
+                "Preço de custo": p.preco_custo || 0,
+                "Cód no fornecedor": "",
+                "Fornecedor": "",
+                "Localização": localizacaoStr,
+                "Estoque maximo": "",
+                "Estoque minimo": "",
+                "Peso líquido (Kg)": "",
+                "Peso bruto (Kg)": "",
+                "GTIN/EAN": p.gtin || "",
+                "GTIN/EAN da embalagem": "",
+                "Largura do Produto": "",
+                "Altura do Produto": "",
+                "Profundidade do produto": "",
+                "Data Validade": p.validade || "",
+                "Descrição do Produto no Fornecedor": "",
+                "Descrição Complementar": "",
+                "Itens p/ caixa": "",
+                "Produto Variação": "",
+                "Tipo Produção": "",
+                "Classe de enquadramento do IPI": "",
+                "Código da lista de serviços": "",
+                "Tipo do item": "",
+                "Grupo de Tags/Tags": "",
+                "Tributos": "",
+                "Código Pai": "",
+                "Código Integração": "",
+                "Grupo de produtos": "",
+                "Marca": p.marca || "",
+                "CEST": "",
+                "Volumes": "",
+                "Descrição Curta": "",
+                "Cross-Docking": "",
+                "URL Imagens Externas": "",
+                "Link Externo": "",
+                "Meses Garantia no Fornecedor": "",
+                "Clonar dados do pai": "",
+                "Condição do produto": "NOVO",
+                "Frete Grátis": "",
+                "Número FCI": "",
+                "Vídeo": p.link_youtube || "",
+                "Departamento": "",
+                "Unidade de medida": "",
+                "Preço de compra": "",
+                "Valor base ICMS ST para retenção": "",
+                "Valor ICMS ST para retenção": "",
+                "Valor ICMS próprio do substituto": "",
+                "Categoria do produto": "",
+                "Informações Adicionais": ""
+            };
+        }
+
+        function downloadCSVBling(dados, filename) {
+            const csv = Papa.unparse(dados, { delimiter: ";" });
+            const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            mostrarAlerta("Planilha do Bling gerada com sucesso!");
+        }
+
+        window.exportarProdutoBling = function(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if(!p) return alert("Produto não encontrado.");
+            downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
+        };
+
+        window.exportarTudoBling = function() {
+            if(!confirm("Exportar todo o banco de dados (Bling CSV)?")) return;
+            if(products.length === 0) return alert("Banco vazio.");
+            const mappedList = products.map(p => mapearProdutoParaBling(p));
+            downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
+        };
+
+        window.exportarCategoriaBling = function() {
+            const cat = document.getElementById('flt-cat').value;
+            if(!cat) return alert("Selecione uma categoria principal no filtro primeiro.");
+            const list = products.filter(p => p.categoria === cat);
+            if(list.length === 0) return alert("Nenhum produto encontrado nesta categoria.");
+            const mappedList = list.map(p => mapearProdutoParaBling(p));
+            downloadCSVBling(mappedList, `Bling_Categoria_${cat}.csv`);
+        };
     </script>
 </body>
 </html>
