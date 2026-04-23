@@ -18,8 +18,10 @@
             --bg-page: #ffffff;
             --bg-img: #f3f4f6;       
             --text-dark: #291F1A;    
+            /* Ajuste de Contraste PageSpeed: Cinza mais legível */
             --text-gray: #5A504A;    
             --border-light: #e5e7eb;
+            /* Ajuste de Contraste PageSpeed: Verde levemente mais escuro para passar no teste AA */
             --success: #059669;
             --radius-img: 16px;
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -32,14 +34,13 @@
 
         .app-container { max-width: 1200px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; }
 
-        /* Top bar fixa para aparecer sempre */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; min-height: 75px; position: sticky; top: 0; z-index: 110; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; min-height: 75px; }
         .logo { height: 55px; object-fit: contain; transition: 0.3s; }
         .btn-menu { font-size: 1.8rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
 
         @media(min-width: 768px) { .logo { height: 65px; } }
 
-        .controls-wrapper { position: sticky; top: 75px; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .controls-wrapper { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
         @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } .search-box { flex: 1; } .nav-buttons { flex: 1; width: auto; } }
 
         .search-box { position: relative; display: flex; align-items: center; width: 100%; }
@@ -50,82 +51,102 @@
 
         .nav-buttons { display: flex; gap: 8px; width: 100%; overflow-x: auto; scrollbar-width: none; }
         .nav-buttons::-webkit-scrollbar { display: none; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; background: #fff; color: var(--text-gray); border: 1px solid var(--border-light); transition: 0.2s; white-space: nowrap; text-align: center; }
+        .nav-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; background: #fff; color: var(--text-gray); border: 1px solid var(--border-light); transition: 0.2s; white-space: nowrap; text-align: center; }
         .nav-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
         .main-content { padding: 32px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
-        .section-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
+        .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
         
         .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 16px; }
         @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
         @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
 
-        .home-section { margin-bottom: 40px; }
-        .home-section-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
+        .home-section { margin-bottom: 56px; }
+        .home-section-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
+        @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
+        .show-all .card { display: flex !important; } 
 
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; height: 100%; }
         
+        /* Ajuste de Proporção: Transformando em imagem mais vertical (3/4) */
         .card-img-wrap { width: 100%; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
+        /* Padronização Tipográfica: Altura fixa em 2 linhas garantida */
         .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em; text-transform: none; cursor: pointer; }
         
-        /* Modificado: Preços em duas linhas na esquerda */
-        .card-price-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: auto; margin-bottom: 12px; }
-        .price { font-size: 1.1rem; font-weight: 700; color: var(--text-dark); line-height: 1; letter-spacing: -0.3px; }
-        .old-price { font-size: 0.8rem; color: var(--text-gray); opacity: 0.8; text-decoration: line-through; margin: 0; line-height: 1; }
+        .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
+        .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
         
-        .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 600; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
+        /* Ajuste PageSpeed: Contraste do preço antigo melhorado */
+        .old-price { font-size: 0.8rem; color: var(--text-gray); opacity: 0.8; text-decoration: line-through; }
+        
+        .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
         .promo-tag.exp { background: var(--brand-light); color: var(--brand); }
 
         .card-basket .card-img-wrap { background: transparent; padding: 0; }
         .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
         .card-basket .card-title { -webkit-line-clamp: 2; height: auto; white-space: normal;}
 
-        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 600; font-size: 0.85rem; transition: 0.2s; }
+        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
         .btn-add.special { background: var(--brand); color: #fff; } 
         .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
         .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
         .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
-        .btn-action-gray { width: 100%; padding: 8px 6px; background: var(--bg-img); color: var(--text-dark); font-size: 0.75rem; font-weight: 600; border-radius: 8px; border: none; transition: 0.2s; cursor: pointer; text-align: center; }
+        .btn-action-gray {
+            width: 100%;
+            padding: 8px 6px;
+            background: var(--bg-img);
+            color: var(--text-dark);
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 8px;
+            border: none;
+            transition: 0.2s;
+            cursor: pointer;
+            text-align: center;
+        }
         .btn-action-gray:active { background: var(--border-light); }
 
-        .embalagem-tag { position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.95); color: var(--brand); font-size: 0.65rem; font-weight: 700; padding: 4px 8px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 2; letter-spacing: -0.2px; }
-        .list-img-wrap .embalagem-tag { top: 6px; left: 6px; font-size: 0.6rem; padding: 2px 6px; border-radius: 6px; }
+        .embalagem-tag {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--brand);
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            z-index: 2;
+            letter-spacing: -0.2px;
+        }
 
-        /* Estilos do Carrossel */
-        .carousel-wrapper { position: relative; margin-bottom: 24px; }
-        .carousel-container { display: flex; gap: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 10px; margin: 0 -20px; padding: 0 20px 10px; scroll-padding-left: 20px; }
-        .carousel-container::-webkit-scrollbar { display: none; }
-        .carousel-container > .card, .carousel-container > .card-ver-todos-container { flex: 0 0 calc(40% - 10px); scroll-snap-align: start; }
-        @media(min-width: 768px) { .carousel-container > .card, .carousel-container > .card-ver-todos-container { flex: 0 0 calc(25% - 16px); } }
+        .list-img-wrap .embalagem-tag {
+            top: 6px;
+            left: 6px;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
 
         .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
         .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
-        .fc-total { font-size: 1.15rem; font-weight: 700; }
-
-        /* Botão Flutuante do WhatsApp */
-        .wa-fab-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
-        .wa-menu { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
-        .wa-menu.open { display: flex; }
-        .wa-menu-item { background: #fff; color: var(--text-dark); padding: 10px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; border: 1px solid var(--border-light); white-space: nowrap; transition: 0.2s; }
-        .wa-menu-item:hover { background: var(--bg-img); }
-        .wa-fab { width: 56px; height: 56px; background: #25D366; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(37,211,102,0.4); cursor: pointer; color: #fff; transition: transform 0.2s; }
-        .wa-fab:active { transform: scale(0.95); }
+        .fc-total { font-size: 1.15rem; font-weight: 800; }
 
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         
-        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; }
-        .drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
+        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; /* <-- Sombra desligada no modo escondido */ }
+
+.drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); /* <-- Sombra ligada quando a gaveta abre */ }
         
-        /* Ajuste do Kit-Drawer para manter a Top Bar visível */
-        #kit-drawer { top: 75px; height: calc(100% - 75px); z-index: 105; }
         
         .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
-        .drawer-title { font-weight: 700; font-size: 1.15rem; letter-spacing: -0.5px; color: var(--brand); }
+        .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--brand); }
         .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
         .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; position: relative; }
         
@@ -136,20 +157,24 @@
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
         
+        /* Padronização Tipográfica na Lista */
         .list-name { font-size: 0.9rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-transform: none; height: 2.8em; }
-        .list-price { font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-top: auto; display: flex; flex-direction: column; }
+        .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; display: flex; flex-direction: column; }
         
-        .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
+        .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
         .btn-swap:active { background: var(--brand-light); }
         
         .chips-wrapper { position: relative; display: flex; align-items: center; width: 100%; background: transparent; }
         .scroll-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); z-index: 5; background: #fff; border: 1px solid var(--border-light); border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; justify-content: center; align-items: center; color: var(--brand); font-size: 0.9rem;}
         .scroll-btn.left { left: 0px; }
         .scroll-btn.right { right: 0px; }
-        @media(min-width: 768px) { .scroll-btn { display: flex; } .swap-chips::-webkit-scrollbar { display: none; } }
+        @media(min-width: 768px) {
+            .scroll-btn { display: flex; }
+            .swap-chips::-webkit-scrollbar { display: none; }
+        }
 
         .swap-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; padding: 0 4px; scroll-behavior: smooth;}
-        .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.85rem; font-weight: 600; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
+        .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
         .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
         #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
@@ -159,17 +184,17 @@
         #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
 
         .chk-section { margin-bottom: 32px; }
-        .chk-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
+        .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
         .input-text { width: 100%; padding: 14px; border: none; background: var(--bg-img); border-radius: 12px; margin-bottom: 12px; font-size: 1rem; outline: none; transition: 0.2s; }
         .input-text:focus { box-shadow: 0 0 0 2px var(--brand); background: #fff; }
         .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .pay-btn { padding: 14px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-weight: 500; color: var(--text-gray); transition: 0.2s; }
         .pay-btn.selected { border-color: var(--brand); background: var(--brand); color: #fff; }
         
+        .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); z-index: 2; position: relative;}
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; color: var(--text-gray); font-weight: 500;}
-        .summary-row.total { font-size: 1.3rem; font-weight: 700; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
-        
-        .btn-checkout { width: 100%; background: var(--brand); color: #fff; padding: 18px; border-radius: 12px; font-weight: 700; font-size: 1.1rem; }
+        .summary-row.total { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
+        .btn-checkout { width: 100%; background: var(--brand); color: #fff; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; }
 
         .menu-link { display: block; padding: 16px 0; font-size: 1.1rem; font-weight: 500; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
         
@@ -178,9 +203,11 @@
         #kit-extra-grid .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
         @media(min-width: 768px) { #kit-extra-grid .product-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; } }
 
-        .banner-destaque { background: var(--brand); color: #fff; padding: 14px 20px; border-radius: 12px; text-align: center; font-weight: 600; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.2); letter-spacing: -0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .banner-destaque { background: var(--brand); color: #fff; padding: 14px 20px; border-radius: 12px; text-align: center; font-weight: 800; font-size: 1.15rem; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.2); letter-spacing: -0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 
-        .economia-tag { font-size: 0.75rem; color: var(--success); font-weight: 700; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 4px; }
+        .drawer-cart-display { background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; border: none; transition: 0.3s; }
+
+        .economia-tag { font-size: 0.75rem; color: var(--success); font-weight: 800; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 4px; }
         
     </style>
 </head>
@@ -256,14 +283,17 @@
                     <div class="banner-destaque">🛒 Adicione mais produtos</div>
                 </div>
                 
-                <div class="chips-wrapper" id="kit-extra-chips-wrap">
+              <div class="chips-wrapper" id="kit-extra-chips-wrap">
                     <button class="scroll-btn left" onclick="scrollElementChips('kit-extra-chips-container', -200)">❮</button>
                     <div class="swap-chips" id="kit-extra-chips-container"></div>
                     <button class="scroll-btn right" onclick="scrollElementChips('kit-extra-chips-container', 200)">❯</button>
                 </div>
                 
-                <div id="kit-extra-grid" style="margin-top: 20px;"></div>
+                <div id="kit-extra-grid" style="margin-top: 20px; padding: 0 20px;"></div>
             </div>
+        </div>
+       <div class="drawer-footer" id="kit-footer-container">
+            <button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>
         </div>
     </div>
 
@@ -283,14 +313,7 @@
         <div class="drawer-body">
             <div class="chk-section" id="chk-items-list"></div>
             
-            <div style="background: #fff; padding-bottom: 24px; border-bottom: 1px dashed var(--border-light); margin-bottom: 24px;">
-                <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success); display: none;" id="sum-desc-row"><span>Descontos</span><span id="sum-desc">R$ 0,00</span></div>
-                <div class="summary-row total" style="font-size: 1.2rem; font-weight: 700; margin-bottom: 16px;"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
-                <button class="btn-checkout" id="btn-send-order" onclick="sendOrder()" style="width: 100%; background: var(--brand); color: #fff; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem;">Enviar pelo WhatsApp</button>
-            </div>
-
-            <button class="pay-btn" style="width: 100%; border-color: var(--brand); color: var(--brand); font-weight: 700; margin-bottom: 32px;" onclick="closeCheckoutAndGoToProducts()">+ Adicionar Mais Produtos</button>
+            <button class="pay-btn" style="width: 100%; border-color: var(--brand); color: var(--brand); font-weight: 800; margin-bottom: 32px;" onclick="closeCheckoutAndGoToProducts()">+ Adicionar Mais Produtos</button>
 
             <div class="chk-section">
                 <div class="chk-title">Agendamento</div>
@@ -307,7 +330,7 @@
                 <div class="chk-title">Cupom de Desconto</div>
                 <div style="display: flex; gap: 8px;">
                     <input type="text" id="chk-cupom" class="input-text" placeholder="CUPOMVIP" style="margin-bottom: 0; text-transform: uppercase;">
-                    <button class="pay-btn" style="background: var(--brand-light); color: var(--brand); border-color: var(--brand-light); font-weight: 700; width: auto; padding: 0 20px;" onclick="aplicarCupom()">Aplicar</button>
+                    <button class="pay-btn" style="background: var(--brand-light); color: var(--brand); border-color: var(--brand-light); font-weight: 800; width: auto; padding: 0 20px;" onclick="aplicarCupom()">Aplicar</button>
                 </div>
                 <div id="cupom-msg" style="font-size: 0.85rem; margin-top: 8px; font-weight: 700;"></div>
             </div>
@@ -325,19 +348,14 @@
             </div>
 
             <div class="chk-section" style="margin-top: 24px; border-top: 1px dashed var(--border-light); padding-top: 24px;">
-                <button class="pay-btn" style="width: 100%; border-color: #ef4444; color: #ef4444; font-weight: 700; background: #fef2f2;" onclick="clearCart()">🗑️ Limpar Carrinho</button>
+                <button class="pay-btn" style="width: 100%; border-color: #ef4444; color: #ef4444; font-weight: 800; background: #fef2f2;" onclick="clearCart()">🗑️ Limpar Carrinho</button>
             </div>
         </div>
-    </div>
-
-    <div class="wa-fab-container">
-        <div class="wa-menu" id="wa-menu">
-            <div class="wa-menu-item" onclick="sendWA('Quais as formas de pagamento?')">Quais as formas de pagamento?</div>
-            <div class="wa-menu-item" onclick="sendWA('Não encontrei um produto.')">Não encontrei um produto.</div>
-            <div class="wa-menu-item" onclick="sendWA('Tem algum cupom de desconto ativo?')">Tem algum cupom de desconto ativo?</div>
-        </div>
-        <div class="wa-fab" onclick="toggleWAMenu()">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+        <div class="drawer-footer">
+            <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
+            <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos Especiais</span><span id="sum-desc">R$ 0,00</span></div>
+            <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
+            <button class="btn-checkout" id="btn-send-order" onclick="sendOrder()">Enviar pelo WhatsApp</button>
         </div>
     </div>
 
@@ -357,7 +375,7 @@ const STATE = {
     prods: [], baskets: [], deptos: {}, categoriesList: [],
     cart: {}, cartOrder: [], maisOfertas: [], swapSimilarProds: [], swapCats: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
-    couponCode: '', couponDiscount: 0,
+    couponCode: '', couponDiscount: 0, // <-- LINHA NOVA
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
     activeCat: 'ofertas', activeKitCat: 'ofertas',
     promoIds: { leve5: [], leve2: [] }
@@ -368,6 +386,10 @@ const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
+// ==========================================
+// SISTEMA DE URLS AMIGÁVEIS (SEO)
+// ==========================================
+
 function createSlug(text) {
     if (!text) return "";
     return text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -376,7 +398,7 @@ function createSlug(text) {
 
 function updateURL(type, slug) {
     const url = new URL(window.location);
-    url.search = ''; 
+    url.search = ''; // Limpa antes de setar novo
     if (type !== 'home') {
         url.searchParams.set(type, slug); 
     }
@@ -407,7 +429,6 @@ window.scrollElementChips = function(id, amount) {
 };
 
 window.goToHome = function() {
-    closeAllDrawers();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     clearSearch(false);
     selectMainCategory('ofertas');
@@ -480,11 +501,10 @@ function checkDrawers() {
     if (modalStack.length === 0) {
         $('overlay').classList.remove('open'); 
         document.body.style.overflow = ''; 
-        document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open'));
     } 
 }
 
-window.aplicarCupom = function() {
+    window.aplicarCupom = function() {
     let code = $('chk-cupom').value.trim().toUpperCase();
     let msgEl = $('cupom-msg');
 
@@ -512,15 +532,6 @@ window.addEventListener('popstate', (e) => {
     }
 });
 
-// WhatsApp Actions
-window.toggleWAMenu = function() {
-    $('wa-menu').classList.toggle('open');
-};
-window.sendWA = function(text) {
-    window.open('https://api.whatsapp.com/send?phone=5565998150975&text=' + encodeURIComponent(text), '_blank');
-    $('wa-menu').classList.remove('open');
-};
-
 function setupCategories() {
     const priority = ['ofertas', 'cat_mercearia_basica', 'cat_limpeza', 'cat_higiene', 'cat_beleza', 'cat_cafe_da_manha'];
     STATE.categoriesList = [
@@ -539,15 +550,16 @@ function setupCategories() {
 
 function renderMainPage() {
     $('grid-title').style.display = "none";
-    let sortedBaskets = [...STATE.baskets].sort((a, b) => b.price - a.price);
-    
     let html = `
-        <div class="banner-destaque" style="margin-bottom: 32px; cursor: pointer;" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975&text=Quero%20garantir%20meu%20desconto.', '_blank')">
+        <div class="banner-destaque" style="margin-bottom: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975&text=Quero%20garantir%20meu%20desconto.', '_blank')">
             🎁 Garanta o desconto de até 35 reais na sua próxima compra.
         </div>
 
         <div id="secao-cestas" style="scroll-margin-top: 140px; margin-bottom: 48px;">
-            ${buildCarouselHTML("Cestas Básicas", sortedBaskets, true)}
+            <h2 class="section-title">Cestas Básicas</h2>
+            <div class="product-grid">
+                ${buildCardsHTML(STATE.baskets, 'BASKET')}
+            </div>
         </div>
 
         <div id="secao-produtos" style="scroll-margin-top: 140px; border-top: 2px dashed var(--border-light); padding-top: 32px;">
@@ -595,7 +607,7 @@ window.selectMainCategory = function(id) {
 
 function getProdutosHTML(id) {
     if (id === 'ofertas') return getHomeHTML();
-    else if(STATE.deptos[id]) return buildCarouselHTML(STATE.deptos[id].title, STATE.deptos[id].data);
+    else if(STATE.deptos[id]) return `<div class="product-grid">${buildCardsHTML(STATE.deptos[id].data, 'PROD')}</div>`;
     return '';
 }
 
@@ -691,9 +703,9 @@ window.openQuickView = function(id, swapCtx = null) {
             <img src="${p.img}" alt="Imagem de ${p.name}" style="max-height:100%; max-width:100%; mix-blend-mode:multiply; object-fit:contain;">
         </div>
         <div style="padding: 24px 20px;">
-            <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; line-height: 1.3;">${p.name}</div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; line-height: 1.3;">${p.name}</div>
             <div style="display:flex; align-items:baseline; gap:8px; margin-bottom: 24px;">
-                <div style="font-size: 1.8rem; font-weight: 700; color: var(--brand);">${fmt(p.price)}</div>
+                <div style="font-size: 1.8rem; font-weight: 900; color: var(--brand);">${fmt(p.price)}</div>
                 ${p.oldPrice > p.price ? `<div class="old-price">${fmt(p.oldPrice)}</div>` : ''}
             </div>
             <div id="quick-act-${p.id}">${acaoHTML}</div>
@@ -701,24 +713,6 @@ window.openQuickView = function(id, swapCtx = null) {
     `;
     openDrawer('quick-drawer');
 };
-
-function buildCarouselHTML(title, items, isBasket = false, promoSpecialType = null) {
-    let validItems = (items || []).filter(p => p !== undefined && p !== null);
-    if(validItems.length === 0) return '';
-    let type = isBasket ? 'BASKET' : 'PROD';
-    let id = 'car-' + Math.random().toString(36).substr(2, 5);
-    return `
-    <div class="home-section">
-        <h3 class="home-section-title">${title}</h3>
-        <div class="carousel-wrapper">
-            <button class="scroll-btn left" onclick="scrollElementChips('${id}', -300)">❮</button>
-            <div class="carousel-container" id="${id}">
-                ${buildCardsHTML(validItems, type, promoSpecialType)}
-            </div>
-            <button class="scroll-btn right" onclick="scrollElementChips('${id}', 300)">❯</button>
-        </div>
-    </div>`;
-}
 
 function buildCardsHTML(items, type, promoSpecialType = null) {
     let html = '';
@@ -772,13 +766,29 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
 
 function getHomeHTML() {
     let html = ''; 
-    html += buildCarouselHTML("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime));
-    html += buildCarouselHTML("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), false, 'APROVEITE');
-    html += buildCarouselHTML("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), false, 'LEVE5');
-    html += buildCarouselHTML("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), false, 'LEVE2');
+    function buildSection(title, items, isPromoRow = true, promoType = null, forceShowAll = false) {
+        let validItems = (items || []).filter(p => p !== undefined && p !== null);
+        if(validItems.length === 0) return '';
+        let classRow = isPromoRow ? "promo-row" : "";
+        if(forceShowAll) classRow += " show-all"; 
+        let displayItems = forceShowAll ? validItems.slice(0, 12) : validItems.slice(0, 10);
+
+        return `
+        <div class="home-section">
+            <h3 class="home-section-title">${title}</h3>
+            <div class="product-grid ${classRow}">
+                ${buildCardsHTML(displayItems, 'PROD', promoType)}
+            </div>
+        </div>`;
+    }
+
+    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
+    html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
+    html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
+    html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
     
     if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
-        html += buildCarouselHTML("Mais Ofertas Imperdíveis", STATE.maisOfertas);
+        html += `<div class="home-section"><h3 class="home-section-title">Mais Ofertas Imperdíveis</h3><div class="product-grid">${buildCardsHTML(STATE.maisOfertas, 'PROD')}</div></div>`;
     }
     return html || "<p style='text-align:center;'>Nenhuma oferta disponível no momento.</p>";
 }
@@ -802,6 +812,7 @@ window.openKitLateralView = function(id) {
 
     expanderState.priceOffset = Math.max(0, sourceObj.preco - expanderState.originalSum);
     $('kit-title').innerText = sourceObj.nome;
+    $('kit-footer-container').innerHTML = `<button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>`;
     
     renderKitList(); 
     setupKitExtraCategory('ofertas', false);
@@ -811,7 +822,7 @@ window.openKitLateralView = function(id) {
 
 function renderKitList() {
     let currentSum = 0;
-    let itemsHtml = expanderState.orderedIds.map(pId => {
+    $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => {
         let p = STATE.prods.find(x => String(x.id) === pId); if (!p) return ''; 
         let qty = expanderState.items[pId]; currentSum += p.price * qty;
         
@@ -844,20 +855,14 @@ function renderKitList() {
     expanderState.currentDisplayPrice = currentSum + expanderState.priceOffset;
     let pf = fmt(expanderState.currentDisplayPrice);
     
-    let footerHtml = `
-        <div style="margin-top: 24px; padding-bottom: 24px;">
-            <button class="btn-checkout" style="width: 100%;" onclick="commitExpander()">Adicionar à Sacola • ${pf}</button>
-        </div>
-    `;
-
-    $('kit-items-grid').innerHTML = itemsHtml + footerHtml;
+    let totalEl = $('kit-total-price'); if (totalEl) totalEl.innerText = pf;
+    else { let btnCheckout = document.querySelector('#kit-footer-container .btn-checkout'); if (btnCheckout) btnCheckout.innerText = `Adicionar à Sacola • ${pf}`; }
 }
 
 window.setupKitExtraCategory = function(catId, shouldScroll = true) {
     STATE.activeKitCat = catId;
     let chipsContainer = $('kit-extra-chips-container');
     if (chipsContainer) chipsContainer.innerHTML = STATE.categoriesList.map(c => `<div class="swap-chip ${catId === c.id ? 'active' : ''}" onclick="setupKitExtraCategory('${c.id}', true)">${c.title}</div>`).join('');
-    
     let gridContainer = $('kit-extra-grid');
     if (gridContainer) gridContainer.innerHTML = getProdutosHTML(catId);
     
@@ -891,6 +896,14 @@ window.commitExpander = function() {
 
     let bodyDrawer = $('kit-drawer').querySelector('.drawer-body'); let offsetTarget = $('kit-extra-section');
     if(bodyDrawer && offsetTarget) bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
+
+    let footer = $('kit-footer-container');
+    footer.innerHTML = `
+        <button class="drawer-cart-display" onclick="openCheckout()">
+            <div class="fc-info"><span id="drawer-fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${$('fc-qtd').innerText}</span><span>Ver Sacola</span></div>
+            <div class="fc-total" id="drawer-fc-total">${$('fc-total').innerText}</div>
+        </button>
+    `;
 };
 
 let swapContext = 'KIT';
@@ -1178,7 +1191,7 @@ window.confirmSwap = function(oldPId, newPId, btnElement) {
     
     currentSwapOldId = newPId;
     if (btnElement) {
-        btnElement.innerHTML = `Troca <span style="color: var(--success); font-weight: 700; margin-left: 4px;">OK</span>`;
+        btnElement.innerHTML = `Troca <span style="color: var(--success); font-weight: 900; margin-left: 4px;">OK</span>`;
         btnElement.disabled = true;
     }
 };
@@ -1260,6 +1273,7 @@ function updateTotals() {
     
    STATE.atacadoDiscount = atacadoDiscount; STATE.customPromoDiscount = customPromoDiscount;
     
+    // NOVO: Cálculo do cupom (7% com limite de R$ 35)
     let couponDiscount = 0;
     if (STATE.couponCode === 'CUPOMVIP') {
         couponDiscount = sum * 0.07;
@@ -1274,9 +1288,13 @@ function updateTotals() {
     let fc = $('floating-cart');
     if (count > 0) { 
         fc.classList.remove('hidden'); $('fc-qtd').innerText = `${count} item(s)`; $('fc-total').innerText = fmt(final); 
+        let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
+        if (dfcQtd && dfcTotal) { dfcQtd.innerText = `${count} item(s)`; dfcTotal.innerText = fmt(final); }
     } 
     else { 
         fc.classList.add('hidden'); 
+        let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
+        if (dfcQtd && dfcTotal) { dfcQtd.innerText = `0 itens`; dfcTotal.innerText = fmt(0); }
     }
 }
 
@@ -1325,6 +1343,7 @@ function renderCheckoutItems() {
 
     let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
     
+    // NOVO: Cálculo do cupom de desconto (7% com limite de R$ 35)
     let couponDiscount = 0;
     if (STATE.couponCode === 'CUPOMVIP') {
         couponDiscount = sum * 0.07;
@@ -1332,6 +1351,7 @@ function renderCheckoutItems() {
     }
     STATE.couponDiscount = couponDiscount;
 
+    // A variável totalDesc agora soma também o STATE.couponDiscount
     let totalDesc = STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.deliveryDiscount + STATE.couponDiscount; 
     let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
 
@@ -1467,6 +1487,9 @@ async function init() {
         $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
         history.replaceState({home: true}, ""); renderMainPage(); 
 
+        // ==========================================
+        // LEITURA DA URL PARA O GOOGLE E COMPARTILHAMENTO
+        // ==========================================
         setTimeout(() => {
             const urlParams = new URLSearchParams(window.location.search);
             const catId = urlParams.get('cat');
