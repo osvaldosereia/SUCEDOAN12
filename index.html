@@ -35,24 +35,26 @@
         .app-container { max-width: 1200px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; }
 
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; min-height: 75px; }
-        .logo { height: 55px; object-fit: contain; transition: 0.3s; }
+        /* Logo reduzida conforme solicitado */
+        .logo { height: 40px; object-fit: contain; transition: 0.3s; }
+        
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .header-cart { position: relative; cursor: pointer; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
+        .cart-icon { width: 26px; height: 26px; }
+        .cart-badge { position: absolute; top: 0px; right: 0px; background: #ef4444; color: white; font-size: 0.7rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 2px solid #fff;}
+        
         .btn-menu { font-size: 1.8rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
 
-        @media(min-width: 768px) { .logo { height: 65px; } }
+        @media(min-width: 768px) { .logo { height: 50px; } }
 
         .controls-wrapper { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } .search-box { flex: 1; } .nav-buttons { flex: 1; width: auto; } }
+        @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } .search-box { flex: 1; } }
 
         .search-box { position: relative; display: flex; align-items: center; width: 100%; }
         .search-icon { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--text-gray); }
         .search-clear { position: absolute; right: 14px; width: 24px; height: 24px; background: var(--border-light); border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-dark); font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;}
         .search-input { width: 100%; padding: 14px 44px; border-radius: 12px; border: 1px solid var(--border-light); background: #f9fafb; font-size: 0.95rem; outline: none; transition: 0.2s; }
         .search-input:focus { border-color: var(--brand); background: #fff; }
-
-        .nav-buttons { display: flex; gap: 8px; width: 100%; overflow-x: auto; scrollbar-width: none; }
-        .nav-buttons::-webkit-scrollbar { display: none; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; background: #fff; color: var(--text-gray); border: 1px solid var(--border-light); transition: 0.2s; white-space: nowrap; text-align: center; }
-        .nav-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
         .main-content { padding: 32px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
         .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
@@ -68,8 +70,8 @@
 
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; height: 100%; }
         
-        /* Ajuste de Proporção: Transformando em imagem mais vertical (3/4) */
-        .card-img-wrap { width: 100%; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
+        /* Ajuste de Proporção: Transformando em imagem com fundo menor verticalmente (1/1 quadrado) */
+        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
         /* Padronização Tipográfica: Altura fixa em 2 linhas garantida */
@@ -132,17 +134,12 @@
             border-radius: 6px;
         }
 
-        .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .floating-cart.hidden { transform: translate(-50%, 150%); }
-        .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
-        .fc-total { font-size: 1.15rem; font-weight: 800; }
-
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         
         .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; /* <-- Sombra desligada no modo escondido */ }
 
-.drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); /* <-- Sombra ligada quando a gaveta abre */ }
+        .drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); /* <-- Sombra ligada quando a gaveta abre */ }
         
         
         .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
@@ -196,7 +193,7 @@
         .summary-row.total { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
         .btn-checkout { width: 100%; background: var(--brand); color: #fff; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; }
 
-        .menu-link { display: block; padding: 16px 0; font-size: 1.1rem; font-weight: 500; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
+        .menu-link { display: block; padding: 16px 0; font-size: 1rem; font-weight: 600; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
         
         #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-gray); transition: opacity 0.3s; }
 
@@ -209,6 +206,16 @@
 
         .economia-tag { font-size: 0.75rem; color: var(--success); font-weight: 800; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 4px; }
         
+        /* Menu FAB do WhatsApp */
+        .fab-wrapper { position: fixed; bottom: 24px; right: 24px; z-index: 90; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+        .fab-menu { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
+        .fab-menu.open { display: flex; }
+        .fab-item { background: #fff; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: var(--text-dark); cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.2s; white-space: nowrap; }
+        .fab-item:active { background: var(--bg-img); }
+        .fab-btn { width: 56px; height: 56px; background: #25D366; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4); cursor: pointer; border: none; transition: transform 0.2s; }
+        .fab-btn:active { transform: scale(0.95); }
+        .fab-icon { width: 32px; height: 32px; fill: currentColor; }
+
     </style>
 </head>
 <body>
@@ -219,7 +226,15 @@
 
     <header class="top-bar">
         <img src="../img/logoantonia2.png" alt="Logomarca Dona Antônia" class="logo" onclick="goToHome()" style="cursor: pointer;" aria-label="Voltar para Início">
-        <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
+        
+        <div class="header-actions">
+            <div class="header-cart" onclick="openCheckout()" aria-label="Carrinho de Compras">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cart-icon"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                <span id="header-cart-badge" class="cart-badge">0</span>
+            </div>
+            
+            <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
+        </div>
     </header>
 
     <div class="controls-wrapper">
@@ -228,11 +243,6 @@
             <input type="text" id="search-input" class="search-input" placeholder="Buscar Produtos" oninput="handleSearchInput()">
             <div class="search-clear" id="search-clear" onclick="clearSearch()" aria-label="Limpar busca">✕</div>
         </div>
-
-        <div class="nav-buttons" id="nav-buttons-container">
-            <button id="btn-nav-cestas" class="nav-btn active" onclick="scrollToCestas()">Cestas Básicas</button>
-            <button id="btn-nav-produtos" class="nav-btn" onclick="scrollToProdutos()">Produtos</button>
-        </div>
     </div>
 
     <main class="main-content">
@@ -240,12 +250,15 @@
         <div id="main-grid"></div>
     </main>
 
-    <div class="floating-cart hidden" id="floating-cart" onclick="openCheckout()">
-        <div class="fc-info">
-            <span id="fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">0 itens</span>
-            <span>Ver Sacola</span>
+    <div class="fab-wrapper">
+        <div class="fab-menu" id="fab-menu">
+            <div class="fab-item" onclick="sendZap('Quais as formas de pagamento?')">Quais as formas de pagamento?</div>
+            <div class="fab-item" onclick="sendZap('Não encontrei um produto.')">Não encontrei um produto.</div>
+            <div class="fab-item" onclick="sendZap('Preciso de ajuda com a minha compra.')">Preciso de ajuda com a minha compra.</div>
         </div>
-        <div class="fc-total" id="fc-total">R$ 0,00</div>
+        <button class="fab-btn" onclick="toggleFab()" aria-label="Ajuda WhatsApp">
+            <svg class="fab-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.487-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+        </button>
     </div>
 
     <div class="overlay" id="overlay" onclick="closeAllDrawers()"></div>
@@ -255,11 +268,8 @@
             <div class="drawer-title">Dona Antônia</div>
             <button class="btn-close" onclick="closeDrawer('main-menu')" aria-label="Fechar menu">✕</button>
         </div>
-        <div class="drawer-body">
-            <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('ofertas'); scrollToProdutos();">🔥 Destaques e Ofertas</a>
-            <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); scrollToCestas();">🛒 Cestas Básicas</a>
-            <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="menu-link" style="color: var(--success);">💬 Atendimento WhatsApp</a>
-        </div>
+        <div class="drawer-body" id="menu-drawer-body">
+            </div>
     </div>
 
     <div class="drawer" id="quick-drawer" style="z-index: 105;">
@@ -375,7 +385,7 @@ const STATE = {
     prods: [], baskets: [], deptos: {}, categoriesList: [],
     cart: {}, cartOrder: [], maisOfertas: [], swapSimilarProds: [], swapCats: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
-    couponCode: '', couponDiscount: 0, // <-- LINHA NOVA
+    couponCode: '', couponDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
     activeCat: 'ofertas', activeKitCat: 'ofertas',
     promoIds: { leve5: [], leve2: [] }
@@ -385,6 +395,26 @@ const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
+
+// ==========================================
+// FUNÇÕES FAB WHATSAPP
+// ==========================================
+window.toggleFab = function() {
+    $('fab-menu').classList.toggle('open');
+};
+
+window.sendZap = function(text) {
+    window.open(`https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(text)}`, '_blank');
+    $('fab-menu').classList.remove('open');
+};
+
+// Fechar FAB clicando fora
+document.addEventListener('click', (e) => {
+    let fabWrapper = document.querySelector('.fab-wrapper');
+    if (fabWrapper && !fabWrapper.contains(e.target)) {
+        $('fab-menu').classList.remove('open');
+    }
+});
 
 // ==========================================
 // SISTEMA DE URLS AMIGÁVEIS (SEO)
@@ -398,7 +428,7 @@ function createSlug(text) {
 
 function updateURL(type, slug) {
     const url = new URL(window.location);
-    url.search = ''; // Limpa antes de setar novo
+    url.search = ''; 
     if (type !== 'home') {
         url.searchParams.set(type, slug); 
     }
@@ -433,7 +463,6 @@ window.goToHome = function() {
     clearSearch(false);
     selectMainCategory('ofertas');
     renderMainPage();
-    updateNavButtons('cestas');
 };
 
 function saveCart() {
@@ -504,7 +533,7 @@ function checkDrawers() {
     } 
 }
 
-    window.aplicarCupom = function() {
+window.aplicarCupom = function() {
     let code = $('chk-cupom').value.trim().toUpperCase();
     let msgEl = $('cupom-msg');
 
@@ -546,6 +575,35 @@ function setupCategories() {
         if(idxB !== -1) return 1;
         return a.title.localeCompare(b.title);
     });
+    
+    renderMenuCategories();
+}
+
+function renderMenuCategories() {
+    let html = `
+        <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-gray); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Navegação Principal</div>
+        <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('ofertas'); scrollToProdutos();">🔥 Destaques e Ofertas</a>
+        <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); scrollToCestas();">🛒 Cestas Básicas</a>
+    `;
+    
+    html += `<div style="font-weight: 800; font-size: 0.85rem; color: var(--text-gray); margin-top: 32px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Departamentos</div>`;
+    
+    STATE.categoriesList.forEach(c => {
+        if (c.id !== 'ofertas') {
+            html += `<a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('${c.id}'); scrollToProdutos();">${c.title}</a>`;
+        }
+    });
+
+    html += `
+        <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-gray); margin-top: 32px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Institucional e Contato</div>
+        <a href="#" class="menu-link">Sobre a Dona Antônia</a>
+        <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="menu-link" style="color: var(--success);">💬 Atendimento WhatsApp</a>
+        <div style="display: flex; gap: 24px; margin-top: 24px; padding-bottom: 24px;">
+            <a href="#" style="color: var(--brand); text-decoration: none; font-weight: 800;">Instagram</a>
+            <a href="#" style="color: var(--brand); text-decoration: none; font-weight: 800;">Facebook</a>
+        </div>
+    `;
+    $('menu-drawer-body').innerHTML = html;
 }
 
 function renderMainPage() {
@@ -614,13 +672,11 @@ function getProdutosHTML(id) {
 window.scrollToCestas = function() {
     let el = $('secao-cestas');
     if(el) el.scrollIntoView({behavior: 'smooth'});
-    updateNavButtons('cestas');
 };
 
 window.scrollToProdutos = function() {
     let el = $('secao-produtos');
     if(el) el.scrollIntoView({behavior: 'smooth'});
-    updateNavButtons('produtos');
 };
 
 window.closeCheckoutAndGoToProducts = function() {
@@ -630,19 +686,6 @@ window.closeCheckoutAndGoToProducts = function() {
     }, 300);
 };
 
-function updateNavButtons(activeId) {
-    $('btn-nav-cestas').classList.toggle('active', activeId === 'cestas');
-    $('btn-nav-produtos').classList.toggle('active', activeId === 'produtos');
-}
-
-window.addEventListener('scroll', () => {
-    let prods = $('secao-produtos');
-    if(!prods) return;
-    let rect = prods.getBoundingClientRect();
-    if(rect.top < 200) updateNavButtons('produtos');
-    else updateNavButtons('cestas');
-}, {passive: true});
-
 let searchTimeout;
 function handleSearchInput() {
     const val = $('search-input').value; $('search-clear').style.display = val.length > 0 ? 'flex' : 'none';
@@ -650,11 +693,9 @@ function handleSearchInput() {
     searchTimeout = setTimeout(() => {
         let q = norm(val);
         if(q.length < 2) { 
-            $('nav-buttons-container').style.display = 'flex';
             renderMainPage(); 
         } 
         else {
-            $('nav-buttons-container').style.display = 'none';
             $('grid-title').style.display = "block"; $('grid-title').innerText = "Resultados da Busca";
             
             let filtered = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
@@ -668,7 +709,6 @@ function clearSearch(triggerSearch = true) {
     $('search-input').value = ''; $('search-clear').style.display = 'none';
     if(triggerSearch) { 
         clearTimeout(searchTimeout); 
-        $('nav-buttons-container').style.display = 'flex';
         renderMainPage(); 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -897,13 +937,17 @@ window.commitExpander = function() {
     let bodyDrawer = $('kit-drawer').querySelector('.drawer-body'); let offsetTarget = $('kit-extra-section');
     if(bodyDrawer && offsetTarget) bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
 
+    let count = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
+
     let footer = $('kit-footer-container');
     footer.innerHTML = `
         <button class="drawer-cart-display" onclick="openCheckout()">
-            <div class="fc-info"><span id="drawer-fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${$('fc-qtd').innerText}</span><span>Ver Sacola</span></div>
-            <div class="fc-total" id="drawer-fc-total">${$('fc-total').innerText}</div>
+            <div class="fc-info"><span id="drawer-fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${count} itens</span><span>Ver Sacola</span></div>
+            <div class="fc-total" id="drawer-fc-total">${$('sum-total')?.innerText || "Ver Total"}</div>
         </button>
     `;
+    
+    updateTotals(); // Força update para garantir que texto está correto
 };
 
 let swapContext = 'KIT';
@@ -1273,7 +1317,6 @@ function updateTotals() {
     
    STATE.atacadoDiscount = atacadoDiscount; STATE.customPromoDiscount = customPromoDiscount;
     
-    // NOVO: Cálculo do cupom (7% com limite de R$ 35)
     let couponDiscount = 0;
     if (STATE.couponCode === 'CUPOMVIP') {
         couponDiscount = sum * 0.07;
@@ -1285,21 +1328,30 @@ function updateTotals() {
     let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.couponDiscount;
     let final = subtotal - totalDesc;
     
-    let fc = $('floating-cart');
+    let headerBadge = $('header-cart-badge');
+    
     if (count > 0) { 
-        fc.classList.remove('hidden'); $('fc-qtd').innerText = `${count} item(s)`; $('fc-total').innerText = fmt(final); 
+        headerBadge.style.display = 'flex';
+        headerBadge.innerText = count;
+        
         let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
         if (dfcQtd && dfcTotal) { dfcQtd.innerText = `${count} item(s)`; dfcTotal.innerText = fmt(final); }
     } 
     else { 
-        fc.classList.add('hidden'); 
+        headerBadge.style.display = 'none';
+        headerBadge.innerText = '0';
+        
         let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
         if (dfcQtd && dfcTotal) { dfcQtd.innerText = `0 itens`; dfcTotal.innerText = fmt(0); }
     }
+    
+    // Atualiza subtotais invisíveis que ainda podem ser requisitados por lógicas internas
+    let sumTotalEl = $('sum-total');
+    if(sumTotalEl) sumTotalEl.innerText = fmt(final);
 }
 
 function openCheckout() {
-    if (STATE.cartOrder.length === 0) return;
+    if (STATE.cartOrder.length === 0) return alert("Seu carrinho está vazio!");
     let options = []; let date = new Date(); let checkDate = new Date(date);
     if (date.getHours() < 10 && date.getDay() !== 0) options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
     while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(checkDate.getDay() !== 0) { let desc = options.length === 0 ? 0 : (options.length === 1 ? 3.00 : 6.00); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
@@ -1343,7 +1395,6 @@ function renderCheckoutItems() {
 
     let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
     
-    // NOVO: Cálculo do cupom de desconto (7% com limite de R$ 35)
     let couponDiscount = 0;
     if (STATE.couponCode === 'CUPOMVIP') {
         couponDiscount = sum * 0.07;
@@ -1351,7 +1402,6 @@ function renderCheckoutItems() {
     }
     STATE.couponDiscount = couponDiscount;
 
-    // A variável totalDesc agora soma também o STATE.couponDiscount
     let totalDesc = STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.deliveryDiscount + STATE.couponDiscount; 
     let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
 
