@@ -18,108 +18,70 @@
             --bg-page: #ffffff;
             --bg-img: #f3f4f6;       
             --text-dark: #291F1A;    
+            /* Ajuste de Contraste PageSpeed: Cinza mais legível */
             --text-gray: #5A504A;    
             --border-light: #e5e7eb;
+            /* Ajuste de Contraste PageSpeed: Verde levemente mais escuro para passar no teste AA */
             --success: #059669;
             --radius-img: 16px;
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
-        /* Padding inferior maior para acomodar a bottom nav bar */
-        body { background-color: var(--bg-page); color: var(--text-dark); overflow-x: hidden; padding-bottom: 85px; line-height: 1.5; }
+        body { background-color: var(--bg-page); color: var(--text-dark); overflow-x: hidden; padding-bottom: 90px; line-height: 1.5; }
         button { border: none; background: none; cursor: pointer; font-weight: 600; outline: none; }
         img { max-width: 100%; height: auto; }
 
         .app-container { max-width: 1200px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; }
 
-        /* ========================================================
-           NOVA TOP BAR COMPACTA
-           ======================================================== */
-        .top-bar { 
-            position: sticky; top: 0; z-index: 50; 
-            display: flex; align-items: center; justify-content: space-between; gap: 12px; 
-            padding: 8px 16px; background: rgba(255, 255, 255, 0.98); 
-            backdrop-filter: blur(8px); border-bottom: 1px solid var(--border-light);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-            min-height: 60px;
-        }
-        .logo { height: 36px; object-fit: contain; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; min-height: 75px; }
+        /* Logo reduzida conforme solicitado */
+        .logo { height: 40px; object-fit: contain; transition: 0.3s; }
         
-        .search-box { position: relative; display: flex; align-items: center; flex: 1; }
-        .search-icon { position: absolute; left: 12px; width: 18px; height: 18px; color: var(--text-gray); }
-        .search-clear { position: absolute; right: 10px; width: 22px; height: 22px; background: var(--border-light); border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-dark); font-size: 10px; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .search-input { width: 100%; padding: 10px 36px; border-radius: 8px; border: 1px solid var(--border-light); background: #f9fafb; font-size: 0.9rem; outline: none; transition: 0.2s; }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .header-cart { position: relative; cursor: pointer; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
+        .cart-icon { width: 26px; height: 26px; }
+        .cart-badge { position: absolute; top: 0px; right: 0px; background: #ef4444; color: white; font-size: 0.7rem; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 2px solid #fff;}
+        
+        .btn-menu { font-size: 1.8rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
+
+        @media(min-width: 768px) { .logo { height: 50px; } }
+
+        .controls-wrapper { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } .search-box { flex: 1; } }
+
+        .search-box { position: relative; display: flex; align-items: center; width: 100%; }
+        .search-icon { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--text-gray); }
+        .search-clear { position: absolute; right: 14px; width: 24px; height: 24px; background: var(--border-light); border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-dark); font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        .search-input { width: 100%; padding: 14px 44px; border-radius: 12px; border: 1px solid var(--border-light); background: #f9fafb; font-size: 0.95rem; outline: none; transition: 0.2s; }
         .search-input:focus { border-color: var(--brand); background: #fff; }
 
-        .btn-whatsapp-top { 
-            display: flex; align-items: center; justify-content: center; 
-            width: 38px; height: 38px; background: #25D366; color: white; 
-            border-radius: 50%; flex-shrink: 0; box-shadow: 0 2px 8px rgba(37, 211, 102, 0.3);
-            transition: transform 0.2s;
-        }
-        .btn-whatsapp-top:active { transform: scale(0.95); }
-        .btn-whatsapp-top svg { width: 20px; height: 20px; fill: currentColor; }
-
-        @media(min-width: 768px) { .logo { height: 42px; } .search-input { font-size: 0.95rem; padding: 12px 40px; } }
-
-        /* ========================================================
-           CONTEÚDO E CARROSSEIS
-           ======================================================== */
-        .main-content { padding: 24px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
-        .section-title { font-size: 1.3rem; font-weight: 800; margin-bottom: 16px; color: var(--text-dark); letter-spacing: -0.5px; }
-        .home-section { margin-bottom: 40px; }
-        .home-section-title { font-size: 1.15rem; font-weight: 800; margin-bottom: 16px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 6px; letter-spacing: -0.5px;}
-
-        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px 16px; }
-        @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 40px 24px; } }
-        @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 48px 32px; } }
-
-        /* Estilo do Carrossel */
-        .carousel-track {
-            display: flex;
-            gap: 16px;
-            overflow-x: auto;
-            scroll-behavior: smooth;
-            scrollbar-width: none; 
-            padding-bottom: 12px;
-            margin: 0 -20px; 
-            padding-left: 20px;
-            padding-right: 20px;
-            scroll-snap-type: x mandatory;
-        }
-        .carousel-track::-webkit-scrollbar { display: none; }
+        .main-content { padding: 32px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
+        .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
         
-        .carousel-track .card {
-            /* 2.3 cards visíveis na tela no mobile */
-            flex: 0 0 calc((100vw - 50px) / 2.3); 
-            max-width: 160px; 
-            scroll-snap-align: start;
-        }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 16px; }
+        @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
+        @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
 
-        .card-view-all {
-            flex: 0 0 calc((100vw - 50px) / 2.3);
-            max-width: 160px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background: var(--brand-light); border-radius: var(--radius-img); cursor: pointer;
-            height: 100%; min-height: 220px;
-            scroll-snap-align: start;
-            opacity: 0.9; transition: 0.2s;
-        }
-        .card-view-all:active { opacity: 1; transform: scale(0.98); }
+        .home-section { margin-bottom: 56px; }
+        .home-section-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
+        @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
+        .show-all .card { display: flex !important; } 
 
-        /* Estilização dos Cards e Preços (2 Linhas) */
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; height: 100%; }
         
+        /* Ajuste de Proporção: Transformando em imagem com fundo menor verticalmente (1/1 quadrado) */
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
-        .card-title { font-size: 0.85rem; font-weight: 500; line-height: 1.3; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.6em; text-transform: none; cursor: pointer; }
+        /* Padronização Tipográfica: Altura fixa em 2 linhas garantida */
+        .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em; text-transform: none; cursor: pointer; }
         
-        /* Ajuste: flex-direction column para forçar duas linhas, fontes mais discretas e alinhadas */
-        .card-price-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: auto; margin-bottom: 16px; }
-        .price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; line-height: 1; }
-        .old-price { font-size: 0.75rem; color: var(--text-gray); opacity: 0.7; text-decoration: line-through; line-height: 1; }
+        .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
+        .price { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
+        
+        /* Ajuste PageSpeed: Contraste do preço antigo melhorado */
+        .old-price { font-size: 0.8rem; color: var(--text-gray); opacity: 0.8; text-decoration: line-through; }
         
         .promo-tag { font-size: 0.65rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
         .promo-tag.exp { background: var(--brand-light); color: var(--brand); }
@@ -128,41 +90,73 @@
         .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
         .card-basket .card-title { -webkit-line-clamp: 2; height: auto; white-space: normal;}
 
-        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 8px; border-radius: 8px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
+        .btn-add { width: 100%; background: var(--brand-light); color: var(--brand); padding: 10px; border-radius: 10px; font-weight: 700; font-size: 0.85rem; transition: 0.2s; }
         .btn-add.special { background: var(--brand); color: #fff; } 
-        .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 8px; height: 36px; overflow: hidden; }
-        .qty-control button { width: 40px; height: 100%; font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
-        .qty-control span { font-weight: 700; font-size: 0.9rem; color: var(--text-dark); }
+        .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 40px; overflow: hidden; }
+        .qty-control button { width: 44px; height: 100%; font-size: 1.2rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
+        .qty-control span { font-weight: 700; font-size: 0.95rem; color: var(--text-dark); }
 
-        .btn-action-gray { width: 100%; padding: 8px 6px; background: var(--bg-img); color: var(--text-dark); font-size: 0.75rem; font-weight: 700; border-radius: 8px; border: none; transition: 0.2s; cursor: pointer; text-align: center; }
+        .btn-action-gray {
+            width: 100%;
+            padding: 8px 6px;
+            background: var(--bg-img);
+            color: var(--text-dark);
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 8px;
+            border: none;
+            transition: 0.2s;
+            cursor: pointer;
+            text-align: center;
+        }
         .btn-action-gray:active { background: var(--border-light); }
 
-        .embalagem-tag { position: absolute; top: 8px; left: 8px; background: rgba(255, 255, 255, 0.95); color: var(--brand); font-size: 0.6rem; font-weight: 800; padding: 2px 6px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); z-index: 2; }
-        .list-img-wrap .embalagem-tag { top: 4px; left: 4px; font-size: 0.55rem; padding: 2px 4px; border-radius: 4px; }
+        .embalagem-tag {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--brand);
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            z-index: 2;
+            letter-spacing: -0.2px;
+        }
 
-        /* ========================================================
-           DRAWER (GAVETAS) E OUTROS ESTILOS MANTIDOS
-           ======================================================== */
+        .list-img-wrap .embalagem-tag {
+            top: 6px;
+            left: 6px;
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         
-        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; }
-        .drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
+        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; /* <-- Sombra desligada no modo escondido */ }
+
+        .drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); /* <-- Sombra ligada quando a gaveta abre */ }
         
-        .drawer-header { padding: 20px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
-        .drawer-title { font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px; color: var(--brand); }
-        .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;}
-        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; position: relative; padding-bottom: 100px; /* buffer final */ }
+        
+        .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
+        .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--brand); }
+        .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; position: relative; }
         
         .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
         .list-item:last-child { border-bottom: none; margin-bottom: 0; }
         
-        .list-img-wrap { width: 90px; height: 120px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; cursor: pointer; position: relative; }
+        .list-img-wrap { width: 100px; height: 140px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; cursor: pointer; position: relative; }
         .list-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
         .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
         
-        .list-name { font-size: 0.85rem; font-weight: 500; color: var(--text-gray); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-transform: none; height: 2.6em; }
-        .list-price { font-size: 1rem; font-weight: 800; color: var(--text-dark); margin-top: auto; display: flex; flex-direction: column; gap: 2px;}
+        /* Padronização Tipográfica na Lista */
+        .list-name { font-size: 0.9rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-transform: none; height: 2.8em; }
+        .list-price { font-size: 1.05rem; font-weight: 800; color: var(--text-dark); margin-top: auto; display: flex; flex-direction: column; }
         
         .btn-swap { font-size: 0.75rem; color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
         .btn-swap:active { background: var(--brand-light); }
@@ -171,73 +165,56 @@
         .scroll-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); z-index: 5; background: #fff; border: 1px solid var(--border-light); border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; justify-content: center; align-items: center; color: var(--brand); font-size: 0.9rem;}
         .scroll-btn.left { left: 0px; }
         .scroll-btn.right { right: 0px; }
-        @media(min-width: 768px) { .scroll-btn { display: flex; } .swap-chips::-webkit-scrollbar { display: none; } }
+        @media(min-width: 768px) {
+            .scroll-btn { display: flex; }
+            .swap-chips::-webkit-scrollbar { display: none; }
+        }
 
         .swap-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; padding: 0 4px; scroll-behavior: smooth;}
-        .swap-chip { padding: 10px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
+        .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
         .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
-        #main-category-chips-wrap { position: sticky; top: 59px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
-        @media(min-width: 768px) { #main-category-chips-wrap { top: 60px; } }
+        #main-category-chips-wrap { position: sticky; top: 71px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
+        @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
         
         #swap-chips-container-wrap { position: sticky; top: -20px; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 16px 20px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); display: flex; flex-direction: column; gap: 12px; }
         #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
 
         .chk-section { margin-bottom: 32px; }
-        .chk-title { font-size: 1rem; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.3px; color: var(--brand); }
-        .input-text { width: 100%; padding: 12px; border: none; background: var(--bg-img); border-radius: 8px; margin-bottom: 10px; font-size: 0.95rem; outline: none; transition: 0.2s; }
+        .chk-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
+        .input-text { width: 100%; padding: 14px; border: none; background: var(--bg-img); border-radius: 12px; margin-bottom: 12px; font-size: 1rem; outline: none; transition: 0.2s; }
         .input-text:focus { box-shadow: 0 0 0 2px var(--brand); background: #fff; }
         .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .pay-btn { padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; background: #fff; font-weight: 600; font-size: 0.9rem; color: var(--text-gray); transition: 0.2s; }
+        .pay-btn { padding: 14px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-weight: 500; color: var(--text-gray); transition: 0.2s; }
         .pay-btn.selected { border-color: var(--brand); background: var(--brand); color: #fff; }
         
-        .drawer-footer { padding: 20px; background: #fff; border-top: 1px solid var(--border-light); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); z-index: 2; position: relative;}
-        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; color: var(--text-gray); font-weight: 500;}
-        .summary-row.total { font-size: 1.25rem; font-weight: 800; color: var(--text-dark); margin-bottom: 20px; letter-spacing: -0.5px; }
-        .btn-checkout { width: 100%; background: var(--brand); color: #fff; padding: 16px; border-radius: 10px; font-weight: 800; font-size: 1.05rem; }
+        .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); z-index: 2; position: relative;}
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem; color: var(--text-gray); font-weight: 500;}
+        .summary-row.total { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
+        .btn-checkout { width: 100%; background: var(--brand); color: #fff; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; }
 
-        .menu-link { display: block; padding: 14px 0; font-size: 0.95rem; font-weight: 600; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
+        .menu-link { display: block; padding: 16px 0; font-size: 1rem; font-weight: 600; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
         
         #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-gray); transition: opacity 0.3s; }
 
-        .banner-destaque { background: var(--brand); color: #fff; padding: 12px 16px; border-radius: 10px; text-align: center; font-weight: 800; font-size: 1rem; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.2); letter-spacing: -0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        #kit-extra-grid .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
+        @media(min-width: 768px) { #kit-extra-grid .product-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; } }
 
-        .drawer-cart-display { background: var(--brand); color: #fff; padding: 14px 20px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; border: none; transition: 0.3s; }
-        .economia-tag { font-size: 0.7rem; color: var(--success); font-weight: 800; background: #ecfdf5; padding: 2px 8px; border-radius: 20px; display: inline-block; margin-top: 4px; }
+        .banner-destaque { background: var(--brand); color: #fff; padding: 14px 20px; border-radius: 12px; text-align: center; font-weight: 800; font-size: 1.15rem; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.2); letter-spacing: -0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .drawer-cart-display { background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; border: none; transition: 0.3s; }
+
+        .economia-tag { font-size: 0.75rem; color: var(--success); font-weight: 800; background: #ecfdf5; padding: 4px 10px; border-radius: 20px; display: inline-block; margin-top: 4px; }
         
-        /* ========================================================
-           NOVA BARRA FIXA INFERIOR (BOTTOM NAVIGATION)
-           ======================================================== */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0; left: 0; width: 100%;
-            background: #fff;
-            border-top: 1px solid var(--border-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            padding-bottom: calc(8px + env(safe-area-inset-bottom));
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            z-index: 90;
-        }
-        .bottom-nav-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: var(--text-gray); gap: 4px; flex: 1; cursor: pointer;
-            transition: color 0.2s;
-        }
-        .bottom-nav-item:active, .bottom-nav-item:focus { color: var(--brand); }
-        .bottom-nav-item svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;}
-        .bottom-nav-item span { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; }
-        
-        /* Badge movido para a barra inferior */
-        .cart-badge-bottom { 
-            position: absolute; top: -6px; right: -10px; 
-            background: #ef4444; color: white; font-size: 0.65rem; 
-            font-weight: bold; width: 16px; height: 16px; 
-            border-radius: 50%; display: none; align-items: center; 
-            justify-content: center; border: 2px solid #fff;
-        }
+        /* Menu FAB do WhatsApp */
+        .fab-wrapper { position: fixed; bottom: 24px; right: 24px; z-index: 90; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+        .fab-menu { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
+        .fab-menu.open { display: flex; }
+        .fab-item { background: #fff; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; color: var(--text-dark); cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.2s; white-space: nowrap; }
+        .fab-item:active { background: var(--bg-img); }
+        .fab-btn { width: 56px; height: 56px; background: #25D366; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4); cursor: pointer; border: none; transition: transform 0.2s; }
+        .fab-btn:active { transform: scale(0.95); }
+        .fab-icon { width: 32px; height: 32px; fill: currentColor; }
 
     </style>
 </head>
@@ -248,54 +225,41 @@
 <div class="app-container">
 
     <header class="top-bar">
-        <img src="../img/logoantonia2.png" alt="Logomarca Dona Antônia" class="logo" onclick="goToHome()" aria-label="Voltar para Início">
+        <img src="../img/logoantonia2.png" alt="Logomarca Dona Antônia" class="logo" onclick="goToHome()" style="cursor: pointer;" aria-label="Voltar para Início">
         
+        <div class="header-actions">
+            <div class="header-cart" onclick="openCheckout()" aria-label="Carrinho de Compras">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="cart-icon"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                <span id="header-cart-badge" class="cart-badge">0</span>
+            </div>
+            
+            <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
+        </div>
+    </header>
+
+    <div class="controls-wrapper">
         <div class="search-box">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <input type="text" id="search-input" class="search-input" placeholder="Buscar Produtos" oninput="handleSearchInput()">
             <div class="search-clear" id="search-clear" onclick="clearSearch()" aria-label="Limpar busca">✕</div>
         </div>
-
-        <button class="btn-whatsapp-top" aria-label="Ajuda WhatsApp" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975', '_blank')">
-            <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.487-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-        </button>
-    </header>
+    </div>
 
     <main class="main-content">
-        <div id="btn-voltar-busca" style="display:none; margin-bottom: 16px; color: var(--brand); font-weight: 700; cursor: pointer;" onclick="clearSearch()">< Voltar</div>
         <h2 class="section-title" id="grid-title" style="display:none;">Resultados</h2>
         <div id="main-grid"></div>
     </main>
 
-    <nav class="bottom-nav">
-        <button class="bottom-nav-item" onclick="goToHome()">
-            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            <span>Início</span>
+    <div class="fab-wrapper">
+        <div class="fab-menu" id="fab-menu">
+            <div class="fab-item" onclick="sendZap('Quais as formas de pagamento?')">Quais as formas de pagamento?</div>
+            <div class="fab-item" onclick="sendZap('Não encontrei um produto.')">Não encontrei um produto.</div>
+            <div class="fab-item" onclick="sendZap('Preciso de ajuda com a minha compra.')">Preciso de ajuda com a minha compra.</div>
+        </div>
+        <button class="fab-btn" onclick="toggleFab()" aria-label="Ajuda WhatsApp">
+            <svg class="fab-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.487-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
         </button>
-        <button class="bottom-nav-item" onclick="focusSearch()">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <span>Busca</span>
-        </button>
-        <button class="bottom-nav-item" onclick="openDrawer('main-menu')">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            <span>Categorias</span>
-        </button>
-        <button class="bottom-nav-item" onclick="selectMainCategory('ofertas'); scrollToProdutos();">
-            <svg viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-            <span>Ofertas</span>
-        </button>
-        <button class="bottom-nav-item" onclick="openCheckout()">
-            <div style="position: relative;">
-                <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                <span id="bottom-cart-badge" class="cart-badge-bottom">0</span>
-            </div>
-            <span>Carrinho</span>
-        </button>
-        <button class="bottom-nav-item" onclick="openDrawer('main-menu')">
-            <svg viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-            <span>Menu</span>
-        </button>
-    </nav>
+    </div>
 
     <div class="overlay" id="overlay" onclick="closeAllDrawers()"></div>
 
@@ -304,7 +268,8 @@
             <div class="drawer-title">Dona Antônia</div>
             <button class="btn-close" onclick="closeDrawer('main-menu')" aria-label="Fechar menu">✕</button>
         </div>
-        <div class="drawer-body" id="menu-drawer-body"></div>
+        <div class="drawer-body" id="menu-drawer-body">
+            </div>
     </div>
 
     <div class="drawer" id="quick-drawer" style="z-index: 105;">
@@ -431,10 +396,29 @@ const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
-function focusSearch() {
-    window.scrollTo({top: 0, behavior: 'smooth'});
-    $('search-input').focus();
-}
+// ==========================================
+// FUNÇÕES FAB WHATSAPP
+// ==========================================
+window.toggleFab = function() {
+    $('fab-menu').classList.toggle('open');
+};
+
+window.sendZap = function(text) {
+    window.open(`https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(text)}`, '_blank');
+    $('fab-menu').classList.remove('open');
+};
+
+// Fechar FAB clicando fora
+document.addEventListener('click', (e) => {
+    let fabWrapper = document.querySelector('.fab-wrapper');
+    if (fabWrapper && !fabWrapper.contains(e.target)) {
+        $('fab-menu').classList.remove('open');
+    }
+});
+
+// ==========================================
+// SISTEMA DE URLS AMIGÁVEIS (SEO)
+// ==========================================
 
 function createSlug(text) {
     if (!text) return "";
@@ -445,7 +429,9 @@ function createSlug(text) {
 function updateURL(type, slug) {
     const url = new URL(window.location);
     url.search = ''; 
-    if (type !== 'home') { url.searchParams.set(type, slug); }
+    if (type !== 'home') {
+        url.searchParams.set(type, slug); 
+    }
     window.history.pushState({ modal: slug }, "", url);
 }
 
@@ -481,7 +467,9 @@ window.goToHome = function() {
 
 function saveCart() {
     localStorage.setItem('dona_antonia_cart', JSON.stringify({
-        cart: STATE.cart, cartOrder: STATE.cartOrder, basketExtraFee: STATE.basketExtraFee
+        cart: STATE.cart,
+        cartOrder: STATE.cartOrder,
+        basketExtraFee: STATE.basketExtraFee
     }));
 }
 
@@ -490,52 +478,87 @@ function loadCart() {
         let saved = localStorage.getItem('dona_antonia_cart');
         if (saved) {
             let parsed = JSON.parse(saved);
-            STATE.cart = parsed.cart || {}; STATE.cartOrder = parsed.cartOrder || []; STATE.basketExtraFee = parsed.basketExtraFee || 0;
+            STATE.cart = parsed.cart || {};
+            STATE.cartOrder = parsed.cartOrder || [];
+            STATE.basketExtraFee = parsed.basketExtraFee || 0;
         }
     } catch(e) { console.error("Erro ao carregar carrinho", e); }
 }
 
 window.clearCart = function() {
     if(confirm("Tem certeza que deseja limpar o carrinho?")) {
-        STATE.cart = {}; STATE.cartOrder = []; STATE.basketExtraFee = 0;
-        saveCart(); updateTotals(); closeDrawer('checkout-drawer');
+        STATE.cart = {};
+        STATE.cartOrder = [];
+        STATE.basketExtraFee = 0;
+        saveCart();
+        updateTotals();
+        closeDrawer('checkout-drawer');
         if(!$('search-input').value) renderMainPage();
     }
 };
 
 let modalStack = [];
 function openDrawer(id) { 
-    $('overlay').classList.add('open'); $(id).classList.add('open'); 
+    $('overlay').classList.add('open'); 
+    $(id).classList.add('open'); 
     document.body.style.overflow = 'hidden'; 
-    modalStack.push(id); history.pushState({ modal: id }, "");
+    modalStack.push(id);
+    history.pushState({ modal: id }, "");
 }
 
 function closeDrawer(id) { 
-    if (modalStack.includes(id)) history.back();
-    if (id === 'quick-drawer' || id === 'kit-drawer') removeURLParam();
+    if (modalStack.includes(id)) {
+        history.back();
+    }
+    if (id === 'quick-drawer' || id === 'kit-drawer') {
+        removeURLParam();
+    }
 }
 
 function closeAllDrawers() { 
-    let count = modalStack.length; if(count > 0) history.go(-count);
+    let count = modalStack.length;
+    if(count > 0) history.go(-count);
+
     document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); 
-    modalStack = []; $('overlay').classList.remove('open'); 
-    document.body.style.overflow = ''; removeURLParam();
+    modalStack = [];
+    $('overlay').classList.remove('open'); 
+    document.body.style.overflow = ''; 
+    removeURLParam();
 }
 
 function checkDrawers() { 
-    if (modalStack.length === 0) { $('overlay').classList.remove('open'); document.body.style.overflow = ''; } 
+    if (modalStack.length === 0) {
+        $('overlay').classList.remove('open'); 
+        document.body.style.overflow = ''; 
+    } 
 }
 
 window.aplicarCupom = function() {
-    let code = $('chk-cupom').value.trim().toUpperCase(); let msgEl = $('cupom-msg');
-    if (code === 'CUPOMVIP') { STATE.couponCode = code; msgEl.innerText = "Cupom de 7% aplicado!"; msgEl.style.color = "var(--success)"; } 
-    else if (code === '') { STATE.couponCode = ''; msgEl.innerText = ""; } 
-    else { STATE.couponCode = ''; msgEl.innerText = "Cupom inválido ou expirado."; msgEl.style.color = "#ef4444"; }
-    updateTotals(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
+    let code = $('chk-cupom').value.trim().toUpperCase();
+    let msgEl = $('cupom-msg');
+
+    if (code === 'CUPOMVIP') {
+        STATE.couponCode = code;
+        msgEl.innerText = "Cupom de 7% aplicado!";
+        msgEl.style.color = "var(--success)";
+    } else if (code === '') {
+        STATE.couponCode = '';
+        msgEl.innerText = "";
+    } else {
+        STATE.couponCode = '';
+        msgEl.innerText = "Cupom inválido ou expirado.";
+        msgEl.style.color = "#ef4444";
+    }
+    updateTotals();
+    if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
 };
 
 window.addEventListener('popstate', (e) => {
-    if(modalStack.length > 0) { let id = modalStack.pop(); $(id).classList.remove('open'); checkDrawers(); }
+    if(modalStack.length > 0) {
+        let id = modalStack.pop();
+        $(id).classList.remove('open');
+        checkDrawers();
+    }
 });
 
 function setupCategories() {
@@ -544,6 +567,7 @@ function setupCategories() {
         { id: 'ofertas', title: 'Destaques e Ofertas 🔥' },
         ...Object.keys(STATE.deptos).map(k => ({ id: k, title: STATE.deptos[k].title }))
     ];
+
     STATE.categoriesList.sort((a, b) => {
         let idxA = priority.indexOf(a.id); let idxB = priority.indexOf(b.id);
         if(idxA !== -1 && idxB !== -1) return idxA - idxB;
@@ -551,6 +575,7 @@ function setupCategories() {
         if(idxB !== -1) return 1;
         return a.title.localeCompare(b.title);
     });
+    
     renderMenuCategories();
 }
 
@@ -559,78 +584,43 @@ function renderMenuCategories() {
         <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-gray); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Navegação Principal</div>
         <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('ofertas'); scrollToProdutos();">🔥 Destaques e Ofertas</a>
         <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); scrollToCestas();">🛒 Cestas Básicas</a>
-        <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-gray); margin-top: 32px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Departamentos</div>`;
+    `;
+    
+    html += `<div style="font-weight: 800; font-size: 0.85rem; color: var(--text-gray); margin-top: 32px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Departamentos</div>`;
+    
     STATE.categoriesList.forEach(c => {
-        if (c.id !== 'ofertas') html += `<a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('${c.id}'); scrollToProdutos();">${c.title}</a>`;
+        if (c.id !== 'ofertas') {
+            html += `<a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('${c.id}'); scrollToProdutos();">${c.title}</a>`;
+        }
     });
+
     html += `
         <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-gray); margin-top: 32px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Institucional e Contato</div>
         <a href="#" class="menu-link">Sobre a Dona Antônia</a>
         <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="menu-link" style="color: var(--success);">💬 Atendimento WhatsApp</a>
+        <div style="display: flex; gap: 24px; margin-top: 24px; padding-bottom: 24px;">
+            <a href="#" style="color: var(--brand); text-decoration: none; font-weight: 800;">Instagram</a>
+            <a href="#" style="color: var(--brand); text-decoration: none; font-weight: 800;">Facebook</a>
+        </div>
     `;
     $('menu-drawer-body').innerHTML = html;
 }
 
-// NOVO: Gerador de Carrossel
-function buildCarousel(items, type, listId, title, promoType = null) {
-    let validItems = (items || []).filter(p => p !== undefined && p !== null);
-    if(validItems.length === 0) return '';
-    
-    let displayItems = validItems.slice(0, 12);
-    let cardsHtml = buildCardsHTML(displayItems, type, promoType);
-
-    let btnTodosHtml = '';
-    if (validItems.length > 0) {
-        btnTodosHtml = `
-        <div class="card card-view-all" onclick="openGridView('${listId}', '${title}', '${type}', '${promoType || ''}')">
-            <div style="font-size: 2rem; color: var(--brand); margin-bottom: 4px; font-weight:300;">+</div>
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--brand); text-transform: uppercase;">Ver Todos</div>
-        </div>`;
-    }
-
-    return `
-    <div class="carousel-track">
-        ${cardsHtml}
-        ${btnTodosHtml}
-    </div>`;
-}
-
-// NOVO: Abre qualquer lista como Grade
-window.openGridView = function(listId, title, type, promoType) {
-    $('grid-title').style.display = "block";
-    $('grid-title').innerText = title;
-    $('btn-voltar-busca').style.display = 'block';
-    
-    let items = [];
-    if(listId === 'cestas') items = STATE.baskets;
-    else if(listId === '20off') items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
-    else if(listId === 'aproveite') items = PROMO_CONFIG.aproveite.map(findItem);
-    else if(listId === 'leve5') items = PROMO_CONFIG.leve5pague4.map(findItem);
-    else if(listId === 'leve2') items = PROMO_CONFIG.leve2.map(findItem);
-    else if(listId === 'mais') items = STATE.maisOfertas;
-    else if(listId.startsWith('cat_')) items = STATE.deptos[listId].data;
-
-    let validItems = (items || []).filter(p => p !== undefined && p !== null);
-    $('main-grid').innerHTML = `<div class="product-grid">${buildCardsHTML(validItems, type, promoType)}</div>`;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-
 function renderMainPage() {
     $('grid-title').style.display = "none";
-    $('btn-voltar-busca').style.display = "none";
-
     let html = `
-        <div class="banner-destaque" style="margin-bottom: 32px; cursor: pointer;" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975&text=Quero%20garantir%20meu%20desconto.', '_blank')">
+        <div class="banner-destaque" style="margin-bottom: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975&text=Quero%20garantir%20meu%20desconto.', '_blank')">
             🎁 Garanta o desconto de até 35 reais na sua próxima compra.
         </div>
 
-        <div id="secao-cestas" style="scroll-margin-top: 100px; margin-bottom: 48px;">
+        <div id="secao-cestas" style="scroll-margin-top: 140px; margin-bottom: 48px;">
             <h2 class="section-title">Cestas Básicas</h2>
-            ${buildCarousel(STATE.baskets, 'BASKET', 'cestas', 'Cestas Básicas')}
+            <div class="product-grid">
+                ${buildCardsHTML(STATE.baskets, 'BASKET')}
+            </div>
         </div>
 
-        <div id="secao-produtos" style="scroll-margin-top: 100px; border-top: 2px dashed var(--border-light); padding-top: 32px;">
+        <div id="secao-produtos" style="scroll-margin-top: 140px; border-top: 2px dashed var(--border-light); padding-top: 32px;">
             <h2 class="section-title" style="margin-bottom: 12px;">Produtos</h2>
             
             <div class="chips-wrapper" id="main-category-chips-wrap">
@@ -657,7 +647,9 @@ function buildMainChipsHTML() {
 }
 
 window.selectMainCategory = function(id) {
-    STATE.activeCat = id; updateURL('cat', id);
+    STATE.activeCat = id;
+    updateURL('cat', id);
+
     let chipsContainer = $('main-category-chips-container');
     if(chipsContainer) chipsContainer.innerHTML = buildMainChipsHTML();
     
@@ -666,25 +658,32 @@ window.selectMainCategory = function(id) {
 
     let secaoProd = document.getElementById('secao-produtos');
     if(secaoProd) {
-        let pos = secaoProd.getBoundingClientRect().top + window.scrollY - 90;
+        let pos = secaoProd.getBoundingClientRect().top + window.scrollY - 130;
         window.scrollTo({ top: pos, behavior: 'smooth' });
     }
 };
 
 function getProdutosHTML(id) {
     if (id === 'ofertas') return getHomeHTML();
-    else if(STATE.deptos[id]) {
-        return buildCarousel(STATE.deptos[id].data, 'PROD', id, STATE.deptos[id].title);
-    }
+    else if(STATE.deptos[id]) return `<div class="product-grid">${buildCardsHTML(STATE.deptos[id].data, 'PROD')}</div>`;
     return '';
 }
 
-window.scrollToCestas = function() { let el = $('secao-cestas'); if(el) el.scrollIntoView({behavior: 'smooth'}); };
-window.scrollToProdutos = function() { let el = $('secao-produtos'); if(el) el.scrollIntoView({behavior: 'smooth'}); };
+window.scrollToCestas = function() {
+    let el = $('secao-cestas');
+    if(el) el.scrollIntoView({behavior: 'smooth'});
+};
+
+window.scrollToProdutos = function() {
+    let el = $('secao-produtos');
+    if(el) el.scrollIntoView({behavior: 'smooth'});
+};
 
 window.closeCheckoutAndGoToProducts = function() {
     closeAllDrawers();
-    setTimeout(() => { scrollToProdutos(); }, 300);
+    setTimeout(() => {
+        scrollToProdutos();
+    }, 300);
 };
 
 let searchTimeout;
@@ -693,10 +692,12 @@ function handleSearchInput() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
         let q = norm(val);
-        if(q.length < 2) { renderMainPage(); } 
+        if(q.length < 2) { 
+            renderMainPage(); 
+        } 
         else {
             $('grid-title').style.display = "block"; $('grid-title').innerText = "Resultados da Busca";
-            $('btn-voltar-busca').style.display = 'block';
+            
             let filtered = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
             $('main-grid').innerHTML = filtered.length > 0 ? `<div class="product-grid">${buildCardsHTML(filtered, 'PROD')}</div>` : '<p style="text-align:center; color:var(--text-gray); margin-top: 40px;">Nenhum produto encontrado.</p>';
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -706,7 +707,11 @@ function handleSearchInput() {
 
 function clearSearch(triggerSearch = true) {
     $('search-input').value = ''; $('search-clear').style.display = 'none';
-    if(triggerSearch) { clearTimeout(searchTimeout); renderMainPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+    if(triggerSearch) { 
+        clearTimeout(searchTimeout); 
+        renderMainPage(); 
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 }
 
 function findItem(idStr) {
@@ -722,23 +727,26 @@ window.openQuickView = function(id, swapCtx = null) {
 
     if (swapCtx === 'KIT' || swapCtx === 'CART') {
         q = (swapCtx === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-        fnAdd = `addSuggestionToKit('${p.id}', 1)`; fnMinus = `addSuggestionToKit('${p.id}', -1)`;
-    } else { q = STATE.cart[p.id] || 0; }
+        fnAdd = `addSuggestionToKit('${p.id}', 1)`;
+        fnMinus = `addSuggestionToKit('${p.id}', -1)`;
+    } else {
+        q = STATE.cart[p.id] || 0;
+    }
 
     let minusBtnGrid = q === 1 ? `<button onclick="${fnMinus}" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="${fnMinus}">-</button>`;
     let acaoHTML = q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="${fnAdd}">+</button></div>` : `<button class="btn-add" onclick="${fnAdd}">Adicionar</button>`;
     let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
     $('quick-content').innerHTML = `
-        <div style="width:100%; height: 320px; background:var(--bg-img); position: relative; display:flex; align-items:center; justify-content:center; padding:10px;">
+        <div style="width:100%; height: 350px; background:var(--bg-img); position: relative; display:flex; align-items:center; justify-content:center; padding:10px;">
             ${tagEmbalagem}
             <img src="${p.img}" alt="Imagem de ${p.name}" style="max-height:100%; max-width:100%; mix-blend-mode:multiply; object-fit:contain;">
         </div>
         <div style="padding: 24px 20px;">
             <div style="font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; line-height: 1.3;">${p.name}</div>
-            <div style="display:flex; flex-direction:column; gap:4px; margin-bottom: 24px;">
+            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom: 24px;">
+                <div style="font-size: 1.8rem; font-weight: 900; color: var(--brand);">${fmt(p.price)}</div>
                 ${p.oldPrice > p.price ? `<div class="old-price">${fmt(p.oldPrice)}</div>` : ''}
-                <div style="font-size: 1.8rem; font-weight: 900; color: var(--brand); line-height:1;">${fmt(p.price)}</div>
             </div>
             <div id="quick-act-${p.id}">${acaoHTML}</div>
         </div>
@@ -747,7 +755,9 @@ window.openQuickView = function(id, swapCtx = null) {
 };
 
 function buildCardsHTML(items, type, promoSpecialType = null) {
-    let html = ''; let isBasket = type === 'BASKET';
+    let html = '';
+    let isBasket = type === 'BASKET';
+    
     for(let i=0; i<items.length; i++) {
         let p = items[i]; let q = STATE.cart[p.id] || 0;
         let isEsgotado = p.stock <= 0 && !isBasket;
@@ -755,18 +765,23 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
         let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
         let acaoHTML = ''; let economiaHTML = ''; 
 
-        if (isEsgotado) { acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; } 
-        else if (isBasket) { acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; } 
-        else if (q > 0) { acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; } 
-        else if (promoSpecialType === 'LEVE5') {
+        if (isEsgotado) { 
+            acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; 
+        } else if (isBasket) { 
+            acaoHTML = `<button class="btn-add" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; 
+        } else if (q > 0) { 
+            acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; 
+        } else if (promoSpecialType === 'LEVE5') {
             acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`;
             economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(p.price)}!</div>`;
         } else if (promoSpecialType === 'LEVE2') {
             acaoHTML = `<button class="btn-add special" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`;
             economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt((p.price * 2) * 0.10)}!</div>`;
-        } else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
+        } else { 
+            acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; 
+        }
 
-        let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.65rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
         let tagEmbalagem = p.embalagem && !isBasket ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
@@ -783,7 +798,7 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
                 ${lbl10}
                 ${economiaHTML}
             </div>
-            <div id="card-act-${p.id}" style="margin-top: auto;">${acaoHTML}</div>
+            <div id="card-act-${p.id}">${acaoHTML}</div>
         </div>`;
     }
     return html;
@@ -791,28 +806,33 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
 
 function getHomeHTML() {
     let html = ''; 
-    function buildSection(title, listId, items, type, promoType = null) {
+    function buildSection(title, items, isPromoRow = true, promoType = null, forceShowAll = false) {
         let validItems = (items || []).filter(p => p !== undefined && p !== null);
         if(validItems.length === 0) return '';
+        let classRow = isPromoRow ? "promo-row" : "";
+        if(forceShowAll) classRow += " show-all"; 
+        let displayItems = forceShowAll ? validItems.slice(0, 12) : validItems.slice(0, 10);
+
         return `
         <div class="home-section">
             <h3 class="home-section-title">${title}</h3>
-            ${buildCarousel(validItems, type, listId, title, promoType)}
+            <div class="product-grid ${classRow}">
+                ${buildCardsHTML(displayItems, 'PROD', promoType)}
+            </div>
         </div>`;
     }
 
-    html += buildSection("Produtos com 20% de Desconto", "20off", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), 'PROD');
-    html += buildSection("Dicas de Hoje", "aproveite", PROMO_CONFIG.aproveite.map(findItem), 'PROD', 'APROVEITE');
-    html += buildSection("Leve 5 pague 4", "leve5", PROMO_CONFIG.leve5pague4.map(findItem), 'PROD', 'LEVE5');
-    html += buildSection("Leve 2 e economize 10%", "leve2", PROMO_CONFIG.leve2.map(findItem), 'PROD', 'LEVE2');
+    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
+    html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
+    html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
+    html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
     
     if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
-        html += buildSection("Mais Ofertas Imperdíveis", "mais", STATE.maisOfertas, 'PROD');
+        html += `<div class="home-section"><h3 class="home-section-title">Mais Ofertas Imperdíveis</h3><div class="product-grid">${buildCardsHTML(STATE.maisOfertas, 'PROD')}</div></div>`;
     }
     return html || "<p style='text-align:center;'>Nenhuma oferta disponível no momento.</p>";
 }
 
-// RESTANTE DO CÓDIGO LOGICO MANTIDO EXATAMENTE IGUAL
 let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
 window.openKitLateralView = function(id) {
@@ -834,7 +854,9 @@ window.openKitLateralView = function(id) {
     $('kit-title').innerText = sourceObj.nome;
     $('kit-footer-container').innerHTML = `<button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>`;
     
-    renderKitList(); setupKitExtraCategory('ofertas', false); openDrawer('kit-drawer');
+    renderKitList(); 
+    setupKitExtraCategory('ofertas', false);
+    openDrawer('kit-drawer');
     setTimeout(() => { let b = $('kit-drawer').querySelector('.drawer-body'); if(b) b.scrollTop = 0; }, 50);
 };
 
@@ -846,7 +868,7 @@ function renderKitList() {
         
         let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
         let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span><br>${fmt(p.price)}` : fmt(p.price);
+        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
         let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
 
         return `
@@ -882,10 +904,11 @@ window.setupKitExtraCategory = function(catId, shouldScroll = true) {
     let chipsContainer = $('kit-extra-chips-container');
     if (chipsContainer) chipsContainer.innerHTML = STATE.categoriesList.map(c => `<div class="swap-chip ${catId === c.id ? 'active' : ''}" onclick="setupKitExtraCategory('${c.id}', true)">${c.title}</div>`).join('');
     let gridContainer = $('kit-extra-grid');
-    if (gridContainer) gridContainer.innerHTML = `<div class="product-grid">${buildCardsHTML((STATE.deptos[catId] || {data:[]}).data, 'PROD')}</div>`;
+    if (gridContainer) gridContainer.innerHTML = getProdutosHTML(catId);
     
     if (shouldScroll) {
-        let bodyDrawer = $('kit-drawer').querySelector('.drawer-body'); let offsetTarget = $('kit-extra-section');
+        let bodyDrawer = $('kit-drawer').querySelector('.drawer-body');
+        let offsetTarget = $('kit-extra-section');
         if(bodyDrawer && offsetTarget) bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
     }
 };
@@ -923,14 +946,347 @@ window.commitExpander = function() {
             <div class="fc-total" id="drawer-fc-total">${$('sum-total')?.innerText || "Ver Total"}</div>
         </button>
     `;
-    updateTotals(); 
+    
+    updateTotals(); // Força update para garantir que texto está correto
 };
 
-/* Restante das lógicas de Swap, Checkout e API omitidas por economia de espaço mas não alteradas,
-você pode apenas re-colar os métodos: buildSwapHorizontalCards, openSwapView, selectSwapCategory,
-buildSwapSuggestions, handleSwapSearch, buildSwapSuggestionsFromList, confirmSwap, addSuggestionToKit,
-upd, updateTotals, openCheckout, selectDelivery, selectPayment, renderCheckoutItems, sendOrder, 
-fetchWithCache, init. Elas continuam exatamente as mesmas! */
+let swapContext = 'KIT';
+let currentSwapOldId = null;
+
+function buildSwapHorizontalCards(items, promoSpecialType = null) {
+    let similarIds = STATE.swapSimilarProds ? STATE.swapSimilarProds.map(s => s.id) : [];
+    let validItems = (items || []).filter(p => p && p.id !== currentSwapOldId && !similarIds.includes(p.id) && p.stock > 0);
+    if(validItems.length === 0) return '';
+
+    return validItems.map(p => {
+        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+        let tagHtml = ""; 
+        let priceHtml = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+
+        let acaoHTML = '';
+        if (q > 0) {
+            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+            acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+        } else if (promoSpecialType === 'LEVE5' || promoSpecialType === 'LEVE2') {
+            let addQty = promoSpecialType === 'LEVE5' ? 5 : 2; let addText = promoSpecialType === 'LEVE5' ? "Add 5 un." : "Add 2 un.";
+            if(promoSpecialType === 'LEVE5') {
+                tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 5 PAGUE 4</div><br>`;
+                priceHtml = `<span class="old-price" style="margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`;
+            } else {
+                tagHtml = `<div style="font-size: 0.65rem; color: #fff; background: var(--brand); padding: 3px 6px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 10% OFF</div><br>`;
+                priceHtml = `<span class="old-price" style="margin-right:6px;">${fmt(p.price*2)}</span>${fmt((p.price*2)*0.8)}`;
+            }
+            acaoHTML = `
+                <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                    <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                    <button class="btn-action-gray" style="background:var(--brand); color:#fff;" onclick="addSuggestionToKit('${p.id}', ${addQty})">${addText}</button>
+                </div>`;
+        } else {
+            acaoHTML = `
+                <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                    <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                    <button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>
+                </div>`;
+        }
+
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        priceHtml += lbl10;
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+
+        return `
+        <div class="list-item">
+            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
+                ${tagEmbalagem}
+                <img src="${p.img}" alt="Imagem do item ${p.name}" loading="lazy" decoding="async">
+            </div>
+            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
+                ${tagHtml}
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${priceHtml}</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                ${acaoHTML}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.openSwapView = function(oldPId, context = 'KIT') {
+    swapContext = context; currentSwapOldId = oldPId;
+    let oldProd = STATE.prods.find(x => String(x.id) === String(oldPId)); if(!oldProd) return;
+
+    let firstWord = norm(oldProd.name).split(' ')[0];
+    let similarProds = STATE.prods.filter(p => p.id !== oldProd.id && p.categoria === oldProd.categoria && norm(p.name).split(' ')[0] === firstWord && p.stock > 0);
+
+    let allCats = new Set(); STATE.prods.forEach(p => { if(p.stock > 0) allCats.add(p.categoria); });
+    let catArr = Array.from(allCats).filter(c => c !== oldProd.categoria).sort((a, b) => a.localeCompare(b));
+    STATE.swapCats = [oldProd.categoria, 'Ofertas', ...catArr]; STATE.swapSimilarProds = similarProds;
+
+    let html = '';
+    if(similarProds.length > 0) {
+        html += `<div style="margin-bottom: 24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>`;
+        html += similarProds.map(p => {
+            let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+            let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+            let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+            let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+            
+            let acaoHTML = '';
+            if (q > 0) {
+                let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+                acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+            } else {
+                acaoHTML = `
+                    <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                        <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                        <button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>
+                    </div>`;
+            }
+
+            return `
+            <div class="list-item">
+                <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
+                    ${tagEmbalagem}
+                    <img src="${p.img}" alt="Produto similar ${p.name}" loading="lazy" decoding="async">
+                </div>
+                <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
+                    <div class="list-name">${p.name}</div>
+                    <div class="list-price">${priceDisplay}${lbl10}</div>
+                </div>
+                <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                    ${acaoHTML}
+                </div>
+            </div>`}).join('');
+        html += `</div>`;
+    } else {
+        html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:0.9rem;">Nenhum produto similar disponível para troca no momento.</p>`;
+    }
+
+    html += `
+        <div style="border-top: 1px dashed var(--border-light);">
+            <div id="swap-chips-container-wrap" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; padding-top: 16px;">
+                <div class="chips-wrapper" style="width: 100%;">
+                    <button class="scroll-btn left" onclick="scrollElementChips('swap-chips-container', -200)">❮</button>
+                    <div class="swap-chips" id="swap-chips-container">
+                        ${STATE.swapCats.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
+                    </div>
+                    <button class="scroll-btn right" onclick="scrollElementChips('swap-chips-container', 200)">❯</button>
+                </div>
+                <div class="search-box" style="width: 100%;">
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="swap-search-input" class="search-input" placeholder="Buscar em todo o site..." oninput="handleSwapSearch()">
+                </div>
+            </div>
+            <div id="swap-suggestions-list" style="padding-top: 0px;">
+                ${buildSwapSuggestions(STATE.swapCats[0])}
+            </div>
+        </div>`;
+
+    $('swap-items-grid').innerHTML = html; openDrawer('swap-drawer');
+    setTimeout(() => { $('swap-drawer').querySelector('.drawer-body').scrollTop = 0; }, 50);
+};
+
+window.selectSwapCategory = function(cat) {
+    let searchInput = $('swap-search-input');
+    if (searchInput) searchInput.value = '';
+    
+    document.querySelectorAll('#swap-chips-container .swap-chip').forEach(el => {
+        if(el.innerText === cat.toUpperCase()) el.classList.add('active'); else el.classList.remove('active');
+    });
+    $('swap-suggestions-list').innerHTML = buildSwapSuggestions(cat);
+    
+    let drawerBody = $('swap-drawer').querySelector('.drawer-body');
+    let chipsWrap = $('swap-chips-container-wrap');
+    if (drawerBody && chipsWrap) drawerBody.scrollTo({ top: chipsWrap.offsetTop - 16, behavior: 'smooth' });
+};
+
+function buildSwapSuggestions(cat) {
+    if (cat === 'Ofertas') {
+        let html = '';
+        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6), null);
+        if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 30% de Desconto</h4>${h1}</div>`;
+        let h2 = buildSwapHorizontalCards(PROMO_CONFIG.aproveite.map(findItem), 'APROVEITE');
+        if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Dicas de Hoje</h4>${h2}</div>`;
+        let h3 = buildSwapHorizontalCards(PROMO_CONFIG.leve5pague4.map(findItem), 'LEVE5');
+        if(h3) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 5 pague 4</h4>${h3}</div>`;
+        let h4 = buildSwapHorizontalCards(PROMO_CONFIG.leve2.map(findItem), 'LEVE2');
+        if(h4) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 2 e economize 10%</h4>${h4}</div>`;
+        let h5 = buildSwapHorizontalCards(STATE.maisOfertas, null);
+        if(h5) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Mais Ofertas Imperdíveis</h4>${h5}</div>`;
+        return html || `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhuma oferta disponível no momento.</p>`;
+    }
+
+    let similarIds = STATE.swapSimilarProds.map(s => s.id);
+    let suggestionProds = STATE.prods.filter(p => p.categoria === cat && p.id !== currentSwapOldId && !similarIds.includes(p.id) && p.stock > 0);
+    
+    if(suggestionProds.length === 0) return `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhum produto extra nesta categoria.</p>`;
+
+    return suggestionProds.map(p => {
+        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+
+        let acaoHTML = '';
+        if (q > 0) {
+            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+            acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+        } else {
+            acaoHTML = `
+                <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                    <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                    <button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>
+                </div>`;
+        }
+
+        return `
+        <div class="list-item">
+            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
+                ${tagEmbalagem}
+                <img src="${p.img}" alt="Produto Sugerido ${p.name}" loading="lazy" decoding="async">
+            </div>
+            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${priceDisplay}${lbl10}</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                ${acaoHTML}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+let swapSearchTimeout;
+window.handleSwapSearch = function() {
+    clearTimeout(swapSearchTimeout);
+    swapSearchTimeout = setTimeout(() => {
+        let val = $('swap-search-input').value;
+        let q = norm(val);
+        if(q.length < 2) {
+            let activeCatEl = document.querySelector('#swap-chips-container .swap-chip.active');
+            let cat = activeCatEl ? activeCatEl.innerText : 'Ofertas';
+            let catId = STATE.swapCats.find(c => c.toUpperCase() === cat.toUpperCase()) || STATE.swapCats[0];
+            $('swap-suggestions-list').innerHTML = buildSwapSuggestions(catId);
+        } else {
+            let filtered = STATE.prods.filter(p => p.stock > 0 && p.id !== currentSwapOldId && (norm(p.name).includes(q) || norm(p.categoria).includes(q)));
+            if(filtered.length === 0) {
+                $('swap-suggestions-list').innerHTML = `<p style="font-size:0.85rem; color:var(--text-gray);">Nenhum produto encontrado para "${val}".</p>`;
+            } else {
+                $('swap-suggestions-list').innerHTML = buildSwapSuggestionsFromList(filtered);
+            }
+        }
+    }, 300);
+};
+
+window.buildSwapSuggestionsFromList = function(suggestionProds) {
+    return suggestionProds.map(p => {
+        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+
+        let acaoHTML = '';
+        if (q > 0) {
+            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
+            acaoHTML = `<div class="qty-control" style="width: 105px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
+        } else {
+            acaoHTML = `
+                <div style="display:flex; flex-direction:column; gap: 6px; width: 105px;">
+                    <button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button>
+                    <button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button>
+                </div>`;
+        }
+
+        return `
+        <div class="list-item">
+            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
+                ${tagEmbalagem}
+                <img src="${p.img}" alt="Produto Sugerido ${p.name}" loading="lazy" decoding="async">
+            </div>
+            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${priceDisplay}${lbl10}</div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
+                ${acaoHTML}
+            </div>
+        </div>`;
+    }).join('');
+};
+
+window.confirmSwap = function(oldPId, newPId, btnElement) {
+    if (swapContext === 'KIT') {
+        let qty = expanderState.items[oldPId] || 1;
+        delete expanderState.items[oldPId]; 
+        let index = expanderState.orderedIds.indexOf(oldPId);
+        if(index !== -1) expanderState.orderedIds[index] = newPId;
+        else expanderState.orderedIds.push(newPId);
+        expanderState.items[newPId] = qty;
+        renderKitList();
+    } else if (swapContext === 'CART') {
+        let qty = STATE.cart[oldPId] || 1;
+        delete STATE.cart[oldPId]; 
+        let index = STATE.cartOrder.indexOf(oldPId);
+        if(index !== -1) STATE.cartOrder[index] = newPId;
+        else STATE.cartOrder.push(newPId);
+        STATE.cart[newPId] = qty;
+        updateTotals(); saveCart(); renderCheckoutItems();
+    }
+    
+    currentSwapOldId = newPId;
+    if (btnElement) {
+        btnElement.innerHTML = `Troca <span style="color: var(--success); font-weight: 900; margin-left: 4px;">OK</span>`;
+        btnElement.disabled = true;
+    }
+};
+
+window.addSuggestionToKit = function(newPId, delta) {
+    let p = STATE.prods.find(x => String(x.id) === String(newPId)); if(!p) return;
+
+    if (swapContext === 'KIT') {
+        let next = Math.max(0, (expanderState.items[newPId] || 0) + delta);
+        if (next > p.stock) return alert("Estoque insuficiente");
+        
+        if(next === 0) { delete expanderState.items[newPId]; expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== newPId); } 
+        else { if (!expanderState.orderedIds.includes(newPId)) expanderState.orderedIds.push(newPId); expanderState.items[newPId] = next; }
+        renderKitList();
+        
+        let q = expanderState.items[newPId] || 0;
+        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
+        
+        let acaoHTML = '';
+        if (q > 0) acaoHTML = `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>`;
+        else {
+            let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
+            if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+            else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+            acaoHTML = `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
+        }
+        document.querySelectorAll(`#swap-act-${newPId}, #quick-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
+
+    } else if (swapContext === 'CART') {
+        let next = Math.max(0, (STATE.cart[newPId] || 0) + delta);
+        if (next > p.stock) return alert("Estoque insuficiente");
+
+        if(next === 0) { delete STATE.cart[newPId]; STATE.cartOrder = STATE.cartOrder.filter(id => id !== newPId); } 
+        else { if (!STATE.cartOrder.includes(newPId)) STATE.cartOrder.push(newPId); STATE.cart[newPId] = next; }
+        updateTotals(); saveCart(); renderCheckoutItems();
+        
+        let q = STATE.cart[newPId] || 0;
+        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
+        
+        let acaoHTML = '';
+        if (q > 0) acaoHTML = `<div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>`;
+        else {
+            let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
+            if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+            else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--brand); color: #fff;"; }
+            acaoHTML = `<button class="btn-add special" style="width: auto; padding: 10px 18px; font-size: 0.85rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
+        }
+        document.querySelectorAll(`#swap-act-${newPId}, #quick-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
+        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML.replace(/addSuggestionToKit/g, "upd"));
+    }
+};
 
 function upd(id, delta) {
     let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
@@ -962,34 +1318,253 @@ function updateTotals() {
    STATE.atacadoDiscount = atacadoDiscount; STATE.customPromoDiscount = customPromoDiscount;
     
     let couponDiscount = 0;
-    if (STATE.couponCode === 'CUPOMVIP') { couponDiscount = sum * 0.07; if (couponDiscount > 35) couponDiscount = 35; }
+    if (STATE.couponCode === 'CUPOMVIP') {
+        couponDiscount = sum * 0.07;
+        if (couponDiscount > 35) couponDiscount = 35;
+    }
     STATE.couponDiscount = couponDiscount;
 
     let subtotal = sum + STATE.basketExtraFee; 
     let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.couponDiscount;
     let final = subtotal - totalDesc;
     
-    // Atualiza o novo Badge da Barra Inferior
-    let bottomBadge = $('bottom-cart-badge');
+    let headerBadge = $('header-cart-badge');
     
     if (count > 0) { 
-        if(bottomBadge) { bottomBadge.style.display = 'flex'; bottomBadge.innerText = count; }
+        headerBadge.style.display = 'flex';
+        headerBadge.innerText = count;
         
         let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
         if (dfcQtd && dfcTotal) { dfcQtd.innerText = `${count} item(s)`; dfcTotal.innerText = fmt(final); }
     } 
     else { 
-        if(bottomBadge) { bottomBadge.style.display = 'none'; bottomBadge.innerText = '0'; }
+        headerBadge.style.display = 'none';
+        headerBadge.innerText = '0';
         
         let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
         if (dfcQtd && dfcTotal) { dfcQtd.innerText = `0 itens`; dfcTotal.innerText = fmt(0); }
     }
     
-    let sumTotalEl = $('sum-total'); if(sumTotalEl) sumTotalEl.innerText = fmt(final);
+    // Atualiza subtotais invisíveis que ainda podem ser requisitados por lógicas internas
+    let sumTotalEl = $('sum-total');
+    if(sumTotalEl) sumTotalEl.innerText = fmt(final);
 }
 
-/* O restante do código JS gigante de inicialização que não sofreu modificação de layout ... */
+function openCheckout() {
+    if (STATE.cartOrder.length === 0) return alert("Seu carrinho está vazio!");
+    let options = []; let date = new Date(); let checkDate = new Date(date);
+    if (date.getHours() < 10 && date.getDay() !== 0) options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
+    while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(checkDate.getDay() !== 0) { let desc = options.length === 0 ? 0 : (options.length === 1 ? 3.00 : 6.00); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
+    STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
+    
+    $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}</button>`).join('');
+    renderCheckoutItems(); openDrawer('checkout-drawer');
+}
 
+function selectDelivery(idx) { STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; openCheckout(); updateTotals(); }
+function selectPayment(metodo, btn) { $('chk-pagamento').value = metodo; document.querySelectorAll('#checkout-drawer .pay-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); }
+
+function renderCheckoutItems() {
+    $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
+        let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
+        let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
+        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.7rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
+        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
+        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+
+        return `
+        <div class="list-item">
+            <div class="list-img-wrap" onclick="openQuickView('${id}', 'CART')">
+                ${tagEmbalagem}
+                <img src="${p.img}" alt="Produto Final ${p.name}" loading="lazy" decoding="async">
+            </div>
+            <div class="list-info" onclick="openQuickView('${id}', 'CART')">
+                <div class="list-name">${p.name}</div>
+                <div class="list-price">${priceDisplay}${lbl10}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+                <div class="qty-control" style="width: 100px; height: 36px; background:var(--bg-img);">
+                    ${minusBtn}<span>${q}</span><button onclick="upd('${id}', 1)">+</button>
+                </div>
+                <button class="btn-swap" style="background:var(--bg-img); border:none; color:var(--text-dark);" onclick="openSwapView('${id}', 'CART')">
+                    Trocar
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+
+    let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
+    
+    let couponDiscount = 0;
+    if (STATE.couponCode === 'CUPOMVIP') {
+        couponDiscount = sum * 0.07;
+        if (couponDiscount > 35) couponDiscount = 35;
+    }
+    STATE.couponDiscount = couponDiscount;
+
+    let totalDesc = STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.deliveryDiscount + STATE.couponDiscount; 
+    let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
+
+    $('sum-sub').innerText = fmt(subtotal); $('sum-desc').innerText = `- ${fmt(totalDesc)}`; $('sum-desc-row').style.display = totalDesc > 0 ? 'flex' : 'none'; $('sum-total').innerText = fmt(final);
+
+    let btn = $('btn-send-order');
+    if (final < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-gray)'; }
+    else { btn.disabled = false; btn.innerText = 'Enviar pelo WhatsApp'; btn.style.background = 'var(--brand)'; }
+}
+
+function sendOrder() {
+    const btn = $('btn-send-order'); if (btn.disabled) return;
+    const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.trim(); const pag = $('chk-pagamento').value;
+    
+    if (!nome) {
+        alert("Preencha seu nome."); let campoNome = $('chk-nome');
+        campoNome.scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+        setTimeout(() => campoNome.focus(), 300); return;
+    }
+    
+    if (!pag) {
+        alert("Escolha o pagamento.");
+        $('chk-pagamento').parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); return;
+    }
+
+    btn.disabled = true; btn.innerText = "Processando...";
+    const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
+    
+    Object.entries(STATE.cart).forEach(([cartId, q]) => { 
+        const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
+        if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; apiItens.push({ id: String(p.blingId || p.id), nome: p.name, qtd: q, price: p.price }); } 
+    });
+      
+   let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + (STATE.couponDiscount || 0); 
+    let final = totalBruto + STATE.basketExtraFee - totalDesc;
+    
+    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO VOLUME: -${fmt(STATE.atacadoDiscount)}`;
+    if (STATE.customPromoDiscount > 0) itemsTxt += `\n🎁 DESCONTOS PROMOCIONAIS: -${fmt(STATE.customPromoDiscount)}`;
+    if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+    if (STATE.couponDiscount > 0) itemsTxt += `\n🏷️ CUPOM (${STATE.couponCode}): -${fmt(STATE.couponDiscount)}`;
+    
+    const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
+    
+    const payload = { cliente: { nome: nome, cpf: cpf, pagamento: pag }, pedido: { itens: apiItens, total: Number(final), outras_despesas: Number(STATE.basketExtraFee), desconto: Number(totalDesc), observacoes: `Entrega: ${STATE.deliveryDateStr}` } };
+    fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
+  
+    window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
+    setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar pelo WhatsApp`; }, 3000);
+}
+
+async function fetchWithCache(url, key) {
+    try {
+        let cached = localStorage.getItem(key); let cacheTime = localStorage.getItem(key + '_time'); let now = Date.now();
+        if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached);
+        let res = await fetch(url).then(r => r.json()); localStorage.setItem(key, JSON.stringify(res)); localStorage.setItem(key + '_time', now); return res;
+    } catch (e) { return fetch(url).then(r => r.json()).catch(() => []); }
+}
+
+async function init() {
+    try {
+        const [r1, r2] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods') ]);
+        
+        STATE.baskets = r1 || [];
+        STATE.baskets.forEach(b => {
+            b.nome = formatName(b.nome);
+            b.slug = createSlug(b.nome);
+        });
+
+        if (r2 && r2.length > 0) {
+            
+            STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
+                let pBase = parseFloat(p.preco) * 1.01;
+                let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
+                
+                return { 
+                    id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), 
+                    name: formatName(p.nome), 
+                    slug: createSlug(p.nome),
+                    price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
+                    img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
+                    categoria: p.categoria || "Outros", 
+                    embalagem: p.embalagem || "", 
+                    _is30Off: false, _isPromo: false, _valTime: validade
+                };
+            });
+
+            let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
+            produtosComValidade.sort((a, b) => a._valTime - b._valTime);
+            produtosComValidade.slice(0, 12).forEach(p => {
+                p.price = p.oldPrice * 0.80;
+                p._is30Off = true;
+                p._isPromo = true;
+            });
+
+            PROMO_CONFIG.aproveite.forEach(idStr => {
+                let p = findItem(idStr);
+                if(p) { p.price = p.oldPrice * 0.90; p._isPromo = true; } 
+            });
+
+            STATE.prods.forEach(p => { 
+                let cId = 'cat_' + norm(p.categoria).replace(/[^a-z0-9]/g, '_');
+                if (!STATE.deptos[cId]) STATE.deptos[cId] = { title: p.categoria || "Outros", data: [] };
+                STATE.deptos[cId].data.push(p); 
+            });
+
+            STATE.promoIds.leve5 = PROMO_CONFIG.leve5pague4.map(findItem).filter(Boolean).map(p => { p._isPromo = true; return p.id; });
+            STATE.promoIds.leve2 = PROMO_CONFIG.leve2.map(findItem).filter(Boolean).map(p => { p._isPromo = true; return p.id; });
+
+            let usedIds = new Set([...STATE.promoIds.leve5, ...STATE.promoIds.leve2, ...PROMO_CONFIG.aproveite.map(findItem).filter(Boolean).map(p => p.id)]);
+            STATE.prods.forEach(p => { if (p._is20Off) usedIds.add(p.id); }); 
+
+            let availableProds = STATE.prods.filter(p => !usedIds.has(p.id) && p.stock > 0);
+            let byCat = {};
+            availableProds.forEach(p => { if(!byCat[p.categoria]) byCat[p.categoria] = []; byCat[p.categoria].push(p); });
+
+            let maisOfertas = []; let cats = Object.keys(byCat); let i = 0;
+            while(maisOfertas.length < 60 && availableProds.length > 0) {
+                let cat = cats[i % cats.length];
+                if(byCat[cat].length > 0) {
+                    let p = byCat[cat].shift();
+                    p.price = p.oldPrice * (1 - (0.05 + (Math.random() * 0.05)));
+                    p._isPromo = true;
+                    maisOfertas.push(p);
+                    availableProds = availableProds.filter(x => x.id !== p.id);
+                }
+                i++; if(availableProds.length === 0) break;
+            }
+            STATE.maisOfertas = maisOfertas;
+        }
+        
+        loadCart(); updateTotals(); setupCategories();
+        
+        $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
+        history.replaceState({home: true}, ""); renderMainPage(); 
+
+        // ==========================================
+        // LEITURA DA URL PARA O GOOGLE E COMPARTILHAMENTO
+        // ==========================================
+        setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const catId = urlParams.get('cat');
+            const pSlug = urlParams.get('p');
+
+            if (catId) {
+                selectMainCategory(catId);
+            }
+
+            if (pSlug) {
+                let produtoAlvo = STATE.prods.find(x => x.slug === pSlug);
+                let cestaAlvo = STATE.baskets.find(x => x.slug === pSlug);
+
+                if (produtoAlvo) {
+                    openQuickView(produtoAlvo.id);
+                } else if (cestaAlvo) {
+                    openKitLateralView(cestaAlvo.id);
+                }
+            }
+        }, 150);
+
+    } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
+}
+
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
