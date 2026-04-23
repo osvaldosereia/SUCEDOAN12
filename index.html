@@ -161,8 +161,9 @@
         }
         .carousel-container::-webkit-scrollbar { display: none; }
         .carousel-container > .card, .carousel-container > .card-ver-todos-container {
-            flex: 0 0 calc(55.55% - 8px); /* 1.8 cards no mobile */
-            scroll-snap-align: start;
+    flex: 0 0 calc(40% - 10px); /* 2.5 cards no mobile */
+    scroll-snap-align: start;
+}
         }
         @media(min-width: 768px) {
             .carousel-container > .card, .carousel-container > .card-ver-todos-container { flex: 0 0 calc(25% - 16px); }
