@@ -34,42 +34,60 @@
 
         .app-container { max-width: 1200px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; }
 
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; min-height: 75px; }
-        .logo { height: 55px; object-fit: contain; transition: 0.3s; }
-        .btn-menu { font-size: 1.8rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
+        /* ========================================================
+           NOVO HEADER COMPACTO E FIXO
+           ======================================================== */
+        .sticky-top-bar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: var(--brand-light);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .top-row-flex {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            gap: 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
 
-        @media(min-width: 768px) { .logo { height: 65px; } }
+        .logo { height: 35px; object-fit: contain; transition: 0.3s; cursor: pointer; }
+        @media(min-width: 768px) { .logo { height: 45px; } }
 
-        .controls-wrapper { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } .search-box { flex: 1; } .nav-buttons { flex: 1; width: auto; } }
+        .search-box { flex: 1; position: relative; display: flex; align-items: center; width: 100%; }
+        .search-icon { position: absolute; left: 12px; width: 18px; height: 18px; color: var(--brand); opacity: 0.7; }
+        .search-clear { position: absolute; right: 12px; width: 20px; height: 20px; background: rgba(0,0,0,0.1); border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--brand); font-size: 10px; font-weight: bold; cursor: pointer; transition: 0.2s;}
+        .search-input { width: 100%; padding: 10px 36px 10px 38px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.5); background: #fff; font-size: 0.9rem; outline: none; transition: 0.2s; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02); }
+        .search-input:focus { border-color: var(--brand); box-shadow: 0 0 0 2px rgba(90, 56, 38, 0.2); }
 
-        .search-box { position: relative; display: flex; align-items: center; width: 100%; }
-        .search-icon { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--text-gray); }
-        .search-clear { position: absolute; right: 14px; width: 24px; height: 24px; background: var(--border-light); border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-dark); font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .search-input { width: 100%; padding: 14px 44px; border-radius: 12px; border: 1px solid var(--border-light); background: #f9fafb; font-size: 0.95rem; outline: none; transition: 0.2s; }
-        .search-input:focus { border-color: var(--brand); background: #fff; }
+        .btn-menu { font-size: 1.6rem; color: var(--brand); display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; }
 
-        .nav-buttons { display: flex; gap: 8px; width: 100%; overflow-x: auto; scrollbar-width: none; }
+        .nav-buttons { background: #fff; display: flex; gap: 8px; width: 100%; overflow-x: auto; scrollbar-width: none; padding: 8px 16px; border-bottom: 1px solid var(--border-light);}
         .nav-buttons::-webkit-scrollbar { display: none; }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 12px; font-size: 0.95rem; font-weight: 700; background: #fff; color: var(--text-gray); border: 1px solid var(--border-light); transition: 0.2s; white-space: nowrap; text-align: center; }
+        .nav-btn { flex: 1; padding: 10px; border-radius: 10px; font-size: 0.9rem; font-weight: 700; background: #fff; color: var(--text-gray); border: 1px solid var(--border-light); transition: 0.2s; white-space: nowrap; text-align: center; }
         .nav-btn.active { background: var(--brand); color: #fff; border-color: var(--brand); }
 
-        .main-content { padding: 32px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
+        .main-content { padding: 24px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
         .section-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
         
-        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 16px; }
-        @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
-        @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px 16px; }
+        @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 40px 24px; } }
+        @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 48px 32px; } }
 
-        .home-section { margin-bottom: 56px; }
+        .home-section { margin-bottom: 48px; }
         .home-section-title { font-size: 1.25rem; font-weight: 900; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
         @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
         .show-all .card { display: flex !important; } 
 
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; height: 100%; }
         
-        /* Ajuste de Proporção: Transformando em imagem mais vertical (3/4) */
-        .card-img-wrap { width: 100%; aspect-ratio: 3/4; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
+        /* Ajuste de Proporção Solicitado: Menor na vertical, mais largo na horizontal (4/3) */
+        .card-img-wrap { width: 100%; aspect-ratio: 4/3; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
         .card-img-wrap img { max-height: 100%; object-fit: contain; mix-blend-mode: multiply; transition: 0.3s; width: auto; height: auto;}
         
         /* Padronização Tipográfica: Altura fixa em 2 linhas garantida */
@@ -132,6 +150,41 @@
             border-radius: 6px;
         }
 
+        /* ========================================================
+           CARROSSEL RESPONSIVO (PRODUTOS)
+           ======================================================== */
+        .carousel-wrapper { position: relative; margin-bottom: 24px; }
+        .carousel-container {
+            display: flex; gap: 16px; overflow-x: auto; scroll-behavior: smooth;
+            scroll-snap-type: x mandatory; scrollbar-width: none; padding-bottom: 10px;
+            margin: 0 -20px; padding: 0 20px 10px;
+        }
+        .carousel-container::-webkit-scrollbar { display: none; }
+        .carousel-container > .card, .carousel-container > .card-ver-todos-container {
+            flex: 0 0 calc(55.55% - 8px); /* 1.8 cards no mobile */
+            scroll-snap-align: start;
+        }
+        @media(min-width: 768px) {
+            .carousel-container > .card, .carousel-container > .card-ver-todos-container { flex: 0 0 calc(25% - 16px); }
+        }
+        
+        .carousel-arrow { display: none; position: absolute; top: 40%; transform: translateY(-50%); z-index: 5; background: #fff; border: 1px solid var(--border-light); border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; justify-content: center; align-items: center; color: var(--brand); font-size: 1.2rem; }
+        .carousel-arrow.left { left: -15px; }
+        .carousel-arrow.right { right: -15px; }
+        @media(min-width: 768px) { .carousel-arrow { display: flex; } }
+
+        .card-ver-todos-container {
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card-ver-todos-inner {
+            background: var(--brand-light); color: var(--brand); width: 100%; height: 100%; min-height: 200px;
+            border-radius: var(--radius-img); display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); text-align: center;
+        }
+        .card-ver-todos-inner:active { background: var(--brand); color: #fff; }
+
+        #category-grid-view { display: none; min-height: 100vh; padding-top: 16px; }
+
         .floating-cart { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 400px; background: var(--brand); color: #fff; padding: 16px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(90, 56, 38, 0.3); z-index: 90; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         .floating-cart.hidden { transform: translate(-50%, 150%); }
         .fc-info { display: flex; align-items: center; gap: 12px; font-weight: 500; font-size: 0.95rem; }
@@ -140,10 +193,8 @@
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
         .overlay.open { opacity: 1; pointer-events: auto; }
         
-        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; /* <-- Sombra desligada no modo escondido */ }
-
-.drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); /* <-- Sombra ligada quando a gaveta abre */ }
-        
+        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; }
+        .drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
         
         .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
         .drawer-title { font-weight: 800; font-size: 1.2rem; letter-spacing: -0.5px; color: var(--brand); }
@@ -176,9 +227,6 @@
         .swap-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; padding: 0 4px; scroll-behavior: smooth;}
         .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.85rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
         .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
-
-        #main-category-chips-wrap { position: sticky; top: 125px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
-        @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
         
         #swap-chips-container-wrap { position: sticky; top: -20px; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 16px 20px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); display: flex; flex-direction: column; gap: 12px; }
         #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
@@ -196,7 +244,8 @@
         .summary-row.total { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
         .btn-checkout { width: 100%; background: var(--brand); color: #fff; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.1rem; }
 
-        .menu-link { display: block; padding: 16px 0; font-size: 1.1rem; font-weight: 500; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
+        .menu-link { display: block; padding: 16px 0; font-size: 1.1rem; font-weight: 500; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); transition: 0.2s; }
+        .menu-link:active { background: var(--bg-img); }
         
         #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 600; color: var(--text-gray); transition: opacity 0.3s; }
 
@@ -217,16 +266,15 @@
 
 <div class="app-container">
 
-    <header class="top-bar">
-        <img src="../img/logoantonia2.png" alt="Logomarca Dona Antônia" class="logo" onclick="goToHome()" style="cursor: pointer;" aria-label="Voltar para Início">
-        <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
-    </header>
-
-    <div class="controls-wrapper">
-        <div class="search-box">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="search-input" class="search-input" placeholder="Buscar Produtos" oninput="handleSearchInput()">
-            <div class="search-clear" id="search-clear" onclick="clearSearch()" aria-label="Limpar busca">✕</div>
+    <div class="sticky-top-bar">
+        <div class="top-row-flex">
+            <img src="../img/logoantonia2.png" alt="Logomarca Dona Antônia" class="logo" onclick="goToHome()" aria-label="Voltar para Início">
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar Produtos" oninput="handleSearchInput()">
+                <div class="search-clear" id="search-clear" onclick="clearSearch()" aria-label="Limpar busca">✕</div>
+            </div>
+            <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
         </div>
 
         <div class="nav-buttons" id="nav-buttons-container">
@@ -236,8 +284,12 @@
     </div>
 
     <main class="main-content">
-        <h2 class="section-title" id="grid-title" style="display:none;">Resultados</h2>
         <div id="main-grid"></div>
+
+        <div id="category-grid-view"></div>
+        
+        <h2 class="section-title" id="grid-title" style="display:none; margin-top: 16px;">Resultados</h2>
+        <div id="search-grid-view"></div>
     </main>
 
     <div class="floating-cart hidden" id="floating-cart" onclick="openCheckout()">
@@ -255,11 +307,8 @@
             <div class="drawer-title">Dona Antônia</div>
             <button class="btn-close" onclick="closeDrawer('main-menu')" aria-label="Fechar menu">✕</button>
         </div>
-        <div class="drawer-body">
-            <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('ofertas'); scrollToProdutos();">🔥 Destaques e Ofertas</a>
-            <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); scrollToCestas();">🛒 Cestas Básicas</a>
-            <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="menu-link" style="color: var(--success);">💬 Atendimento WhatsApp</a>
-        </div>
+        <div class="drawer-body" id="drawer-menu-links">
+            </div>
     </div>
 
     <div class="drawer" id="quick-drawer" style="z-index: 105;">
@@ -375,9 +424,9 @@ const STATE = {
     prods: [], baskets: [], deptos: {}, categoriesList: [],
     cart: {}, cartOrder: [], maisOfertas: [], swapSimilarProds: [], swapCats: [],
     basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
-    couponCode: '', couponDiscount: 0, // <-- LINHA NOVA
+    couponCode: '', couponDiscount: 0,
     deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-    activeCat: 'ofertas', activeKitCat: 'ofertas',
+    activeKitCat: 'ofertas',
     promoIds: { leve5: [], leve2: [] }
 };
 
@@ -385,10 +434,6 @@ const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
-
-// ==========================================
-// SISTEMA DE URLS AMIGÁVEIS (SEO)
-// ==========================================
 
 function createSlug(text) {
     if (!text) return "";
@@ -398,7 +443,7 @@ function createSlug(text) {
 
 function updateURL(type, slug) {
     const url = new URL(window.location);
-    url.search = ''; // Limpa antes de setar novo
+    url.search = ''; 
     if (type !== 'home') {
         url.searchParams.set(type, slug); 
     }
@@ -431,7 +476,7 @@ window.scrollElementChips = function(id, amount) {
 window.goToHome = function() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     clearSearch(false);
-    selectMainCategory('ofertas');
+    hideCategoryGrid();
     renderMainPage();
     updateNavButtons('cestas');
 };
@@ -504,7 +549,7 @@ function checkDrawers() {
     } 
 }
 
-    window.aplicarCupom = function() {
+window.aplicarCupom = function() {
     let code = $('chk-cupom').value.trim().toUpperCase();
     let msgEl = $('cupom-msg');
 
@@ -535,7 +580,6 @@ window.addEventListener('popstate', (e) => {
 function setupCategories() {
     const priority = ['ofertas', 'cat_mercearia_basica', 'cat_limpeza', 'cat_higiene', 'cat_beleza', 'cat_cafe_da_manha'];
     STATE.categoriesList = [
-        { id: 'ofertas', title: 'Destaques e Ofertas 🔥' },
         ...Object.keys(STATE.deptos).map(k => ({ id: k, title: STATE.deptos[k].title }))
     ];
 
@@ -546,13 +590,33 @@ function setupCategories() {
         if(idxB !== -1) return 1;
         return a.title.localeCompare(b.title);
     });
+
+    // Injetar Menu Dinâmico
+    let menuHtml = `
+        <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); scrollToCestas();">🛒 Cestas Básicas</a>
+        <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); scrollToProdutos();" style="border-bottom: 2px solid var(--border-light); font-weight: 800; padding-bottom: 20px;">🔥 Destaques e Ofertas</a>
+    `;
+    STATE.categoriesList.forEach(c => {
+         menuHtml += `<a href="#" class="menu-link" style="font-weight: 500; padding-left: 12px; font-size: 0.95rem; color: var(--text-gray);" onclick="closeDrawer('main-menu'); showCategoryGrid('${c.id}', '${c.title}');">↳ ${c.title}</a>`;
+    });
+    menuHtml += `<a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="menu-link" style="color: var(--success); font-weight: 800; margin-top: 16px; border-top: 1px solid var(--border-light);">💬 Atendimento WhatsApp</a>`;
+
+    let drawerMenuContainer = document.getElementById('drawer-menu-links');
+    if(drawerMenuContainer) drawerMenuContainer.innerHTML = menuHtml;
 }
 
+// ==========================================
+// RENDERIZAÇÃO PRINCIPAL EM CARROSSÉIS
+// ==========================================
 function renderMainPage() {
     $('grid-title').style.display = "none";
+    $('search-grid-view').innerHTML = "";
+    $('category-grid-view').style.display = "none";
+    $('main-grid').style.display = "block";
+
     let html = `
         <div class="banner-destaque" style="margin-bottom: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975&text=Quero%20garantir%20meu%20desconto.', '_blank')">
-            🎁 Garanta o desconto de até 35 reais na sua próxima compra.
+            🎁 Garanta o desconto de até R$ 35 na sua próxima compra.
         </div>
 
         <div id="secao-cestas" style="scroll-margin-top: 140px; margin-bottom: 48px;">
@@ -563,61 +627,112 @@ function renderMainPage() {
         </div>
 
         <div id="secao-produtos" style="scroll-margin-top: 140px; border-top: 2px dashed var(--border-light); padding-top: 32px;">
-            <h2 class="section-title" style="margin-bottom: 12px;">Produtos</h2>
-            
-            <div class="chips-wrapper" id="main-category-chips-wrap">
-                <button class="scroll-btn left" onclick="scrollElementChips('main-category-chips-container', -200)">❮</button>
-                <div class="swap-chips" id="main-category-chips-container">
-                    ${buildMainChipsHTML()}
-                </div>
-                <button class="scroll-btn right" onclick="scrollElementChips('main-category-chips-container', 200)">❯</button>
-            </div>
-
-            <div id="produtos-grid-container">
-                ${getProdutosHTML(STATE.activeCat)}
+            <h2 class="section-title" style="margin-bottom: 24px;">Produtos</h2>
+            <div id="produtos-carrossel-container">
+                ${getAllCarouselsHTML()}
             </div>
         </div>
     `;
     $('main-grid').innerHTML = html;
 }
 
-function buildMainChipsHTML() {
-    return STATE.categoriesList.map(c => 
-        `<div class="swap-chip ${STATE.activeCat === c.id ? 'active' : ''}" 
-              onclick="selectMainCategory('${c.id}')">${c.title}</div>`
-    ).join('');
+function buildCarouselSection(title, items, isPromoRow, promoType, catId) {
+    let validItems = (items || []).filter(p => p !== undefined && p !== null);
+    if(validItems.length === 0) return '';
+    
+    let displayItems = validItems.slice(0, 10);
+    let carouselId = 'carousel-' + (catId || createSlug(title));
+    let hasMore = validItems.length > 10;
+
+    return `
+    <div class="home-section" style="position: relative; margin-bottom: 40px;">
+        <h3 class="home-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+            ${title}
+            ${hasMore ? `<span style="font-size: 0.85rem; font-weight: 700; color: var(--brand); cursor: pointer; text-decoration: underline;" onclick="showCategoryGrid('${catId || title}', '${title}', '${promoType || ''}')">Ver Todos</span>` : ''}
+        </h3>
+        <div class="carousel-wrapper">
+            <button class="scroll-btn left carousel-arrow" onclick="scrollElementChips('${carouselId}', -300)">❮</button>
+            <div class="carousel-container" id="${carouselId}">
+                ${buildCardsHTML(displayItems, 'PROD', promoType)}
+                ${hasMore ? `
+                <div class="card-ver-todos-container" onclick="showCategoryGrid('${catId || title}', '${title}', '${promoType || ''}')">
+                    <div class="card-ver-todos-inner">
+                        <div style="font-size: 2rem; margin-bottom: 8px;">➜</div>
+                        <div style="font-weight: 800; font-size: 1.1rem;">Ver Todos</div>
+                    </div>
+                </div>` : ''}
+            </div>
+            <button class="scroll-btn right carousel-arrow" onclick="scrollElementChips('${carouselId}', 300)">❯</button>
+        </div>
+    </div>`;
 }
 
-window.selectMainCategory = function(id) {
-    STATE.activeCat = id;
-    updateURL('cat', id);
-
-    let chipsContainer = $('main-category-chips-container');
-    if(chipsContainer) chipsContainer.innerHTML = buildMainChipsHTML();
+function getAllCarouselsHTML() {
+    let html = '';
     
-    let gridContainer = $('produtos-grid-container');
-    if(gridContainer) gridContainer.innerHTML = getProdutosHTML(id);
-
-    let secaoProd = document.getElementById('secao-produtos');
-    if(secaoProd) {
-        let pos = secaoProd.getBoundingClientRect().top + window.scrollY - 130;
-        window.scrollTo({ top: pos, behavior: 'smooth' });
+    // Promos Destaques
+    html += buildCarouselSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, 'promo-20');
+    html += buildCarouselSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE', 'promo-dicas');
+    html += buildCarouselSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5', 'promo-leve5');
+    html += buildCarouselSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2', 'promo-leve2');
+    
+    if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
+        html += buildCarouselSection("Mais Ofertas Imperdíveis", STATE.maisOfertas, false, null, 'promo-mais');
     }
+
+    // Categorias Restantes
+    STATE.categoriesList.forEach(c => {
+        if (STATE.deptos[c.id]) {
+            html += buildCarouselSection(c.title, STATE.deptos[c.id].data, false, null, c.id);
+        }
+    });
+
+    return html;
+}
+
+let lastScrollY = 0;
+window.showCategoryGrid = function(catId, title, promoType) {
+    lastScrollY = window.scrollY;
+    $('main-grid').style.display = 'none';
+
+    let items = [];
+    if (catId === 'promo-20') items = STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime);
+    else if (catId === 'promo-dicas') items = PROMO_CONFIG.aproveite.map(findItem);
+    else if (catId === 'promo-leve5') items = PROMO_CONFIG.leve5pague4.map(findItem);
+    else if (catId === 'promo-leve2') items = PROMO_CONFIG.leve2.map(findItem);
+    else if (catId === 'promo-mais') items = STATE.maisOfertas;
+    else if (STATE.deptos[catId]) items = STATE.deptos[catId].data;
+
+    let pType = (promoType && promoType !== 'null' && promoType !== '') ? promoType : null;
+
+    $('category-grid-view').innerHTML = `
+        <div style="display:flex; align-items:center; gap: 12px; margin-bottom: 24px;">
+            <button onclick="hideCategoryGrid()" style="width: 40px; height: 40px; background: var(--bg-img); border-radius: 50%; display:flex; align-items:center; justify-content:center; color: var(--text-dark); font-size: 1.2rem; cursor: pointer;">❮</button>
+            <h2 class="section-title" style="margin-bottom: 0;">${title}</h2>
+        </div>
+        <div class="product-grid">
+            ${buildCardsHTML(items, 'PROD', pType)}
+        </div>
+    `;
+    $('category-grid-view').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'instant' });
 };
 
-function getProdutosHTML(id) {
-    if (id === 'ofertas') return getHomeHTML();
-    else if(STATE.deptos[id]) return `<div class="product-grid">${buildCardsHTML(STATE.deptos[id].data, 'PROD')}</div>`;
-    return '';
-}
+window.hideCategoryGrid = function() {
+    $('category-grid-view').style.display = 'none';
+    $('main-grid').style.display = 'block';
+    window.scrollTo({ top: lastScrollY, behavior: 'instant' });
+};
 
 window.scrollToCestas = function() {
+    hideCategoryGrid(); clearSearch(false);
     let el = $('secao-cestas');
     if(el) el.scrollIntoView({behavior: 'smooth'});
     updateNavButtons('cestas');
 };
 
 window.scrollToProdutos = function() {
+    hideCategoryGrid(); clearSearch(false);
     let el = $('secao-produtos');
     if(el) el.scrollIntoView({behavior: 'smooth'});
     updateNavButtons('produtos');
@@ -651,14 +766,25 @@ function handleSearchInput() {
         let q = norm(val);
         if(q.length < 2) { 
             $('nav-buttons-container').style.display = 'flex';
-            renderMainPage(); 
+            $('search-grid-view').innerHTML = "";
+            $('grid-title').style.display = "none";
+            
+            // Garantir que volta ou para a grade de categoria ou para a home
+            if ($('category-grid-view').innerHTML.trim() !== '') {
+                // não faz nada se estava em modo grade
+            } else {
+                renderMainPage(); 
+            }
         } 
         else {
             $('nav-buttons-container').style.display = 'none';
+            $('category-grid-view').style.display = 'none';
+            $('main-grid').style.display = 'none';
+            
             $('grid-title').style.display = "block"; $('grid-title').innerText = "Resultados da Busca";
             
             let filtered = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
-            $('main-grid').innerHTML = filtered.length > 0 ? `<div class="product-grid">${buildCardsHTML(filtered, 'PROD')}</div>` : '<p style="text-align:center; color:var(--text-gray); margin-top: 40px;">Nenhum produto encontrado.</p>';
+            $('search-grid-view').innerHTML = filtered.length > 0 ? `<div class="product-grid">${buildCardsHTML(filtered, 'PROD')}</div>` : '<p style="text-align:center; color:var(--text-gray); margin-top: 40px;">Nenhum produto encontrado.</p>';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     }, 300);
@@ -669,7 +795,10 @@ function clearSearch(triggerSearch = true) {
     if(triggerSearch) { 
         clearTimeout(searchTimeout); 
         $('nav-buttons-container').style.display = 'flex';
-        renderMainPage(); 
+        $('search-grid-view').innerHTML = "";
+        $('grid-title').style.display = "none";
+        
+        $('main-grid').style.display = "block";
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 }
@@ -764,34 +893,9 @@ function buildCardsHTML(items, type, promoSpecialType = null) {
     return html;
 }
 
-function getHomeHTML() {
-    let html = ''; 
-    function buildSection(title, items, isPromoRow = true, promoType = null, forceShowAll = false) {
-        let validItems = (items || []).filter(p => p !== undefined && p !== null);
-        if(validItems.length === 0) return '';
-        let classRow = isPromoRow ? "promo-row" : "";
-        if(forceShowAll) classRow += " show-all"; 
-        let displayItems = forceShowAll ? validItems.slice(0, 12) : validItems.slice(0, 10);
-
-        return `
-        <div class="home-section">
-            <h3 class="home-section-title">${title}</h3>
-            <div class="product-grid ${classRow}">
-                ${buildCardsHTML(displayItems, 'PROD', promoType)}
-            </div>
-        </div>`;
-    }
-
-    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
-    html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
-    html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
-    html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
-    
-    if(STATE.maisOfertas && STATE.maisOfertas.length > 0) {
-        html += `<div class="home-section"><h3 class="home-section-title">Mais Ofertas Imperdíveis</h3><div class="product-grid">${buildCardsHTML(STATE.maisOfertas, 'PROD')}</div></div>`;
-    }
-    return html || "<p style='text-align:center;'>Nenhuma oferta disponível no momento.</p>";
-}
+// ==========================================
+// FUNÇÕES DO KIT / CARRINHO 
+// ==========================================
 
 let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
 
@@ -859,10 +963,25 @@ function renderKitList() {
     else { let btnCheckout = document.querySelector('#kit-footer-container .btn-checkout'); if (btnCheckout) btnCheckout.innerText = `Adicionar à Sacola • ${pf}`; }
 }
 
+// Note: Reusamos `getProdutosHTML` que gerava grid pura. Para a aba de kit, como pede a continuação do código.
+function getProdutosHTML(id) {
+    if (id === 'ofertas') {
+        let items = [...PROMO_CONFIG.aproveite.map(findItem), ...PROMO_CONFIG.leve5pague4.map(findItem), ...PROMO_CONFIG.leve2.map(findItem)].filter(Boolean);
+        return `<div class="product-grid">${buildCardsHTML(items.slice(0,10), 'PROD')}</div>`;
+    }
+    else if(STATE.deptos[id]) return `<div class="product-grid">${buildCardsHTML(STATE.deptos[id].data, 'PROD')}</div>`;
+    return '';
+}
+
 window.setupKitExtraCategory = function(catId, shouldScroll = true) {
     STATE.activeKitCat = catId;
+    
+    // Preparar lista de categorias para a aba de kits (simplificada)
+    let extraCatList = [{ id: 'ofertas', title: 'Destaques e Ofertas 🔥' }, ...STATE.categoriesList];
+    
     let chipsContainer = $('kit-extra-chips-container');
-    if (chipsContainer) chipsContainer.innerHTML = STATE.categoriesList.map(c => `<div class="swap-chip ${catId === c.id ? 'active' : ''}" onclick="setupKitExtraCategory('${c.id}', true)">${c.title}</div>`).join('');
+    if (chipsContainer) chipsContainer.innerHTML = extraCatList.map(c => `<div class="swap-chip ${catId === c.id ? 'active' : ''}" onclick="setupKitExtraCategory('${c.id}', true)">${c.title}</div>`).join('');
+    
     let gridContainer = $('kit-extra-grid');
     if (gridContainer) gridContainer.innerHTML = getProdutosHTML(catId);
     
@@ -1273,7 +1392,6 @@ function updateTotals() {
     
    STATE.atacadoDiscount = atacadoDiscount; STATE.customPromoDiscount = customPromoDiscount;
     
-    // NOVO: Cálculo do cupom (7% com limite de R$ 35)
     let couponDiscount = 0;
     if (STATE.couponCode === 'CUPOMVIP') {
         couponDiscount = sum * 0.07;
@@ -1343,7 +1461,6 @@ function renderCheckoutItems() {
 
     let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
     
-    // NOVO: Cálculo do cupom de desconto (7% com limite de R$ 35)
     let couponDiscount = 0;
     if (STATE.couponCode === 'CUPOMVIP') {
         couponDiscount = sum * 0.07;
@@ -1351,7 +1468,6 @@ function renderCheckoutItems() {
     }
     STATE.couponDiscount = couponDiscount;
 
-    // A variável totalDesc agora soma também o STATE.couponDiscount
     let totalDesc = STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.deliveryDiscount + STATE.couponDiscount; 
     let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
 
@@ -1487,17 +1603,9 @@ async function init() {
         $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
         history.replaceState({home: true}, ""); renderMainPage(); 
 
-        // ==========================================
-        // LEITURA DA URL PARA O GOOGLE E COMPARTILHAMENTO
-        // ==========================================
         setTimeout(() => {
             const urlParams = new URLSearchParams(window.location.search);
-            const catId = urlParams.get('cat');
             const pSlug = urlParams.get('p');
-
-            if (catId) {
-                selectMainCategory(catId);
-            }
 
             if (pSlug) {
                 let produtoAlvo = STATE.prods.find(x => x.slug === pSlug);
