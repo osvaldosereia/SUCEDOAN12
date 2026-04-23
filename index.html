@@ -10,1174 +10,431 @@
 
     <style>
         /* ========================================================
-           DESIGN PREMIUM "DONA ANTÔNIA" - REFINADO PARA UX/UI
+           SISTEMA DE DESIGN - PADRÃO SÊNIOR (UX MINIMALISTA)
            ======================================================== */
         :root {
-            --brand: #5A3826;        
-            --brand-light: #EBD9C3;  
-            --bg-page: #ffffff;
-            --bg-img: #f3f4f6;       
-            --text-dark: #291F1A;    
-            --text-gray: #5A504A;    
-            --border-light: #e5e7eb;
-            --success: #059669; /* Verde conversão */
-            --radius-img: 16px;
-            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --primary: #5A3826;        
+            --primary-light: #EBD9C3;  
+            --accent: #059669; /* Verde Sucesso/Conversão */
+            --bg-body: #F9FAFB;
+            --text-main: #1F2937;
+            --text-muted: #4B5563;
+            --white: #ffffff;
+            --radius: 12px;
+            --font: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); -webkit-tap-highlight-color: transparent; }
-        body { background-color: var(--bg-page); color: var(--text-dark); overflow-x: hidden; padding-bottom: 90px; line-height: 1.5; }
-        button { border: none; background: none; cursor: pointer; font-weight: 600; outline: none; }
-        img { max-width: 100%; height: auto; }
-
-        .app-container { max-width: 1200px; margin: 0 auto; background: var(--bg-page); min-height: 100vh; position: relative; }
-
-        /* HEADER */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; background: #fff; min-height: 75px; }
-        .logo { height: 40px; object-fit: contain; transition: 0.3s; }
         
-        .header-actions { display: flex; align-items: center; gap: 16px; }
-        
-        /* ACESSIBILIDADE: Adicionado texto "Sacola" e fundo para destacar */
-        .header-cart { position: relative; cursor: pointer; color: var(--brand); display: flex; align-items: center; justify-content: center; background: var(--brand-light); padding: 8px 16px; border-radius: 24px; gap: 8px;}
-        .cart-icon { width: 22px; height: 22px; }
-        .cart-badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: white; font-size: 0.75rem; font-weight: bold; width: 20px; height: 20px; border-radius: 50%; display: none; align-items: center; justify-content: center; border: 2px solid #fff;}
-        
-        .btn-menu { font-size: 1.8rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; }
+        body { background-color: var(--bg-body); color: var(--text-main); line-height: 1.6; padding-bottom: 80px; }
 
-        @media(min-width: 768px) { .logo { height: 50px; } }
+        /* HEADER SIMPLIFICADO */
+        .header { background: var(--white); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #E5E7EB; }
+        .logo { height: 45px; cursor: pointer; }
+        
+        .cart-trigger { background: var(--accent); color: var(--white); padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 8px; font-weight: bold; position: relative; border: none; cursor: pointer; }
+        .cart-badge { background: #EF4444; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; position: absolute; top: -5px; right: -5px; border: 2px solid white; }
+
+        /* BANNER DE ALTA CONVERSÃO */
+        .banner-promo { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white; margin: 15px; padding: 20px; border-radius: var(--radius); display: flex; justify-content: space-between; align-items: center; cursor: pointer; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        .banner-promo h3 { font-size: 1.1rem; font-weight: 800; }
+        .banner-btn { background: white; color: var(--accent); padding: 6px 12px; border-radius: 20px; font-weight: 900; font-size: 0.8rem; }
 
         /* BUSCA */
-        .controls-wrapper { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); padding: 12px 20px; z-index: 50; display: flex; flex-direction: column; gap: 12px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        @media(min-width: 768px) { .controls-wrapper { flex-direction: row; align-items: center; gap: 16px; } .search-box { flex: 1; } }
+        .search-container { padding: 0 15px 15px; background: var(--white); }
+        .search-input { width: 100%; padding: 14px; border: 2px solid #E5E7EB; border-radius: var(--radius); outline: none; font-size: 1rem; }
 
-        .search-box { position: relative; display: flex; align-items: center; width: 100%; }
-        .search-icon { position: absolute; left: 14px; width: 20px; height: 20px; color: var(--text-gray); }
-        .search-clear { position: absolute; right: 14px; width: 24px; height: 24px; background: var(--border-light); border-radius: 50%; display: none; align-items: center; justify-content: center; color: var(--text-dark); font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s;}
-        .search-input { width: 100%; padding: 14px 44px; border-radius: 12px; border: 1px solid var(--border-light); background: #f9fafb; font-size: 1rem; outline: none; transition: 0.2s; }
-        .search-input:focus { border-color: var(--brand); background: #fff; }
+        /* CATEGORIAS (ABAS ECOMMERCE) */
+        .category-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px 15px; scrollbar-width: none; background: var(--white); margin-bottom: 15px; border-bottom: 1px solid #E5E7EB; }
+        .category-tab { padding: 10px 20px; background: #F3F4F6; border-radius: 30px; white-space: nowrap; font-weight: 600; color: var(--text-muted); cursor: pointer; border: 1px solid transparent; }
+        .category-tab.active { background: var(--primary); color: white; }
 
-        /* MAIN & GRIDS */
-        .main-content { padding: 32px 20px; content-visibility: auto; contain-intrinsic-size: 1000px; }
-        .section-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 24px; color: var(--text-dark); letter-spacing: -0.5px; }
-        
-        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 16px; }
-        @media(min-width: 768px) { .product-grid { grid-template-columns: repeat(4, 1fr); gap: 48px 24px; } }
-        @media(min-width: 1024px) { .product-grid { grid-template-columns: repeat(5, 1fr); gap: 56px 32px; } }
+        /* GRID DE PRODUTOS */
+        .container { padding: 15px; }
+        .section-title { font-size: 1.4rem; margin-bottom: 20px; color: var(--primary); font-weight: 800; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        @media(min-width: 768px) { .grid { grid-template-columns: repeat(4, 1fr); } }
 
-        .home-section { margin-bottom: 56px; }
-        .home-section-title { font-size: 1.3rem; font-weight: 900; margin-bottom: 20px; color: var(--brand); border-bottom: 2px solid var(--brand-light); padding-bottom: 8px; letter-spacing: -0.5px;}
-        @media (max-width: 1023px) { .promo-row .card:nth-child(n+5) { display: none !important; } }
-        .show-all .card { display: flex !important; } 
+        /* CARD DE PRODUTO SÊNIOR */
+        .product-card { background: var(--white); padding: 12px; border-radius: var(--radius); border: 1px solid #E5E7EB; display: flex; flex-direction: column; transition: 0.2s; }
+        .product-card:hover { border-color: var(--primary-light); }
+        .img-wrap { aspect-ratio: 1; background: #F3F4F6; border-radius: 8px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .img-wrap img { max-width: 90%; max-height: 90%; object-fit: contain; }
+        .prod-title { font-size: 0.9rem; font-weight: 600; color: var(--text-muted); height: 2.8em; overflow: hidden; margin-bottom: 8px; }
+        .prod-price { font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin-bottom: 12px; }
+        .old-price { font-size: 0.8rem; text-decoration: line-through; color: #9CA3AF; margin-right: 5px; }
 
-        /* CARDS DE PRODUTOS */
-        .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; height: 100%; }
+        /* BOTÕES DE AÇÃO */
+        .btn-add { width: 100%; padding: 12px; background: var(--accent); color: white; border-radius: 10px; font-weight: bold; border: none; cursor: pointer; font-size: 0.9rem; }
+        .btn-basket { background: var(--primary); }
         
-        /* PERFORMANCE: Removido mix-blend-mode: multiply para destravar rolagem em celulares 40+ */
-        .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: var(--radius-img); margin-bottom: 12px; padding: 12px; overflow: hidden; cursor: pointer; position: relative; }
-        .card-img-wrap img { max-height: 100%; object-fit: contain; transition: 0.3s; width: auto; height: auto;}
+        .qty-control { display: flex; align-items: center; justify-content: space-between; background: #F3F4F6; border-radius: 10px; height: 45px; }
+        .qty-btn { width: 45px; height: 100%; font-size: 1.2rem; font-weight: bold; color: var(--primary); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; }
         
-        .card-title { font-size: 0.95rem; font-weight: 600; line-height: 1.4; margin-bottom: 8px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em; text-transform: none; cursor: pointer; }
-        
-        .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 16px; flex-wrap: wrap; }
-        .price { font-size: 1.25rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.3px; }
-        .old-price { font-size: 0.9rem; color: var(--text-gray); opacity: 0.8; text-decoration: line-through; }
-        
-        /* ACESSIBILIDADE: Fontes de tags aumentadas para 0.75rem (minimo recomendado) */
-        .promo-tag { font-size: 0.75rem; color: #fff; background: var(--brand); padding: 6px 10px; border-radius: 6px; font-weight: 700; display: inline-block; width: 100%; text-align: center; margin-top: 4px; letter-spacing: 0.5px;}
-        .promo-tag.exp { background: var(--brand-light); color: var(--brand); }
-
-        .card-basket .card-img-wrap { background: transparent; padding: 0; }
-        .card-basket .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; mix-blend-mode: normal; border-radius: var(--radius-img); }
-        .card-basket .card-title { -webkit-line-clamp: 2; height: auto; white-space: normal;}
-
-        /* CONVERSÃO: Botão verde com fonte maior e bold */
-        .btn-add { width: 100%; background: var(--success); color: #fff; padding: 12px; border-radius: 10px; font-weight: 800; font-size: 0.95rem; transition: 0.2s; }
-        .btn-add.special { background: var(--brand); color: #fff; } 
-        
-        .qty-control { width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--bg-img); border-radius: 10px; height: 44px; overflow: hidden; }
-        .qty-control button { width: 44px; height: 100%; font-size: 1.4rem; color: var(--text-dark); display: flex; align-items: center; justify-content: center; }
-        .qty-control span { font-weight: 800; font-size: 1rem; color: var(--text-dark); }
-
-        .btn-action-gray { width: 100%; padding: 10px 6px; background: var(--bg-img); color: var(--text-dark); font-size: 0.85rem; font-weight: 700; border-radius: 8px; border: none; transition: 0.2s; cursor: pointer; text-align: center; }
-        .btn-action-gray:active { background: var(--border-light); }
-
-        .embalagem-tag { position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.95); color: var(--brand); font-size: 0.75rem; font-weight: 800; padding: 6px 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 2; letter-spacing: -0.2px; }
-
-        .list-img-wrap .embalagem-tag { top: 6px; left: 6px; font-size: 0.7rem; padding: 4px 8px; border-radius: 6px; }
-
-        /* OVERLAYS & DRAWERS */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
-        .overlay.open { opacity: 1; pointer-events: auto; }
-        
-        .drawer { position: fixed; top: 0; right: 0; width: 100%; max-width: 420px; height: 100%; background: #fff; z-index: 101; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease; display: flex; flex-direction: column; box-shadow: none; }
-        .drawer.open { transform: translateX(0); box-shadow: -10px 0 40px rgba(0,0,0,0.05); }
-        
-        .drawer-header { padding: 24px 20px 16px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; justify-content: space-between; background: #fff; z-index: 2; position: relative;}
-        .drawer-title { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.5px; color: var(--brand); }
-        .btn-close { font-size: 1.5rem; color: var(--text-gray); display: flex; align-items: center; justify-content: center; }
-        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; background: #fff; scroll-behavior: smooth; position: relative; }
-        
-        /* LISTAS (Kit, Swap, Cart) */
-        .list-item { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--border-light); padding-bottom: 16px; margin-bottom: 16px; }
-        .list-item:last-child { border-bottom: none; margin-bottom: 0; }
-        
-        .list-img-wrap { width: 100px; height: 140px; background: var(--bg-img); border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 8px; flex-shrink: 0; cursor: pointer; position: relative; }
-        .list-img-wrap img { max-height: 100%; object-fit: contain; } /* mix-blend removido */
-        .list-info { flex: 1; display: flex; flex-direction: column; justify-content: center; cursor: pointer; }
-        
-        .list-name { font-size: 0.95rem; font-weight: 600; color: var(--text-gray); line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-transform: none; height: 2.8em; }
-        .list-price { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); margin-top: auto; display: flex; flex-direction: column; }
-        
-        .btn-swap { font-size: 0.85rem; color: var(--brand); font-weight: 800; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 10px 12px; background: #fff; border: 1px solid var(--brand-light); border-radius: 8px; transition: 0.2s; width: 100%;}
-        .btn-swap:active { background: var(--brand-light); }
-        
-        /* CHIPS (Scrollers horizontais) */
-        .chips-wrapper { position: relative; display: flex; align-items: center; width: 100%; background: transparent; }
-        .scroll-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); z-index: 5; background: #fff; border: 1px solid var(--border-light); border-radius: 50%; width: 34px; height: 34px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer; justify-content: center; align-items: center; color: var(--brand); font-size: 0.9rem;}
-        .scroll-btn.left { left: 0px; }
-        .scroll-btn.right { right: 0px; }
-        @media(min-width: 768px) { .scroll-btn { display: flex; } .swap-chips::-webkit-scrollbar { display: none; } }
-
-        .swap-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; padding: 0 4px; scroll-behavior: smooth;}
-        .swap-chip { padding: 12px 20px; border-radius: 24px; font-size: 0.9rem; font-weight: 700; background: var(--bg-img); color: var(--text-gray); white-space: nowrap; border: 1px solid var(--border-light); transition: 0.2s; cursor: pointer; text-transform: uppercase; }
-        .swap-chip.active { background: var(--brand); color: #fff; border-color: var(--brand); }
-
-        #main-category-chips-wrap { position: sticky; top: 71px; z-index: 40; background: var(--bg-page); margin: 0 -20px 24px -20px; padding: 12px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
-        @media(min-width: 768px) { #main-category-chips-wrap { top: 72px; } }
-        
-        #swap-chips-container-wrap { position: sticky; top: -20px; background: #fff; z-index: 10; margin: -20px -20px 16px -20px; padding: 16px 20px 16px 20px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); display: flex; flex-direction: column; gap: 12px; }
-        #kit-extra-chips-wrap { position: sticky; top: 0; background: #fff; z-index: 10; margin: 0 -20px 16px -20px; padding: 16px 20px 8px; border-bottom: 1px solid var(--border-light); box-shadow: 0 4px 6px -6px rgba(0,0,0,0.1); width: calc(100% + 40px); }
+        /* DRAWERS (GAVETAS) */
+        .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; backdrop-filter: blur(4px); }
+        .drawer { position: fixed; bottom: 0; left: 0; width: 100%; height: 90%; background: var(--white); z-index: 201; border-radius: 20px 20px 0 0; transform: translateY(100%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; }
+        .drawer.open { transform: translateY(0); }
+        .drawer-header { padding: 20px; border-bottom: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; }
+        .drawer-body { flex: 1; overflow-y: auto; padding: 20px; }
+        .drawer-footer { padding: 20px; border-top: 1px solid #E5E7EB; }
 
         /* CHECKOUT */
-        .chk-section { margin-bottom: 32px; }
-        .chk-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; color: var(--brand); }
-        .input-text { width: 100%; padding: 16px; border: none; background: var(--bg-img); border-radius: 12px; margin-bottom: 12px; font-size: 1.05rem; outline: none; transition: 0.2s; }
-        .input-text:focus { box-shadow: 0 0 0 2px var(--brand); background: #fff; }
-        .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .pay-btn { padding: 16px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-weight: 600; font-size: 0.95rem; color: var(--text-gray); transition: 0.2s; }
-        .pay-btn.selected { border-color: var(--success); background: var(--success); color: #fff; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 600; }
+        .total-row { font-size: 1.4rem; color: var(--primary); font-weight: 900; margin-top: 10px; padding-top: 10px; border-top: 2px dashed #E5E7EB; }
+        .input-basic { width: 100%; padding: 14px; border: 1px solid #D1D5DB; border-radius: 8px; margin-bottom: 15px; font-size: 1rem; }
+
+        /* LOADER */
+        #loading-screen { position: fixed; inset: 0; background: white; z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; }
         
-        .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); z-index: 2; position: relative;}
-        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1rem; color: var(--text-gray); font-weight: 600;}
-        .summary-row.total { font-size: 1.5rem; font-weight: 900; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
-        .btn-checkout { width: 100%; background: var(--success); color: #fff; padding: 18px; border-radius: 12px; font-weight: 800; font-size: 1.15rem; }
-
-        .menu-link { display: block; padding: 16px 0; font-size: 1.1rem; font-weight: 600; color: var(--text-dark); text-decoration: none; border-bottom: 1px solid var(--border-light); }
-        
-        #loader { position: fixed; inset: 0; background: #fff; z-index: 999; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 1.1rem; color: var(--text-gray); transition: opacity 0.3s; }
-
-        #kit-extra-grid .product-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 16px !important; }
-        @media(min-width: 768px) { #kit-extra-grid .product-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 20px !important; } }
-
-        .banner-destaque { background: var(--brand); color: #fff; padding: 16px 20px; border-radius: 12px; text-align: center; font-weight: 800; font-size: 1.15rem; box-shadow: 0 4px 15px rgba(90, 56, 38, 0.2); letter-spacing: -0.3px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-
-        .drawer-cart-display { background: var(--success); color: #fff; padding: 18px 24px; border-radius: 100px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; width: 100%; border: none; transition: 0.3s; font-size: 1.1rem; font-weight: bold;}
-
-        .economia-tag { font-size: 0.8rem; color: var(--success); font-weight: 800; background: #ecfdf5; padding: 6px 12px; border-radius: 20px; display: inline-block; margin-top: 4px; }
-        
-        /* Menu FAB do WhatsApp */
-        .fab-wrapper { position: fixed; bottom: 24px; right: 24px; z-index: 90; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
-        .fab-menu { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
-        .fab-menu.open { display: flex; }
-        .fab-item { background: #fff; border: 1px solid var(--border-light); padding: 12px 16px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; color: var(--text-dark); cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.2s; white-space: nowrap; }
-        .fab-item:active { background: var(--bg-img); }
-        .fab-btn { width: 64px; height: 64px; background: #25D366; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4); cursor: pointer; border: none; transition: transform 0.2s; }
-        .fab-btn:active { transform: scale(0.95); }
-        .fab-icon { width: 36px; height: 36px; fill: currentColor; }
-
+        /* WHATSAPP FAB */
+        .whatsapp-fab { position: fixed; bottom: 20px; right: 20px; background: #25D366; color: white; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 90; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="loader">Carregando a loja...</div>
+<div id="loading-screen">
+    <div style="font-size: 1.2rem; color: var(--primary);">Carregando Loja...</div>
+</div>
 
-<div class="app-container">
+<header class="header">
+    <img src="../img/logoantonia2.png" alt="Dona Antônia" class="logo" onclick="location.reload()">
+    <button class="cart-trigger" onclick="openDrawer('cart-drawer')">
+        <span>Minha Sacola</span>
+        <span id="cart-badge-count" class="cart-badge" style="display:none">0</span>
+    </button>
+</header>
 
-    <header class="top-bar">
-        <img src="../img/logoantonia2.png" alt="Logomarca Dona Antônia" class="logo" onclick="goToHome()" style="cursor: pointer;" aria-label="Voltar para Início">
+<div class="search-container">
+    <input type="text" id="main-search" class="search-input" placeholder="O que você está procurando?" oninput="handleSearch(this.value)">
+</div>
+
+<div class="banner-promo" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975&text=Quero%20meu%20desconto%20de%2035%20reais!', '_blank')">
+    <div>
+        <h3>🎁 Ganhe R$ 35,00 de Desconto</h3>
+        <p style="font-size: 0.8rem; opacity: 0.9;">Clique para resgatar no WhatsApp</p>
+    </div>
+    <div class="banner-btn">PEGAR AGORA</div>
+</div>
+
+<nav class="category-scroll" id="cat-tabs"></nav>
+
+<main class="container">
+    <div id="home-content">
+        </div>
+</main>
+
+<div class="whatsapp-fab" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975', '_blank')">
+    <svg width="30" height="30" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.487-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+</div>
+
+<div class="drawer-overlay" id="overlay" onclick="closeAllDrawers()"></div>
+
+<div class="drawer" id="cart-drawer">
+    <div class="drawer-header">
+        <h2 class="section-title" style="margin:0">Minha Sacola</h2>
+        <button onclick="closeAllDrawers()" style="border:none; background:none; font-size:1.5rem">✕</button>
+    </div>
+    <div class="drawer-body" id="cart-items-list">
+        </div>
+    <div class="drawer-footer">
+        <div class="summary-row"><span>Subtotal:</span><span id="cart-subtotal">R$ 0,00</span></div>
+        <div class="summary-row" style="color:var(--accent)"><span>Descontos:</span><span id="cart-discount">R$ 0,00</span></div>
+        <div class="summary-row total-row"><span>Total:</span><span id="cart-total">R$ 0,00</span></div>
         
-        <div class="header-actions">
-            <div class="header-cart" onclick="openCheckout()" aria-label="Carrinho de Compras">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="cart-icon"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                <span style="font-weight: 800; font-size: 0.95rem;">Sacola</span>
-                <span id="header-cart-badge" class="cart-badge">0</span>
-            </div>
-            
-            <button class="btn-menu" aria-label="Menu" onclick="openDrawer('main-menu')">☰</button>
+        <input type="text" id="order-name" class="input-basic" placeholder="Seu Nome Completo">
+        
+        <div style="margin-bottom: 15px;">
+            <p style="font-weight:bold; margin-bottom:5px;">Como prefere pagar?</p>
+            <select id="order-payment" class="input-basic">
+                <option value="">Selecione...</option>
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="PIX">PIX</option>
+                <option value="Cartão">Cartão (Entregador leva maquininha)</option>
+            </select>
         </div>
-    </header>
 
-    <div class="controls-wrapper">
-        <div class="search-box">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="search-input" class="search-input" placeholder="Buscar Produtos" oninput="handleSearchInput()">
-            <div class="search-clear" id="search-clear" onclick="clearSearch()" aria-label="Limpar busca">✕</div>
-        </div>
+        <button class="btn-add" style="height:60px; font-size:1.1rem" onclick="submitOrder()">FINALIZAR COMPRA</button>
     </div>
+</div>
 
-    <main class="main-content">
-        <h2 class="section-title" id="grid-title" style="display:none;">Resultados</h2>
-        <div id="main-grid"></div>
-    </main>
-
-    <div class="fab-wrapper">
-        <div class="fab-menu" id="fab-menu">
-            <div class="fab-item" onclick="sendZap('Quais as formas de pagamento?')">Quais as formas de pagamento?</div>
-            <div class="fab-item" onclick="sendZap('Não encontrei um produto.')">Não encontrei um produto.</div>
-            <div class="fab-item" onclick="sendZap('Preciso de ajuda com a minha compra.')">Preciso de ajuda com a minha compra.</div>
-        </div>
-        <button class="fab-btn" onclick="toggleFab()" aria-label="Ajuda WhatsApp">
-            <svg class="fab-icon" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.888-.788-1.487-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
-        </button>
+<div class="drawer" id="kit-drawer">
+    <div class="drawer-header">
+        <h2 id="kit-label" class="section-title" style="margin:0">Personalizar Cesta</h2>
+        <button onclick="closeAllDrawers()" style="border:none; background:none; font-size:1.5rem">✕</button>
     </div>
-
-    <div class="overlay" id="overlay" onclick="closeAllDrawers()"></div>
-
-    <div class="drawer" id="main-menu">
-        <div class="drawer-header">
-            <div class="drawer-title">Dona Antônia</div>
-            <button class="btn-close" onclick="closeDrawer('main-menu')" aria-label="Fechar menu">✕</button>
+    <div class="drawer-body" id="kit-content-list">
         </div>
-        <div class="drawer-body" id="menu-drawer-body">
-            </div>
+    <div class="drawer-footer">
+        <button class="btn-add btn-basket" id="btn-confirm-kit" onclick="addKitToCart()">Confirmar e Adicionar</button>
     </div>
-
-    <div class="drawer" id="quick-drawer" style="z-index: 105;">
-        <div class="drawer-header">
-            <div class="drawer-title">Detalhes do Produto</div>
-            <button class="btn-close" onclick="closeDrawer('quick-drawer')" aria-label="Fechar detalhes">✕</button>
-        </div>
-        <div class="drawer-body" id="quick-content" style="padding: 0;"></div>
-    </div>
-
-    <div class="drawer" id="kit-drawer">
-        <div class="drawer-header">
-            <div class="drawer-title" id="kit-title">Personalizar Cesta</div>
-            <button class="btn-close" onclick="closeDrawer('kit-drawer')" aria-label="Fechar personalização">✕</button>
-        </div>
-        <div class="drawer-body" style="padding: 0;">
-            <div id="kit-items-grid" style="padding: 20px;"></div>
-            
-            <div id="kit-extra-section" style="padding: 24px 0 20px 0; border-top: 8px solid var(--bg-img);">
-                <div style="padding: 0 20px 20px 20px;">
-                    <div class="banner-destaque" style="background: #FFFBEB; border: 1px dashed #F59E0B; color: #92400E; font-size:1rem; text-align: center;">
-                        💡 Aproveite o frete da cesta! Leve junto:
-                    </div>
-                </div>
-                
-              <div class="chips-wrapper" id="kit-extra-chips-wrap">
-                    <button class="scroll-btn left" onclick="scrollElementChips('kit-extra-chips-container', -200)">❮</button>
-                    <div class="swap-chips" id="kit-extra-chips-container"></div>
-                    <button class="scroll-btn right" onclick="scrollElementChips('kit-extra-chips-container', 200)">❯</button>
-                </div>
-                
-                <div id="kit-extra-grid" style="margin-top: 20px; padding: 0 20px;"></div>
-            </div>
-        </div>
-       <div class="drawer-footer" id="kit-footer-container">
-            <button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>
-        </div>
-    </div>
-
-    <div class="drawer" id="swap-drawer" style="z-index: 102;">
-        <div class="drawer-header">
-            <div class="drawer-title" style="font-size: 1.1rem;">Trocar ou Adicionar</div>
-            <button class="btn-close" onclick="closeDrawer('swap-drawer')" aria-label="Fechar trocas">✕</button>
-        </div>
-        <div class="drawer-body" id="swap-items-grid"></div>
-    </div>
-
-    <div class="drawer" id="checkout-drawer">
-        <div class="drawer-header">
-            <div class="drawer-title">Finalizar Pedido</div>
-            <button class="btn-close" onclick="closeDrawer('checkout-drawer')" aria-label="Fechar finalização">✕</button>
-        </div>
-        <div class="drawer-body">
-            <div class="chk-section" id="chk-items-list"></div>
-            
-            <button class="pay-btn" style="width: 100%; border-color: var(--brand); color: var(--brand); font-weight: 800; margin-bottom: 32px;" onclick="closeCheckoutAndGoToProducts()">+ Adicionar Mais Produtos</button>
-
-            <div class="chk-section">
-                <div class="chk-title">Agendamento</div>
-                <div class="pay-options" id="delivery-options-list"></div>
-            </div>
-
-            <div class="chk-section">
-                <div class="chk-title">Seus Dados</div>
-                <input type="text" id="chk-nome" class="input-text" placeholder="Nome Completo">
-                <input type="text" id="chk-cpf" class="input-text" placeholder="CPF">
-            </div>
-
-            <div class="chk-section">
-                <div class="chk-title">Cupom de Desconto</div>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="chk-cupom" class="input-text" placeholder="CUPOMVIP" style="margin-bottom: 0; text-transform: uppercase;">
-                    <button class="pay-btn" style="background: var(--brand-light); color: var(--brand); border-color: var(--brand-light); font-weight: 800; width: auto; padding: 0 20px;" onclick="aplicarCupom()">Aplicar</button>
-                </div>
-                <div id="cupom-msg" style="font-size: 0.9rem; margin-top: 8px; font-weight: 700;"></div>
-            </div>
-
-            <div class="chk-section">
-                <div class="chk-title">Pagamento na Entrega</div>
-                <div class="pay-options">
-                    <button class="pay-btn" onclick="selectPayment('Dinheiro', this)">Dinheiro</button>
-                    <button class="pay-btn" onclick="selectPayment('PIX', this)">PIX</button>
-                    <button class="pay-btn" onclick="selectPayment('Débito', this)">Débito</button>
-                    <button class="pay-btn" onclick="selectPayment('Crédito', this)">Crédito</button>
-                    <button class="pay-btn" onclick="selectPayment('Alimentação', this)" style="grid-column: span 2;">Vale Alimentação</button>
-                </div>
-                <input type="hidden" id="chk-pagamento">
-            </div>
-
-            <div class="chk-section" style="margin-top: 24px; border-top: 1px dashed var(--border-light); padding-top: 24px;">
-                <button class="pay-btn" style="width: 100%; border-color: #ef4444; color: #ef4444; font-weight: 800; background: #fef2f2;" onclick="clearCart()">🗑️ Limpar Carrinho</button>
-            </div>
-        </div>
-        <div class="drawer-footer">
-            <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
-            <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos Especiais</span><span id="sum-desc">R$ 0,00</span></div>
-            <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
-            <button class="btn-checkout" id="btn-send-order" onclick="sendOrder()">Enviar pelo WhatsApp</button>
-        </div>
-    </div>
-
 </div>
 
 <script>
 // ========================================================
-// TODA A LÓGICA DE NEGÓCIO ORIGINAL INTACTA 
+// LÓGICA CORE SÊNIOR
 // ========================================================
 
-const PROMO_CONFIG = {
-    aproveite: ["1776338128673", "1776442232584", "1776447661760", "1775922855198", "1775940331076", "1776338128063", "1776338128158", "1776338128389", "1776338125752", "7896355700510", "1776338126174"],
-    leve2: ["1776338127057", "1776338123514", "1776338124594", "1776338132584", "1776338124343", "1776338127713", "1776338123812", "1776338123007", "1775968438873", "1775968438873", "1776359446941"],
-    leve5pague4: ["1775965599401", "1776338131591", "1776338131018", "1776338123831", "1776338125770", "1776338132236", "1776031547894"]
-};
-
-const MIN_ORDER = 75.00;
-const $ = id => document.getElementById(id);
-
 const STATE = {
-    prods: [], baskets: [], deptos: {}, categoriesList: [],
-    cart: {}, cartOrder: [], maisOfertas: [], swapSimilarProds: [], swapCats: [],
-    basketExtraFee: 0, atacadoDiscount: 0, customPromoDiscount: 0,
-    couponCode: '', couponDiscount: 0,
-    deliveryOptions: [], selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-    activeCat: 'ofertas', activeKitCat: 'ofertas',
-    promoIds: { leve5: [], leve2: [] }
+    products: [],
+    baskets: [],
+    cart: {}, // { id: quantidade }
+    activeCategory: 'ofertas',
+    currentKit: null // Para quando estiver editando uma cesta
 };
 
-const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:18px; height:18px; display:block; margin:auto;"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6"/></svg>`;
+const MIN_ORDER = 75.0;
 
-function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
+// Formatação BRL
+const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-// WHATSAPP
-window.toggleFab = function() { $('fab-menu').classList.toggle('open'); };
-window.sendZap = function(text) {
-    window.open(`https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(text)}`, '_blank');
-    $('fab-menu').classList.remove('open');
-};
-document.addEventListener('click', (e) => { let fabWrapper = document.querySelector('.fab-wrapper'); if (fabWrapper && !fabWrapper.contains(e.target)) { $('fab-menu').classList.remove('open'); } });
-
-// SEO URL
-function createSlug(text) { return !text ? "" : text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-'); }
-function updateURL(type, slug) { const url = new URL(window.location); url.search = ''; if (type !== 'home') { url.searchParams.set(type, slug); } window.history.pushState({ modal: slug }, "", url); }
-function removeURLParam() { const url = new URL(window.location); url.search = ''; window.history.pushState({}, "", url); }
-function formatName(name) { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map(w => { let clean = w.replace(/[.,]/g, ''); if(clean === "bak") return w.replace("bak", "Bak"); if(clean === "ype" || clean === "ypê") return w.replace(clean, "Ypê"); if(w.length <= 3) return w; return w.charAt(0).toUpperCase() + w.slice(1); }).join(' '); }
-
-window.scrollElementChips = function(id, amount) { let el = document.getElementById(id); if(el) el.scrollBy({ left: amount, behavior: 'smooth' }); };
-window.goToHome = function() { window.scrollTo({ top: 0, behavior: 'smooth' }); clearSearch(false); selectMainCategory('ofertas'); renderMainPage(); };
-
-function saveCart() { localStorage.setItem('dona_antonia_cart', JSON.stringify({ cart: STATE.cart, cartOrder: STATE.cartOrder, basketExtraFee: STATE.basketExtraFee })); }
-function loadCart() { try { let saved = localStorage.getItem('dona_antonia_cart'); if (saved) { let parsed = JSON.parse(saved); STATE.cart = parsed.cart || {}; STATE.cartOrder = parsed.cartOrder || []; STATE.basketExtraFee = parsed.basketExtraFee || 0; } } catch(e) { console.error("Erro ao carregar carrinho", e); } }
-
-window.clearCart = function() { if(confirm("Tem certeza que deseja limpar o carrinho?")) { STATE.cart = {}; STATE.cartOrder = []; STATE.basketExtraFee = 0; saveCart(); updateTotals(); closeDrawer('checkout-drawer'); if(!$('search-input').value) renderMainPage(); } };
-
-let modalStack = [];
-function openDrawer(id) { $('overlay').classList.add('open'); $(id).classList.add('open'); document.body.style.overflow = 'hidden'; modalStack.push(id); history.pushState({ modal: id }, ""); }
-function closeDrawer(id) { if (modalStack.includes(id)) { history.back(); } if (id === 'quick-drawer' || id === 'kit-drawer') { removeURLParam(); } }
-function closeAllDrawers() { let count = modalStack.length; if(count > 0) history.go(-count); document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open')); modalStack = []; $('overlay').classList.remove('open'); document.body.style.overflow = ''; removeURLParam(); }
-function checkDrawers() { if (modalStack.length === 0) { $('overlay').classList.remove('open'); document.body.style.overflow = ''; } }
-
-window.aplicarCupom = function() { let code = $('chk-cupom').value.trim().toUpperCase(); let msgEl = $('cupom-msg'); if (code === 'CUPOMVIP') { STATE.couponCode = code; msgEl.innerText = "Cupom de 7% aplicado!"; msgEl.style.color = "var(--success)"; } else if (code === '') { STATE.couponCode = ''; msgEl.innerText = ""; } else { STATE.couponCode = ''; msgEl.innerText = "Cupom inválido ou expirado."; msgEl.style.color = "#ef4444"; } updateTotals(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems(); };
-window.addEventListener('popstate', (e) => { if(modalStack.length > 0) { let id = modalStack.pop(); $(id).classList.remove('open'); checkDrawers(); } });
-
-function setupCategories() {
-    const priority = ['ofertas', 'cat_mercearia_basica', 'cat_limpeza', 'cat_higiene', 'cat_beleza', 'cat_cafe_da_manha'];
-    STATE.categoriesList = [ { id: 'ofertas', title: 'Destaques e Ofertas 🔥' }, ...Object.keys(STATE.deptos).map(k => ({ id: k, title: STATE.deptos[k].title })) ];
-    STATE.categoriesList.sort((a, b) => { let idxA = priority.indexOf(a.id); let idxB = priority.indexOf(b.id); if(idxA !== -1 && idxB !== -1) return idxA - idxB; if(idxA !== -1) return -1; if(idxB !== -1) return 1; return a.title.localeCompare(b.title); });
-    renderMenuCategories();
-}
-
-function renderMenuCategories() {
-    let html = `
-        <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-gray); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Navegação Principal</div>
-        <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('ofertas'); scrollToProdutos();">🔥 Destaques e Ofertas</a>
-        <a href="#" class="menu-link" onclick="closeDrawer('main-menu'); scrollToCestas();">🛒 Cestas Básicas</a>
-    `;
-    html += `<div style="font-weight: 800; font-size: 0.9rem; color: var(--text-gray); margin-top: 32px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Departamentos</div>`;
-    STATE.categoriesList.forEach(c => { if (c.id !== 'ofertas') { html += `<a href="#" class="menu-link" onclick="closeDrawer('main-menu'); selectMainCategory('${c.id}'); scrollToProdutos();">${c.title}</a>`; } });
-    html += `
-        <div style="font-weight: 800; font-size: 0.9rem; color: var(--text-gray); margin-top: 32px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Institucional e Contato</div>
-        <a href="#" class="menu-link">Sobre a Dona Antônia</a>
-        <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" class="menu-link" style="color: var(--success);">💬 Atendimento WhatsApp</a>
-        <div style="display: flex; gap: 24px; margin-top: 24px; padding-bottom: 24px;">
-            <a href="#" style="color: var(--brand); text-decoration: none; font-weight: 800;">Instagram</a>
-            <a href="#" style="color: var(--brand); text-decoration: none; font-weight: 800;">Facebook</a>
-        </div>
-    `;
-    $('menu-drawer-body').innerHTML = html;
-}
-
-// MAIN PAGE - ATUALIZADO PARA DAR DESTAQUE ÀS CESTAS
-function renderMainPage() {
-    $('grid-title').style.display = "none";
-    let html = `
-        <div class="banner-destaque" style="margin-bottom: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975&text=Quero%20garantir%20meu%20desconto.', '_blank')">
-            🎁 Garanta o desconto de até 35 reais na sua próxima compra.
-        </div>
-
-        <div id="secao-cestas" style="scroll-margin-top: 140px; margin-bottom: 48px; background: linear-gradient(180deg, #f9fafb 0%, var(--bg-page) 100%); padding: 20px 0; border-radius: 16px;">
-            <h2 class="section-title" style="font-size: 1.8rem; text-align: center; margin-bottom: 30px;">Cestas Básicas 🛒</h2>
-            <div class="product-grid">
-                ${buildCardsHTML(STATE.baskets, 'BASKET')}
-            </div>
-        </div>
-
-        <div id="secao-produtos" style="scroll-margin-top: 140px; border-top: 2px dashed var(--border-light); padding-top: 32px;">
-            <h2 class="section-title" style="margin-bottom: 12px;">Produtos</h2>
-            
-            <div class="chips-wrapper" id="main-category-chips-wrap">
-                <button class="scroll-btn left" onclick="scrollElementChips('main-category-chips-container', -200)">❮</button>
-                <div class="swap-chips" id="main-category-chips-container">
-                    ${buildMainChipsHTML()}
-                </div>
-                <button class="scroll-btn right" onclick="scrollElementChips('main-category-chips-container', 200)">❯</button>
-            </div>
-
-            <div id="produtos-grid-container">
-                ${getProdutosHTML(STATE.activeCat)}
-            </div>
-        </div>
-    `;
-    $('main-grid').innerHTML = html;
-}
-
-function buildMainChipsHTML() { return STATE.categoriesList.map(c => `<div class="swap-chip ${STATE.activeCat === c.id ? 'active' : ''}" onclick="selectMainCategory('${c.id}')">${c.title}</div>`).join(''); }
-
-window.selectMainCategory = function(id) {
-    STATE.activeCat = id; updateURL('cat', id);
-    let chipsContainer = $('main-category-chips-container'); if(chipsContainer) chipsContainer.innerHTML = buildMainChipsHTML();
-    let gridContainer = $('produtos-grid-container'); if(gridContainer) gridContainer.innerHTML = getProdutosHTML(id);
-    let secaoProd = document.getElementById('secao-produtos'); if(secaoProd) { let pos = secaoProd.getBoundingClientRect().top + window.scrollY - 130; window.scrollTo({ top: pos, behavior: 'smooth' }); }
-};
-
-function getProdutosHTML(id) { if (id === 'ofertas') return getHomeHTML(); else if(STATE.deptos[id]) return `<div class="product-grid">${buildCardsHTML(STATE.deptos[id].data, 'PROD')}</div>`; return ''; }
-window.scrollToCestas = function() { let el = $('secao-cestas'); if(el) el.scrollIntoView({behavior: 'smooth'}); };
-window.scrollToProdutos = function() { let el = $('secao-produtos'); if(el) el.scrollIntoView({behavior: 'smooth'}); };
-window.closeCheckoutAndGoToProducts = function() { closeAllDrawers(); setTimeout(() => { scrollToProdutos(); }, 300); };
-
-let searchTimeout;
-function handleSearchInput() {
-    const val = $('search-input').value; $('search-clear').style.display = val.length > 0 ? 'flex' : 'none';
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        let q = norm(val);
-        if(q.length < 2) { renderMainPage(); } 
-        else {
-            $('grid-title').style.display = "block"; $('grid-title').innerText = "Resultados da Busca";
-            let filtered = STATE.prods.filter(p => norm(p.name).includes(q) || norm(p.categoria).includes(q));
-            $('main-grid').innerHTML = filtered.length > 0 ? `<div class="product-grid">${buildCardsHTML(filtered, 'PROD')}</div>` : '<p style="text-align:center; color:var(--text-gray); margin-top: 40px; font-size:1.1rem;">Nenhum produto encontrado.</p>';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    }, 300);
-}
-
-function clearSearch(triggerSearch = true) { $('search-input').value = ''; $('search-clear').style.display = 'none'; if(triggerSearch) { clearTimeout(searchTimeout); renderMainPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
-function findItem(idStr) { if(!idStr) return null; let target = String(idStr).trim(); return STATE.prods.find(p => p.id === target || p.blingId === target || p.codigo === target); }
-
-window.openQuickView = function(id, swapCtx = null) {
-    let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
-    updateURL('p', p.slug);
-    let q = 0; let fnAdd = `upd('${p.id}', 1)`; let fnMinus = `upd('${p.id}', -1)`;
-
-    if (swapCtx === 'KIT' || swapCtx === 'CART') {
-        q = (swapCtx === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-        fnAdd = `addSuggestionToKit('${p.id}', 1)`; fnMinus = `addSuggestionToKit('${p.id}', -1)`;
-    } else { q = STATE.cart[p.id] || 0; }
-
-    let minusBtnGrid = q === 1 ? `<button onclick="${fnMinus}" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="${fnMinus}">-</button>`;
-    let acaoHTML = q > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="${fnAdd}">+</button></div>` : `<button class="btn-add" onclick="${fnAdd}">Adicionar</button>`;
-    let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-
-    $('quick-content').innerHTML = `
-        <div style="width:100%; height: 350px; background:var(--bg-img); position: relative; display:flex; align-items:center; justify-content:center; padding:10px;">
-            ${tagEmbalagem}
-            <img src="${p.img}" alt="Imagem de ${p.name}" style="max-height:100%; max-width:100%; object-fit:contain;">
-        </div>
-        <div style="padding: 24px 20px;">
-            <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-dark); margin-bottom: 12px; line-height: 1.3;">${p.name}</div>
-            <div style="display:flex; align-items:baseline; gap:8px; margin-bottom: 24px;">
-                <div style="font-size: 1.8rem; font-weight: 900; color: var(--brand);">${fmt(p.price)}</div>
-                ${p.oldPrice > p.price ? `<div class="old-price">${fmt(p.oldPrice)}</div>` : ''}
-            </div>
-            <div id="quick-act-${p.id}">${acaoHTML}</div>
-        </div>
-    `;
-    openDrawer('quick-drawer');
-};
-
-function buildCardsHTML(items, type, promoSpecialType = null) {
-    let html = ''; let isBasket = type === 'BASKET';
-    for(let i=0; i<items.length; i++) {
-        let p = items[i]; let q = STATE.cart[p.id] || 0; let isEsgotado = p.stock <= 0 && !isBasket;
-        let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
-        let acaoHTML = ''; let economiaHTML = ''; 
-
-        if (isEsgotado) { acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; } 
-        else if (isBasket) { acaoHTML = `<button class="btn-add special" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; } 
-        else if (q > 0) { acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; } 
-        else if (promoSpecialType === 'LEVE5') { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`; economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(p.price)}!</div>`; } 
-        else if (promoSpecialType === 'LEVE2') { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`; economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt((p.price * 2) * 0.10)}!</div>`; } 
-        else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
-
-        let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.8rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
-        let tagEmbalagem = p.embalagem && !isBasket ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-
-        html += `
-        <div class="card ${isBasket ? 'card-basket' : ''}" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
-            <div class="card-img-wrap" ${clickEvt}>
-                ${tagEmbalagem}
-                <img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" alt="Foto de ${p.name || p.nome}" loading="lazy" decoding="async">
-            </div>
-            <div class="card-title" ${clickEvt}>${p.name || p.nome}</div>
-            <div class="card-price-row">
-                ${p.oldPrice && p.oldPrice > p.price ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
-                <span class="price">${fmt(p.price || p.preco)}</span>
-                ${lbl10}
-                ${economiaHTML}
-            </div>
-            <div id="card-act-${p.id}">${acaoHTML}</div>
-        </div>`;
-    }
-    return html;
-}
-
-function getHomeHTML() {
-    let html = ''; 
-    function buildSection(title, items, isPromoRow = true, promoType = null, forceShowAll = false) {
-        let validItems = (items || []).filter(p => p !== undefined && p !== null);
-        if(validItems.length === 0) return '';
-        let classRow = isPromoRow ? "promo-row" : "";
-        if(forceShowAll) classRow += " show-all"; 
-        let displayItems = forceShowAll ? validItems.slice(0, 12) : validItems.slice(0, 10);
-
-        return `<div class="home-section"><h3 class="home-section-title">${title}</h3><div class="product-grid ${classRow}">${buildCardsHTML(displayItems, 'PROD', promoType)}</div></div>`;
-    }
-
-    html += buildSection("Produtos com 20% de Desconto", STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime), false, null, true);
-    html += buildSection("Dicas de Hoje", PROMO_CONFIG.aproveite.map(findItem), true, 'APROVEITE');
-    html += buildSection("Leve 5 pague 4", PROMO_CONFIG.leve5pague4.map(findItem), true, 'LEVE5');
-    html += buildSection("Leve 2 e economize 10%", PROMO_CONFIG.leve2.map(findItem), true, 'LEVE2');
-    
-    if(STATE.maisOfertas && STATE.maisOfertas.length > 0) { html += `<div class="home-section"><h3 class="home-section-title">Mais Ofertas Imperdíveis</h3><div class="product-grid">${buildCardsHTML(STATE.maisOfertas, 'PROD')}</div></div>`; }
-    return html || "<p style='text-align:center;'>Nenhuma oferta disponível no momento.</p>";
-}
-
-let expanderState = { items: {}, sourceObj: null, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
-
-window.openKitLateralView = function(id) {
-    let sourceObj = STATE.baskets.find(x => String(x.id) === String(id)); if (!sourceObj) return;
-    updateURL('p', sourceObj.slug);
-    expanderState = { items: {}, sourceObj, orderedIds: [], originalSum: 0, priceOffset: 0, currentDisplayPrice: 0 };
-
-    sourceObj.produtos.forEach(s => {
-        let partes = String(s).split('x');
-        if (partes.length > 1) { 
-            let pId = partes[1].trim(); let qty = parseInt(partes[0]); 
-            let p = STATE.prods.find(x => String(x.id) === pId); 
-            if (p) { expanderState.items[pId] = qty; expanderState.orderedIds.push(pId); expanderState.originalSum += (p.price * qty); } 
-        }
-    });
-
-    expanderState.priceOffset = Math.max(0, sourceObj.preco - expanderState.originalSum);
-    $('kit-title').innerText = sourceObj.nome;
-    $('kit-footer-container').innerHTML = `<button class="btn-checkout" onclick="commitExpander()">Adicionar à Sacola</button>`;
-    
-    renderKitList(); setupKitExtraCategory('ofertas', false); openDrawer('kit-drawer');
-    setTimeout(() => { let b = $('kit-drawer').querySelector('.drawer-body'); if(b) b.scrollTop = 0; }, 50);
-};
-
-function renderKitList() {
-    let currentSum = 0;
-    $('kit-items-grid').innerHTML = expanderState.orderedIds.map(pId => {
-        let p = STATE.prods.find(x => String(x.id) === pId); if (!p) return ''; 
-        let qty = expanderState.items[pId]; currentSum += p.price * qty;
-        
-        let minusBtn = qty === 1 ? `<button onclick="changeKitQty('${pId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="changeKitQty('${pId}', -1)">-</button>`;
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.8rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
-        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-
-        return `
-        <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${pId}', 'KIT')">
-                ${tagEmbalagem}
-                <img src="${p.img}" alt="Produto ${p.name}" loading="lazy" decoding="async">
-            </div>
-            <div class="list-info" onclick="openQuickView('${pId}', 'KIT')">
-                <div class="list-name">${p.name}</div>
-                <div class="list-price">${priceDisplay}${lbl10}</div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-                <div class="qty-control" style="width: 105px; height: 38px; background:var(--bg-img);">
-                    ${minusBtn}<span>${qty}</span><button onclick="changeKitQty('${pId}', 1)">+</button>
-                </div>
-                <button class="btn-swap" style="background:var(--bg-img); border:none; color:var(--text-dark);" onclick="openSwapView('${p.id}', 'KIT')">
-                    Trocar
-                </button>
-            </div>
-        </div>`;
-    }).join('');
-    
-    expanderState.currentDisplayPrice = currentSum + expanderState.priceOffset;
-    let pf = fmt(expanderState.currentDisplayPrice);
-    
-    let totalEl = $('kit-total-price'); if (totalEl) totalEl.innerText = pf;
-    else { let btnCheckout = document.querySelector('#kit-footer-container .btn-checkout'); if (btnCheckout) btnCheckout.innerText = `Adicionar à Sacola • ${pf}`; }
-}
-
-window.setupKitExtraCategory = function(catId, shouldScroll = true) {
-    STATE.activeKitCat = catId;
-    let chipsContainer = $('kit-extra-chips-container');
-    if (chipsContainer) chipsContainer.innerHTML = STATE.categoriesList.map(c => `<div class="swap-chip ${catId === c.id ? 'active' : ''}" onclick="setupKitExtraCategory('${c.id}', true)">${c.title}</div>`).join('');
-    let gridContainer = $('kit-extra-grid');
-    if (gridContainer) gridContainer.innerHTML = getProdutosHTML(catId);
-    
-    if (shouldScroll) { let bodyDrawer = $('kit-drawer').querySelector('.drawer-body'); let offsetTarget = $('kit-extra-section'); if(bodyDrawer && offsetTarget) bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' }); }
-};
-
-window.changeKitQty = function(pId, delta) {
-    let p = STATE.prods.find(x => String(x.id) === pId); if(!p) return;
-    let next = Math.max(0, (expanderState.items[pId] || 0) + delta);
-    if (next > p.stock) return alert("Estoque insuficiente");
-    if (next === 0) { delete expanderState.items[pId]; expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== pId); } 
-    else expanderState.items[pId] = next; 
-    renderKitList();
-}
-
-window.commitExpander = function() {
-    let added = false;
-    Object.entries(expanderState.items).forEach(([pId, qty]) => { if (qty > 0) { if (!STATE.cart[pId]) STATE.cartOrder.push(pId); STATE.cart[pId] = (STATE.cart[pId] || 0) + qty; added = true; } });
-    
-    if(!added) return alert("Cesta vazia.");
-    STATE.basketExtraFee += expanderState.priceOffset; updateTotals(); saveCart();
-
-    let bodyDrawer = $('kit-drawer').querySelector('.drawer-body'); let offsetTarget = $('kit-extra-section');
-    if(bodyDrawer && offsetTarget) bodyDrawer.scrollTo({ top: offsetTarget.offsetTop - 10, behavior: 'smooth' });
-
-    let count = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
-
-    let footer = $('kit-footer-container');
-    footer.innerHTML = `
-        <button class="drawer-cart-display" onclick="openCheckout()">
-            <div class="fc-info"><span id="drawer-fc-qtd" style="background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px;">${count} itens</span><span>Ver Sacola</span></div>
-            <div class="fc-total" id="drawer-fc-total">${$('sum-total')?.innerText || "Ver Total"}</div>
-        </button>
-    `;
-    updateTotals();
-};
-
-let swapContext = 'KIT'; let currentSwapOldId = null;
-
-function buildSwapHorizontalCards(items, promoSpecialType = null) {
-    let similarIds = STATE.swapSimilarProds ? STATE.swapSimilarProds.map(s => s.id) : [];
-    let validItems = (items || []).filter(p => p && p.id !== currentSwapOldId && !similarIds.includes(p.id) && p.stock > 0);
-    if(validItems.length === 0) return '';
-
-    return validItems.map(p => {
-        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-        let tagHtml = ""; let priceHtml = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
-
-        let acaoHTML = '';
-        if (q > 0) {
-            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
-            acaoHTML = `<div class="qty-control" style="width: 105px; height: 38px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
-        } else if (promoSpecialType === 'LEVE5' || promoSpecialType === 'LEVE2') {
-            let addQty = promoSpecialType === 'LEVE5' ? 5 : 2; let addText = promoSpecialType === 'LEVE5' ? "Add 5 un." : "Add 2 un.";
-            if(promoSpecialType === 'LEVE5') { tagHtml = `<div style="font-size: 0.75rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 5 PAGUE 4</div><br>`; priceHtml = `<span class="old-price" style="margin-right:6px;">${fmt(p.price*5)}</span>${fmt(p.price*4)}`; } 
-            else { tagHtml = `<div style="font-size: 0.75rem; color: #fff; background: var(--brand); padding: 4px 8px; border-radius: 4px; font-weight: 700; display: inline-block; margin-bottom: 6px;">LEVE 2 COM 10% OFF</div><br>`; priceHtml = `<span class="old-price" style="margin-right:6px;">${fmt(p.price*2)}</span>${fmt((p.price*2)*0.8)}`; }
-            acaoHTML = `<div style="display:flex; flex-direction:column; gap: 6px; width: 105px;"><button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button><button class="btn-action-gray" style="background:var(--success); color:#fff;" onclick="addSuggestionToKit('${p.id}', ${addQty})">${addText}</button></div>`;
-        } else { acaoHTML = `<div style="display:flex; flex-direction:column; gap: 6px; width: 105px;"><button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button><button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button></div>`; }
-
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.8rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : ''; priceHtml += lbl10;
-        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-
-        return `
-        <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
-                ${tagEmbalagem}
-                <img src="${p.img}" alt="Imagem do item ${p.name}" loading="lazy" decoding="async">
-            </div>
-            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
-                ${tagHtml}
-                <div class="list-name">${p.name}</div>
-                <div class="list-price">${priceHtml}</div>
-            </div>
-            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
-                ${acaoHTML}
-            </div>
-        </div>`;
-    }).join('');
-}
-
-window.openSwapView = function(oldPId, context = 'KIT') {
-    swapContext = context; currentSwapOldId = oldPId;
-    let oldProd = STATE.prods.find(x => String(x.id) === String(oldPId)); if(!oldProd) return;
-
-    let firstWord = norm(oldProd.name).split(' ')[0];
-    let similarProds = STATE.prods.filter(p => p.id !== oldProd.id && p.categoria === oldProd.categoria && norm(p.name).split(' ')[0] === firstWord && p.stock > 0);
-
-    let allCats = new Set(); STATE.prods.forEach(p => { if(p.stock > 0) allCats.add(p.categoria); });
-    let catArr = Array.from(allCats).filter(c => c !== oldProd.categoria).sort((a, b) => a.localeCompare(b));
-    STATE.swapCats = [oldProd.categoria, 'Ofertas', ...catArr]; STATE.swapSimilarProds = similarProds;
-
-    let html = '';
-    if(similarProds.length > 0) {
-        html += `<div style="margin-bottom: 24px;"><h4 style="font-size: 1.1rem; color: var(--brand); margin-bottom: 16px; border-bottom: 2px solid var(--brand-light); padding-bottom: 6px;">Opções Similares</h4>`;
-        html += similarProds.map(p => {
-            let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.8rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-            let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
-            let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-            let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-            
-            let acaoHTML = '';
-            if (q > 0) {
-                let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
-                acaoHTML = `<div class="qty-control" style="width: 105px; height: 38px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
-            } else { acaoHTML = `<div style="display:flex; flex-direction:column; gap: 6px; width: 105px;"><button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button><button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button></div>`; }
-
-            return `
-            <div class="list-item">
-                <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
-                    ${tagEmbalagem}
-                    <img src="${p.img}" alt="Produto similar ${p.name}" loading="lazy" decoding="async">
-                </div>
-                <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
-                    <div class="list-name">${p.name}</div>
-                    <div class="list-price">${priceDisplay}${lbl10}</div>
-                </div>
-                <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
-                    ${acaoHTML}
-                </div>
-            </div>`}).join('');
-        html += `</div>`;
-    } else { html += `<p style="color:var(--text-gray); margin-bottom: 24px; font-size:1rem;">Nenhum produto similar disponível para troca no momento.</p>`; }
-
-    html += `
-        <div style="border-top: 1px dashed var(--border-light);">
-            <div id="swap-chips-container-wrap" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; padding-top: 16px;">
-                <div class="chips-wrapper" style="width: 100%;">
-                    <button class="scroll-btn left" onclick="scrollElementChips('swap-chips-container', -200)">❮</button>
-                    <div class="swap-chips" id="swap-chips-container">
-                        ${STATE.swapCats.map((c, i) => `<div class="swap-chip ${i===0 ? 'active' : ''}" onclick="selectSwapCategory('${c}')">${c}</div>`).join('')}
-                    </div>
-                    <button class="scroll-btn right" onclick="scrollElementChips('swap-chips-container', 200)">❯</button>
-                </div>
-                <div class="search-box" style="width: 100%;">
-                    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <input type="text" id="swap-search-input" class="search-input" placeholder="Buscar em todo o site..." oninput="handleSwapSearch()">
-                </div>
-            </div>
-            <div id="swap-suggestions-list" style="padding-top: 0px;">
-                ${buildSwapSuggestions(STATE.swapCats[0])}
-            </div>
-        </div>`;
-
-    $('swap-items-grid').innerHTML = html; openDrawer('swap-drawer');
-    setTimeout(() => { $('swap-drawer').querySelector('.drawer-body').scrollTop = 0; }, 50);
-};
-
-window.selectSwapCategory = function(cat) { let searchInput = $('swap-search-input'); if (searchInput) searchInput.value = ''; document.querySelectorAll('#swap-chips-container .swap-chip').forEach(el => { if(el.innerText === cat.toUpperCase()) el.classList.add('active'); else el.classList.remove('active'); }); $('swap-suggestions-list').innerHTML = buildSwapSuggestions(cat); let drawerBody = $('swap-drawer').querySelector('.drawer-body'); let chipsWrap = $('swap-chips-container-wrap'); if (drawerBody && chipsWrap) drawerBody.scrollTo({ top: chipsWrap.offsetTop - 16, behavior: 'smooth' }); };
-
-function buildSwapSuggestions(cat) {
-    if (cat === 'Ofertas') {
-        let html = '';
-        let h1 = buildSwapHorizontalCards(STATE.prods.filter(p => p._is30Off).sort((a,b) => a._valTime - b._valTime).slice(0, 6), null); if(h1) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1.1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Produtos com 30% de Desconto</h4>${h1}</div>`;
-        let h2 = buildSwapHorizontalCards(PROMO_CONFIG.aproveite.map(findItem), 'APROVEITE'); if(h2) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1.1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Dicas de Hoje</h4>${h2}</div>`;
-        let h3 = buildSwapHorizontalCards(PROMO_CONFIG.leve5pague4.map(findItem), 'LEVE5'); if(h3) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1.1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 5 pague 4</h4>${h3}</div>`;
-        let h4 = buildSwapHorizontalCards(PROMO_CONFIG.leve2.map(findItem), 'LEVE2'); if(h4) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1.1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Leve 2 e economize 10%</h4>${h4}</div>`;
-        let h5 = buildSwapHorizontalCards(STATE.maisOfertas, null); if(h5) html += `<div style="margin-bottom:24px;"><h4 style="font-size: 1.1rem; color: var(--brand); margin-bottom: 12px; border-bottom: 2px solid var(--brand-light); padding-bottom: 4px;">Mais Ofertas Imperdíveis</h4>${h5}</div>`;
-        return html || `<p style="font-size:0.95rem; color:var(--text-gray);">Nenhuma oferta disponível no momento.</p>`;
-    }
-
-    let similarIds = STATE.swapSimilarProds.map(s => s.id);
-    let suggestionProds = STATE.prods.filter(p => p.categoria === cat && p.id !== currentSwapOldId && !similarIds.includes(p.id) && p.stock > 0);
-    
-    if(suggestionProds.length === 0) return `<p style="font-size:0.95rem; color:var(--text-gray);">Nenhum produto extra nesta categoria.</p>`;
-
-    return suggestionProds.map(p => {
-        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.8rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
-
-        let acaoHTML = '';
-        if (q > 0) {
-            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
-            acaoHTML = `<div class="qty-control" style="width: 105px; height: 38px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
-        } else { acaoHTML = `<div style="display:flex; flex-direction:column; gap: 6px; width: 105px;"><button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button><button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button></div>`; }
-
-        return `
-        <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
-                ${tagEmbalagem}
-                <img src="${p.img}" alt="Produto Sugerido ${p.name}" loading="lazy" decoding="async">
-            </div>
-            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
-                <div class="list-name">${p.name}</div>
-                <div class="list-price">${priceDisplay}${lbl10}</div>
-            </div>
-            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
-                ${acaoHTML}
-            </div>
-        </div>`;
-    }).join('');
-}
-
-let swapSearchTimeout;
-window.handleSwapSearch = function() {
-    clearTimeout(swapSearchTimeout);
-    swapSearchTimeout = setTimeout(() => {
-        let val = $('swap-search-input').value; let q = norm(val);
-        if(q.length < 2) { let activeCatEl = document.querySelector('#swap-chips-container .swap-chip.active'); let cat = activeCatEl ? activeCatEl.innerText : 'Ofertas'; let catId = STATE.swapCats.find(c => c.toUpperCase() === cat.toUpperCase()) || STATE.swapCats[0]; $('swap-suggestions-list').innerHTML = buildSwapSuggestions(catId); } 
-        else { let filtered = STATE.prods.filter(p => p.stock > 0 && p.id !== currentSwapOldId && (norm(p.name).includes(q) || norm(p.categoria).includes(q))); if(filtered.length === 0) { $('swap-suggestions-list').innerHTML = `<p style="font-size:0.95rem; color:var(--text-gray);">Nenhum produto encontrado para "${val}".</p>`; } else { $('swap-suggestions-list').innerHTML = buildSwapSuggestionsFromList(filtered); } }
-    }, 300);
-};
-
-window.buildSwapSuggestionsFromList = function(suggestionProds) {
-    return suggestionProds.map(p => {
-        let q = (swapContext === 'KIT') ? (expanderState.items[p.id] || 0) : (STATE.cart[p.id] || 0);
-        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.8rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
-
-        let acaoHTML = '';
-        if (q > 0) {
-            let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${p.id}', -1)">-</button>`;
-            acaoHTML = `<div class="qty-control" style="width: 105px; height: 38px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${p.id}', 1)">+</button></div>`;
-        } else { acaoHTML = `<div style="display:flex; flex-direction:column; gap: 6px; width: 105px;"><button class="btn-action-gray" onclick="confirmSwap('${currentSwapOldId}', '${p.id}', this)">Trocar</button><button class="btn-action-gray" onclick="addSuggestionToKit('${p.id}', 1)">Adicionar</button></div>`; }
-
-        return `
-        <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${p.id}', '${swapContext}')">
-                ${tagEmbalagem}
-                <img src="${p.img}" alt="Produto Sugerido ${p.name}" loading="lazy" decoding="async">
-            </div>
-            <div class="list-info" onclick="openQuickView('${p.id}', '${swapContext}')">
-                <div class="list-name">${p.name}</div>
-                <div class="list-price">${priceDisplay}${lbl10}</div>
-            </div>
-            <div style="display:flex; align-items:center; justify-content:flex-end;" id="swap-act-${p.id}">
-                ${acaoHTML}
-            </div>
-        </div>`;
-    }).join('');
-};
-
-window.confirmSwap = function(oldPId, newPId, btnElement) {
-    if (swapContext === 'KIT') {
-        let qty = expanderState.items[oldPId] || 1; delete expanderState.items[oldPId]; 
-        let index = expanderState.orderedIds.indexOf(oldPId); if(index !== -1) expanderState.orderedIds[index] = newPId; else expanderState.orderedIds.push(newPId);
-        expanderState.items[newPId] = qty; renderKitList();
-    } else if (swapContext === 'CART') {
-        let qty = STATE.cart[oldPId] || 1; delete STATE.cart[oldPId]; 
-        let index = STATE.cartOrder.indexOf(oldPId); if(index !== -1) STATE.cartOrder[index] = newPId; else STATE.cartOrder.push(newPId);
-        STATE.cart[newPId] = qty; updateTotals(); saveCart(); renderCheckoutItems();
-    }
-    currentSwapOldId = newPId; if (btnElement) { btnElement.innerHTML = `Troca <span style="color: var(--success); font-weight: 900; margin-left: 4px;">OK</span>`; btnElement.disabled = true; }
-};
-
-window.addSuggestionToKit = function(newPId, delta) {
-    let p = STATE.prods.find(x => String(x.id) === String(newPId)); if(!p) return;
-
-    if (swapContext === 'KIT') {
-        let next = Math.max(0, (expanderState.items[newPId] || 0) + delta);
-        if (next > p.stock) return alert("Estoque insuficiente");
-        
-        if(next === 0) { delete expanderState.items[newPId]; expanderState.orderedIds = expanderState.orderedIds.filter(id => id !== newPId); } 
-        else { if (!expanderState.orderedIds.includes(newPId)) expanderState.orderedIds.push(newPId); expanderState.items[newPId] = next; }
-        renderKitList();
-        
-        let q = expanderState.items[newPId] || 0;
-        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
-        
-        let acaoHTML = '';
-        if (q > 0) acaoHTML = `<div class="qty-control" style="width: 105px; height: 38px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>`;
-        else {
-            let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
-            if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--success); color: #fff;"; }
-            else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--success); color: #fff;"; }
-            acaoHTML = `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.95rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
-        }
-        document.querySelectorAll(`#swap-act-${newPId}, #quick-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
-
-    } else if (swapContext === 'CART') {
-        let next = Math.max(0, (STATE.cart[newPId] || 0) + delta);
-        if (next > p.stock) return alert("Estoque insuficiente");
-
-        if(next === 0) { delete STATE.cart[newPId]; STATE.cartOrder = STATE.cartOrder.filter(id => id !== newPId); } 
-        else { if (!STATE.cartOrder.includes(newPId)) STATE.cartOrder.push(newPId); STATE.cart[newPId] = next; }
-        updateTotals(); saveCart(); renderCheckoutItems();
-        
-        let q = STATE.cart[newPId] || 0;
-        let minusBtnGrid = q === 1 ? `<button onclick="addSuggestionToKit('${newPId}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="addSuggestionToKit('${newPId}', -1)">-</button>`;
-        
-        let acaoHTML = '';
-        if (q > 0) acaoHTML = `<div class="qty-control" style="width: 105px; height: 38px; background:var(--bg-img);">${minusBtnGrid}<span>${q}</span><button onclick="addSuggestionToKit('${newPId}', 1)">+</button></div>`;
-        else {
-            let addQty = 1; let addText = "Adicionar"; let btnStyle = "background: var(--bg-img); color: var(--text-dark);";
-            if (STATE.promoIds.leve5.includes(newPId)) { addQty = 5; addText = "Add 5 un."; btnStyle = "background: var(--success); color: #fff;"; }
-            else if (STATE.promoIds.leve2.includes(newPId)) { addQty = 2; addText = "Add 2 un."; btnStyle = "background: var(--success); color: #fff;"; }
-            acaoHTML = `<button class="btn-add" style="width: auto; padding: 10px 18px; font-size: 0.95rem; ${btnStyle}" onclick="addSuggestionToKit('${newPId}', ${addQty})">${addText}</button>`;
-        }
-        document.querySelectorAll(`#swap-act-${newPId}, #quick-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML);
-        document.querySelectorAll(`#card-act-${newPId}`).forEach(el => el.innerHTML = acaoHTML.replace(/addSuggestionToKit/g, "upd"));
-    }
-};
-
-function upd(id, delta) {
-    let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
-    let n = Math.max(0, (STATE.cart[id] || 0) + delta);
-    if (n > p.stock) return alert("Estoque insuficiente");
-    if ((STATE.cart[id] || 0) === 0 && n > 0) STATE.cartOrder.push(id);
-    STATE.cart[id] = n; if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); }
-    
-    document.querySelectorAll(`#card-act-${id}, #quick-act-${id}`).forEach(actBox => {
-        let minusBtnGrid = n === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
-        actBox.innerHTML = n > 0 ? `<div class="qty-control">${minusBtnGrid}<span>${n}</span><button onclick="upd('${id}', 1)">+</button></div>` : `<button class="btn-add" onclick="upd('${id}', 1)">Adicionar</button>`;
-    });
-    updateTotals(); saveCart(); if($('checkout-drawer').classList.contains('open')) renderCheckoutItems();
-}
-
-function updateTotals() {
-    let sum = 0; let count = 0; let atacadoDiscount = 0; let customPromoDiscount = 0;
-    
-    Object.entries(STATE.cart).forEach(([id, q]) => { 
-        let p = STATE.prods.find(x => String(x.id) === String(id)); 
-        if (p) { 
-            sum += p.price * q; count += q; 
-            if (STATE.promoIds.leve5.includes(p.id)) customPromoDiscount += (Math.floor(q / 5) * p.price);
-            else if (STATE.promoIds.leve2.includes(p.id)) { if (q >= 2) customPromoDiscount += (p.price * 0.10) * q; } 
-            else if (!p._isPromo) { if (q >= 2) atacadoDiscount += (p.price * 0.05) * q; }
-        } 
-    });
-    
-   STATE.atacadoDiscount = atacadoDiscount; STATE.customPromoDiscount = customPromoDiscount;
-    
-    let couponDiscount = 0;
-    if (STATE.couponCode === 'CUPOMVIP') { couponDiscount = sum * 0.07; if (couponDiscount > 35) couponDiscount = 35; }
-    STATE.couponDiscount = couponDiscount;
-
-    let subtotal = sum + STATE.basketExtraFee; 
-    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.couponDiscount;
-    let final = subtotal - totalDesc;
-    
-    let headerBadge = $('header-cart-badge');
-    
-    if (count > 0) { 
-        headerBadge.style.display = 'flex'; headerBadge.innerText = count;
-        let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
-        if (dfcQtd && dfcTotal) { dfcQtd.innerText = `${count} item(s)`; dfcTotal.innerText = fmt(final); }
-    } 
-    else { 
-        headerBadge.style.display = 'none'; headerBadge.innerText = '0';
-        let dfcQtd = document.getElementById('drawer-fc-qtd'); let dfcTotal = document.getElementById('drawer-fc-total');
-        if (dfcQtd && dfcTotal) { dfcQtd.innerText = `0 itens`; dfcTotal.innerText = fmt(0); }
-    }
-    
-    let sumTotalEl = $('sum-total'); if(sumTotalEl) sumTotalEl.innerText = fmt(final);
-}
-
-function openCheckout() {
-    if (STATE.cartOrder.length === 0) return alert("Seu carrinho está vazio!");
-    let options = []; let date = new Date(); let checkDate = new Date(date);
-    if (date.getHours() < 10 && date.getDay() !== 0) options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
-    while(options.length < 3) { checkDate.setDate(checkDate.getDate() + 1); if(checkDate.getDay() !== 0) { let desc = options.length === 0 ? 0 : (options.length === 1 ? 3.00 : 6.00); options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); } }
-    STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
-    
-    $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}</button>`).join('');
-    renderCheckoutItems(); openDrawer('checkout-drawer');
-}
-
-function selectDelivery(idx) { STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; openCheckout(); updateTotals(); }
-function selectPayment(metodo, btn) { $('chk-pagamento').value = metodo; document.querySelectorAll('#checkout-drawer .pay-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); }
-
-function renderCheckoutItems() {
-    $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
-        let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id];
-        let minusBtn = q === 1 ? `<button onclick="upd('${id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${id}', -1)">-</button>`;
-        let lbl10 = (!p._isPromo) ? `<div style="font-size: 0.8rem; color: var(--success); font-weight: 700; margin-top: 2px;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
-        let priceDisplay = p.oldPrice > p.price ? `<span class="old-price" style="margin-right:6px;">${fmt(p.oldPrice)}</span>${fmt(p.price)}` : fmt(p.price);
-        let tagEmbalagem = p.embalagem ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
-
-        return `
-        <div class="list-item">
-            <div class="list-img-wrap" onclick="openQuickView('${id}', 'CART')">
-                ${tagEmbalagem}
-                <img src="${p.img}" alt="Produto Final ${p.name}" loading="lazy" decoding="async">
-            </div>
-            <div class="list-info" onclick="openQuickView('${id}', 'CART')">
-                <div class="list-name">${p.name}</div>
-                <div class="list-price">${priceDisplay}${lbl10}</div>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-                <div class="qty-control" style="width: 105px; height: 38px; background:var(--bg-img);">
-                    ${minusBtn}<span>${q}</span><button onclick="upd('${id}', 1)">+</button>
-                </div>
-                <button class="btn-swap" style="background:var(--bg-img); border:none; color:var(--text-dark);" onclick="openSwapView('${id}', 'CART')">
-                    Trocar
-                </button>
-            </div>
-        </div>`;
-    }).join('');
-
-    let sum = 0; Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) sum += p.price * q; });
-    
-    let couponDiscount = 0;
-    if (STATE.couponCode === 'CUPOMVIP') { couponDiscount = sum * 0.07; if (couponDiscount > 35) couponDiscount = 35; }
-    STATE.couponDiscount = couponDiscount;
-
-    let totalDesc = STATE.atacadoDiscount + STATE.customPromoDiscount + STATE.deliveryDiscount + STATE.couponDiscount; 
-    let subtotal = sum + STATE.basketExtraFee; let final = subtotal - totalDesc;
-
-    $('sum-sub').innerText = fmt(subtotal); $('sum-desc').innerText = `- ${fmt(totalDesc)}`; $('sum-desc-row').style.display = totalDesc > 0 ? 'flex' : 'none'; $('sum-total').innerText = fmt(final);
-
-    let btn = $('btn-send-order');
-    if (final < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-gray)'; }
-    else { btn.disabled = false; btn.innerText = 'Enviar pelo WhatsApp'; btn.style.background = 'var(--success)'; }
-}
-
-function sendOrder() {
-    const btn = $('btn-send-order'); if (btn.disabled) return;
-    const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.trim(); const pag = $('chk-pagamento').value;
-    
-    if (!nome) { alert("Preencha seu nome."); let campoNome = $('chk-nome'); campoNome.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => campoNome.focus(), 300); return; }
-    if (!pag) { alert("Escolha o pagamento."); $('chk-pagamento').parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-
-    btn.disabled = true; btn.innerText = "Processando...";
-    const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
-    
-    Object.entries(STATE.cart).forEach(([cartId, q]) => { 
-        const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
-        if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; apiItens.push({ id: String(p.blingId || p.id), nome: p.name, qtd: q, price: p.price }); } 
-    });
-      
-   let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + (STATE.couponDiscount || 0); 
-    let final = totalBruto + STATE.basketExtraFee - totalDesc;
-    
-    if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO VOLUME: -${fmt(STATE.atacadoDiscount)}`;
-    if (STATE.customPromoDiscount > 0) itemsTxt += `\n🎁 DESCONTOS PROMOCIONAIS: -${fmt(STATE.customPromoDiscount)}`;
-    if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-    if (STATE.couponDiscount > 0) itemsTxt += `\n🏷️ CUPOM (${STATE.couponCode}): -${fmt(STATE.couponDiscount)}`;
-    
-    const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
-    
-    const payload = { cliente: { nome: nome, cpf: cpf, pagamento: pag }, pedido: { itens: apiItens, total: Number(final), outras_despesas: Number(STATE.basketExtraFee), desconto: Number(totalDesc), observacoes: `Entrega: ${STATE.deliveryDateStr}` } };
-    fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
-  
-    window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
-    setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar pelo WhatsApp`; }, 3000);
-}
-
-async function fetchWithCache(url, key) {
-    try {
-        let cached = localStorage.getItem(key); let cacheTime = localStorage.getItem(key + '_time'); let now = Date.now();
-        if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached);
-        let res = await fetch(url).then(r => r.json()); localStorage.setItem(key, JSON.stringify(res)); localStorage.setItem(key + '_time', now); return res;
-    } catch (e) { return fetch(url).then(r => r.json()).catch(() => []); }
-}
-
+// Inicialização
 async function init() {
     try {
-        const [r1, r2] = await Promise.all([ fetchWithCache('/site/produtos-cesta-basica.json', 'cache_baskets'), fetchWithCache('/site/produtos.json', 'cache_prods') ]);
+        const [resBaskets, resProds] = await Promise.all([
+            fetch('/site/produtos-cesta-basica.json').then(r => r.json()),
+            fetch('/site/produtos.json').then(r => r.json())
+        ]);
+
+        STATE.baskets = resBaskets;
+        STATE.products = resProds.filter(p => p.situacao !== "I").map(p => ({
+            id: String(p.id),
+            name: p.nome,
+            price: parseFloat(p.preco) * 1.01, // Pequeno ajuste de margem
+            img: p.url_imagem || `/site/img/produtos/${p.id}.webp`,
+            category: p.categoria || "Geral",
+            stock: parseInt(p.estoque) || 0
+        }));
+
+        renderCategories();
+        renderHome();
         
-        STATE.baskets = r1 || [];
-        STATE.baskets.forEach(b => { b.nome = formatName(b.nome); b.slug = createSlug(b.nome); });
-
-        if (r2 && r2.length > 0) {
-            STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
-                let pBase = parseFloat(p.preco) * 1.01;
-                let validade = p.validade ? (new Date(p.validade.split('/').reverse().join('-')).getTime() || 8640000000000000) : 8640000000000000;
-                
-                return { 
-                    id: String(p.codigo || p.id), blingId: String(p.id), codigo: String(p.codigo || ""), 
-                    name: formatName(p.nome), slug: createSlug(p.nome),
-                    price: pBase, oldPrice: pBase, stock: parseInt(p.estoque) || 0, 
-                    img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                    categoria: p.categoria || "Outros", embalagem: p.embalagem || "", 
-                    _is30Off: false, _isPromo: false, _valTime: validade
-                };
-            });
-
-            let produtosComValidade = STATE.prods.filter(p => p._valTime !== 8640000000000000 && p.stock > 0);
-            produtosComValidade.sort((a, b) => a._valTime - b._valTime);
-            produtosComValidade.slice(0, 12).forEach(p => { p.price = p.oldPrice * 0.80; p._is30Off = true; p._isPromo = true; });
-
-            PROMO_CONFIG.aproveite.forEach(idStr => { let p = findItem(idStr); if(p) { p.price = p.oldPrice * 0.90; p._isPromo = true; } });
-
-            STATE.prods.forEach(p => { 
-                let cId = 'cat_' + norm(p.categoria).replace(/[^a-z0-9]/g, '_');
-                if (!STATE.deptos[cId]) STATE.deptos[cId] = { title: p.categoria || "Outros", data: [] };
-                STATE.deptos[cId].data.push(p); 
-            });
-
-            STATE.promoIds.leve5 = PROMO_CONFIG.leve5pague4.map(findItem).filter(Boolean).map(p => { p._isPromo = true; return p.id; });
-            STATE.promoIds.leve2 = PROMO_CONFIG.leve2.map(findItem).filter(Boolean).map(p => { p._isPromo = true; return p.id; });
-
-            let usedIds = new Set([...STATE.promoIds.leve5, ...STATE.promoIds.leve2, ...PROMO_CONFIG.aproveite.map(findItem).filter(Boolean).map(p => p.id)]);
-            STATE.prods.forEach(p => { if (p._is20Off) usedIds.add(p.id); }); 
-
-            let availableProds = STATE.prods.filter(p => !usedIds.has(p.id) && p.stock > 0);
-            let byCat = {}; availableProds.forEach(p => { if(!byCat[p.categoria]) byCat[p.categoria] = []; byCat[p.categoria].push(p); });
-
-            let maisOfertas = []; let cats = Object.keys(byCat); let i = 0;
-            while(maisOfertas.length < 60 && availableProds.length > 0) {
-                let cat = cats[i % cats.length];
-                if(byCat[cat].length > 0) {
-                    let p = byCat[cat].shift(); p.price = p.oldPrice * (1 - (0.05 + (Math.random() * 0.05))); p._isPromo = true;
-                    maisOfertas.push(p); availableProds = availableProds.filter(x => x.id !== p.id);
-                }
-                i++; if(availableProds.length === 0) break;
-            }
-            STATE.maisOfertas = maisOfertas;
-        }
-        
-        loadCart(); updateTotals(); setupCategories();
-        
-        $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
-        history.replaceState({home: true}, ""); renderMainPage(); 
-
-        setTimeout(() => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const catId = urlParams.get('cat'); const pSlug = urlParams.get('p');
-
-            if (catId) selectMainCategory(catId);
-            if (pSlug) {
-                let produtoAlvo = STATE.prods.find(x => x.slug === pSlug);
-                let cestaAlvo = STATE.baskets.find(x => x.slug === pSlug);
-                if (produtoAlvo) openQuickView(produtoAlvo.id);
-                else if (cestaAlvo) openKitLateralView(cestaAlvo.id);
-            }
-        }, 150);
-
-    } catch (e) { alert("Erro ao carregar loja."); console.error(e); }
+        document.getElementById('loading-screen').style.display = 'none';
+    } catch (e) {
+        console.error("Erro ao carregar dados", e);
+        alert("Erro ao conectar com o servidor. Tente novamente.");
+    }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// Renderizar Abas de Categorias
+function renderCategories() {
+    const cats = ['Ofertas', ...new Set(STATE.products.map(p => p.category))];
+    const container = document.getElementById('cat-tabs');
+    container.innerHTML = cats.map(c => `
+        <div class="category-tab ${STATE.activeCategory === c.toLowerCase() ? 'active' : ''}" 
+             onclick="setCategory('${c}')">${c}</div>
+    `).join('');
+}
+
+function setCategory(cat) {
+    STATE.activeCategory = cat.toLowerCase();
+    renderCategories();
+    renderHome();
+}
+
+// Renderizar Conteúdo Principal
+function renderHome() {
+    const container = document.getElementById('home-content');
+    let html = '';
+
+    // Seção Cestas sempre no topo se for "Ofertas"
+    if (STATE.activeCategory === 'ofertas') {
+        html += `<h2 class="section-title">Nossas Cestas 🧺</h2>`;
+        html += `<div class="grid">${STATE.baskets.map(b => renderCard(b, true)).join('')}</div>`;
+        html += `<h2 class="section-title" style="margin-top:40px;">Destaques do Dia 🔥</h2>`;
+    }
+
+    const filtered = STATE.activeCategory === 'ofertas' 
+        ? STATE.products.slice(0, 12) 
+        : STATE.products.filter(p => p.category.toLowerCase() === STATE.activeCategory);
+
+    html += `<div class="grid">${filtered.map(p => renderCard(p, false)).join('')}</div>`;
+    container.innerHTML = html;
+}
+
+// Template de Card (Simples e Direto)
+function renderCard(item, isBasket) {
+    const id = item.id;
+    const qty = STATE.cart[id] || 0;
+    
+    let actionHtml = '';
+    if (isBasket) {
+        actionHtml = `<button class="btn-add btn-basket" onclick="openKit('${id}')">Ver Itens</button>`;
+    } else if (qty > 0) {
+        actionHtml = `
+            <div class="qty-control">
+                <button class="qty-btn" onclick="updateCart('${id}', -1)">-</button>
+                <span>${qty}</span>
+                <button class="qty-btn" onclick="updateCart('${id}', 1)">+</button>
+            </div>
+        `;
+    } else {
+        actionHtml = `<button class="btn-add" onclick="updateCart('${id}', 1)">Adicionar</button>`;
+    }
+
+    return `
+        <div class="product-card">
+            <div class="img-wrap"><img src="${item.img || item.imagem}" alt="${item.nome || item.name}"></div>
+            <div class="prod-title">${item.nome || item.name}</div>
+            <div class="prod-price">${fmt(item.preco || item.price)}</div>
+            <div id="action-${id}">${actionHtml}</div>
+        </div>
+    `;
+}
+
+// Atualizar Carrinho
+function updateCart(id, delta) {
+    const current = STATE.cart[id] || 0;
+    const next = current + delta;
+    
+    if (next <= 0) delete STATE.cart[id];
+    else STATE.cart[id] = next;
+
+    renderHome();
+    updateCartUI();
+}
+
+function updateCartUI() {
+    const count = Object.values(STATE.cart).reduce((a, b) => a + b, 0);
+    const badge = document.getElementById('cart-badge-count');
+    if (count > 0) {
+        badge.innerText = count;
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// Controle de Gavetas
+function openDrawer(id) {
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById(id).classList.add('open');
+    if (id === 'cart-drawer') renderCartItems();
+}
+
+function closeAllDrawers() {
+    document.getElementById('overlay').style.display = 'none';
+    document.querySelectorAll('.drawer').forEach(d => d.classList.remove('open'));
+}
+
+// Renderizar Itens no Carrinho
+function renderCartItems() {
+    const list = document.getElementById('cart-items-list');
+    let subtotal = 0;
+    let html = '';
+
+    Object.entries(STATE.cart).forEach(([id, qty]) => {
+        const p = STATE.products.find(x => x.id === id);
+        if (!p) return;
+        const total = p.price * qty;
+        subtotal += total;
+        html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <div style="flex:1">
+                    <div style="font-weight:bold">${p.name}</div>
+                    <div style="color:var(--text-muted)">${qty}x ${fmt(p.price)}</div>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px">
+                    <button class="qty-btn" style="height:30px; width:30px" onclick="updateCart('${id}', -1)">-</button>
+                    <strong>${qty}</strong>
+                    <button class="qty-btn" style="height:30px; width:30px" onclick="updateCart('${id}', 1)">+</button>
+                </div>
+            </div>
+        `;
+    });
+
+    list.innerHTML = html || '<p style="text-align:center; padding:20px;">Sua sacola está vazia.</p>';
+    
+    const finalTotal = subtotal; // Pode adicionar lógica de cupons aqui
+    document.getElementById('cart-subtotal').innerText = fmt(subtotal);
+    document.getElementById('cart-total').innerText = fmt(finalTotal);
+}
+
+// Finalizar Pedido
+function submitOrder() {
+    const nome = document.getElementById('order-name').value;
+    const pagamento = document.getElementById('order-payment').value;
+    
+    if (!nome || !pagamento) return alert("Por favor, preencha seu nome e escolha o pagamento.");
+    
+    const total = parseFloat(document.getElementById('cart-total').innerText.replace(/[^\d,]/g, '').replace(',', '.'));
+    
+    if (total < MIN_ORDER) return alert(`O pedido mínimo é de ${fmt(MIN_ORDER)}`);
+
+    // Payload para o MAKE.COM
+    const orderData = {
+        cliente: nome,
+        pagamento: pagamento,
+        itens: Object.entries(STATE.cart).map(([id, q]) => ({ id, qtd: q })),
+        total: total
+    };
+
+    fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(orderData)
+    });
+
+    const msg = `Olá! Meu nome é ${nome}. Gostaria de confirmar meu pedido no valor de ${fmt(total)}.`;
+    window.open(`https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`);
+}
+
+// Lógica de Personalização de Cestas (Intelligence)
+function openKit(id) {
+    const kit = STATE.baskets.find(b => b.id === id);
+    if (!kit) return;
+    STATE.currentKit = { ...kit, items: {} };
+    
+    // Parse dos itens da cesta
+    kit.produtos.forEach(line => {
+        const [qtd, pId] = line.split('x');
+        STATE.currentKit.items[pId.trim()] = parseInt(qtd);
+    });
+
+    const list = document.getElementById('kit-content-list');
+    list.innerHTML = Object.entries(STATE.currentKit.items).map(([pId, q]) => {
+        const p = STATE.products.find(x => x.id === pId);
+        return `
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <span>${p ? p.name : 'Produto'}</span>
+                <span>${q} un.</span>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('kit-label').innerText = kit.nome;
+    openDrawer('kit-drawer');
+}
+
+function addKitToCart() {
+    if (!STATE.currentKit) return;
+    Object.entries(STATE.currentKit.items).forEach(([pId, q]) => {
+        STATE.cart[pId] = (STATE.cart[pId] || 0) + q;
+    });
+    updateCartUI();
+    closeAllDrawers();
+    renderHome();
+    alert("Cesta adicionada com sucesso!");
+}
+
+// Busca Simples
+function handleSearch(query) {
+    if (!query) {
+        renderHome();
+        return;
+    }
+    const q = query.toLowerCase();
+    const filtered = STATE.products.filter(p => p.name.toLowerCase().includes(q));
+    const container = document.getElementById('home-content');
+    container.innerHTML = `
+        <h2 class="section-title">Resultados para: ${query}</h2>
+        <div class="grid">${filtered.map(p => renderCard(p, false)).join('')}</div>
+    `;
+}
+
+// Iniciar tudo
+init();
 </script>
 </body>
 </html>
