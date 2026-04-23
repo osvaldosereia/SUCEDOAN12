@@ -370,6 +370,7 @@
                 <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">IMPORTAR CSV (SUBSTITUIR)</button>
                 
                 <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">EXPORTAR CATÁLOGO META</button>
+                <button class="nav-btn success-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="exportarCatalogoGeral()">EXPORTAR CATÁLOGO GERAL</button>
             </div>
 
             <div class="form-section" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 15px;">
@@ -1427,11 +1428,68 @@
 
         async function limparSistema() { if(confirm("Apagar base local? (Nuvem NÃO afetada)")) { await localforage.clear(); location.reload(); } }
 
-        // Módulo de exportação original em branco mas declarado para não quebrar botões mantidos
+        // ==========================================================
+        // MÓDULO DE EXPORTAÇÃO META E CATÁLOGO GERAL
+        // ==========================================================
         function abrirModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'flex'; }
         function fecharModalExportacaoMeta() { document.getElementById('modal-meta-export').style.display = 'none'; }
-        function gerarCSVMetaCompleto() {}
-        function gerarCSVMetaFila(tipoFiltro) {}
+        
+        function formatarURLImagem(url) {
+            if (!url) return "";
+            if (typeof url === 'string' && url.includes('../')) {
+                return url.split('?')[0].replace("../", "https://donaantonia.com.br/");
+            } else if (typeof url === 'string' && url.startsWith('http')) {
+                return url.split('?')[0];
+            }
+            return url;
+        }
+
+        function gerarCSVMetaCompleto() {
+            if(products.length === 0) return alert("Banco vazio.");
+            const ativos = products.filter(p => p.situacao !== 'I');
+            const metaCatalog = ativos.map(p => ({
+                "id": p.codigo,
+                "title": p.nome || "",
+                "description": p.nome + (p.embalagem ? " - " + p.embalagem : ""),
+                "availability": p.estoque > 0 ? "in stock" : "out of stock",
+                "condition": "new",
+                "price": p.preco ? p.preco + " BRL" : "0.00 BRL",
+                "link": "https://donaantonia.com.br/produto/" + p.codigo,
+                "image_link": formatarURLImagem(p.url_imagem),
+                "brand": p.marca || "Marca"
+            }));
+            downloadCSVBling(metaCatalog, "Catalogo_Meta_Completo.csv");
+            fecharModalExportacaoMeta();
+        }
+
+        function gerarCSVMetaFila(tipoFiltro) {
+            gerarCSVMetaCompleto(); 
+        }
+
+        window.exportarCatalogoGeral = function() {
+            const ativos = products.filter(p => p.situacao !== 'I');
+            ativos.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+            
+            const catalogo = ativos.map(p => {
+                let tags = p.tag_global || "";
+                if (Array.isArray(tags)) tags = tags.join(", ");
+
+                return {
+                    "NOME": p.nome || "",
+                    "DESCRIÇÃO": p.nome || "",
+                    "MARCA": p.marca || "",
+                    "VALOR": p.preco || 0,
+                    "ESTOQUE": p.estoque || 0,
+                    "CATEGORIA": p.categoria || "",
+                    "SUBCATEGORIA": p.subcategoria || "",
+                    "SUBSUB CATEGORIA": p.subsubcategoria || "",
+                    "TAG GLOBAL": tags,
+                    "EMBALAGEM": p.embalagem || "",
+                    "LINK DA IMAGEM": formatarURLImagem(p.url_imagem)
+                };
+            });
+            downloadCSVBling(catalogo, "Catalogo_Geral.csv");
+        };
 
         // ==========================================================
         // MÓDULO DE EXPORTAÇÃO BLING V3 (59 COLUNAS)
@@ -1526,7 +1584,7 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            mostrarAlerta("Planilha do Bling gerada com sucesso!");
+            mostrarAlerta("Planilha gerada com sucesso!");
         }
 
         window.exportarProdutoBling = function(sku) {
