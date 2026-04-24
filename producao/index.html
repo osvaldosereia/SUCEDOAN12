@@ -718,8 +718,19 @@
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             
             let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
+            let precisaSalvarProd = false; // Adicionado para gerir a gravação dos SKUs novos
 
             products.forEach(p => {
+                // =======================================================
+                // ROTINA DE GERAÇÃO AUTOMÁTICA DE SKU (CÓDIGO)
+                // Se algum produto (antigo ou importado) estiver sem código, gera um agora
+                // =======================================================
+                if (!p.codigo) {
+                    p.codigo = Date.now().toString().slice(-5) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                    p.last_update = Date.now();
+                    precisaSalvarProd = true;
+                }
+
                 if (p.marca) p.marca = String(p.marca).toUpperCase().trim();
                 if (p.marca && !marcasDoSistema.includes(p.marca)) { marcasDoSistema.push(p.marca); precisaSalvarMarca = true; }
                 
@@ -767,6 +778,7 @@
             if (precisaSalvarMarca) await localforage.setItem(MARCAS_KEY, marcasDoSistema);
             if (precisaSalvarTag) await localforage.setItem(TAGS_KEY, tagsDoSistema);
             if (precisaSalvarCat) await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
+            if (precisaSalvarProd) await saveDataLocally(); // Salva se algum SKU foi criado
 
             if(categoriasDoSistema.length > 0) {
                 categoriasDoSistema.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
@@ -1049,12 +1061,12 @@
                                 <label>Nome do Produto</label>
                                 <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px;" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
                                 <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
-    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
-    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
-    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
-    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #ef4444; border-color: #fecaca;" onclick="searchYoutube('${safeNomeGoogle}')" title="Buscar Vídeo no YouTube"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
-    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="searchGoogleInfo('${safeNomeGoogle}')" title="Buscar informações, avaliações e especificações"><i data-lucide="info" size="12"></i> INFO</button>
-</div>
+                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
+                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
+                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
+                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #ef4444; border-color: #fecaca;" onclick="searchYoutube('${safeNomeGoogle}')" title="Buscar Vídeo no YouTube"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
+                                    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="searchGoogleInfo('${safeNomeGoogle}')" title="Buscar informações, avaliações e especificações"><i data-lucide="info" size="12"></i> INFO</button>
+                                </div>
                             </div>
                             <div class="field-group">
                                 <label>Link do YouTube</label>
@@ -1079,6 +1091,9 @@
                         
                         <div class="field-group"><label>Marca</label>
                             <select class="form-input card-mini-input" onchange="updateField('${p.codigo}', 'marca', this.value)">${gerarOptions(marcasDoSistema, p.marca, 'Sel. Marca')}</select></div>
+
+                        <div class="field-group"><label>SKU (Código Automático)</label>
+                            <input type="text" class="form-input card-mini-input" value="${p.codigo || ''}" readonly style="background: #e4e4e7; cursor: not-allowed; color: var(--text-secondary);" title="Código gerado automaticamente"></div>
                             
                         <div class="field-group"><label>EAN / GTIN</label>
                             <input type="text" class="form-input card-mini-input" value="${p.gtin || ''}" onchange="updateField('${p.codigo}', 'gtin', this.value)"></div>
