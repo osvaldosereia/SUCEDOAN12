@@ -1317,14 +1317,14 @@ function sendOrder() {
     btn.disabled = true; btn.innerText = "Processando...";
     const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
     
- Object.entries(STATE.cart).forEach(([cartId, q]) => { 
+Object.entries(STATE.cart).forEach(([cartId, q]) => { 
         const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
         if (p) { 
             totalBruto += p.price * q; 
             itemsTxt += `${q}x ${p.name}\n`; 
-            // AQUI ESTÁ A MAGIA: Adicionamos o p.codigo a ser enviado como "sku"
+            
+            // Enviando apenas o que importa de verdade para a nota fiscal!
             apiItens.push({ 
-                id: String(p.id), 
                 sku: String(p.codigo), 
                 nome: p.name, 
                 qtd: q, 
