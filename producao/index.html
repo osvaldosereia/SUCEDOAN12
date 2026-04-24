@@ -1708,6 +1708,55 @@
             const mappedList = list.map(p => mapearProdutoParaBling(p));
             downloadCSVBling(mappedList, `Bling_Categoria_${cat}.csv`);
         };
+
+        // ==========================================================
+        // LEITURA DO CSV DO BLING (SEPARA ID E CÓDIGO/SKU PERFEITAMENTE)
+        // ==========================================================
+        document.getElementById('csv-file-substituir').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            mostrarAlerta("Lendo planilha do Bling...", "aviso");
+            
+            Papa.parse(file, {
+                header: true, // Lê o cabeçalho automático do Bling
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const linhas = results.data;
+                    let novosProdutos = [];
+                    const timestamp = Date.now();
+                    
+                    linhas.forEach(linha => {
+                        // Captura as duas colunas cruciais do Bling
+                        let idBling = linha["ID"] || timestamp.toString().slice(-8); 
+                        let skuBling = linha["Código"] || linha["Codigo"] || idBling;
+                        let nome = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
+                        let precoStr = linha["Preço"] || "0";
+                        let preco = parseFloat(precoStr.toString().replace(',','.')) || 0;
+                        
+                        novosProdutos.push({
+                            id: idBling,         // O campo "id" agora guarda o ID interno do Bling
+                            codigo: skuBling,    // O campo "codigo" agora guarda o SKU real
+                            nome: nome,
+                            preco: preco,
+                            preco_custo: 0,
+                            situacao: 'A',
+                            estoque: 0,
+                            descricao: "",
+                            last_update: timestamp
+                        });
+                    });
+                    
+                    if (novosProdutos.length > 0) {
+                        products = novosProdutos;
+                        await saveDataLocally();
+                        renderGrid();
+                        mostrarAlerta(`✅ Importação Concluída! ${novosProdutos.length} produtos carregados com ID e SKU corretos.`, "sucesso");
+                    }
+                }
+            });
+        });
+        
     </script>
 </body>
 </html>
