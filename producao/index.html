@@ -1665,11 +1665,39 @@
             downloadCSVBling([mapearProdutoParaBling(p)], `Bling_Produto_${sku}.csv`);
         };
 
-        window.exportarTudoBling = function() {
-            if(!confirm("Exportar todo o banco de dados (Bling CSV)?")) return;
+      window.exportarTudoBling = async function() {
+            if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
             if(products.length === 0) return alert("Banco vazio.");
+            
+            // 1. Mapeia todos os produtos para o formato do Bling
             const mappedList = products.map(p => mapearProdutoParaBling(p));
-            downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
+            
+            // 2. Define o limite máximo de produtos por arquivo
+            const chunkSize = 900; 
+
+            // 3. Se for menor ou igual a 900, exporta normalmente num ficheiro só
+            if (mappedList.length <= chunkSize) {
+                downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
+            } 
+            // 4. Se for maior que 900, divide em várias partes
+            else {
+                // Calcula quantas partes serão necessárias (ex: 2000 / 900 = 2.22 -> Math.ceil arredonda para 3)
+                const totalParts = Math.ceil(mappedList.length / chunkSize);
+                
+                mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
+
+                for (let i = 0; i < totalParts; i++) {
+                    // Pega num "fatia" de 900 produtos. Ex: parte 0 corta de 0 a 900, parte 1 corta de 900 a 1800.
+                    const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
+                    const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
+                    
+                    // Adiciona uma pausa (delay) de 800ms entre cada download para o navegador não bloquear
+                    await new Promise(resolve => setTimeout(() => {
+                        downloadCSVBling(chunk, filename);
+                        resolve();
+                    }, i === 0 ? 0 : 800)); 
+                }
+            }
         };
 
         window.exportarCategoriaBling = function() {
