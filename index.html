@@ -414,7 +414,7 @@ function getRecommendations() {
     } catch (e) { return []; }
 }
 
-// SISTEMA DE FALLBACK DE FOTOS SECUNDÁRIAS
+// SISTEMA DE FALLBACK DE FOTOS SECUNDÁRIAS CORRIGIDO
 window.handleImgError = function(img, id) {
     if (!img.dataset.triedSec) {
         img.dataset.triedSec = "true";
@@ -423,6 +423,8 @@ window.handleImgError = function(img, id) {
             img.src = `/site/img/produtos/secundaria/${p.codigo || p.id}.webp`;
         }
     } else {
+        // A SOLUÇÃO ESTÁ AQUI: Removemos o evento de erro antes de colocar a última imagem
+        img.onerror = null; 
         img.src = '/site/img/produtos/cesta.webp';
     }
 };
