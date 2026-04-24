@@ -134,6 +134,18 @@
             .card-grid { grid-template-columns: 1fr; gap: 10px; }
             .menu-sidebar-btn { width: 100%; height: 42px; margin-bottom: 8px; justify-content: flex-start; font-size: 12px; }
         }
+
+        /* =========================================================
+           CSS DO EDITOR DE TEXTO RICO (NOVIDADE)
+           ========================================================= */
+        .rich-text-editor { min-height: 80px; max-height: 200px; overflow-y: auto; background: #fafafa; border: 1px solid var(--border); border-radius: 0 0 6px 6px; padding: 8px; font-size: 12px; font-weight: normal; color: var(--text-primary); }
+        .rich-text-editor:focus { background: #ffffff; border-color: var(--accent); outline: none; }
+        .rich-text-editor a { color: #0284c7; text-decoration: underline; cursor: pointer; }
+        .rich-text-editor ul { margin: 4px 0; padding-left: 20px; }
+        .rich-text-toolbar { display: flex; gap: 4px; padding: 4px; background: #e4e4e7; border: 1px solid var(--border); border-bottom: none; border-radius: 6px 6px 0 0; }
+        .editor-btn { background: #fff; border: 1px solid #d4d4d8; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; padding: 4px 8px; display: flex; align-items: center; justify-content: center; color: var(--text-primary); transition: 0.2s;}
+        .editor-btn:hover { background: #f4f4f5; border-color: var(--accent); }
+        .desc-chip { display: inline-block; background: var(--accent); color: white !important; padding: 2px 8px; border-radius: 12px; font-size: 10px; text-decoration: none !important; margin: 2px; font-weight: 600; cursor: pointer;}
     </style>
 </head>
 <body id="body-app">
@@ -539,11 +551,12 @@
         }
 
        function sanitizeProductsForExport(prods) {
+            // AQUI FOI INCLUÍDO O CAMPO 'descricao' PARA EXPORTAR PARA O JSON
             const camposPermitidos = [
                 'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
                 'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
                 'subcategoria', 'subsubcategoria', 'marca', 'embalagem', 'tag_global', 
-                'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao'
+                'link_youtube', 'last_update', 'url_imagem', 'gondola', 'prateleira', 'localizacao', 'descricao'
             ];
             return prods.map(p => {
                 let cleanP = {};
@@ -774,8 +787,33 @@
         }
 
         // ==========================================================
-        // GERAÇÃO DE OPÇÕES DE SELECTS
+        // GERAÇÃO DE OPÇÕES DE SELECTS E FUNÇÕES AUXILIARES EDITOR
         // ==========================================================
+        
+        // FUNÇÕES DO EDITOR DE TEXTO RICO (NOVIDADE)
+        window.addLink = function(sku) {
+            const url = prompt("Insira a URL do link:");
+            if(url) {
+                const editor = document.getElementById(`desc-${sku}`);
+                editor.focus();
+                document.execCommand('createLink', false, url);
+                updateField(sku, 'descricao', editor.innerHTML);
+            }
+        }
+        
+        window.addChip = function(sku) {
+            const texto = prompt("Texto do Chip (Ex: Ver Manual):");
+            if(!texto) return;
+            const url = prompt("URL de Destino do Chip:");
+            if(url) {
+                const editor = document.getElementById(`desc-${sku}`);
+                editor.focus();
+                const chipHtml = `&nbsp;<a href="${url}" class="desc-chip" target="_blank">${texto}</a>&nbsp;`;
+                document.execCommand('insertHTML', false, chipHtml);
+                updateField(sku, 'descricao', editor.innerHTML);
+            }
+        }
+
         function gerarOptions(lista, selecionado, textoPadrao) {
             let html = `<option value="">${textoPadrao}</option>`;
             lista.forEach(item => {
@@ -1060,6 +1098,17 @@
                         <div class="field-group"><label>Estoque (Qtde)</label>
                             <input type="number" step="1" class="form-input card-mini-input" style="color:var(--accent); font-weight:900;" value="${p.estoque || 0}" onchange="updateField('${p.codigo}', 'estoque', this.value)"></div>
                     </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 0; margin-top: 5px;">
+                        <label style="font-size: 9px; color: var(--text-secondary); font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">Descrição Detalhada</label>
+                        <div class="rich-text-toolbar">
+                            <button type="button" class="editor-btn" onclick="document.execCommand('bold', false, null)" title="Negrito"><b>B</b></button>
+                            <button type="button" class="editor-btn" onclick="document.execCommand('insertUnorderedList', false, null)" title="Lista Indentada"><i data-lucide="list" size="10" style="margin-right:2px;"></i> Lista</button>
+                            <button type="button" class="editor-btn" onclick="addLink('${p.codigo}')" title="Adicionar Link"><i data-lucide="link" size="10" style="margin-right:2px;"></i> Link</button>
+                            <button type="button" class="editor-btn" onclick="addChip('${p.codigo}')" title="Adicionar Chip Linkado"><i data-lucide="tag" size="10" style="margin-right:2px;"></i> Chip</button>
+                        </div>
+                        <div class="rich-text-editor" id="desc-${p.codigo}" contenteditable="true" onblur="updateField('${p.codigo}', 'descricao', this.innerHTML)">${p.descricao || ''}</div>
+                    </div>
                 `;
                 gridContainer.appendChild(card);
                 itemsCarregados++;
@@ -1083,7 +1132,8 @@
         
         async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true); }
         async function deleteProduct(sku) { if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== sku); await saveDataLocally(); renderGrid(); }
-        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, last_update: timestamp }); await saveDataLocally(); renderGrid(); window.scrollTo(0, 0); }
+        // AQUI FOI INCLUÍDO O CAMPO descricao: "" NA CRIAÇÃO DE NOVO PRODUTO
+        async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, descricao: "", last_update: timestamp }); await saveDataLocally(); renderGrid(); window.scrollTo(0, 0); }
 
         // ==========================================================
         // EDITOR DE CANVAS 100% MANTIDO (Apenas 1 Slot)
@@ -1537,7 +1587,7 @@
                 "Profundidade do produto": "",
                 "Data Validade": p.validade || "",
                 "Descrição do Produto no Fornecedor": "",
-                "Descrição Complementar": "",
+                "Descrição Complementar": p.descricao || "", // Adicionamos a descrição rica aqui para o Bling
                 "Itens p/ caixa": "",
                 "Produto Variação": "",
                 "Tipo Produção": "",
