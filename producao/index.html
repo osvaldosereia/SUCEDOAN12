@@ -445,6 +445,12 @@
             window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(nome)}`, '_blank'); 
         }
 
+        window.searchGoogleInfo = function(nome) { 
+            if(!nome) return; 
+            // Busca o nome do produto + termos relevantes para compradores
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(nome + " avaliação OR análise OR especificações")}`, '_blank'); 
+        }
+
         // ==========================================================
         // GESTOR DE COMUNICAÇÃO COM GITHUB
         // ==========================================================
@@ -1042,11 +1048,12 @@
                             <div class="field-group">
                                 <label>Nome do Produto</label>
                                 <input type="text" class="form-input card-mini-input" style="font-weight:900; font-size:12px;" value="${safeNameForInput}" onchange="updateField('${p.codigo}', 'nome', this.value)">
-                                <div style="display: flex; gap: 4px; margin-top: 4px;">
+                                <div style="display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
     <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleNCM('${safeNomeGoogle}')" title="Buscar NCM no Google"><i data-lucide="search" size="12"></i> NCM</button>
     <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleHD('${safeNomeGoogle}')" title="Buscar Foto em Alta Resolução"><i data-lucide="image" size="12"></i> FOTO HD</button>
     <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px;" onclick="searchGoogleShopping('${safeNomeGoogle}')" title="Buscar Preço no Google Shopping"><i data-lucide="shopping-cart" size="12"></i> PREÇO</button>
     <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #ef4444; border-color: #fecaca;" onclick="searchYoutube('${safeNomeGoogle}')" title="Buscar Vídeo no YouTube"><i data-lucide="youtube" size="12"></i> VÍDEO</button>
+    <button class="nav-btn" style="flex: 1; padding: 4px; justify-content: center; font-size: 9px; min-height: 26px; color: #0284c7; border-color: #bae6fd; background: #e0f2fe;" onclick="searchGoogleInfo('${safeNomeGoogle}')" title="Buscar informações, avaliações e especificações"><i data-lucide="info" size="12"></i> INFO</button>
 </div>
                             </div>
                             <div class="field-group">
