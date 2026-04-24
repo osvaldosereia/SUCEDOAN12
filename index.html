@@ -21,7 +21,7 @@
             --text-gray: #5A504A;    
             --border-light: #e5e7eb;
             --success: #059669; 
-            --radius-img: 0px; /* Transformado para cantos retos */
+            --radius-img: 0px; 
             --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
 
@@ -72,11 +72,9 @@
         /* CARDS DE PRODUTOS */
         .card { background: transparent; border: none; display: flex; flex-direction: column; position: relative; transition: 0.2s; height: 100%; }
         
-        /* Ajuste de Fundo, Margens e Lente (mix-blend-mode) */
         .card-img-wrap { width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; background: var(--bg-img); border-radius: 0px; margin-bottom: 8px; padding: 0px; overflow: hidden; cursor: pointer; position: relative; }
         .card-img-wrap img { width: 100%; height: 100%; object-fit: contain; transition: 0.3s; mix-blend-mode: multiply; }
         
-        /* Fontes menores e refinadas */
         .card-title { font-size: 0.85rem; font-weight: 600; line-height: 1.4; margin-bottom: 6px; color: var(--text-gray); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 2.8em; text-transform: none; cursor: pointer; }
         
         .card-price-row { display: flex; align-items: baseline; gap: 8px; margin-top: auto; margin-bottom: 12px; flex-wrap: wrap; }
@@ -100,7 +98,6 @@
         .btn-action-gray { width: 100%; padding: 10px 6px; background: var(--bg-img); color: var(--text-dark); font-size: 0.85rem; font-weight: 700; border-radius: 0px; border: none; transition: 0.2s; cursor: pointer; text-align: center; text-transform: uppercase; }
         .btn-action-gray:active { background: var(--border-light); }
 
-        /* EMBALAGEM AGORA NO LADO DIREITO SUPERIOR E MENOR */
         .embalagem-tag { position: absolute; top: 8px; right: 8px; background: rgba(255, 255, 255, 0.95); color: var(--brand); font-size: 0.65rem; font-weight: 800; padding: 4px 8px; border-radius: 0px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 2; letter-spacing: -0.2px; text-transform: uppercase; }
         .list-img-wrap .embalagem-tag { top: 4px; right: 4px; font-size: 0.6rem; padding: 2px 6px; }
 
@@ -156,6 +153,9 @@
         .pay-btn { padding: 16px; border: 1px solid var(--border-light); border-radius: 0px; background: #fff; font-weight: 600; font-size: 0.95rem; color: var(--text-gray); transition: 0.2s; }
         .pay-btn.selected { border-color: var(--success); background: var(--success); color: #fff; }
         
+        /* NOVO SELETOR DE CIDADES CHECKOUT */
+        .cidade-selector input[type="radio"]:checked + .btn-cidade { background: var(--brand); color: #fff; border-color: var(--brand); }
+
         .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); z-index: 2; position: relative;}
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1rem; color: var(--text-gray); font-weight: 600;}
         .summary-row.total { font-size: 1.5rem; font-weight: 900; color: var(--text-dark); margin-bottom: 24px; letter-spacing: -0.5px; }
@@ -174,7 +174,6 @@
 
         .economia-tag { font-size: 0.75rem; color: var(--success); font-weight: 800; background: #ecfdf5; padding: 4px 8px; border-radius: 0px; display: inline-block; margin-top: 4px; }
         
-        /* Menu FAB do WhatsApp - Tamanho reduzido e quadrado */
         .fab-wrapper { position: fixed; bottom: 24px; right: 24px; z-index: 90; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
         .fab-menu { display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
         .fab-menu.open { display: flex; }
@@ -184,7 +183,6 @@
         .fab-btn:active { transform: scale(0.95); }
         .fab-icon { width: 28px; height: 28px; fill: currentColor; }
 
-        /* ESTILOS PARA DESCRIÇÃO DO PRODUTO (NOVA PÁGINA) */
         .produto-descricao { font-size: 0.95rem; color: var(--text-gray); line-height: 1.6; padding-right: 8px; }
         .produto-descricao h2 { font-size: 1.2rem !important; color: var(--brand); margin-top: 24px; margin-bottom: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: -0.5px;}
         .produto-descricao h3 { font-size: 1.05rem !important; margin-top: 16px; margin-bottom: 8px; font-weight: 700; color: var(--text-dark); }
@@ -193,7 +191,6 @@
         .produto-descricao li { margin-bottom: 6px; }
         .produto-descricao mark { background: var(--brand-light); color: var(--brand); padding: 0 4px; font-weight: 600;}
 
-        /* LAYOUT PÁGINA DE PRODUTO */
         .product-page-container { display: flex; flex-direction: column; gap: 24px; }
         @media(min-width: 768px) { .product-page-container { flex-direction: row; align-items: flex-start; gap: 48px; } }
         .product-page-image { flex: 1; background: var(--bg-img); display: flex; align-items: center; justify-content: center; position: relative; padding: 0; border-radius: 0px; overflow: hidden; aspect-ratio: 1/1; width: 100%;}
@@ -317,8 +314,28 @@
 
             <div class="chk-section">
                 <div class="chk-title">Seus Dados</div>
-                <input type="text" id="chk-nome" class="input-text" placeholder="Nome Completo">
-                <input type="text" id="chk-cpf" class="input-text" placeholder="CPF">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <input type="text" id="chk-nome" class="input-text" placeholder="Nome Completo" style="margin-bottom:0;" required>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="tel" id="chk-cpf" class="input-text" placeholder="CPF (Apenas números)" style="margin-bottom:0; flex: 1;" maxlength="14" oninput="mascaraCPF(this)" required>
+                        <input type="tel" id="chk-whats" class="input-text" placeholder="WhatsApp" style="margin-bottom:0; flex: 1;" maxlength="15" oninput="mascaraWhats(this)" required>
+                    </div>
+                    
+                    <div class="chk-title" style="margin-top: 12px; margin-bottom: 8px; font-size: 1rem;">Cidade de Entrega</div>
+                    <div class="cidade-selector" style="display: flex; gap: 10px;">
+                        <input type="radio" id="cidCuiaba" name="chk-cidade" value="Cuiabá" checked style="display: none;">
+                        <label class="btn-cidade" for="cidCuiaba" style="flex: 1; text-align: center; padding: 14px; background: #f9fafb; border: 2px solid var(--border-light); border-radius: 8px; font-weight: bold; color: var(--text-gray); cursor: pointer; transition: 0.2s;">Cuiabá</label>
+                        
+                        <input type="radio" id="cidVG" name="chk-cidade" value="Várzea Grande" style="display: none;">
+                        <label class="btn-cidade" for="cidVG" style="flex: 1; text-align: center; padding: 14px; background: #f9fafb; border: 2px solid var(--border-light); border-radius: 8px; font-weight: bold; color: var(--text-gray); cursor: pointer; transition: 0.2s;">Várzea Grande</label>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 4px;">
+                        <input type="tel" id="chk-cep" class="input-text" placeholder="CEP" style="margin-bottom:0; flex: 1;" maxlength="9" oninput="mascaraCEP(this)">
+                        <input type="text" id="chk-bairro" class="input-text" placeholder="Bairro" style="margin-bottom:0; flex: 2;">
+                    </div>
+                    <input type="text" id="chk-endereco" class="input-text" placeholder="Endereço (Rua, Número, Complemento)" style="margin-bottom:0;">
+                </div>
             </div>
 
             <div class="chk-section">
@@ -358,7 +375,7 @@
 
 <script>
 // ========================================================
-// TODA A LÓGICA DE NEGÓCIO ORIGINAL INTACTA + INTELIGÊNCIA
+// TODA A LÓGICA DE NEGÓCIO ORIGINAL INTACTA + INTELIGÊNCIA LOCAL-FIRST
 // ========================================================
 
 const PROMO_CONFIG = {
@@ -385,7 +402,49 @@ const trashIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
 
-// RASTREAMENTO PARA RECOMENDAÇÕES (COOKIES/LOCALSTORAGE)
+// ========================================================
+// FUNÇÕES DE MÁSCARA E LOCAL-FIRST (DADOS SALVOS NO CELULAR)
+// ========================================================
+function mascaraCPF(i){
+    let v = i.value.replace(/\D/g,"");
+    v = v.replace(/(\d{3})(\d)/,"$1.$2");
+    v = v.replace(/(\d{3})(\d)/,"$1.$2");
+    v = v.replace(/(\d{3})(\d{1,2})$/,"$1-$2");
+    i.value = v;
+}
+function mascaraWhats(i){
+    let v = i.value.replace(/\D/g,"");
+    v = v.replace(/^(\d{2})(\d)/g,"($1) $2");
+    v = v.replace(/(\d)(\d{4})$/,"$1-$2");
+    i.value = v;
+}
+function mascaraCEP(i){
+    let v = i.value.replace(/\D/g,"");
+    v = v.replace(/^(\d{5})(\d)/,"$1-$2");
+    i.value = v;
+}
+
+function carregarDadosSalvos() {
+    try {
+        const dados = JSON.parse(localStorage.getItem('donaAntoniaCliente'));
+        if(dados) {
+            if(dados.nome) $('chk-nome').value = dados.nome;
+            if(dados.cpf) $('chk-cpf').value = dados.cpf;
+            if(dados.whats) $('chk-whats').value = dados.whats;
+            if(dados.cep) $('chk-cep').value = dados.cep;
+            if(dados.bairro) $('chk-bairro').value = dados.bairro;
+            if(dados.endereco) $('chk-endereco').value = dados.endereco;
+            if(dados.cidade === 'Cuiabá') $('cidCuiaba').checked = true;
+            if(dados.cidade === 'Várzea Grande') $('cidVG').checked = true;
+        }
+    } catch(e) {}
+}
+
+function salvarDadosLocalmente(dados) {
+    localStorage.setItem('donaAntoniaCliente', JSON.stringify(dados));
+}
+
+// RASTREAMENTO PARA RECOMENDAÇÕES
 function trackPreference(prod) {
     if (!prod) return;
     try {
@@ -414,63 +473,43 @@ function getRecommendations() {
     } catch (e) { return []; }
 }
 
-// ========================================================
-// SISTEMA INTELIGENTE DE RESGATE DE IMAGENS (FALLBACK)
-// ========================================================
 window.handleImgError = function(img, id) {
-    // 1. Prevenção de Loop Infinito (o "pisca-pisca")
     if (img.dataset.fallbackState === "failed") {
-        img.onerror = null; // Desliga o gatilho de erro
+        img.onerror = null; 
         img.src = '/site/img/produtos/cesta.webp';
         return;
     }
-
-    // 2. Busca os dados do produto que deu erro
     let p = STATE.prods.find(x => String(x.id) === String(id)) || STATE.baskets.find(x => String(x.id) === String(id));
-    
     if (!p) {
         img.dataset.fallbackState = "failed";
         img.src = '/site/img/produtos/cesta.webp';
         return;
     }
-
-    // 3. Limpeza do Link Original (remove o '../' problemático)
     let linkLimpo = null;
     if (p.img || p.url_imagem) {
         let linkSujo = p.img || p.url_imagem;
         linkLimpo = linkSujo.replace('../', '/'); 
     }
-
-    // 4. A Lista de Tentativas (A Cascata)
     const tentativas = [
-        linkLimpo,                                                 // Tenta o link corrigido do JSON
-        `/site/img/produtos/secundaria/${p.codigo || p.id}.webp`,  // Tenta a pasta secundária
-        `/site/img/produtos_2/${p.codigo || p.id}.webp`,           // Tenta a pasta extra 2 do PIM
-        `/site/img/produtos_3/${p.codigo || p.id}.webp`            // Tenta a pasta extra 3 do PIM
+        linkLimpo,                                                 
+        `/site/img/produtos/secundaria/${p.codigo || p.id}.webp`,  
+        `/site/img/produtos_2/${p.codigo || p.id}.webp`,           
+        `/site/img/produtos_3/${p.codigo || p.id}.webp`            
     ];
-
-    // Descobre em qual tentativa estamos no momento
     let tentativaAtual = parseInt(img.dataset.fallbackStep || "0");
-
-    // Pula os itens vazios da lista (ex: se não houver linkLimpo)
     while (tentativaAtual < tentativas.length && !tentativas[tentativaAtual]) {
         tentativaAtual++;
     }
-
-    // 5. Executa a tentativa
     if (tentativaAtual < tentativas.length) {
         img.src = tentativas[tentativaAtual];
-        // Marca qual será a próxima tentativa se essa também falhar
         img.dataset.fallbackStep = (tentativaAtual + 1).toString();
     } else {
-        // 6. Último Recurso: Desiste e mostra a Cesta
         img.dataset.fallbackState = "failed";
-        img.onerror = null; // Trava de segurança final
+        img.onerror = null; 
         img.src = '/site/img/produtos/cesta.webp';
     }
 };
 
-// WHATSAPP
 window.toggleFab = function() { $('fab-menu').classList.toggle('open'); };
 window.sendZap = function(text) {
     window.open(`https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(text)}`, '_blank');
@@ -478,7 +517,6 @@ window.sendZap = function(text) {
 };
 document.addEventListener('click', (e) => { let fabWrapper = document.querySelector('.fab-wrapper'); if (fabWrapper && !fabWrapper.contains(e.target)) { $('fab-menu').classList.remove('open'); } });
 
-// SEO URL
 function createSlug(text) { return !text ? "" : text.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-'); }
 function updateURL(type, slug) { const url = new URL(window.location); url.search = ''; if (type !== 'home') { url.searchParams.set(type, slug); } window.history.pushState({ modal: slug }, "", url); }
 function removeURLParam() { const url = new URL(window.location); url.search = ''; window.history.pushState({}, "", url); }
@@ -614,7 +652,6 @@ function handleSearchInput() {
 function clearSearch(triggerSearch = true) { $('search-input').value = ''; $('search-clear').style.display = 'none'; if(triggerSearch) { clearTimeout(searchTimeout); renderMainPage(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
 function findItem(idStr) { if(!idStr) return null; let target = String(idStr).trim(); return STATE.prods.find(p => p.id === target || p.blingId === target || p.codigo === target); }
 
-// ABRE A PÁGINA DO PRODUTO DETALHADA
 window.openQuickView = function(id, swapCtx = null) {
     let isBasket = false;
     let p = STATE.prods.find(x => String(x.id) === String(id)); 
@@ -1246,12 +1283,36 @@ function renderCheckoutItems() {
     else { btn.disabled = false; btn.innerText = 'Enviar pelo WhatsApp'; btn.style.background = 'var(--success)'; }
 }
 
+// ========================================================
+// NOVO FLUXO SEND ORDER (GERA JSON COMPLETO)
+// ========================================================
 function sendOrder() {
     const btn = $('btn-send-order'); if (btn.disabled) return;
-    const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.trim(); const pag = $('chk-pagamento').value;
     
-    if (!nome) { alert("Preencha seu nome."); let campoNome = $('chk-nome'); campoNome.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(() => campoNome.focus(), 300); return; }
+    // Coletando todos os dados do novo form Local-First
+    const nome = $('chk-nome').value.trim(); 
+    const cpf = $('chk-cpf').value.replace(/\D/g,""); // API pede numero limpo
+    const whats = $('chk-whats').value.trim();
+    const cidadeRadio = document.querySelector('input[name="chk-cidade"]:checked');
+    const cidade = cidadeRadio ? cidadeRadio.value : '';
+    const estado = 'MT'; // Estado chumbado
+    const cep = $('chk-cep').value.replace(/\D/g,"");
+    const bairro = $('chk-bairro').value.trim();
+    const endereco = $('chk-endereco').value.trim();
+    const pag = $('chk-pagamento').value;
+    
+    if (!nome || !cpf || !whats || !bairro || !endereco) { 
+        alert("Por favor, preencha todos os dados de entrega para prosseguir."); 
+        $('chk-nome').scrollIntoView({ behavior: 'smooth', block: 'center' }); 
+        return; 
+    }
     if (!pag) { alert("Escolha o pagamento."); $('chk-pagamento').parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+
+    // Salva silenciosamente no celular do cliente
+    salvarDadosLocalmente({
+        nome: nome, cpf: $('chk-cpf').value, whats: whats, 
+        cidade: cidade, cep: $('chk-cep').value, bairro: bairro, endereco: endereco
+    });
 
     btn.disabled = true; btn.innerText = "Processando...";
     const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
@@ -1261,7 +1322,7 @@ function sendOrder() {
         if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; apiItens.push({ id: String(p.blingId || p.id), nome: p.name, qtd: q, price: p.price }); } 
     });
       
-   let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + (STATE.couponDiscount || 0); 
+    let totalDesc = STATE.deliveryDiscount + STATE.atacadoDiscount + STATE.customPromoDiscount + (STATE.couponDiscount || 0); 
     let final = totalBruto + STATE.basketExtraFee - totalDesc;
     
     if (STATE.atacadoDiscount > 0) itemsTxt += `\n📦 DESCONTO VOLUME: -${fmt(STATE.atacadoDiscount)}`;
@@ -1269,9 +1330,30 @@ function sendOrder() {
     if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
     if (STATE.couponDiscount > 0) itemsTxt += `\n🏷️ CUPOM (${STATE.couponCode}): -${fmt(STATE.couponDiscount)}`;
     
-    const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
+    const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/${estado}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
-    const payload = { cliente: { nome: nome, cpf: cpf, pagamento: pag }, pedido: { itens: apiItens, total: Number(final), outras_despesas: Number(STATE.basketExtraFee), desconto: Number(totalDesc), observacoes: `Entrega: ${STATE.deliveryDateStr}` } };
+    // Novo Payload Enriquecido
+    const payload = { 
+        cliente: { 
+            nome: nome, 
+            cpf: cpf, 
+            whats: whats,
+            cidade: cidade,
+            estado: estado,
+            cep: cep,
+            bairro: bairro,
+            endereco: endereco,
+            pagamento: pag 
+        }, 
+        pedido: { 
+            itens: apiItens, 
+            total: Number(final), 
+            outras_despesas: Number(STATE.basketExtraFee), 
+            desconto: Number(totalDesc), 
+            observacoes: `Entrega: ${STATE.deliveryDateStr}` 
+        } 
+    };
+    
     fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
   
     window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
@@ -1352,6 +1434,9 @@ async function init() {
         
         loadCart(); updateTotals(); setupCategories();
         
+        // Puxa os dados salvos caso existam no Local Storage
+        carregarDadosSalvos();
+
         $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
         history.replaceState({home: true}, ""); renderMainPage(); 
 
