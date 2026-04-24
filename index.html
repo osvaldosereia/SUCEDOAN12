@@ -414,17 +414,58 @@ function getRecommendations() {
     } catch (e) { return []; }
 }
 
-// SISTEMA DE FALLBACK DE FOTOS SECUNDÁRIAS CORRIGIDO
+// ========================================================
+// SISTEMA INTELIGENTE DE RESGATE DE IMAGENS (FALLBACK)
+// ========================================================
 window.handleImgError = function(img, id) {
-    if (!img.dataset.triedSec) {
-        img.dataset.triedSec = "true";
-        let p = STATE.prods.find(x => String(x.id) === String(id)) || STATE.baskets.find(x => String(x.id) === String(id));
-        if (p) {
-            img.src = `/site/img/produtos/secundaria/${p.codigo || p.id}.webp`;
-        }
+    // 1. Prevenção de Loop Infinito (o "pisca-pisca")
+    if (img.dataset.fallbackState === "failed") {
+        img.onerror = null; // Desliga o gatilho de erro
+        img.src = '/site/img/produtos/cesta.webp';
+        return;
+    }
+
+    // 2. Busca os dados do produto que deu erro
+    let p = STATE.prods.find(x => String(x.id) === String(id)) || STATE.baskets.find(x => String(x.id) === String(id));
+    
+    if (!p) {
+        img.dataset.fallbackState = "failed";
+        img.src = '/site/img/produtos/cesta.webp';
+        return;
+    }
+
+    // 3. Limpeza do Link Original (remove o '../' problemático)
+    let linkLimpo = null;
+    if (p.img || p.url_imagem) {
+        let linkSujo = p.img || p.url_imagem;
+        linkLimpo = linkSujo.replace('../', '/'); 
+    }
+
+    // 4. A Lista de Tentativas (A Cascata)
+    const tentativas = [
+        linkLimpo,                                                 // Tenta o link corrigido do JSON
+        `/site/img/produtos/secundaria/${p.codigo || p.id}.webp`,  // Tenta a pasta secundária
+        `/site/img/produtos_2/${p.codigo || p.id}.webp`,           // Tenta a pasta extra 2 do PIM
+        `/site/img/produtos_3/${p.codigo || p.id}.webp`            // Tenta a pasta extra 3 do PIM
+    ];
+
+    // Descobre em qual tentativa estamos no momento
+    let tentativaAtual = parseInt(img.dataset.fallbackStep || "0");
+
+    // Pula os itens vazios da lista (ex: se não houver linkLimpo)
+    while (tentativaAtual < tentativas.length && !tentativas[tentativaAtual]) {
+        tentativaAtual++;
+    }
+
+    // 5. Executa a tentativa
+    if (tentativaAtual < tentativas.length) {
+        img.src = tentativas[tentativaAtual];
+        // Marca qual será a próxima tentativa se essa também falhar
+        img.dataset.fallbackStep = (tentativaAtual + 1).toString();
     } else {
-        // A SOLUÇÃO ESTÁ AQUI: Removemos o evento de erro antes de colocar a última imagem
-        img.onerror = null; 
+        // 6. Último Recurso: Desiste e mostra a Cesta
+        img.dataset.fallbackState = "failed";
+        img.onerror = null; // Trava de segurança final
         img.src = '/site/img/produtos/cesta.webp';
     }
 };
