@@ -1043,21 +1043,27 @@
             }, 300);
         }
 
-        function renderCategoryChips() {
+       function renderCategoryChips() {
             const container = $('category-chips');
             if (!container) return;
+            
+            // Verifica quem está ativo
             let isOfertasActive = STATE.currentFilter.type === 'ofertas' || STATE.currentFilter.type === 'search' ? 'active' : '';
             let isCestasActive = STATE.currentFilter.type === 'cestas' ? 'active' : '';
             
+            // Renderiza os botões fixos sem o estilo embutido
             let html = `<div class="category-chip ${isOfertasActive}" onclick="filterBy('ofertas', '')">Ofertas</div>`;
-            html += `<div class="category-chip ${isCestasActive}" style="background-color: var(--primary); color: white;" onclick="filterBy('cestas', '')"><i class="fa-solid fa-box-open"></i> Cestas Básicas</div>`;
+            html += `<div class="category-chip ${isCestasActive}" onclick="filterBy('cestas', '')"><i class="fa-solid fa-box-open" style="margin-right: 4px;"></i> Cestas Básicas</div>`;
             
+            // Renderiza as restantes categorias dinâmicas
             STATE.mainCategories.forEach((cat, index) => {
                 let isActive = (STATE.activeCatIndex === index && STATE.currentFilter.type !== 'ofertas' && STATE.currentFilter.type !== 'cestas') ? 'active' : '';
                 html += `<div class="category-chip ${isActive}" onclick="filterBy('cat', '${cat}')">${cat}</div>`;
             });
+            
             container.innerHTML = html;
 
+            // Faz o scroll automático para o chip ativo
             setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
@@ -1666,10 +1672,13 @@
         // ==========================================
         // LÓGICA DAS CESTAS BÁSICAS
         // ==========================================
+        window.currentBasketId = null; // Guarda o ID da cesta aberta no momento
+
         window.openBasketDetail = function(basketId) {
             const basket = BASKETS.find(b => b.id === basketId);
             if (!basket) return;
 
+            window.currentBasketId = basketId;
             pushHistoryState('basket');
             
             $('basketModalImg').src = basket.imagem;
@@ -1693,53 +1702,36 @@
             $('basketDetailModal').classList.add('active');
         };
 
+        // A função renderBasketItemsList() e updateBasketItemQty() continuam as mesmas que você já tem...
+        
         window.closeBasketDetail = function() {
             $('basketDetailModal').classList.remove('active');
-        };
-
-        function renderBasketItemsList() {
-            let container = $('basket-items-container');
-            if(currentBasketItems.length === 0) {
-                container.innerHTML = "<p style='color: #888;'>Nenhum produto em estoque encontrado para esta cesta.</p>";
-                return;
-            }
-
-            let html = '';
-            currentBasketItems.forEach((item, index) => {
-                let p = item.pObj;
-                html += `
-                <div class="product-card-list" style="border: 1px solid var(--border-light); padding: 8px;">
-                    <img src="${p.img}" class="product-icon-list" style="width: 60px; height: 60px;">
-                    <div class="product-info-list">
-                        <div class="product-name-list" style="font-size: 12px;">${p.name}</div>
-                        <div class="tag-preco-list" style="font-size: 14px;">${fmt(p.price)}</div>
-                    </div>
-                    <div class="qty-controls" style="padding: 4px 8px; font-size: 13px;">
-                        <i class="fa-solid fa-minus qty-btn" onclick="updateBasketItemQty(${index}, -1)"></i>
-                        <span style="font-weight:bold; width: 20px; text-align:center;">${item.qty}</span>
-                        <i class="fa-solid fa-plus qty-btn" onclick="updateBasketItemQty(${index}, 1)"></i>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        }
-
-        window.updateBasketItemQty = function(index, delta) {
-            let item = currentBasketItems[index];
-            if (!item) return;
-            
-            let newQty = item.qty + delta;
-            if (newQty < 0) newQty = 0;
-            if (newQty > item.pObj.stock) {
-                alert("Estoque insuficiente para " + item.pObj.name);
-                return;
-            }
-            
-            item.qty = newQty;
-            renderBasketItemsList(); 
+            window.currentBasketId = null;
         };
 
         window.addBasketToCart = function() {
+            if (!window.currentBasketId) return;
+            const basket = BASKETS.find(b => b.id === window.currentBasketId);
+            if (!basket) return;
+
+            // 1. Calcula o valor original da soma dos itens da cesta
+            let valorOriginalProdutos = 0;
+            basket.produtos.forEach(itemString => {
+                let parts = itemString.split("x ");
+                if(parts.length === 2) {
+                    let qty = parseInt(parts[0]);
+                    let code = parts[1];
+                    let pObj = STATE.prods.find(p => p.codigo === code || p.id === code);
+                    if (pObj) {
+                        valorOriginalProdutos += (qty * pObj.price);
+                    }
+                }
+            });
+
+            // 2. Calcula a diferença (Taxa escondida ou Desconto)
+            let diferenca = basket.preco - valorOriginalProdutos;
+
+            // 3. Adiciona os itens (com as quantidades editadas pelo cliente) na sacola
             let addedCount = 0;
             currentBasketItems.forEach(item => {
                 if (item.qty > 0) {
@@ -1752,6 +1744,37 @@
                 }
             });
 
+            // 4. Adiciona o ajuste financeiro na sacola
+            if (addedCount > 0 && Math.abs(diferenca) > 0.01) {
+                let feeId = 'fee_' + basket.id;
+                let isDiscount = diferenca < 0;
+                let feeName = isDiscount ? 'Desconto Promo (' + basket.nome + ')' : 'Embalagem/Montagem (' + basket.nome + ')';
+                
+                // Cria o item de ajuste na memória se ele ainda não existir
+                let feeProd = STATE.prods.find(p => p.id === feeId);
+                if (!feeProd) {
+                    feeProd = {
+                        id: feeId,
+                        codigo: feeId,
+                        name: feeName,
+                        price: diferenca, // Aceita valor negativo sem problemas
+                        stock: 9999,
+                        img: basket.imagem,
+                        categoria: 'Cestas',
+                        subcategoria: '',
+                        marca: '',
+                        embalagem: '',
+                        descricao: 'Ajuste de valor da cesta fechada.'
+                    };
+                    STATE.prods.push(feeProd);
+                }
+                
+                // Adiciona 1 unidade do ajuste à sacola
+                let currentFee = STATE.cart[feeId] || 0;
+                if (currentFee === 0) STATE.cartOrder.push(feeId);
+                STATE.cart[feeId] = currentFee + 1;
+            }
+
             if (addedCount > 0) {
                 updateTotals(); 
                 saveCart();
@@ -1762,7 +1785,7 @@
                     bagIcon.style.color = 'var(--success)'; 
                     setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); 
                 }
-                setTimeout(() => alert("Produtos da Cesta adicionados à sua sacola!"), 300);
+                setTimeout(() => alert("Cesta adicionada à sua sacola!"), 300);
             } else {
                 alert("Nenhum produto válido para adicionar.");
             }
