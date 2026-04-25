@@ -212,9 +212,14 @@
            2. VITRINE E SCROLL (CONTROLE POR FORMATO)
         ========================================= */
         .main-container {
-            height: 100dvh;
-            /* Ajuste: Adicionado + 15px na conta para descer a grade e descolar dos chips */
-            padding-top: calc(var(--header-total) + env(safe-area-inset-top) + 15px);
+            /* Fixa a vitrine para começar exatamente abaixo do cabeçalho completo (topbar + chips) */
+            position: fixed; 
+            top: calc(var(--header-total) + env(safe-area-inset-top));
+            left: 0;
+            width: 100%;
+            height: calc(100dvh - var(--header-total) - env(safe-area-inset-top));
+            padding-top: 15px; /* Respiro visual acima do primeiro card */
+            scroll-padding-top: 15px; /* Garante que o scroll-snap não engula o respiro */
             padding-bottom: max(20px, env(safe-area-inset-bottom));
             overflow-y: auto;
             scroll-behavior: auto;
@@ -243,7 +248,7 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
-            /* Ajuste: Subtraímos os 15px adicionados no padding (o -10px original virou -25px) */
+            /* Altura total calculada considerando o novo limite do container e o respiro de 15px */
             height: calc(100dvh - var(--header-total) - env(safe-area-inset-top) - 25px); 
             scroll-snap-align: start;
             scroll-snap-stop: always;
@@ -288,7 +293,7 @@
             gap: 0;
         }
         .view-mode-3 .product-card {
-            height: calc(100dvh - var(--header-total) - env(safe-area-inset-top)); 
+            height: calc(100dvh - var(--header-total) - env(safe-area-inset-top) - 15px); 
             aspect-ratio: auto; 
             scroll-snap-align: start; 
             scroll-snap-stop: always;
