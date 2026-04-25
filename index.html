@@ -1295,18 +1295,17 @@
             }
         };
 
-        function renderVitrineEngine() {
+       function renderVitrineEngine() {
             const vitrine = $('vitrine');
             let fType = STATE.currentFilter.type;
             let fVal = STATE.currentFilter.value;
             
-            // Controle do botão de visualização (Grid/Lista) e renderização das cestas
+            // Controle das Cestas Básicas (mantido igual)
             if (fType === 'cestas') {
                 $('viewModeBtn').style.opacity = '0.3'; 
-                $('viewModeBtn').style.pointerEvents = 'none'; // Desativa o botão
-                vitrine.className = `main-container view-mode-1`; // Usa grade 1x para ficar vertical grande
+                $('viewModeBtn').style.pointerEvents = 'none';
+                vitrine.className = `main-container view-mode-1`;
                 
-                // Renderiza as cestas
                 let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
                 BASKETS.forEach(basket => {
                     html += `
@@ -1319,10 +1318,10 @@
                 });
                 html += '</div>';
                 vitrine.innerHTML = html;
-                return; // Para a execução por aqui
+                return; 
             } else {
                 $('viewModeBtn').style.opacity = '1';
-                $('viewModeBtn').style.pointerEvents = 'auto'; // Ativa o botão de volta
+                $('viewModeBtn').style.pointerEvents = 'auto'; 
                 vitrine.className = `main-container view-mode-${STATE.viewMode}`;
             }
             
@@ -1352,10 +1351,15 @@
                 vitrine.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-light);">Nenhum produto encontrado.</div>`;
                 return;
             }
+
+            let fullList = primaryList.concat(secondaryList);
             let buffer = [];
             let isPrimaryPhase = true;
-            let fullList = primaryList.concat(secondaryList);
-            for (let i = 0; i < fullList.length; i++) {
+            
+            // NOVO: Limita a lista a desenhar na tela baseando-se no pageLimit
+            let listToRender = fullList.slice(0, STATE.pageLimit);
+
+            for (let i = 0; i < listToRender.length; i++) {
                 if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'ofertas' && fType !== 'search') {
                     isPrimaryPhase = false;
                     if(buffer.length > 0) {
@@ -1368,19 +1372,55 @@
                     divPage.innerHTML = `<div class="category-divider" style="padding: 40px 10px 20px; font-weight: bold; text-align: center; color: #888;">Explore Mais Categorias</div>`;
                     fragment.appendChild(divPage);
                 }
-                buffer.push(renderCardHTML(fullList[i]));
+                buffer.push(renderCardHTML(listToRender[i]));
                 if (buffer.length === 4) {
                     let page = document.createElement('div'); page.className = 'product-page';
                     page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                 }
             }
+            
             if (buffer.length > 0) {
                 let page = document.createElement('div'); page.className = 'product-page';
                 page.innerHTML = buffer.join(''); fragment.appendChild(page);
             }
+
+            // NOVO: Se ainda houver produtos de fora da tela, adiciona um Sentinela (Load More)
+            if (fullList.length > STATE.pageLimit) {
+                let sentinel = document.createElement('div');
+                sentinel.id = 'scroll-sentinel';
+                sentinel.style.padding = '30px 10px 80px';
+                sentinel.style.textAlign = 'center';
+                sentinel.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color: var(--text-light); font-size: 24px;"></i>';
+                fragment.appendChild(sentinel);
+            }
+
             vitrine.innerHTML = '';
             vitrine.appendChild(fragment);
             lazyLoadImages();
+            
+            // NOVO: Ativa o observador do final da tela
+            observeSentinel();
+        }
+
+        // NOVO: Deteta quando o utilizador chega ao fim da lista para carregar mais
+        function observeSentinel() {
+            let sentinel = document.getElementById('scroll-sentinel');
+            if (!sentinel) return;
+
+            let observer = new IntersectionObserver((entries) => {
+                if (entries[0].isIntersecting) {
+                    // Se o ícone de carregamento apareceu, adicionamos mais 16 e recarregamos!
+                    STATE.pageLimit += 16; 
+                    observer.disconnect(); 
+                    
+                    // Um micro delay apenas para garantir suavidade
+                    setTimeout(() => {
+                        renderVitrineEngine();
+                    }, 50);
+                }
+            }, { root: $('vitrine'), rootMargin: '100px' }); // O rootMargin aciona 100px antes de aparecer na tela, parecendo magia!
+
+            observer.observe(sentinel);
         }
 
         function lazyLoadImages() {
