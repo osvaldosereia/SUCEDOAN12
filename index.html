@@ -54,7 +54,7 @@
         }
 
         #splash-screen img {
-            width: 240px; /* Ajuste: Logo horizontal um pouco maior */
+            width: 240px; 
             animation: pulse 1.2s infinite alternate ease-in-out;
         }
 
@@ -92,40 +92,22 @@
 
         /* MODO 0: Grade 2x2 (Padrão) */
         .view-mode-0 { scroll-snap-type: y mandatory; }
-        
         .view-mode-0 .product-page { 
             display: grid;
             grid-template-columns: repeat(2, 1fr); 
-            grid-template-rows: repeat(2, 1fr); /* Força exatamente 2 linhas iguais */
-            /* Altura total (100dvh) - dock height (55px) - dock bottom (60px) - 10px de margem */
+            grid-template-rows: repeat(2, 1fr); 
             height: calc(100dvh - var(--dock-height) - var(--dock-bottom) - 10px); 
             scroll-snap-align: start;
             scroll-snap-stop: always;
         }
-
-        /* Separa o related grid para ele não herdar a altura de tela inteira no modal */
-        .view-mode-0 #related-grid { 
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); 
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
-        }
-
         .view-mode-0 .product-card {
-            height: 100%; /* O card vai se esticar para preencher sua parte da grade perfeitamente */
+            height: 100%; 
             aspect-ratio: auto; 
-        }
-
-        /* Garante que os cards no modal de detalhes fiquem com uma proporção bonita */
-        .view-mode-0 #related-grid .product-card {
-            height: auto;
-            aspect-ratio: 3/4; 
         }
 
         /* MODO 1: Grade 1x (Cards grandes) */
         .view-mode-1 { scroll-snap-type: y mandatory; }
-        .view-mode-1 .product-page,
-        .view-mode-1 #related-grid { 
+        .view-mode-1 .product-page { 
             display: grid;
             grid-template-columns: 1fr; 
             scroll-snap-align: start;
@@ -137,8 +119,7 @@
 
         /* MODO 2: Lista Horizontal */
         .view-mode-2 { scroll-snap-type: none; }
-        .view-mode-2 .product-page,
-        .view-mode-2 #related-grid { 
+        .view-mode-2 .product-page { 
             display: flex; 
             flex-direction: column; 
             gap: 8px; 
@@ -151,8 +132,7 @@
 
         /* MODO 3: Tela Cheia (1 Card por tela) */
         .view-mode-3 { scroll-snap-type: y mandatory; }
-        .view-mode-3 .product-page,
-        .view-mode-3 #related-grid { 
+        .view-mode-3 .product-page { 
             display: grid;
             grid-template-columns: 1fr; 
             scroll-snap-align: none; 
@@ -160,7 +140,7 @@
             gap: 0;
         }
         .view-mode-3 .product-card {
-            height: calc(100dvh - 80px); /* Ajuste: Diminui exatamente 80px no card único */
+            height: calc(100dvh - 80px); 
             aspect-ratio: auto; 
             scroll-snap-align: start; 
             scroll-snap-stop: always;
@@ -169,11 +149,8 @@
         .view-mode-3 .tag-preco-nova { bottom: 140px; font-size: 1.2rem; padding: 8px 20px; }
         .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } 
         .view-mode-3 .product-icon { width: 90%; height: 90%; margin-bottom: 25%; }
-        
-        /* Ajustes Modal 3 para Controle de Qtde */
         .view-mode-3 .card-action-grid { bottom: 190px; right: 15px; }
         .view-mode-3 .btn-quick-add { width: 48px; height: 48px; font-size: 22px; }
-        .view-mode-3 .qty-controls-card { height: 48px; font-size: 20px; padding: 4px 16px; gap: 12px; }
 
         /* =========================================
            2. CARDS DE PRODUTO
@@ -199,23 +176,26 @@
             mix-blend-mode: multiply;
             position: relative;
             z-index: 1;
-            margin-bottom: 15%; /* Ajuste: Empurra a imagem para cima da margem superior, fora do centro exato */
+            margin-bottom: 15%; 
         }
 
         .tag-preco-nova {
             position: absolute;
-            bottom: 24px; 
+            bottom: 20px; 
             left: 0;      
             right: auto;
-            background: #ffffff;
+            background: rgba(255, 255, 255, 0.95);
             color: #000000;
             font-size: 0.85rem; 
-            font-weight: 600; 
-            padding: 5px 12px;
-            border-radius: 0 6px 6px 0; 
-            letter-spacing: 0.5px;
-            box-shadow: 2px 2px 8px rgba(0,0,0,0.06); 
+            font-weight: 700; 
+            padding: 6px 12px;
+            border-radius: 0 8px 8px 0; 
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.08); 
             z-index: 2;
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+            gap: 2px;
         }
 
         .tag-embalagem {
@@ -223,7 +203,7 @@
             bottom: 5px; 
             left: 12px;  
             right: auto;
-            color: #555555; 
+            color: #888888; 
             font-size: 0.65rem; 
             font-weight: 600;
             z-index: 2;
@@ -231,7 +211,6 @@
             text-align: left; 
         }
 
-        /* Container que segura o + ou contador */
         .card-action-grid {
             position: absolute;
             bottom: 15px;
@@ -256,22 +235,6 @@
         
         .btn-quick-add:active { transform: scale(0.85); }
 
-        .qty-controls-card {
-            background-color: #ffffff;
-            color: #000000;
-            border: 1px solid var(--border-light);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 8px;
-            padding: 4px 10px;
-            height: 32px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        .qty-btn-card { cursor: pointer; padding: 2px; color: var(--text-light); }
-        .qty-btn-card:active { color: #000; }
-
         /* =========================================
            2.1 CARDS DE PRODUTO (MODO 2 - LISTA)
         ========================================= */
@@ -284,6 +247,7 @@
             cursor: pointer;
             transition: opacity 0.2s;
             align-items: center;
+            position: relative;
         }
         .product-icon-list {
             width: 85px;
@@ -320,6 +284,9 @@
             font-size: 16px;
             font-weight: 800;
             color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
         }
         .card-action-area {
             display: flex;
@@ -340,18 +307,6 @@
             transition: 0.2s;
         }
         .btn-quick-add-list:active { opacity: 0.8; transform: scale(0.95); }
-        .qty-controls-list {
-            display: inline-flex; 
-            align-items: center; 
-            gap: 12px; 
-            background: #fff;
-            border: 1px solid var(--border-light);
-            padding: 5px 12px; 
-            border-radius: 16px; 
-            font-weight: 700; 
-            font-size: 14px;
-            color: var(--text-dark);
-        }
 
         /* =========================================
            3. BARRAS FLUTUANTES (DOCK BASE E BUSCA)
@@ -362,7 +317,7 @@
             left: 0;
             width: 100%;
             height: 120px;
-            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent); /* Ajuste: gradiente um pouco mais escuro */
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent); 
             pointer-events: none;
             z-index: 990;
         }
@@ -640,7 +595,7 @@
         .overlay.open { opacity: 1; pointer-events: all; }
 
         /* =========================================
-           5. MODAL DE PRODUTO
+           5. MODAL DE PRODUTO E GRID RELATED
         ========================================= */
         .full-screen-detail {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
@@ -670,6 +625,20 @@
         .modal-title { font-size: 22px; font-weight: 800; margin: 0 0 15px 0; line-height: 1.2; }
         
         .related-title { font-size: 16px; font-weight: 800; margin: 30px 20px 10px 20px; text-transform: uppercase; }
+
+        /* MODAL RELATED GRID (Sempre 2 colunas organizadas e sem encavalar) */
+        #related-grid { 
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+            padding: 0 20px 20px 20px !important;
+            height: auto !important;
+        }
+        #related-grid .product-card {
+            height: auto !important;
+            aspect-ratio: 3/3.8 !important; 
+            border-radius: 8px !important; /* Visual mais bonito no modal */
+        }
 
         #modalMetaTags {
             display: flex; 
@@ -794,8 +763,8 @@
         <i class="fa-solid fa-xmark btn-close-sidebar" onclick="closeSidebar()"></i>
         <div class="sidebar-header">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <img src="../img/logoantonia5.png" alt="Dona Antônia" style="height: 55px;">
-                <div style="display: flex; gap: 15px; font-size: 24px; padding-right: 50px;">
+                <img src="../img/logoantonia5.png" alt="Dona Antônia" style="height: 40px; max-width: 60%; object-fit: contain;">
+                <div style="display: flex; gap: 10px; font-size: 22px; padding-right: 15px;">
                     <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" style="color: #25D366;"><i class="fa-brands fa-whatsapp"></i></a>
                     <a href="#" target="_blank" style="color: #E1306C;"><i class="fa-brands fa-instagram"></i></a>
                 </div>
@@ -938,7 +907,8 @@
             viewMode: 0, 
             mainCategories: [],
             activeCatIndex: -1,
-            currentFilter: { type: 'all', value: '' }
+            // Ajuste: A página inicial agora é 'ofertas' por padrão
+            currentFilter: { type: 'ofertas', value: '' } 
         };
 
         let currentModalProdId = null;
@@ -972,7 +942,7 @@
         function scrollToTop() { 
             $('vitrine').scrollTop = 0;
             closeSearch();
-            STATE.currentFilter = { type: 'all', value: '' };
+            STATE.currentFilter = { type: 'ofertas', value: '' }; // Retorna sempre para ofertas
             STATE.activeCatIndex = -1;
             renderVitrineEngine();
             renderCategoryChips();
@@ -989,7 +959,7 @@
             searchTimeout = setTimeout(() => {
                 let q = norm($('app-search-input').value);
                 if(q.length < 2) { 
-                    STATE.currentFilter = { type: 'all', value: '' };
+                    STATE.currentFilter = { type: 'ofertas', value: '' };
                 } else {
                     STATE.currentFilter = { type: 'search', value: q };
                 }
@@ -1002,16 +972,16 @@
         function renderCategoryChips() {
             const container = $('category-chips');
             if (!container) return;
-            let isAllActive = STATE.currentFilter.type === 'all' || STATE.currentFilter.type === 'search' ? 'active' : '';
-            let html = `<div class="category-chip ${isAllActive}" onclick="filterBy('all', '')">Todos</div>`;
+            // Ofertas agora é a aba base e ativa inicialmente
+            let isOfertasActive = STATE.currentFilter.type === 'ofertas' || STATE.currentFilter.type === 'search' ? 'active' : '';
+            let html = `<div class="category-chip ${isOfertasActive}" onclick="filterBy('ofertas', '')">Ofertas</div>`;
+            
             STATE.mainCategories.forEach((cat, index) => {
-                // Ajuste: A classe active agora depende do activeCatIndex global para reconhecer também subcategorias
-                let isActive = (STATE.activeCatIndex === index) ? 'active' : '';
+                let isActive = (STATE.activeCatIndex === index && STATE.currentFilter.type !== 'ofertas') ? 'active' : '';
                 html += `<div class="category-chip ${isActive}" onclick="filterBy('cat', '${cat}')">${cat}</div>`;
             });
             container.innerHTML = html;
 
-            // Ajuste: Realiza um scroll suave para centralizar o chip ativo da categoria selecionada
             setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
@@ -1079,7 +1049,6 @@
             if ($('sidebar').classList.contains('open')) history.back(); 
             STATE.currentFilter = { type, value };
             
-            // Ajuste: Lógica para manter a categoria principal mapeada, mesmo ao clicar em uma subcategoria
             if (type === 'cat') { 
                 STATE.activeCatIndex = STATE.mainCategories.indexOf(value); 
             } else if (type === 'sub') {
@@ -1087,7 +1056,7 @@
                 if(prodWithSub) {
                     STATE.activeCatIndex = STATE.mainCategories.indexOf(prodWithSub.categoria);
                 }
-            } else if (type === 'all' || type === 'search') {
+            } else if (type === 'ofertas' || type === 'search') {
                 STATE.activeCatIndex = -1;
             }
 
@@ -1143,23 +1112,29 @@
             let currentMode = forceMode !== null ? forceMode : STATE.viewMode;
             let q = STATE.cart[prod.id] || 0;
             
+            let discountBadge = (prod.discountPercent && prod.discountPercent > 0) 
+                ? `<div style="position: absolute; top: 0; right: 0; background: #ef4444; color: #fff; font-size: 0.7rem; padding: 3px 8px; font-weight: 800; border-bottom-left-radius: 8px; z-index: 5;">-${prod.discountPercent}%</div>` 
+                : '';
+                
+            let oldPriceHtml = (prod.discountPercent && prod.discountPercent > 0) 
+                ? `<span style="text-decoration: line-through; font-size: 0.65rem; color: #999; font-weight: normal;">${fmt(prod.oldPrice)}</span>` 
+                : '';
+
             if (currentMode === 2) {
+                // Modo Lista (Ajuste do botão +)
                 let controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>`
-                    : `<div class="qty-controls-list" onclick="event.stopPropagation()">
-                         <i class="fa-solid fa-minus qty-btn" onclick="updateCartItemList('${prod.id}', -1, event)"></i>
-                         <span style="font-weight:bold; width: 20px; text-align:center;">${q}</span>
-                         <i class="fa-solid fa-plus qty-btn" onclick="updateCartItemList('${prod.id}', 1, event)"></i>
-                       </div>`;
+                    : `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${prod.id}', event)">${q} Adicionados</div>`;
                 let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem-list">${prod.embalagem}</div>` : '';
                 return `
                     <div class="product-card-list" onclick="openDetail('${prod.id}')">
+                        ${discountBadge}
                         <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon-list lazy-img" alt="${prod.name}">
                         <div class="product-info-list">
                             <div class="product-name-list">${prod.name}</div>
                             ${embalagemHtml}
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
-                                <div class="tag-preco-list">${fmt(prod.price)}</div>
+                                <div class="tag-preco-list">${oldPriceHtml} ${fmt(prod.price)}</div>
                                 <div class="card-action-area" id="action-card-${prod.id}">
                                     ${controlsHtml}
                                 </div>
@@ -1168,61 +1143,48 @@
                     </div>`;
             }
             
-            // Grid Modes (0, 1, 3)
+            // Grid Modes (0, 1, 3) - (Ajuste do botão + como marcador único numérico)
             let controlsHtmlGrid = q === 0 
                 ? `<div class="btn-quick-add" onclick="quickAddToCart('${prod.id}', event)"><i class="fa-solid fa-plus"></i></div>`
-                : `<div class="qty-controls-card" onclick="event.stopPropagation()">
-                     <i class="fa-solid fa-minus qty-btn-card" onclick="updateCartItemList('${prod.id}', -1, event)"></i>
-                     <span style="font-weight:bold; min-width: 14px; text-align: center;">${q}</span>
-                     <i class="fa-solid fa-plus qty-btn-card" onclick="updateCartItemList('${prod.id}', 1, event)"></i>
-                   </div>`;
+                : `<div class="btn-quick-add" style="background:var(--success); font-weight: 800;" onclick="quickAddToCart('${prod.id}', event)">${q}</div>`;
             
             let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem">${prod.embalagem}</div>` : '';
             return `
                 <div class="product-card" onclick="openDetail('${prod.id}')">
+                    ${discountBadge}
                     <div class="card-action-grid" id="action-card-grid-${prod.id}">
                         ${controlsHtmlGrid}
                     </div>
-                    <div class="tag-preco-nova">${fmt(prod.price)}</div>
+                    <div class="tag-preco-nova">
+                        ${oldPriceHtml}
+                        <span>${fmt(prod.price)}</span>
+                    </div>
                     ${embalagemHtml}
                     <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon lazy-img" alt="${prod.name}">
                 </div>`;
         }
 
-        window.updateCartItemList = function(id, delta, event) {
-            event.stopPropagation();
-            updateCartItem(id, delta);
-        };
-
         window.updateAllCardUIs = function() {
             STATE.prods.forEach(p => {
                 let q = STATE.cart[p.id] || 0;
                 
-                // Atualiza Cards em Modo Lista
+                // Atualiza Cards em Modo Lista (Sem botões de - ou + no controle)
                 let elList = $('action-card-' + p.id);
                 if(elList) {
                     if(q === 0) {
                         elList.innerHTML = `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>`;
                     } else {
-                        elList.innerHTML = `<div class="qty-controls-list" onclick="event.stopPropagation()">
-                         <i class="fa-solid fa-minus qty-btn" onclick="updateCartItemList('${p.id}', -1, event)"></i>
-                         <span style="font-weight:bold; width: 20px; text-align:center;">${q}</span>
-                         <i class="fa-solid fa-plus qty-btn" onclick="updateCartItemList('${p.id}', 1, event)"></i>
-                       </div>`;
+                        elList.innerHTML = `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${p.id}', event)">${q} Adicionados</div>`;
                     }
                 }
 
-                // Atualiza Cards em Modo Grade
+                // Atualiza Cards em Modo Grade (Marcador numérico)
                 let elGrid = $('action-card-grid-' + p.id);
                 if(elGrid) {
                     if(q === 0) {
                         elGrid.innerHTML = `<div class="btn-quick-add" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i></div>`;
                     } else {
-                        elGrid.innerHTML = `<div class="qty-controls-card" onclick="event.stopPropagation()">
-                         <i class="fa-solid fa-minus qty-btn-card" onclick="updateCartItemList('${p.id}', -1, event)"></i>
-                         <span style="font-weight:bold; min-width: 14px; text-align: center;">${q}</span>
-                         <i class="fa-solid fa-plus qty-btn-card" onclick="updateCartItemList('${p.id}', 1, event)"></i>
-                       </div>`;
+                        elGrid.innerHTML = `<div class="btn-quick-add" style="background:var(--success); font-weight: 800;" onclick="quickAddToCart('${p.id}', event)">${q}</div>`;
                     }
                 }
             });
@@ -1252,8 +1214,13 @@
             let secondaryList = [];
             let fType = STATE.currentFilter.type;
             let fVal = STATE.currentFilter.value;
+            
             if (fType === 'search') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (norm(p.name).includes(fVal) || norm(p.categoria).includes(fVal) || norm(p.marca).includes(fVal)));
+            } else if (fType === 'ofertas') {
+                // Exibe as ofertas ordenadas pelo maior desconto
+                primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => b.discountPercent - a.discountPercent);
+                secondaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) === 0);
             } else if (fType === 'cat') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && p.categoria === fVal);
                 secondaryList = STATE.prods.filter(p => p.stock > 0 && p.categoria !== fVal);
@@ -1266,6 +1233,7 @@
             } else {
                 primaryList = STATE.prods.filter(p => p.stock > 0);
             }
+            
             let fragment = document.createDocumentFragment();
             if (primaryList.length === 0 && secondaryList.length === 0) {
                 vitrine.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-light);">Nenhum produto encontrado.</div>`;
@@ -1275,18 +1243,19 @@
             let isPrimaryPhase = true;
             let fullList = primaryList.concat(secondaryList);
             for (let i = 0; i < fullList.length; i++) {
-                if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'all' && fType !== 'search') {
+                if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'ofertas' && fType !== 'search') {
                     isPrimaryPhase = false;
                     if(buffer.length > 0) {
                         let page = document.createElement('div'); page.className = 'product-page';
                         page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                     }
                     let divPage = document.createElement('div'); divPage.className = 'product-page';
-                    divPage.innerHTML = `<div class="category-divider">Explore Mais Categorias</div>`;
+                    divPage.innerHTML = `<div class="category-divider" style="grid-column: span 2; padding: 20px 10px; font-weight: bold; text-align: center; color: #888;">Explore Mais Categorias</div>`;
                     fragment.appendChild(divPage);
                 }
-          buffer.push(renderCardHTML(fullList[i]));
-                if (buffer.length === 4) { // <-- MUDAR PARA 4 AQUI
+                buffer.push(renderCardHTML(fullList[i]));
+                // Mantém 4 cards por página na visão padrão (2x2) conforme interação anterior
+                if (buffer.length === 4) {
                     let page = document.createElement('div'); page.className = 'product-page';
                     page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                 }
@@ -1323,7 +1292,14 @@
             currentModalQty = 1;
             $('modalImg').src = p.img;
             $('modalTitle').innerText = p.name;
-            $('modalPrice').innerText = fmt(p.price);
+            
+            // Reflete preços no modal também
+            if(p.discountPercent > 0) {
+                $('modalPrice').innerHTML = `<span style="text-decoration: line-through; font-size: 12px; color:#888;">${fmt(p.oldPrice)}</span><br>${fmt(p.price)}`;
+            } else {
+                $('modalPrice').innerText = fmt(p.price);
+            }
+            
             let metaHtml = '';
             if(p.marca) metaHtml += `<span onclick="filterBy('marca', '${p.marca}')">${p.marca}</span>`;
             if(p.categoria) metaHtml += `<span onclick="filterBy('cat', '${p.categoria}')">${p.categoria}</span>`;
@@ -1335,6 +1311,7 @@
             } else {
                 $('modalDesc').innerHTML = "";
             }
+            
             let related = STATE.prods.filter(x => x.id !== p.id && x.stock > 0);
             let finalRelated = related.filter(x => x.categoria === p.categoria);
             if (finalRelated.length < 10) {
@@ -1342,10 +1319,10 @@
                 finalRelated = [...finalRelated, ...outros];
             }
             finalRelated = finalRelated.slice(0, 50);
+            
             if(finalRelated.length > 0) {
                 $('related-container').style.display = 'block';
                 $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod, 0)).join('');
-                $('related-grid').parentElement.className = 'view-mode-0';
                 lazyLoadImages(); 
             } else {
                 $('related-container').style.display = 'none';
@@ -1536,8 +1513,64 @@
             } catch (e) { return []; }
         }
 
+        function aplicarDescontos(products) {
+            let now = new Date();
+            let eligibleForRandom = [];
+            
+            // 1. Descontos por Data de Vencimento
+            products.forEach(p => {
+                p.discountPercent = 0;
+                p.oldPrice = p.price;
+                
+                if (p.vencimento) {
+                    let vDate = new Date(p.vencimento);
+                    let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
+                    
+                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 30;
+                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 20;
+                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 10;
+                }
+                
+                if (p.discountPercent === 0) {
+                    eligibleForRandom.push(p);
+                }
+            });
+
+            // 2. Descontos Aleatórios Fixos por 48h
+            // Cria uma semente matemática baseada no relógio (muda exato a cada 48 horas)
+            let currentSeed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000));
+            
+            function seededRandom(seed) {
+                let x = Math.sin(seed++) * 10000;
+                return x - Math.floor(x);
+            }
+
+            // Ordena usando a semente fixa para o ciclo atual
+            eligibleForRandom.sort((a, b) => {
+                let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0);
+                let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0);
+                let randA = seededRandom(currentSeed + idNumA);
+                let randB = seededRandom(currentSeed + idNumB);
+                return randA - randB;
+            });
+
+            let r30 = 5, r20 = 5, r10 = 30;
+            
+            eligibleForRandom.forEach(p => {
+                if (r30 > 0) { p.discountPercent = 30; r30--; }
+                else if (r20 > 0) { p.discountPercent = 20; r20--; }
+                else if (r10 > 0) { p.discountPercent = 10; r10--; }
+            });
+
+            // 3. Aplica o novo valor de preço
+            products.forEach(p => {
+                if (p.discountPercent > 0) {
+                    p.price = p.oldPrice * (1 - p.discountPercent / 100);
+                }
+            });
+        }
+
         async function init() {
-            // Garante que o splash screen feche mesmo se a internet travar/falhar
             setTimeout(() => {
                 let splash = $('splash-screen');
                 if(splash) {
@@ -1555,9 +1588,13 @@
                             price: parseFloat(p.preco) * 1.01, stock: parseInt(p.estoque) || 0, 
                             img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                             categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", subsubcategoria: p.subsubcategoria || "",
-                            marca: p.marca || "", embalagem: p.embalagem || "", descricao: p.descricao || ""
+                            marca: p.marca || "", embalagem: p.embalagem || "", descricao: p.descricao || "",
+                            vencimento: p.vencimento || null // Adicionada captura da data de vencimento
                         };
                     });
+                    
+                    // Aplica a lógica de descontos aos produtos assim que são montados
+                    aplicarDescontos(STATE.prods);
                 }
                 loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
                 
