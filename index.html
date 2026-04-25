@@ -69,14 +69,13 @@
             padding-bottom: calc(var(--dock-height) + var(--dock-bottom) + 50px);
             overflow-y: auto;
             scroll-snap-type: y mandatory;
-            scroll-behavior: auto; /* Retirado smooth para busca instantânea */
+            scroll-behavior: auto;
             -webkit-overflow-scrolling: touch;
         }
 
         .main-container::-webkit-scrollbar { display: none; }
 
         .product-page {
-            /* Removida altura e linhas fixas para o card crescer os 30% propostos na vertical */
             width: 100%;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -125,17 +124,15 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            border-radius: 0; /* Cantos retos totais */
+            border-radius: 0;
             transition: opacity 0.2s;
             overflow: hidden;
-            /* Proporção alterada para deixar o card mais alongado (~30% a mais na vertical) */
             aspect-ratio: 3/5; 
         }
 
         .product-card:active { opacity: 0.7; }
 
         .product-icon {
-            /* Imagem aumentada para ocupar mais espaço */
             width: 95%;
             height: 95%;
             object-fit: contain;
@@ -144,22 +141,21 @@
 
         .tag-preco-nova {
             position: absolute;
-            bottom: 15px; /* 15px acima da base */
-            right: 0;     /* Colada na direita */
+            bottom: 15px; 
+            right: 0;     
             background: #ffffff;
             color: #000000;
-            font-size: 0.8rem; /* Um pouco menor */
-            font-weight: 300; /* Fonte mais leve conforme solicitado */
+            font-size: 0.8rem; 
+            font-weight: 300; 
             padding: 5px 12px;
-            border-radius: 6px 0 0 6px; /* Canto suave à esquerda para dar acabamento */
+            border-radius: 6px 0 0 6px; 
             letter-spacing: 0.5px;
-            box-shadow: -2px 2px 8px rgba(0,0,0,0.06); /* Sombra suave para destacar do fundo cinza */
+            box-shadow: -2px 2px 8px rgba(0,0,0,0.06); 
         }
 
         /* =========================================
            3. BARRAS FLUTUANTES (DOCK BASE E BUSCA)
         ========================================= */
-        /* Sombra degradê atrás da doca */
         .dock-gradient-shadow {
             position: fixed;
             bottom: 0;
@@ -184,7 +180,7 @@
 
         .floating-dock {
             flex: 1;
-            background: rgba(20, 20, 20, 0.95); /* Preta */
+            background: rgba(20, 20, 20, 0.95);
             backdrop-filter: blur(15px);
             display: flex;
             justify-content: space-around;
@@ -210,7 +206,7 @@
         .sort-dock-btn:active { background: #000; color: #fff; }
 
         .nav-item { 
-            color: #777; /* Meio cinza */
+            color: #777; 
             font-size: 22px; 
             flex: 1; 
             text-align: center; 
@@ -267,7 +263,7 @@
         }
 
         /* =========================================
-           4. MENU LATERAL (SIDEBAR) - ATUALIZADO
+           4. MENU LATERAL (SIDEBAR) 
         ========================================= */
         .sidebar {
             position: fixed;
@@ -279,7 +275,7 @@
             background: white;
             z-index: 1500;
             transition: left 0.3s cubic-bezier(0.1, 0.7, 0.1, 1);
-            overflow-y: auto; /* Rolagem em tudo */
+            overflow-y: auto; 
             -webkit-overflow-scrolling: touch;
         }
         .sidebar.open { left: 0; }
@@ -339,7 +335,7 @@
         .sidebar-menu li:active { background: var(--bg-card); }
         
         .sidebar-menu li.subcat {
-            padding-left: 45px; /* Recuo para subcategorias */
+            padding-left: 45px; 
             font-size: 14px;
             font-weight: 400;
             color: var(--text-light);
@@ -348,7 +344,6 @@
             padding-bottom: 10px;
         }
 
-        /* Marcas Accordion - Visual Mais Bonito */
         details.brand-group { 
             margin: 0 15px 8px 15px; 
             background: var(--bg-card);
@@ -372,7 +367,6 @@
         details.brand-group ul { padding: 5px 0 10px 0; margin: 0; background: #fff; }
         details.brand-group li { padding: 12px 20px; border: none; font-size: 14px; font-weight: 500; color: var(--text-light); }
 
-        /* Rodapé Sidebar */
         .sidebar-footer {
             padding: 30px 25px calc(30px + env(safe-area-inset-bottom));
             background: var(--bg-card);
@@ -427,7 +421,6 @@
         
         .related-title { font-size: 16px; font-weight: 800; margin: 30px 20px 10px 20px; text-transform: uppercase; }
 
-        /* Action Bar Modal Compacta */
         .floating-action-bar {
             position: absolute; bottom: max(15px, env(safe-area-inset-bottom)); left: 15px; right: 15px;
             background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -474,12 +467,9 @@
         .pay-btn { padding: 16px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-weight: 600; font-size: 0.95rem; color: var(--text-light); }
         .pay-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
 
-        /* Checkout - Itens */
         .cart-item-row { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid var(--border-light); }
         .cart-item-info { display: flex; align-items: center; gap: 12px; flex: 1; }
-        /* Foto grande, sem fundo cinza */
         .cart-item-img { width: 70px; height: 70px; object-fit: contain; mix-blend-mode: normal; background: transparent; }
-        /* Fonte menor no checkout */
         .cart-item-name { font-weight: 600; font-size: 0.8rem; color: var(--text-dark); line-height: 1.3; margin-bottom: 4px; }
         
         .chk-inline-summary { background: var(--bg-card); padding: 20px; border-radius: 12px; margin-bottom: 24px; }
@@ -636,7 +626,7 @@
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-            sortMode: 0, // 0 = A-Z, 1 = $⬇ (Menor), 2 = $⬆ (Maior)
+            sortMode: 0, 
             mainCategories: [],
             activeCatIndex: -1,
             currentFilter: { type: 'all', value: '' }
@@ -650,7 +640,6 @@
         function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
         function formatName(name) { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map(w => w.length <= 3 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
 
-        // History API para Seta Voltar
         window.addEventListener('popstate', (e) => {
             if ($('detailModal').classList.contains('active')) {
                 $('detailModal').classList.remove('active');
@@ -694,12 +683,11 @@
                 } else {
                     STATE.currentFilter = { type: 'search', value: q };
                 }
-                $('vitrine').scrollTop = 0; // Busca instantanea, rola pro topo s/ animacao
+                $('vitrine').scrollTop = 0; 
                 renderVitrineEngine();
             }, 300);
         }
 
-        // Ordenação
         window.toggleSort = function() {
             STATE.sortMode = (STATE.sortMode + 1) % 3;
             const icon = $('sortBtn').querySelector('i');
@@ -719,7 +707,6 @@
             return res;
         }
 
-        // Sidebar Dinâmica - Organizada e Sanfona de Letras
         function renderSidebarMenu() {
             let catMap = {};
             let brands = new Set();
@@ -747,7 +734,6 @@
             });
             html += `</ul>`;
 
-            // Marcas Retráteis por Letra Inicial (Organizado e Elegante)
             let sortedBrands = Array.from(brands).sort();
             if(sortedBrands.length > 0) {
                 html += `<div class="sidebar-group-title">Nossas Marcas</div>`;
@@ -771,14 +757,13 @@
         }
 
         window.filterBy = function(type, value) {
-            history.back(); // Fecha sidebar
+            history.back(); 
             STATE.currentFilter = { type, value };
             if (type === 'cat') { STATE.activeCatIndex = STATE.mainCategories.indexOf(value); }
             $('vitrine').scrollTop = 0;
             renderVitrineEngine();
         };
 
-        // Swipe Nativo Aperfeiçoado (Verifica Eixo X e Y para evitar bugs no scroll)
         let touchstartX = 0;
         let touchstartY = 0;
         let touchendX = 0;
@@ -800,13 +785,10 @@
             let swipeDistX = touchendX - touchstartX;
             let swipeDistY = touchendY - touchstartY;
             
-            // Só ativa o swipe se o movimento horizontal for grande e o vertical for pequeno (não estava rolando para baixo)
             if (Math.abs(swipeDistX) > 80 && Math.abs(swipeDistY) < 50 && STATE.mainCategories.length > 0) {
                 if (swipeDistX < 0) {
-                    // Swipe Left -> Próxima Categoria
                     STATE.activeCatIndex = (STATE.activeCatIndex + 1) % STATE.mainCategories.length;
                 } else {
-                    // Swipe Right -> Categoria Anterior
                     STATE.activeCatIndex = STATE.activeCatIndex - 1;
                     if(STATE.activeCatIndex < 0) STATE.activeCatIndex = STATE.mainCategories.length - 1;
                 }
@@ -817,7 +799,6 @@
             }
         }
 
-        // Renderização Contínua
         function renderCardHTML(prod) {
             return `
                 <div class="product-card" onclick="openDetail('${prod.id}')">
@@ -832,7 +813,6 @@
             let primaryList = [];
             let secondaryList = [];
 
-            // Filtragem
             let fType = STATE.currentFilter.type;
             let fVal = STATE.currentFilter.value;
 
@@ -861,13 +841,11 @@
                 return;
             }
 
-            // Construtor de Páginas (6 por tela)
             let buffer = [];
             let isPrimaryPhase = true;
             let fullList = primaryList.concat(secondaryList);
 
             for (let i = 0; i < fullList.length; i++) {
-                // Checa transição de primário pra secundário para por Divisor (apenas se houver secundário)
                 if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'all' && fType !== 'search') {
                     isPrimaryPhase = false;
                     if(buffer.length > 0) {
@@ -912,9 +890,6 @@
             images.forEach(img => observer.observe(img));
         }
 
-        // ==========================================
-        // MODAL PRODUTO
-        // ==========================================
         window.openDetail = function(id) {
             let p = STATE.prods.find(x => String(x.id) === String(id));
             if(!p) return;
@@ -940,7 +915,6 @@
                 $('modalDesc').innerHTML = "";
             }
 
-            // Grade Relacionados
             let related = STATE.prods.filter(x => x.id !== p.id && x.stock > 0);
             let sameSubSub = related.filter(x => x.subsubcategoria && x.subsubcategoria === p.subsubcategoria);
             let sameSub = related.filter(x => x.subcategoria && x.subcategoria === p.subcategoria && !sameSubSub.includes(x));
@@ -957,7 +931,7 @@
             $('qtyCount').innerText = currentModalQty;
             $('modal-scroll-area').scrollTop = 0;
             $('detailModal').classList.add('active');
-            lazyLoadImages(); // Dispara loading para os relacionados
+            lazyLoadImages(); 
         };
 
         window.closeDetail = function() {
@@ -988,9 +962,6 @@
             bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = '#777', 500);
         };
 
-        // ==========================================
-        // CHECKOUT E CARRINHO
-        // ==========================================
         window.openCheckout = function() {
             if (STATE.cartOrder.length === 0) return alert("Sua sacola está vazia!");
             pushHistoryState('checkout');
@@ -1051,10 +1022,6 @@
             updateTotals(); saveCart(); renderCheckoutItems();
         };
 
-        window.clearCart = function() {
-            if(confirm("Deseja esvaziar a sacola?")) { STATE.cart = {}; STATE.cartOrder = []; updateTotals(); saveCart(); history.back(); }
-        };
-
         function updateTotals() {
             let sum = 0; let count = 0; 
             Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) { sum += p.price * q; count += q; } });
@@ -1100,6 +1067,62 @@
         };
 
         // ==========================================
+        // FUNÇÕES RECUPERADAS (CARRINHO E MÁSCARAS)
+        // ==========================================
+        const MIN_ORDER = 30; // Ajuste para o valor mínimo do seu pedido
+
+        function loadCart() {
+            try {
+                let saved = localStorage.getItem('dona_antonia_cart');
+                let savedOrder = localStorage.getItem('dona_antonia_cart_order');
+                if (saved) STATE.cart = JSON.parse(saved);
+                if (savedOrder) STATE.cartOrder = JSON.parse(savedOrder);
+            } catch(e) {}
+        }
+
+        function saveCart() {
+            localStorage.setItem('dona_antonia_cart', JSON.stringify(STATE.cart));
+            localStorage.setItem('dona_antonia_cart_order', JSON.stringify(STATE.cartOrder));
+        }
+
+        function carregarDadosSalvos() {
+            try {
+                let d = JSON.parse(localStorage.getItem('dona_antonia_user') || '{}');
+                if(d.nome) $('chk-nome').value = d.nome;
+                if(d.cpf) $('chk-cpf').value = d.cpf;
+                if(d.whats) $('chk-whats').value = d.whats;
+                if(d.cep) $('chk-cep').value = d.cep;
+                if(d.bairro) $('chk-bairro').value = d.bairro;
+                if(d.endereco) $('chk-endereco').value = d.endereco;
+            } catch(e){}
+        }
+
+        function salvarDadosLocalmente(dados) {
+            localStorage.setItem('dona_antonia_user', JSON.stringify(dados));
+        }
+
+        window.mascaraCPF = function(i) {
+            let v = i.value.replace(/\D/g, "");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            i.value = v;
+        }
+
+        window.mascaraWhats = function(i) {
+            let v = i.value.replace(/\D/g, "");
+            v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+            v = v.replace(/(\d)(\d{4})$/, "$1-$2");
+            i.value = v;
+        }
+
+        window.mascaraCEP = function(i) {
+            let v = i.value.replace(/\D/g, "");
+            v = v.replace(/^(\d{5})(\d)/, "$1-$2");
+            i.value = v;
+        }
+
+        // ==========================================
         // INIT ENGINE
         // ==========================================
         async function fetchWithCache(url, key) {
@@ -1126,15 +1149,16 @@
                     });
                 }
                 
-                loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
+                loadCart(); 
+                updateTotals(); 
+                carregarDadosSalvos(); 
+                renderSidebarMenu();
 
-                // 2 Segundos de Splash Screen Exato
                 setTimeout(() => {
                     $('splash-screen').style.opacity = '0';
                     setTimeout(() => $('splash-screen').style.display = 'none', 400);
                 }, 2000);
 
-                // Carrega Inicial em Ordem Alfabética
                 STATE.sortMode = 0;
                 renderVitrineEngine();
 
