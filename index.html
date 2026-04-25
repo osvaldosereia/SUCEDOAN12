@@ -147,57 +147,59 @@
             z-index: 1;
         }
 
-        /* Etiqueta de Preço mais grossa e mais alta */
-        .tag-preco-nova {
-            position: absolute;
-            bottom: 28px; 
-            right: 0;     
-            background: #ffffff;
-            color: #000000;
-            font-size: 0.85rem; 
-            font-weight: 600; 
-            padding: 5px 12px;
-            border-radius: 6px 0 0 6px; 
-            letter-spacing: 0.5px;
-            box-shadow: -2px 2px 8px rgba(0,0,0,0.06);
-            z-index: 2;
-        }
+       /* Etiqueta de Preço (À direita) */
+.tag-preco-nova {
+    position: absolute;
+    bottom: 24px; /* Ajustado levemente para alinhar com o botão */
+    right: 0;     
+    background: #ffffff;
+    color: #000000;
+    font-size: 0.85rem; 
+    font-weight: 600; 
+    padding: 5px 12px;
+    border-radius: 6px 0 0 6px; 
+    letter-spacing: 0.5px;
+    box-shadow: -2px 2px 8px rgba(0,0,0,0.06);
+    z-index: 2;
+}
 
-        /* Etiqueta da Embalagem (Abaixo do preço, sem fundo) */
-        .tag-embalagem {
-            position: absolute;
-            bottom: 8px; 
-            right: 12px; 
-            color: #777777;
-            font-size: 0.7rem;
-            font-weight: 600;
-            z-index: 2;
-            text-transform: uppercase;
-        }
+/* Etiqueta da Embalagem (Abaixo do preço, à direita) */
+.tag-embalagem {
+    position: absolute;
+    bottom: 8px; 
+    right: 12px; 
+    color: #777777;
+    font-size: 0.7rem;
+    font-weight: 600;
+    z-index: 2;
+    text-transform: uppercase;
+    text-align: right;
+}
 
-        /* Botão + Redondo para Compra Rápida */
-        .btn-quick-add {
-            position: absolute;
-            bottom: 65px; 
-            right: 8px;
-            width: 32px;
-            height: 32px;
-            background-color: #000000;
-            color: #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 15px;
-            cursor: pointer;
-            z-index: 3;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            transition: transform 0.2s;
-        }
-        
-        .btn-quick-add:active {
-            transform: scale(0.85);
-        }
+/* Botão + Redondo (Movido para a ESQUERDA) */
+.btn-quick-add {
+    position: absolute;
+    bottom: 15px; /* Altura média para ficar alinhado ao lado do bloco de tags */
+    left: 10px;   /* Movido da direita para a esquerda */
+    right: auto;  /* Garante que não fique preso na direita */
+    width: 32px;
+    height: 32px;
+    background-color: #000000;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    cursor: pointer;
+    z-index: 3;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+}
+
+.btn-quick-add:active {
+    transform: scale(0.85);
+}
 
         /* =========================================
            3. BARRAS FLUTUANTES (DOCK BASE E BUSCA)
