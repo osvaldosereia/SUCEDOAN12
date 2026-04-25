@@ -212,7 +212,7 @@
       /* =========================================
            2. VITRINE E SCROLL (CONTROLE POR FORMATO)
         ========================================= */
-        .main-container {
+       .main-container {
             position: fixed; 
             top: calc(var(--header-total) + env(safe-area-inset-top));
             left: 0;
@@ -222,6 +222,7 @@
             scroll-padding-top: 15px; 
             padding-bottom: max(20px, env(safe-area-inset-bottom));
             overflow-y: auto;
+            overflow-x: hidden; /* NOVO: Trava qualquer tremor ou deslize lateral */
             scroll-behavior: auto;
             -webkit-overflow-scrolling: touch;
             transition: opacity 0.15s ease;
@@ -237,10 +238,7 @@
             /* Removida a animação 'slideIn' para evitar o tremor no Scroll Infinito */
         }
 
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(30px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
+    
 
         /* MODO 0: Grade 2x2 (Padrão) */
         .view-mode-0 { scroll-snap-type: y mandatory; }
