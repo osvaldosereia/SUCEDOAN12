@@ -17,7 +17,7 @@
             --success: #059669; 
             --gap: 2px;
             --dock-height: 55px;
-            --dock-bottom: 30px; /* AJUSTE: Subiu 10px (era 20px) */
+            --dock-bottom: 30px; 
             --brand: #5A3826;        
             --border-light: #eaeaea;
         }
@@ -61,7 +61,7 @@
             100% { transform: scale(1.05); opacity: 1; }
         }
 
-       /* =========================================
+        /* =========================================
            1. VITRINE E SCROLL (CONTROLE POR FORMATO)
         ========================================= */
         .main-container {
@@ -71,7 +71,6 @@
             scroll-behavior: auto;
             -webkit-overflow-scrolling: touch;
             transition: opacity 0.15s ease;
-            /* O tipo de trava (snap) agora é definido em cada modo abaixo */
         }
 
         .main-container::-webkit-scrollbar { display: none; }
@@ -89,7 +88,7 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-       /* ---------------------------------------------------
+        /* ---------------------------------------------------
            EDIÇÃO DE GRADE, ROLAGEM E ALTURA PARA CADA MODO
         --------------------------------------------------- */
 
@@ -103,7 +102,6 @@
             scroll-snap-stop: always;
         }
         .view-mode-0 .product-card {
-            /* AJUSTE AQUI: Proporção Largura/Altura do card na grade 2x (ex: 3/3.5, 3/4, 1/1) */
             aspect-ratio: 3/3.5; 
         }
 
@@ -117,7 +115,6 @@
             scroll-snap-stop: always;
         }
         .view-mode-1 .product-card {
-            /* AJUSTE AQUI: Proporção do card na grade de 1 coluna (ex: 16/10, 4/3) */
             aspect-ratio: 4/3; 
         }
 
@@ -132,34 +129,33 @@
             scroll-snap-align: none;
         }
         .view-mode-2 .product-card-list {
-            /* AJUSTE AQUI: Altura fixa do card no modo de lista horizontal */
             min-height: 105px; 
         }
 
-        /* MODO 3: Tela Cheia (1 Card por tela - Estilo TikTok/Reels) */
+        /* MODO 3: Tela Cheia (1 Card por tela) */
         .view-mode-3 { scroll-snap-type: y mandatory; }
         .view-mode-3 .product-page,
         .view-mode-3 #related-grid { 
             display: grid;
             grid-template-columns: 1fr; 
-            scroll-snap-align: none; /* Remove a trava do bloco inteiro */
+            scroll-snap-align: none; 
             padding: 0;
             gap: 0;
         }
         .view-mode-3 .product-card {
-            height: 100dvh; /* O card passa a ter exatamente a altura da tela */
-            aspect-ratio: auto; /* Desativa a proporção quadrada */
-            scroll-snap-align: start; /* Faz o scroll travar em cada produto individualmente */
+            height: 100dvh; 
+            aspect-ratio: auto; 
+            scroll-snap-align: start; 
             scroll-snap-stop: always;
         }
         
-        /* Ajuste para as informações não ficarem escondidas no Modo 3 */
         .view-mode-3 .tag-preco-nova { bottom: 140px; font-size: 1.2rem; padding: 8px 20px; }
-        .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } /* Mais afastado e alinhado à esquerda */
-        .view-mode-3 .btn-quick-add { bottom: 190px; width: 48px; height: 48px; font-size: 22px; right: 15px; left: auto; } /* Botão na direita */
+        .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } 
+        .view-mode-3 .btn-quick-add { bottom: 190px; width: 48px; height: 48px; font-size: 22px; right: 15px; left: auto; }
         .view-mode-3 .product-icon { width: 90%; height: 90%; }
+
         /* =========================================
-           2. CARDS DE PRODUTO (MODOS 0 E 1)
+           2. CARDS DE PRODUTO (MODOS 0, 1 E 3)
         ========================================= */
         .product-card {
             background-color: var(--bg-card);
@@ -184,43 +180,43 @@
             z-index: 1;
         }
 
-        /* Etiqueta de Preço (Movida para a ESQUERDA) */
+        /* Etiqueta de Preço na ESQUERDA */
         .tag-preco-nova {
             position: absolute;
             bottom: 24px; 
-            left: 0;      /* Colado na esquerda */
+            left: 0;      
             right: auto;
             background: #ffffff;
             color: #000000;
             font-size: 0.85rem; 
             font-weight: 600; 
             padding: 5px 12px;
-            border-radius: 0 6px 6px 0; /* Arredondamento invertido */
+            border-radius: 0 6px 6px 0; 
             letter-spacing: 0.5px;
-            box-shadow: 2px 2px 8px rgba(0,0,0,0.06); /* Sombra invertida */
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.06); 
             z-index: 2;
         }
 
-        /* Etiqueta da Embalagem (Esquerda, menor, mais escura e afastada) */
+        /* Etiqueta da Embalagem ESQUERDA, Escura e Afastada */
         .tag-embalagem {
             position: absolute;
-            bottom: 5px; /* Afastado mais 3px da tag de preço (era 8px) */
-            left: 12px;  /* Movido para a esquerda */
+            bottom: 5px; 
+            left: 12px;  
             right: auto;
-            color: #555555; /* Um pouco mais escura (era #777777) */
-            font-size: 0.65rem; /* Um pouco menor (era 0.7rem) */
+            color: #555555; 
+            font-size: 0.65rem; 
             font-weight: 600;
             z-index: 2;
             text-transform: uppercase;
-            text-align: left; /* Alinhamento invertido */
+            text-align: left; 
         }
 
-        /* Botão + Redondo (Movido para a DIREITA) */
+        /* Botão + Redondo na DIREITA */
         .btn-quick-add {
             position: absolute;
             bottom: 15px; 
-            right: 10px;  /* Movido para a direita */
-            left: auto;   /* Limpa a esquerda */
+            right: 10px;  
+            left: auto;   
             width: 32px;
             height: 32px;
             background-color: #000000;
@@ -333,7 +329,6 @@
             z-index: 990;
         }
 
-        /* AJUSTE: Barra reestruturada e mais compacta */
         .dock-container {
             position: fixed;
             bottom: var(--dock-bottom);
@@ -357,7 +352,7 @@
         }
 
         .side-dock-btn {
-            width: 50px; /* Mais fino que os 60px originais */
+            width: 50px; 
             background: rgba(20, 20, 20, 0.95);
             backdrop-filter: blur(15px);
             display: flex;
@@ -857,7 +852,7 @@
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-            viewMode: 0, // 0 = 2xGrid, 1 = 1xGrid, 2 = List
+            viewMode: 0, // 0 = 2xGrid, 1 = 1xGrid, 2 = List, 3 = Full
             mainCategories: [],
             activeCatIndex: -1,
             currentFilter: { type: 'all', value: '' }
@@ -919,7 +914,6 @@
             }, 300);
         }
 
-        // NOVO: Alternador de Categorias (Botão Esquerdo)
         window.nextCategory = function() {
             if (STATE.mainCategories.length === 0) return;
             
@@ -940,15 +934,14 @@
             }, 150);
         };
 
-       // Alternador de Visualização (Botão Direito) - Agora com 4 modos
         window.toggleViewMode = function() {
-            STATE.viewMode = (STATE.viewMode + 1) % 4; // Alterado de 3 para 4
+            STATE.viewMode = (STATE.viewMode + 1) % 4;
             const icon = $('viewModeBtn').querySelector('i');
             
-            if (STATE.viewMode === 0) icon.className = "fa-solid fa-border-all"; // Grade 2x
-            else if (STATE.viewMode === 1) icon.className = "fa-solid fa-square"; // Grade 1x
-            else if (STATE.viewMode === 2) icon.className = "fa-solid fa-list"; // Lista Horizontal
-            else icon.className = "fa-solid fa-mobile-screen"; // Modo Tela Cheia (Ícone de celular)
+            if (STATE.viewMode === 0) icon.className = "fa-solid fa-border-all"; 
+            else if (STATE.viewMode === 1) icon.className = "fa-solid fa-square"; 
+            else if (STATE.viewMode === 2) icon.className = "fa-solid fa-list"; 
+            else icon.className = "fa-solid fa-mobile-screen"; 
             
             $('vitrine').scrollTop = 0;
             renderVitrineEngine();
@@ -1006,7 +999,7 @@
         }
 
         window.filterBy = function(type, value) {
-            history.back(); // Dispara o fechamento de menus/modal automaticamente
+            history.back(); 
             STATE.currentFilter = { type, value };
             if (type === 'cat') { STATE.activeCatIndex = STATE.mainCategories.indexOf(value); }
             $('vitrine').scrollTop = 0;
@@ -1059,7 +1052,6 @@
         // SISTEMA DE RENDERIZAÇÃO DA VITRINE E CARDS
         // ==========================================
         function renderCardHTML(prod, forceMode = null) {
-            // Se forceMode for passado, usa ele. Se não, usa o da vitrine.
             let currentMode = forceMode !== null ? forceMode : STATE.viewMode;
 
             // MODO DE LISTA HORIZONTAL (Modo 2)
@@ -1106,21 +1098,6 @@
             `;
         }
 
-            // MODOS DE GRADE (Modo 0 e 1)
-            let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem">${prod.embalagem}</div>` : '';
-            return `
-                <div class="product-card" onclick="openDetail('${prod.id}')">
-                    <div class="btn-quick-add" onclick="quickAddToCart('${prod.id}', event)">
-                        <i class="fa-solid fa-plus"></i>
-                    </div>
-                    <div class="tag-preco-nova">${fmt(prod.price)}</div>
-                    ${embalagemHtml}
-                    <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon lazy-img" alt="${prod.name}">
-                </div>
-            `;
-        }
-
-        // Funções para controle do carrinho na listagem horizontal (Modo 2)
         window.updateCartItemList = function(id, delta, event) {
             event.stopPropagation();
             updateCartItem(id, delta);
@@ -1145,7 +1122,6 @@
             });
         };
 
-        // FUNÇÃO DE COMPRA RÁPIDA (Não abre o modal)
         window.quickAddToCart = function(id, event) {
             event.stopPropagation(); 
             
@@ -1285,14 +1261,11 @@
 
             finalRelated = finalRelated.slice(0, 50);
             
-           // Procure estas linhas dentro de openDetail e adicione a última:
-if(finalRelated.length > 0) {
+            if(finalRelated.length > 0) {
                 $('related-container').style.display = 'block';
                 
-                // O '0' aqui força a função a desenhar o card padrão de grade
+                // O '0' força o uso do MODO 0 (Grade de 2 colunas) no modal
                 $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod, 0)).join('');
-                
-                // Força o container a usar a classe do Modo 0 (Grade 2x colunas)
                 $('related-grid').parentElement.className = 'view-mode-0';
                 
                 lazyLoadImages(); 
@@ -1408,7 +1381,6 @@ if(finalRelated.length > 0) {
             let btn = $('btn-send-order');
             if ((sum - STATE.deliveryDiscount) < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
 
-            // Atualiza os seletores da lista de forma dinâmica se o modo 2 estiver ativo
             if (STATE.viewMode === 2 && typeof updateAllCardUIs === 'function') {
                 updateAllCardUIs();
             }
@@ -1453,9 +1425,6 @@ if(finalRelated.length > 0) {
             setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar Pedido`; }, 3000);
         };
 
-        // ==========================================
-        // FUNÇÕES RECUPERADAS (CARRINHO E MÁSCARAS)
-        // ==========================================
         const MIN_ORDER = 30; 
 
         function loadCart() {
@@ -1509,9 +1478,6 @@ if(finalRelated.length > 0) {
             i.value = v;
         }
 
-        // ==========================================
-        // INIT ENGINE
-        // ==========================================
         async function fetchWithCache(url, key) {
             try {
                 let cached = localStorage.getItem(key); let cacheTime = localStorage.getItem(key + '_time'); let now = Date.now();
