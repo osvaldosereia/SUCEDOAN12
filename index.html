@@ -1298,13 +1298,13 @@
             let fType = STATE.currentFilter.type;
             let fVal = STATE.currentFilter.value;
             
-            // Controle das Cestas Básicas (mantido igual)
+           // Controle das Cestas Básicas
             if (fType === 'cestas') {
                 $('viewModeBtn').style.opacity = '0.3'; 
                 $('viewModeBtn').style.pointerEvents = 'none';
                 vitrine.className = `main-container view-mode-1`;
                 
-               let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
+                let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
                 BASKETS.forEach(basket => {
                     html += `
                     <div class="basket-card" onclick="openBasketDetail('${basket.id}')">
@@ -1317,6 +1317,10 @@
                     </div>`;
                 });
                 html += '</div>';
+                
+                // 👇 A LINHA MÁGICA QUE FALTAVA PARA EXIBIR AS CESTAS NO ECRÃ
+                vitrine.innerHTML = html; 
+                
                 return; 
             } else {
                 $('viewModeBtn').style.opacity = '1';
