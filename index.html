@@ -40,7 +40,6 @@
         #splash-screen img { width: 180px; animation: pulse 1.2s infinite alternate ease-in-out; }
         @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
 
-        /* Toast Notifications */
         .toast {
             position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(50px);
             background: rgba(0, 0, 0, 0.85); color: #fff; padding: 12px 24px; border-radius: 30px;
@@ -78,15 +77,14 @@
         .product-card {
             background-color: var(--bg-card); position: relative; display: flex; align-items: center; justify-content: center;
             cursor: pointer; border-radius: 0; transition: opacity 0.2s; overflow: hidden; height: 100%;
-            /* Ajuste para ficar um pouco mais horizontal que o padrão 2/3 */
-            aspect-ratio: 1 / 0.9; 
+            aspect-ratio: 1 / 0.9; /* Deixa o card com aspecto mais deitado/horizontal */
         }
         .product-page .product-card { aspect-ratio: auto; }
 
         .product-card:active { opacity: 0.7; }
         .product-icon { width: 75%; height: 75%; object-fit: contain; mix-blend-mode: multiply; }
 
-        /* Tag Ajustada: Branca, letra preta pequena, colada na direita, subida 15px */
+        /* TAG BRANCA: Pequena, preta, colada direita, subida 15px */
         .tag-preco-nova {
             position: absolute;
             bottom: 15px; 
@@ -102,7 +100,7 @@
         }
 
         /* =========================================
-           3. BARRAS FLUTUANTES (DOCK BASE E BUSCA)
+           3. BARRAS FLUTUANTES (DOCK E BUSCA)
         ========================================= */
         .dock-gradient-shadow {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 120px;
@@ -122,12 +120,12 @@
         }
         .sort-dock-btn:active { background: #000; color: #fff; }
 
-        .nav-item { color: #888; font-size: 20px; flex: 1; text-align: center; cursor: pointer; transition: color 0.2s; display: flex; align-items: center; justify-content: center; height: 100%; }
+        .nav-item { color: #888; font-size: 20px; flex: 1; display: flex; align-items: center; justify-content: center; height: 100%; cursor: pointer; transition: color 0.2s; position: relative; }
         .nav-item.active { color: #ffffff; }
 
         .icon-wrapper { position: relative; display: flex; align-items: center; justify-content: center; }
         .cart-badge {
-            position: absolute; top: -6px; right: -10px; background: #ef4444; color: white;
+            position: absolute; top: -6px; right: -12px; background: #ef4444; color: white;
             font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 10px;
             display: none; border: 2px solid rgba(15, 15, 15, 0.95); min-width: 18px; text-align: center;
         }
@@ -316,7 +314,7 @@
             <p>Atendimento de Seg a Sáb.</p>
             <div style="margin-top: 20px;">
                 <button class="btn-social btn-insta" onclick="window.open('https://instagram.com/', '_blank')"><i class="fa-brands fa-instagram"></i> Seguir no Instagram</button>
-                <button class="btn-social btn-google" onclick="alert('Link GMN')"><i class="fa-brands fa-google"></i> Avaliar no Google</button>
+                <button class="btn-social btn-google" onclick="alert('Google Meu Negócio')"><i class="fa-brands fa-google"></i> Avaliar no Google</button>
             </div>
         </div>
     </div>
@@ -403,7 +401,7 @@
             </div>
 
             <button class="btn-send" id="btn-send-order" onclick="sendOrder()">Enviar Pedido</button>
-            <button class="btn-clear" onclick="clearCart()">Limpar Carrinho</button>
+            <button class="btn-clear" onclick="clearCart()">Esvaziar Sacola</button>
         </div>
     </div>
 
@@ -450,13 +448,10 @@
         function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
         function formatName(name) { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map(w => w.length <= 3 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
 
-        // TOAST NOTIFICATION
+        // TOAST
         function showToast(msg) {
-            const toast = $('toast');
-            toast.innerText = msg;
-            toast.classList.add('show');
-            clearTimeout(toastTimeout);
-            toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 2500);
+            const toast = $('toast'); toast.innerText = msg; toast.classList.add('show');
+            clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toast.classList.remove('show'); }, 2500);
         }
 
         // MÁSCARAS
@@ -481,7 +476,6 @@
         function saveCart() { localStorage.setItem('dona_antonia_cart', JSON.stringify({ cart: STATE.cart, cartOrder: STATE.cartOrder })); }
         function loadCart() { try { let saved = localStorage.getItem('dona_antonia_cart'); if (saved) { let parsed = JSON.parse(saved); STATE.cart = parsed.cart || {}; STATE.cartOrder = parsed.cartOrder || []; } } catch(e) {} }
 
-        // FAQ WPP
         window.sendFaqToZap = function() {
             let msg = `Olá Dona Antônia! Gostaria de tirar algumas dúvidas:\n\n1. Qual o valor mínimo do pedido?\n2. Entregam em quais bairros/cidades?\n3. Quais as formas de pagamento?\n4. Qual o prazo de entrega?\n5. Como funciona a personalização?`;
             window.open(`https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`, '_blank');
@@ -565,8 +559,8 @@
             touchendX = e.changedTouches[0].screenX;
             let swipeDistance = touchendX - touchstartX;
             if (Math.abs(swipeDistance) > 80 && STATE.mainCategories.length > 0 && STATE.currentFilter.type !== 'search') {
-                if (swipeDistance < 0) STATE.activeCatIndex = (STATE.activeCatIndex + 1) % STATE.mainCategories.length; // E
-                else { STATE.activeCatIndex = STATE.activeCatIndex - 1; if(STATE.activeCatIndex < 0) STATE.activeCatIndex = STATE.mainCategories.length - 1; } // D
+                if (swipeDistance < 0) STATE.activeCatIndex = (STATE.activeCatIndex + 1) % STATE.mainCategories.length;
+                else { STATE.activeCatIndex = STATE.activeCatIndex - 1; if(STATE.activeCatIndex < 0) STATE.activeCatIndex = STATE.mainCategories.length - 1; }
                 
                 STATE.currentFilter = { type: 'cat', value: STATE.mainCategories[STATE.activeCatIndex] };
                 isProgrammaticScroll = true; $('vitrine').scrollTop = 0; renderVitrineEngine(); setTimeout(() => isProgrammaticScroll = false, 50);
@@ -612,7 +606,7 @@
 
         // RENDERIZAÇÃO DA VITRINE
         function renderCardHTML(prod) {
-            return `<div class="product-card" onclick="openDetail('${prod.id}')"><div class="tag-preco-nova">${fmt(prod.price)}</div><img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon lazy-img" alt="${prod.name}"></div>`;
+            return `<div class="product-card" onclick="openDetail('${prod.id}')"><div class="tag-preco-nova">${fmt(prod.price)}</div><img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" onerror="this.src='../img/produtos/cesta.webp'" class="product-icon lazy-img" alt="${prod.name}"></div>`;
         }
 
         function renderVitrineEngine() {
@@ -698,8 +692,7 @@
             if ((STATE.cart[currentModalProdId] || 0) === 0 && currentModalQty > 0) STATE.cartOrder.push(currentModalProdId);
             STATE.cart[currentModalProdId] = currentInCart + currentModalQty;
             
-            updateTotals(); saveCart(); history.back();
-            showToast("Item adicionado à sacola!");
+            updateTotals(); saveCart(); history.back(); showToast("Produto adicionado à sacola");
         };
 
         // CHECKOUT E CARRINHO
@@ -796,55 +789,37 @@
             setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar Pedido`; }, 3000);
         };
 
-        // INIT ENGINE
-        async function fetchWithFallback() {
-            try {
-                let res = await fetch('/site/produtos.json');
-                if(res.ok) return await res.json();
-                
-                res = await fetch('produtos.json');
-                if(res.ok) return await res.json();
-                
-                res = await fetch('../site/produtos.json');
-                if(res.ok) return await res.json();
-            } catch(e) {}
-            return [];
-        }
-
+        // INIT ENGINE: SISTEMA DE FALLBACK INQUEBRÁVEL
         async function init() {
             try {
-                // Tenta carregar do Cache primeiro para velocidade
-                let cached = localStorage.getItem('cache_prods');
-                let cacheTime = localStorage.getItem('cache_prods_time');
-                let now = Date.now();
-                let data = [];
+                // Tenta puxar do banco real JSON
+                let res = null;
+                try { res = await fetch('/site/produtos.json'); if(!res.ok) throw new Error(); } 
+                catch(e) { try { res = await fetch('produtos.json'); if(!res.ok) throw new Error(); } 
+                catch(e) { try { res = await fetch('../site/produtos.json'); if(!res.ok) throw new Error(); } catch(e) { } } }
 
-                if (cached && cacheTime && (now - cacheTime < 30 * 60000)) {
-                    data = JSON.parse(cached);
-                } else {
-                    data = await fetchWithFallback();
-                    if (data.length > 0) {
-                        localStorage.setItem('cache_prods', JSON.stringify(data));
-                        localStorage.setItem('cache_prods_time', now);
-                    }
-                }
+                let data = res ? await res.json() : [];
 
                 if (data.length > 0) {
                     STATE.prods = data.filter(x => x.situacao !== "I").map(p => {
                         return { 
                             id: String(p.codigo || p.id), codigo: String(p.codigo || ""), name: formatName(p.nome), 
-                            price: parseFloat(p.preco) * 1.01, stock: parseInt(p.estoque) || 0, 
+                            price: parseFloat(p.preco || p.price || 0), stock: parseInt(p.estoque || 10), 
                             img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                            categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", subsubcategoria: p.subsubcategoria || "",
+                            categoria: p.categoria || "Geral", subcategoria: p.subcategoria || "", subsubcategoria: p.subsubcategoria || "",
                             marca: p.marca || "", embalagem: p.embalagem || "", descricao: p.descricao || ""
                         };
                     });
                 } else {
-                    // Fallback visual de teste caso o JSON não exista no servidor local
-                    STATE.prods = Array.from({length: 30}, (_, i) => ({
-                        id: String(i), codigo: String(i), name: `Produto de Teste ${i+1}`, price: 15.90 + i, stock: 10,
-                        img: `https://via.placeholder.com/300x300?text=Produto+${i+1}`, categoria: "Teste", marca: "Marca X"
-                    }));
+                    // DADOS MOCKADOS DE EMERGÊNCIA (Para o site nunca abrir vazio)
+                    STATE.prods = [
+                        { id: '1', name: 'Shampoo Pantene 400ml', price: 21.90, stock: 10, img: 'https://via.placeholder.com/300x400?text=Pantene', categoria: 'Saúde e Beleza', subcategoria: 'Cabelos', marca: 'Pantene', embalagem: '400ml' },
+                        { id: '2', name: 'Café Melitta 500g', price: 19.90, stock: 15, img: 'https://via.placeholder.com/300x400?text=Melitta', categoria: 'Supermercado', subcategoria: 'Matinais', marca: 'Melitta', embalagem: '500g' },
+                        { id: '3', name: 'Ração Royal Canin 1kg', price: 89.90, stock: 5, img: 'https://via.placeholder.com/300x400?text=Racao', categoria: 'Pet Shop', subcategoria: 'Cães', marca: 'Royal Canin', embalagem: '1kg' },
+                        { id: '4', name: 'Desodorante Rexona', price: 29.90, stock: 20, img: 'https://via.placeholder.com/300x400?text=Rexona', categoria: 'Saúde e Beleza', subcategoria: 'Higiene', marca: 'Rexona', embalagem: 'Aerosol' },
+                        { id: '5', name: 'Arroz Branco 5kg', price: 32.00, stock: 10, img: 'https://via.placeholder.com/300x400?text=Arroz', categoria: 'Supermercado', subcategoria: 'Básicos', marca: 'Marca X', embalagem: '5kg' },
+                        { id: '6', name: 'Petisco Doguitos', price: 7.50, stock: 30, img: 'https://via.placeholder.com/300x400?text=Petisco', categoria: 'Pet Shop', subcategoria: 'Cães', marca: 'Purina', embalagem: '100g' }
+                    ];
                 }
                 
                 loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
@@ -857,7 +832,7 @@
                 STATE.sortMode = 0; renderVitrineEngine();
 
             } catch (e) { 
-                showToast("Carregando layout offline");
+                showToast("Erro crítico. Carregamento falhou.");
                 setTimeout(() => { $('splash-screen').style.opacity = '0'; $('splash-screen').style.display = 'none'; }, 2000);
             }
         }
