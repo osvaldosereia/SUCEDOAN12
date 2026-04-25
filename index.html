@@ -364,6 +364,23 @@
             text-align: left; 
         }
 
+        .tag-nome-produto {
+            position: absolute;
+            bottom: 5px; 
+            left: 10px;  
+            right: 48px; /* Dá espaço para não encavalar no botão de + */
+            color: #666666; 
+            font-size: 0.65rem; 
+            font-weight: 700;
+            z-index: 2;
+            text-align: left; 
+            white-space: nowrap; /* Não deixa quebrar linha */
+            overflow: hidden; /* Esconde o que não couber */
+            text-overflow: ellipsis; /* Coloca os ... no final */
+        }
+        
+        .view-mode-3 .tag-nome-produto { bottom: 117px; font-size: 0.9rem; left: 20px; right: 20px; }
+
         .card-action-grid {
             position: absolute;
             bottom: 15px;
@@ -903,7 +920,13 @@
 
         function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
         function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
-        function formatName(name) { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map(w => w.length <= 3 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' '); }
+        
+        // Ajuste: Formata nome com primeira letra e palavras longas em maiúsculo
+        function formatName(name) { 
+            if(!name) return ""; 
+            let words = name.toLowerCase().split(/\s+/); 
+            return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); 
+        }
 
         window.addEventListener('popstate', (e) => {
             if ($('detailModal').classList.contains('active')) {
@@ -1126,7 +1149,9 @@
                 ? `<div class="btn-quick-add" onclick="quickAddToCart('${prod.id}', event)"><i class="fa-solid fa-plus"></i></div>`
                 : `<div class="btn-quick-add" style="background:var(--success); font-weight: 800;" onclick="quickAddToCart('${prod.id}', event)">${q}</div>`;
             
-            let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem">${prod.embalagem}</div>` : '';
+            // Ajuste: Mostrando o nome do produto ao invés da embalagem nos cards em grade
+            let nomeProdutoHtml = `<div class="tag-nome-produto" title="${prod.name}">${prod.name}</div>`;
+            
             return `
                 <div class="product-card" onclick="openDetail('${prod.id}')">
                     ${discountBadge}
@@ -1137,7 +1162,7 @@
                         ${oldPriceHtml}
                         <span>${fmt(prod.price)}</span>
                     </div>
-                    ${embalagemHtml}
+                    ${nomeProdutoHtml}
                     <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon lazy-img" alt="${prod.name}">
                 </div>`;
         }
@@ -1224,8 +1249,10 @@
                         let page = document.createElement('div'); page.className = 'product-page';
                         page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                     }
-                    let divPage = document.createElement('div'); divPage.className = 'product-page';
-                    divPage.innerHTML = `<div class="category-divider" style="grid-column: span 2; padding: 20px 10px; font-weight: bold; text-align: center; color: #888;">Explore Mais Categorias</div>`;
+                    let divPage = document.createElement('div'); 
+                    divPage.style.width = '100%';
+                    divPage.style.scrollSnapAlign = 'start'; 
+                    divPage.innerHTML = `<div class="category-divider" style="padding: 40px 10px 20px; font-weight: bold; text-align: center; color: #888;">Explore Mais Categorias</div>`;
                     fragment.appendChild(divPage);
                 }
                 buffer.push(renderCardHTML(fullList[i]));
@@ -1431,7 +1458,8 @@
             setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar Pedido`; }, 3000);
         };
 
-        const MIN_ORDER = 30; 
+        // Ajuste: Valor mínimo do pedido configurado para 75
+        const MIN_ORDER = 75; 
         function loadCart() {
             try {
                 let saved = localStorage.getItem('dona_antonia_cart');
