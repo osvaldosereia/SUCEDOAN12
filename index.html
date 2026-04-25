@@ -299,7 +299,8 @@
             scroll-snap-stop: always;
         }
         
-        .view-mode-3 .tag-preco-nova { bottom: 140px; font-size: 1.2rem; padding: 8px 20px; }
+        /* Ajuste: Subimos a tag de preço no modo tela cheia também */
+        .view-mode-3 .tag-preco-nova { bottom: 155px; font-size: 1.2rem; padding: 8px 20px; }
         .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } 
         .view-mode-3 .product-icon { width: 90%; height: 90%; margin-bottom: 25%; }
         .view-mode-3 .card-action-grid { bottom: 190px; right: 15px; }
@@ -334,7 +335,7 @@
 
         .tag-preco-nova {
             position: absolute;
-            bottom: 20px; 
+            bottom: 42px; /* Ajuste: Etiqueta de preço mais alta para não colar no nome de 2 linhas */
             left: 0;      
             right: auto;
             background: rgba(255, 255, 255, 0.95);
@@ -366,20 +367,22 @@
 
         .tag-nome-produto {
             position: absolute;
-            bottom: 5px; 
-            left: 10px;  
-            right: 48px; /* Dá espaço para não encavalar no botão de + */
+            bottom: 10px; /* Ajuste: Respiro garantido na base */
+            left: 12px;   /* Ajuste: Respiro garantido na lateral */
+            right: 48px;  /* Dá espaço para não encavalar no botão de + */
             color: #666666; 
             font-size: 0.65rem; 
             font-weight: 700;
             z-index: 2;
             text-align: left; 
-            white-space: nowrap; /* Não deixa quebrar linha */
-            overflow: hidden; /* Esconde o que não couber */
-            text-overflow: ellipsis; /* Coloca os ... no final */
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* Ajuste: Limita a até 2 linhas e coloca reticências */
+            -webkit-box-orient: vertical;
+            overflow: hidden; 
         }
         
-        .view-mode-3 .tag-nome-produto { bottom: 117px; font-size: 0.9rem; left: 20px; right: 20px; }
+        .view-mode-3 .tag-nome-produto { bottom: 115px; font-size: 0.9rem; left: 20px; right: 20px; }
 
         .card-action-grid {
             position: absolute;
@@ -921,7 +924,6 @@
         function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
         function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
         
-        // Ajuste: Formata nome com primeira letra e palavras longas em maiúsculo
         function formatName(name) { 
             if(!name) return ""; 
             let words = name.toLowerCase().split(/\s+/); 
@@ -1149,7 +1151,6 @@
                 ? `<div class="btn-quick-add" onclick="quickAddToCart('${prod.id}', event)"><i class="fa-solid fa-plus"></i></div>`
                 : `<div class="btn-quick-add" style="background:var(--success); font-weight: 800;" onclick="quickAddToCart('${prod.id}', event)">${q}</div>`;
             
-            // Ajuste: Mostrando o nome do produto ao invés da embalagem nos cards em grade
             let nomeProdutoHtml = `<div class="tag-nome-produto" title="${prod.name}">${prod.name}</div>`;
             
             return `
@@ -1458,7 +1459,6 @@
             setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar Pedido`; }, 3000);
         };
 
-        // Ajuste: Valor mínimo do pedido configurado para 75
         const MIN_ORDER = 75; 
         function loadCart() {
             try {
