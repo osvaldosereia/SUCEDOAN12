@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Dona Antônia - E-commerce App</title>
+    <link rel="icon" href="data:,">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&display=swap" rel="stylesheet">
     
@@ -17,7 +19,7 @@
             --success: #059669; 
             --gap: 2px;
             --dock-height: 55px;
-            --dock-bottom: 60px; /* Ajustado para dar espaço aos chips */
+            --dock-bottom: 60px;
             --brand: #5A3826;        
             --border-light: #eaeaea;
         }
@@ -147,8 +149,12 @@
         
         .view-mode-3 .tag-preco-nova { bottom: 140px; font-size: 1.2rem; padding: 8px 20px; }
         .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } 
-        .view-mode-3 .btn-quick-add { bottom: 190px; width: 48px; height: 48px; font-size: 22px; right: 15px; left: auto; }
         .view-mode-3 .product-icon { width: 90%; height: 90%; }
+        
+        /* Ajustes Modal 3 para Controle de Qtde */
+        .view-mode-3 .card-action-grid { bottom: 190px; right: 15px; }
+        .view-mode-3 .btn-quick-add { width: 48px; height: 48px; font-size: 22px; }
+        .view-mode-3 .qty-controls-card { height: 48px; font-size: 20px; padding: 4px 16px; gap: 12px; }
 
         /* =========================================
            2. CARDS DE PRODUTO
@@ -205,11 +211,15 @@
             text-align: left; 
         }
 
-        .btn-quick-add {
+        /* Container que segura o + ou contador */
+        .card-action-grid {
             position: absolute;
-            bottom: 15px; 
-            right: 10px;  
-            left: auto;   
+            bottom: 15px;
+            right: 10px;
+            z-index: 3;
+        }
+
+        .btn-quick-add {
             width: 32px;
             height: 32px;
             background-color: #000000;
@@ -220,12 +230,27 @@
             justify-content: center;
             font-size: 15px;
             cursor: pointer;
-            z-index: 3;
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
             transition: transform 0.2s;
         }
         
         .btn-quick-add:active { transform: scale(0.85); }
+
+        .qty-controls-card {
+            background-color: #ffffff;
+            color: #000000;
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 4px 10px;
+            height: 32px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .qty-btn-card { cursor: pointer; padding: 2px; color: var(--text-light); }
+        .qty-btn-card:active { color: #000; }
 
         /* =========================================
            2.1 CARDS DE PRODUTO (MODO 2 - LISTA)
@@ -361,7 +386,6 @@
         }
         .side-dock-btn:active { background: #000; color: #fff; }
 
-        /* Estilo do Avatar (Botão Esquerdo) */
         .avatar-img {
             width: 100%;
             height: 100%;
@@ -376,7 +400,6 @@
             box-shadow: none;
         }
 
-        /* Container dos Chips */
         .chip-container {
             position: fixed;
             bottom: 12px;
@@ -498,8 +521,6 @@
             position: relative;
         }
 
-        .sidebar-header img { height: 35px; }
-
         .btn-close-sidebar {
             position: absolute;
             top: max(20px, env(safe-area-inset-top));
@@ -522,9 +543,7 @@
             letter-spacing: 1.2px;
         }
 
-        .sidebar-menu ul { list-style: none; padding: 0; margin: 0; }
-
-        .sidebar-menu li.main-cat {
+        .main-cat-row {
             padding: 10px 25px; 
             font-weight: 600;
             font-size: 15px;
@@ -532,10 +551,23 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            cursor: pointer;
             border-bottom: 1px solid #f5f5f5; 
             transition: background 0.2s;
         }
+        
+        .main-cat-text {
+            flex: 1;
+            cursor: pointer;
+            padding: 5px 0;
+        }
+
+        .toggle-icon {
+            padding: 5px 10px;
+            cursor: pointer;
+            color: #aaa;
+            transition: transform 0.3s;
+        }
+        .toggle-icon.open { transform: rotate(180deg); }
 
         .sidebar-menu li.sub-cat {
             padding: 8px 25px 8px 45px; 
@@ -548,6 +580,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            list-style: none;
         }
 
         .sidebar-menu li.sub-cat::before {
@@ -563,27 +596,6 @@
         }
 
         .sidebar-menu li:active { background: #f9f9f9; }
-
-        details.brand-group { 
-            margin: 0 15px 8px 15px; 
-            background: var(--bg-card);
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        details.brand-group summary {
-            padding: 14px 20px;
-            font-weight: 800;
-            font-size: 15px;
-            color: var(--text-dark);
-            cursor: pointer;
-            list-style: none;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        details.brand-group summary::-webkit-details-marker { display: none; }
-        details.brand-group summary::after { content: '\f078'; font-family: "Font Awesome 6 Free"; font-weight: 900; color: var(--text-light); font-size: 12px; transition: transform 0.3s; }
-        details.brand-group[open] summary::after { transform: rotate(180deg); }
-        details.brand-group ul { padding: 5px 0 10px 0; margin: 0; background: #fff; }
-        details.brand-group li { padding: 12px 20px; border: none; font-size: 14px; font-weight: 500; color: var(--text-light); }
 
         .sidebar-footer {
             padding: 30px 25px 100px; 
@@ -747,7 +759,7 @@
 <body>
 
     <div id="splash-screen">
-        <img src="../img/logoantonia5.png" alt="Carregando..." onerror="this.src='https://via.placeholder.com/180x60?text=Dona+Antônia'">
+        <img src="../img/logoantonia5.png" alt="Dona Antônia">
     </div>
 
     <div class="overlay" id="overlay"></div>
@@ -761,7 +773,13 @@
     <div class="sidebar" id="sidebar">
         <i class="fa-solid fa-xmark btn-close-sidebar" onclick="closeSidebar()"></i>
         <div class="sidebar-header">
-            <img src="../img/logoantonia5.png" alt="Dona Antônia" onerror="this.src='https://via.placeholder.com/150x50?text=Logo'">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <img src="../img/logoantonia5.png" alt="Dona Antônia" style="height: 55px;">
+                <div style="display: flex; gap: 15px; font-size: 24px; padding-right: 50px;">
+                    <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" style="color: #25D366;"><i class="fa-brands fa-whatsapp"></i></a>
+                    <a href="#" target="_blank" style="color: #E1306C;"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
             <p style="color: #888; font-size: 13px; margin-top:10px;"><i class="fa-solid fa-location-dot"></i> Cuiabá e Várzea Grande</p>
         </div>
         <div class="sidebar-menu" id="menu-categories-list"></div>
@@ -984,46 +1002,46 @@
             renderVitrineEngine();
         };
 
+        window.toggleSubMenu = function(id, iconEl) {
+            let el = document.getElementById(id);
+            if (el.style.display === 'none') {
+                el.style.display = 'block';
+                iconEl.classList.add('open');
+            } else {
+                el.style.display = 'none';
+                iconEl.classList.remove('open');
+            }
+        };
+
         function renderSidebarMenu() {
             let catMap = {};
-            let brands = new Set();
             STATE.prods.forEach(p => {
                 if(p.categoria) {
                     if(!catMap[p.categoria]) catMap[p.categoria] = new Set();
                     if(p.subcategoria) catMap[p.categoria].add(p.subcategoria);
                 }
-                if(p.marca) brands.add(p.marca);
             });
             STATE.mainCategories = Object.keys(catMap).sort();
+            
             let html = '';
-            html += `<div class="sidebar-group-title">Departamentos</div><ul>`;
-            STATE.mainCategories.forEach(cat => {
-                html += `<li class="main-cat" onclick="filterBy('cat', '${cat}')">
-                            ${cat} <i class="fa-solid fa-chevron-right" style="font-size:10px; opacity:0.3"></i>
+            html += `<div class="sidebar-group-title">Departamentos</div><ul style="padding:0; margin:0;">`;
+            
+            STATE.mainCategories.forEach((cat, index) => {
+                let catId = 'cat-' + index;
+                html += `<li class="main-cat-row">
+                            <span class="main-cat-text" onclick="filterBy('cat', '${cat}')">${cat}</span>
+                            <div class="toggle-icon" onclick="toggleSubMenu('${catId}', this)"><i class="fa-solid fa-chevron-down"></i></div>
                          </li>`;
+                
                 let subs = Array.from(catMap[cat]).sort();
+                html += `<ul id="${catId}" class="sub-cat-list" style="display:none; list-style:none; padding:0; margin:0;">`;
                 subs.forEach(sub => {
                     html += `<li class="sub-cat" onclick="filterBy('sub', '${sub}')">${sub}</li>`;
                 });
+                html += `</ul>`;
             });
             html += `</ul>`;
-            let sortedBrands = Array.from(brands).sort();
-            if(sortedBrands.length > 0) {
-                html += `<div class="sidebar-group-title">Marcas</div>`;
-                let alphaGroups = {};
-                sortedBrands.forEach(b => {
-                    let letter = b.charAt(0).toUpperCase();
-                    if(!alphaGroups[letter]) alphaGroups[letter] = [];
-                    alphaGroups[letter].push(b);
-                });
-                Object.keys(alphaGroups).sort().forEach(letter => {
-                    html += `<details class="brand-group"><summary>Marcas com ${letter}</summary><ul>`;
-                    alphaGroups[letter].forEach(brand => {
-                        html += `<li onclick="filterBy('marca', '${brand}')">${brand}</li>`;
-                    });
-                    html += `</ul></details>`;
-                });
-            }
+            
             $('menu-categories-list').innerHTML = html;
             renderCategoryChips();
         }
@@ -1082,8 +1100,9 @@
         // ==========================================
         function renderCardHTML(prod, forceMode = null) {
             let currentMode = forceMode !== null ? forceMode : STATE.viewMode;
+            let q = STATE.cart[prod.id] || 0;
+            
             if (currentMode === 2) {
-                let q = STATE.cart[prod.id] || 0;
                 let controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>`
                     : `<div class="qty-controls-list" onclick="event.stopPropagation()">
@@ -1107,11 +1126,21 @@
                         </div>
                     </div>`;
             }
+            
+            // Grid Modes (0, 1, 3)
+            let controlsHtmlGrid = q === 0 
+                ? `<div class="btn-quick-add" onclick="quickAddToCart('${prod.id}', event)"><i class="fa-solid fa-plus"></i></div>`
+                : `<div class="qty-controls-card" onclick="event.stopPropagation()">
+                     <i class="fa-solid fa-minus qty-btn-card" onclick="updateCartItemList('${prod.id}', -1, event)"></i>
+                     <span style="font-weight:bold; min-width: 14px; text-align: center;">${q}</span>
+                     <i class="fa-solid fa-plus qty-btn-card" onclick="updateCartItemList('${prod.id}', 1, event)"></i>
+                   </div>`;
+            
             let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem">${prod.embalagem}</div>` : '';
             return `
                 <div class="product-card" onclick="openDetail('${prod.id}')">
-                    <div class="btn-quick-add" onclick="quickAddToCart('${prod.id}', event)">
-                        <i class="fa-solid fa-plus"></i>
+                    <div class="card-action-grid" id="action-card-grid-${prod.id}">
+                        ${controlsHtmlGrid}
                     </div>
                     <div class="tag-preco-nova">${fmt(prod.price)}</div>
                     ${embalagemHtml}
@@ -1125,18 +1154,33 @@
         };
 
         window.updateAllCardUIs = function() {
-            if (STATE.viewMode !== 2) return;
             STATE.prods.forEach(p => {
-                let el = $('action-card-' + p.id);
-                if(el) {
-                    let q = STATE.cart[p.id] || 0;
+                let q = STATE.cart[p.id] || 0;
+                
+                // Atualiza Cards em Modo Lista
+                let elList = $('action-card-' + p.id);
+                if(elList) {
                     if(q === 0) {
-                        el.innerHTML = `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>`;
+                        elList.innerHTML = `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>`;
                     } else {
-                        el.innerHTML = `<div class="qty-controls-list" onclick="event.stopPropagation()">
+                        elList.innerHTML = `<div class="qty-controls-list" onclick="event.stopPropagation()">
                          <i class="fa-solid fa-minus qty-btn" onclick="updateCartItemList('${p.id}', -1, event)"></i>
                          <span style="font-weight:bold; width: 20px; text-align:center;">${q}</span>
                          <i class="fa-solid fa-plus qty-btn" onclick="updateCartItemList('${p.id}', 1, event)"></i>
+                       </div>`;
+                    }
+                }
+
+                // Atualiza Cards em Modo Grade
+                let elGrid = $('action-card-grid-' + p.id);
+                if(elGrid) {
+                    if(q === 0) {
+                        elGrid.innerHTML = `<div class="btn-quick-add" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i></div>`;
+                    } else {
+                        elGrid.innerHTML = `<div class="qty-controls-card" onclick="event.stopPropagation()">
+                         <i class="fa-solid fa-minus qty-btn-card" onclick="updateCartItemList('${p.id}', -1, event)"></i>
+                         <span style="font-weight:bold; min-width: 14px; text-align: center;">${q}</span>
+                         <i class="fa-solid fa-plus qty-btn-card" onclick="updateCartItemList('${p.id}', 1, event)"></i>
                        </div>`;
                     }
                 }
@@ -1361,7 +1405,8 @@
             $('sum-total').innerText = fmt(sum - STATE.deliveryDiscount);
             let btn = $('btn-send-order');
             if ((sum - STATE.deliveryDiscount) < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
-            if (STATE.viewMode === 2 && typeof updateAllCardUIs === 'function') {
+            
+            if (typeof updateAllCardUIs === 'function') {
                 updateAllCardUIs();
             }
         }
@@ -1451,6 +1496,15 @@
         }
 
         async function init() {
+            // Garante que o splash screen feche mesmo se a internet travar/falhar
+            setTimeout(() => {
+                let splash = $('splash-screen');
+                if(splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.style.display = 'none', 400);
+                }
+            }, 2500);
+
             try {
                 const r2 = await fetchWithCache('/site/produtos.json', 'cache_prods');
                 if (r2 && r2.length > 0) {
@@ -1465,16 +1519,12 @@
                     });
                 }
                 loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
-                setTimeout(() => {
-                    $('splash-screen').style.opacity = '0';
-                    setTimeout(() => $('splash-screen').style.display = 'none', 400);
-                }, 2000);
+                
                 STATE.viewMode = 0;
                 renderVitrineEngine();
                 renderCategoryChips();
             } catch (e) { 
-                alert("Erro de conexão. Tentando recuperar dados off-line...");
-                setTimeout(() => { $('splash-screen').style.opacity = '0'; $('splash-screen').style.display = 'none'; }, 2000);
+                console.error("Erro ao carregar os dados:", e);
             }
         }
         document.addEventListener('DOMContentLoaded', init);
