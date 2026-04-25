@@ -134,15 +134,15 @@
         .topbar-actions {
             display: flex;
             align-items: center;
-            gap: 22px; /* Ajuste: Botões mais separados (era 16px) */
+            gap: 22px; 
             flex-shrink: 0;
         }
 
        .action-btn {
             position: relative;
             color: var(--text-dark);
-            font-size: 24px; /* Ajuste: Ícones um pouco maiores (era 20px) */
-            padding: 4px; /* Ajuste: Cria uma área "invisível" extra para facilitar o clique com o dedo */
+            font-size: 24px; 
+            padding: 4px; 
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -156,8 +156,8 @@
 
         .cart-badge {
             position: absolute;
-            top: -2px;   /* Ajuste: reposicionado para bater com o novo tamanho do ícone */
-            right: -6px; /* Ajuste: reposicionado para a lateral certa do ícone */
+            top: -2px;   
+            right: -6px; 
             background: #ef4444;
             color: white;
             font-size: 10px;
@@ -213,14 +213,13 @@
            2. VITRINE E SCROLL (CONTROLE POR FORMATO)
         ========================================= */
         .main-container {
-            /* Fixa a vitrine para começar exatamente abaixo do cabeçalho completo (topbar + chips) */
             position: fixed; 
             top: calc(var(--header-total) + env(safe-area-inset-top));
             left: 0;
             width: 100%;
             height: calc(100dvh - var(--header-total) - env(safe-area-inset-top));
-            padding-top: 15px; /* Respiro visual acima do primeiro card */
-            scroll-padding-top: 15px; /* Garante que o scroll-snap não engula o respiro */
+            padding-top: 15px; 
+            scroll-padding-top: 15px; 
             padding-bottom: max(20px, env(safe-area-inset-bottom));
             overflow-y: auto;
             scroll-behavior: auto;
@@ -249,7 +248,6 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
-            /* Altura total calculada considerando o novo limite do container e o respiro de 15px */
             height: calc(100dvh - var(--header-total) - env(safe-area-inset-top) - 25px); 
             scroll-snap-align: start;
             scroll-snap-stop: always;
@@ -300,7 +298,6 @@
             scroll-snap-stop: always;
         }
         
-        /* Ajuste: Subimos a tag de preço no modo tela cheia também */
         .view-mode-3 .tag-preco-nova { bottom: 155px; font-size: 1.2rem; padding: 8px 20px; }
         .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } 
         .view-mode-3 .product-icon { width: 90%; height: 90%; margin-bottom: 25%; }
@@ -336,7 +333,7 @@
 
         .tag-preco-nova {
             position: absolute;
-            bottom: 42px; /* Ajuste: Etiqueta de preço mais alta para não colar no nome de 2 linhas */
+            bottom: 42px; 
             left: 0;      
             right: auto;
             background: rgba(255, 255, 255, 0.95);
@@ -368,9 +365,9 @@
 
         .tag-nome-produto {
             position: absolute;
-            bottom: 10px; /* Ajuste: Respiro garantido na base */
-            left: 12px;   /* Ajuste: Respiro garantido na lateral */
-            right: 48px;  /* Dá espaço para não encavalar no botão de + */
+            bottom: 10px; 
+            left: 12px;   
+            right: 48px;  
             color: #666666; 
             font-size: 0.65rem; 
             font-weight: 700;
@@ -378,7 +375,7 @@
             text-align: left; 
             line-height: 1.2;
             display: -webkit-box;
-            -webkit-line-clamp: 2; /* Ajuste: Limita a até 2 linhas e coloca reticências */
+            -webkit-line-clamp: 2; 
             -webkit-box-orient: vertical;
             overflow: hidden; 
         }
@@ -721,6 +718,39 @@
         .btn-add:active { opacity: 0.8; }
 
         /* =========================================
+           ESTILOS ESPECÍFICOS PARA CESTAS BÁSICAS
+        ========================================= */
+        .basket-card {
+            background-color: var(--bg-card);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .basket-card:active { opacity: 0.7; }
+        .basket-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #fff;
+        }
+        .basket-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+        .basket-price {
+            font-size: 18px;
+            font-weight: 900;
+            color: var(--primary);
+        }
+
+        /* =========================================
            6. DRAWER DE CHECKOUT
         ========================================= */
         .checkout-drawer {
@@ -851,6 +881,31 @@
         </div>
     </div>
 
+    <div class="full-screen-detail" id="basketDetailModal">
+        <div class="detail-close" onclick="closeBasketDetail()">
+            <i class="fa-solid fa-xmark"></i>
+        </div>
+        
+        <div class="modal-scroll-area" style="padding-bottom: 120px;">
+            <div class="detail-icon-box" style="height: 30vh;">
+                <img id="basketModalImg" src="" alt="Cesta">
+            </div>
+            <div class="detail-content" style="padding-top: 10px;">
+                <h1 class="modal-title" id="basketModalTitle">Nome da Cesta</h1>
+                <p style="color: var(--text-light); font-weight: 600; margin-bottom: 20px; font-size: 18px;" id="basketModalPrice">R$ 0,00</p>
+                
+                <h3 class="related-title" style="margin: 0 0 15px 0;">Itens da Cesta</h3>
+                <p style="font-size: 12px; color: #888; margin-bottom: 15px;">Ajuste as quantidades conforme necessário. Produtos não encontrados no sistema não serão exibidos.</p>
+                
+                <div id="basket-items-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+        </div>
+
+        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px 20px 25px; border-top: 1px solid var(--border-light); z-index: 2200; box-shadow: 0 -4px 15px rgba(0,0,0,0.05);">
+            <button class="btn-send" onclick="addBasketToCart()" style="margin: 0;">Adicionar Todos à Sacola</button>
+        </div>
+    </div>
+
     <div class="checkout-drawer" id="checkout-drawer">
         <div class="chk-header">
             Sua Sacola
@@ -918,9 +973,19 @@
             currentFilter: { type: 'ofertas', value: '' } 
         };
 
-        let currentModalProdId = null;
-        let currentModalQty = 1;
-        let searchTimeout;
+        const BASKETS = [
+          { "id": "cesta1", "nome": "Economica Bonini", "preco": 85, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
+          { "id": "cesta2", "nome": "Mini Bonini", "preco": 165, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta3", "nome": "Mini Koblenz", "preco": 170, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta4", "nome": "Pequena Bonini", "preco": 215, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta5", "nome": "Pequena Koblenz", "preco": 220, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta6", "nome": "Média Koblenz", "preco": 325, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta7", "nome": "Média Bonini", "preco": 320, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta8", "nome": "Grande Koblenz", "preco": 390, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta9", "nome": "Grande Bonini", "preco": 380, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] }
+        ];
+        
+        let currentBasketItems = [];
 
         function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
         function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
@@ -932,7 +997,9 @@
         }
 
         window.addEventListener('popstate', (e) => {
-            if ($('detailModal').classList.contains('active')) {
+            if ($('basketDetailModal') && $('basketDetailModal').classList.contains('active')) {
+                closeBasketDetail();
+            } else if ($('detailModal').classList.contains('active')) {
                 $('detailModal').classList.remove('active');
                 currentModalProdId = null;
             } else if ($('checkout-drawer').classList.contains('open')) {
@@ -980,10 +1047,13 @@
             const container = $('category-chips');
             if (!container) return;
             let isOfertasActive = STATE.currentFilter.type === 'ofertas' || STATE.currentFilter.type === 'search' ? 'active' : '';
+            let isCestasActive = STATE.currentFilter.type === 'cestas' ? 'active' : '';
+            
             let html = `<div class="category-chip ${isOfertasActive}" onclick="filterBy('ofertas', '')">Ofertas</div>`;
+            html += `<div class="category-chip ${isCestasActive}" style="background-color: var(--primary); color: white;" onclick="filterBy('cestas', '')"><i class="fa-solid fa-box-open"></i> Cestas Básicas</div>`;
             
             STATE.mainCategories.forEach((cat, index) => {
-                let isActive = (STATE.activeCatIndex === index && STATE.currentFilter.type !== 'ofertas') ? 'active' : '';
+                let isActive = (STATE.activeCatIndex === index && STATE.currentFilter.type !== 'ofertas' && STATE.currentFilter.type !== 'cestas') ? 'active' : '';
                 html += `<div class="category-chip ${isActive}" onclick="filterBy('cat', '${cat}')">${cat}</div>`;
             });
             container.innerHTML = html;
@@ -1062,7 +1132,7 @@
                 if(prodWithSub) {
                     STATE.activeCatIndex = STATE.mainCategories.indexOf(prodWithSub.categoria);
                 }
-            } else if (type === 'ofertas' || type === 'search') {
+            } else if (type === 'ofertas' || type === 'search' || type === 'cestas') {
                 STATE.activeCatIndex = -1;
             }
 
@@ -1212,11 +1282,37 @@
 
         function renderVitrineEngine() {
             const vitrine = $('vitrine');
-            vitrine.className = `main-container view-mode-${STATE.viewMode}`;
-            let primaryList = [];
-            let secondaryList = [];
             let fType = STATE.currentFilter.type;
             let fVal = STATE.currentFilter.value;
+            
+            // Controle do botão de visualização (Grid/Lista) e renderização das cestas
+            if (fType === 'cestas') {
+                $('viewModeBtn').style.opacity = '0.3'; 
+                $('viewModeBtn').style.pointerEvents = 'none'; // Desativa o botão
+                vitrine.className = `main-container view-mode-1`; // Usa grade 1x para ficar vertical grande
+                
+                // Renderiza as cestas
+                let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
+                BASKETS.forEach(basket => {
+                    html += `
+                    <div class="basket-card" onclick="openBasketDetail('${basket.id}')">
+                        <img src="${basket.imagem}" class="basket-img" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'">
+                        <div class="basket-title">${basket.nome}</div>
+                        <div class="basket-price">${fmt(basket.preco)}</div>
+                        <button class="btn-quick-add-list" style="width: 100%; justify-content: center; margin-top: 10px; background: #000; color:#fff;">Ver Itens da Cesta</button>
+                    </div>`;
+                });
+                html += '</div>';
+                vitrine.innerHTML = html;
+                return; // Para a execução por aqui
+            } else {
+                $('viewModeBtn').style.opacity = '1';
+                $('viewModeBtn').style.pointerEvents = 'auto'; // Ativa o botão de volta
+                vitrine.className = `main-container view-mode-${STATE.viewMode}`;
+            }
+            
+            let primaryList = [];
+            let secondaryList = [];
             
             if (fType === 'search') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (norm(p.name).includes(fVal) || norm(p.categoria).includes(fVal) || norm(p.marca).includes(fVal)));
@@ -1566,6 +1662,111 @@
                 }
             });
         }
+
+        // ==========================================
+        // LÓGICA DAS CESTAS BÁSICAS
+        // ==========================================
+        window.openBasketDetail = function(basketId) {
+            const basket = BASKETS.find(b => b.id === basketId);
+            if (!basket) return;
+
+            pushHistoryState('basket');
+            
+            $('basketModalImg').src = basket.imagem;
+            $('basketModalTitle').innerText = basket.nome;
+            $('basketModalPrice').innerText = "Valor Sugerido: " + fmt(basket.preco);
+            
+            currentBasketItems = [];
+            basket.produtos.forEach(itemString => {
+                let parts = itemString.split("x ");
+                if(parts.length === 2) {
+                    let qty = parseInt(parts[0]);
+                    let code = parts[1];
+                    let pObj = STATE.prods.find(p => p.codigo === code || p.id === code);
+                    if (pObj && pObj.stock > 0) {
+                        currentBasketItems.push({ pObj: pObj, qty: qty });
+                    }
+                }
+            });
+
+            renderBasketItemsList();
+            $('basketDetailModal').classList.add('active');
+        };
+
+        window.closeBasketDetail = function() {
+            $('basketDetailModal').classList.remove('active');
+        };
+
+        function renderBasketItemsList() {
+            let container = $('basket-items-container');
+            if(currentBasketItems.length === 0) {
+                container.innerHTML = "<p style='color: #888;'>Nenhum produto em estoque encontrado para esta cesta.</p>";
+                return;
+            }
+
+            let html = '';
+            currentBasketItems.forEach((item, index) => {
+                let p = item.pObj;
+                html += `
+                <div class="product-card-list" style="border: 1px solid var(--border-light); padding: 8px;">
+                    <img src="${p.img}" class="product-icon-list" style="width: 60px; height: 60px;">
+                    <div class="product-info-list">
+                        <div class="product-name-list" style="font-size: 12px;">${p.name}</div>
+                        <div class="tag-preco-list" style="font-size: 14px;">${fmt(p.price)}</div>
+                    </div>
+                    <div class="qty-controls" style="padding: 4px 8px; font-size: 13px;">
+                        <i class="fa-solid fa-minus qty-btn" onclick="updateBasketItemQty(${index}, -1)"></i>
+                        <span style="font-weight:bold; width: 20px; text-align:center;">${item.qty}</span>
+                        <i class="fa-solid fa-plus qty-btn" onclick="updateBasketItemQty(${index}, 1)"></i>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.updateBasketItemQty = function(index, delta) {
+            let item = currentBasketItems[index];
+            if (!item) return;
+            
+            let newQty = item.qty + delta;
+            if (newQty < 0) newQty = 0;
+            if (newQty > item.pObj.stock) {
+                alert("Estoque insuficiente para " + item.pObj.name);
+                return;
+            }
+            
+            item.qty = newQty;
+            renderBasketItemsList(); 
+        };
+
+        window.addBasketToCart = function() {
+            let addedCount = 0;
+            currentBasketItems.forEach(item => {
+                if (item.qty > 0) {
+                    let pid = item.pObj.id;
+                    let currentInCart = STATE.cart[pid] || 0;
+                    
+                    if (currentInCart === 0) STATE.cartOrder.push(pid); 
+                    STATE.cart[pid] = currentInCart + item.qty; 
+                    addedCount++;
+                }
+            });
+
+            if (addedCount > 0) {
+                updateTotals(); 
+                saveCart();
+                closeBasketDetail();
+                
+                const bagIcon = document.querySelector('.fa-bag-shopping');
+                if(bagIcon) {
+                    bagIcon.style.color = 'var(--success)'; 
+                    setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); 
+                }
+                setTimeout(() => alert("Produtos da Cesta adicionados à sua sacola!"), 300);
+            } else {
+                alert("Nenhum produto válido para adicionar.");
+            }
+        };
 
         async function init() {
             setTimeout(() => {
