@@ -881,15 +881,19 @@
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const img = entry.target;
+                        // Troca o placeholder pela imagem real
                         img.src = img.getAttribute('data-src');
                         img.classList.remove('lazy-img');
                         obs.unobserve(img);
                     }
                 });
-            }, { root: $('vitrine'), rootMargin: '200px' });
+            }, { 
+                // root: null faz com que ele observe a rolagem da janela/viewport geral
+                root: null, 
+                rootMargin: '300px' // Carrega a imagem 300px antes dela aparecer na tela
+            });
             images.forEach(img => observer.observe(img));
         }
-
         window.openDetail = function(id) {
             let p = STATE.prods.find(x => String(x.id) === String(id));
             if(!p) return;
