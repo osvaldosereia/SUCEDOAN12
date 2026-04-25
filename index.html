@@ -54,7 +54,7 @@
         }
 
         #splash-screen img {
-            width: 180px;
+            width: 240px; /* Ajuste: Logo horizontal um pouco maior */
             animation: pulse 1.2s infinite alternate ease-in-out;
         }
 
@@ -100,7 +100,8 @@
             scroll-snap-stop: always;
         }
         .view-mode-0 .product-card {
-            aspect-ratio: 3/3.5; 
+            aspect-ratio: auto; /* Removemos para controlar via cálculo de altura exata */
+            height: calc(((100vw - 6px) / 2) * 1.1666 - 7px); /* Ajuste: Diminui exatamente 7px do fundo cinza */
         }
 
         /* MODO 1: Grade 1x (Cards grandes) */
@@ -141,7 +142,7 @@
             gap: 0;
         }
         .view-mode-3 .product-card {
-            height: 100dvh; 
+            height: calc(100dvh - 80px); /* Ajuste: Diminui exatamente 80px no card único */
             aspect-ratio: auto; 
             scroll-snap-align: start; 
             scroll-snap-stop: always;
@@ -149,7 +150,7 @@
         
         .view-mode-3 .tag-preco-nova { bottom: 140px; font-size: 1.2rem; padding: 8px 20px; }
         .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } 
-        .view-mode-3 .product-icon { width: 90%; height: 90%; }
+        .view-mode-3 .product-icon { width: 90%; height: 90%; margin-bottom: 25%; }
         
         /* Ajustes Modal 3 para Controle de Qtde */
         .view-mode-3 .card-action-grid { bottom: 190px; right: 15px; }
@@ -180,6 +181,7 @@
             mix-blend-mode: multiply;
             position: relative;
             z-index: 1;
+            margin-bottom: 15%; /* Ajuste: Empurra a imagem para cima da margem superior, fora do centro exato */
         }
 
         .tag-preco-nova {
@@ -342,7 +344,7 @@
             left: 0;
             width: 100%;
             height: 120px;
-            background: linear-gradient(to top, rgba(0,0,0,0.15), transparent);
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent); /* Ajuste: gradiente um pouco mais escuro */
             pointer-events: none;
             z-index: 990;
         }
@@ -984,11 +986,20 @@
             if (!container) return;
             let isAllActive = STATE.currentFilter.type === 'all' || STATE.currentFilter.type === 'search' ? 'active' : '';
             let html = `<div class="category-chip ${isAllActive}" onclick="filterBy('all', '')">Todos</div>`;
-            STATE.mainCategories.forEach(cat => {
-                let isActive = (STATE.currentFilter.type === 'cat' && STATE.currentFilter.value === cat) ? 'active' : '';
+            STATE.mainCategories.forEach((cat, index) => {
+                // Ajuste: A classe active agora depende do activeCatIndex global para reconhecer também subcategorias
+                let isActive = (STATE.activeCatIndex === index) ? 'active' : '';
                 html += `<div class="category-chip ${isActive}" onclick="filterBy('cat', '${cat}')">${cat}</div>`;
             });
             container.innerHTML = html;
+
+            // Ajuste: Realiza um scroll suave para centralizar o chip ativo da categoria selecionada
+            setTimeout(() => {
+                let activeChip = container.querySelector('.active');
+                if (activeChip) {
+                    activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            }, 50);
         }
 
         window.toggleViewMode = function() {
@@ -1049,7 +1060,19 @@
         window.filterBy = function(type, value) {
             if ($('sidebar').classList.contains('open')) history.back(); 
             STATE.currentFilter = { type, value };
-            if (type === 'cat') { STATE.activeCatIndex = STATE.mainCategories.indexOf(value); }
+            
+            // Ajuste: Lógica para manter a categoria principal mapeada, mesmo ao clicar em uma subcategoria
+            if (type === 'cat') { 
+                STATE.activeCatIndex = STATE.mainCategories.indexOf(value); 
+            } else if (type === 'sub') {
+                let prodWithSub = STATE.prods.find(p => p.subcategoria === value);
+                if(prodWithSub) {
+                    STATE.activeCatIndex = STATE.mainCategories.indexOf(prodWithSub.categoria);
+                }
+            } else if (type === 'all' || type === 'search') {
+                STATE.activeCatIndex = -1;
+            }
+
             $('vitrine').scrollTop = 0;
             renderVitrineEngine();
             renderCategoryChips();
