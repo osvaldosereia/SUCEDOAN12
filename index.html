@@ -83,6 +83,12 @@
             scroll-snap-align: start;
             scroll-snap-stop: always;
             padding: var(--gap);
+            animation: slideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
         }
         
         .product-grid {
@@ -114,7 +120,7 @@
             background: var(--border-light);
         }
 
-       /* =========================================
+        /* =========================================
            2. CARDS DE PRODUTO
         ========================================= */
         .product-card {
@@ -127,17 +133,16 @@
             border-radius: 0;
             transition: opacity 0.2s;
             overflow: hidden;
-            aspect-ratio: 3/3; 
+            aspect-ratio: 3/4.2; 
         }
 
         .product-card:active { opacity: 0.7; }
 
         .product-icon {
-            width: 70%;
-            height: 70%;
+            width: 75%;
+            height: 75%;
             object-fit: contain;
             mix-blend-mode: multiply;
-            /* Garante que a foto fique na camada de baixo */
             position: relative;
             z-index: 1;
         }
@@ -154,7 +159,6 @@
             border-radius: 6px 0 0 6px; 
             letter-spacing: 0.5px;
             box-shadow: -2px 2px 8px rgba(0,0,0,0.06);
-            /* Garante que a etiqueta fique na camada de cima */
             z-index: 2;
         }
 
@@ -210,33 +214,34 @@
         }
         .sort-dock-btn:active { background: #000; color: #fff; }
 
-       .nav-item { 
-    position: relative; /* <-- ADICIONE ESTA LINHA */
-    color: #777; 
-    font-size: 22px; 
-    flex: 1; 
-    text-align: center; 
-    cursor: pointer;
-    transition: color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-}
+        .nav-item { 
+            position: relative;
+            color: #777; 
+            font-size: 22px; 
+            flex: 1; 
+            text-align: center; 
+            cursor: pointer;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        .nav-item.active { color: #ffffff; }
 
-.cart-badge {
-    position: absolute;
-    top: 5px;
-    right: 25px; /* Ajustei de 15px para 25px para centralizar melhor em cima da sacola */
-    background: #ef4444;
-    color: white;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 2px 6px;
-    border-radius: 10px;
-    display: none;
-    border: 2px solid #222;
-}
+        .cart-badge {
+            position: absolute;
+            top: 5px;
+            right: 25px; 
+            background: #ef4444;
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 10px;
+            display: none;
+            border: 2px solid #222;
+        }
 
         .floating-search {
             position: fixed;
@@ -267,125 +272,144 @@
             font-family: 'Inter', sans-serif;
         }
 
-     /* =========================================
-   4. MENU LATERAL (SIDEBAR) - ROLAGEM TOTAL
-========================================= */
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: -100%;
-    width: 85%;
-    max-width: 320px;
-    height: 100dvh;
-    background: #ffffff;
-    z-index: 1500;
-    transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 20px 0 50px rgba(0,0,0,0.1);
-    
-    /* MUDANÇA AQUI: Rolagem em toda a sidebar */
-    overflow-y: auto; 
-    display: block; 
-    -webkit-overflow-scrolling: touch;
-}
+        /* =========================================
+           4. MENU LATERAL (SIDEBAR) - ROLAGEM TOTAL E MINIMALISTA
+        ========================================= */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 85%;
+            max-width: 320px;
+            height: 100dvh;
+            background: #ffffff;
+            z-index: 1500;
+            transition: left 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 20px 0 50px rgba(0,0,0,0.1);
+            overflow-y: auto; 
+            display: block; 
+            -webkit-overflow-scrolling: touch;
+        }
 
-.sidebar.open { left: 0; }
+        .sidebar.open { left: 0; }
 
-.sidebar-header {
-    padding: max(40px, env(safe-area-inset-top)) 25px 20px;
-    text-align: left;
-    background: #fff;
-    /* Linha separadora após o topo */
-    border-bottom: 1px solid #f0f0f0; 
-}
+        .sidebar-header {
+            padding: max(40px, env(safe-area-inset-top)) 25px 20px;
+            text-align: left;
+            background: #fff;
+            border-bottom: 1px solid #f0f0f0; 
+            position: relative;
+        }
 
-.sidebar-header img { height: 35px; }
+        .sidebar-header img { height: 35px; }
 
-.sidebar-menu { 
-    padding: 0; /* Remove padding extra */
-}
+        .btn-close-sidebar {
+            position: absolute;
+            top: max(20px, env(safe-area-inset-top));
+            right: 20px;
+            font-size: 24px;
+            color: var(--text-dark);
+            cursor: pointer;
+            width: 40px; height: 40px;
+            display: flex; align-items: center; justify-content: center;
+        }
 
-.sidebar-group-title {
-    padding: 20px 25px 8px;
-    font-size: 10px;
-    font-weight: 800;
-    color: #b0b0b0;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-}
+        .sidebar-menu { padding: 0; }
 
-/* Categoria Principal - Mais compacta e com linha */
-.sidebar-menu li.main-cat {
-    padding: 10px 25px; /* Espaçamento menor entre linhas */
-    font-weight: 600;
-    font-size: 15px;
-    color: #1a1a1a;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    /* Linha separadora entre categorias */
-    border-bottom: 1px solid #f5f5f5; 
-}
+        .sidebar-group-title {
+            padding: 20px 25px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #b0b0b0;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+        }
 
-/* Subcategoria - Mais compacta */
-.sidebar-menu li.sub-cat {
-    padding: 8px 25px 8px 45px; /* Espaçamento menor entre linhas */
-    font-size: 13.5px;
-    font-weight: 400;
-    color: #666;
-    position: relative;
-    cursor: pointer;
-    border-bottom: 1px solid #fafafa; /* Linha mais discreta para subs */
-}
+        .sidebar-menu ul { list-style: none; padding: 0; margin: 0; }
 
-.sidebar-menu li.sub-cat::before {
-    content: '';
-    position: absolute;
-    left: 30px;
-    top: 50%;
-    width: 3px;
-    height: 3px;
-    background: #ddd;
-    border-radius: 50%;
-    transform: translateY(-50%);
-}
+        .sidebar-menu li.main-cat {
+            padding: 10px 25px; 
+            font-weight: 600;
+            font-size: 15px;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5; 
+            transition: background 0.2s;
+        }
 
-.sidebar-menu li:active { background: #f9f9f9; }
+        .sidebar-menu li.sub-cat {
+            padding: 8px 25px 8px 45px; 
+            font-size: 13.5px;
+            font-weight: 400;
+            color: #666;
+            position: relative;
+            cursor: pointer;
+            border-bottom: 1px solid #fafafa; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-/* Rodapé agora rola com o resto */
-.sidebar-footer {
-    padding: 30px 25px 100px; /* Padding bottom maior para não sumir atrás da dock */
-    background: #fff;
-    border-top: 1px solid #f0f0f0;
-}
+        .sidebar-menu li.sub-cat::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            width: 3px;
+            height: 3px;
+            background: #ddd;
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
 
-.btn-social {
-    display: block; 
-    width: 100%; 
-    padding: 12px; 
-    margin-bottom: 8px;
-    border-radius: 8px; 
-    text-align: center; 
-    font-weight: 700; 
-    font-size: 12px;
-    text-transform: uppercase; 
-    cursor: pointer; 
-    text-decoration: none; 
-    border: none;
-}
-.btn-zap { background: #25D366; color: #fff; }
-.btn-google { background: #fff; color: var(--text-dark); border: 1px solid #eee; }
+        .sidebar-menu li:active { background: #f9f9f9; }
 
-.overlay {
-    position: fixed; 
-    inset: 0; 
-    background: rgba(0,0,0,0.6); 
-    opacity: 0;
-    pointer-events: none; 
-    z-index: 1400; 
-    transition: opacity 0.3s;
-}
-.overlay.open { opacity: 1; pointer-events: all; }
+        /* Marcas Retráteis */
+        details.brand-group { 
+            margin: 0 15px 8px 15px; 
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        details.brand-group summary {
+            padding: 14px 20px;
+            font-weight: 800;
+            font-size: 15px;
+            color: var(--text-dark);
+            cursor: pointer;
+            list-style: none;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        details.brand-group summary::-webkit-details-marker { display: none; }
+        details.brand-group summary::after { content: '\f078'; font-family: "Font Awesome 6 Free"; font-weight: 900; color: var(--text-light); font-size: 12px; transition: transform 0.3s; }
+        details.brand-group[open] summary::after { transform: rotate(180deg); }
+        details.brand-group ul { padding: 5px 0 10px 0; margin: 0; background: #fff; }
+        details.brand-group li { padding: 12px 20px; border: none; font-size: 14px; font-weight: 500; color: var(--text-light); }
+
+        .sidebar-footer {
+            padding: 30px 25px 100px; 
+            background: #fff;
+            border-top: 1px solid #f0f0f0;
+        }
+        .sidebar-footer h4 { font-size: 14px; margin-bottom: 10px; }
+        .sidebar-footer p { font-size: 12px; color: var(--text-light); margin-bottom: 8px; }
+
+        .btn-social {
+            display: block; width: 100%; padding: 12px; margin-bottom: 8px;
+            border-radius: 8px; text-align: center; font-weight: 700; font-size: 12px;
+            text-transform: uppercase; cursor: pointer; text-decoration: none; border: none;
+        }
+        .btn-zap { background: #25D366; color: #fff; }
+        .btn-google { background: #fff; color: var(--text-dark); border: 1px solid var(--border-light); }
+
+        .overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0;
+            pointer-events: none; z-index: 1400; transition: opacity 0.3s;
+        }
+        .overlay.open { opacity: 1; pointer-events: all; }
 
         /* =========================================
            5. MODAL DE PRODUTO
@@ -419,9 +443,7 @@
         
         .related-title { font-size: 16px; font-weight: 800; margin: 30px 20px 10px 20px; text-transform: uppercase; }
 
-        /* =========================================
-           AJUSTE DAS TAGS (Sem fundo, fonte leve e com | )
-        ========================================= */
+        /* Tags acima do nome (Minimalistas com | ) */
         #modalMetaTags {
             display: flex; 
             flex-wrap: wrap; 
@@ -437,93 +459,54 @@
             font-weight: 300;
             color: var(--text-light);
             text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            letter-spacing: 0.5px;
         }
 
         #modalMetaTags span:not(:last-child)::after {
             content: '|';
             margin: 0 8px;
             color: #ddd;
+            font-weight: 300;
         }
 
-        /* =========================================
-           BARRA DE COMPRA (Erro de sintaxe corrigido)
-        ========================================= */
+        /* Barra de Ação de Compra Integrada e Não Fixa */
         .floating-action-bar {
             position: relative !important;
-            background: #ffffff;
-            border-radius: 12px;
-            border: 1px solid var(--border-light);
-            padding: 15px; 
+            bottom: auto !important;
+            left: auto !important;
             display: flex; 
             align-items: center; 
             justify-content: space-between; 
             gap: 12px; 
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border-light); 
+            padding: 15px;
             margin: 25px 0; 
-            box-shadow: none;
             width: 100%;
-            bottom: auto !important;
-            left: auto !important;
+            box-shadow: none;
         }
 
-        .modal-price-col { 
-            display: flex; 
-            flex-direction: column; 
-            flex-shrink: 0;
-        }
-
-        .modal-price-label { 
-            font-size: 10px; 
-            color: var(--text-light); 
-            font-weight: 600; 
-            text-transform: uppercase; 
-        }
-
-        .modal-price { 
-            font-size: 18px; 
-            font-weight: 800; 
-            color: var(--text-dark);
-        }
+        .modal-price-col { display: flex; flex-direction: column; flex-shrink: 0; }
+        .modal-price-label { font-size: 10px; color: var(--text-light); font-weight: 600; text-transform: uppercase; }
+        .modal-price { font-size: 18px; font-weight: 800; color: var(--text-dark); }
 
         .qty-controls {
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            background: var(--bg-card);
-            padding: 8px 12px; 
-            border-radius: 8px; 
-            font-weight: 700; 
-            font-size: 16px;
-            flex-shrink: 0;
+            display: flex; align-items: center; gap: 12px; background: var(--bg-card);
+            padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 16px; flex-shrink: 0;
         }
-
-        .qty-btn { 
-            cursor: pointer; 
-            color: var(--text-light); 
-            padding: 5px; 
-            transition: color 0.2s;
-        }
-
-        .qty-btn:active {
-            color: var(--text-dark);
-        }
+        .qty-btn { cursor: pointer; color: var(--text-light); padding: 5px; transition: color 0.2s; }
+        .qty-btn:active { color: var(--text-dark); }
 
         .btn-add {
-            flex: 1; 
-            background: var(--primary); 
-            color: #ffffff; 
-            border: none;
-            padding: 14px 0; 
-            border-radius: 8px; 
-            font-weight: 700; 
-            font-size: 13px; 
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: opacity 0.2s;
+            flex: 1; background: var(--primary); color: #ffffff; border: none;
+            padding: 14px 0; border-radius: 8px; font-weight: 700; font-size: 13px; text-transform: uppercase;
+            cursor: pointer; transition: opacity 0.2s;
         }
+        .btn-add:active { opacity: 0.8; }
 
-        .btn-add:active {
-            opacity: 0.8;
-        }
         /* =========================================
            6. DRAWER DE CHECKOUT
         ========================================= */
@@ -547,7 +530,7 @@
         .input-text { width: 100%; padding: 16px; border: none; background: var(--bg-card); border-radius: 12px; margin-bottom: 12px; font-size: 1rem; outline: none; }
         
         .pay-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .pay-btn { padding: 16px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-weight: 600; font-size: 0.95rem; color: var(--text-light); }
+        .pay-btn { padding: 16px; border: 1px solid var(--border-light); border-radius: 12px; background: #fff; font-weight: 600; font-size: 0.95rem; color: var(--text-light); cursor: pointer; }
         .pay-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
 
         .cart-item-row { display: flex; align-items: center; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid var(--border-light); }
@@ -559,8 +542,8 @@
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 1rem; color: var(--text-light); font-weight: 600;}
         .summary-row.total { font-size: 1.5rem; font-weight: 900; color: var(--text-dark); margin-bottom: 0; border-top: 1px dashed var(--border-light); padding-top: 10px; margin-top: 10px;}
         
-        .btn-send { width: 100%; background: var(--success); color: #fff; padding: 18px; border-radius: 14px; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; border: none; margin-bottom: 15px; }
-        .btn-clear { width: 100%; border: 1px solid #ef4444; color: #ef4444; background: #fff; padding: 16px; border-radius: 12px; font-weight: 800; text-transform: uppercase; }
+        .btn-send { width: 100%; background: var(--success); color: #fff; padding: 18px; border-radius: 14px; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; border: none; margin-bottom: 15px; cursor: pointer; }
+        .btn-clear { width: 100%; border: 1px solid #ef4444; color: #ef4444; background: #fff; padding: 16px; border-radius: 12px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -583,8 +566,7 @@
             <img src="../img/logoantonia5.png" alt="Dona Antônia" onerror="this.src='https://via.placeholder.com/150x50?text=Logo'">
             <p style="color: #888; font-size: 13px; margin-top:10px;"><i class="fa-solid fa-location-dot"></i> Cuiabá e Várzea Grande</p>
         </div>
-        <div class="sidebar-menu" id="menu-categories-list">
-            </div>
+        <div class="sidebar-menu" id="menu-categories-list"></div>
         <div class="sidebar-footer">
             <h4>Dona Antônia Supermercado</h4>
             <p>CNPJ: 00.000.000/0000-00</p>
@@ -605,33 +587,32 @@
             <div class="detail-icon-box">
                 <img id="modalImg" src="" alt="Produto">
             </div>
-           <div class="detail-content">
-    <div id="modalMetaTags"></div>
-    <h1 class="modal-title" id="modalTitle">Nome do Produto</h1>
-    
-    <div class="floating-action-bar">
-        <div class="modal-price-col">
-            <span class="modal-price-label">Valor Unit.</span>
-            <span class="modal-price" id="modalPrice">R$ 0,00</span>
-        </div>
-        <div class="qty-controls">
-            <i class="fa-solid fa-minus qty-btn" onclick="changeModalQty(-1)"></i>
-            <span id="qtyCount">1</span>
-            <i class="fa-solid fa-plus qty-btn" onclick="changeModalQty(1)"></i>
-        </div>
-        <button class="btn-add" onclick="addFromModal()">Adicionar</button>
-    </div>
+            <div class="detail-content">
+                <div id="modalMetaTags"></div>
+                <h1 class="modal-title" id="modalTitle">Nome do Produto</h1>
+                
+                <div class="floating-action-bar">
+                    <div class="modal-price-col">
+                        <span class="modal-price-label">Valor Unit.</span>
+                        <span class="modal-price" id="modalPrice">R$ 0,00</span>
+                    </div>
+                    <div class="qty-controls">
+                        <i class="fa-solid fa-minus qty-btn" onclick="changeModalQty(-1)"></i>
+                        <span id="qtyCount">1</span>
+                        <i class="fa-solid fa-plus qty-btn" onclick="changeModalQty(1)"></i>
+                    </div>
+                    <button class="btn-add" onclick="addFromModal()">Adicionar</button>
+                </div>
 
-    <div class="modal-desc" id="modalDesc"></div>
-</div>
+                <div class="modal-desc" id="modalDesc" style="color: var(--text-light); line-height: 1.5; font-size: 14px;"></div>
+            </div>
 
             <div id="related-container" style="display: none; padding-bottom: 20px;">
                 <h3 class="related-title">Veja também</h3>
                 <div class="product-grid" id="related-grid"></div>
             </div>
         </div>
-
-        
+    </div>
 
     <div class="checkout-drawer" id="checkout-drawer">
         <div class="chk-header">
@@ -792,48 +773,56 @@
             return res;
         }
 
-       function renderSidebarMenu() {
-    let catMap = {};
-    let brands = new Set();
+        function renderSidebarMenu() {
+            let catMap = {};
+            let brands = new Set();
 
-    // Organiza os dados
-    STATE.prods.forEach(p => {
-        if(p.categoria) {
-            if(!catMap[p.categoria]) catMap[p.categoria] = new Set();
-            if(p.subcategoria) catMap[p.categoria].add(p.subcategoria);
+            STATE.prods.forEach(p => {
+                if(p.categoria) {
+                    if(!catMap[p.categoria]) catMap[p.categoria] = new Set();
+                    if(p.subcategoria) catMap[p.categoria].add(p.subcategoria);
+                }
+                if(p.marca) brands.add(p.marca);
+            });
+
+            STATE.mainCategories = Object.keys(catMap).sort();
+
+            let html = '';
+            html += `<div class="sidebar-group-title">Departamentos</div><ul>`;
+            
+            STATE.mainCategories.forEach(cat => {
+                html += `<li class="main-cat" onclick="filterBy('cat', '${cat}')">
+                            ${cat} <i class="fa-solid fa-chevron-right" style="font-size:10px; opacity:0.3"></i>
+                         </li>`;
+                
+                let subs = Array.from(catMap[cat]).sort();
+                subs.forEach(sub => {
+                    html += `<li class="sub-cat" onclick="filterBy('sub', '${sub}')">${sub}</li>`;
+                });
+            });
+            html += `</ul>`;
+
+            let sortedBrands = Array.from(brands).sort();
+            if(sortedBrands.length > 0) {
+                html += `<div class="sidebar-group-title">Marcas</div>`;
+                let alphaGroups = {};
+                sortedBrands.forEach(b => {
+                    let letter = b.charAt(0).toUpperCase();
+                    if(!alphaGroups[letter]) alphaGroups[letter] = [];
+                    alphaGroups[letter].push(b);
+                });
+
+                Object.keys(alphaGroups).sort().forEach(letter => {
+                    html += `<details class="brand-group"><summary>Marcas com ${letter}</summary><ul>`;
+                    alphaGroups[letter].forEach(brand => {
+                        html += `<li onclick="filterBy('marca', '${brand}')">${brand}</li>`;
+                    });
+                    html += `</ul></details>`;
+                });
+            }
+
+            $('menu-categories-list').innerHTML = html;
         }
-        if(p.marca) brands.add(p.marca);
-    });
-
-    let html = '';
-
-    // Seção de Categorias
-    html += `<div class="sidebar-group-title">Departamentos</div><ul>`;
-    
-    Object.keys(catMap).sort().forEach(cat => {
-        // Renderiza Categoria Mãe
-        html += `<li class="main-cat" onclick="filterBy('cat', '${cat}')">
-                    ${cat} <i class="fa-solid fa-chevron-right" style="font-size:10px; opacity:0.3"></i>
-                 </li>`;
-        
-        // Renderiza Subcategorias logo abaixo
-        let subs = Array.from(catMap[cat]).sort();
-        subs.forEach(sub => {
-            html += `<li class="sub-cat" onclick="filterBy('sub', '${sub}')">${sub}</li>`;
-        });
-    });
-    html += `</ul>`;
-
-    // Seção de Marcas (Sanfona Minimalista)
-    let sortedBrands = Array.from(brands).sort();
-    if(sortedBrands.length > 0) {
-        html += `<div class="sidebar-group-title">Marcas</div>`;
-        // Agrupamento por letra inicial já existente no seu código...
-        // [Mantenha a lógica de alphaGroups aqui conforme o código anterior]
-    }
-
-    $('menu-categories-list').innerHTML = html;
-}
 
         window.filterBy = function(type, value) {
             history.back(); 
@@ -864,17 +853,24 @@
             let swipeDistX = touchendX - touchstartX;
             let swipeDistY = touchendY - touchstartY;
             
-            if (Math.abs(swipeDistX) > 80 && Math.abs(swipeDistY) < 50 && STATE.mainCategories.length > 0) {
+            if (Math.abs(swipeDistX) > 80 && Math.abs(swipeDistX) > (Math.abs(swipeDistY) * 1.5) && STATE.mainCategories.length > 0) {
+                let currentIndex = STATE.activeCatIndex === -1 ? 0 : STATE.activeCatIndex;
+
                 if (swipeDistX < 0) {
-                    STATE.activeCatIndex = (STATE.activeCatIndex + 1) % STATE.mainCategories.length;
+                    STATE.activeCatIndex = (currentIndex + 1) % STATE.mainCategories.length;
                 } else {
-                    STATE.activeCatIndex = STATE.activeCatIndex - 1;
+                    STATE.activeCatIndex = currentIndex - 1;
                     if(STATE.activeCatIndex < 0) STATE.activeCatIndex = STATE.mainCategories.length - 1;
                 }
                 let nextCat = STATE.mainCategories[STATE.activeCatIndex];
                 STATE.currentFilter = { type: 'cat', value: nextCat };
-                $('vitrine').scrollTop = 0;
-                renderVitrineEngine();
+                
+                $('vitrine').style.opacity = '0'; 
+                setTimeout(() => {
+                    $('vitrine').scrollTop = 0;
+                    renderVitrineEngine();
+                    $('vitrine').style.opacity = '1';
+                }, 50); 
             }
         }
 
@@ -960,19 +956,18 @@
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const img = entry.target;
-                        // Troca o placeholder pela imagem real
                         img.src = img.getAttribute('data-src');
                         img.classList.remove('lazy-img');
                         obs.unobserve(img);
                     }
                 });
             }, { 
-                // root: null faz com que ele observe a rolagem da janela/viewport geral
                 root: null, 
-                rootMargin: '300px' // Carrega a imagem 300px antes dela aparecer na tela
+                rootMargin: '300px' 
             });
             images.forEach(img => observer.observe(img));
         }
+
         window.openDetail = function(id) {
             let p = STATE.prods.find(x => String(x.id) === String(id));
             if(!p) return;
@@ -986,10 +981,10 @@
             $('modalPrice').innerText = fmt(p.price);
             
             let metaHtml = '';
-            if(p.marca) metaHtml += `<span style="background:#f0f0f0; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; color:var(--text-dark); text-transform:uppercase;">${p.marca}</span>`;
-            if(p.embalagem) metaHtml += `<span style="background:#f0f0f0; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; color:var(--text-dark); text-transform:uppercase;">${p.embalagem}</span>`;
-            if(p.categoria) metaHtml += `<span style="background:#f0f0f0; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; color:var(--text-dark); text-transform:uppercase;">${p.categoria}</span>`;
-            if(p.subcategoria) metaHtml += `<span style="background:#f0f0f0; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; color:var(--text-dark); text-transform:uppercase;">${p.subcategoria}</span>`;
+            if(p.marca) metaHtml += `<span>${p.marca}</span>`;
+            if(p.embalagem) metaHtml += `<span>${p.embalagem}</span>`;
+            if(p.categoria) metaHtml += `<span>${p.categoria}</span>`;
+            if(p.subcategoria) metaHtml += `<span>${p.subcategoria}</span>`;
             $('modalMetaTags').innerHTML = metaHtml;
 
             if(p.descricao && p.descricao.trim().length > 0) {
@@ -998,28 +993,19 @@
                 $('modalDesc').innerHTML = "";
             }
 
-            // ... (código acima mantém igual: modalDesc, metaTags, etc)
-
-           // Grade Relacionados (Até 50 produtos)
             let related = STATE.prods.filter(x => x.id !== p.id && x.stock > 0);
-            
-            // Prioriza mesma categoria
             let finalRelated = related.filter(x => x.categoria === p.categoria);
             
-            // Se não houver muitos na mesma categoria, completa com outros para dar volume
             if (finalRelated.length < 10) {
                 let outros = related.filter(x => x.categoria !== p.categoria);
                 finalRelated = [...finalRelated, ...outros];
             }
 
-            // Limita a 50 produtos conforme solicitado
             finalRelated = finalRelated.slice(0, 50);
             
             if(finalRelated.length > 0) {
                 $('related-container').style.display = 'block';
                 $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod)).join('');
-                
-                // IMPORTANTE: Avisa o sistema para carregar as imagens novas conforme a rolagem
                 lazyLoadImages(); 
             } else {
                 $('related-container').style.display = 'none';
@@ -1027,7 +1013,6 @@
 
             $('qtyCount').innerText = currentModalQty;
             $('modal-scroll-area').scrollTop = 0;
-            // ... (código abaixo mantém igual)
             $('detailModal').classList.add('active');
             lazyLoadImages(); 
         };
@@ -1137,17 +1122,10 @@
 
         window.clearCart = function() {
             if(confirm("Deseja realmente esvaziar sua sacola?")) { 
-                // Limpa os dados na memória do aplicativo
                 STATE.cart = {}; 
                 STATE.cartOrder = []; 
-                
-                // Atualiza os cálculos de valores e o badge do ícone
                 updateTotals(); 
-                
-                // Grava as alterações no navegador do cliente
                 saveCart(); 
-                
-                // Volta para a tela anterior (fecha o checkout)
                 history.back(); 
             }
         };
