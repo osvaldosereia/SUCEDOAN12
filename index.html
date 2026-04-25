@@ -1056,6 +1056,23 @@
             if ((sum - STATE.deliveryDiscount) < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
         }
 
+        window.clearCart = function() {
+            if(confirm("Deseja realmente esvaziar sua sacola?")) { 
+                // Limpa os dados na memória do aplicativo
+                STATE.cart = {}; 
+                STATE.cartOrder = []; 
+                
+                // Atualiza os cálculos de valores e o badge do ícone
+                updateTotals(); 
+                
+                // Grava as alterações no navegador do cliente
+                saveCart(); 
+                
+                // Volta para a tela anterior (fecha o checkout)
+                history.back(); 
+            }
+        };
+
         window.sendOrder = function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
             const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.replace(/\D/g,""); const whats = $('chk-whats').value.trim();
