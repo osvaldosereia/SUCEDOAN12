@@ -1304,18 +1304,19 @@
                 $('viewModeBtn').style.pointerEvents = 'none';
                 vitrine.className = `main-container view-mode-1`;
                 
-                let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
+               let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
                 BASKETS.forEach(basket => {
                     html += `
                     <div class="basket-card" onclick="openBasketDetail('${basket.id}')">
                         <img src="${basket.imagem}" class="basket-img" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'">
                         <div class="basket-title">${basket.nome}</div>
                         <div class="basket-price">${fmt(basket.preco)}</div>
-                        <button class="btn-quick-add-list" style="width: 100%; justify-content: center; margin-top: 10px; background: #000; color:#fff;">Ver Itens da Cesta</button>
+                        <div class="btn-quick-add-list" style="width: 100%; justify-content: center; margin-top: 10px; background: #000; color:#fff;" onclick="event.stopPropagation(); openBasketDetail('${basket.id}');">
+                            Ver Itens da Cesta
+                        </div>
                     </div>`;
                 });
                 html += '</div>';
-                vitrine.innerHTML = html;
                 return; 
             } else {
                 $('viewModeBtn').style.opacity = '1';
@@ -1721,9 +1722,16 @@
         // ==========================================
         window.currentBasketId = null; // Guarda o ID da cesta aberta no momento
 
-        window.openBasketDetail = function(basketId) {
+       window.openBasketDetail = function(basketId) {
+            // Verifica se as cestas existem
+            if (!BASKETS) return alert("Erro: Base de cestas não encontrada.");
+            
             const basket = BASKETS.find(b => b.id === basketId);
-            if (!basket) return;
+            if (!basket) return alert("Erro: Cesta não encontrada.");
+
+            // Verifica se o Modal existe no HTML
+            const modalEl = document.getElementById('basketDetailModal');
+            if (!modalEl) return alert("Erro: O ecrã da cesta não foi encontrado no HTML.");
 
             window.currentBasketId = basketId;
             pushHistoryState('basket');
@@ -1737,16 +1745,21 @@
                 let parts = itemString.split("x ");
                 if(parts.length === 2) {
                     let qty = parseInt(parts[0]);
-                    let code = parts[1];
+                    let code = parts[1].trim(); // Remove espaços extras por segurança
                     let pObj = STATE.prods.find(p => p.codigo === code || p.id === code);
-                    if (pObj && pObj.stock > 0) {
+                    // O item vai aparecer mesmo se o stock for 0, para a pessoa ver o que compõe a cesta
+                    if (pObj) {
                         currentBasketItems.push({ pObj: pObj, qty: qty });
                     }
                 }
             });
 
-            renderBasketItemsList();
-            $('basketDetailModal').classList.add('active');
+            // Se existir a função de desenhar os itens, chama-a
+            if (typeof renderBasketItemsList === 'function') {
+                renderBasketItemsList();
+            }
+
+            modalEl.classList.add('active');
         };
 
         // A função renderBasketItemsList() e updateBasketItemQty() continuam as mesmas que você já tem...
