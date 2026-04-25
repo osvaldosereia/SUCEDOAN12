@@ -146,10 +146,10 @@
             scroll-snap-stop: always;
         }
         
-        /* Ajuste para as informações não ficarem escondidas atrás da barra preta inferior */
+       /* Ajuste para as informações não ficarem escondidas no Modo 3 */
         .view-mode-3 .tag-preco-nova { bottom: 140px; font-size: 1.2rem; padding: 8px 20px; }
-        .view-mode-3 .tag-embalagem { bottom: 120px; font-size: 0.8rem; }
-        .view-mode-3 .btn-quick-add { bottom: 190px; width: 48px; height: 48px; font-size: 22px; left: 15px; }
+        .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } /* Mais afastado e alinhado à esquerda */
+        .view-mode-3 .btn-quick-add { bottom: 190px; width: 48px; height: 48px; font-size: 22px; right: 15px; left: auto; } /* Botão na direita */
         .view-mode-3 .product-icon { width: 90%; height: 90%; }
 
         /* =========================================
@@ -178,38 +178,43 @@
             z-index: 1;
         }
 
+        /* Etiqueta de Preço (Movida para a ESQUERDA) */
         .tag-preco-nova {
             position: absolute;
             bottom: 24px; 
-            right: 0;     
+            left: 0;      /* Colado na esquerda */
+            right: auto;
             background: #ffffff;
             color: #000000;
             font-size: 0.85rem; 
             font-weight: 600; 
             padding: 5px 12px;
-            border-radius: 6px 0 0 6px; 
+            border-radius: 0 6px 6px 0; /* Arredondamento invertido */
             letter-spacing: 0.5px;
-            box-shadow: -2px 2px 8px rgba(0,0,0,0.06);
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.06); /* Sombra invertida */
             z-index: 2;
         }
 
+        /* Etiqueta da Embalagem (Esquerda, menor, mais escura e afastada) */
         .tag-embalagem {
             position: absolute;
-            bottom: 8px; 
-            right: 12px; 
-            color: #777777;
-            font-size: 0.7rem;
+            bottom: 5px; /* Afastado mais 3px da tag de preço (era 8px) */
+            left: 12px;  /* Movido para a esquerda */
+            right: auto;
+            color: #555555; /* Um pouco mais escura (era #777777) */
+            font-size: 0.65rem; /* Um pouco menor (era 0.7rem) */
             font-weight: 600;
             z-index: 2;
             text-transform: uppercase;
-            text-align: right;
+            text-align: left; /* Alinhamento invertido */
         }
 
+        /* Botão + Redondo (Movido para a DIREITA) */
         .btn-quick-add {
             position: absolute;
             bottom: 15px; 
-            left: 10px;   
-            right: auto;  
+            right: 10px;  /* Movido para a direita */
+            left: auto;   /* Limpa a esquerda */
             width: 32px;
             height: 32px;
             background-color: #000000;
