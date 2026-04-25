@@ -98,8 +98,44 @@
         .btn-action-gray { width: 100%; padding: 10px 6px; background: var(--bg-img); color: var(--text-dark); font-size: 0.85rem; font-weight: 700; border-radius: 0px; border: none; transition: 0.2s; cursor: pointer; text-align: center; text-transform: uppercase; }
         .btn-action-gray:active { background: var(--border-light); }
 
+        /* TAGS ANTIGAS E LISTAS */
         .embalagem-tag { position: absolute; top: 8px; right: 8px; background: rgba(255, 255, 255, 0.95); color: var(--brand); font-size: 0.65rem; font-weight: 800; padding: 4px 8px; border-radius: 0px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); z-index: 2; letter-spacing: -0.2px; text-transform: uppercase; }
         .list-img-wrap .embalagem-tag { top: 4px; right: 4px; font-size: 0.6rem; padding: 2px 6px; }
+
+        /* ========================================================
+           NOVAS TAGS DO CARD (PREÇO E EMBALAGEM ALINHADAS À DIREITA)
+           ======================================================== */
+        .tags-right-container {
+            position: absolute;
+            top: 12px;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            z-index: 2;
+            align-items: flex-end;
+        }
+
+        .tag-embalagem-nova {
+            background: #000000;
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 0px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-preco-nova {
+            background: #ffffff;
+            color: #000000;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 0px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
 
         /* OVERLAYS & DRAWERS */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(2px); }
@@ -153,7 +189,6 @@
         .pay-btn { padding: 16px; border: 1px solid var(--border-light); border-radius: 0px; background: #fff; font-weight: 600; font-size: 0.95rem; color: var(--text-gray); transition: 0.2s; }
         .pay-btn.selected { border-color: var(--success); background: var(--success); color: #fff; }
         
-        /* NOVO SELETOR DE CIDADES CHECKOUT */
         .cidade-selector input[type="radio"]:checked + .btn-cidade { background: var(--brand); color: #fff; border-color: var(--brand); }
 
         .drawer-footer { padding: 24px 20px; background: #fff; border-top: 1px solid var(--border-light); box-shadow: 0 -4px 15px rgba(0,0,0,0.03); z-index: 2; position: relative;}
@@ -746,40 +781,72 @@ window.closeProductPage = function() {
     }
 };
 
+// ========================================================
+// NOVA FUNÇÃO DE RENDERIZAÇÃO DE CARDS (TAGS À DIREITA)
+// ========================================================
 function buildCardsHTML(items, type, promoSpecialType = null) {
     let html = ''; let isBasket = type === 'BASKET';
+    
     for(let i=0; i<items.length; i++) {
-        let p = items[i]; let q = STATE.cart[p.id] || 0; let isEsgotado = p.stock <= 0 && !isBasket;
+        let p = items[i]; 
+        let q = STATE.cart[p.id] || 0; 
+        let isEsgotado = p.stock <= 0 && !isBasket;
+        
         let minusBtnGrid = q === 1 ? `<button onclick="upd('${p.id}', -1)" style="color:var(--brand); display:flex; align-items:center; justify-content:center;">${trashIcon}</button>` : `<button onclick="upd('${p.id}', -1)">-</button>`;
-        let acaoHTML = ''; let economiaHTML = ''; 
+        let acaoHTML = ''; 
+        let economiaHTML = ''; 
 
-        if (isEsgotado) { acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; } 
-        else if (isBasket) { acaoHTML = `<button class="btn-add special" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; } 
-        else if (q > 0) { acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; } 
-        else if (promoSpecialType === 'LEVE5') { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`; economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(p.price)}!</div>`; } 
-        else if (promoSpecialType === 'LEVE2') { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`; economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt((p.price * 2) * 0.10)}!</div>`; } 
-        else { acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; }
+        if (isEsgotado) { 
+            acaoHTML = `<button class="btn-add" style="background:var(--border-light); color:var(--text-gray); cursor:not-allowed;" disabled>Esgotado</button>`; 
+        } 
+        else if (isBasket) { 
+            acaoHTML = `<button class="btn-add special" onclick="openKitLateralView('${p.id}')">Ver Itens</button>`; 
+        } 
+        else if (q > 0) { 
+            acaoHTML = `<div class="qty-control">${minusBtnGrid}<span>${q}</span><button onclick="upd('${p.id}', 1)">+</button></div>`; 
+        } 
+        else if (promoSpecialType === 'LEVE5') { 
+            acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 5)">Adicionar 5 un.</button>`; 
+            economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt(p.price)}!</div>`; 
+        } 
+        else if (promoSpecialType === 'LEVE2') { 
+            acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 2)">Adicionar 2 un.</button>`; 
+            economiaHTML = `<div class="economia-tag" style="width: 100%;">Economize ${fmt((p.price * 2) * 0.10)}!</div>`; 
+        } 
+        else { 
+            acaoHTML = `<button class="btn-add" onclick="upd('${p.id}', 1)">Adicionar</button>`; 
+        }
 
         let lbl10 = (!isBasket && !p._isPromo) ? `<div style="font-size: 0.8rem; color: var(--success); font-weight: 700; margin-top: 4px; width: 100%;">Leve 2 por ${fmt(p.price * 0.90)} cada</div>` : '';
         let clickEvt = isBasket ? `onclick="openKitLateralView('${p.id}')"` : `onclick="openQuickView('${p.id}')"`;
-        let tagEmbalagem = p.embalagem && !isBasket ? `<div class="embalagem-tag">${p.embalagem}</div>` : '';
+        
+        let tagsDireitaHTML = '';
+        if (!isBasket) {
+            tagsDireitaHTML = `<div class="tags-right-container">`;
+            if (p.embalagem) {
+                tagsDireitaHTML += `<div class="tag-embalagem-nova">${p.embalagem}</div>`;
+            }
+            tagsDireitaHTML += `<div class="tag-preco-nova">${fmt(p.price || p.preco)}</div>`;
+            tagsDireitaHTML += `</div>`;
+        }
 
         html += `
         <div class="card ${isBasket ? 'card-basket' : ''}" style="${isEsgotado ? 'opacity:0.6; filter:grayscale(1);' : ''}">
             <div class="card-img-wrap" ${clickEvt}>
-                ${tagEmbalagem}
+                ${tagsDireitaHTML}
                 <img src="${p.img || p.imagem || '/site/img/produtos/cesta.webp'}" alt="Foto de ${p.name || p.nome}" loading="lazy" decoding="async" onerror="handleImgError(this, '${p.id}')">
             </div>
             <div class="card-title" ${clickEvt}>${p.name || p.nome}</div>
             <div class="card-price-row">
                 ${p.oldPrice && p.oldPrice > (p.price || p.preco) ? `<span class="old-price">${fmt(p.oldPrice)}</span>` : ''}
-                <span class="price">${fmt(p.price || p.preco)}</span>
+                ${isBasket ? `<span class="price">${fmt(p.price || p.preco)}</span>` : ''}
                 ${lbl10}
                 ${economiaHTML}
             </div>
             <div id="card-act-${p.id}">${acaoHTML}</div>
         </div>`;
     }
+    
     return html;
 }
 
@@ -1283,19 +1350,15 @@ function renderCheckoutItems() {
     else { btn.disabled = false; btn.innerText = 'Enviar pelo WhatsApp'; btn.style.background = 'var(--success)'; }
 }
 
-// ========================================================
-// NOVO FLUXO SEND ORDER (GERA JSON COMPLETO)
-// ========================================================
 function sendOrder() {
     const btn = $('btn-send-order'); if (btn.disabled) return;
     
-    // Coletando todos os dados do novo form Local-First
     const nome = $('chk-nome').value.trim(); 
-    const cpf = $('chk-cpf').value.replace(/\D/g,""); // API pede numero limpo
+    const cpf = $('chk-cpf').value.replace(/\D/g,""); 
     const whats = $('chk-whats').value.trim();
     const cidadeRadio = document.querySelector('input[name="chk-cidade"]:checked');
     const cidade = cidadeRadio ? cidadeRadio.value : '';
-    const estado = 'MT'; // Estado chumbado
+    const estado = 'MT';
     const cep = $('chk-cep').value.replace(/\D/g,"");
     const bairro = $('chk-bairro').value.trim();
     const endereco = $('chk-endereco').value.trim();
@@ -1308,7 +1371,6 @@ function sendOrder() {
     }
     if (!pag) { alert("Escolha o pagamento."); $('chk-pagamento').parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
 
-    // Salva silenciosamente no celular do cliente
     salvarDadosLocalmente({
         nome: nome, cpf: $('chk-cpf').value, whats: whats, 
         cidade: cidade, cep: $('chk-cep').value, bairro: bairro, endereco: endereco
@@ -1317,13 +1379,12 @@ function sendOrder() {
     btn.disabled = true; btn.innerText = "Processando...";
     const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
     
-Object.entries(STATE.cart).forEach(([cartId, q]) => { 
+    Object.entries(STATE.cart).forEach(([cartId, q]) => { 
         const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
         if (p) { 
             totalBruto += p.price * q; 
             itemsTxt += `${q}x ${p.name}\n`; 
             
-            // Enviando apenas o que importa de verdade para a nota fiscal!
             apiItens.push({ 
                 sku: String(p.codigo), 
                 nome: p.name, 
@@ -1343,7 +1404,6 @@ Object.entries(STATE.cart).forEach(([cartId, q]) => {
     
     const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/${estado}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
     
-    // Novo Payload Enriquecido
     const payload = { 
         cliente: { 
             nome: nome, 
@@ -1445,7 +1505,6 @@ async function init() {
         
         loadCart(); updateTotals(); setupCategories();
         
-        // Puxa os dados salvos caso existam no Local Storage
         carregarDadosSalvos();
 
         $('loader').style.opacity = '0'; setTimeout(() => $('loader').style.display = 'none', 300);
