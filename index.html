@@ -205,33 +205,33 @@
         }
         .sort-dock-btn:active { background: #000; color: #fff; }
 
-        .nav-item { 
-            color: #777; 
-            font-size: 22px; 
-            flex: 1; 
-            text-align: center; 
-            cursor: pointer;
-            transition: color 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        }
-        .nav-item.active { color: #ffffff; }
+       .nav-item { 
+    position: relative; /* <-- ADICIONE ESTA LINHA */
+    color: #777; 
+    font-size: 22px; 
+    flex: 1; 
+    text-align: center; 
+    cursor: pointer;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
 
-        .cart-badge {
-            position: absolute;
-            top: 5px;
-            right: 15px;
-            background: #ef4444;
-            color: white;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 6px;
-            border-radius: 10px;
-            display: none;
-            border: 2px solid #222;
-        }
+.cart-badge {
+    position: absolute;
+    top: 5px;
+    right: 25px; /* Ajustei de 15px para 25px para centralizar melhor em cima da sacola */
+    background: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 10px;
+    display: none;
+    border: 2px solid #222;
+}
 
         .floating-search {
             position: fixed;
@@ -915,11 +915,21 @@
                 $('modalDesc').innerHTML = "";
             }
 
+            // ... (código acima mantém igual: modalDesc, metaTags, etc)
+
+            // Grade Relacionados Simplificada
             let related = STATE.prods.filter(x => x.id !== p.id && x.stock > 0);
-            let sameSubSub = related.filter(x => x.subsubcategoria && x.subsubcategoria === p.subsubcategoria);
-            let sameSub = related.filter(x => x.subcategoria && x.subcategoria === p.subcategoria && !sameSubSub.includes(x));
-            let sameCat = related.filter(x => x.categoria && x.categoria === p.categoria && !sameSubSub.includes(x) && !sameSub.includes(x));
-            let finalRelated = [...sameSubSub, ...sameSub, ...sameCat].slice(0, 4);
+            
+            // Prioriza mesma categoria
+            let finalRelated = related.filter(x => x.categoria === p.categoria);
+            
+            // Se não tiver 4 da mesma categoria, completa com outros produtos
+            if (finalRelated.length < 4) {
+                let outros = related.filter(x => x.categoria !== p.categoria);
+                finalRelated = [...finalRelated, ...outros].slice(0, 4);
+            } else {
+                finalRelated = finalRelated.slice(0, 4);
+            }
             
             if(finalRelated.length > 0) {
                 $('related-container').style.display = 'block';
@@ -930,6 +940,7 @@
 
             $('qtyCount').innerText = currentModalQty;
             $('modal-scroll-area').scrollTop = 0;
+            // ... (código abaixo mantém igual)
             $('detailModal').classList.add('active');
             lazyLoadImages(); 
         };
