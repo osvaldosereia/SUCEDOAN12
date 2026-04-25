@@ -90,18 +90,36 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-        /* MODO 0: Grade 2x (Padrão) */
+        /* MODO 0: Grade 2x2 (Padrão) */
         .view-mode-0 { scroll-snap-type: y mandatory; }
-        .view-mode-0 .product-page,
+        
+        .view-mode-0 .product-page { 
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); 
+            grid-template-rows: repeat(2, 1fr); /* Força exatamente 2 linhas iguais */
+            /* Altura total (100dvh) - dock height (55px) - dock bottom (60px) - 10px de margem */
+            height: calc(100dvh - var(--dock-height) - var(--dock-bottom) - 10px); 
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+        }
+
+        /* Separa o related grid para ele não herdar a altura de tela inteira no modal */
         .view-mode-0 #related-grid { 
             display: grid;
             grid-template-columns: repeat(2, 1fr); 
             scroll-snap-align: start;
             scroll-snap-stop: always;
         }
+
         .view-mode-0 .product-card {
-            aspect-ratio: auto; /* Removemos para controlar via cálculo de altura exata */
-            height: calc(((100vw - 6px) / 2) * 1.1666 - 7px); /* Ajuste: Diminui exatamente 7px do fundo cinza */
+            height: 100%; /* O card vai se esticar para preencher sua parte da grade perfeitamente */
+            aspect-ratio: auto; 
+        }
+
+        /* Garante que os cards no modal de detalhes fiquem com uma proporção bonita */
+        .view-mode-0 #related-grid .product-card {
+            height: auto;
+            aspect-ratio: 3/4; 
         }
 
         /* MODO 1: Grade 1x (Cards grandes) */
@@ -1267,8 +1285,8 @@
                     divPage.innerHTML = `<div class="category-divider">Explore Mais Categorias</div>`;
                     fragment.appendChild(divPage);
                 }
-                buffer.push(renderCardHTML(fullList[i]));
-                if (buffer.length === 6) {
+          buffer.push(renderCardHTML(fullList[i]));
+                if (buffer.length === 4) { // <-- MUDAR PARA 4 AQUI
                     let page = document.createElement('div'); page.className = 'product-page';
                     page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                 }
