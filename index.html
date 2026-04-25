@@ -61,69 +61,74 @@
             100% { transform: scale(1.05); opacity: 1; }
         }
 
-        /* =========================================
-           1. VITRINE E SCROLL
+       /* =========================================
+           1. VITRINE E SCROLL (CONTROLE POR FORMATO)
         ========================================= */
         .main-container {
             height: 100dvh;
             padding-bottom: calc(var(--dock-height) + var(--dock-bottom) + 50px);
             overflow-y: auto;
-            scroll-snap-type: y mandatory;
             scroll-behavior: auto;
             -webkit-overflow-scrolling: touch;
             transition: opacity 0.15s ease;
+            /* O tipo de trava (snap) agora é definido em cada modo abaixo */
         }
 
         .main-container::-webkit-scrollbar { display: none; }
 
-        /* Estilos base da página de produtos */
         .product-page {
             width: 100%;
             display: grid;
             gap: var(--gap);
-            scroll-snap-align: start;
-            scroll-snap-stop: always;
             padding: var(--gap);
             animation: slideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
-
-        /* AJUSTE: Modos de Visualização */
-        .view-mode-0 .product-page { grid-template-columns: repeat(2, 1fr); }
-        .view-mode-1 .product-page { grid-template-columns: 1fr; }
-        .view-mode-2 .product-page { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
 
         @keyframes slideIn {
             from { opacity: 0; transform: translateX(30px); }
             to { opacity: 1; transform: translateX(0); }
         }
-        
-        .product-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: var(--gap);
-            padding: var(--gap);
+
+       /* ---------------------------------------------------
+           EDIÇÃO DE GRADE, ROLAGEM E ALTURA PARA CADA MODO
+        --------------------------------------------------- */
+
+        /* MODO 0: Grade 2x (Padrão) */
+        .view-mode-0 { scroll-snap-type: y mandatory; }
+        .view-mode-0 .product-page { 
+            grid-template-columns: repeat(2, 1fr); 
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+        }
+        .view-mode-0 .product-card {
+            /* AJUSTE AQUI: Proporção Largura/Altura do card na grade 2x (ex: 3/3.5, 3/4, 1/1) */
+            aspect-ratio: 3/3.5; 
         }
 
-        .category-divider {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 40px 20px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-light);
-            background: var(--bg-body);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
+        /* MODO 1: Grade 1x (Cards grandes) */
+        .view-mode-1 { scroll-snap-type: y mandatory; }
+        .view-mode-1 .product-page { 
+            grid-template-columns: 1fr; 
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
         }
-        .category-divider::before, .category-divider::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border-light);
+        .view-mode-1 .product-card {
+            /* AJUSTE AQUI: Proporção do card na grade de 1 coluna (ex: 16/10, 4/3) */
+            aspect-ratio: 4/3; 
+        }
+
+        /* MODO 2: Lista Horizontal */
+        .view-mode-2 { scroll-snap-type: none; }
+        .view-mode-2 .product-page { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+            padding: 10px; 
+            scroll-snap-align: none;
+        }
+        .view-mode-2 .product-card-list {
+            /* AJUSTE AQUI: Altura fixa do card no modo de lista horizontal */
+            min-height: 105px; 
         }
 
         /* =========================================
@@ -139,7 +144,6 @@
             border-radius: 0;
             transition: opacity 0.2s;
             overflow: hidden;
-            aspect-ratio: 3/3.5; 
         }
 
         .product-card:active { opacity: 0.7; }
