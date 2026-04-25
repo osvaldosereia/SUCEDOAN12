@@ -229,12 +229,12 @@
 
         .main-container::-webkit-scrollbar { display: none; }
 
-        .product-page {
+       .product-page {
             width: 100%;
             display: grid;
             gap: var(--gap);
             padding: var(--gap);
-            animation: slideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            /* Removida a animação 'slideIn' para evitar o tremor no Scroll Infinito */
         }
 
         @keyframes slideIn {
