@@ -95,7 +95,9 @@
 
         /* MODO 0: Grade 2x (Padrão) */
         .view-mode-0 { scroll-snap-type: y mandatory; }
-        .view-mode-0 .product-page { 
+        .view-mode-0 .product-page,
+        .view-mode-0 #related-grid { 
+            display: grid;
             grid-template-columns: repeat(2, 1fr); 
             scroll-snap-align: start;
             scroll-snap-stop: always;
@@ -107,7 +109,9 @@
 
         /* MODO 1: Grade 1x (Cards grandes) */
         .view-mode-1 { scroll-snap-type: y mandatory; }
-        .view-mode-1 .product-page { 
+        .view-mode-1 .product-page,
+        .view-mode-1 #related-grid { 
+            display: grid;
             grid-template-columns: 1fr; 
             scroll-snap-align: start;
             scroll-snap-stop: always;
@@ -119,7 +123,8 @@
 
         /* MODO 2: Lista Horizontal */
         .view-mode-2 { scroll-snap-type: none; }
-        .view-mode-2 .product-page { 
+        .view-mode-2 .product-page,
+        .view-mode-2 #related-grid { 
             display: flex; 
             flex-direction: column; 
             gap: 8px; 
@@ -133,7 +138,9 @@
 
         /* MODO 3: Tela Cheia (1 Card por tela - Estilo TikTok/Reels) */
         .view-mode-3 { scroll-snap-type: y mandatory; }
-        .view-mode-3 .product-page { 
+        .view-mode-3 .product-page,
+        .view-mode-3 #related-grid { 
+            display: grid;
             grid-template-columns: 1fr; 
             scroll-snap-align: none; /* Remove a trava do bloco inteiro */
             padding: 0;
@@ -146,12 +153,11 @@
             scroll-snap-stop: always;
         }
         
-       /* Ajuste para as informações não ficarem escondidas no Modo 3 */
+        /* Ajuste para as informações não ficarem escondidas no Modo 3 */
         .view-mode-3 .tag-preco-nova { bottom: 140px; font-size: 1.2rem; padding: 8px 20px; }
         .view-mode-3 .tag-embalagem { bottom: 117px; font-size: 0.75rem; left: 20px; } /* Mais afastado e alinhado à esquerda */
         .view-mode-3 .btn-quick-add { bottom: 190px; width: 48px; height: 48px; font-size: 22px; right: 15px; left: auto; } /* Botão na direita */
         .view-mode-3 .product-icon { width: 90%; height: 90%; }
-
         /* =========================================
            2. CARDS DE PRODUTO (MODOS 0 E 1)
         ========================================= */
@@ -1262,11 +1268,16 @@
 
             finalRelated = finalRelated.slice(0, 50);
             
-            if(finalRelated.length > 0) {
-                $('related-container').style.display = 'block';
-                $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod)).join('');
-                lazyLoadImages(); 
-            } else {
+           // Procure estas linhas dentro de openDetail e adicione a última:
+if(finalRelated.length > 0) {
+    $('related-container').style.display = 'block';
+    $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod)).join('');
+    
+    // ADICIONE ESTA LINHA ABAIXO:
+    $('related-grid').parentElement.className = 'view-mode-' + STATE.viewMode;
+    
+    lazyLoadImages(); 
+} else {
                 $('related-container').style.display = 'none';
             }
 
