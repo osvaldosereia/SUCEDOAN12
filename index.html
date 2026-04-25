@@ -208,13 +208,13 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
-        /* =========================================
+      /* =========================================
            2. VITRINE E SCROLL (CONTROLE POR FORMATO)
         ========================================= */
         .main-container {
             height: 100dvh;
-            /* Inicia a grade perfeitamente abaixo da barra de chips */
-            padding-top: calc(var(--header-total) + env(safe-area-inset-top));
+            /* Ajuste: Adicionado + 15px na conta para descer a grade e descolar dos chips */
+            padding-top: calc(var(--header-total) + env(safe-area-inset-top) + 15px);
             padding-bottom: max(20px, env(safe-area-inset-bottom));
             overflow-y: auto;
             scroll-behavior: auto;
@@ -243,7 +243,8 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr); 
             grid-template-rows: repeat(2, 1fr); 
-            height: calc(100dvh - var(--header-total) - env(safe-area-inset-top) - 10px); 
+            /* Ajuste: Subtraímos os 15px adicionados no padding (o -10px original virou -25px) */
+            height: calc(100dvh - var(--header-total) - env(safe-area-inset-top) - 25px); 
             scroll-snap-align: start;
             scroll-snap-stop: always;
         }
