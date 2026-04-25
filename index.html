@@ -970,7 +970,8 @@
             viewMode: 0, 
             mainCategories: [],
             activeCatIndex: -1,
-            currentFilter: { type: 'ofertas', value: '' } 
+            currentFilter: { type: 'ofertas', value: '' },
+            pageLimit: 16 // NOVO: Define quantos produtos desenhar por vez
         };
 
         const BASKETS = [
@@ -1127,7 +1128,7 @@
             renderCategoryChips();
         }
 
-        window.filterBy = function(type, value) {
+       window.filterBy = function(type, value) {
             if ($('sidebar').classList.contains('open')) history.back(); 
             STATE.currentFilter = { type, value };
             
@@ -1142,9 +1143,17 @@
                 STATE.activeCatIndex = -1;
             }
 
-            $('vitrine').scrollTop = 0;
-            renderVitrineEngine();
+            // Reseta a paginação ao mudar de categoria
+            STATE.pageLimit = 16; 
+            
+            // Renderiza logo o botão no topo para dar feedback imediato
             renderCategoryChips();
+
+            // Pequeno delay (10ms) para que a interface não congele ("enrosque") no momento do clique
+            setTimeout(() => {
+                $('vitrine').scrollTop = 0;
+                renderVitrineEngine();
+            }, 10);
         };
 
         let touchstartX = 0;
