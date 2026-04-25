@@ -419,84 +419,111 @@
         
         .related-title { font-size: 16px; font-weight: 800; margin: 30px 20px 10px 20px; text-transform: uppercase; }
 
-        /* Seção de Preço e Compra (Interna da Página) */
-.floating-action-bar {
-    position: relative;
-    background: #ffffff;
-    border-radius: 12px;
-    border: 1px solid var(--border-light);
-    padding: 15px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    gap: 12px; 
-    margin: 25px 0; /* Espaçamento equilibrado acima e abaixo */
-    box-shadow: none;
-    width: 100%;
-}
+        /* =========================================
+           AJUSTE DAS TAGS (Sem fundo, fonte leve e com | )
+        ========================================= */
+        #modalMetaTags {
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 0; 
+            margin-bottom: 8px;
+            align-items: center;
+        }
 
-/* Coluna do Preço */
-.modal-price-col { 
-    display: flex; 
-    flex-direction: column; 
-    flex-shrink: 0;
-}
+        #modalMetaTags span {
+            background: none !important;
+            padding: 0 !important;
+            font-size: 11px;
+            font-weight: 300;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
 
-.modal-price-label { 
-    font-size: 10px; 
-    color: var(--text-light); 
-    font-weight: 600; 
-    text-transform: uppercase; 
-}
+        #modalMetaTags span:not(:last-child)::after {
+            content: '|';
+            margin: 0 8px;
+            color: #ddd;
+        }
 
-.modal-price { 
-    font-size: 18px; 
-    font-weight: 800; 
-    color: var(--text-dark);
-}
+        /* =========================================
+           BARRA DE COMPRA (Erro de sintaxe corrigido)
+        ========================================= */
+        .floating-action-bar {
+            position: relative !important;
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            padding: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            gap: 12px; 
+            margin: 25px 0; 
+            box-shadow: none;
+            width: 100%;
+            bottom: auto !important;
+            left: auto !important;
+        }
 
-/* Seletor de Quantidade */
-.qty-controls {
-    display: flex; 
-    align-items: center; 
-    gap: 12px; 
-    background: var(--bg-card);
-    padding: 8px 12px; 
-    border-radius: 8px; 
-    font-weight: 700; 
-    font-size: 16px;
-    flex-shrink: 0;
-}
+        .modal-price-col { 
+            display: flex; 
+            flex-direction: column; 
+            flex-shrink: 0;
+        }
 
-.qty-btn { 
-    cursor: pointer; 
-    color: var(--text-light); 
-    padding: 5px; 
-    transition: color 0.2s;
-}
+        .modal-price-label { 
+            font-size: 10px; 
+            color: var(--text-light); 
+            font-weight: 600; 
+            text-transform: uppercase; 
+        }
 
-.qty-btn:active {
-    color: var(--text-dark);
-}
+        .modal-price { 
+            font-size: 18px; 
+            font-weight: 800; 
+            color: var(--text-dark);
+        }
 
-/* Botão Adicionar */
-.btn-add {
-    flex: 1; 
-    background: var(--primary); 
-    color: #ffffff; 
-    border: none;
-    padding: 14px 0; 
-    border-radius: 8px; 
-    font-weight: 700; 
-    font-size: 13px; 
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
+        .qty-controls {
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            background: var(--bg-card);
+            padding: 8px 12px; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            font-size: 16px;
+            flex-shrink: 0;
+        }
 
-.btn-add:active {
-    opacity: 0.8;
-}
+        .qty-btn { 
+            cursor: pointer; 
+            color: var(--text-light); 
+            padding: 5px; 
+            transition: color 0.2s;
+        }
+
+        .qty-btn:active {
+            color: var(--text-dark);
+        }
+
+        .btn-add {
+            flex: 1; 
+            background: var(--primary); 
+            color: #ffffff; 
+            border: none;
+            padding: 14px 0; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            font-size: 13px; 
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn-add:active {
+            opacity: 0.8;
+        }
         /* =========================================
            6. DRAWER DE CHECKOUT
         ========================================= */
