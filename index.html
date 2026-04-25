@@ -1917,7 +1917,7 @@
             let container = $('vip-items-grid');
             
             // Alterado para pegar produtos com 10% ou mais de desconto e mostrar até 30 itens
-            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 30);
+            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 60);
             
             if(ofertas.length === 0) ofertas = STATE.prods.slice(0, 10); 
 
