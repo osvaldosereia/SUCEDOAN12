@@ -917,23 +917,27 @@
 
             // ... (código acima mantém igual: modalDesc, metaTags, etc)
 
-            // Grade Relacionados Simplificada
+           // Grade Relacionados (Até 50 produtos)
             let related = STATE.prods.filter(x => x.id !== p.id && x.stock > 0);
             
             // Prioriza mesma categoria
             let finalRelated = related.filter(x => x.categoria === p.categoria);
             
-            // Se não tiver 4 da mesma categoria, completa com outros produtos
-            if (finalRelated.length < 4) {
+            // Se não houver muitos na mesma categoria, completa com outros para dar volume
+            if (finalRelated.length < 10) {
                 let outros = related.filter(x => x.categoria !== p.categoria);
-                finalRelated = [...finalRelated, ...outros].slice(0, 4);
-            } else {
-                finalRelated = finalRelated.slice(0, 4);
+                finalRelated = [...finalRelated, ...outros];
             }
+
+            // Limita a 50 produtos conforme solicitado
+            finalRelated = finalRelated.slice(0, 50);
             
             if(finalRelated.length > 0) {
                 $('related-container').style.display = 'block';
                 $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod)).join('');
+                
+                // IMPORTANTE: Avisa o sistema para carregar as imagens novas conforme a rolagem
+                lazyLoadImages(); 
             } else {
                 $('related-container').style.display = 'none';
             }
