@@ -1058,9 +1058,12 @@
         // ==========================================
         // SISTEMA DE RENDERIZAÇÃO DA VITRINE E CARDS
         // ==========================================
-        function renderCardHTML(prod) {
+        function renderCardHTML(prod, forceMode = null) {
+            // Se forceMode for passado, usa ele. Se não, usa o da vitrine.
+            let currentMode = forceMode !== null ? forceMode : STATE.viewMode;
+
             // MODO DE LISTA HORIZONTAL (Modo 2)
-            if (STATE.viewMode === 2) {
+            if (currentMode === 2) {
                 let q = STATE.cart[prod.id] || 0;
                 let controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>`
@@ -1088,6 +1091,20 @@
                     </div>
                 `;
             }
+
+            // MODOS DE GRADE (Modo 0, 1 e 3)
+            let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem">${prod.embalagem}</div>` : '';
+            return `
+                <div class="product-card" onclick="openDetail('${prod.id}')">
+                    <div class="btn-quick-add" onclick="quickAddToCart('${prod.id}', event)">
+                        <i class="fa-solid fa-plus"></i>
+                    </div>
+                    <div class="tag-preco-nova">${fmt(prod.price)}</div>
+                    ${embalagemHtml}
+                    <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon lazy-img" alt="${prod.name}">
+                </div>
+            `;
+        }
 
             // MODOS DE GRADE (Modo 0 e 1)
             let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem">${prod.embalagem}</div>` : '';
@@ -1270,14 +1287,16 @@
             
            // Procure estas linhas dentro de openDetail e adicione a última:
 if(finalRelated.length > 0) {
-    $('related-container').style.display = 'block';
-    $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod)).join('');
-    
-    // ADICIONE ESTA LINHA ABAIXO:
-    $('related-grid').parentElement.className = 'view-mode-' + STATE.viewMode;
-    
-    lazyLoadImages(); 
-} else {
+                $('related-container').style.display = 'block';
+                
+                // O '0' aqui força a função a desenhar o card padrão de grade
+                $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod, 0)).join('');
+                
+                // Força o container a usar a classe do Modo 0 (Grade 2x colunas)
+                $('related-grid').parentElement.className = 'view-mode-0';
+                
+                lazyLoadImages(); 
+            } else {
                 $('related-container').style.display = 'none';
             }
 
