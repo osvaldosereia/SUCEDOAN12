@@ -476,6 +476,8 @@
             transition: 0.2s;
         }
         .btn-quick-add-list:active { opacity: 0.8; transform: scale(0.95); }
+        .product-card-list.bordered { border-color: var(--border-light); background: #ffffff; border: 1px solid var(--border-light); }
+        .vip-badge { position: absolute; top: 0; right: 0; background: var(--success); color: #fff; font-size: 0.7rem; padding: 4px 10px; font-weight: 800; border-bottom-left-radius: 10px; z-index: 5; box-shadow: -2px 2px 5px rgba(0,0,0,0.1); }
 
         /* =========================================
            4. MENU LATERAL (SIDEBAR)
@@ -896,13 +898,25 @@
                 <p style="font-size: 12px; color: #888; margin-bottom: 15px;">Ajuste as quantidades conforme necessário. Produtos não encontrados no sistema não serão exibidos.</p>
                 
                 <div id="basket-items-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                <div id="basket-summary-container" style="background: var(--bg-card); padding: 18px; border-radius: 12px; margin-top: 20px; border: 1px solid var(--border-light);">
+                    <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 16px; margin-bottom: 15px; color: var(--text-dark);">
+                        <span>Total (<span id="basket-total-items">0</span> itens)</span>
+                        <span id="basket-total-price">R$ 0,00</span>
+                    </div>
+                    <button class="btn-send" id="btn-add-basket" onclick="addBasketToCart()" style="width: 100%; margin: 0; background: var(--primary);">Adicionar à Sacola</button>
+                </div>
+
+                <div id="vip-list-container" style="display: none; margin-top: 40px; padding-bottom: 30px;">
+                    <div style="background: #e6f4ea; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #a3d9b1;">
+                        <h3 style="margin: 0 0 5px 0; color: var(--success); font-size: 16px;"><i class="fa-solid fa-unlock-keyhole"></i> Benefício VIP!</h3>
+                        <p style="font-size: 12px; color: var(--success); font-weight: 600;">Ao levar a Cesta, ganhas +5% de desconto extra nestas e outras ofertas!</p>
+                    </div>
+                    <div id="vip-items-grid" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
             </div>
         </div>
 
-        <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; padding: 15px 20px 25px; border-top: 1px solid var(--border-light); z-index: 2200; box-shadow: 0 -4px 15px rgba(0,0,0,0.05);">
-            <button class="btn-send" onclick="addBasketToCart()" style="margin: 0;">Adicionar Todos à Sacola</button>
         </div>
-    </div>
 
     <div class="checkout-drawer" id="checkout-drawer">
         <div class="chk-header">
@@ -944,9 +958,10 @@
                 <input type="hidden" id="chk-pagamento" value="PIX">
             </div>
 
-            <div class="chk-inline-summary">
+           <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos</span><span id="sum-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos Promo</span><span id="sum-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-vip-row"><span>Desconto Cesta VIP (-5%)</span><span id="sum-vip-desc">R$ 0,00</span></div>
                 <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
             </div>
 
@@ -1570,20 +1585,29 @@
         };
 
         function updateTotals() {
-            let sum = 0; let count = 0; 
-            Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) { sum += p.price * q; count += q; } });
+            let sumBase = 0; let count = 0; 
+            let hasBasket = Object.keys(STATE.cart).some(id => id.startsWith('fee_cesta'));
+            
+            Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) { sumBase += p.price * q; count += q; } });
+            let vipDiscount = hasBasket ? (sumBase * 0.05) : 0; 
+
             let badge = $('cart-badge');
             if (count > 0) { badge.style.display = 'block'; badge.innerText = count > 99 ? '99+' : count; } else { badge.style.display = 'none'; }
-            $('sum-sub').innerText = fmt(sum); $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; 
-            $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
-            $('sum-total').innerText = fmt(sum - STATE.deliveryDiscount);
-            let btn = $('btn-send-order');
-            if ((sum - STATE.deliveryDiscount) < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
             
-            if (typeof updateAllCardUIs === 'function') {
-                updateAllCardUIs();
-            }
+            $('sum-sub').innerText = fmt(sumBase); 
+            $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; 
+            $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
+            $('sum-vip-row').style.display = vipDiscount > 0 ? 'flex' : 'none';
+            $('sum-vip-desc').innerText = `- ${fmt(vipDiscount)}`;
+            
+            let finalTotal = sumBase - STATE.deliveryDiscount - vipDiscount;
+            $('sum-total').innerText = fmt(finalTotal);
+            
+            let btn = $('btn-send-order');
+            if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
+            if (typeof updateAllCardUIs === 'function') updateAllCardUIs();
         }
+        
 
         window.clearCart = function() {
             if(confirm("Deseja realmente esvaziar sua sacola?")) { 
@@ -1591,25 +1615,31 @@
             }
         };
 
-        window.sendOrder = function() {
+       window.sendOrder = function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
             const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.replace(/\D/g,""); const whats = $('chk-whats').value.trim();
-            const cidade = document.querySelector('input[name="chk-cidade"]:checked') ? document.querySelector('input[name="chk-cidade"]:checked').value : '';
-            const cep = $('chk-cep').value.replace(/\D/g,""); const bairro = $('chk-bairro').value.trim(); const endereco = $('chk-endereco').value.trim();
+            const cidade = 'Cuiabá'; const cep = $('chk-cep').value.replace(/\D/g,""); const bairro = $('chk-bairro').value.trim(); const endereco = $('chk-endereco').value.trim();
             const pag = $('chk-pagamento').value;
             if (!nome || !cpf || !whats || !bairro || !endereco) return alert("Preencha todos os dados de entrega."); 
             salvarDadosLocalmente({ nome, cpf: $('chk-cpf').value, whats, cidade, cep: $('chk-cep').value, bairro, endereco });
             btn.disabled = true; btn.innerText = "Processando...";
-            const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
+            const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let totalBruto = 0; let hasBasket = false;
+            
             Object.entries(STATE.cart).forEach(([cartId, q]) => { 
                 const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
-                if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; apiItens.push({ sku: String(p.codigo), nome: p.name, qtd: q, price: p.price }); } 
+                if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; } 
+                if (cartId.startsWith('fee_cesta')) hasBasket = true;
             });
-            let final = totalBruto - STATE.deliveryDiscount;
+            
+            let vipDiscount = hasBasket ? (totalBruto * 0.05) : 0;
+            let final = totalBruto - STATE.deliveryDiscount - vipDiscount;
+            
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+            if (vipDiscount > 0) itemsTxt += `\n⭐ BÔNUS VIP CESTA (5%): -${fmt(vipDiscount)}`;
+            
             const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
-            const payload = { cliente: { nome, cpf, whats, cidade, estado: 'MT', cep, bairro, endereco, pagamento: pag }, pedido: { itens: apiItens, total: Number(final), outras_despesas: 0, desconto: Number(STATE.deliveryDiscount), observacoes: `Entrega: ${STATE.deliveryDateStr}` } };
-            fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
+            
+            // Substitua esta linha pelo seu fetch do Make (se aplicável), estou mantendo apenas o WhatsApp
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar Pedido`; }, 3000);
         };
@@ -1868,21 +1898,61 @@
                 STATE.cart[feeId] = currentFee + 1;
             }
 
-            if (addedCount > 0) {
-                updateTotals(); 
-                saveCart();
-                closeBasketDetail();
-                
+           if (addedCount > 0) {
+                updateTotals(); saveCart();
                 const bagIcon = document.querySelector('.fa-bag-shopping');
-                if(bagIcon) {
-                    bagIcon.style.color = 'var(--success)'; 
-                    setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); 
-                }
-                setTimeout(() => alert("Cesta adicionada à sua sacola!"), 300);
+                if(bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
+                
+                // Transforma o botão e mostra VIP
+                let btnAdd = $('btn-add-basket');
+                btnAdd.innerText = 'Cesta Adicionada! Sacola VIP ✅';
+                btnAdd.style.background = 'var(--text-dark)';
+                renderVIPList(); 
             } else {
                 alert("Nenhum produto válido para adicionar.");
             }
         };
+
+        // ADICIONE ESTA NOVA FUNÇÃO LOGO ABAIXO DA ADDBASKETTOCART
+        function renderVIPList() {
+            let container = $('vip-items-grid');
+            let ofertas = STATE.prods.filter(p => p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 10);
+            if(ofertas.length === 0) ofertas = STATE.prods.slice(0, 5); 
+
+            let html = '';
+            ofertas.forEach(p => {
+                let q = STATE.cart[p.id] || 0;
+                let controlsHtml = q === 0 ? `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> VIP</div>` : `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${p.id}', event)">${q} na Sacola</div>`;
+                
+                let pOriginal = fmt(p.oldPrice || p.price);
+                let pOferta = fmt(p.price);
+                let pVip = fmt(p.price * 0.95); 
+
+                html += `
+                <div class="product-card-list bordered" onclick="openDetail('${p.id}')">
+                    <div class="vip-badge">VIP -5% Extra</div>
+                    <img data-src="${p.img}" src="${p.img}" class="product-icon-list" alt="${p.name}">
+                    <div class="product-info-list">
+                        <div class="product-name-list">${p.name}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
+                            <div class="tag-preco-list" style="line-height: 1.2;">
+                                <span style="text-decoration: line-through; font-size: 0.65rem; color: #aaa; font-weight: normal;">${pOriginal}</span>
+                                <span style="text-decoration: line-through; font-size: 0.75rem; color: #888; font-weight: normal;">${pOferta}</span>
+                                <span style="color: var(--success); font-size: 1.1rem;">${pVip}</span>
+                            </div>
+                            <div class="card-action-area" id="action-vip-${p.id}">
+                                ${controlsHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+            $('vip-list-container').style.display = 'block';
+            setTimeout(() => { $('vip-list-container').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+        }
+                
+        
 
         async function init() {
             setTimeout(() => {
