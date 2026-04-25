@@ -134,14 +134,15 @@
         .topbar-actions {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 22px; /* Ajuste: Botões mais separados (era 16px) */
             flex-shrink: 0;
         }
 
-        .action-btn {
+       .action-btn {
             position: relative;
             color: var(--text-dark);
-            font-size: 20px;
+            font-size: 24px; /* Ajuste: Ícones um pouco maiores (era 20px) */
+            padding: 4px; /* Ajuste: Cria uma área "invisível" extra para facilitar o clique com o dedo */
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -155,8 +156,8 @@
 
         .cart-badge {
             position: absolute;
-            top: -4px;
-            right: -6px; 
+            top: -2px;   /* Ajuste: reposicionado para bater com o novo tamanho do ícone */
+            right: -6px; /* Ajuste: reposicionado para a lateral certa do ícone */
             background: #ef4444;
             color: white;
             font-size: 10px;
