@@ -1721,19 +1721,17 @@
             });
         }
 
-        // ==========================================
+       // ==========================================
         // LÓGICA DAS CESTAS BÁSICAS
         // ==========================================
-        window.currentBasketId = null; // Guarda o ID da cesta aberta no momento
+        window.currentBasketId = null;
 
-       window.openBasketDetail = function(basketId) {
-            // Verifica se as cestas existem
+        window.openBasketDetail = function(basketId) {
             if (!BASKETS) return alert("Erro: Base de cestas não encontrada.");
             
             const basket = BASKETS.find(b => b.id === basketId);
             if (!basket) return alert("Erro: Cesta não encontrada.");
 
-            // Verifica se o Modal existe no HTML
             const modalEl = document.getElementById('basketDetailModal');
             if (!modalEl) return alert("Erro: O ecrã da cesta não foi encontrado no HTML.");
 
@@ -1749,25 +1747,62 @@
                 let parts = itemString.split("x ");
                 if(parts.length === 2) {
                     let qty = parseInt(parts[0]);
-                    let code = parts[1].trim(); // Remove espaços extras por segurança
+                    let code = parts[1].trim(); 
                     let pObj = STATE.prods.find(p => p.codigo === code || p.id === code);
-                    // O item vai aparecer mesmo se o stock for 0, para a pessoa ver o que compõe a cesta
                     if (pObj) {
                         currentBasketItems.push({ pObj: pObj, qty: qty });
                     }
                 }
             });
 
-            // Se existir a função de desenhar os itens, chama-a
-            if (typeof renderBasketItemsList === 'function') {
-                renderBasketItemsList();
-            }
-
+            renderBasketItemsList();
             modalEl.classList.add('active');
         };
 
-        // A função renderBasketItemsList() e updateBasketItemQty() continuam as mesmas que você já tem...
-        
+        // 👇 AS FUNÇÕES QUE ESTAVAM EM FALTA ESTÃO AQUI 👇
+        function renderBasketItemsList() {
+            let container = $('basket-items-container');
+            if(currentBasketItems.length === 0) {
+                container.innerHTML = "<p style='color: #888; text-align:center; padding: 20px;'>Nenhum produto correspondente encontrado no sistema para esta cesta.</p>";
+                return;
+            }
+
+            let html = '';
+            currentBasketItems.forEach((item, index) => {
+                let p = item.pObj;
+                html += `
+                <div class="product-card-list" style="border: 1px solid var(--border-light); padding: 8px;">
+                    <img src="${p.img}" class="product-icon-list" style="width: 60px; height: 60px;">
+                    <div class="product-info-list">
+                        <div class="product-name-list" style="font-size: 12px;">${p.name}</div>
+                        <div class="tag-preco-list" style="font-size: 14px;">${fmt(p.price)}</div>
+                    </div>
+                    <div class="qty-controls" style="padding: 4px 8px; font-size: 13px;">
+                        <i class="fa-solid fa-minus qty-btn" onclick="updateBasketItemQty(${index}, -1)"></i>
+                        <span style="font-weight:bold; width: 20px; text-align:center;">${item.qty}</span>
+                        <i class="fa-solid fa-plus qty-btn" onclick="updateBasketItemQty(${index}, 1)"></i>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        window.updateBasketItemQty = function(index, delta) {
+            let item = currentBasketItems[index];
+            if (!item) return;
+            
+            let newQty = item.qty + delta;
+            if (newQty < 0) newQty = 0;
+            // Bloqueia se tentar adicionar mais do que tem em stock
+            if (newQty > item.pObj.stock) {
+                alert("Estoque insuficiente para " + item.pObj.name);
+                return;
+            }
+            
+            item.qty = newQty;
+            renderBasketItemsList(); 
+        };
+
         window.closeBasketDetail = function() {
             $('basketDetailModal').classList.remove('active');
             window.currentBasketId = null;
@@ -1778,13 +1813,12 @@
             const basket = BASKETS.find(b => b.id === window.currentBasketId);
             if (!basket) return;
 
-            // 1. Calcula o valor original da soma dos itens da cesta
             let valorOriginalProdutos = 0;
             basket.produtos.forEach(itemString => {
                 let parts = itemString.split("x ");
                 if(parts.length === 2) {
                     let qty = parseInt(parts[0]);
-                    let code = parts[1];
+                    let code = parts[1].trim();
                     let pObj = STATE.prods.find(p => p.codigo === code || p.id === code);
                     if (pObj) {
                         valorOriginalProdutos += (qty * pObj.price);
@@ -1792,11 +1826,9 @@
                 }
             });
 
-            // 2. Calcula a diferença (Taxa escondida ou Desconto)
             let diferenca = basket.preco - valorOriginalProdutos;
-
-            // 3. Adiciona os itens (com as quantidades editadas pelo cliente) na sacola
             let addedCount = 0;
+            
             currentBasketItems.forEach(item => {
                 if (item.qty > 0) {
                     let pid = item.pObj.id;
@@ -1808,20 +1840,18 @@
                 }
             });
 
-            // 4. Adiciona o ajuste financeiro na sacola
             if (addedCount > 0 && Math.abs(diferenca) > 0.01) {
                 let feeId = 'fee_' + basket.id;
                 let isDiscount = diferenca < 0;
                 let feeName = isDiscount ? 'Desconto Promo (' + basket.nome + ')' : 'Embalagem/Montagem (' + basket.nome + ')';
                 
-                // Cria o item de ajuste na memória se ele ainda não existir
                 let feeProd = STATE.prods.find(p => p.id === feeId);
                 if (!feeProd) {
                     feeProd = {
                         id: feeId,
                         codigo: feeId,
                         name: feeName,
-                        price: diferenca, // Aceita valor negativo sem problemas
+                        price: diferenca, 
                         stock: 9999,
                         img: basket.imagem,
                         categoria: 'Cestas',
@@ -1833,7 +1863,6 @@
                     STATE.prods.push(feeProd);
                 }
                 
-                // Adiciona 1 unidade do ajuste à sacola
                 let currentFee = STATE.cart[feeId] || 0;
                 if (currentFee === 0) STATE.cartOrder.push(feeId);
                 STATE.cart[feeId] = currentFee + 1;
