@@ -421,11 +421,24 @@
         
         .related-title { font-size: 16px; font-weight: 800; margin: 30px 20px 10px 20px; text-transform: uppercase; }
 
-        .floating-action-bar {
-            position: absolute; bottom: max(15px, env(safe-area-inset-bottom)); left: 15px; right: 15px;
-            background: white; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; z-index: 2200;
-        }
+        ./* Transformado de flutuante para bloco interno da página */
+.floating-action-bar {
+    position: relative; /* Mudou de absolute para relative */
+    bottom: auto;
+    left: auto;
+    right: auto;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--border-light); /* Adicionado um contorno leve */
+    padding: 15px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    gap: 10px; 
+    z-index: 10;
+    margin: 20px 0; /* Bom respiro acima e abaixo */
+    box-shadow: none; /* Removida a sombra pesada de flutuação */
+}
         .modal-price-col { display: flex; flex-direction: column; }
         .modal-price { font-size: 18px; font-weight: 800; }
         .modal-price-label { font-size: 10px; color: var(--text-light); font-weight: 600; text-transform: uppercase; }
@@ -522,11 +535,25 @@
             <div class="detail-icon-box">
                 <img id="modalImg" src="" alt="Produto">
             </div>
-            <div class="detail-content">
-                <div id="modalMetaTags" style="display:flex; flex-wrap:wrap; gap: 6px; margin-bottom: 12px;"></div>
-                <h1 class="modal-title" id="modalTitle">Nome do Produto</h1>
-                <div class="modal-desc" id="modalDesc"></div>
-            </div>
+           <div class="detail-content">
+    <div id="modalMetaTags"></div>
+    <h1 class="modal-title" id="modalTitle">Nome do Produto</h1>
+    
+    <div class="floating-action-bar">
+        <div class="modal-price-col">
+            <span class="modal-price-label">Valor Unit.</span>
+            <span class="modal-price" id="modalPrice">R$ 0,00</span>
+        </div>
+        <div class="qty-controls">
+            <i class="fa-solid fa-minus qty-btn" onclick="changeModalQty(-1)"></i>
+            <span id="qtyCount">1</span>
+            <i class="fa-solid fa-plus qty-btn" onclick="changeModalQty(1)"></i>
+        </div>
+        <button class="btn-add" onclick="addFromModal()">Adicionar</button>
+    </div>
+
+    <div class="modal-desc" id="modalDesc"></div>
+</div>
 
             <div id="related-container" style="display: none; padding-bottom: 20px;">
                 <h3 class="related-title">Veja também</h3>
