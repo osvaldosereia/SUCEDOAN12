@@ -1913,16 +1913,20 @@
             }
         };
 
-        // ADICIONE ESTA NOVA FUNÇÃO LOGO ABAIXO DA ADDBASKETTOCART
         function renderVIPList() {
             let container = $('vip-items-grid');
-            let ofertas = STATE.prods.filter(p => p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 10);
-            if(ofertas.length === 0) ofertas = STATE.prods.slice(0, 5); 
+            
+            // Alterado para pegar produtos com 10% ou mais de desconto e mostrar até 30 itens
+            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 30);
+            
+            if(ofertas.length === 0) ofertas = STATE.prods.slice(0, 10); 
 
             let html = '';
             ofertas.forEach(p => {
                 let q = STATE.cart[p.id] || 0;
-                let controlsHtml = q === 0 ? `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> VIP</div>` : `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${p.id}', event)">${q} na Sacola</div>`;
+                
+                // Alterado de "VIP" para "Adicionar"
+                let controlsHtml = q === 0 ? `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>` : `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${p.id}', event)">${q} na Sacola</div>`;
                 
                 let pOriginal = fmt(p.oldPrice || p.price);
                 let pOferta = fmt(p.price);
