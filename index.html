@@ -17,7 +17,7 @@
             --success: #059669; 
             --gap: 2px;
             --dock-height: 55px;
-            --dock-bottom: 30px; 
+            --dock-bottom: 60px; /* Ajustado para dar espaço aos chips */
             --brand: #5A3826;        
             --border-light: #eaeaea;
         }
@@ -66,7 +66,7 @@
         ========================================= */
         .main-container {
             height: 100dvh;
-            padding-bottom: calc(var(--dock-height) + var(--dock-bottom) + 50px);
+            padding-bottom: calc(var(--dock-height) + var(--dock-bottom) + 90px);
             overflow-y: auto;
             scroll-behavior: auto;
             -webkit-overflow-scrolling: touch;
@@ -87,10 +87,6 @@
             from { opacity: 0; transform: translateX(30px); }
             to { opacity: 1; transform: translateX(0); }
         }
-
-        /* ---------------------------------------------------
-           EDIÇÃO DE GRADE, ROLAGEM E ALTURA PARA CADA MODO
-        --------------------------------------------------- */
 
         /* MODO 0: Grade 2x (Padrão) */
         .view-mode-0 { scroll-snap-type: y mandatory; }
@@ -155,7 +151,7 @@
         .view-mode-3 .product-icon { width: 90%; height: 90%; }
 
         /* =========================================
-           2. CARDS DE PRODUTO (MODOS 0, 1 E 3)
+           2. CARDS DE PRODUTO
         ========================================= */
         .product-card {
             background-color: var(--bg-card);
@@ -180,7 +176,6 @@
             z-index: 1;
         }
 
-        /* Etiqueta de Preço na ESQUERDA */
         .tag-preco-nova {
             position: absolute;
             bottom: 24px; 
@@ -197,7 +192,6 @@
             z-index: 2;
         }
 
-        /* Etiqueta da Embalagem ESQUERDA, Escura e Afastada */
         .tag-embalagem {
             position: absolute;
             bottom: 5px; 
@@ -211,7 +205,6 @@
             text-align: left; 
         }
 
-        /* Botão + Redondo na DIREITA */
         .btn-quick-add {
             position: absolute;
             bottom: 15px; 
@@ -367,6 +360,56 @@
             flex-shrink: 0;
         }
         .side-dock-btn:active { background: #000; color: #fff; }
+
+        /* Estilo do Avatar (Botão Esquerdo) */
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .side-dock-btn.avatar-btn {
+            border-radius: 50%;
+            padding: 2px;
+            background: transparent;
+            box-shadow: none;
+        }
+
+        /* Container dos Chips */
+        .chip-container {
+            position: fixed;
+            bottom: 12px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            gap: 10px;
+            padding: 0 15px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            z-index: 1000;
+        }
+        .chip-container::-webkit-scrollbar { display: none; }
+
+        .category-chip {
+            background: #ffffff;
+            color: var(--text-light);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .category-chip.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
 
         .nav-item { 
             position: relative;
@@ -825,8 +868,8 @@
     <div class="dock-gradient-shadow"></div>
     <div class="dock-container">
         
-        <div class="side-dock-btn" onclick="nextCategory()">
-            <i class="fa-solid fa-layer-group"></i>
+        <div class="side-dock-btn avatar-btn" onclick="openSidebar()">
+            <img src="../img/avatar.png" alt="Avatar" class="avatar-img" onerror="this.src='https://via.placeholder.com/50x50?text=A'">
         </div>
 
         <nav class="floating-dock">
@@ -844,6 +887,8 @@
         </div>
     </div>
 
+    <div class="chip-container" id="category-chips"></div>
+
     <script>
         // ========================================================
         // ENGINE LOGIC
@@ -852,7 +897,7 @@
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-            viewMode: 0, // 0 = 2xGrid, 1 = 1xGrid, 2 = List, 3 = Full
+            viewMode: 0, 
             mainCategories: [],
             activeCatIndex: -1,
             currentFilter: { type: 'all', value: '' }
@@ -892,6 +937,7 @@
             STATE.currentFilter = { type: 'all', value: '' };
             STATE.activeCatIndex = -1;
             renderVitrineEngine();
+            renderCategoryChips();
         }
         
         function openSidebar() { pushHistoryState('sidebar'); $('sidebar').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back(); }
@@ -911,38 +957,29 @@
                 }
                 $('vitrine').scrollTop = 0; 
                 renderVitrineEngine();
+                renderCategoryChips();
             }, 300);
         }
 
-        window.nextCategory = function() {
-            if (STATE.mainCategories.length === 0) return;
-            
-            let currentIndex = STATE.activeCatIndex;
-            if (currentIndex === -1 && STATE.currentFilter.type === 'cat') {
-                currentIndex = STATE.mainCategories.indexOf(STATE.currentFilter.value);
-            }
-            
-            STATE.activeCatIndex = (currentIndex + 1) % STATE.mainCategories.length;
-            let nextCat = STATE.mainCategories[STATE.activeCatIndex];
-            STATE.currentFilter = { type: 'cat', value: nextCat };
-            
-            $('vitrine').style.opacity = '0';
-            setTimeout(() => {
-                $('vitrine').scrollTop = 0;
-                renderVitrineEngine();
-                $('vitrine').style.opacity = '1';
-            }, 150);
-        };
+        function renderCategoryChips() {
+            const container = $('category-chips');
+            if (!container) return;
+            let isAllActive = STATE.currentFilter.type === 'all' || STATE.currentFilter.type === 'search' ? 'active' : '';
+            let html = `<div class="category-chip ${isAllActive}" onclick="filterBy('all', '')">Todos</div>`;
+            STATE.mainCategories.forEach(cat => {
+                let isActive = (STATE.currentFilter.type === 'cat' && STATE.currentFilter.value === cat) ? 'active' : '';
+                html += `<div class="category-chip ${isActive}" onclick="filterBy('cat', '${cat}')">${cat}</div>`;
+            });
+            container.innerHTML = html;
+        }
 
         window.toggleViewMode = function() {
             STATE.viewMode = (STATE.viewMode + 1) % 4;
             const icon = $('viewModeBtn').querySelector('i');
-            
             if (STATE.viewMode === 0) icon.className = "fa-solid fa-border-all"; 
             else if (STATE.viewMode === 1) icon.className = "fa-solid fa-square"; 
             else if (STATE.viewMode === 2) icon.className = "fa-solid fa-list"; 
             else icon.className = "fa-solid fa-mobile-screen"; 
-            
             $('vitrine').scrollTop = 0;
             renderVitrineEngine();
         };
@@ -950,7 +987,6 @@
         function renderSidebarMenu() {
             let catMap = {};
             let brands = new Set();
-
             STATE.prods.forEach(p => {
                 if(p.categoria) {
                     if(!catMap[p.categoria]) catMap[p.categoria] = new Set();
@@ -958,24 +994,19 @@
                 }
                 if(p.marca) brands.add(p.marca);
             });
-
             STATE.mainCategories = Object.keys(catMap).sort();
-
             let html = '';
             html += `<div class="sidebar-group-title">Departamentos</div><ul>`;
-            
             STATE.mainCategories.forEach(cat => {
                 html += `<li class="main-cat" onclick="filterBy('cat', '${cat}')">
                             ${cat} <i class="fa-solid fa-chevron-right" style="font-size:10px; opacity:0.3"></i>
                          </li>`;
-                
                 let subs = Array.from(catMap[cat]).sort();
                 subs.forEach(sub => {
                     html += `<li class="sub-cat" onclick="filterBy('sub', '${sub}')">${sub}</li>`;
                 });
             });
             html += `</ul>`;
-
             let sortedBrands = Array.from(brands).sort();
             if(sortedBrands.length > 0) {
                 html += `<div class="sidebar-group-title">Marcas</div>`;
@@ -985,7 +1016,6 @@
                     if(!alphaGroups[letter]) alphaGroups[letter] = [];
                     alphaGroups[letter].push(b);
                 });
-
                 Object.keys(alphaGroups).sort().forEach(letter => {
                     html += `<details class="brand-group"><summary>Marcas com ${letter}</summary><ul>`;
                     alphaGroups[letter].forEach(brand => {
@@ -994,16 +1024,17 @@
                     html += `</ul></details>`;
                 });
             }
-
             $('menu-categories-list').innerHTML = html;
+            renderCategoryChips();
         }
 
         window.filterBy = function(type, value) {
-            history.back(); 
+            if ($('sidebar').classList.contains('open')) history.back(); 
             STATE.currentFilter = { type, value };
             if (type === 'cat') { STATE.activeCatIndex = STATE.mainCategories.indexOf(value); }
             $('vitrine').scrollTop = 0;
             renderVitrineEngine();
+            renderCategoryChips();
         };
 
         let touchstartX = 0;
@@ -1026,10 +1057,8 @@
         function handleSwipe() {
             let swipeDistX = touchendX - touchstartX;
             let swipeDistY = touchendY - touchstartY;
-            
             if (Math.abs(swipeDistX) > 80 && Math.abs(swipeDistX) > (Math.abs(swipeDistY) * 1.5) && STATE.mainCategories.length > 0) {
                 let currentIndex = STATE.activeCatIndex === -1 ? 0 : STATE.activeCatIndex;
-
                 if (swipeDistX < 0) {
                     STATE.activeCatIndex = (currentIndex + 1) % STATE.mainCategories.length;
                 } else {
@@ -1038,11 +1067,11 @@
                 }
                 let nextCat = STATE.mainCategories[STATE.activeCatIndex];
                 STATE.currentFilter = { type: 'cat', value: nextCat };
-                
                 $('vitrine').style.opacity = '0'; 
                 setTimeout(() => {
                     $('vitrine').scrollTop = 0;
                     renderVitrineEngine();
+                    renderCategoryChips();
                     $('vitrine').style.opacity = '1';
                 }, 150); 
             }
@@ -1053,8 +1082,6 @@
         // ==========================================
         function renderCardHTML(prod, forceMode = null) {
             let currentMode = forceMode !== null ? forceMode : STATE.viewMode;
-
-            // MODO DE LISTA HORIZONTAL (Modo 2)
             if (currentMode === 2) {
                 let q = STATE.cart[prod.id] || 0;
                 let controlsHtml = q === 0 
@@ -1064,9 +1091,7 @@
                          <span style="font-weight:bold; width: 20px; text-align:center;">${q}</span>
                          <i class="fa-solid fa-plus qty-btn" onclick="updateCartItemList('${prod.id}', 1, event)"></i>
                        </div>`;
-                       
                 let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem-list">${prod.embalagem}</div>` : '';
-                
                 return `
                     <div class="product-card-list" onclick="openDetail('${prod.id}')">
                         <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon-list lazy-img" alt="${prod.name}">
@@ -1080,11 +1105,8 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
-
-            // MODOS DE GRADE (Modo 0, 1 e 3)
             let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem">${prod.embalagem}</div>` : '';
             return `
                 <div class="product-card" onclick="openDetail('${prod.id}')">
@@ -1094,8 +1116,7 @@
                     <div class="tag-preco-nova">${fmt(prod.price)}</div>
                     ${embalagemHtml}
                     <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon lazy-img" alt="${prod.name}">
-                </div>
-            `;
+                </div>`;
         }
 
         window.updateCartItemList = function(id, delta, event) {
@@ -1124,19 +1145,14 @@
 
         window.quickAddToCart = function(id, event) {
             event.stopPropagation(); 
-            
             let p = STATE.prods.find(x => String(x.id) === String(id));
             if(!p) return;
-            
             let currentInCart = STATE.cart[id] || 0;
             if(currentInCart + 1 > p.stock) return alert("Estoque insuficiente.");
-            
             if (currentInCart === 0) STATE.cartOrder.push(id);
             STATE.cart[id] = currentInCart + 1;
-            
             updateTotals(); 
             saveCart();
-            
             const bagIcon = document.querySelector('.fa-bag-shopping').parentElement;
             if(bagIcon) {
                 bagIcon.style.color = 'var(--success)'; 
@@ -1147,13 +1163,10 @@
         function renderVitrineEngine() {
             const vitrine = $('vitrine');
             vitrine.className = `main-container view-mode-${STATE.viewMode}`;
-            
             let primaryList = [];
             let secondaryList = [];
-
             let fType = STATE.currentFilter.type;
             let fVal = STATE.currentFilter.value;
-
             if (fType === 'search') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (norm(p.name).includes(fVal) || norm(p.categoria).includes(fVal) || norm(p.marca).includes(fVal)));
             } else if (fType === 'cat') {
@@ -1168,18 +1181,14 @@
             } else {
                 primaryList = STATE.prods.filter(p => p.stock > 0);
             }
-
             let fragment = document.createDocumentFragment();
-
             if (primaryList.length === 0 && secondaryList.length === 0) {
                 vitrine.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-light);">Nenhum produto encontrado.</div>`;
                 return;
             }
-
             let buffer = [];
             let isPrimaryPhase = true;
             let fullList = primaryList.concat(secondaryList);
-
             for (let i = 0; i < fullList.length; i++) {
                 if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'all' && fType !== 'search') {
                     isPrimaryPhase = false;
@@ -1191,20 +1200,16 @@
                     divPage.innerHTML = `<div class="category-divider">Explore Mais Categorias</div>`;
                     fragment.appendChild(divPage);
                 }
-
                 buffer.push(renderCardHTML(fullList[i]));
-
                 if (buffer.length === 6) {
                     let page = document.createElement('div'); page.className = 'product-page';
                     page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                 }
             }
-
             if (buffer.length > 0) {
                 let page = document.createElement('div'); page.className = 'product-page';
                 page.innerHTML = buffer.join(''); fragment.appendChild(page);
             }
-
             vitrine.innerHTML = '';
             vitrine.appendChild(fragment);
             lazyLoadImages();
@@ -1228,51 +1233,38 @@
         window.openDetail = function(id) {
             let p = STATE.prods.find(x => String(x.id) === String(id));
             if(!p) return;
-            
             pushHistoryState('detail');
             currentModalProdId = id;
             currentModalQty = 1;
-            
             $('modalImg').src = p.img;
             $('modalTitle').innerText = p.name;
             $('modalPrice').innerText = fmt(p.price);
-            
             let metaHtml = '';
             if(p.marca) metaHtml += `<span onclick="filterBy('marca', '${p.marca}')">${p.marca}</span>`;
             if(p.categoria) metaHtml += `<span onclick="filterBy('cat', '${p.categoria}')">${p.categoria}</span>`;
             if(p.subcategoria) metaHtml += `<span onclick="filterBy('sub', '${p.subcategoria}')">${p.subcategoria}</span>`;
             if(p.embalagem) metaHtml += `<span>${p.embalagem}</span>`; 
-            
             $('modalMetaTags').innerHTML = metaHtml;
-
             if(p.descricao && p.descricao.trim().length > 0) {
                 $('modalDesc').innerHTML = p.descricao;
             } else {
                 $('modalDesc').innerHTML = "";
             }
-
             let related = STATE.prods.filter(x => x.id !== p.id && x.stock > 0);
             let finalRelated = related.filter(x => x.categoria === p.categoria);
-            
             if (finalRelated.length < 10) {
                 let outros = related.filter(x => x.categoria !== p.categoria);
                 finalRelated = [...finalRelated, ...outros];
             }
-
             finalRelated = finalRelated.slice(0, 50);
-            
             if(finalRelated.length > 0) {
                 $('related-container').style.display = 'block';
-                
-                // O '0' força o uso do MODO 0 (Grade de 2 colunas) no modal
                 $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod, 0)).join('');
                 $('related-grid').parentElement.className = 'view-mode-0';
-                
                 lazyLoadImages(); 
             } else {
                 $('related-container').style.display = 'none';
             }
-
             $('qtyCount').innerText = currentModalQty;
             $('modal-scroll-area').scrollTop = 0;
             $('detailModal').classList.add('active');
@@ -1295,14 +1287,10 @@
             if(!currentModalProdId) return;
             let p = STATE.prods.find(x => String(x.id) === String(currentModalProdId));
             let currentInCart = STATE.cart[currentModalProdId] || 0;
-            
             if(currentInCart + currentModalQty > p.stock) return alert("Estoque insuficiente.");
-            
             if ((STATE.cart[currentModalProdId] || 0) === 0 && currentModalQty > 0) STATE.cartOrder.push(currentModalProdId);
             STATE.cart[currentModalProdId] = currentInCart + currentModalQty;
-            
             updateTotals(); saveCart(); history.back();
-            
             const bagIcon = document.querySelector('.fa-bag-shopping').parentElement;
             bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = '#777', 500);
         };
@@ -1310,7 +1298,6 @@
         window.openCheckout = function() {
             if (STATE.cartOrder.length === 0) return alert("Sua sacola está vazia!");
             pushHistoryState('checkout');
-            
             let options = []; let date = new Date(); let checkDate = new Date(date);
             if (date.getHours() < 10 && date.getDay() !== 0) options.push({ title: 'Receber Hoje', dateStr: date.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: 0 });
             while(options.length < 3) { 
@@ -1320,12 +1307,9 @@
                     options.push({ title: 'Agendar', dateStr: checkDate.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}), discount: desc }); 
                 } 
             }
-            
             STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; 
             STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
-            
             $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}</button>`).join('');
-            
             renderCheckoutItems(); updateTotals();
             $('checkout-drawer').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back();
         };
@@ -1370,17 +1354,13 @@
         function updateTotals() {
             let sum = 0; let count = 0; 
             Object.entries(STATE.cart).forEach(([id, q]) => { let p = STATE.prods.find(x => String(x.id) === String(id)); if (p) { sum += p.price * q; count += q; } });
-            
             let badge = $('cart-badge');
             if (count > 0) { badge.style.display = 'block'; badge.innerText = count > 99 ? '99+' : count; } else { badge.style.display = 'none'; }
-            
             $('sum-sub').innerText = fmt(sum); $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; 
             $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
             $('sum-total').innerText = fmt(sum - STATE.deliveryDiscount);
-
             let btn = $('btn-send-order');
             if ((sum - STATE.deliveryDiscount) < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
-
             if (STATE.viewMode === 2 && typeof updateAllCardUIs === 'function') {
                 updateAllCardUIs();
             }
@@ -1388,11 +1368,7 @@
 
         window.clearCart = function() {
             if(confirm("Deseja realmente esvaziar sua sacola?")) { 
-                STATE.cart = {}; 
-                STATE.cartOrder = []; 
-                updateTotals(); 
-                saveCart(); 
-                history.back(); 
+                STATE.cart = {}; STATE.cartOrder = []; updateTotals(); saveCart(); history.back(); 
             }
         };
 
@@ -1402,31 +1378,24 @@
             const cidade = document.querySelector('input[name="chk-cidade"]:checked') ? document.querySelector('input[name="chk-cidade"]:checked').value : '';
             const cep = $('chk-cep').value.replace(/\D/g,""); const bairro = $('chk-bairro').value.trim(); const endereco = $('chk-endereco').value.trim();
             const pag = $('chk-pagamento').value;
-            
             if (!nome || !cpf || !whats || !bairro || !endereco) return alert("Preencha todos os dados de entrega."); 
             salvarDadosLocalmente({ nome, cpf: $('chk-cpf').value, whats, cidade, cep: $('chk-cep').value, bairro, endereco });
-
             btn.disabled = true; btn.innerText = "Processando...";
             const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let apiItens = []; let totalBruto = 0; 
-            
             Object.entries(STATE.cart).forEach(([cartId, q]) => { 
                 const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
                 if (p) { totalBruto += p.price * q; itemsTxt += `${q}x ${p.name}\n`; apiItens.push({ sku: String(p.codigo), nome: p.name, qtd: q, price: p.price }); } 
             });
-              
             let final = totalBruto - STATE.deliveryDiscount;
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-            
             const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
             const payload = { cliente: { nome, cpf, whats, cidade, estado: 'MT', cep, bairro, endereco, pagamento: pag }, pedido: { itens: apiItens, total: Number(final), outras_despesas: 0, desconto: Number(STATE.deliveryDiscount), observacoes: `Entrega: ${STATE.deliveryDateStr}` } };
-            
             fetch("https://hook.eu1.make.com/yisqs4w309ogi6fx4969dbsr2q7fu7il", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(payload) }).catch(e => console.log(e));
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             setTimeout(() => { btn.disabled = false; btn.innerText = `Enviar Pedido`; }, 3000);
         };
 
         const MIN_ORDER = 30; 
-
         function loadCart() {
             try {
                 let saved = localStorage.getItem('dona_antonia_cart');
@@ -1435,12 +1404,10 @@
                 if (savedOrder) STATE.cartOrder = JSON.parse(savedOrder);
             } catch(e) {}
         }
-
         function saveCart() {
             localStorage.setItem('dona_antonia_cart', JSON.stringify(STATE.cart));
             localStorage.setItem('dona_antonia_cart_order', JSON.stringify(STATE.cartOrder));
         }
-
         function carregarDadosSalvos() {
             try {
                 let d = JSON.parse(localStorage.getItem('dona_antonia_user') || '{}');
@@ -1452,11 +1419,9 @@
                 if(d.endereco) $('chk-endereco').value = d.endereco;
             } catch(e){}
         }
-
         function salvarDadosLocalmente(dados) {
             localStorage.setItem('dona_antonia_user', JSON.stringify(dados));
         }
-
         window.mascaraCPF = function(i) {
             let v = i.value.replace(/\D/g, "");
             v = v.replace(/(\d{3})(\d)/, "$1.$2");
@@ -1464,14 +1429,12 @@
             v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
             i.value = v;
         }
-
         window.mascaraWhats = function(i) {
             let v = i.value.replace(/\D/g, "");
             v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
             v = v.replace(/(\d)(\d{4})$/, "$1-$2");
             i.value = v;
         }
-
         window.mascaraCEP = function(i) {
             let v = i.value.replace(/\D/g, "");
             v = v.replace(/^(\d{5})(\d)/, "$1-$2");
@@ -1501,26 +1464,19 @@
                         };
                     });
                 }
-                
-                loadCart(); 
-                updateTotals(); 
-                carregarDadosSalvos(); 
-                renderSidebarMenu();
-
+                loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
                 setTimeout(() => {
                     $('splash-screen').style.opacity = '0';
                     setTimeout(() => $('splash-screen').style.display = 'none', 400);
                 }, 2000);
-
                 STATE.viewMode = 0;
                 renderVitrineEngine();
-
+                renderCategoryChips();
             } catch (e) { 
                 alert("Erro de conexão. Tentando recuperar dados off-line...");
                 setTimeout(() => { $('splash-screen').style.opacity = '0'; $('splash-screen').style.display = 'none'; }, 2000);
             }
         }
-
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
