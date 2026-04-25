@@ -477,39 +477,84 @@ details.brand-group li {
         
         .related-title { font-size: 16px; font-weight: 800; margin: 30px 20px 10px 20px; text-transform: uppercase; }
 
-        ./* Transformado de flutuante para bloco interno da página */
+        /* Seção de Preço e Compra (Interna da Página) */
 .floating-action-bar {
-    position: relative; /* Mudou de absolute para relative */
-    bottom: auto;
-    left: auto;
-    right: auto;
-    background: #fff;
+    position: relative;
+    background: #ffffff;
     border-radius: 12px;
-    border: 1px solid var(--border-light); /* Adicionado um contorno leve */
+    border: 1px solid var(--border-light);
     padding: 15px; 
     display: flex; 
     align-items: center; 
     justify-content: space-between; 
-    gap: 10px; 
-    z-index: 10;
-    margin: 20px 0; /* Bom respiro acima e abaixo */
-    box-shadow: none; /* Removida a sombra pesada de flutuação */
+    gap: 12px; 
+    margin: 25px 0; /* Espaçamento equilibrado acima e abaixo */
+    box-shadow: none;
+    width: 100%;
 }
-        .modal-price-col { display: flex; flex-direction: column; }
-        .modal-price { font-size: 18px; font-weight: 800; }
-        .modal-price-label { font-size: 10px; color: var(--text-light); font-weight: 600; text-transform: uppercase; }
 
-        .qty-controls {
-            display: flex; align-items: center; gap: 12px; background: var(--bg-card);
-            padding: 8px 12px; border-radius: 8px; font-weight: 700; font-size: 16px;
-        }
-        .qty-btn { cursor: pointer; color: var(--text-light); padding: 5px; }
+/* Coluna do Preço */
+.modal-price-col { 
+    display: flex; 
+    flex-direction: column; 
+    flex-shrink: 0;
+}
 
-        .btn-add {
-            flex: 1; background: var(--primary); color: white; border: none;
-            padding: 12px 0; border-radius: 8px; font-weight: 700; font-size: 13px; text-transform: uppercase;
-        }
+.modal-price-label { 
+    font-size: 10px; 
+    color: var(--text-light); 
+    font-weight: 600; 
+    text-transform: uppercase; 
+}
 
+.modal-price { 
+    font-size: 18px; 
+    font-weight: 800; 
+    color: var(--text-dark);
+}
+
+/* Seletor de Quantidade */
+.qty-controls {
+    display: flex; 
+    align-items: center; 
+    gap: 12px; 
+    background: var(--bg-card);
+    padding: 8px 12px; 
+    border-radius: 8px; 
+    font-weight: 700; 
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.qty-btn { 
+    cursor: pointer; 
+    color: var(--text-light); 
+    padding: 5px; 
+    transition: color 0.2s;
+}
+
+.qty-btn:active {
+    color: var(--text-dark);
+}
+
+/* Botão Adicionar */
+.btn-add {
+    flex: 1; 
+    background: var(--primary); 
+    color: #ffffff; 
+    border: none;
+    padding: 14px 0; 
+    border-radius: 8px; 
+    font-weight: 700; 
+    font-size: 13px; 
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-add:active {
+    opacity: 0.8;
+}
         /* =========================================
            6. DRAWER DE CHECKOUT
         ========================================= */
