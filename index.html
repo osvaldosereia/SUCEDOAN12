@@ -1730,13 +1730,15 @@
                 p.oldPrice = p.price;
                 
                 if (p.vencimento) {
-                    let vDate = new Date(p.vencimento);
+                    // Divide a data "DD/MM/YYYY" em 3 partes e cria a data corretamente (Ano, Mês - 1, Dia)
+                    let partes = p.vencimento.split('/');
+                    let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
+                    
                     let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
                     
-                    // NOVOS VALORES DE DESCONTO POR VENCIMENTO:
-                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35;       // Faltam até 30 dias -> 35%
-                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30;  // Faltam de 31 a 60 dias -> 30%
-                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;  // Faltam de 61 a 90 dias -> 25%
+                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35;
+                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30;
+                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;
                 }
                 
                 // Se não ganhou desconto por validade, entra na lista do sorteio
@@ -2011,7 +2013,7 @@
                             img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                             categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", subsubcategoria: p.subsubcategoria || "",
                             marca: p.marca || "", embalagem: p.embalagem || "", descricao: p.descricao || "",
-                            vencimento: p.vencimento || null 
+                            vencimento: p.validade || p.vencimento || null 
                         };
                     });
                     
