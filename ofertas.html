@@ -6,244 +6,247 @@
     <title>Ofertas Especiais - Dona Antônia</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* Reaproveitando suas variáveis e estilos base */
         :root {
-            --bg-body: #ffffff;
-            --bg-card: #f2f2f5;
-            --text-dark: #111111;
             --primary: #000000;
             --success: #059669; 
+            --bg-card: #f2f2f5;
+            --text-dark: #111111;
+            --text-light: #777777;
             --border-light: #eaeaea;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background: var(--bg-body); padding-bottom: 100px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: #fff; color: var(--text-dark); padding-bottom: 120px; }
 
-        /* Cabeçalho Minimalista */
-        .header-simple {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-light);
-            background: #fff;
-            position: sticky; top: 0; z-index: 100;
-        }
-        .header-simple h1 { font-size: 18px; font-weight: 800; text-transform: uppercase; }
-        .header-simple p { font-size: 13px; color: #777; margin-top: 4px; }
-
-        /* Vitrine em Grade (2x2) */
-        .vitrine-ofertas {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 2px;
-            padding: 2px;
-            background: var(--border-light);
-        }
-
-        .prod-card {
-            background: #fff;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-
-        .prod-img { width: 100%; aspect-ratio: 1; object-fit: contain; margin-bottom: 10px; }
+        /* Header e Chips */
+        .top-nav { position: sticky; top: 0; z-index: 1000; background: #fff; border-bottom: 1px solid var(--border-light); }
+        .header-simple { padding: 15px 20px 10px; text-align: center; }
+        .header-simple h1 { font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
         
-        .badge-desc {
-            position: absolute; top: 10px; right: 10px;
-            background: #ef4444; color: #fff; font-size: 10px;
-            padding: 4px 8px; border-radius: 4px; font-weight: 800;
+        .chip-container {
+            display: flex; gap: 10px; padding: 10px 20px 15px;
+            overflow-x: auto; scrollbar-width: none;
         }
+        .chip-container::-webkit-scrollbar { display: none; }
+        .chip {
+            background: var(--bg-card); color: var(--text-light);
+            padding: 8px 16px; border-radius: 20px; font-size: 12px;
+            font-weight: 700; white-space: nowrap; cursor: pointer; border: 1px solid transparent;
+        }
+        .chip.active { background: var(--primary); color: #fff; }
 
-        .prod-name { font-size: 12px; font-weight: 600; color: #555; text-align: center; height: 32px; overflow: hidden; margin-bottom: 8px; }
-        .prod-price { font-size: 15px; font-weight: 800; color: var(--text-dark); }
-        .old-price { font-size: 11px; text-decoration: line-through; color: #aaa; margin-right: 5px; }
+        /* Vitrine */
+        .vitrine-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border-light); border-top: 1px solid var(--border-light); }
+        .prod-card { background: #fff; padding: 15px; position: relative; display: flex; flex-direction: column; align-items: center; }
+        .badge-desc { position: absolute; top: 10px; right: 10px; background: #ef4444; color: #fff; font-size: 10px; padding: 3px 7px; border-radius: 5px; font-weight: 800; z-index: 5; }
+        .prod-img { width: 100%; aspect-ratio: 1; object-fit: contain; margin-bottom: 10px; }
+        .prod-name { font-size: 11px; font-weight: 600; text-align: center; height: 32px; overflow: hidden; color: #444; margin-bottom: 5px; }
+        .price-box { text-align: center; margin-bottom: 10px; }
+        .old-price { font-size: 10px; text-decoration: line-through; color: #aaa; }
+        .current-price { font-size: 15px; font-weight: 800; color: var(--text-dark); display: block; }
+        
+        .btn-add { width: 36px; height: 36px; background: var(--primary); color: #fff; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .btn-add:active { transform: scale(0.9); }
 
-        .btn-add-fast {
-            margin-top: 10px; width: 40px; height: 40px;
-            background: var(--primary); color: #fff;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; border: none; transition: transform 0.2s;
+        /* Barra de Valor */
+        .cart-bar {
+            position: fixed; bottom: 25px; left: 15px; right: 15px;
+            background: var(--primary); color: #fff; padding: 15px 20px;
+            border-radius: 16px; display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 1100;
+            transform: translateY(150%); transition: transform 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
         }
-        .btn-add-fast:active { transform: scale(0.8); }
+        .cart-bar.active { transform: translateY(0); }
+        .cart-info b { font-size: 18px; display: block; }
+        .cart-info span { font-size: 11px; text-transform: uppercase; opacity: 0.8; font-weight: 700; }
+        .btn-view { background: var(--success); color: #fff; padding: 10px 15px; border-radius: 8px; font-weight: 800; font-size: 12px; text-transform: uppercase; }
 
-        /* Barra Flutuante Inferior */
-        .floating-cart-bar {
-            position: fixed; bottom: 20px; left: 15px; right: 15px;
-            background: var(--primary); color: #fff;
-            padding: 15px 20px; border-radius: 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-            z-index: 1000;
-            transform: translateY(150%); transition: transform 0.3s ease;
-        }
-        .floating-cart-bar.active { transform: translateY(0); }
-
-        .finalize-btn {
-            background: var(--success); color: #fff; padding: 8px 15px;
-            border-radius: 8px; font-weight: 800; font-size: 12px; text-transform: uppercase;
-        }
-
-        /* Modal de Resumo */
-        .summary-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-            z-index: 2000; display: none; align-items: flex-end;
-        }
-        .summary-modal {
-            background: #fff; width: 100%; border-radius: 20px 20px 0 0;
-            padding: 25px; max-height: 80vh; overflow-y: auto;
-        }
-        .summary-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-        .btn-send-whatsapp {
-            width: 100%; background: var(--success); color: #fff;
-            padding: 18px; border-radius: 12px; border: none;
-            font-weight: 800; font-size: 16px; margin-top: 20px; cursor: pointer;
-        }
+        /* Modal Resumo */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: flex-end; }
+        .modal-content { background: #fff; width: 100%; border-radius: 24px 24px 0 0; padding: 25px; max-height: 85vh; overflow-y: auto; }
+        .summary-list { display: flex; flex-direction: column; gap: 15px; margin: 20px 0; }
+        .item-row { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
+        .item-img { width: 50px; height: 50px; object-fit: contain; background: var(--bg-card); border-radius: 6px; }
+        .item-info { flex: 1; }
+        .item-info h4 { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
+        .item-info p { font-size: 13px; font-weight: 800; }
+        
+        .btn-confirm { width: 100%; background: var(--success); color: #fff; padding: 18px; border-radius: 14px; border: none; font-weight: 800; font-size: 16px; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <header class="header-simple">
-        <h1>Ofertas da Semana ⚡</h1>
-        <p>Aproveite antes que acabe!</p>
-    </header>
-
-    <div class="vitrine-ofertas" id="vitrine">
+    <div class="top-nav">
+        <header class="header-simple">
+            <h1>Ofertas Dona Antônia</h1>
+        </header>
+        <div class="chip-container" id="discount-chips">
+            <div class="chip active" onclick="filterOffers(0, this)">Todas</div>
+            <div class="chip" onclick="filterOffers(35, this)">35% OFF</div>
+            <div class="chip" onclick="filterOffers(30, this)">30% OFF</div>
+            <div class="chip" onclick="filterOffers(25, this)">25% OFF</div>
+            <div class="chip" onclick="filterOffers(20, this)">20% OFF</div>
+            <div class="chip" onclick="filterOffers(15, this)">15% OFF</div>
+            <div class="chip" onclick="filterOffers(10, this)">10% OFF</div>
         </div>
-
-    <div class="floating-cart-bar" id="cartBar" onclick="openSummary()">
-        <div>
-            <span id="cartCount">0</span> itens na sacola<br>
-            <strong id="cartTotal">R$ 0,00</strong>
-        </div>
-        <div class="finalize-btn">Ver Resumo</div>
     </div>
 
-    <div class="summary-overlay" id="summaryOverlay" onclick="closeSummary()">
-        <div class="summary-modal" onclick="event.stopPropagation()">
-            <h2 style="margin-bottom: 15px;">Itens Selecionados</h2>
-            <div id="summaryList"></div>
-            <div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 20px; font-weight: 900;">
-                <span>Total:</span>
-                <span id="summaryTotalValue">R$ 0,00</span>
+    <div class="vitrine-grid" id="vitrine"></div>
+
+    <div class="cart-bar" id="cartBar" onclick="openModal()">
+        <div class="cart-info">
+            <span id="txt-items">0 itens selecionados</span>
+            <b id="txt-total">R$ 0,00</b>
+        </div>
+        <div class="btn-view">Confirmar</div>
+    </div>
+
+    <div class="modal" id="modalSummary" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 style="font-weight: 800; font-size: 20px;">Resumo das Ofertas</h2>
+            <div class="summary-list" id="summaryItems"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0;">
+                <span style="font-weight: 600; color: #777;">Total Adicional:</span>
+                <span id="modalTotal" style="font-size: 22px; font-weight: 900;">R$ 0,00</span>
             </div>
-            <button class="btn-send-whatsapp" onclick="sendToWhatsApp()">
-                <i class="fa-brands fa-whatsapp"></i> ADICIONAR AO MEU PEDIDO
+            <button class="btn-confirm" onclick="sendToZap()">
+                <i class="fa-brands fa-whatsapp" style="font-size: 20px;"></i> ENVIAR AO WHATSAPP
             </button>
-            <button style="width: 100%; background: none; border: none; padding: 15px; color: #888;" onclick="closeSummary()">Continuar Comprando</button>
+            <button onclick="closeModal()" style="width: 100%; padding: 15px; border: none; background: none; color: #aaa; font-weight: 600;">Continuar Comprando</button>
         </div>
     </div>
 
     <script>
+        const $ = id => document.getElementById(id);
         let PRODS = [];
         let CART = {};
+        let currentFilter = 0;
 
-        const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        async function loadOfertas() {
-            try {
-                const response = await fetch('/site/produtos.json');
-                const data = await response.json();
-                
-                // Filtramos apenas produtos com desconto (inteligência baseada no seu index.html)
-                PRODS = data.map(p => ({
-                    id: String(p.codigo || p.id),
-                    name: p.nome,
-                    price: parseFloat(p.preco) * 1.06, // Mantendo sua margem do site principal
-                    img: p.url_imagem || `/site/img/produtos/${p.codigo}.webp`,
-                    desc: Math.floor(Math.random() * 20) + 10 // Simulação de desconto para o exemplo
-                }));
+        // MESMA LÓGICA DO SITE PRINCIPAL
+        function aplicarDescontos(products) {
+            let now = new Date();
+            let eligibleForRandom = [];
+            
+            products.forEach(p => {
+                p.discountPercent = 0; p.oldPrice = p.price;
+                if (p.vencimento) {
+                    let partes = p.vencimento.split('/');
+                    let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
+                    let days = (vDate - now) / (1000 * 60 * 60 * 24);
+                    if (days >= 0 && days <= 30) p.discountPercent = 35;
+                    else if (days > 30 && days <= 60) p.discountPercent = 30;
+                    else if (days > 60 && days <= 90) p.discountPercent = 25;
+                }
+                if (p.discountPercent === 0) eligibleForRandom.push(p);
+            });
 
-                renderVitrine();
-            } catch (e) { console.error("Erro ao carregar ofertas", e); }
+            let seed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000));
+            const seededRandom = (s) => { let x = Math.sin(s++) * 10000; return x - Math.floor(x); };
+
+            eligibleForRandom.sort((a, b) => seededRandom(seed + parseInt(a.id.replace(/\D/g,'') || 0)) - seededRandom(seed + parseInt(b.id.replace(/\D/g,'') || 0)));
+            let r20=5, r15=5, r10=100;
+            eligibleForRandom.forEach(p => {
+                if(r20>0){ p.discountPercent=20; r20--; } else if(r15>0){ p.discountPercent=15; r15--; } else if(r10>0){ p.discountPercent=10; r10--; }
+            });
+
+            products.forEach(p => { if(p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent/100); });
         }
 
-        function renderVitrine() {
-            const container = document.getElementById('vitrine');
-            container.innerHTML = PRODS.map(p => `
+        async function init() {
+            try {
+                const res = await fetch('/site/produtos.json');
+                const data = await res.json();
+                
+                PRODS = data.filter(x => x.situacao !== "I").map(p => ({
+                    id: String(p.codigo || p.id),
+                    name: p.nome,
+                    price: parseFloat(p.preco) * 1.06,
+                    stock: parseInt(p.estoque) || 0,
+                    img: p.url_imagem || `/site/img/produtos/${p.codigo}.webp`,
+                    vencimento: p.validade || p.vencimento || null
+                }));
+
+                aplicarDescontos(PRODS);
+                PRODS = PRODS.filter(p => p.discountPercent > 0 && p.stock > 0).sort((a,b) => b.discountPercent - a.discountPercent);
+                render();
+            } catch (e) { console.error(e); }
+        }
+
+        function filterOffers(pct, el) {
+            currentFilter = pct;
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            render();
+        }
+
+        function render() {
+            const list = currentFilter === 0 ? PRODS : PRODS.filter(p => p.discountPercent === currentFilter);
+            $('vitrine').innerHTML = list.map(p => `
                 <div class="prod-card">
-                    <div class="badge-desc">-${p.desc}%</div>
-                    <img src="${p.img}" class="prod-img">
+                    <div class="badge-desc">-${p.discountPercent}%</div>
+                    <img src="${p.img}" class="prod-img" onerror="this.src='/site/img/logoantonia5.png'">
                     <div class="prod-name">${p.name}</div>
-                    <div class="prod-price"><span class="old-price">${fmt(p.price * 1.2)}</span>${fmt(p.price)}</div>
-                    <button class="btn-add-fast" onclick="addToCart('${p.id}')">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
+                    <div class="price-box">
+                        <span class="old-price">${fmt(p.oldPrice)}</span>
+                        <span class="current-price">${fmt(p.price)}</span>
+                    </div>
+                    <button class="btn-add" onclick="addToCart('${p.id}')"><i class="fa-solid fa-plus"></i></button>
                 </div>
             `).join('');
         }
 
         function addToCart(id) {
             CART[id] = (CART[id] || 0) + 1;
-            updateUI();
+            let total=0, count=0;
+            Object.entries(CART).forEach(([cid, q]) => {
+                const p = PRODS.find(x => x.id === cid);
+                if(p) { total += p.price * q; count += q; }
+            });
+            $('txt-items').innerText = `${count} itens selecionados`;
+            $('txt-total').innerText = fmt(total);
+            $('cartBar').classList.add('active');
         }
 
-        function updateUI() {
-            let total = 0;
-            let count = 0;
-            
+        function openModal() {
+            let html = '', total = 0;
             Object.entries(CART).forEach(([id, q]) => {
                 const p = PRODS.find(x => x.id === id);
                 if(p) {
                     total += p.price * q;
-                    count += q;
+                    html += `
+                        <div class="item-row">
+                            <img src="${p.img}" class="item-img">
+                            <div class="item-info">
+                                <h4>${p.name}</h4>
+                                <p>${q}x ${fmt(p.price)}</p>
+                            </div>
+                            <div style="font-weight:800;">${fmt(p.price * q)}</div>
+                        </div>`;
                 }
             });
-
-            const bar = document.getElementById('cartBar');
-            if(count > 0) {
-                bar.classList.add('active');
-                document.getElementById('cartCount').innerText = count;
-                document.getElementById('cartTotal').innerText = fmt(total);
-            }
+            $('summaryItems').innerHTML = html;
+            $('modalTotal').innerText = fmt(total);
+            $('modalSummary').style.display = 'flex';
         }
 
-        function openSummary() {
-            const list = document.getElementById('summaryList');
-            let total = 0;
-            let html = '';
+        function closeModal() { $('modalSummary').style.display = 'none'; }
 
+        function sendToZap() {
+            let msg = "*ADICIONAR AO MEU PEDIDO (OFERTAS):*\n\n", total = 0;
             Object.entries(CART).forEach(([id, q]) => {
                 const p = PRODS.find(x => x.id === id);
-                if(p) {
-                    html += `<div class="summary-item">
-                                <span>${q}x ${p.name}</span>
-                                <span>${fmt(p.price * q)}</span>
-                             </div>`;
-                    total += p.price * q;
-                }
+                if(p) { msg += `✅ ${q}x ${p.name} - ${fmt(p.price * q)}\n`; total += p.price * q; }
             });
-
-            list.innerHTML = html;
-            document.getElementById('summaryTotalValue').innerText = fmt(total);
-            document.getElementById('summaryOverlay').style.display = 'flex';
+            msg += `\n*TOTAL EXTRA: ${fmt(total)}*`;
+            window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
         }
 
-        function closeSummary() { document.getElementById('summaryOverlay').style.display = 'none'; }
-
-        function sendToWhatsApp() {
-            let itemsTxt = "*QUERO ADICIONAR ESTAS OFERTAS:* \n\n";
-            let total = 0;
-
-            Object.entries(CART).forEach(([id, q]) => {
-                const p = PRODS.find(x => x.id === id);
-                if(p) {
-                    itemsTxt += `✅ ${q}x ${p.name} - ${fmt(p.price * q)}\n`;
-                    total += p.price * q;
-                }
-            });
-
-            itemsTxt += `\n*TOTAL ADICIONAL: ${fmt(total)}*`;
-            
-            const msg = encodeURIComponent(itemsTxt);
-            window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${msg}`;
-        }
-
-        loadOfertas();
+        init();
     </script>
 </body>
 </html>
