@@ -1720,10 +1720,11 @@
             } catch (e) { return []; }
         }
 
-        function aplicarDescontos(products) {
+       function aplicarDescontos(products) {
             let now = new Date();
             let eligibleForRandom = [];
             
+            // ETAPA 1: Regra de Desconto por Validade
             products.forEach(p => {
                 p.discountPercent = 0;
                 p.oldPrice = p.price;
@@ -1732,16 +1733,19 @@
                     let vDate = new Date(p.vencimento);
                     let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
                     
-                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 30;
-                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 20;
-                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 10;
+                    // NOVOS VALORES DE DESCONTO POR VENCIMENTO:
+                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35;       // Faltam até 30 dias -> 35%
+                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30;  // Faltam de 31 a 60 dias -> 30%
+                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;  // Faltam de 61 a 90 dias -> 25%
                 }
                 
+                // Se não ganhou desconto por validade, entra na lista do sorteio
                 if (p.discountPercent === 0) {
                     eligibleForRandom.push(p);
                 }
             });
 
+            // ETAPA 2: Preparar a "Semente" do Sorteio (Muda a cada 48h)
             let currentSeed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000));
             
             function seededRandom(seed) {
@@ -1749,6 +1753,7 @@
                 return x - Math.floor(x);
             }
 
+            // Embaralha a lista de forma que seja a mesma ordem durante 48h
             eligibleForRandom.sort((a, b) => {
                 let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0);
                 let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0);
@@ -1757,14 +1762,17 @@
                 return randA - randB;
             });
 
-            let r30 = 5, r20 = 5, r10 = 30;
+            // ETAPA 3: Distribuição dos Descontos Sorteados
+            // NOVOS LIMITES DE SORTEIO: 5x 20%, 5x 15%, 100x 10%
+            let r20 = 5, r15 = 5, r10 = 100; 
             
             eligibleForRandom.forEach(p => {
-                if (r30 > 0) { p.discountPercent = 30; r30--; }
-                else if (r20 > 0) { p.discountPercent = 20; r20--; }
+                if (r20 > 0) { p.discountPercent = 20; r20--; }
+                else if (r15 > 0) { p.discountPercent = 15; r15--; }
                 else if (r10 > 0) { p.discountPercent = 10; r10--; }
             });
 
+            // ETAPA 4: Aplicar o cálculo matemático para todos os produtos com desconto
             products.forEach(p => {
                 if (p.discountPercent > 0) {
                     p.price = p.oldPrice * (1 - p.discountPercent / 100);
