@@ -1037,20 +1037,27 @@
         function openSidebar() { pushHistoryState('sidebar'); $('sidebar').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back(); }
         function closeSidebar() { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
 
-        function handleSearchInput() {
+       window.handleSearchInput = function() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                let q = norm($('app-search-input').value);
+                // Captura o texto e limpa os espaços extra
+                let q = norm($('app-search-input').value).trim();
+                
                 if(q.length < 2) { 
                     STATE.currentFilter = { type: 'ofertas', value: '' };
                 } else {
                     STATE.currentFilter = { type: 'search', value: q };
                 }
+                
+                // AJUSTES CRUCIAIS: Resetar o estado da tela para a pesquisa funcionar fluída
+                STATE.pageLimit = 16; 
+                STATE.activeCatIndex = -1;
+                
                 $('vitrine').scrollTop = 0; 
                 renderVitrineEngine();
                 renderCategoryChips();
             }, 300);
-        }
+        };
 
        function renderCategoryChips() {
             const container = $('category-chips');
