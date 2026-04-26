@@ -1312,7 +1312,7 @@
             }
         };
 
-       function renderVitrineEngine() {
+      function renderVitrineEngine() {
             const vitrine = $('vitrine');
             let fType = STATE.currentFilter.type;
             let fVal = STATE.currentFilter.value;
@@ -1349,7 +1349,7 @@
             let primaryList = [];
             let secondaryList = [];
             
-           if (fType === 'search') {
+            if (fType === 'search') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (norm(p.name).includes(fVal) || norm(p.categoria).includes(fVal) || norm(p.marca).includes(fVal)));
             } else if (fType === 'ofertas') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => b.discountPercent - a.discountPercent);
@@ -1394,8 +1394,35 @@
             let fullList = primaryList.concat(secondaryList);
             let buffer = [];
             let isPrimaryPhase = true;
+            
+            // O CICLO "FOR" QUE EU TINHA APAGADO SEM QUERER ESTÁ AQUI DE VOLTA!
+            let listToRender = fullList.slice(0, STATE.pageLimit);
 
-            // NOVO: Se ainda houver produtos de fora da tela, adiciona um Sentinela (Load More)
+            for (let i = 0; i < listToRender.length; i++) {
+                if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'ofertas' && fType !== 'search') {
+                    isPrimaryPhase = false;
+                    if(buffer.length > 0) {
+                        let page = document.createElement('div'); page.className = 'product-page';
+                        page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
+                    }
+                    let divPage = document.createElement('div'); 
+                    divPage.style.width = '100%';
+                    divPage.style.scrollSnapAlign = 'start'; 
+                    divPage.innerHTML = `<div class="category-divider" style="padding: 40px 10px 20px; font-weight: bold; text-align: center; color: #888;">Explore Mais Categorias</div>`;
+                    fragment.appendChild(divPage);
+                }
+                buffer.push(renderCardHTML(listToRender[i]));
+                if (buffer.length === 4) {
+                    let page = document.createElement('div'); page.className = 'product-page';
+                    page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
+                }
+            }
+            
+            if (buffer.length > 0) {
+                let page = document.createElement('div'); page.className = 'product-page';
+                page.innerHTML = buffer.join(''); fragment.appendChild(page);
+            }
+
             if (fullList.length > STATE.pageLimit) {
                 let sentinel = document.createElement('div');
                 sentinel.id = 'scroll-sentinel';
@@ -1409,7 +1436,6 @@
             vitrine.appendChild(fragment);
             lazyLoadImages();
             
-            // NOVO: Ativa o observador do final da tela
             observeSentinel();
         }
 
