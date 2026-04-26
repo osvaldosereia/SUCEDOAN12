@@ -1356,22 +1356,15 @@
             let primaryList = [];
             let secondaryList = [];
             
-           if (fType === 'search') {
-                // BUSCA INTELIGENTE: Separa as palavras para permitir pesquisas soltas (Ex: "Arroz 5kg")
+         if (fType === 'search') {
+                // Busca inteligente: encontra as palavras pesquisadas mesmo que estejam separadas
                 let terms = fVal.split(' ').filter(t => t.trim().length > 0);
-                
                 primaryList = STATE.prods.filter(p => {
-                    if (p.stock <= 0) return false; // Esconde produtos sem stock
-                    
-                    // Junta tudo o que é pesquisável num só grande texto oculto
-                    let textoBusca = norm(`${p.name} ${p.categoria} ${p.marca} ${p.codigo}`);
-                    
-                    // O produto tem de conter TODAS as palavras que o cliente digitou
+                    if (p.stock <= 0) return false;
+                    let textoBusca = norm(p.name + " " + p.categoria + " " + p.marca + " " + p.codigo);
                     return terms.every(term => textoBusca.includes(term));
                 });
-                
             } else if (fType === 'ofertas') {
-               
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => b.discountPercent - a.discountPercent);
                 secondaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) === 0);
             } else if (fType === 'cat') {
@@ -1389,15 +1382,15 @@
             
             // NOVA REGRA: Ordenar Categorias (Exclui Ofertas, Cestas e Pesquisa)
             if (fType !== 'ofertas' && fType !== 'cestas' && fType !== 'search') {
-                const sortRules = (a, b) => {
-                    // Pega apenas os descontos altos (>= 25%). Se for menor, trata como 0 para a ordenação inicial.
+                const sortRules = function(a, b) {
+                    // Pega apenas os descontos altos (>= 25%)
                     let descA = (a.discountPercent >= 25) ? a.discountPercent : 0;
                     let descB = (b.discountPercent >= 25) ? b.discountPercent : 0;
                     
-                    // Se um desconto alto for maior que o outro, ele ganha prioridade
+                    // Coloca as grandes ofertas no topo
                     if (descA !== descB) return descB - descA;
                     
-                    // Se ambos tiverem o mesmo desconto alto, ou se ambos forem < 25%, segue por ordem alfabética!
+                    // O restante segue por ordem alfabética
                     return a.name.localeCompare(b.name);
                 };
                 
