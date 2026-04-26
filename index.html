@@ -1349,7 +1349,7 @@
             let primaryList = [];
             let secondaryList = [];
             
-            if (fType === 'search') {
+           if (fType === 'search') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (norm(p.name).includes(fVal) || norm(p.categoria).includes(fVal) || norm(p.marca).includes(fVal)));
             } else if (fType === 'ofertas') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => b.discountPercent - a.discountPercent);
@@ -1367,6 +1367,24 @@
                 primaryList = STATE.prods.filter(p => p.stock > 0);
             }
             
+            // NOVA REGRA: Ordenar Categorias (Exclui Ofertas, Cestas e Pesquisa)
+            if (fType !== 'ofertas' && fType !== 'cestas' && fType !== 'search') {
+                const sortRules = (a, b) => {
+                    // Pega apenas os descontos altos (>= 25%). Se for menor, trata como 0 para a ordenação inicial.
+                    let descA = (a.discountPercent >= 25) ? a.discountPercent : 0;
+                    let descB = (b.discountPercent >= 25) ? b.discountPercent : 0;
+                    
+                    // Se um desconto alto for maior que o outro, ele ganha prioridade
+                    if (descA !== descB) return descB - descA;
+                    
+                    // Se ambos tiverem o mesmo desconto alto, ou se ambos forem < 25%, segue por ordem alfabética!
+                    return a.name.localeCompare(b.name);
+                };
+                
+                primaryList.sort(sortRules);
+                secondaryList.sort(sortRules);
+            }
+            
             let fragment = document.createDocumentFragment();
             if (primaryList.length === 0 && secondaryList.length === 0) {
                 vitrine.innerHTML = `<div style="padding: 40px; text-align: center; color: var(--text-light);">Nenhum produto encontrado.</div>`;
@@ -1376,34 +1394,6 @@
             let fullList = primaryList.concat(secondaryList);
             let buffer = [];
             let isPrimaryPhase = true;
-            
-            // NOVO: Limita a lista a desenhar na tela baseando-se no pageLimit
-            let listToRender = fullList.slice(0, STATE.pageLimit);
-
-            for (let i = 0; i < listToRender.length; i++) {
-                if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'ofertas' && fType !== 'search') {
-                    isPrimaryPhase = false;
-                    if(buffer.length > 0) {
-                        let page = document.createElement('div'); page.className = 'product-page';
-                        page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
-                    }
-                    let divPage = document.createElement('div'); 
-                    divPage.style.width = '100%';
-                    divPage.style.scrollSnapAlign = 'start'; 
-                    divPage.innerHTML = `<div class="category-divider" style="padding: 40px 10px 20px; font-weight: bold; text-align: center; color: #888;">Explore Mais Categorias</div>`;
-                    fragment.appendChild(divPage);
-                }
-                buffer.push(renderCardHTML(listToRender[i]));
-                if (buffer.length === 4) {
-                    let page = document.createElement('div'); page.className = 'product-page';
-                    page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
-                }
-            }
-            
-            if (buffer.length > 0) {
-                let page = document.createElement('div'); page.className = 'product-page';
-                page.innerHTML = buffer.join(''); fragment.appendChild(page);
-            }
 
             // NOVO: Se ainda houver produtos de fora da tela, adiciona um Sentinela (Load More)
             if (fullList.length > STATE.pageLimit) {
