@@ -1037,12 +1037,21 @@
         function openSidebar() { pushHistoryState('sidebar'); $('sidebar').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back(); }
         function closeSidebar() { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
 
-       window.handleSearchInput = function() {
+     /* ==========================================
+           CORREÇÃO: Variável declarada para o temporizador de busca
+        ========================================== */
+        let searchTimeout;
+
+        window.handleSearchInput = function() {
+            // Limpa o temporizador se o usuário ainda estiver digitando
             clearTimeout(searchTimeout);
+            
+            // Define um novo temporizador de 300ms
             searchTimeout = setTimeout(() => {
                 // Captura o texto e limpa os espaços extra
                 let q = norm($('app-search-input').value).trim();
                 
+                // Se a busca tiver menos de 2 caracteres, volta para a tela de ofertas
                 if(q.length < 2) { 
                     STATE.currentFilter = { type: 'ofertas', value: '' };
                 } else {
@@ -1053,6 +1062,7 @@
                 STATE.pageLimit = 16; 
                 STATE.activeCatIndex = -1;
                 
+                // Atualiza a interface
                 $('vitrine').scrollTop = 0; 
                 renderVitrineEngine();
                 renderCategoryChips();
