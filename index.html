@@ -1356,9 +1356,22 @@
             let primaryList = [];
             let secondaryList = [];
             
-            if (fType === 'search') {
-                primaryList = STATE.prods.filter(p => p.stock > 0 && (norm(p.name).includes(fVal) || norm(p.categoria).includes(fVal) || norm(p.marca).includes(fVal)));
+           if (fType === 'search') {
+                // BUSCA INTELIGENTE: Separa as palavras para permitir pesquisas soltas (Ex: "Arroz 5kg")
+                let terms = fVal.split(' ').filter(t => t.trim().length > 0);
+                
+                primaryList = STATE.prods.filter(p => {
+                    if (p.stock <= 0) return false; // Esconde produtos sem stock
+                    
+                    // Junta tudo o que é pesquisável num só grande texto oculto
+                    let textoBusca = norm(`${p.name} ${p.categoria} ${p.marca} ${p.codigo}`);
+                    
+                    // O produto tem de conter TODAS as palavras que o cliente digitou
+                    return terms.every(term => textoBusca.includes(term));
+                });
+                
             } else if (fType === 'ofertas') {
+               
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => b.discountPercent - a.discountPercent);
                 secondaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) === 0);
             } else if (fType === 'cat') {
