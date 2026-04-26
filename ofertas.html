@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Ofertas Especiais - Dona Antônia</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Reaproveitando suas variáveis e estilos base */
+        :root {
+            --bg-body: #ffffff;
+            --bg-card: #f2f2f5;
+            --text-dark: #111111;
+            --primary: #000000;
+            --success: #059669; 
+            --border-light: #eaeaea;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-body); padding-bottom: 100px; }
+
+        /* Cabeçalho Minimalista */
+        .header-simple {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-light);
+            background: #fff;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-simple h1 { font-size: 18px; font-weight: 800; text-transform: uppercase; }
+        .header-simple p { font-size: 13px; color: #777; margin-top: 4px; }
+
+        /* Vitrine em Grade (2x2) */
+        .vitrine-ofertas {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2px;
+            padding: 2px;
+            background: var(--border-light);
+        }
+
+        .prod-card {
+            background: #fff;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .prod-img { width: 100%; aspect-ratio: 1; object-fit: contain; margin-bottom: 10px; }
+        
+        .badge-desc {
+            position: absolute; top: 10px; right: 10px;
+            background: #ef4444; color: #fff; font-size: 10px;
+            padding: 4px 8px; border-radius: 4px; font-weight: 800;
+        }
+
+        .prod-name { font-size: 12px; font-weight: 600; color: #555; text-align: center; height: 32px; overflow: hidden; margin-bottom: 8px; }
+        .prod-price { font-size: 15px; font-weight: 800; color: var(--text-dark); }
+        .old-price { font-size: 11px; text-decoration: line-through; color: #aaa; margin-right: 5px; }
+
+        .btn-add-fast {
+            margin-top: 10px; width: 40px; height: 40px;
+            background: var(--primary); color: #fff;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; border: none; transition: transform 0.2s;
+        }
+        .btn-add-fast:active { transform: scale(0.8); }
+
+        /* Barra Flutuante Inferior */
+        .floating-cart-bar {
+            position: fixed; bottom: 20px; left: 15px; right: 15px;
+            background: var(--primary); color: #fff;
+            padding: 15px 20px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transform: translateY(150%); transition: transform 0.3s ease;
+        }
+        .floating-cart-bar.active { transform: translateY(0); }
+
+        .finalize-btn {
+            background: var(--success); color: #fff; padding: 8px 15px;
+            border-radius: 8px; font-weight: 800; font-size: 12px; text-transform: uppercase;
+        }
+
+        /* Modal de Resumo */
+        .summary-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            z-index: 2000; display: none; align-items: flex-end;
+        }
+        .summary-modal {
+            background: #fff; width: 100%; border-radius: 20px 20px 0 0;
+            padding: 25px; max-height: 80vh; overflow-y: auto;
+        }
+        .summary-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .btn-send-whatsapp {
+            width: 100%; background: var(--success); color: #fff;
+            padding: 18px; border-radius: 12px; border: none;
+            font-weight: 800; font-size: 16px; margin-top: 20px; cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-simple">
+        <h1>Ofertas da Semana ⚡</h1>
+        <p>Aproveite antes que acabe!</p>
+    </header>
+
+    <div class="vitrine-ofertas" id="vitrine">
+        </div>
+
+    <div class="floating-cart-bar" id="cartBar" onclick="openSummary()">
+        <div>
+            <span id="cartCount">0</span> itens na sacola<br>
+            <strong id="cartTotal">R$ 0,00</strong>
+        </div>
+        <div class="finalize-btn">Ver Resumo</div>
+    </div>
+
+    <div class="summary-overlay" id="summaryOverlay" onclick="closeSummary()">
+        <div class="summary-modal" onclick="event.stopPropagation()">
+            <h2 style="margin-bottom: 15px;">Itens Selecionados</h2>
+            <div id="summaryList"></div>
+            <div style="display: flex; justify-content: space-between; margin-top: 20px; font-size: 20px; font-weight: 900;">
+                <span>Total:</span>
+                <span id="summaryTotalValue">R$ 0,00</span>
+            </div>
+            <button class="btn-send-whatsapp" onclick="sendToWhatsApp()">
+                <i class="fa-brands fa-whatsapp"></i> ADICIONAR AO MEU PEDIDO
+            </button>
+            <button style="width: 100%; background: none; border: none; padding: 15px; color: #888;" onclick="closeSummary()">Continuar Comprando</button>
+        </div>
+    </div>
+
+    <script>
+        let PRODS = [];
+        let CART = {};
+
+        const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        async function loadOfertas() {
+            try {
+                const response = await fetch('/site/produtos.json');
+                const data = await response.json();
+                
+                // Filtramos apenas produtos com desconto (inteligência baseada no seu index.html)
+                PRODS = data.map(p => ({
+                    id: String(p.codigo || p.id),
+                    name: p.nome,
+                    price: parseFloat(p.preco) * 1.06, // Mantendo sua margem do site principal
+                    img: p.url_imagem || `/site/img/produtos/${p.codigo}.webp`,
+                    desc: Math.floor(Math.random() * 20) + 10 // Simulação de desconto para o exemplo
+                }));
+
+                renderVitrine();
+            } catch (e) { console.error("Erro ao carregar ofertas", e); }
+        }
+
+        function renderVitrine() {
+            const container = document.getElementById('vitrine');
+            container.innerHTML = PRODS.map(p => `
+                <div class="prod-card">
+                    <div class="badge-desc">-${p.desc}%</div>
+                    <img src="${p.img}" class="prod-img">
+                    <div class="prod-name">${p.name}</div>
+                    <div class="prod-price"><span class="old-price">${fmt(p.price * 1.2)}</span>${fmt(p.price)}</div>
+                    <button class="btn-add-fast" onclick="addToCart('${p.id}')">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id) {
+            CART[id] = (CART[id] || 0) + 1;
+            updateUI();
+        }
+
+        function updateUI() {
+            let total = 0;
+            let count = 0;
+            
+            Object.entries(CART).forEach(([id, q]) => {
+                const p = PRODS.find(x => x.id === id);
+                if(p) {
+                    total += p.price * q;
+                    count += q;
+                }
+            });
+
+            const bar = document.getElementById('cartBar');
+            if(count > 0) {
+                bar.classList.add('active');
+                document.getElementById('cartCount').innerText = count;
+                document.getElementById('cartTotal').innerText = fmt(total);
+            }
+        }
+
+        function openSummary() {
+            const list = document.getElementById('summaryList');
+            let total = 0;
+            let html = '';
+
+            Object.entries(CART).forEach(([id, q]) => {
+                const p = PRODS.find(x => x.id === id);
+                if(p) {
+                    html += `<div class="summary-item">
+                                <span>${q}x ${p.name}</span>
+                                <span>${fmt(p.price * q)}</span>
+                             </div>`;
+                    total += p.price * q;
+                }
+            });
+
+            list.innerHTML = html;
+            document.getElementById('summaryTotalValue').innerText = fmt(total);
+            document.getElementById('summaryOverlay').style.display = 'flex';
+        }
+
+        function closeSummary() { document.getElementById('summaryOverlay').style.display = 'none'; }
+
+        function sendToWhatsApp() {
+            let itemsTxt = "*QUERO ADICIONAR ESTAS OFERTAS:* \n\n";
+            let total = 0;
+
+            Object.entries(CART).forEach(([id, q]) => {
+                const p = PRODS.find(x => x.id === id);
+                if(p) {
+                    itemsTxt += `✅ ${q}x ${p.name} - ${fmt(p.price * q)}\n`;
+                    total += p.price * q;
+                }
+            });
+
+            itemsTxt += `\n*TOTAL ADICIONAL: ${fmt(total)}*`;
+            
+            const msg = encodeURIComponent(itemsTxt);
+            window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${msg}`;
+        }
+
+        loadOfertas();
+    </script>
+</body>
+</html>
