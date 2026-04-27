@@ -377,12 +377,14 @@
             mix-blend-mode: multiply;
             position: relative;
             z-index: 1;
-            margin-bottom: 15%; 
+            /* Subimos a margem para evitar que a imagem fique por trás do novo texto de 3 linhas */
+            margin-bottom: 30%; 
         }
 
         .tag-preco-nova {
             position: absolute;
-            bottom: 42px; 
+            /* Subiu os 20px base + espaço extra para a 3ª linha do título */
+            bottom: 82px; 
             left: 0;      
             right: auto;
             background: rgba(255, 255, 255, 0.95);
@@ -401,7 +403,8 @@
 
         .tag-embalagem {
             position: absolute;
-            bottom: 5px; 
+            /* Subiu 20px (era 5px) */
+            bottom: 25px; 
             left: 12px;  
             right: auto;
             color: #888888; 
@@ -414,17 +417,20 @@
 
         .tag-nome-produto {
             position: absolute;
-            bottom: 10px; 
+            /* Subiu 20px (era 10px) */
+            bottom: 30px; 
             left: 12px;   
             right: 48px;  
             color: #666666; 
-            font-size: 0.65rem; 
-            font-weight: 700;
+            /* Fonte um pouco maior e mais leve */
+            font-size: 0.75rem; 
+            font-weight: 600; 
             z-index: 2;
             text-align: left; 
             line-height: 1.2;
             display: -webkit-box;
-            -webkit-line-clamp: 2; 
+            /* Agora permite até 3 linhas */
+            -webkit-line-clamp: 3; 
             -webkit-box-orient: vertical;
             overflow: hidden; 
         }
@@ -433,12 +439,14 @@
 
         .card-action-grid {
             position: absolute;
-            bottom: 15px;
+            /* Subiu 20px (era 15px) */
+            bottom: 35px;
             right: 10px;
             z-index: 3;
         }
 
         .btn-quick-add {
+            /* Restante do botão permanece igual */
             width: 32px;
             height: 32px;
             background-color: #000000;
