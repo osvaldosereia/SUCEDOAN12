@@ -1725,7 +1725,6 @@
         function updateTotals() {
             let sumBase = 0; 
             let count = 0; 
-            let hasBasket = Object.keys(STATE.cart).some(id => id.startsWith('fee_cesta'));
             
             Object.entries(STATE.cart).forEach(([id, q]) => { 
                 let p = STATE.prods.find(x => String(x.id) === String(id)); 
@@ -1737,18 +1736,15 @@
                 } 
             });
             
-            let vipDiscount = hasBasket ? (sumBase * 0.05) : 0; 
-
             let badge = $('cart-badge');
             if (count > 0) { badge.style.display = 'block'; badge.innerText = count > 99 ? '99+' : count; } else { badge.style.display = 'none'; }
             
             $('sum-sub').innerText = fmt(sumBase); 
             $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; 
             $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
-            $('sum-vip-row').style.display = vipDiscount > 0 ? 'flex' : 'none';
-            $('sum-vip-desc').innerText = `- ${fmt(vipDiscount)}`;
+            $('sum-vip-row').style.display = 'none';
             
-            let finalTotal = sumBase - STATE.deliveryDiscount - vipDiscount;
+            let finalTotal = sumBase - STATE.deliveryDiscount;
             $('sum-total').innerText = fmt(finalTotal);
             
             let btn = $('btn-send-order');
@@ -1782,12 +1778,9 @@
                 } 
                 if (cartId.startsWith('fee_cesta')) hasBasket = true;
             });
-            
-            let vipDiscount = hasBasket ? (totalBruto * 0.05) : 0;
-            let final = totalBruto - STATE.deliveryDiscount - vipDiscount;
+            let final = totalBruto - STATE.deliveryDiscount;
             
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
-            if (vipDiscount > 0) itemsTxt += `\n⭐ BÔNUS VIP CESTA (5%): -${fmt(vipDiscount)}`;
             
             const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
             
@@ -1908,8 +1901,20 @@
             if (!modalEl) return alert("Erro: O ecrã da cesta não foi encontrado no HTML.");
 
             window.currentBasketId = basketId;
-            pushHistoryState('basket');
-            
+        pushHistoryState('basket');
+        
+        // Reseta o botão e a lista de ofertas sempre que abrir uma cesta
+        let btnAdd = $('btn-add-basket');
+        if (btnAdd) {
+            btnAdd.innerText = 'Adicionar à Sacola';
+            btnAdd.style.background = 'var(--primary)';
+        }
+        let vipContainer = $('vip-list-container');
+        if (vipContainer) {
+            vipContainer.style.display = 'none';
+        }
+        
+           
             $('basketModalImg').src = basket.imagem;
             $('basketModalTitle').innerText = basket.nome;
             $('basketModalPrice').innerText = "Valor Sugerido: " + fmt(basket.preco);
@@ -2036,9 +2041,9 @@
                 const bagIcon = document.querySelector('.fa-bag-shopping');
                 if(bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
                 let btnAdd = $('btn-add-basket');
-                btnAdd.innerText = 'Cesta Adicionada! Sacola VIP ✅';
+                btnAdd.innerText = 'Cesta Adicionada! Veja Ofertas ✅';
                 btnAdd.style.background = 'var(--text-dark)';
-                renderVIPList(); 
+                renderVIPList();
             } else {
                 alert("Nenhum produto válido para adicionar.");
             }
@@ -2058,7 +2063,11 @@
                 
                 let pOriginal = fmt(p.oldPrice || p.price);
                 let pOferta = fmt(p.price);
-                let pVip = fmt(p.price * 0.95); 
+                
+                let precoHtml = (p.discountPercent > 0) 
+                    ? `<span style="text-decoration: line-through; font-size: 0.75rem; color: #888; font-weight: normal;">${pOriginal}</span>
+                       <span style="color: var(--success); font-size: 1.1rem;">${pOferta}</span>`
+                    : `<span style="color: var(--text-dark); font-size: 1.1rem;">${pOferta}</span>`;
 
                 html += `
                 <div class="product-card-list bordered" onclick="openDetail('${p.id}')">
@@ -2067,9 +2076,7 @@
                         <div class="product-name-list">${p.name}</div>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
                             <div class="tag-preco-list" style="line-height: 1.2;">
-                                <span style="text-decoration: line-through; font-size: 0.65rem; color: #aaa; font-weight: normal;">${pOriginal}</span>
-                                <span style="text-decoration: line-through; font-size: 0.75rem; color: #888; font-weight: normal;">${pOferta}</span>
-                                <span style="color: var(--success); font-size: 1.1rem;">${pVip}</span>
+                                ${precoHtml}
                             </div>
                             <div class="card-action-area" id="action-vip-${p.id}">
                                 ${controlsHtml}
