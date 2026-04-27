@@ -21,9 +21,10 @@
             --brand: #5A3826;        
             --border-light: #eaeaea;
             
-            /* Novas variáveis para o cabeçalho superior */
+            /* Variáveis de cabeçalho atualizadas */
             --topbar-height: 60px;
             --chips-height: 50px;
+            --sub-chips-height: 45px;
             --header-total: calc(var(--topbar-height) + var(--chips-height));
         }
 
@@ -67,7 +68,7 @@
         }
 
         /* =========================================
-           1. TOPBAR E NAVEGAÇÃO PRINCIPAL (NOVA ESTRUTURA)
+           1. TOPBAR E NAVEGAÇÃO PRINCIPAL
         ========================================= */
         .topbar {
             position: fixed;
@@ -209,8 +210,61 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
+        /* =========================================
+           1.1 SUB-CHIPS (NOVO ESTILO)
+        ========================================= */
+        .sub-chip-container {
+            position: fixed;
+            top: max(calc(var(--topbar-height) + var(--chips-height)), calc(var(--topbar-height) + var(--chips-height) + env(safe-area-inset-top)));
+            left: 0;
+            width: 100%;
+            height: var(--sub-chips-height);
+            background: #fdfdfd;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 15px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            z-index: 1050;
+            border-bottom: 1px solid var(--border-light);
+            transition: transform 0.3s ease, height 0.3s ease, opacity 0.3s ease;
+        }
+        
+        .sub-chip-container.hidden {
+            transform: translateY(-100%);
+            height: 0;
+            opacity: 0;
+            border: none;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        
+        .sub-chip-container::-webkit-scrollbar { display: none; }
+
+        .sub-category-chip {
+            background: transparent;
+            color: var(--text-light);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+        }
+        
+        .sub-category-chip.active {
+            background: var(--text-dark);
+            color: #ffffff;
+            border-color: var(--text-dark);
+        }
+
       /* =========================================
-           2. VITRINE E SCROLL (CONTROLE POR FORMATO)
+           2. VITRINE E SCROLL
         ========================================= */
        .main-container {
             position: fixed; 
@@ -225,7 +279,7 @@
             overflow-x: hidden;
             scroll-behavior: auto;
             -webkit-overflow-scrolling: touch;
-            transition: opacity 0.15s ease;
+            transition: opacity 0.15s ease, top 0.3s ease, height 0.3s ease;
         }
 
         .main-container::-webkit-scrollbar { display: none; }
@@ -818,6 +872,7 @@
     </header>
 
     <div class="chip-container" id="category-chips"></div>
+    <div class="sub-chip-container hidden" id="sub-category-chips"></div>
 
     <div class="sidebar" id="sidebar">
         <i class="fa-solid fa-xmark btn-close-sidebar" onclick="closeSidebar()"></i>
@@ -979,7 +1034,7 @@
             mainCategories: [],
             activeCatIndex: -1,
             currentFilter: { type: 'ofertas', value: '' },
-            pageLimit: 16 // NOVO: Define quantos produtos desenhar por vez
+            pageLimit: 16 
         };
 
         const BASKETS = [
@@ -1037,32 +1092,19 @@
         function openSidebar() { pushHistoryState('sidebar'); $('sidebar').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back(); }
         function closeSidebar() { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
 
-     /* ==========================================
-           CORREÇÃO: Variável declarada para o temporizador de busca
-        ========================================== */
         let searchTimeout;
 
         window.handleSearchInput = function() {
-            // Limpa o temporizador se o usuário ainda estiver digitando
             clearTimeout(searchTimeout);
-            
-            // Define um novo temporizador de 300ms
             searchTimeout = setTimeout(() => {
-                // Captura o texto e limpa os espaços extra
                 let q = norm($('app-search-input').value).trim();
-                
-                // Se a busca tiver menos de 2 caracteres, volta para a tela de ofertas
                 if(q.length < 2) { 
                     STATE.currentFilter = { type: 'ofertas', value: '' };
                 } else {
                     STATE.currentFilter = { type: 'search', value: q };
                 }
-                
-                // AJUSTES CRUCIAIS: Resetar o estado da tela para a pesquisa funcionar fluída
                 STATE.pageLimit = 16; 
                 STATE.activeCatIndex = -1;
-                
-                // Atualiza a interface
                 $('vitrine').scrollTop = 0; 
                 renderVitrineEngine();
                 renderCategoryChips();
@@ -1073,23 +1115,92 @@
             const container = $('category-chips');
             if (!container) return;
             
-            // Verifica quem está ativo
-            let isOfertasActive = STATE.currentFilter.type === 'ofertas' || STATE.currentFilter.type === 'search' ? 'active' : '';
+            let isOfertasActive = STATE.currentFilter.type.startsWith('ofertas') || STATE.currentFilter.type === 'search' ? 'active' : '';
             let isCestasActive = STATE.currentFilter.type === 'cestas' ? 'active' : '';
             
-            // Renderiza os botões fixos sem o estilo embutido
             let html = `<div class="category-chip ${isOfertasActive}" onclick="filterBy('ofertas', '')">Ofertas</div>`;
             html += `<div class="category-chip ${isCestasActive}" onclick="filterBy('cestas', '')"><i class="fa-solid fa-box-open" style="margin-right: 4px;"></i> Cestas Básicas</div>`;
             
-            // Renderiza as restantes categorias dinâmicas
             STATE.mainCategories.forEach((cat, index) => {
-                let isActive = (STATE.activeCatIndex === index && STATE.currentFilter.type !== 'ofertas' && STATE.currentFilter.type !== 'cestas') ? 'active' : '';
+                let isActive = (STATE.activeCatIndex === index && !STATE.currentFilter.type.startsWith('ofertas') && STATE.currentFilter.type !== 'cestas') ? 'active' : '';
                 html += `<div class="category-chip ${isActive}" onclick="filterBy('cat', '${cat}')">${cat}</div>`;
             });
             
             container.innerHTML = html;
 
-            // Faz o scroll automático para o chip ativo
+            setTimeout(() => {
+                let activeChip = container.querySelector('.active');
+                if (activeChip) {
+                    activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            }, 50);
+
+            // Chamada para os sub-chips
+            renderSubCategoryChips();
+        }
+
+        // ==========================================
+        // NOVO: RENDERIZADOR DE SUBCATEGORIAS / DESCONTOS
+        // ==========================================
+        function renderSubCategoryChips() {
+            const container = $('sub-category-chips');
+            if (!container) return;
+
+            let fType = STATE.currentFilter.type;
+            let fVal = STATE.currentFilter.value;
+            let html = '';
+
+            if (fType === 'cestas' || fType === 'search') {
+                container.classList.add('hidden');
+                document.documentElement.style.setProperty('--header-total', 'calc(var(--topbar-height) + var(--chips-height))');
+                return;
+            }
+
+            if (fType === 'ofertas' || fType === 'ofertas_desc') {
+                const descontos = [35, 30, 25, 20, 15, 10];
+                let isTodosActive = fType === 'ofertas' ? 'active' : '';
+                html += `<div class="sub-category-chip ${isTodosActive}" onclick="filterBy('ofertas', '')">Todos</div>`;
+
+                descontos.forEach(desc => {
+                    let isActive = (fType === 'ofertas_desc' && parseInt(fVal) === desc) ? 'active' : '';
+                    let temProduto = STATE.prods.some(p => p.discountPercent === desc && p.stock > 0);
+                    if (temProduto) {
+                        html += `<div class="sub-category-chip ${isActive}" onclick="filterBy('ofertas_desc', '${desc}')">${desc}% OFF</div>`;
+                    }
+                });
+            }
+            else if (fType === 'cat' || fType === 'sub') {
+                let activeCatName = STATE.mainCategories[STATE.activeCatIndex];
+                if (!activeCatName) return;
+
+                let subs = new Set();
+                STATE.prods.forEach(p => {
+                    if (p.categoria === activeCatName && p.subcategoria && p.stock > 0) {
+                        subs.add(p.subcategoria);
+                    }
+                });
+
+                let subArray = Array.from(subs).sort();
+
+                if (subArray.length > 0) {
+                    let isTodasActive = fType === 'cat' ? 'active' : '';
+                    html += `<div class="sub-category-chip ${isTodasActive}" onclick="filterBy('cat', '${activeCatName}')">Todas</div>`;
+
+                    subArray.forEach(sub => {
+                        let isActive = (fType === 'sub' && fVal === sub) ? 'active' : '';
+                        html += `<div class="sub-category-chip ${isActive}" onclick="filterBy('sub', '${sub}')">${sub}</div>`;
+                    });
+                } else {
+                    container.classList.add('hidden');
+                    document.documentElement.style.setProperty('--header-total', 'calc(var(--topbar-height) + var(--chips-height))');
+                    return;
+                }
+            }
+
+            container.innerHTML = html;
+            container.classList.remove('hidden');
+            document.documentElement.style.setProperty('--header-total', 'calc(var(--topbar-height) + var(--chips-height) + var(--sub-chips-height))');
+
             setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
@@ -1164,17 +1275,13 @@
                 if(prodWithSub) {
                     STATE.activeCatIndex = STATE.mainCategories.indexOf(prodWithSub.categoria);
                 }
-            } else if (type === 'ofertas' || type === 'search' || type === 'cestas') {
+            } else if (type.startsWith('ofertas') || type === 'search' || type === 'cestas') {
                 STATE.activeCatIndex = -1;
             }
 
-            // Reseta a paginação ao mudar de categoria
             STATE.pageLimit = 16; 
-            
-            // Renderiza logo o botão no topo para dar feedback imediato
             renderCategoryChips();
 
-            // Pequeno delay (10ms) para que a interface não congele ("enrosque") no momento do clique
             setTimeout(() => {
                 $('vitrine').scrollTop = 0;
                 renderVitrineEngine();
@@ -1334,7 +1441,6 @@
             let fType = STATE.currentFilter.type;
             let fVal = STATE.currentFilter.value;
             
-           // Controle das Cestas Básicas
             if (fType === 'cestas') {
                 $('viewModeBtn').style.opacity = '0.3'; 
                 $('viewModeBtn').style.pointerEvents = 'none';
@@ -1355,7 +1461,6 @@
                 html += '</div>';
                 
                 vitrine.innerHTML = html; 
-                
                 return; 
             } else {
                 $('viewModeBtn').style.opacity = '1';
@@ -1367,7 +1472,6 @@
             let secondaryList = [];
             
          if (fType === 'search') {
-                // Busca inteligente: encontra as palavras pesquisadas mesmo que estejam separadas
                 let terms = fVal.split(' ').filter(t => t.trim().length > 0);
                 primaryList = STATE.prods.filter(p => {
                     if (p.stock <= 0) return false;
@@ -1377,6 +1481,10 @@
             } else if (fType === 'ofertas') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => b.discountPercent - a.discountPercent);
                 secondaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) === 0);
+            } else if (fType === 'ofertas_desc') { // NOVO FILTRO DE DESCONTO
+                let descVal = parseInt(fVal);
+                primaryList = STATE.prods.filter(p => p.stock > 0 && p.discountPercent === descVal);
+                secondaryList = [];
             } else if (fType === 'cat') {
                 primaryList = STATE.prods.filter(p => p.stock > 0 && p.categoria === fVal);
                 secondaryList = STATE.prods.filter(p => p.stock > 0 && p.categoria !== fVal);
@@ -1390,20 +1498,13 @@
                 primaryList = STATE.prods.filter(p => p.stock > 0);
             }
             
-            // NOVA REGRA: Ordenar Categorias (Exclui Ofertas, Cestas e Pesquisa)
             if (fType !== 'ofertas' && fType !== 'cestas' && fType !== 'search') {
                 const sortRules = function(a, b) {
-                    // Pega apenas os descontos altos (>= 25%)
                     let descA = (a.discountPercent >= 25) ? a.discountPercent : 0;
                     let descB = (b.discountPercent >= 25) ? b.discountPercent : 0;
-                    
-                    // Coloca as grandes ofertas no topo
                     if (descA !== descB) return descB - descA;
-                    
-                    // O restante segue por ordem alfabética
                     return a.name.localeCompare(b.name);
                 };
-                
                 primaryList.sort(sortRules);
                 secondaryList.sort(sortRules);
             }
@@ -1418,7 +1519,6 @@
             let buffer = [];
             let isPrimaryPhase = true;
             
-            // O CICLO "FOR" QUE EU TINHA APAGADO SEM QUERER ESTÁ AQUI DE VOLTA!
             let listToRender = fullList.slice(0, STATE.pageLimit);
 
             for (let i = 0; i < listToRender.length; i++) {
@@ -1458,27 +1558,22 @@
             vitrine.innerHTML = '';
             vitrine.appendChild(fragment);
             lazyLoadImages();
-            
             observeSentinel();
         }
 
-        // NOVO: Deteta quando o utilizador chega ao fim da lista para carregar mais
         function observeSentinel() {
             let sentinel = document.getElementById('scroll-sentinel');
             if (!sentinel) return;
 
             let observer = new IntersectionObserver((entries) => {
                 if (entries[0].isIntersecting) {
-                    // Se o ícone de carregamento apareceu, adicionamos mais 16 e recarregamos!
                     STATE.pageLimit += 16; 
                     observer.disconnect(); 
-                    
-                    // Um micro delay apenas para garantir suavidade
                     setTimeout(() => {
                         renderVitrineEngine();
                     }, 50);
                 }
-            }, { root: $('vitrine'), rootMargin: '100px' }); // O rootMargin aciona 100px antes de aparecer na tela, parecendo magia!
+            }, { root: $('vitrine'), rootMargin: '100px' });
 
             observer.observe(sentinel);
         }
@@ -1595,9 +1690,7 @@
 
         function renderCheckoutItems() {
             $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
-                // Esconde a taxa de ajuste da cesta da visão do cliente
                 if (String(id).startsWith('fee_cesta')) return '';
-                
                 let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id]; if(!p) return '';
                 return `
                 <div class="cart-item-row">
@@ -1638,7 +1731,6 @@
                 let p = STATE.prods.find(x => String(x.id) === String(id)); 
                 if (p) { 
                     sumBase += p.price * q; 
-                    // Só conta como item se não for o ajuste oculto
                     if (!String(id).startsWith('fee_cesta')) {
                         count += q; 
                     }
@@ -1684,7 +1776,6 @@
                 const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
                 if (p) { 
                     totalBruto += p.price * q; 
-                    // Esconde a taxa de ajuste na mensagem
                     if (!String(cartId).startsWith('fee_cesta')) {
                         itemsTxt += `${q}x ${p.name}\n`; 
                     }
@@ -1763,38 +1854,28 @@
             let now = new Date();
             let eligibleForRandom = [];
             
-            // ETAPA 1: Regra de Desconto por Validade
             products.forEach(p => {
                 p.discountPercent = 0;
                 p.oldPrice = p.price;
-                
                 if (p.vencimento) {
-                    // Divide a data "DD/MM/YYYY" em 3 partes e cria a data corretamente (Ano, Mês - 1, Dia)
                     let partes = p.vencimento.split('/');
                     let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
-                    
                     let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
-                    
                     if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35;
                     else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30;
                     else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;
                 }
-                
-                // Se não ganhou desconto por validade, entra na lista do sorteio
                 if (p.discountPercent === 0) {
                     eligibleForRandom.push(p);
                 }
             });
 
-            // ETAPA 2: Preparar a "Semente" do Sorteio (Muda a cada 48h)
             let currentSeed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000));
-            
             function seededRandom(seed) {
                 let x = Math.sin(seed++) * 10000;
                 return x - Math.floor(x);
             }
 
-            // Embaralha a lista de forma que seja a mesma ordem durante 48h
             eligibleForRandom.sort((a, b) => {
                 let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0);
                 let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0);
@@ -1803,17 +1884,13 @@
                 return randA - randB;
             });
 
-            // ETAPA 3: Distribuição dos Descontos Sorteados
-            // NOVOS LIMITES DE SORTEIO: 5x 20%, 5x 15%, 100x 10%
             let r20 = 5, r15 = 5, r10 = 100; 
-            
             eligibleForRandom.forEach(p => {
                 if (r20 > 0) { p.discountPercent = 20; r20--; }
                 else if (r15 > 0) { p.discountPercent = 15; r15--; }
                 else if (r10 > 0) { p.discountPercent = 10; r10--; }
             });
 
-            // ETAPA 4: Aplicar o cálculo matemático para todos os produtos com desconto
             products.forEach(p => {
                 if (p.discountPercent > 0) {
                     p.price = p.oldPrice * (1 - p.discountPercent / 100);
@@ -1821,17 +1898,12 @@
             });
         }
 
-       // ==========================================
-        // LÓGICA DAS CESTAS BÁSICAS
-        // ==========================================
         window.currentBasketId = null;
 
         window.openBasketDetail = function(basketId) {
             if (!BASKETS) return alert("Erro: Base de cestas não encontrada.");
-            
             const basket = BASKETS.find(b => b.id === basketId);
             if (!basket) return alert("Erro: Cesta não encontrada.");
-
             const modalEl = document.getElementById('basketDetailModal');
             if (!modalEl) return alert("Erro: O ecrã da cesta não foi encontrado no HTML.");
 
@@ -1873,7 +1945,7 @@
             let html = '';
             currentBasketItems.forEach((item, index) => {
                 let p = item.pObj;
-                totalItemsCount += item.qty; // ADICIONADO A SOMA CORRETA DAS QUANTIDADES
+                totalItemsCount += item.qty; 
 
                 html += `
                 <div class="product-card-list" style="border: 1px solid var(--border-light); padding: 8px;">
@@ -1899,15 +1971,12 @@
         window.updateBasketItemQty = function(index, delta) {
             let item = currentBasketItems[index];
             if (!item) return;
-            
             let newQty = item.qty + delta;
             if (newQty < 0) newQty = 0;
-            // Bloqueia se tentar adicionar mais do que tem em stock
             if (newQty > item.pObj.stock) {
                 alert("Estoque insuficiente para " + item.pObj.name);
                 return;
             }
-            
             item.qty = newQty;
             renderBasketItemsList(); 
         };
@@ -1942,7 +2011,6 @@
                 if (item.qty > 0) {
                     let pid = item.pObj.id;
                     let currentInCart = STATE.cart[pid] || 0;
-                    
                     if (currentInCart === 0) STATE.cartOrder.push(pid); 
                     STATE.cart[pid] = currentInCart + item.qty; 
                     addedCount++;
@@ -1953,25 +2021,11 @@
                 let feeId = 'fee_' + basket.id;
                 let isDiscount = diferenca < 0;
                 let feeName = isDiscount ? 'Desconto Promo (' + basket.nome + ')' : 'Embalagem/Montagem (' + basket.nome + ')';
-                
                 let feeProd = STATE.prods.find(p => p.id === feeId);
                 if (!feeProd) {
-                    feeProd = {
-                        id: feeId,
-                        codigo: feeId,
-                        name: feeName,
-                        price: diferenca, 
-                        stock: 9999,
-                        img: basket.imagem,
-                        categoria: 'Cestas',
-                        subcategoria: '',
-                        marca: '',
-                        embalagem: '',
-                        descricao: 'Ajuste de valor da cesta fechada.'
-                    };
+                    feeProd = { id: feeId, codigo: feeId, name: feeName, price: diferenca, stock: 9999, img: basket.imagem, categoria: 'Cestas', subcategoria: '', marca: '', embalagem: '', descricao: 'Ajuste de valor da cesta fechada.' };
                     STATE.prods.push(feeProd);
                 }
-                
                 let currentFee = STATE.cart[feeId] || 0;
                 if (currentFee === 0) STATE.cartOrder.push(feeId);
                 STATE.cart[feeId] = currentFee + 1;
@@ -1981,8 +2035,6 @@
                 updateTotals(); saveCart();
                 const bagIcon = document.querySelector('.fa-bag-shopping');
                 if(bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
-                
-                // Transforma o botão e mostra VIP
                 let btnAdd = $('btn-add-basket');
                 btnAdd.innerText = 'Cesta Adicionada! Sacola VIP ✅';
                 btnAdd.style.background = 'var(--text-dark)';
@@ -2000,7 +2052,6 @@
             let html = '';
             ofertas.forEach(p => {
                 let q = STATE.cart[p.id] || 0;
-                
                 let controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>` 
                     : `<div class="qty-controls" style="padding: 6px 10px; font-size: 14px; margin: 0;"><i class="fa-solid fa-minus qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();"></i><span style="font-weight:bold; width: 20px; text-align:center;">${q}</span><i class="fa-solid fa-plus qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();"></i></div>`;
@@ -2055,11 +2106,9 @@
                             vencimento: p.validade || p.vencimento || null 
                         };
                     });
-                    
                     aplicarDescontos(STATE.prods);
                 }
                 loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
-                
                 STATE.viewMode = 0;
                 renderVitrineEngine();
                 renderCategoryChips();
