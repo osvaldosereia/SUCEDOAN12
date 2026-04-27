@@ -1309,6 +1309,9 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
        window.filterBy = function(type, value) {
             if ($('sidebar').classList.contains('open')) history.back(); 
+            // Adicionamos a linha abaixo para fechar o modal do produto se ele estiver aberto
+            if ($('detailModal').classList.contains('active')) history.back();
+            
             STATE.currentFilter = { type, value };
             
             if (type === 'cat') { 
