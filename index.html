@@ -2121,7 +2121,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
                         return { 
                             id: String(p.codigo || p.id), codigo: String(p.codigo || ""), name: formatName(p.nome), 
-                            price: parseFloat(p.preco) * 1.06, stock: parseInt(p.estoque) || 0, 
+                            price: parseFloat(p.preco) * 1.01, stock: parseInt(p.estoque) || 0, 
                             img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                             categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", subsubcategoria: p.subsubcategoria || "",
                             marca: p.marca || "", embalagem: p.embalagem || "", descricao: p.descricao || "",
