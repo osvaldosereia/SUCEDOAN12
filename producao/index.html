@@ -378,13 +378,18 @@
 
             <div class="form-section" style="margin-top:10px;">
                 <div class="section-title">Integração Externa</div>
+                
                 <input type="file" id="csv-file-substituir" accept=".csv" style="display:none">
-                <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">IMPORTAR CSV (SUBSTITUIR)</button>
+                <button class="nav-btn" style="height:40px; justify-content:center; color: var(--danger); border-color: #fecaca;" onclick="document.getElementById('csv-file-substituir').click()">IMPORTAR CSV (SUBSTITUIR TUDO)</button>
+                
+                <input type="file" id="csv-file-atualizar" accept=".csv" style="display:none">
+                <button class="nav-btn success-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="document.getElementById('csv-file-atualizar').click()">
+                    <i data-lucide="upload-cloud" size="14"></i> IMPORTAR (ATUALIZAR / ADICIONAR)
+                </button>
                 
                 <button class="nav-btn primary" style="height:40px; justify-content:center; margin-top:5px;" onclick="abrirModalExportacaoMeta()">EXPORTAR CATÁLOGO META</button>
                 <button class="nav-btn success-btn" style="height:40px; justify-content:center; margin-top:5px;" onclick="exportarCatalogoGeral()">EXPORTAR CATÁLOGO GERAL</button>
             </div>
-
             <div class="form-section" style="margin-top:10px; border-top: 1px dashed var(--border); padding-top: 15px;">
                 <div class="section-title">Credenciais GitHub</div>
                 <div class="form-group"><label class="form-label">Token</label><input type="password" id="cfg-token" class="form-input"></div>
@@ -1710,49 +1715,95 @@
         };
 
         // ==========================================================
-        // LEITURA DO CSV DO BLING (SEPARA ID E CÓDIGO/SKU PERFEITAMENTE)
+        // LEITURA DO CSV DO BLING - ATUALIZAR/ADICIONAR (UPSERT)
         // ==========================================================
-        document.getElementById('csv-file-substituir').addEventListener('change', function(e) {
+        document.getElementById('csv-file-atualizar').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             
-            mostrarAlerta("Lendo planilha do Bling...", "aviso");
+            mostrarAlerta("Analisando planilha e atualizando produtos...", "aviso");
             
             Papa.parse(file, {
-                header: true, // Lê o cabeçalho automático do Bling
+                header: true,
                 skipEmptyLines: true,
                 complete: async function(results) {
                     const linhas = results.data;
-                    let novosProdutos = [];
                     const timestamp = Date.now();
                     
+                    let atualizados = 0;
+                    let adicionados = 0;
+                    
                     linhas.forEach(linha => {
-                        // Captura as duas colunas cruciais do Bling
-                        let idBling = linha["ID"] || timestamp.toString().slice(-8); 
-                        let skuBling = linha["Código"] || linha["Codigo"] || idBling;
+                        // 1. Extração flexível dos dados da planilha (suporta vários padrões do Bling)
+                        let eanBling = (linha["GTIN/EAN"] || linha["EAN"] || linha["GTIN"] || "").toString().trim();
+                        let idBling = (linha["ID"] || "").toString().trim();
+                        let skuBling = (linha["Código"] || linha["Codigo"] || idBling || timestamp.toString().slice(-8) + Math.floor(Math.random()*1000)).toString().trim();
                         let nome = linha["Descrição"] || linha["Descricao"] || "Produto Importado";
-                        let precoStr = linha["Preço"] || "0";
+                        let precoStr = linha["Preço"] || linha["Preco"] || "0";
                         let preco = parseFloat(precoStr.toString().replace(',','.')) || 0;
+                        let custoStr = linha["Preço de custo"] || linha["Preco de custo"] || "0";
+                        let custo = parseFloat(custoStr.toString().replace(',','.')) || 0;
+                        let estoqueStr = linha["Estoque"] || "0";
+                        let estoque = parseFloat(estoqueStr.toString().replace(',','.')) || 0;
+                        let ncm = linha["NCM"] || "";
+                        let marca = linha["Marca"] || "";
                         
-                        novosProdutos.push({
-                            id: idBling,         // O campo "id" agora guarda o ID interno do Bling
-                            codigo: skuBling,    // O campo "codigo" agora guarda o SKU real
-                            nome: nome,
-                            preco: preco,
-                            preco_custo: 0,
-                            situacao: 'A',
-                            estoque: 0,
-                            descricao: "",
-                            last_update: timestamp
-                        });
+                        // 2. Procura pelo produto: Primeiro pelo EAN, depois pelo SKU
+                        let produtoExistente = null;
+                        
+                        if (eanBling !== "") {
+                            produtoExistente = products.find(p => p.gtin === eanBling);
+                        }
+                        
+                        // Se não achou por EAN, tenta encontrar pelo Código por segurança
+                        if (!produtoExistente && skuBling !== "") {
+                            produtoExistente = products.find(p => p.codigo === skuBling);
+                        }
+                        
+                        // 3. Atualiza ou Adiciona
+                        if (produtoExistente) {
+                            // Se encontrou, atualizamos os dados vitais
+                            produtoExistente.nome = nome;
+                            produtoExistente.preco = preco;
+                            produtoExistente.preco_custo = custo;
+                            produtoExistente.estoque = estoque;
+                            
+                            // Só atualiza NCM, Marca e EAN se vierem dados novos da planilha
+                            if (ncm) produtoExistente.ncm = ncm;
+                            if (marca) produtoExistente.marca = marca;
+                            if (eanBling && !produtoExistente.gtin) produtoExistente.gtin = eanBling;
+                            
+                            produtoExistente.last_update = Date.now();
+                            atualizados++;
+                        } else {
+                            // Se não encontrou, criamos um novo do zero
+                            products.unshift({
+                                id: idBling || Date.now().toString(),
+                                codigo: skuBling,
+                                gtin: eanBling,
+                                nome: nome,
+                                preco: preco,
+                                preco_custo: custo,
+                                situacao: 'A',
+                                estoque: estoque,
+                                ncm: ncm,
+                                marca: marca,
+                                descricao: "",
+                                last_update: Date.now()
+                            });
+                            adicionados++;
+                        }
                     });
                     
-                    if (novosProdutos.length > 0) {
-                        products = novosProdutos;
-                        await saveDataLocally();
-                        renderGrid();
-                        mostrarAlerta(`✅ Importação Concluída! ${novosProdutos.length} produtos carregados com ID e SKU corretos.`, "sucesso");
-                    }
+                    // 4. Salva no banco de dados e recarrega a interface
+                    await saveDataLocally();
+                    await loadData(); // Recarrega para gerar listas de marcas/categorias se houver novas
+                    renderGrid();
+                    
+                    mostrarAlerta(`✅ Concluído! ${adicionados} produtos criados e ${atualizados} atualizados.`, "sucesso");
+                    
+                    // Limpa o campo do ficheiro para poderes importar o mesmo ficheiro novamente se precisares
+                    document.getElementById('csv-file-atualizar').value = "";
                 }
             });
         });
