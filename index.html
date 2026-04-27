@@ -865,6 +865,53 @@
         
         .btn-send { width: 100%; background: var(--success); color: #fff; padding: 18px; border-radius: 14px; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; border: none; margin-bottom: 15px; cursor: pointer; }
         .btn-clear { width: 100%; border: 1px solid #ef4444; color: #ef4444; background: #fff; padding: 16px; border-radius: 12px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
+
+        /* =========================================
+           BANNER INSTAGRAM FLUTUANTE
+        ========================================= */
+        .insta-floating-banner {
+            position: fixed;
+            bottom: max(20px, env(safe-area-inset-bottom));
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            color: #ffffff;
+            padding: 10px 16px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1300;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            width: max-content;
+            max-width: 90%;
+        }
+
+        .insta-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            text-decoration: none;
+            color: #ffffff;
+        }
+
+        .insta-content i {
+            font-size: 20px;
+        }
+
+        .close-insta {
+            cursor: pointer;
+            font-size: 16px;
+            padding-left: 12px;
+            border-left: 1px solid rgba(255,255,255,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
     <script>
 !function(f,b,e,v,n,t,s)
@@ -889,6 +936,16 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
     </div>
 
     <div class="overlay" id="overlay"></div>
+
+    <div id="insta-banner" class="insta-floating-banner">
+        <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="insta-content">
+            <i class="fa-brands fa-instagram"></i>
+            <span>Siga-nos no Instagram!</span>
+        </a>
+        <div class="close-insta" onclick="closeInstaBanner()">
+            <i class="fa-solid fa-xmark"></i>
+        </div>
+    </div>
     
     <header class="topbar">
         <img src="../img/avatar.png" alt="Dona Antônia" class="topbar-logo" onerror="this.src='../img/logoantonia5.png'" onclick="scrollToTop()">
@@ -922,7 +979,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 <img src="../img/logoantonia5.png" alt="Dona Antônia" style="height: 40px; max-width: 60%; object-fit: contain;">
                 <div style="display: flex; gap: 10px; font-size: 22px; padding-right: 15px;">
                     <a href="https://api.whatsapp.com/send?phone=5565998150975" target="_blank" style="color: #25D366;"><i class="fa-brands fa-whatsapp"></i></a>
-                    <a href="#" target="_blank" style="color: #E1306C;"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" style="color: #E1306C;"><i class="fa-brands fa-instagram"></i></a>
                 </div>
             </div>
             <p style="color: #888; font-size: 13px; margin-top:10px;"><i class="fa-solid fa-location-dot"></i> Cuiabá e Várzea Grande</p>
@@ -930,11 +987,11 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         <div class="sidebar-menu" id="menu-categories-list"></div>
         <div class="sidebar-footer">
             <h4>Dona Antônia Supermercado</h4>
-            <p>CNPJ: 00.000.000/0000-00</p>
+            <p>CNPJ: 51.385.335/0001-06</p>
             <p>Atendimento de Seg a Sáb.</p>
             <div style="margin-top: 20px;">
                 <button class="btn-social btn-zap" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975', '_blank')"><i class="fa-brands fa-whatsapp"></i> Chamar no WhatsApp</button>
-                <button class="btn-social btn-google" onclick="alert('Link para o Google Meu Negócio')"><i class="fa-brands fa-google"></i> Avaliar no Google</button>
+                <button class="btn-social btn-google" onclick="window.open('https://g.page/r/CaIREJtO1L6WEBM/review', '_blank')"><i class="fa-brands fa-google"></i> Avaliar no Google</button>
             </div>
         </div>
     </div>
@@ -1134,6 +1191,18 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         
         function openSidebar() { pushHistoryState('sidebar'); $('sidebar').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back(); }
         function closeSidebar() { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
+
+        // Fecha o banner do Instagram
+        window.closeInstaBanner = function() {
+            const banner = document.getElementById('insta-banner');
+            if (banner) {
+                banner.style.opacity = '0';
+                banner.style.transform = 'translate(-50%, 20px)';
+                setTimeout(() => {
+                    banner.style.display = 'none';
+                }, 300);
+            }
+        };
 
         let searchTimeout;
 
