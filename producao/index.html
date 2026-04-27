@@ -551,7 +551,7 @@
 
         function processQueueLoop() {
             if (syncQueue.length === 0) { isSyncing = false; renderQueueStatus(); return; }
-            startQueueCountdown(20);
+            startQueueCountdown(50);
         }
 
         async function enqueueTask(taskName, taskFn) {
