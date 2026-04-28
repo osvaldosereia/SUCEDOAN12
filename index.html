@@ -997,9 +997,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         </div>
 
         <div class="topbar-actions">
-            <div class="action-btn" id="viewModeBtn" onclick="toggleViewMode()">
-                <i class="fa-solid fa-border-all"></i>
-            </div>
             <div class="action-btn" onclick="openCheckout()">
                 <i class="fa-solid fa-bag-shopping"></i>
                 <span class="cart-badge" id="cart-badge">0</span>
@@ -1389,17 +1386,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             }, 50);
         }
 
-        window.toggleViewMode = function() {
-            STATE.viewMode = (STATE.viewMode + 1) % 4;
-            const icon = $('viewModeBtn').querySelector('i');
-            if (STATE.viewMode === 0) icon.className = "fa-solid fa-border-all"; 
-            else if (STATE.viewMode === 1) icon.className = "fa-solid fa-square"; 
-            else if (STATE.viewMode === 2) icon.className = "fa-solid fa-list"; 
-            else icon.className = "fa-solid fa-mobile-screen"; 
-            $('vitrine').scrollTop = 0;
-            renderVitrineEngine();
-        };
-
         window.toggleSubMenu = function(id, iconEl) {
             let el = document.getElementById(id);
             if (el.style.display === 'none') {
@@ -1641,8 +1627,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let fVal = STATE.currentFilter.value;
             
             if (fType === 'cestas') {
-                $('viewModeBtn').style.opacity = '0.3'; 
-                $('viewModeBtn').style.pointerEvents = 'none';
                 vitrine.className = `main-container view-mode-1`;
                 
                 let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
@@ -1669,9 +1653,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 vitrine.innerHTML = html; 
                 return; 
             } else {
-                $('viewModeBtn').style.opacity = '1';
-                $('viewModeBtn').style.pointerEvents = 'auto'; 
-                vitrine.className = `main-container view-mode-${STATE.viewMode}`;
+                vitrine.className = `main-container view-mode-2`;
             }
             
             let primaryList = [];
@@ -2268,7 +2250,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             modalEl.classList.add('active');
         };
 
-       function renderBasketItemsList() {
+        function renderBasketItemsList() {
             let container = $('basket-items-container');
             let totalItemsCount = 0;
 
