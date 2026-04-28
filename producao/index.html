@@ -457,7 +457,7 @@
         }
 
         // ==========================================================
-        // GESTOR DE COMUNICAÇÃO COM GITHUB
+        // GESTOR DE COMUNICAÇÃO COM GITHUB (ATUALIZADO)
         // ==========================================================
         const GitHubAPI = {
             getConfig: function() {
@@ -471,6 +471,31 @@
             getHeaders: function(cfg) {
                 return { "Authorization": `Bearer ${cfg.token}`, "X-GitHub-Api-Version": "2022-11-28", "Content-Type": "application/json" };
             },
+            
+            // NOVO: Codificador seguro para grandes volumes de texto (Salvar Nuvem)
+            encodeUTF8toBase64: function(str) {
+                const bytes = new TextEncoder().encode(str);
+                let binString = '';
+                // Processa em pequenos blocos para evitar estouro de memória no navegador
+                const chunkSize = 8192;
+                for (let i = 0; i < bytes.length; i += chunkSize) {
+                    const chunk = bytes.subarray(i, i + chunkSize);
+                    binString += String.fromCharCode.apply(null, chunk);
+                }
+                return btoa(binString);
+            },
+            
+            // NOVO: Descodificador seguro que remove quebras de linha (Baixar Nuvem)
+            decodeBase64toUTF8: function(base64) {
+                const cleanBase64 = base64.replace(/\s/g, ''); // Limpa \n e espaços
+                const binString = atob(cleanBase64);
+                const bytes = new Uint8Array(binString.length);
+                for (let i = 0; i < binString.length; i++) {
+                    bytes[i] = binString.charCodeAt(i);
+                }
+                return new TextDecoder('utf-8').decode(bytes); // Decodifica perfeitamente acentos e emojis
+            },
+
             getFileData: async function(path) {
                 const cfg = this.getConfig();
                 if (!cfg) throw new Error("Credenciais ausentes");
@@ -485,11 +510,14 @@
                 if (!cfg) throw new Error("Credenciais ausentes");
                 let sha = null;
                 try { const existingFile = await this.getFileData(path); if (existingFile) sha = existingFile.sha; } catch(e) {}
+                
                 let finalBase64 = content;
                 if (!isBase64Ready) {
                     const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
-                    finalBase64 = btoa(unescape(encodeURIComponent(contentStr))); 
+                    // Usa o novo sistema de codificação seguro em vez do antigo btoa(unescape...)
+                    finalBase64 = this.encodeUTF8toBase64(contentStr); 
                 }
+                
                 const url = `https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${path}`;
                 const body = { message: message, content: finalBase64 };
                 if (sha) body.sha = sha;
@@ -562,7 +590,6 @@
         }
 
        function sanitizeProductsForExport(prods) {
-            // AQUI FOI INCLUÍDO O CAMPO 'descricao' PARA EXPORTAR PARA O JSON
             const camposPermitidos = [
                 'id', 'codigo', 'nome', 'gtin', 'preco', 'preco_custo', 
                 'estoque', 'situacao', 'ncm', 'validade', 'categoria', 
@@ -579,16 +606,11 @@
                     }
                 });
 
-                // ==========================================
-                // LIMPEZA PROFUNDA DE FANTASMAS ANTES DE EXPORTAR
-                // ==========================================
-                
-                // Limpa Tags que já não existem no sistema
+                // Limpeza Profunda
                 if (Array.isArray(cleanP.tag_global)) {
                     cleanP.tag_global = cleanP.tag_global.filter(t => tagsDoSistema.includes(t));
                 }
                 
-                // Limpa Categorias e Subs fantasmas
                 if (cleanP.categoria && !categoriasDoSistema.find(c => c.nome === cleanP.categoria)) {
                     cleanP.categoria = ""; cleanP.subcategoria = ""; cleanP.subsubcategoria = "";
                 } else if (cleanP.categoria && cleanP.subcategoria) {
@@ -601,7 +623,6 @@
                     }
                 }
 
-                // Limpa Marcas Fantasmas
                 if (cleanP.marca && !marcasDoSistema.includes(cleanP.marca)) {
                     cleanP.marca = "";
                 }
@@ -723,13 +744,9 @@
             try { const tg = await localforage.getItem(TAGS_KEY); if(tg && Array.isArray(tg)) tagsDoSistema = tg; } catch (err) {} 
             
             let precisaSalvarCat = false, precisaSalvarMarca = false, precisaSalvarTag = false;
-            let precisaSalvarProd = false; // Adicionado para gerir a gravação dos SKUs novos
+            let precisaSalvarProd = false;
 
             products.forEach(p => {
-                // =======================================================
-                // ROTINA DE GERAÇÃO AUTOMÁTICA DE SKU (CÓDIGO)
-                // Se algum produto (antigo ou importado) estiver sem código, gera um agora
-                // =======================================================
                 if (!p.codigo) {
                     p.codigo = Date.now().toString().slice(-5) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
                     p.last_update = Date.now();
@@ -783,7 +800,7 @@
             if (precisaSalvarMarca) await localforage.setItem(MARCAS_KEY, marcasDoSistema);
             if (precisaSalvarTag) await localforage.setItem(TAGS_KEY, tagsDoSistema);
             if (precisaSalvarCat) await localforage.setItem(CATEGORIAS_KEY, categoriasDoSistema);
-            if (precisaSalvarProd) await saveDataLocally(); // Salva se algum SKU foi criado
+            if (precisaSalvarProd) await saveDataLocally(); 
 
             if(categoriasDoSistema.length > 0) {
                 categoriasDoSistema.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
@@ -812,8 +829,6 @@
         // ==========================================================
         // GERAÇÃO DE OPÇÕES DE SELECTS E FUNÇÕES AUXILIARES EDITOR
         // ==========================================================
-        
-        // FUNÇÕES DO EDITOR DE TEXTO RICO (NOVIDADE)
         window.addLink = function(sku) {
             const url = prompt("Insira a URL do link:");
             if(url) {
@@ -1058,7 +1073,6 @@
                             </div>
                             <button class="nav-btn bling-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="exportarProdutoBling('${p.codigo}')"><i data-lucide="download" size="12"></i> EXP. BLING</button>
                             
-                            <!-- BOTÃO DE DUPLICAR ADICIONADO AQUI -->
                             <button class="nav-btn warning" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="duplicarProduto('${p.codigo}')"><i data-lucide="copy" size="12"></i> DUPLICAR</button>
                             
                             <button class="nav-btn ${p.situacao === 'I' ? '' : 'primary'}" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="12"></i> ${p.situacao === 'I' ? 'INATIVO' : 'ATIVO'}</button>
@@ -1158,12 +1172,9 @@
             if(field === 'validade' && typeof value === 'string' && value.includes('-')) { const partes = value.split('-'); if(partes[0].length === 4) finalVal = `${partes[2]}/${partes[1]}/${partes[0]}`; } 
             else if(['preco','estoque','preco_custo'].includes(field)) { finalVal = parseFloat(value.toString().replace(',','.')) || 0; }
             p[field] = finalVal; p.last_update = Date.now(); await saveDataLocally(); 
-            if(['preco', 'preco_custo'].includes(field)) renderGrid(null, true); // Recarrega para atualizar markup
+            if(['preco', 'preco_custo'].includes(field)) renderGrid(null, true); 
         }
         
-        // ==========================================================
-        // FUNÇÃO DE DUPLICAR PRODUTO (NOVA)
-        // ==========================================================
         window.duplicarProduto = async function(sku) {
             const p = products.find(x => x.codigo === sku);
             if (!p) return;
@@ -1171,31 +1182,27 @@
             const timestamp = Date.now();
             const novoSku = timestamp.toString().slice(-8);
 
-            // Criamos um novo objeto espelhando as informações antigas (...p), 
-            // mas alteramos propositalmente o ID, o Código, a Imagem e o timestamp
             const novoProduto = {
                 ...p,
                 id: timestamp,
                 codigo: novoSku,
-                url_imagem: "", // Deixa sem foto como pediste
+                url_imagem: "", 
                 last_update: timestamp
             };
 
-            // Insere o produto duplicado no início da lista do sistema
             products.unshift(novoProduto);
             await saveDataLocally();
             renderGrid();
-            window.scrollTo(0, 0); // Sobe ao topo para o utilizador ver o novo card
+            window.scrollTo(0, 0); 
             mostrarAlerta("Produto duplicado com sucesso!", "sucesso");
         };
 
         async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true); }
         async function deleteProduct(sku) { if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== sku); await saveDataLocally(); renderGrid(); }
-        // AQUI FOI INCLUÍDO O CAMPO descricao: "" NA CRIAÇÃO DE NOVO PRODUTO
         async function createNewProduct() { const timestamp = Date.now(); const sku = timestamp.toString().slice(-8); products.unshift({ id: timestamp, codigo: sku, nome: "", preco: 0, preco_custo: 0, situacao: 'A', estoque: 0, descricao: "", last_update: timestamp }); await saveDataLocally(); renderGrid(); window.scrollTo(0, 0); }
 
         // ==========================================================
-        // EDITOR DE CANVAS 100% MANTIDO (Apenas 1 Slot)
+        // EDITOR DE CANVAS (NITIDEZ INCLUÍDA)
         // ==========================================================
         const canvas = document.getElementById('imageCanvas'); const ctx = canvas.getContext('2d'); let loadedImage = null; let imgOffsetX = 0; let imgOffsetY = 0; let isDragging = false; let startDragX = 0; let startDragY = 0;
 
@@ -1221,9 +1228,8 @@
                 
                 ctx.filter = `brightness(${bright})`; 
                 ctx.drawImage(loadedImage, posX, posY, w, h); 
-                ctx.filter = 'none'; // Reseta o filtro
+                ctx.filter = 'none';
 
-                // NOVA LÓGICA DE NITIDEZ AQUI!
                 if (sharpen > 0) {
                     applySharpenKernel(ctx, canvas.width, canvas.height, sharpen);
                 }
@@ -1234,35 +1240,29 @@
             }
         }
 
-        // ==========================================================
-        // FUNÇÃO DE MATRIZ DE CONVOLUÇÃO PARA NITIDEZ (NOVA)
-        // ==========================================================
         function applySharpenKernel(context, width, height, amount) {
             if (amount <= 0) return;
-            // Pega nos dados dos píxeis em bruto
             const imgData = context.getImageData(0, 0, width, height);
             const data = imgData.data;
             const tempData = new Uint8ClampedArray(data);
             
-            // Variáveis matemáticas da Matriz de Nitidez
             const a = amount;
             const mid = 1 + 4 * a;
 
             for (let y = 1; y < height - 1; y++) {
                 for (let x = 1; x < width - 1; x++) {
                     const i = (y * width + x) * 4;
-                    for (let c = 0; c < 3; c++) { // RGB (O Alpha/Transparência é ignorado)
+                    for (let c = 0; c < 3; c++) { 
                         const val =
-                            -a * tempData[i - width * 4 + c] +    // píxel de cima
-                            -a * tempData[i - 4 + c] +            // píxel da esquerda
-                            mid * tempData[i + c] +               // píxel central (com ganho)
-                            -a * tempData[i + 4 + c] +            // píxel da direita
-                            -a * tempData[i + width * 4 + c];     // píxel de baixo
+                            -a * tempData[i - width * 4 + c] +    
+                            -a * tempData[i - 4 + c] +            
+                            mid * tempData[i + c] +               
+                            -a * tempData[i + 4 + c] +            
+                            -a * tempData[i + width * 4 + c];     
                         data[i + c] = val;
                     }
                 }
             }
-            // Devolve a imagem ajustada para o Canvas
             context.putImageData(imgData, 0, 0);
         }
 
@@ -1444,7 +1444,7 @@
             products.forEach(p => { 
                 if (Array.isArray(p[obj.prop])) {
                     let idx = p[obj.prop].indexOf(old);
-                    if (idx > -1) p[obj.prop][idx] = nm; // Atualiza a tag no Array
+                    if (idx > -1) p[obj.prop][idx] = nm; 
                 } else if (p[obj.prop] === old) {
                     p[obj.prop] = nm; 
                 }
@@ -1459,7 +1459,7 @@
             
             products.forEach(p => { 
                 if (Array.isArray(p[obj.prop])) {
-                    p[obj.prop] = p[obj.prop].filter(t => t !== old); // Remove a tag do Array
+                    p[obj.prop] = p[obj.prop].filter(t => t !== old); 
                 } else if (p[obj.prop] === old) {
                     p[obj.prop] = ""; 
                 }
@@ -1501,11 +1501,10 @@
             mostrarAlerta("Iniciando varredura no GitHub. Por favor, aguarde...", "aviso");
             
             try {
-                // Lista todas as imagens em uso no json
                 const imagensEmUso = new Set(products.map(p => {
                     if(!p.url_imagem) return null;
                     const partes = p.url_imagem.split('?')[0].split('/');
-                    return partes[partes.length-1]; // Extrai só o nome ex: "18271653.webp"
+                    return partes[partes.length-1]; 
                 }).filter(x => x));
 
                 let pastas = ["site/img/produtos"];
@@ -1518,7 +1517,6 @@
                         const files = await GitHubAPI.getFileData(pasta);
                         if(Array.isArray(files)) {
                             for(const file of files) {
-                                // Se a imagem do github não estiver no Set de imagens em uso, apaga!
                                 if(!imagensEmUso.has(file.name)) {
                                     await fetch(`https://api.github.com/repos/${cfg.user}/${cfg.repo}/contents/${file.path}`, {
                                         method: 'DELETE',
@@ -1529,7 +1527,7 @@
                                 }
                             }
                         }
-                    } catch(e) { } // Se der 404 (pasta não existe), ignora e vai pra próxima
+                    } catch(e) { } 
                 }
                 
                 mostrarAlerta(`✅ Limpeza concluída! ${apagadas} imagens não utilizadas foram apagadas.`, "sucesso");
@@ -1539,21 +1537,23 @@
             }
         }
         
+        // ==========================================================
+        // A NOVA FUNÇÃO CORRIGIDA DE SINCRONIZAÇÃO
+        // ==========================================================
         async function fetchFromGithub() {
             try {
                 mostrarAlerta("Sincronizando com a nuvem...", "aviso");
                 
                 const cfg = GitHubAPI.getConfig(); if (!cfg) return;
                 
-                // Usamos o método Base64 seguro (getFileData) em vez do header 'raw' que sofre bloqueio de CORS
                 const fileData = await GitHubAPI.getFileData('site/produtos.json');
                 
                 if (!fileData || !fileData.content) {
                     return alert("Arquivo produtos.json não encontrado ou vazio na nuvem.");
                 }
                 
-                // Decodificação Base64 segura para caracteres especiais (UTF-8)
-                const decodedStr = decodeURIComponent(escape(atob(fileData.content)));
+                // UTILIZA O NOSSO NOVO DESCODIFICADOR SEGURO
+                const decodedStr = GitHubAPI.decodeBase64toUTF8(fileData.content);
                 const parsedData = JSON.parse(decodedStr);
                 
                 if (parsedData && Array.isArray(parsedData)) {
@@ -1563,7 +1563,6 @@
                     
                     products = parsedData;
                     
-                    // LIMPEZA FORÇADA PARA RECALCULAR DA NUVEM
                     categoriasDoSistema = [];
                     marcasDoSistema = [];
                     tagsDoSistema = [];
@@ -1572,7 +1571,7 @@
                     await localforage.setItem(TAGS_KEY, tagsDoSistema);
                     
                     await saveDataLocally(); 
-                    await loadData(); // Recarrega e extrai tudo do zero!
+                    await loadData(); 
                     
                     mostrarAlerta("✅ Atualização concluída com sucesso!", "sucesso"); 
                     closeSidebar('config-sidebar');
@@ -1659,13 +1658,10 @@
                 localizacaoStr = `Gôndola: ${p.gondola || '-'} | Prateleira: ${p.prateleira || '-'}`;
             }
 
-            // Tratamento dinâmico da URL da Imagem (Preserva a pasta correta: produtos, produtos_2, etc)
             let urlImagemBling = "";
             if (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.includes('../')) {
-                // Remove o timestamp de cache (?v=...) para o Bling e troca o "../" pelo seu domínio
                 urlImagemBling = p.url_imagem.split('?')[0].replace("../", "https://donaantonia.com.br/");
             } else if (p.url_imagem && typeof p.url_imagem === 'string' && p.url_imagem.startsWith('http')) {
-                // Caso a imagem já tenha sido salva com link completo de outro lugar
                 urlImagemBling = p.url_imagem.split('?')[0];
             }
 
@@ -1696,7 +1692,7 @@
                 "Profundidade do produto": "",
                 "Data Validade": p.validade || "",
                 "Descrição do Produto no Fornecedor": "",
-                "Descrição Complementar": p.descricao || "", // Adicionamos a descrição rica aqui para o Bling
+                "Descrição Complementar": p.descricao || "", 
                 "Itens p/ caixa": "",
                 "Produto Variação": "",
                 "Tipo Produção": "",
@@ -1756,29 +1752,20 @@
             if(!confirm("Exportar todo o banco de dados (Bling CSV)? O sistema dividirá automaticamente em arquivos de até 900 produtos se necessário.")) return;
             if(products.length === 0) return alert("Banco vazio.");
             
-            // 1. Mapeia todos os produtos para o formato do Bling
             const mappedList = products.map(p => mapearProdutoParaBling(p));
-            
-            // 2. Define o limite máximo de produtos por arquivo
             const chunkSize = 900; 
 
-            // 3. Se for menor ou igual a 900, exporta normalmente num ficheiro só
             if (mappedList.length <= chunkSize) {
                 downloadCSVBling(mappedList, "Bling_Banco_Completo.csv");
             } 
-            // 4. Se for maior que 900, divide em várias partes
             else {
-                // Calcula quantas partes serão necessárias (ex: 2000 / 900 = 2.22 -> Math.ceil arredonda para 3)
                 const totalParts = Math.ceil(mappedList.length / chunkSize);
-                
                 mostrarAlerta(`A exportar ${totalParts} ficheiros... Por favor, aguarde.`, 'aviso');
 
                 for (let i = 0; i < totalParts; i++) {
-                    // Pega num "fatia" de 900 produtos. Ex: parte 0 corta de 0 a 900, parte 1 corta de 900 a 1800.
                     const chunk = mappedList.slice(i * chunkSize, (i + 1) * chunkSize);
                     const filename = `Bling_Banco_Completo_Parte_${i + 1}.csv`;
                     
-                    // Adiciona uma pausa (delay) de 800ms entre cada download para o navegador não bloquear
                     await new Promise(resolve => setTimeout(() => {
                         downloadCSVBling(chunk, filename);
                         resolve();
@@ -1816,7 +1803,6 @@
                     let adicionados = 0;
                     
                     linhas.forEach(linha => {
-                        // 1. Extração flexível dos dados da planilha (suporta vários padrões do Bling)
                         let eanBling = (linha["GTIN/EAN"] || linha["EAN"] || linha["GTIN"] || "").toString().trim();
                         let idBling = (linha["ID"] || "").toString().trim();
                         let skuBling = (linha["Código"] || linha["Codigo"] || idBling || timestamp.toString().slice(-8) + Math.floor(Math.random()*1000)).toString().trim();
@@ -1830,27 +1816,22 @@
                         let ncm = linha["NCM"] || "";
                         let marca = linha["Marca"] || "";
                         
-                        // 2. Procura pelo produto: Primeiro pelo EAN, depois pelo SKU
                         let produtoExistente = null;
                         
                         if (eanBling !== "") {
                             produtoExistente = products.find(p => p.gtin === eanBling);
                         }
                         
-                        // Se não achou por EAN, tenta encontrar pelo Código por segurança
                         if (!produtoExistente && skuBling !== "") {
                             produtoExistente = products.find(p => p.codigo === skuBling);
                         }
                         
-                        // 3. Atualiza ou Adiciona
                         if (produtoExistente) {
-                            // Se encontrou, atualizamos os dados vitais
                             produtoExistente.nome = nome;
                             produtoExistente.preco = preco;
                             produtoExistente.preco_custo = custo;
                             produtoExistente.estoque = estoque;
                             
-                            // Só atualiza NCM, Marca e EAN se vierem dados novos da planilha
                             if (ncm) produtoExistente.ncm = ncm;
                             if (marca) produtoExistente.marca = marca;
                             if (eanBling && !produtoExistente.gtin) produtoExistente.gtin = eanBling;
@@ -1858,7 +1839,6 @@
                             produtoExistente.last_update = Date.now();
                             atualizados++;
                         } else {
-                            // Se não encontrou, criamos um novo do zero
                             products.unshift({
                                 id: idBling || Date.now().toString(),
                                 codigo: skuBling,
@@ -1877,14 +1857,11 @@
                         }
                     });
                     
-                    // 4. Salva no banco de dados e recarrega a interface
                     await saveDataLocally();
-                    await loadData(); // Recarrega para gerar listas de marcas/categorias se houver novas
+                    await loadData(); 
                     renderGrid();
                     
                     mostrarAlerta(`✅ Concluído! ${adicionados} produtos criados e ${atualizados} atualizados.`, "sucesso");
-                    
-                    // Limpa o campo do ficheiro para poderes importar o mesmo ficheiro novamente se precisares
                     document.getElementById('csv-file-atualizar').value = "";
                 }
             });
