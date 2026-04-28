@@ -1355,7 +1355,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             }
         };
 
-        function renderSidebarMenu() {
+       function renderSidebarMenu() {
             let catMap = {};
             STATE.prods.forEach(p => {
                 if(p.categoria) {
@@ -1364,11 +1364,13 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 }
             });
 
-            // AQUI ESTAVA O ERRO NO SEU CÓDIGO! 
-            // Agora estamos forçando o sistema a usar a ORDEM_CATEGORIAS.
+            // Ordenação "à prova de balas" ignorando maiúsculas e acentos
             STATE.mainCategories = Object.keys(catMap).sort((a, b) => {
-                let indexA = ORDEM_CATEGORIAS.indexOf(a);
-                let indexB = ORDEM_CATEGORIAS.indexOf(b);
+                let catA = norm(a).trim();
+                let catB = norm(b).trim();
+
+                let indexA = ORDEM_CATEGORIAS.indexOf(catA);
+                let indexB = ORDEM_CATEGORIAS.indexOf(catB);
                 
                 if (indexA === -1 && indexB === -1) return a.localeCompare(b);
                 if (indexA === -1) return 1;
@@ -1380,6 +1382,10 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             html += `<div class="sidebar-group-title">Departamentos</div><ul style="padding:0; margin:0;">`;
             
             STATE.mainCategories.forEach((cat, index) => {
+                let catN = norm(cat);
+                // Não mostra Cestas e Ofertas duplicadas no menu lateral
+                if (catN.includes('cestas') || catN === 'ofertas') return; 
+
                 let catId = 'cat-' + index;
                 html += `<li class="main-cat-row">
                             <span class="main-cat-text" onclick="filterBy('cat', '${cat}')">${cat}</span>
@@ -1617,10 +1623,13 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     return terms.every(term => textoBusca.includes(term));
                 });
             } else if (fType === 'ofertas') {
-                // Ordena primeiro pela lista oficial de categorias, depois pelo maior desconto
+                // Ordena primeiro pela lista oficial (sem acento), depois pelo desconto
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => {
-                    let iA = ORDEM_CATEGORIAS.indexOf(a.categoria || '');
-                    let iB = ORDEM_CATEGORIAS.indexOf(b.categoria || '');
+                    let catA = norm(a.categoria || '').trim();
+                    let catB = norm(b.categoria || '').trim();
+
+                    let iA = ORDEM_CATEGORIAS.indexOf(catA);
+                    let iB = ORDEM_CATEGORIAS.indexOf(catB);
                     
                     // Se a categoria não estiver na nossa lista, jogamos para o final (999)
                     if (iA === -1) iA = 999; 
@@ -1634,7 +1643,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 });
                 
                 // Deixamos vazia para exibir APENAS itens com desconto
-                secondaryList = []; 
+                secondaryList = [];
             } else if (fType === 'ofertas_desc') { 
                 let descVal = parseInt(fVal);
                 primaryList = STATE.prods.filter(p => p.stock > 0 && p.discountPercent === descVal);
