@@ -1087,8 +1087,10 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 <h1 class="modal-title" id="basketModalTitle">Nome da Cesta</h1>
                 <p style="font-weight: 600; margin-bottom: 20px; font-size: 18px;" id="basketModalPrice">R$ 0,00</p>
                 
-                <h3 class="related-title" style="margin: 0 0 15px 0;">Itens da Cesta</h3>
-                <p style="font-size: 12px; color: #888; margin-bottom: 15px;">Ajuste as quantidades conforme necessário. Produtos não encontrados no sistema não serão exibidos.</p>
+                <div id="basket-items-header">
+                    <h3 class="related-title" style="margin: 0 0 15px 0;">Itens da Cesta</h3>
+                    <p style="font-size: 12px; color: #888; margin-bottom: 15px;">Ajuste as quantidades conforme necessário. Produtos não encontrados no sistema não serão exibidos.</p>
+                </div>
                 
                 <div id="basket-items-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
                 
@@ -1100,13 +1102,13 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     <button class="btn-send" id="btn-add-basket" onclick="addBasketToCart()" style="width: 100%; margin: 0; background: var(--primary);">Adicionar à Sacola</button>
                 </div>
 
-                <div id="vip-list-container" style="display: none; margin-top: 40px; padding-bottom: 30px;">
+                <div id="vip-list-container" style="display: none; margin-top: 20px; padding-bottom: 30px;">
                     <div id="vip-items-grid" style="display: flex; flex-direction: column; gap: 8px;"></div>
                 </div>
             </div>
         </div>
 
-        </div>
+    </div>
 
    <div class="checkout-drawer" id="checkout-drawer">
         <div class="chk-header">
@@ -2220,18 +2222,20 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             window.currentBasketId = basketId;
         pushHistoryState('basket');
         
-        // Reseta o botão e a lista de ofertas sempre que abrir uma cesta
-        let btnAdd = $('btn-add-basket');
-        if (btnAdd) {
-            btnAdd.innerText = 'Adicionar à Sacola';
-            btnAdd.style.background = 'var(--primary)';
-        }
+        // MOSTRA OS ELEMENTOS PADRÃO DA CESTA SEMPRE QUE ABRIR
+        let headerEl = $('basket-items-header');
+        if(headerEl) headerEl.style.display = 'block';
+        let containerEl = $('basket-items-container');
+        if(containerEl) containerEl.style.display = 'flex';
+        let summaryEl = $('basket-summary-container');
+        if(summaryEl) summaryEl.style.display = 'block';
+
         let vipContainer = $('vip-list-container');
         if (vipContainer) {
             vipContainer.style.display = 'none';
         }
         
-           
+            
             $('basketModalImg').src = basket.imagem;
             $('basketModalTitle').innerText = basket.nome;
             
@@ -2373,9 +2377,13 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 updateTotals(); saveCart();
                 const bagIcon = document.querySelector('.fa-bag-shopping');
                 if(bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
-                let btnAdd = $('btn-add-basket');
-                btnAdd.innerText = 'CESTA ADICIONADA ✅';
-                btnAdd.style.background = '#000000';
+                
+                // ESCONDER A LISTA DE ITENS PARA LIMPAR A TELA DEPOIS DE ADICIONAR
+                $('basket-items-header').style.display = 'none';
+                $('basket-items-container').style.display = 'none';
+                $('basket-summary-container').style.display = 'none';
+                
+                // CHAMA O RENDER VIP COM A NOVA LÓGICA (SUCESSO + OFERTAS)
                 renderVIPList();
             } else {
                 alert("Nenhum produto válido para adicionar.");
@@ -2384,10 +2392,26 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
         function renderVIPList() {
             let container = $('vip-items-grid');
-            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 30);
-            if(ofertas.length === 0) ofertas = STATE.prods.slice(0, 10); 
+            
+            // LIMITAMOS A 4 OFERTAS PARA NÃO CONFUNDIR O CLIENTE
+            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 4);
+            if(ofertas.length === 0) ofertas = STATE.prods.slice(0, 4); 
 
-            let html = `<div style="background: var(--success); color: white; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: 800; font-size: 16px;">🌟 Aproveite as Ofertas de Hoje</div>`;
+            // CRIAMOS UM BANNER DE SUCESSO E TRAZEMOS OS BOTÕES PARA O TOPO
+            let html = `
+            <div style="background: var(--success); color: white; padding: 25px 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);">
+                <i class="fa-solid fa-circle-check" style="font-size: 48px; margin-bottom: 12px;"></i>
+                <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Cesta Adicionada!</h2>
+                <p style="font-size: 14px; opacity: 0.9;">Todos os itens foram para a sua sacola.</p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 35px;">
+                <button class="btn-send" style="margin: 0; background: var(--primary); font-size: 16px; padding: 18px;" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)"><i class="fa-solid fa-bag-shopping" style="margin-right: 8px;"></i> Finalizar Pedido</button>
+                <button class="btn-send" style="margin: 0; background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-light); font-size: 15px;" onclick="closeBasketDetail(); setTimeout(() => scrollToTop(), 300)">Continuar Comprando</button>
+            </div>
+            
+            <div style="font-weight: 800; font-size: 14px; margin-bottom: 15px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">🌟 Aproveite e leve junto:</div>
+            `;
             
             ofertas.forEach(p => {
                 let q = STATE.cart[p.id] || 0;
@@ -2420,15 +2444,14 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 </div>`;
             });
             
-            html += `
-            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
-                <button class="btn-send" style="background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-light);" onclick="closeBasketDetail(); setTimeout(() => scrollToTop(), 300)">Ver mais produtos</button>
-                <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar pedido</button>
-            </div>`;
-            
             container.innerHTML = html;
             $('vip-list-container').style.display = 'block';
-            setTimeout(() => { $('vip-list-container').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+            
+            // Fazemos a tela rolar para o topo do modal para o cliente ver a mensagem de sucesso
+            setTimeout(() => { 
+                let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
+                if(scrollArea) scrollArea.scrollTo({top: 0, behavior: 'smooth'}); 
+            }, 50);
         }
 
         async function init() {
