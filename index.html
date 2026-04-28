@@ -1360,7 +1360,18 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     if(p.subcategoria) catMap[p.categoria].add(p.subcategoria);
                 }
             });
-            STATE.mainCategories = Object.keys(catMap).sort();
+
+            // AQUI ESTAVA O ERRO NO SEU CÓDIGO! 
+            // Agora estamos forçando o sistema a usar a ORDEM_CATEGORIAS.
+            STATE.mainCategories = Object.keys(catMap).sort((a, b) => {
+                let indexA = ORDEM_CATEGORIAS.indexOf(a);
+                let indexB = ORDEM_CATEGORIAS.indexOf(b);
+                
+                if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
             
             let html = '';
             html += `<div class="sidebar-group-title">Departamentos</div><ul style="padding:0; margin:0;">`;
@@ -1655,7 +1666,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 return;
             }
 
-            let fullList = primaryList.concat(secondaryList);
+           let fullList = primaryList.concat(secondaryList);
             let buffer = [];
             let isPrimaryPhase = true;
             let lastCatRendered = null; // Variável para lembrar a última categoria desenhada
@@ -1678,7 +1689,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     fragment.appendChild(divPage);
                 }
 
-                // Lógica de subdivisão APENAS para a aba Ofertas
+               // Lógica de subdivisão APENAS para a aba Ofertas
                 if (fType === 'ofertas') {
                     let catAtual = prod.categoria || 'Outros';
                     
@@ -1711,13 +1722,15 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     let page = document.createElement('div'); page.className = 'product-page';
                     page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                 }
-            }
+            } // <-- Aqui termina o laço "for"
             
+            // Verificamos se sobrou algo no buffer depois que o laço terminou
             if (buffer.length > 0) {
                 let page = document.createElement('div'); page.className = 'product-page';
                 page.innerHTML = buffer.join(''); fragment.appendChild(page);
             }
 
+            // Se a lista total for maior que o limite, criamos o ícone de carregamento ("sentinela")
             if (fullList.length > STATE.pageLimit) {
                 let sentinel = document.createElement('div');
                 sentinel.id = 'scroll-sentinel';
