@@ -38,18 +38,113 @@
         }
         .chip.active { background: var(--primary); color: #fff; }
 
-        /* Vitrine */
-        .vitrine-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border-light); border-top: 1px solid var(--border-light); }
-        .prod-card { background: #fff; padding: 15px; position: relative; display: flex; flex-direction: column; align-items: center; }
-        .badge-desc { position: absolute; top: 10px; right: 10px; background: #ef4444; color: #fff; font-size: 10px; padding: 3px 7px; border-radius: 5px; font-weight: 800; z-index: 5; }
-        .prod-img { width: 100%; aspect-ratio: 1; object-fit: contain; margin-bottom: 10px; }
-        .prod-name { font-size: 11px; font-weight: 600; text-align: center; height: 32px; overflow: hidden; color: #444; margin-bottom: 5px; }
-        .price-box { text-align: center; margin-bottom: 10px; }
-        .old-price { font-size: 10px; text-decoration: line-through; color: #aaa; }
-        .current-price { font-size: 15px; font-weight: 800; color: var(--text-dark); display: block; }
+        /* Container da Vitrine (Visual de Lista Idêntico ao Site Principal) */
+        .vitrine-container { background: #fff; padding-top: 5px; }
+        .product-page { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
         
-        .btn-add { width: 36px; height: 36px; background: var(--primary); color: #fff; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .btn-add:active { transform: scale(0.9); }
+        /* Cabeçalho de Categoria */
+        .category-header {
+            padding: 25px 15px 5px; font-weight: 800; font-size: 1.1rem; color: var(--text-dark); 
+            border-bottom: 2px solid var(--primary); margin: 0 10px 10px 10px; display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Estilos do Card Lista */
+        .product-card-list {
+            background-color: #ffffff;
+            border-radius: 12px;
+            display: flex;
+            padding: 10px;
+            gap: 12px;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid var(--border-light);
+        }
+        .product-icon-list {
+            width: 100px;
+            height: 100px;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+            border-radius: 8px;
+            background: #fff;
+            padding: 5px;
+            flex-shrink: 0;
+        }
+        .product-info-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0; 
+        }
+        .product-name-list {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+        .tag-embalagem-list {
+            font-size: 11px;
+            color: var(--primary);
+            background: #e6e6e6;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: inline-block;
+            width: fit-content;
+        }
+        .tag-preco-list {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            line-height: 1.1;
+        }
+        .old-price {
+            text-decoration: line-through;
+            font-size: 0.65rem;
+            color: #999;
+            font-weight: normal;
+        }
+        .badge-desc {
+            position: absolute;
+            top: 0; right: 0;
+            background: #ef4444; color: #fff;
+            font-size: 0.7rem; padding: 3px 8px;
+            border-bottom-left-radius: 8px; font-weight: 800; z-index: 5;
+        }
+        
+        /* Botões de Ação do Card */
+        .card-action-area {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .btn-quick-add-list {
+            background: var(--primary);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: 0.2s;
+        }
+        .btn-quick-add-list:active { opacity: 0.8; transform: scale(0.95); }
+        
+        .qty-controls {
+            display: flex; align-items: center; gap: 12px; background: var(--bg-card);
+            padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 14px; margin: 0; flex-shrink: 0;
+        }
+        .qty-btn { cursor: pointer; color: var(--text-light); padding: 5px; transition: color 0.2s; }
+        .qty-btn:active { color: var(--text-dark); }
 
         /* Barra de Valor */
         .cart-bar {
@@ -58,6 +153,7 @@
             border-radius: 16px; display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 1100;
             transform: translateY(150%); transition: transform 0.4s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+            cursor: pointer;
         }
         .cart-bar.active { transform: translateY(0); }
         .cart-info b { font-size: 18px; display: block; }
@@ -94,7 +190,7 @@
         </div>
     </div>
 
-    <div class="vitrine-grid" id="vitrine"></div>
+    <div class="vitrine-container" id="vitrine"></div>
 
     <div class="cart-bar" id="cartBar" onclick="openModal()">
         <div class="cart-info">
@@ -115,7 +211,7 @@
             <button class="btn-confirm" onclick="sendToZap()">
                 <i class="fa-brands fa-whatsapp" style="font-size: 20px;"></i> ENVIAR AO WHATSAPP
             </button>
-            <button onclick="closeModal()" style="width: 100%; padding: 15px; border: none; background: none; color: #aaa; font-weight: 600;">Continuar Comprando</button>
+            <button onclick="closeModal()" style="width: 100%; padding: 15px; border: none; background: none; color: #aaa; font-weight: 600; cursor: pointer;">Continuar Comprando</button>
         </div>
     </div>
 
@@ -125,9 +221,17 @@
         let CART = {};
         let currentFilter = 0;
 
-        const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        // Lista oficial de categorias para ordenação, exatamente igual à vitrine principal
+        const ORDEM_CATEGORIAS = [
+            'mercearia basica', 'lavanderia', 'limpeza', 'cafe da manha', 
+            'temperos', 'sucos e refris', 'bolachas e biscoitos', 'beleza', 
+            'higiene', 'sabonete', 'shampoo',
+        ];
 
-        // MESMA LÓGICA DO SITE PRINCIPAL
+        const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
+
+        // Mesma lógica de aplicação de descontos baseada em validade / seed
         function aplicarDescontos(products) {
             let now = new Date();
             let eligibleForRandom = [];
@@ -159,6 +263,7 @@
 
         async function init() {
             try {
+                // Tenta puxar do arquivo local
                 const res = await fetch('/site/produtos.json');
                 const data = await res.json();
                 
@@ -168,11 +273,28 @@
                     price: parseFloat(p.preco) * 1.06,
                     stock: parseInt(p.estoque) || 0,
                     img: p.url_imagem || `/site/img/produtos/${p.codigo}.webp`,
-                    vencimento: p.validade || p.vencimento || null
+                    vencimento: p.validade || p.vencimento || null,
+                    categoria: p.categoria || "Outros",
+                    embalagem: p.embalagem || ""
                 }));
 
                 aplicarDescontos(PRODS);
-                PRODS = PRODS.filter(p => p.discountPercent > 0 && p.stock > 0).sort((a,b) => b.discountPercent - a.discountPercent);
+                
+                // Filtra apenas os que tem desconto e estoque, e depois ordena por Categoria, e então Maior Desconto
+                PRODS = PRODS.filter(p => p.discountPercent > 0 && p.stock > 0).sort((a, b) => {
+                    let catA = norm(a.categoria || '').trim();
+                    let catB = norm(b.categoria || '').trim();
+
+                    let iA = ORDEM_CATEGORIAS.indexOf(catA);
+                    let iB = ORDEM_CATEGORIAS.indexOf(catB);
+                    
+                    if (iA === -1) iA = 999; 
+                    if (iB === -1) iB = 999;
+                    
+                    if (iA !== iB) return iA - iB; 
+                    return b.discountPercent - a.discountPercent; 
+                });
+
                 render();
             } catch (e) { console.error(e); }
         }
@@ -184,32 +306,114 @@
             render();
         }
 
+        // Nova renderização utilizando o layout e subdivisões idênticos ao site principal
         function render() {
             const list = currentFilter === 0 ? PRODS : PRODS.filter(p => p.discountPercent === currentFilter);
-            $('vitrine').innerHTML = list.map(p => `
-                <div class="prod-card">
-                    <div class="badge-desc">-${p.discountPercent}%</div>
-                    <img src="${p.img}" class="prod-img" onerror="this.src='/site/img/logoantonia5.png'">
-                    <div class="prod-name">${p.name}</div>
-                    <div class="price-box">
-                        <span class="old-price">${fmt(p.oldPrice)}</span>
-                        <span class="current-price">${fmt(p.price)}</span>
-                    </div>
-                    <button class="btn-add" onclick="addToCart('${p.id}')"><i class="fa-solid fa-plus"></i></button>
-                </div>
-            `).join('');
+            
+            let html = '<div class="product-page">';
+            let lastCatRendered = null;
+
+            if (list.length === 0) {
+                html += `<div style="padding: 40px; text-align: center; color: var(--text-light);">Nenhuma oferta encontrada para esta categoria de desconto.</div>`;
+            } else {
+                list.forEach(p => {
+                    let catAtual = p.categoria || 'Outros';
+                    
+                    // Exibe a tag de categoria caso seja uma nova categoria na lista
+                    if (catAtual !== lastCatRendered) {
+                        lastCatRendered = catAtual;
+                        html += `
+                            <div class="category-header">
+                                <i class="fa-solid fa-tag" style="color: #ef4444;"></i> ${catAtual}
+                            </div>`;
+                    }
+
+                    // Verifica as embalagens e montagem do HTML do card
+                    let embalagemHtml = p.embalagem ? `<div class="tag-embalagem-list">${p.embalagem}</div>` : '';
+                    
+                    html += `
+                    <div class="product-card-list bordered">
+                        <div class="badge-desc">-${p.discountPercent}%</div>
+                        <img src="${p.img}" class="product-icon-list" onerror="this.src='/site/img/logoantonia5.png'">
+                        <div class="product-info-list">
+                            ${embalagemHtml}
+                            <div class="product-name-list">${p.name}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
+                                <div class="tag-preco-list">
+                                    <span class="old-price">${fmt(p.oldPrice)}</span>
+                                    <span style="color: var(--success);">${fmt(p.price)}</span>
+                                </div>
+                                <div class="card-action-area" id="action-card-${p.id}">
+                                    </div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
+            
+            html += '</div>';
+            $('vitrine').innerHTML = html;
+            updateAllCardUIs();
         }
 
-        function addToCart(id) {
-            CART[id] = (CART[id] || 0) + 1;
-            let total=0, count=0;
+        // Função para atualizar especificamente os botões de cada card sem precisar recarregar toda a lista
+        function updateAllCardUIs() {
+            PRODS.forEach(p => {
+                let q = CART[p.id] || 0;
+                let el = $('action-card-' + p.id);
+                if (el) {
+                    if (q === 0) {
+                        el.innerHTML = `<div class="btn-quick-add-list" onclick="updateCartItem('${p.id}', 1)"><i class="fa-solid fa-plus"></i> Adicionar</div>`;
+                    } else {
+                        el.innerHTML = `
+                        <div class="qty-controls">
+                            <i class="fa-solid fa-minus qty-btn" onclick="updateCartItem('${p.id}', -1)"></i>
+                            <span style="font-weight:bold; width: 20px; text-align:center;">${q}</span>
+                            <i class="fa-solid fa-plus qty-btn" onclick="updateCartItem('${p.id}', 1)"></i>
+                        </div>`;
+                    }
+                }
+            });
+        }
+
+        // Função universal de gerenciar adição e subtração no carrinho
+        function updateCartItem(id, delta) {
+            let p = PRODS.find(x => x.id === id);
+            if (!p) return;
+            
+            let currentInCart = CART[id] || 0;
+            let n = Math.max(0, currentInCart + delta);
+            
+            if (n > p.stock) return alert("Estoque insuficiente.");
+            
+            CART[id] = n;
+            if (n === 0) delete CART[id];
+            
+            updateTotals();
+            updateAllCardUIs(); // Atualiza os botões visualmente
+        }
+
+        function updateTotals() {
+            let total = 0, count = 0;
             Object.entries(CART).forEach(([cid, q]) => {
                 const p = PRODS.find(x => x.id === cid);
                 if(p) { total += p.price * q; count += q; }
             });
+            
             $('txt-items').innerText = `${count} itens selecionados`;
             $('txt-total').innerText = fmt(total);
-            $('cartBar').classList.add('active');
+            
+            if (count > 0) {
+                $('cartBar').classList.add('active');
+            } else {
+                $('cartBar').classList.remove('active');
+            }
+
+            // Se o modal estiver aberto, atualiza a lista de lá também
+            if ($('modalSummary').style.display === 'flex') {
+                if (count === 0) closeModal();
+                else openModal();
+            }
         }
 
         function openModal() {
@@ -220,12 +424,22 @@
                     total += p.price * q;
                     html += `
                         <div class="item-row">
-                            <img src="${p.img}" class="item-img">
+                            <img src="${p.img}" class="item-img" onerror="this.src='/site/img/logoantonia5.png'">
                             <div class="item-info">
                                 <h4>${p.name}</h4>
-                                <p>${q}x ${fmt(p.price)}</p>
+                                <p style="color: #666; font-size: 11px;">
+                                    <span style="text-decoration: line-through;">${fmt(p.oldPrice)}</span> 
+                                    <span style="color: var(--success); margin-left: 5px; font-weight: 800;">${fmt(p.price)}</span>
+                                </p>
                             </div>
-                            <div style="font-weight:800;">${fmt(p.price * q)}</div>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                <div style="font-weight:800; margin-bottom: 5px;">${fmt(p.price * q)}</div>
+                                <div class="qty-controls" style="padding: 4px 8px; font-size: 12px; background: #fff; border: 1px solid var(--border-light);">
+                                    <i class="fa-solid fa-minus qty-btn" onclick="updateCartItem('${p.id}', -1)"></i>
+                                    <span style="font-weight:bold; width: 16px; text-align:center;">${q}</span>
+                                    <i class="fa-solid fa-plus qty-btn" onclick="updateCartItem('${p.id}', 1)"></i>
+                                </div>
+                            </div>
                         </div>`;
                 }
             });
