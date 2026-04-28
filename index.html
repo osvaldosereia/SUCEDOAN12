@@ -193,7 +193,6 @@
         .category-chip {
             background: #ffffff;
             color: var(--text-light);
-            /* Reduzimos o padding de '8px 18px' para '6px 14px' para ficar mais compacto */
             padding: 6px 14px; 
             border-radius: 20px;
             font-size: 13px;
@@ -457,7 +456,7 @@
         .btn-quick-add:active { transform: scale(0.85); }
 
         /* =========================================
-           3.1 CARDS DE PRODUTO (MODO 2 - LISTA)
+           3.1 CARDS DE PRODUTO (MODO 2 - LISTA E ESGOTADO)
         ========================================= */
         .product-card-list {
             background-color: var(--bg-card);
@@ -472,6 +471,28 @@
             overflow: hidden;
             border: 1px solid transparent;
         }
+        
+        /* Estilo para produtos esgotados */
+        .esgotado {
+            opacity: 0.5;
+            filter: grayscale(100%);
+            pointer-events: none !important;
+        }
+        .esgotado-tag {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 12px;
+            z-index: 10;
+            letter-spacing: 1px;
+        }
+
         .product-icon-list {
             width: 100px; 
             height: 100px;
@@ -909,51 +930,29 @@
         }
         
         /* =========================================
-           BANNER INSTAGRAM FLUTUANTE
+           NOVO CARRINHO FLUTUANTE INFERIOR
         ========================================= */
-        .insta-floating-banner {
+        .floating-cart-bar {
             position: fixed;
             bottom: max(20px, env(safe-area-inset-bottom));
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+            left: 15px;
+            right: 15px;
+            background: var(--success);
             color: #ffffff;
-            padding: 10px 16px;
-            border-radius: 30px;
+            padding: 14px 20px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: space-between;
             z-index: 1300;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            width: max-content;
-            max-width: 90%;
-        }
-
-        .insta-content {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
             cursor: pointer;
-            font-weight: 700;
-            font-size: 13px;
-            text-decoration: none;
-            color: #ffffff;
+            transition: transform 0.2s;
         }
+        .floating-cart-bar:active { transform: scale(0.98); }
+        .fc-info { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px;}
+        .fc-btn { font-size: 14px; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
 
-        .insta-content i {
-            font-size: 20px;
-        }
-
-        .close-insta {
-            cursor: pointer;
-            font-size: 16px;
-            padding-left: 12px;
-            border-left: 1px solid rgba(255,255,255,0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
     </style>
     <script>
 !function(f,b,e,v,n,t,s)
@@ -979,14 +978,12 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
     <div class="overlay" id="overlay"></div>
 
-    <div id="insta-banner" class="insta-floating-banner">
-        <a href="https://www.instagram.com/cestas.dona.antonia.cuiaba.vg/" target="_blank" class="insta-content">
-            <i class="fa-brands fa-instagram"></i>
-            <span>Siga-nos no Instagram!</span>
-        </a>
-        <div class="close-insta" onclick="closeInstaBanner()">
-            <i class="fa-solid fa-xmark"></i>
+    <div id="floating-cart" class="floating-cart-bar" style="display: none;" onclick="openCheckout()">
+        <div class="fc-info">
+            <i class="fa-solid fa-bag-shopping"></i>
+            <span id="fc-count">0</span> itens | <span id="fc-total">R$ 0,00</span>
         </div>
+        <div class="fc-btn">Ver Sacola <i class="fa-solid fa-arrow-right"></i></div>
     </div>
     
     <header class="topbar">
@@ -1256,18 +1253,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         function openSidebar() { pushHistoryState('sidebar'); $('sidebar').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back(); }
         function closeSidebar() { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
 
-        // Fecha o banner do Instagram
-        window.closeInstaBanner = function() {
-            const banner = document.getElementById('insta-banner');
-            if (banner) {
-                banner.style.opacity = '0';
-                banner.style.transform = 'translate(-50%, 20px)';
-                setTimeout(() => {
-                    banner.style.display = 'none';
-                }, 300);
-            }
-        };
-
         let searchTimeout;
 
         window.handleSearchInput = function() {
@@ -1308,7 +1293,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             
             container.innerHTML = html;
             
-         setTimeout(() => {
+           setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
                     // Alteramos para scrollTo, calculando a distância do chip até a borda esquerda (offsetLeft)
@@ -1396,7 +1381,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     });
                 }
             }, 50);
-        } // <-- AQUI ESTÁ A CHAVE QUE FALTAVA PARA FECHAR A renderSubCategoryChips!
+        }
 
         window.toggleSubMenu = function(id, iconEl) {
             let el = document.getElementById(id);
@@ -1530,6 +1515,11 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let currentMode = forceMode !== null ? forceMode : STATE.viewMode;
             let q = STATE.cart[prod.id] || 0;
             
+            let isOutOfStock = prod.stock <= 0;
+            let esgotadoTag = isOutOfStock ? `<div class="esgotado-tag">ESGOTADO</div>` : '';
+            let baseClassList = isOutOfStock ? 'product-card-list esgotado' : 'product-card-list';
+            let baseClassGrid = isOutOfStock ? 'product-card esgotado' : 'product-card';
+            
             let discountBadge = (prod.discountPercent && prod.discountPercent > 0) 
                 ? `<div style="position: absolute; top: 0; right: 0; background: #ef4444; color: #fff; font-size: 0.7rem; padding: 3px 8px; font-weight: 800; border-bottom-left-radius: 8px; z-index: 5;">-${prod.discountPercent}%</div>` 
                 : '';
@@ -1546,8 +1536,9 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem-list">${prod.embalagem}</div>` : '';
                 
                 return `
-                    <div class="product-card-list" onclick="openDetail('${prod.id}')">
+                    <div class="${baseClassList}" onclick="openDetail('${prod.id}')">
                         ${discountBadge}
+                        ${esgotadoTag}
                         <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon-list lazy-img" alt="${prod.name}">
                         <div class="product-info-list">
                             ${embalagemHtml}
@@ -1569,8 +1560,9 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let nomeProdutoHtml = `<div class="tag-nome-produto" title="${prod.name}">${prod.name}</div>`;
             
             return `
-                <div class="product-card" onclick="openDetail('${prod.id}')">
+                <div class="${baseClassGrid}" onclick="openDetail('${prod.id}')">
                     ${discountBadge}
+                    ${esgotadoTag}
                     <div class="card-action-grid" id="action-card-grid-${prod.id}">
                         ${controlsHtmlGrid}
                     </div>
@@ -1674,7 +1666,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
          if (fType === 'search') {
                 let terms = fVal.split(' ').filter(t => t.trim().length > 0);
                 primaryList = STATE.prods.filter(p => {
-                    if (p.stock <= 0) return false;
                     let textoBusca = norm(p.name + " " + p.categoria + " " + p.marca + " " + p.codigo);
                     return terms.every(term => textoBusca.includes(term));
                 });
@@ -1700,16 +1691,16 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 primaryList = STATE.prods.filter(p => p.stock > 0 && p.discountPercent === descVal);
                 secondaryList = [];
             } else if (fType === 'cat') {
-                primaryList = STATE.prods.filter(p => p.stock > 0 && p.categoria === fVal);
+                primaryList = STATE.prods.filter(p => p.categoria === fVal);
                 secondaryList = STATE.prods.filter(p => p.stock > 0 && p.categoria !== fVal);
             } else if (fType === 'sub') {
-                primaryList = STATE.prods.filter(p => p.stock > 0 && p.subcategoria === fVal);
+                primaryList = STATE.prods.filter(p => p.subcategoria === fVal);
                 secondaryList = STATE.prods.filter(p => p.stock > 0 && p.subcategoria !== fVal);
             } else if (fType === 'marca') {
-                primaryList = STATE.prods.filter(p => p.stock > 0 && p.marca === fVal);
+                primaryList = STATE.prods.filter(p => p.marca === fVal);
                 secondaryList = STATE.prods.filter(p => p.stock > 0 && p.marca !== fVal);
             } else {
-                primaryList = STATE.prods.filter(p => p.stock > 0);
+                primaryList = STATE.prods;
             }
             
             if (fType !== 'ofertas' && fType !== 'cestas' && fType !== 'search') {
@@ -2055,6 +2046,18 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let btn = $('btn-send-order');
             if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
             if (typeof updateAllCardUIs === 'function') updateAllCardUIs();
+
+            // Atualiza a Barra Flutuante do Carrinho
+            let fc = $('floating-cart');
+            if (fc) {
+                if (count > 0) {
+                    fc.style.display = 'flex';
+                    $('fc-count').innerText = count;
+                    $('fc-total').innerText = fmt(finalTotal);
+                } else {
+                    fc.style.display = 'none';
+                }
+            }
         }
 
         window.clearCart = function() {
@@ -2395,9 +2398,9 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         function renderVIPList() {
             let container = $('vip-items-grid');
             
-            // LIMITAMOS A 4 OFERTAS PARA NÃO CONFUNDIR O CLIENTE
-            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 4);
-            if(ofertas.length === 0) ofertas = STATE.prods.slice(0, 4); 
+            // LIMITAMOS A 4 OFERTAS PARA NÃO CONFUNDIR O CLIENTE, GARANTINDO QUE TENHAM ESTOQUE
+            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10 && p.stock > 0).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 4);
+            if(ofertas.length === 0) ofertas = STATE.prods.filter(p => p.stock > 0).slice(0, 4); 
 
             // CRIAMOS UM BANNER DE SUCESSO E TRAZEMOS OS BOTÕES PARA O TOPO
             let html = `
@@ -2409,7 +2412,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 35px;">
                 <button class="btn-send" style="margin: 0; background: var(--primary); font-size: 16px; padding: 18px;" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)"><i class="fa-solid fa-bag-shopping" style="margin-right: 8px;"></i> Finalizar Pedido</button>
-                <button class="btn-send" style="margin: 0; background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-light); font-size: 15px;" onclick="closeBasketDetail(); setTimeout(() => scrollToTop(), 300)">Continuar Comprando</button>
+                <button class="btn-send" style="margin: 0; background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-light); font-size: 15px;" onclick="closeBasketDetail(); setTimeout(() => { scrollToTop(); filterBy('ofertas', ''); }, 300)">Continuar Comprando</button>
             </div>
             
             <div style="font-weight: 800; font-size: 14px; margin-bottom: 15px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">🌟 Aproveite e leve junto:</div>
