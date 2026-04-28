@@ -6,7 +6,6 @@
     <title>Importador XML Simples</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Barra de rolagem simples */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
@@ -22,7 +21,7 @@
                 <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
             </label>
             <button onclick="exportarCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-bold transition-colors shadow">
-                ↓ EXPORTAR CSV
+                ↓ EXPORTAR SELECIONADOS
             </button>
         </div>
     </header>
@@ -30,8 +29,12 @@
     <main class="flex flex-1 overflow-hidden">
         
         <div class="w-1/3 bg-white border-r flex flex-col h-full">
-            <div class="p-3 bg-slate-50 border-b text-xs font-bold text-slate-500 uppercase">
-                Produtos Carregados (<span id="contador">0</span>)
+            <div class="p-3 bg-slate-50 border-b flex justify-between items-center">
+                <label class="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-slate-500 uppercase">
+                    <input type="checkbox" id="checkTodos" class="w-4 h-4 accent-blue-600" checked onclick="alternarTodos(this)">
+                    <span>Selecionar Todos</span>
+                </label>
+                <span class="text-xs font-bold text-slate-500 uppercase">Total: <span id="contador">0</span></span>
             </div>
             <div id="listaProdutos" class="flex-1 overflow-y-auto p-2 space-y-2">
                 <p class="text-center text-slate-400 mt-10 text-sm">Nenhum XML carregado.</p>
@@ -51,11 +54,9 @@
     </main>
 
 <script>
-    // 1. DADOS PRINCIPAIS
-    let produtos = []; // Lista que vai guardar todos os produtos extraídos
-    let indiceSelecionado = null; // Para saber qual produto estamos editando
+    let produtos = []; 
+    let indiceSelecionado = null; 
     
-    // O cabeçalho exato necessário para o seu CSV
     const colunasModelo = [
         "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", 
         "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", 
@@ -69,45 +70,33 @@
         "Categoria do produto", "Informações Adicionais"
     ];
 
-    // 2. IMPORTAR E LER O XML
     document.getElementById('xmlInput').addEventListener('change', function(e) {
         const arquivos = Array.from(e.target.files);
-        
         arquivos.forEach(arquivo => {
             const reader = new FileReader();
             reader.onload = function(evento) {
-                // Transforma o texto do arquivo em um objeto XML navegável
                 const xmlDoc = new DOMParser().parseFromString(evento.target.result, "text/xml");
                 extrairProdutosDoXML(xmlDoc);
             };
             reader.readAsText(arquivo);
         });
-        
-        // Limpa o input para permitir selecionar os mesmos arquivos novamente se necessário
         e.target.value = ''; 
     });
 
-    // 3. EXTRAIR DADOS DO XML
     function extrairProdutosDoXML(xml) {
-        // Pega o nome do fornecedor (emitente)
         const fornecedor = xml.querySelector('emit > xNome')?.textContent || "";
-        
-        // Procura por todos os itens (detalhes) da nota
         const itens = xml.querySelectorAll('det');
         
         itens.forEach(det => {
             const prod = det.querySelector('prod');
-            
-            // Cria um objeto vazio e preenche com as chaves do modelo
             let novoProduto = {};
+            
             colunasModelo.forEach(col => novoProduto[col] = "");
             
-            // Pega os dados básicos
             const ean = prod.querySelector('cEAN')?.textContent || "";
             const valorUn = (prod.querySelector('vUnCom')?.textContent || "0.00").replace('.', ',');
             const qtd = (prod.querySelector('qCom')?.textContent || "0").replace('.', ',');
             
-            // Preenche o objeto com o que achamos no XML
             novoProduto["Descrição"] = prod.querySelector('xProd')?.textContent || "Produto Sem Nome";
             novoProduto["Unidade"] = prod.querySelector('uCom')?.textContent || "";
             novoProduto["NCM"] = prod.querySelector('NCM')?.textContent || "";
@@ -116,59 +105,81 @@
             novoProduto["Preço de custo"] = valorUn;
             novoProduto["Estoque"] = qtd;
             novoProduto["Fornecedor"] = fornecedor;
-            novoProduto["GTIN/EAN"] = ean ? `\t${ean}` : ""; // \t previne problemas no Excel
+            novoProduto["GTIN/EAN"] = ean ? `\t${ean}` : ""; 
             
-            // Gera um código aleatório simples (ex: PROD-A1B2)
             const codigoAleatorio = Math.random().toString(36).substring(2, 6).toUpperCase();
             novoProduto["Código"] = `P-${codigoAleatorio}`;
             
-            // Adiciona valores padrão
             novoProduto["Situação"] = "Ativo";
             novoProduto["Condição do Produto"] = "Novo";
+            
+            // NOVIDADE: Adicionamos a propriedade para controlar a seleção
+            novoProduto._selecionado = true;
             
             produtos.push(novoProduto);
         });
         
+        // Garante que o checkbox de "Selecionar Todos" fique marcado ao importar novos
+        document.getElementById('checkTodos').checked = true;
         renderizarLista();
     }
 
-    // 4. RENDERIZAR A LISTA NA TELA
     function renderizarLista() {
         const divLista = document.getElementById('listaProdutos');
         document.getElementById('contador').innerText = produtos.length;
-        divLista.innerHTML = ""; // Limpa a lista
+        divLista.innerHTML = ""; 
         
         produtos.forEach((p, index) => {
             const div = document.createElement('div');
-            // Estilização simples. Se for o selecionado, fica azulzinho.
-            div.className = `p-3 border rounded cursor-pointer transition-colors ${indiceSelecionado === index ? 'bg-blue-100 border-blue-300' : 'bg-white hover:bg-slate-50'}`;
+            div.className = `p-3 border rounded cursor-pointer transition-colors flex gap-3 items-start ${indiceSelecionado === index ? 'bg-blue-100 border-blue-300' : 'bg-white hover:bg-slate-50'}`;
             
+            // NOVIDADE: Adicionado o checkbox. O evento 'stopPropagation' impede que o clique no checkbox abra o editor do produto sem querer.
             div.innerHTML = `
-                <div class="font-bold text-sm truncate text-slate-800">${p["Descrição"]}</div>
-                <div class="flex justify-between mt-1 text-xs text-slate-500">
-                    <span>Cod: ${p["Código"]}</span>
-                    <span class="font-black text-emerald-600">R$ ${p["Preço"]}</span>
+                <input type="checkbox" class="mt-1 w-4 h-4 accent-blue-600" 
+                       ${p._selecionado ? 'checked' : ''} 
+                       onclick="event.stopPropagation(); alternarSelecaoProduto(${index}, this.checked)">
+                <div class="flex-1 overflow-hidden" onclick="abrirEditor(${index})">
+                    <div class="font-bold text-sm truncate text-slate-800">${p["Descrição"]}</div>
+                    <div class="flex justify-between mt-1 text-xs text-slate-500">
+                        <span>Cod: ${p["Código"]}</span>
+                        <span class="font-black text-emerald-600">R$ ${p["Preço"]}</span>
+                    </div>
                 </div>
             `;
             
-            // Quando clicar, abre o editor
-            div.onclick = () => abrirEditor(index);
             divLista.appendChild(div);
         });
     }
 
-    // 5. ABRIR EDITOR PARA PERSONALIZAR
+    // NOVIDADE: Função que atualiza o estado de um produto específico
+    function alternarSelecaoProduto(index, estaMarcado) {
+        produtos[index]._selecionado = estaMarcado;
+        atualizarStatusCheckTodos();
+    }
+
+    // NOVIDADE: Função para marcar/desmarcar todos de uma vez
+    function alternarTodos(checkbox) {
+        const marcar = checkbox.checked;
+        produtos.forEach(p => p._selecionado = marcar);
+        renderizarLista();
+    }
+
+    // NOVIDADE: Verifica se todos estão marcados ou não para ajustar o checkbox do topo
+    function atualizarStatusCheckTodos() {
+        const todosMarcados = produtos.every(p => p._selecionado);
+        document.getElementById('checkTodos').checked = todosMarcados && produtos.length > 0;
+    }
+
     function abrirEditor(index) {
         indiceSelecionado = index;
-        renderizarLista(); // Re-renderiza para atualizar a cor do item selecionado
+        renderizarLista(); 
         
         const produto = produtos[index];
         document.getElementById('nomeProdutoAtual').innerText = produto["Descrição"];
         
         const form = document.getElementById('formularioEditor');
-        form.innerHTML = ""; // Limpa o formulário anterior
+        form.innerHTML = ""; 
         
-        // Cria um campo (input) para cada coluna do modelo
         colunasModelo.forEach(coluna => {
             const div = document.createElement('div');
             div.innerHTML = `
@@ -182,34 +193,30 @@
         });
     }
 
-    // 6. ATUALIZAR DADO ENQUANTO DIGITA
     function atualizarDado(indexProduto, chave, novoValor) {
         produtos[indexProduto][chave] = novoValor;
-        
-        // Se mudou o nome ou código, atualiza o título e a lista (opcional, mas bom visualmente)
         if(chave === "Descrição") {
             document.getElementById('nomeProdutoAtual').innerText = novoValor;
+            renderizarLista(); // Re-renderiza para atualizar o nome na lista em tempo real
         }
     }
 
-    // 7. EXPORTAR PARA CSV
     function exportarCSV() {
-        if (produtos.length === 0) {
-            alert("Não há produtos para exportar. Importe um XML primeiro.");
+        // NOVIDADE: Filtra o array para pegar apenas os produtos marcados
+        const produtosSelecionados = produtos.filter(p => p._selecionado);
+
+        if (produtosSelecionados.length === 0) {
+            alert("Não há produtos selecionados para exportar.");
             return;
         }
 
-        // '\ufeff' ajuda o Excel a ler caracteres especiais (acentos, ç)
         let conteudoCSV = "\ufeff"; 
-        
-        // Linha 1: Cabeçalhos (ex: "ID";"Código";"Descrição")
         conteudoCSV += colunasModelo.map(col => `"${col}"`).join(";") + "\r\n";
 
-        // Linhas seguintes: Os dados dos produtos
-        produtos.forEach(prod => {
+        // Usamos agora a lista filtrada (produtosSelecionados)
+        produtosSelecionados.forEach(prod => {
             let linha = colunasModelo.map(col => {
                 let valor = prod[col] || "";
-                // Remove aspas internas para não quebrar o CSV
                 valor = String(valor).replace(/"/g, ''); 
                 return `"${valor}"`;
             }).join(";");
@@ -217,11 +224,11 @@
             conteudoCSV += linha + "\r\n";
         });
 
-        // Rotina padrão do JavaScript para baixar um arquivo
         const blob = new Blob([conteudoCSV], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         link.href = URL.createObjectURL(blob);
-        link.download = "produtos_exportados.csv";
+        // Coloquei o contador no nome do arquivo para você saber quantos itens exportou
+        link.download = `produtos_selecionados_${produtosSelecionados.length}_itens.csv`;
         link.click();
     }
 </script>
