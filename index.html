@@ -328,7 +328,7 @@
             scroll-snap-align: none;
         }
         .view-mode-2 .product-card-list {
-            min-height: 105px; 
+            min-height: 130px; /* Mais alto, conforme pedido */
         }
 
         /* MODO 3: Tela Cheia (1 Card por tela) */
@@ -479,8 +479,8 @@
             border: 1px solid transparent;
         }
         .product-icon-list {
-            width: 85px;
-            height: 85px;
+            width: 100px; /* Maior conforme pedido */
+            height: 100px;
             object-fit: contain;
             mix-blend-mode: multiply;
             border-radius: 8px;
@@ -503,11 +503,16 @@
             line-height: 1.2;
         }
         .tag-embalagem-list {
-            font-size: 10px;
-            color: var(--text-light);
+            font-size: 11px; /* Maior e mais visível */
+            color: var(--primary);
+            background: #e6e6e6;
+            padding: 3px 8px;
+            border-radius: 4px;
             text-transform: uppercase;
-            font-weight: 600;
-            margin-bottom: 8px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            display: inline-block;
+            width: fit-content;
         }
         .tag-preco-list {
             font-size: 16px;
@@ -810,7 +815,7 @@
         .basket-card:active { opacity: 0.7; }
        .basket-img {
             width: 100%;
-            height: 280px; /* Ajustamos aqui: mudou de 180px para 280px para deixar a imagem mais alta */
+            height: 280px; 
             object-fit: cover;
             border-radius: 8px;
             margin-bottom: 15px;
@@ -1046,7 +1051,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             </div>
             <div class="detail-content" style="padding-top: 10px;">
                 <h1 class="modal-title" id="basketModalTitle">Nome da Cesta</h1>
-                <p style="color: var(--text-light); font-weight: 600; margin-bottom: 20px; font-size: 18px;" id="basketModalPrice">R$ 0,00</p>
+                <p style="font-weight: 600; margin-bottom: 20px; font-size: 18px;" id="basketModalPrice">R$ 0,00</p>
                 
                 <h3 class="related-title" style="margin: 0 0 15px 0;">Itens da Cesta</h3>
                 <p style="font-size: 12px; color: #888; margin-bottom: 15px;">Ajuste as quantidades conforme necessário. Produtos não encontrados no sistema não serão exibidos.</p>
@@ -1121,7 +1126,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         </div>
     </div>
 
-    <main class="main-container view-mode-0" id="vitrine"></main>
+    <main class="main-container view-mode-2" id="vitrine"></main>
 
     <script>
         // ========================================================
@@ -1131,10 +1136,10 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-            viewMode: 0, 
+            viewMode: 2, // Ajustado para lista horizontal padrão
             mainCategories: [],
             activeCatIndex: -1,
-            currentFilter: { type: 'cestas', value: '' }, // Mudamos de 'ofertas' para 'cestas'
+            currentFilter: { type: 'cestas', value: '' },
             pageLimit: 16 
         };
 
@@ -1146,15 +1151,15 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         ];
 
         const BASKETS = [
-          { "id": "cesta1", "nome": "Economica Bonini", "preco": 85, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
-          { "id": "cesta2", "nome": "Mini Bonini", "preco": 165, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
-          { "id": "cesta3", "nome": "Mini Koblenz", "preco": 170, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
-          { "id": "cesta4", "nome": "Pequena Bonini (Oferta)", "preco": 200, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
-          { "id": "cesta5", "nome": "Pequena Koblenz (Oferta)", "preco": 205, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
-          { "id": "cesta6", "nome": "Média Koblenz", "preco": 325, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
-          { "id": "cesta7", "nome": "Média Bonini", "preco": 320, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
-          { "id": "cesta8", "nome": "Grande Koblenz", "preco": 390, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
-          { "id": "cesta9", "nome": "Grande Bonini", "preco": 380, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] }
+          { "id": "cesta1", "nome": "Economica Bonini", "oldPrice": 85, "preco": 80, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
+          { "id": "cesta2", "nome": "Mini Bonini", "oldPrice": 165, "preco": 155, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta3", "nome": "Mini Koblenz", "oldPrice": 170, "preco": 160, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta4", "nome": "Pequena Bonini (Oferta)", "oldPrice": 215, "preco": 205, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta5", "nome": "Pequena Koblenz (Oferta)", "oldPrice": 220, "preco": 210, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta6", "nome": "Média Koblenz", "oldPrice": 325, "preco": 310, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta7", "nome": "Média Bonini", "oldPrice": 320, "preco": 305, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta8", "nome": "Grande Koblenz", "oldPrice": 390, "preco": 370, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta9", "nome": "Grande Bonini", "oldPrice": 380, "preco": 360, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] }
         ];
         
         let currentBasketItems = [];
@@ -1190,7 +1195,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         function scrollToTop() { 
             $('vitrine').scrollTop = 0;
             $('app-search-input').value = '';
-            STATE.currentFilter = { type: 'cestas', value: '' }; // Mudamos de 'ofertas' para 'cestas'
+            STATE.currentFilter = { type: 'cestas', value: '' }; 
             STATE.activeCatIndex = -1;
             renderVitrineEngine();
             renderCategoryChips();
@@ -1242,8 +1247,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             html += `<div class="category-chip ${isOfertasActive}" onclick="filterBy('ofertas', '')">Ofertas</div>`;
             
             STATE.mainCategories.forEach((cat, index) => {
-                let catN = norm(cat); // Remove acentos e maiúsculas
-                // Previne botões duplicados caso exista "ofertas" ou "cestas" cadastradas no banco de dados
+                let catN = norm(cat); 
                 if (catN.includes('cestas') || catN === 'ofertas') return; 
 
                 let isActive = (STATE.activeCatIndex === index && !STATE.currentFilter.type.startsWith('ofertas') && STATE.currentFilter.type !== 'cestas') ? 'active' : '';
@@ -1364,7 +1368,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 }
             });
 
-            // Ordenação "à prova de balas" ignorando maiúsculas e acentos
             STATE.mainCategories = Object.keys(catMap).sort((a, b) => {
                 let catA = norm(a).trim();
                 let catB = norm(b).trim();
@@ -1383,7 +1386,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             
             STATE.mainCategories.forEach((cat, index) => {
                 let catN = norm(cat);
-                // Não mostra Cestas e Ofertas duplicadas no menu lateral
                 if (catN.includes('cestas') || catN === 'ofertas') return; 
 
                 let catId = 'cat-' + index;
@@ -1407,7 +1409,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
        window.filterBy = function(type, value) {
             if ($('sidebar').classList.contains('open')) history.back(); 
-            // Adicionamos a linha abaixo para fechar o modal do produto se ele estiver aberto
             if ($('detailModal').classList.contains('active')) history.back();
             
             STATE.currentFilter = { type, value };
@@ -1490,15 +1491,17 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             if (currentMode === 2) {
                 let controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>`
-                    : `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${prod.id}', event)">${q} Adicionados</div>`;
+                    : `<div class="qty-controls" style="padding: 6px 10px; font-size: 14px; margin: 0;"><i class="fa-solid fa-minus qty-btn" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();"></i><span style="font-weight:bold; width: 20px; text-align:center;">${q}</span><i class="fa-solid fa-plus qty-btn" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();"></i></div>`;
+                
                 let embalagemHtml = prod.embalagem ? `<div class="tag-embalagem-list">${prod.embalagem}</div>` : '';
+                
                 return `
                     <div class="product-card-list" onclick="openDetail('${prod.id}')">
                         ${discountBadge}
                         <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon-list lazy-img" alt="${prod.name}">
                         <div class="product-info-list">
-                            <div class="product-name-list">${prod.name}</div>
                             ${embalagemHtml}
+                            <div class="product-name-list">${prod.name}</div>
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
                                 <div class="tag-preco-list">${oldPriceHtml} ${fmt(prod.price)}</div>
                                 <div class="card-action-area" id="action-card-${prod.id}">
@@ -1539,7 +1542,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     if(q === 0) {
                         elList.innerHTML = `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>`;
                     } else {
-                        elList.innerHTML = `<div class="btn-quick-add-list" style="background:var(--success);" onclick="quickAddToCart('${p.id}', event)">${q} Adicionados</div>`;
+                        elList.innerHTML = `<div class="qty-controls" style="padding: 6px 10px; font-size: 14px; margin: 0;"><i class="fa-solid fa-minus qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();"></i><span style="font-weight:bold; width: 20px; text-align:center;">${q}</span><i class="fa-solid fa-plus qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();"></i></div>`;
                     }
                 }
 
@@ -1592,11 +1595,18 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 
                 let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
                 BASKETS.forEach(basket => {
+                    let priceHtml = '';
+                    if (basket.oldPrice) {
+                         priceHtml = `<div class="basket-price"><span style="text-decoration: line-through; font-size: 14px; color: #888; font-weight: normal; margin-right: 5px;">${fmt(basket.oldPrice)}</span><span style="color: #ef4444;">${fmt(basket.preco)}</span></div>`;
+                    } else {
+                         priceHtml = `<div class="basket-price">${fmt(basket.preco)}</div>`;
+                    }
+
                     html += `
                     <div class="basket-card" onclick="openBasketDetail('${basket.id}')">
                         <img src="${basket.imagem}" class="basket-img" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'">
-                        <div class="basket-title">${basket.nome}</div>
-                        <div class="basket-price">${fmt(basket.preco)}</div>
+                        <div class="basket-title">${basket.nome} ${basket.oldPrice ? '<span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; vertical-align: middle; margin-left: 5px;">PROMO</span>' : ''}</div>
+                        ${priceHtml}
                         <div class="btn-quick-add-list" style="width: 100%; justify-content: center; margin-top: 10px; background: #000; color:#fff;" onclick="event.stopPropagation(); openBasketDetail('${basket.id}');">
                             Ver Itens da Cesta
                         </div>
@@ -1623,7 +1633,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     return terms.every(term => textoBusca.includes(term));
                 });
             } else if (fType === 'ofertas') {
-                // Ordena primeiro pela lista oficial (sem acento), depois pelo desconto
                 primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => {
                     let catA = norm(a.categoria || '').trim();
                     let catB = norm(b.categoria || '').trim();
@@ -1631,18 +1640,14 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     let iA = ORDEM_CATEGORIAS.indexOf(catA);
                     let iB = ORDEM_CATEGORIAS.indexOf(catB);
                     
-                    // Se a categoria não estiver na nossa lista, jogamos para o final (999)
                     if (iA === -1) iA = 999; 
                     if (iB === -1) iB = 999;
                     
-                    // Se as categorias forem diferentes, organiza pela ordem da nossa lista
                     if (iA !== iB) return iA - iB; 
                     
-                    // Se for a mesma categoria, mostra o maior desconto primeiro
                     return b.discountPercent - a.discountPercent; 
                 });
                 
-                // Deixamos vazia para exibir APENAS itens com desconto
                 secondaryList = [];
             } else if (fType === 'ofertas_desc') { 
                 let descVal = parseInt(fVal);
@@ -1681,12 +1686,12 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
            let fullList = primaryList.concat(secondaryList);
             let buffer = [];
             let isPrimaryPhase = true;
-            let lastCatRendered = null; // Variável para lembrar a última categoria desenhada
+            let lastCatRendered = null; 
             
             let listToRender = fullList.slice(0, STATE.pageLimit);
 
             for (let i = 0; i < listToRender.length; i++) {
-                let prod = listToRender[i]; // Pegamos o produto atual da lista
+                let prod = listToRender[i]; 
 
                 if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'ofertas' && fType !== 'search') {
                     isPrimaryPhase = false;
@@ -1701,21 +1706,17 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     fragment.appendChild(divPage);
                 }
 
-               // Lógica de subdivisão APENAS para a aba Ofertas
                 if (fType === 'ofertas') {
                     let catAtual = prod.categoria || 'Outros';
                     
-                    // Se a categoria mudou em relação à anterior, inserimos um cabeçalho
                     if (catAtual !== lastCatRendered) {
                         lastCatRendered = catAtual;
                         
-                        // 1. Fechamos a página de produtos atual se houver algo nela
                         if (buffer.length > 0) {
                             let page = document.createElement('div'); page.className = 'product-page';
                             page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                         }
                         
-                        // 2. Criamos o cabeçalho visual para separar as categorias
                         let divHeader = document.createElement('div');
                         divHeader.style.width = '100%';
                         divHeader.style.scrollSnapAlign = 'start';
@@ -1727,22 +1728,19 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     }
                 }
 
-                // Colocamos o HTML do produto na fila
                 buffer.push(renderCardHTML(prod));
                 
                 if (buffer.length === 4) {
                     let page = document.createElement('div'); page.className = 'product-page';
                     page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
                 }
-            } // <-- Aqui termina o laço "for"
+            } 
             
-            // Verificamos se sobrou algo no buffer depois que o laço terminou
             if (buffer.length > 0) {
                 let page = document.createElement('div'); page.className = 'product-page';
                 page.innerHTML = buffer.join(''); fragment.appendChild(page);
             }
 
-            // Se a lista total for maior que o limite, criamos o ícone de carregamento ("sentinela")
             if (fullList.length > STATE.pageLimit) {
                 let sentinel = document.createElement('div');
                 sentinel.id = 'scroll-sentinel';
@@ -2134,7 +2132,12 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
            
             $('basketModalImg').src = basket.imagem;
             $('basketModalTitle').innerText = basket.nome;
-            $('basketModalPrice').innerText = "Valor Sugerido: " + fmt(basket.preco);
+            
+            if (basket.oldPrice) {
+                $('basketModalPrice').innerHTML = `<span style="text-decoration: line-through; font-size: 14px; color: #888; margin-right: 10px;">De: ${fmt(basket.oldPrice)}</span> <span style="color: #ef4444;">Por: ${fmt(basket.preco)}</span>`;
+            } else {
+                $('basketModalPrice').innerText = "Valor Sugerido: " + fmt(basket.preco);
+            }
             
             currentBasketItems = [];
             basket.produtos.forEach(itemString => {
@@ -2258,8 +2261,8 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 const bagIcon = document.querySelector('.fa-bag-shopping');
                 if(bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
                 let btnAdd = $('btn-add-basket');
-                btnAdd.innerText = 'Cesta Adicionada! Veja Ofertas ✅';
-                btnAdd.style.background = 'var(--text-dark)';
+                btnAdd.innerText = 'CESTA ADICIONADA ✅';
+                btnAdd.style.background = '#000000';
                 renderVIPList();
             } else {
                 alert("Nenhum produto válido para adicionar.");
@@ -2271,7 +2274,8 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let ofertas = STATE.prods.filter(p => p.discountPercent >= 10).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 30);
             if(ofertas.length === 0) ofertas = STATE.prods.slice(0, 10); 
 
-            let html = '';
+            let html = `<div style="background: var(--success); color: white; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px; font-weight: 800; font-size: 16px;">🌟 Aproveite as Ofertas de Hoje</div>`;
+            
             ofertas.forEach(p => {
                 let q = STATE.cart[p.id] || 0;
                 let controlsHtml = q === 0 
@@ -2303,6 +2307,12 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 </div>`;
             });
             
+            html += `
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button class="btn-send" style="background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-light);" onclick="closeBasketDetail(); setTimeout(() => scrollToTop(), 300)">Ver mais produtos</button>
+                <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar pedido</button>
+            </div>`;
+            
             container.innerHTML = html;
             $('vip-list-container').style.display = 'block';
             setTimeout(() => { $('vip-list-container').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
@@ -2333,7 +2343,9 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     aplicarDescontos(STATE.prods);
                 }
                 loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
-                STATE.viewMode = 0;
+                
+                // Mudei o viewMode para 2 para iniciar no formato lista horizontal
+                STATE.viewMode = 2;
                 renderVitrineEngine();
                 renderCategoryChips();
                 
