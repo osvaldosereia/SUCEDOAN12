@@ -1308,7 +1308,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             
             container.innerHTML = html;
             
-           setTimeout(() => {
+         setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
                     // Alteramos para scrollTo, calculando a distância do chip até a borda esquerda (offsetLeft)
@@ -1319,7 +1319,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     });
                 }
             }, 50);
-      }
 
             // Chamada para os sub-chips
             renderSubCategoryChips();
@@ -1397,7 +1396,8 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     });
                 }
             }, 50);
-        }
+        } // <-- AQUI ESTÁ A CHAVE QUE FALTAVA PARA FECHAR A renderSubCategoryChips!
+
         window.toggleSubMenu = function(id, iconEl) {
             let el = document.getElementById(id);
             if (el.style.display === 'none') {
