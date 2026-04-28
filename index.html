@@ -193,7 +193,8 @@
         .category-chip {
             background: #ffffff;
             color: var(--text-light);
-            padding: 8px 18px;
+            /* Reduzimos o padding de '8px 18px' para '6px 14px' para ficar mais compacto */
+            padding: 6px 14px; 
             border-radius: 20px;
             font-size: 13px;
             font-weight: 700;
@@ -1305,10 +1306,15 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             
             container.innerHTML = html;
             
-            setTimeout(() => {
+           setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
-                    activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    // Alteramos para scrollTo, calculando a distância do chip até a borda esquerda (offsetLeft)
+                    // Subtraímos 15 para manter a margem visual da tela
+                    container.scrollTo({ 
+                        left: activeChip.offsetLeft - 15, 
+                        behavior: 'smooth' 
+                    });
                 }
             }, 50);
 
