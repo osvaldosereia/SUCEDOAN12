@@ -1387,11 +1387,13 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
-                    activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    // Mesma lógica aplicada aos chips secundários
+                    container.scrollTo({ 
+                        left: activeChip.offsetLeft - 15, 
+                        behavior: 'smooth' 
+                    });
                 }
             }, 50);
-        }
-
         window.toggleSubMenu = function(id, iconEl) {
             let el = document.getElementById(id);
             if (el.style.display === 'none') {
