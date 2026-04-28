@@ -328,7 +328,7 @@
             scroll-snap-align: none;
         }
         .view-mode-2 .product-card-list {
-            min-height: 130px; /* Mais alto, conforme pedido */
+            min-height: 130px; 
         }
 
         /* MODO 3: Tela Cheia (1 Card por tela) */
@@ -377,13 +377,11 @@
             mix-blend-mode: multiply;
             position: relative;
             z-index: 1;
-            /* Subimos a margem para evitar que a imagem fique por trás do novo texto de 3 linhas */
             margin-bottom: 30%; 
         }
 
         .tag-preco-nova {
             position: absolute;
-            /* Subiu os 20px base + espaço extra para a 3ª linha do título */
             bottom: 82px; 
             left: 0;      
             right: auto;
@@ -403,7 +401,6 @@
 
         .tag-embalagem {
             position: absolute;
-            /* Subiu 20px (era 5px) */
             bottom: 25px; 
             left: 12px;  
             right: auto;
@@ -417,19 +414,16 @@
 
         .tag-nome-produto {
             position: absolute;
-            /* Subiu 20px (era 10px) */
             bottom: 30px; 
             left: 12px;   
             right: 48px;  
             color: #666666; 
-            /* Fonte um pouco maior e mais leve */
             font-size: 0.75rem; 
             font-weight: 600; 
             z-index: 2;
             text-align: left; 
             line-height: 1.2;
             display: -webkit-box;
-            /* Agora permite até 3 linhas */
             -webkit-line-clamp: 3; 
             -webkit-box-orient: vertical;
             overflow: hidden; 
@@ -439,7 +433,6 @@
 
         .card-action-grid {
             position: absolute;
-            /* Subiu 20px (era 15px) */
             bottom: 35px;
             right: 10px;
             z-index: 3;
@@ -479,7 +472,7 @@
             border: 1px solid transparent;
         }
         .product-icon-list {
-            width: 100px; /* Maior conforme pedido */
+            width: 100px; 
             height: 100px;
             object-fit: contain;
             mix-blend-mode: multiply;
@@ -503,7 +496,7 @@
             line-height: 1.2;
         }
         .tag-embalagem-list {
-            font-size: 11px; /* Maior e mais visível */
+            font-size: 11px; 
             color: var(--primary);
             background: #e6e6e6;
             padding: 3px 8px;
@@ -871,7 +864,7 @@
         .btn-send { width: 100%; background: var(--success); color: #fff; padding: 18px; border-radius: 14px; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; border: none; margin-bottom: 15px; cursor: pointer; }
         .btn-clear { width: 100%; border: 1px solid #ef4444; color: #ef4444; background: #fff; padding: 16px; border-radius: 12px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
 
-/* Ajuste do layout de agendamento (1 por linha e mais fino) */
+        /* Ajuste do layout de agendamento (1 por linha e mais fino) */
         #delivery-options-list {
             grid-template-columns: 1fr;
         }
@@ -1960,6 +1953,8 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             renderCheckoutItems(); updateTotals();
             $('checkout-drawer').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back();
         };
+        
+        window.closeCheckout = function() { $('checkout-drawer').classList.remove('open'); $('overlay').classList.remove('open'); };
 
         window.selectDelivery = function(idx) { 
             STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; 
@@ -1986,6 +1981,40 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             $('chk-voucher').value = brand;
             document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); 
             btn.classList.add('selected'); 
+        };
+
+        function renderCheckoutItems() {
+            $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
+                if (String(id).startsWith('fee_cesta')) return '';
+                let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id]; if(!p) return '';
+                return `
+                <div class="cart-item-row">
+                    <div class="cart-item-info">
+                        <img src="${p.img}" class="cart-item-img">
+                        <div>
+                            <div class="cart-item-name">${p.name}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-light);">${q}x ${fmt(p.price)}</div>
+                        </div>
+                    </div>
+                    <div class="qty-controls" style="padding: 6px 10px; font-size: 14px;">
+                        <i class="fa-solid fa-minus qty-btn" onclick="updateCartItem('${id}', -1)"></i>
+                        <span style="font-weight:bold; width: 20px; text-align:center;">${q}</span>
+                        <i class="fa-solid fa-plus qty-btn" onclick="updateCartItem('${id}', 1)"></i>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+        
+        window.updateCartItem = function(id, delta) {
+            let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
+            let n = Math.max(0, (STATE.cart[id] || 0) + delta);
+            if (n > p.stock) return alert("Estoque insuficiente");
+            STATE.cart[id] = n; 
+            if (n === 0) { 
+                delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); 
+                if(STATE.cartOrder.length === 0) history.back();
+            }
+            updateTotals(); saveCart(); renderCheckoutItems();
         };
 
         function updateTotals() {
@@ -2033,6 +2062,12 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
             if (typeof updateAllCardUIs === 'function') updateAllCardUIs();
         }
+
+        window.clearCart = function() {
+            if(confirm("Deseja realmente esvaziar sua sacola?")) { 
+                STATE.cart = {}; STATE.cartOrder = []; updateTotals(); saveCart(); history.back(); 
+            }
+        };
 
        window.sendOrder = function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
