@@ -1230,8 +1230,9 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let isOfertasActive = STATE.currentFilter.type.startsWith('ofertas') || STATE.currentFilter.type === 'search' ? 'active' : '';
             let isCestasActive = STATE.currentFilter.type === 'cestas' ? 'active' : '';
             
-            let html = `<div class="category-chip ${isOfertasActive}" onclick="filterBy('ofertas', '')">Ofertas</div>`;
-            html += `<div class="category-chip ${isCestasActive}" onclick="filterBy('cestas', '')"><i class="fa-solid fa-box-open" style="margin-right: 4px;"></i> Cestas Básicas</div>`;
+            // Invertemos aqui: Cestas primeiro, depois Ofertas
+            let html = `<div class="category-chip ${isCestasActive}" onclick="filterBy('cestas', '')"><i class="fa-solid fa-box-open" style="margin-right: 4px;"></i> Cestas Básicas</div>`;
+            html += `<div class="category-chip ${isOfertasActive}" onclick="filterBy('ofertas', '')">Ofertas</div>`;
             
             STATE.mainCategories.forEach((cat, index) => {
                 let isActive = (STATE.activeCatIndex === index && !STATE.currentFilter.type.startsWith('ofertas') && STATE.currentFilter.type !== 'cestas') ? 'active' : '';
@@ -1239,6 +1240,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             });
             
             container.innerHTML = html;
+            
 
             setTimeout(() => {
                 let activeChip = container.querySelector('.active');
