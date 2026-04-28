@@ -1183,7 +1183,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         function scrollToTop() { 
             $('vitrine').scrollTop = 0;
             $('app-search-input').value = '';
-            STATE.currentFilter = { type: 'ofertas', value: '' }; 
+            STATE.currentFilter = { type: 'cestas', value: '' }; // Mudamos de 'ofertas' para 'cestas'
             STATE.activeCatIndex = -1;
             renderVitrineEngine();
             renderCategoryChips();
