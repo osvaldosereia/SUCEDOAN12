@@ -1138,6 +1138,13 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             pageLimit: 16 
         };
 
+        // Nossa lista oficial de ordem das categorias
+        const ORDEM_CATEGORIAS = [
+            'Mercearia', 'Lavanderia', 'Limpeza', 'Café da Manhã', 
+            'Temperos', 'Sucos e Refris', 'Bolachas e Biscoitos', 
+            'Higiene', 'Sabonete', 'Shampoo', 'Beleza'
+        ];
+
         const BASKETS = [
           { "id": "cesta1", "nome": "Economica Bonini", "preco": 85, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
           { "id": "cesta2", "nome": "Mini Bonini", "preco": 165, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
@@ -1596,8 +1603,24 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     return terms.every(term => textoBusca.includes(term));
                 });
             } else if (fType === 'ofertas') {
-                primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => b.discountPercent - a.discountPercent);
-                secondaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) === 0);
+                // Ordena primeiro pela lista oficial de categorias, depois pelo maior desconto
+                primaryList = STATE.prods.filter(p => p.stock > 0 && (p.discountPercent || 0) > 0).sort((a, b) => {
+                    let iA = ORDEM_CATEGORIAS.indexOf(a.categoria || '');
+                    let iB = ORDEM_CATEGORIAS.indexOf(b.categoria || '');
+                    
+                    // Se a categoria não estiver na nossa lista, jogamos para o final (999)
+                    if (iA === -1) iA = 999; 
+                    if (iB === -1) iB = 999;
+                    
+                    // Se as categorias forem diferentes, organiza pela ordem da nossa lista
+                    if (iA !== iB) return iA - iB; 
+                    
+                    // Se for a mesma categoria, mostra o maior desconto primeiro
+                    return b.discountPercent - a.discountPercent; 
+                });
+                
+                // Deixamos vazia para exibir APENAS itens com desconto
+                secondaryList = []; 
             } else if (fType === 'ofertas_desc') { 
                 let descVal = parseInt(fVal);
                 primaryList = STATE.prods.filter(p => p.stock > 0 && p.discountPercent === descVal);
@@ -1635,10 +1658,13 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let fullList = primaryList.concat(secondaryList);
             let buffer = [];
             let isPrimaryPhase = true;
+            let lastCatRendered = null; // Variável para lembrar a última categoria desenhada
             
             let listToRender = fullList.slice(0, STATE.pageLimit);
 
             for (let i = 0; i < listToRender.length; i++) {
+                let prod = listToRender[i]; // Pegamos o produto atual da lista
+
                 if (isPrimaryPhase && i >= primaryList.length && secondaryList.length > 0 && fType !== 'ofertas' && fType !== 'search') {
                     isPrimaryPhase = false;
                     if(buffer.length > 0) {
@@ -1651,7 +1677,36 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     divPage.innerHTML = `<div class="category-divider" style="padding: 40px 10px 20px; font-weight: bold; text-align: center; color: #888;">Explore Mais Categorias</div>`;
                     fragment.appendChild(divPage);
                 }
-                buffer.push(renderCardHTML(listToRender[i]));
+
+                // Lógica de subdivisão APENAS para a aba Ofertas
+                if (fType === 'ofertas') {
+                    let catAtual = prod.categoria || 'Outros';
+                    
+                    // Se a categoria mudou em relação à anterior, inserimos um cabeçalho
+                    if (catAtual !== lastCatRendered) {
+                        lastCatRendered = catAtual;
+                        
+                        // 1. Fechamos a página de produtos atual se houver algo nela
+                        if (buffer.length > 0) {
+                            let page = document.createElement('div'); page.className = 'product-page';
+                            page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
+                        }
+                        
+                        // 2. Criamos o cabeçalho visual para separar as categorias
+                        let divHeader = document.createElement('div');
+                        divHeader.style.width = '100%';
+                        divHeader.style.scrollSnapAlign = 'start';
+                        divHeader.innerHTML = `
+                            <div style="padding: 25px 15px 5px; font-weight: 800; font-size: 1.1rem; color: var(--text-dark); border-bottom: 2px solid var(--primary); margin: 0 10px 10px 10px; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-tag" style="color: #ef4444;"></i> ${catAtual}
+                            </div>`;
+                        fragment.appendChild(divHeader);
+                    }
+                }
+
+                // Colocamos o HTML do produto na fila
+                buffer.push(renderCardHTML(prod));
+                
                 if (buffer.length === 4) {
                     let page = document.createElement('div'); page.className = 'product-page';
                     page.innerHTML = buffer.join(''); fragment.appendChild(page); buffer = [];
