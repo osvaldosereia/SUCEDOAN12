@@ -871,6 +871,49 @@
         .btn-send { width: 100%; background: var(--success); color: #fff; padding: 18px; border-radius: 14px; font-weight: 800; font-size: 1.1rem; text-transform: uppercase; border: none; margin-bottom: 15px; cursor: pointer; }
         .btn-clear { width: 100%; border: 1px solid #ef4444; color: #ef4444; background: #fff; padding: 16px; border-radius: 12px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
 
+/* Ajuste do layout de agendamento (1 por linha e mais fino) */
+        #delivery-options-list {
+            grid-template-columns: 1fr;
+        }
+        #delivery-options-list .pay-btn {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            text-align: left;
+        }
+
+        /* Estilos das bandeiras de voucher */
+        .voucher-brands {
+            display: none; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+            margin-top: 12px;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: 12px;
+        }
+        .voucher-brands.open {
+            display: grid;
+        }
+        .brand-btn {
+            padding: 8px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            background: #fff;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .brand-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+        
         /* =========================================
            BANNER INSTAGRAM FLUTUANTE
         ========================================= */
@@ -1074,7 +1117,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
         </div>
 
-    <div class="checkout-drawer" id="checkout-drawer">
+   <div class="checkout-drawer" id="checkout-drawer">
         <div class="chk-header">
             Sua Sacola
             <i class="fa-solid fa-xmark" style="cursor: pointer;" onclick="history.back()"></i>
@@ -1105,19 +1148,35 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
             <div class="chk-section">
                 <div class="chk-title">Pagamento</div>
-                <div class="pay-options">
+                <div class="pay-options" id="main-payment-options">
                     <button class="pay-btn selected" onclick="selectPayment('PIX', this)">PIX</button>
                     <button class="pay-btn" onclick="selectPayment('Dinheiro', this)">Dinheiro</button>
                     <button class="pay-btn" onclick="selectPayment('Débito', this)">Débito</button>
                     <button class="pay-btn" onclick="selectPayment('Crédito', this)">Crédito</button>
+                    <button class="pay-btn" onclick="selectPayment('Cartão Alimentação', this)">Alimentação</button>
+                    <button class="pay-btn" onclick="selectPayment('Cartão Refeição', this)">Refeição</button>
                 </div>
+
+                <div id="voucher-brands-container" class="voucher-brands">
+                    <button class="brand-btn" onclick="selectVoucherBrand('Pluxee', this)">Pluxee</button>
+                    <button class="brand-btn" onclick="selectVoucherBrand('Sodexo', this)">Sodexo</button>
+                    <button class="brand-btn" onclick="selectVoucherBrand('Alelo', this)">Alelo</button>
+                    <button class="brand-btn" onclick="selectVoucherBrand('Flash', this)">Flash</button>
+                    <button class="brand-btn" onclick="selectVoucherBrand('Caju', this)">Caju</button>
+                    <button class="brand-btn" onclick="selectVoucherBrand('Ifood', this)">iFood</button>
+                </div>
+
                 <input type="hidden" id="chk-pagamento" value="PIX">
+                <input type="hidden" id="chk-voucher" value="">
             </div>
 
            <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success);" id="sum-desc-row"><span>Descontos Promo</span><span id="sum-desc">R$ 0,00</span></div>
-                <div class="summary-row" style="color: var(--success); display: none;" id="sum-vip-row"><span>Desconto Cesta VIP (-5%)</span><span id="sum-vip-desc">R$ 0,00</span></div>
+                
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-basket-row"><span>Desconto Promocional (Cesta)</span><span id="sum-basket-desc">R$ 0,00</span></div>
+                
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-desc-row"><span>Desconto Agendamento</span><span id="sum-desc">R$ 0,00</span></div>
+                
                 <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
             </div>
 
@@ -1894,52 +1953,45 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             }
             STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; 
             STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
-            $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}</button>`).join('');
+            
+            // Botão alterado para 1 linha
+            $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 800;">-${fmt(opt.discount)}</span>` : ''}</button>`).join('');
+            
             renderCheckoutItems(); updateTotals();
             $('checkout-drawer').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back();
         };
 
-        window.closeCheckout = function() { $('checkout-drawer').classList.remove('open'); $('overlay').classList.remove('open'); };
-        window.selectDelivery = function(idx) { STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; $('delivery-options-list').innerHTML = STATE.deliveryOptions.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})">${opt.title} <br><small>${opt.dateStr}</small> ${opt.discount > 0 ? `<br><small style="color:var(--success)">-${fmt(opt.discount)}</small>` : ''}</button>`).join(''); updateTotals(); };
-        window.selectPayment = function(metodo, btn) { $('chk-pagamento').value = metodo; document.querySelectorAll('#checkout-drawer .pay-btn').forEach(el => el.classList.remove('selected')); btn.classList.add('selected'); };
+        window.selectDelivery = function(idx) { 
+            STATE.selectedDeliveryIndex = idx; let sel = STATE.deliveryOptions[idx]; STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr; 
+            $('delivery-options-list').innerHTML = STATE.deliveryOptions.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 800;">-${fmt(opt.discount)}</span>` : ''}</button>`).join(''); 
+            updateTotals(); 
+        };
 
-        function renderCheckoutItems() {
-            $('chk-items-list').innerHTML = STATE.cartOrder.map(id => {
-                if (String(id).startsWith('fee_cesta')) return '';
-                let p = STATE.prods.find(x => String(x.id) === String(id)); let q = STATE.cart[id]; if(!p) return '';
-                return `
-                <div class="cart-item-row">
-                    <div class="cart-item-info">
-                        <img src="${p.img}" class="cart-item-img">
-                        <div>
-                            <div class="cart-item-name">${p.name}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-light);">${q}x ${fmt(p.price)}</div>
-                        </div>
-                    </div>
-                    <div class="qty-controls" style="padding: 6px 10px; font-size: 14px;">
-                        <i class="fa-solid fa-minus qty-btn" onclick="updateCartItem('${id}', -1)"></i>
-                        <span style="font-weight:bold; width: 20px; text-align:center;">${q}</span>
-                        <i class="fa-solid fa-plus qty-btn" onclick="updateCartItem('${id}', 1)"></i>
-                    </div>
-                </div>`;
-            }).join('');
-        }
+        window.selectPayment = function(metodo, btn) { 
+            $('chk-pagamento').value = metodo; 
+            document.querySelectorAll('#main-payment-options .pay-btn').forEach(el => el.classList.remove('selected')); 
+            btn.classList.add('selected'); 
 
-        window.updateCartItem = function(id, delta) {
-            let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
-            let n = Math.max(0, (STATE.cart[id] || 0) + delta);
-            if (n > p.stock) return alert("Estoque insuficiente");
-            STATE.cart[id] = n; 
-            if (n === 0) { 
-                delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); 
-                if(STATE.cartOrder.length === 0) history.back();
+            let voucherContainer = $('voucher-brands-container');
+            if(metodo === 'Cartão Alimentação' || metodo === 'Cartão Refeição') {
+                voucherContainer.classList.add('open');
+            } else {
+                voucherContainer.classList.remove('open');
+                $('chk-voucher').value = '';
+                document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected'));
             }
-            updateTotals(); saveCart(); renderCheckoutItems();
+        };
+
+        window.selectVoucherBrand = function(brand, btn) {
+            $('chk-voucher').value = brand;
+            document.querySelectorAll('.brand-btn').forEach(el => el.classList.remove('selected')); 
+            btn.classList.add('selected'); 
         };
 
         function updateTotals() {
             let sumBase = 0; 
             let count = 0; 
+            let basketDiscountTotal = 0;
             
             Object.entries(STATE.cart).forEach(([id, q]) => { 
                 let p = STATE.prods.find(x => String(x.id) === String(id)); 
@@ -1947,6 +1999,14 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     sumBase += p.price * q; 
                     if (!String(id).startsWith('fee_cesta')) {
                         count += q; 
+                    } else {
+                        // Calcula o desconto real baseado no oldPrice da cesta
+                        let bId = String(id).replace('fee_', '');
+                        let basketObj = BASKETS.find(b => b.id === bId);
+                        if (basketObj && basketObj.oldPrice) {
+                            let diff = basketObj.oldPrice - basketObj.preco;
+                            if (diff > 0) basketDiscountTotal += (diff * q);
+                        }
                     }
                 } 
             });
@@ -1954,10 +2014,17 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let badge = $('cart-badge');
             if (count > 0) { badge.style.display = 'block'; badge.innerText = count > 99 ? '99+' : count; } else { badge.style.display = 'none'; }
             
-            $('sum-sub').innerText = fmt(sumBase); 
+            // O subtotal exibido será o valor total (com a cesta no preço normal) para evidenciar o desconto
+            let subtotalVisual = sumBase + basketDiscountTotal;
+            $('sum-sub').innerText = fmt(subtotalVisual); 
+            
+            // Renderiza Desconto da Cesta
+            $('sum-basket-desc').innerText = `- ${fmt(basketDiscountTotal)}`;
+            $('sum-basket-row').style.display = basketDiscountTotal > 0 ? 'flex' : 'none';
+
+            // Renderiza Desconto de Agendamento
             $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; 
             $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
-            $('sum-vip-row').style.display = 'none';
             
             let finalTotal = sumBase - STATE.deliveryDiscount;
             $('sum-total').innerText = fmt(finalTotal);
@@ -1967,21 +2034,26 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             if (typeof updateAllCardUIs === 'function') updateAllCardUIs();
         }
 
-        window.clearCart = function() {
-            if(confirm("Deseja realmente esvaziar sua sacola?")) { 
-                STATE.cart = {}; STATE.cartOrder = []; updateTotals(); saveCart(); history.back(); 
-            }
-        };
-
        window.sendOrder = function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
             const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.replace(/\D/g,""); const whats = $('chk-whats').value.trim();
             const cidade = 'Cuiabá'; const cep = $('chk-cep').value.replace(/\D/g,""); const bairro = $('chk-bairro').value.trim(); const endereco = $('chk-endereco').value.trim();
-            const pag = $('chk-pagamento').value;
+            
+            let pag = $('chk-pagamento').value;
+            let voucher = $('chk-voucher').value;
+            
+            if ((pag === 'Cartão Alimentação' || pag === 'Cartão Refeição') && !voucher) {
+                return alert("Por favor, selecione a bandeira do seu cartão.");
+            }
+            if (voucher) {
+                pag += ` (${voucher})`;
+            }
+
             if (!nome || !cpf || !whats || !bairro || !endereco) return alert("Preencha todos os dados de entrega."); 
             salvarDadosLocalmente({ nome, cpf: $('chk-cpf').value, whats, cidade, cep: $('chk-cep').value, bairro, endereco });
             btn.disabled = true; btn.innerText = "Processando...";
             const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let totalBruto = 0; let hasBasket = false;
+            let totalDescontoCestas = 0;
             
             Object.entries(STATE.cart).forEach(([cartId, q]) => { 
                 const p = STATE.prods.find(x => String(x.id) === String(cartId)); 
@@ -1989,12 +2061,17 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     totalBruto += p.price * q; 
                     if (!String(cartId).startsWith('fee_cesta')) {
                         itemsTxt += `${q}x ${p.name}\n`; 
+                    } else {
+                        hasBasket = true;
+                        let bId = String(cartId).replace('fee_', '');
+                        let bObj = BASKETS.find(b => b.id === bId);
+                        if (bObj && bObj.oldPrice) totalDescontoCestas += ((bObj.oldPrice - bObj.preco) * q);
                     }
                 } 
-                if (cartId.startsWith('fee_cesta')) hasBasket = true;
             });
             let final = totalBruto - STATE.deliveryDiscount;
             
+            if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA(S): -${fmt(totalDescontoCestas)}`;
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             
             const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
