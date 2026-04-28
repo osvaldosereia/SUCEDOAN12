@@ -1057,6 +1057,10 @@
                                 <img src="${imgUrl}" style="object-fit: contain; width: 100%; height: 100%;" onerror="this.src='https://placehold.co/100x100/f4f4f5/ef4444?text=ERRO'">
                             </div>
                             <button class="nav-btn bling-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="exportarProdutoBling('${p.codigo}')"><i data-lucide="download" size="12"></i> EXP. BLING</button>
+                            
+                            <!-- BOTÃO DE DUPLICAR ADICIONADO AQUI -->
+                            <button class="nav-btn warning" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="duplicarProduto('${p.codigo}')"><i data-lucide="copy" size="12"></i> DUPLICAR</button>
+                            
                             <button class="nav-btn ${p.situacao === 'I' ? '' : 'primary'}" style="width:100%; padding: 4px; justify-content:center; font-size:9px;" onclick="toggleStatus('${p.codigo}')"><i data-lucide="power" size="12"></i> ${p.situacao === 'I' ? 'INATIVO' : 'ATIVO'}</button>
                             <button class="nav-btn" style="width:100%; padding: 4px; justify-content:center; font-size:9px; color:var(--danger); border-color:#fecaca;" onclick="deleteProduct('${p.codigo}')"><i data-lucide="trash-2" size="12"></i> APAGAR</button>
                         </div>
@@ -1157,6 +1161,34 @@
             if(['preco', 'preco_custo'].includes(field)) renderGrid(null, true); // Recarrega para atualizar markup
         }
         
+        // ==========================================================
+        // FUNÇÃO DE DUPLICAR PRODUTO (NOVA)
+        // ==========================================================
+        window.duplicarProduto = async function(sku) {
+            const p = products.find(x => x.codigo === sku);
+            if (!p) return;
+
+            const timestamp = Date.now();
+            const novoSku = timestamp.toString().slice(-8);
+
+            // Criamos um novo objeto espelhando as informações antigas (...p), 
+            // mas alteramos propositalmente o ID, o Código, a Imagem e o timestamp
+            const novoProduto = {
+                ...p,
+                id: timestamp,
+                codigo: novoSku,
+                url_imagem: "", // Deixa sem foto como pediste
+                last_update: timestamp
+            };
+
+            // Insere o produto duplicado no início da lista do sistema
+            products.unshift(novoProduto);
+            await saveDataLocally();
+            renderGrid();
+            window.scrollTo(0, 0); // Sobe ao topo para o utilizador ver o novo card
+            mostrarAlerta("Produto duplicado com sucesso!", "sucesso");
+        };
+
         async function toggleStatus(sku) { const p = products.find(x => x.codigo === sku); if (!p) return; p.situacao = p.situacao === 'I' ? 'A' : 'I'; p.last_update = Date.now(); await saveDataLocally(); renderGrid(null, true); }
         async function deleteProduct(sku) { if(!confirm(`Apagar produto permanentemente?`)) return; products = products.filter(p => p.codigo !== sku); await saveDataLocally(); renderGrid(); }
         // AQUI FOI INCLUÍDO O CAMPO descricao: "" NA CRIAÇÃO DE NOVO PRODUTO
@@ -1178,10 +1210,60 @@
         function drawCanvas() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             if(loadedImage) { 
-                const zoom = parseFloat(document.getElementById('zoomRange').value); const bright = parseFloat(document.getElementById('brightnessRange').value);
-                const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height) * zoom; const w = loadedImage.width * ratio, h = loadedImage.height * ratio; const posX = ((canvas.width - w) / 2) + imgOffsetX; const posY = ((canvas.height - h) / 2) + imgOffsetY; 
-                ctx.filter = `brightness(${bright})`; ctx.drawImage(loadedImage, posX, posY, w, h); ctx.filter = 'none';
-            } else { ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; ctx.fillText("Cole foto (Ctrl+V) ou busque no PC", canvas.width/2, canvas.height/2); }
+                const zoom = parseFloat(document.getElementById('zoomRange').value); 
+                const bright = parseFloat(document.getElementById('brightnessRange').value);
+                const sharpen = parseFloat(document.getElementById('sharpenRange').value);
+
+                const ratio = Math.min(canvas.width / loadedImage.width, canvas.height / loadedImage.height) * zoom; 
+                const w = loadedImage.width * ratio, h = loadedImage.height * ratio; 
+                const posX = ((canvas.width - w) / 2) + imgOffsetX; 
+                const posY = ((canvas.height - h) / 2) + imgOffsetY; 
+                
+                ctx.filter = `brightness(${bright})`; 
+                ctx.drawImage(loadedImage, posX, posY, w, h); 
+                ctx.filter = 'none'; // Reseta o filtro
+
+                // NOVA LÓGICA DE NITIDEZ AQUI!
+                if (sharpen > 0) {
+                    applySharpenKernel(ctx, canvas.width, canvas.height, sharpen);
+                }
+
+            } else { 
+                ctx.font = "600 13px Inter"; ctx.fillStyle = "#a1a1aa"; ctx.textAlign = "center"; 
+                ctx.fillText("Cole foto (Ctrl+V) ou busque no PC", canvas.width/2, canvas.height/2); 
+            }
+        }
+
+        // ==========================================================
+        // FUNÇÃO DE MATRIZ DE CONVOLUÇÃO PARA NITIDEZ (NOVA)
+        // ==========================================================
+        function applySharpenKernel(context, width, height, amount) {
+            if (amount <= 0) return;
+            // Pega nos dados dos píxeis em bruto
+            const imgData = context.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            const tempData = new Uint8ClampedArray(data);
+            
+            // Variáveis matemáticas da Matriz de Nitidez
+            const a = amount;
+            const mid = 1 + 4 * a;
+
+            for (let y = 1; y < height - 1; y++) {
+                for (let x = 1; x < width - 1; x++) {
+                    const i = (y * width + x) * 4;
+                    for (let c = 0; c < 3; c++) { // RGB (O Alpha/Transparência é ignorado)
+                        const val =
+                            -a * tempData[i - width * 4 + c] +    // píxel de cima
+                            -a * tempData[i - 4 + c] +            // píxel da esquerda
+                            mid * tempData[i + c] +               // píxel central (com ganho)
+                            -a * tempData[i + 4 + c] +            // píxel da direita
+                            -a * tempData[i + width * 4 + c];     // píxel de baixo
+                        data[i + c] = val;
+                    }
+                }
+            }
+            // Devolve a imagem ajustada para o Canvas
+            context.putImageData(imgData, 0, 0);
         }
 
         function setupEditorEvents() {
