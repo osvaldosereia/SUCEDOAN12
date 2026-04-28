@@ -1936,6 +1936,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 800;">-${fmt(opt.discount)}</span>` : ''}</button>`).join('');
             
             renderCheckoutItems(); updateTotals();
+            $('checkout-drawer').scrollTop = 0; // <--- ADICIONE ESTA LINHA
             $('checkout-drawer').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back();
         };
         
