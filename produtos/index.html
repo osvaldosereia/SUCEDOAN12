@@ -3,177 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Master Pro | Preços & Padrões</title>
+    <title>Importador XML Simples</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        .field-filled { background-color: #f0f9ff !important; border-color: #bae6fd !important; }
-        .selected-item { border-left: 5px solid #3b82f6 !important; background-color: #f1f5f9; }
-        
-        .sidebar { width: 60px; transition: width 0.2s; overflow: hidden; white-space: nowrap; }
-        .sidebar:hover { width: 220px; }
-        .main-content { flex: 1; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-        
-        .tab-content { display: none; height: calc(100vh - 140px); }
-        .tab-content.active { display: flex; }
-        .tab-btn.active { border-bottom: 3px solid #3b82f6; color: #3b82f6; }
-
-        .status-vinc { background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
-        .status-novo { background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 800; }
-        .price-change { font-size: 9px; color: #d97706; font-weight: bold; margin-top: 2px; display: block; }
-        
-        .nav-link { display: flex; align-items: center; padding: 14px 20px; color: #94a3b8; transition: all 0.2s; gap: 15px; cursor: pointer; }
-        .nav-link:hover { background: #1e293b; color: #3b82f6; }
-        .nav-link i { min-width: 20px; text-align: center; font-size: 18px; }
-
-        th.sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
-        th.sortable:hover { background-color: #e2e8f0; }
-
-        @media print {
-            body > *:not(#printArea) { display: none !important; }
-            #printArea { display: block !important; width: 85mm; margin: 0; padding: 0; }
-            .etiqueta {
-                width: 80mm; min-height: 40mm; margin: 0 auto; padding: 2mm 0;
-                display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
-                page-break-after: always; border-bottom: 1px dashed #ccc;
-            }
-            .etiqueta-nome { font-size: 14pt; font-weight: 900; line-height: 1.1; margin-bottom: 3mm; width: 100%; text-transform: uppercase; word-wrap: break-word; }
-            .etiqueta-ean { font-size: 11pt; width: 100%; font-family: 'Courier New', monospace; letter-spacing: 1px; }
-            @page { size: 85mm auto; margin: 0; }
-        }
+        /* Barra de rolagem simples */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-50 flex overflow-hidden text-slate-900">
+<body class="bg-slate-100 text-slate-800 h-screen flex flex-col font-sans overflow-hidden">
 
-    <aside class="sidebar bg-slate-900 flex flex-col shadow-2xl z-50">
-        <div class="p-4 mb-4 flex justify-center bg-blue-600">
-            <i class="fas fa-bolt text-white text-xl"></i>
+    <header class="bg-white p-4 shadow-md flex justify-between items-center z-10">
+        <h1 class="text-xl font-black text-blue-600">XML > CSV RÁPIDO</h1>
+        <div class="flex gap-3">
+            <label class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold cursor-pointer transition-colors shadow">
+                + IMPORTAR XMLs
+                <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
+            </label>
+            <button onclick="exportarCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded font-bold transition-colors shadow">
+                ↓ EXPORTAR CSV
+            </button>
         </div>
-        <nav class="flex-1 overflow-y-auto custom-scrollbar">
-            <div onclick="switchTab('import')" class="nav-link text-white bg-slate-800" title="Dashboard XML"><i class="fas fa-file-invoice"></i> <span>DASHBOARD XML</span></div>
-            <div onclick="switchTab('labels')" class="nav-link text-white bg-slate-800 mb-2" title="Etiquetas"><i class="fas fa-barcode"></i> <span>ETIQUETAS</span></div>
-            <div class="border-t border-slate-700 my-2 mx-4"></div>
-            <a href="https://www.bling.com.br/produtos.php#list" target="_blank" class="nav-link"><i class="fas fa-box"></i> <span>PRODUTOS</span></a>
-            <a href="https://www.bling.com.br/vendas.php" target="_blank" class="nav-link"><i class="fas fa-shopping-cart"></i> <span>PEDIDOS</span></a>
-            <a href="http://localhost:3000/" target="_blank" class="nav-link text-blue-400 font-bold"><i class="fas fa-plus-circle"></i> <span>TIRAR PEDIDO</span></a>
-            <a href="https://www.bling.com.br/importador.produtos.php" target="_blank" class="nav-link"><i class="fas fa-upload"></i> <span>IMPORTAR PRODUTOS</span></a>
-            <a href="https://www.bling.com.br/importador.produtos.estrutura.php" target="_blank" class="nav-link"><i class="fas fa-boxes"></i> <span>IMPORTAR COMBOS</span></a>
-            <a href="https://www.bling.com.br/vendas.php#list" target="_blank" class="nav-link"><i class="fas fa-list-ul"></i> <span>PEDIDOS DE VENDA</span></a>
-            <a href="https://www.bling.com.br/contatos.php" target="_blank" class="nav-link"><i class="fas fa-users"></i> <span>CLIENTES</span></a>
-            <div class="border-t border-slate-800 my-2"></div>
-            <a href="https://www.donaantonia.com.br/site" target="_blank" class="nav-link text-emerald-400"><i class="fas fa-globe"></i> <span>SITE DONA ANTONIA</span></a>
-        </nav>
-    </aside>
+    </header>
 
-    <div class="main-content">
-        <header class="bg-white border-b border-slate-200 p-4 flex justify-between items-center shadow-sm">
-            <div class="flex items-center gap-8">
-                <h1 class="text-lg font-black tracking-tighter uppercase">XML MASTER <span class="text-blue-600">PRO</span></h1>
-                <nav class="flex gap-4">
-                    <button onclick="switchTab('import')" id="headerBtnImport" class="tab-btn active px-3 py-2 font-bold text-xs uppercase tracking-widest">Dashboard</button>
-                    <button onclick="switchTab('labels')" id="headerBtnLabels" class="tab-btn px-3 py-2 font-bold text-xs uppercase tracking-widest">Etiquetas Bling</button>
-                </nav>
+    <main class="flex flex-1 overflow-hidden">
+        
+        <div class="w-1/3 bg-white border-r flex flex-col h-full">
+            <div class="p-3 bg-slate-50 border-b text-xs font-bold text-slate-500 uppercase">
+                Produtos Carregados (<span id="contador">0</span>)
             </div>
-            <div class="flex gap-2">
-                <label class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 border border-slate-300 transition-all">
-                    <i class="fas fa-database text-amber-500"></i> CARREGAR CSV BLING
-                    <input type="file" id="blingCsvInput" accept=".csv" class="hidden">
-                </label>
-                <label id="btnXml" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold cursor-pointer text-xs flex items-center gap-2 shadow-lg transition-all">
-                    <i class="fas fa-file-import"></i> IMPORTAR XMLS
-                    <input type="file" id="xmlInput" accept=".xml" multiple class="hidden">
-                </label>
-            </div>
-        </header>
-
-        <div id="importTab" class="tab-content active p-4 gap-4 overflow-hidden">
-            <div class="w-80 bg-white rounded-xl border border-slate-200 overflow-y-auto custom-scrollbar shadow-sm">
-                <div class="p-3 border-b bg-slate-50 sticky top-0 z-20 flex justify-between items-center flex-wrap gap-2">
-                    <label class="flex items-center gap-2 cursor-pointer select-none">
-                        <input type="checkbox" id="checkAllXml" class="w-4 h-4 accent-blue-600" checked onclick="toggleAllXML(this)">
-                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-widest">TODOS</span>
-                    </label>
-                    <div class="flex gap-1">
-                        <button id="btnExport" class="hidden bg-emerald-600 text-white px-2 py-1 rounded font-bold text-[10px]" title="Exportar Selecionados">EXP. SEL.</button>
-                        <button id="btnExportAll" class="hidden bg-blue-600 text-white px-2 py-1 rounded font-bold text-[10px]" title="Exportar Todos">EXP. TUDO</button>
-                    </div>
-                </div>
-                <div id="productList" class="divide-y divide-slate-100">
-                    <p class="p-8 text-center text-slate-400 italic text-xs">Aguardando arquivos...</p>
-                </div>
-            </div>
-
-            <div class="flex-1 bg-white rounded-xl border border-slate-200 overflow-y-auto custom-scrollbar p-6 shadow-sm">
-                <div id="editorContent" class="hidden">
-                    <div class="flex justify-between items-start border-b pb-6 mb-6">
-                        <div class="flex-1 mr-6">
-                            <label class="text-[9px] font-black text-blue-500 uppercase">Nome / Descrição do Produto</label>
-                            <input type="text" id="editMainName" class="text-xl font-bold text-slate-800 uppercase w-full bg-slate-50 border-b-2 border-transparent focus:border-blue-500 outline-none p-1" oninput="sincronizarNome(this)">
-                            <div id="calcInfo" class="mt-4"></div>
-                        </div>
-                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex flex-col items-center gap-1 shadow-inner">
-                            <span class="text-[9px] font-black text-blue-800 uppercase">Itens na Caixa (Fator)</span>
-                            <input type="number" id="fatorInput" value="1" min="1" class="w-20 p-2 rounded-lg border-blue-300 text-blue-900 font-bold text-center text-lg outline-none focus:ring-2 focus:ring-blue-400">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-4" id="fieldsGrid"></div>
-                </div>
+            <div id="listaProdutos" class="flex-1 overflow-y-auto p-2 space-y-2">
+                <p class="text-center text-slate-400 mt-10 text-sm">Nenhum XML carregado.</p>
             </div>
         </div>
 
-        <div id="labelsTab" class="tab-content flex-col p-4 overflow-hidden">
-            <div class="bg-white rounded-xl border border-slate-200 flex flex-col h-full shadow-sm">
-                <div class="p-4 border-b flex justify-between items-center bg-slate-50">
-                    <div>
-                        <h3 class="font-bold text-slate-700">Produtos no Cadastro Bling</h3>
-                        <p class="text-xs text-slate-500">Clique nos títulos das colunas para ordenar</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="exportarBaseBling()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg font-bold text-xs hover:bg-emerald-700 flex items-center gap-2">
-                            <i class="fas fa-file-export"></i> EXPORTAR LISTA COMPLETA
-                        </button>
-                        <button onclick="imprimirEtiquetas()" class="bg-slate-800 text-white px-6 py-2 rounded-lg font-bold text-xs hover:bg-slate-900 flex items-center gap-2">
-                            <i class="fas fa-print"></i> IMPRIMIR SELECIONADOS
-                        </button>
-                    </div>
-                </div>
-                <div class="overflow-y-auto flex-1 custom-scrollbar">
-                    <table class="w-full text-left text-sm" id="labelsTable">
-                        <thead class="bg-slate-100 sticky top-0 text-[10px] font-black uppercase text-slate-500">
-                            <tr>
-                                <th class="p-4 w-10"><input type="checkbox" onclick="toggleAllLabels(this)"></th>
-                                <th class="p-4 sortable" onclick="ordenarTabela(1)">Descrição do Produto <i class="fas fa-sort ml-1"></i></th>
-                                <th class="p-4 sortable" onclick="ordenarTabela(2)">EAN / GTIN <i class="fas fa-sort ml-1"></i></th>
-                                <th class="p-4 sortable" onclick="ordenarTabela(3)">Código <i class="fas fa-sort ml-1"></i></th>
-                                <th class="p-4 sortable" onclick="ordenarTabela(4)">Localização <i class="fas fa-sort ml-1"></i></th>
-                            </tr>
-                        </thead>
-                        <tbody id="labelsTableBody" class="divide-y divide-slate-100">
-                            <tr><td colspan="5" class="p-8 text-center text-slate-400 italic">Carregue o CSV do Bling para listar os produtos.</td></tr>
-                        </tbody>
-                    </table>
+        <div class="w-2/3 bg-slate-50 flex flex-col h-full">
+            <div class="p-4 border-b bg-white">
+                <h2 class="text-lg font-bold text-slate-700" id="nomeProdutoAtual">Selecione um produto</h2>
+            </div>
+            <div class="flex-1 overflow-y-auto p-6">
+                <div id="formularioEditor" class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <p class="text-slate-400 col-span-3 text-sm">As opções de edição aparecerão aqui.</p>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div id="printArea" class="hidden"></div>
+    </main>
 
 <script>
-    let baseBling = {}; 
-    let produtosCarregados = [];
-    let categoriasBling = new Set();
-    let produtoSelecionadoIdx = null;
-    let listaCompletaBling = [];
-
-    // O nosso "cofre" que armazena todos os códigos para não haver repetição
-    let codigosExistentes = new Set(); 
-
-    // Lista exata de colunas conforme o CSV modelo fornecido
+    // 1. DADOS PRINCIPAIS
+    let produtos = []; // Lista que vai guardar todos os produtos extraídos
+    let indiceSelecionado = null; // Para saber qual produto estamos editando
+    
+    // O cabeçalho exato necessário para o seu CSV
     const colunasModelo = [
         "ID", "Código", "Descrição", "Unidade", "NCM", "Origem", "Preço", "Valor IPI fixo", "Observações", "Situação", 
         "Estoque", "Preço de custo", "Cód. no fornecedor", "Fornecedor", "Localização", "Estoque máximo", "Estoque mínimo", 
@@ -187,411 +69,161 @@
         "Categoria do produto", "Informações Adicionais"
     ];
 
-    function switchTab(tab) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tab + 'Tab').classList.add('active');
-        if(tab === 'import') document.getElementById('headerBtnImport').classList.add('active');
-        if(tab === 'labels') document.getElementById('headerBtnLabels').classList.add('active');
-    }
-
-    // Leitura Perfeita do CSV
-    document.getElementById('blingCsvInput').addEventListener('change', function(e) {
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            let content = ev.target.result.replace(/^\ufeff/, "");
-            const rows = content.split(/\r?\n/);
-            const sep = ';'; // Forçado para CSV Bling padrão
-            
-            // Assume que a primeira linha é o cabeçalho idêntico ao colunasModelo
-            const headers = rows[0].split(sep).map(h => h.replace(/"/g, '').trim());
-            
-            // Mapear índices para a aba de etiquetas
-            const idxID = headers.indexOf('ID');
-            const idxEAN = headers.indexOf('GTIN/EAN');
-            const idxDesc = headers.indexOf('Descrição');
-            const idxCodigo = headers.indexOf('Código');
-            const idxLoc = headers.indexOf('Localização');
-
-            baseBling = {};
-            categoriasBling.clear();
-            listaCompletaBling = [];
-            codigosExistentes.clear(); // Limpa o cofre ao carregar um novo arquivo
-            
-            const tbody = document.getElementById('labelsTableBody');
-            tbody.innerHTML = "";
-
-            for(let i = 1; i < rows.length; i++) {
-                if(!rows[i].trim()) continue;
-                
-                // Regex para splitar respeitando aspas
-                const cols = rows[i].split(new RegExp(`${sep}(?=(?:(?:[^"]*"){2})*[^"]*$)`));
-                
-                // Criar objeto completo do produto mantendo integridade
-                let prodObj = {};
-                headers.forEach((h, index) => {
-                    let val = cols[index] ? cols[index].replace(/^"|"$/g, '') : "";
-                    prodObj[h] = val;
-                });
-
-                listaCompletaBling.push(prodObj);
-
-                // Armazenar na baseBling para consulta
-                const ean = prodObj['GTIN/EAN']?.trim();
-                const codigo = prodObj['Código']?.trim();
-                const desc = prodObj['Descrição'] || "SEM NOME";
-                
-                if (ean) baseBling[ean] = prodObj;
-                if (codigo) {
-                    baseBling[codigo] = prodObj;
-                    // Guarda o código do produto no nosso Cofre
-                    codigosExistentes.add(codigo);
-                }
-
-                // Renderizar Tabela de Etiquetas
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50 transition-colors border-b border-slate-50";
-                tr.innerHTML = `
-                    <td class="p-4"><input type="checkbox" class="label-check w-4 h-4 accent-slate-800" data-ean="${ean || ''}" data-nome="${desc}"></td>
-                    <td class="p-4 font-bold text-slate-700">${desc}</td>
-                    <td class="p-4 font-mono text-slate-500">${ean || '-'}</td>
-                    <td class="p-4 text-slate-500">${codigo || '-'}</td>
-                    <td class="p-4"><span class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold">${prodObj['Localização'] || '-'}</span></td>
-                `;
-                tbody.appendChild(tr);
-            }
-            alert(`CSV Carregado! ${rows.length - 1} produtos processados.`);
-        };
-        reader.readAsText(e.target.files[0], 'ISO-8859-1');
-    });
-
+    // 2. IMPORTAR E LER O XML
     document.getElementById('xmlInput').addEventListener('change', function(e) {
-        produtosCarregados = [];
-        document.getElementById('productList').innerHTML = "";
-        Array.from(e.target.files).forEach((file, i) => lerXML(file, i));
-        document.getElementById('btnExport').classList.remove('hidden');
-        document.getElementById('btnExportAll').classList.remove('hidden');
+        const arquivos = Array.from(e.target.files);
+        
+        arquivos.forEach(arquivo => {
+            const reader = new FileReader();
+            reader.onload = function(evento) {
+                // Transforma o texto do arquivo em um objeto XML navegável
+                const xmlDoc = new DOMParser().parseFromString(evento.target.result, "text/xml");
+                extrairProdutosDoXML(xmlDoc);
+            };
+            reader.readAsText(arquivo);
+        });
+        
+        // Limpa o input para permitir selecionar os mesmos arquivos novamente se necessário
+        e.target.value = ''; 
     });
 
-    // Função que gera o código com 6 números e 1 letra no final
-    function gerarCodigoUnico() {
-        const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        let novoCodigo = "";
-        let ehUnico = false;
-
-        // O laço continua até achar um código inédito
-        while (!ehUnico) {
-            // Gera 6 números (entre 100000 e 999999)
-            const numeros = Math.floor(100000 + Math.random() * 900000);
-            // Sorteia 1 letra
-            const letraAleatoria = letras.charAt(Math.floor(Math.random() * letras.length));
+    // 3. EXTRAIR DADOS DO XML
+    function extrairProdutosDoXML(xml) {
+        // Pega o nome do fornecedor (emitente)
+        const fornecedor = xml.querySelector('emit > xNome')?.textContent || "";
+        
+        // Procura por todos os itens (detalhes) da nota
+        const itens = xml.querySelectorAll('det');
+        
+        itens.forEach(det => {
+            const prod = det.querySelector('prod');
             
-            // Monta o código
-            novoCodigo = `${numeros}${letraAleatoria}`;
-
-            // Verifica no nosso Set (cofre)
-            if (!codigosExistentes.has(novoCodigo)) {
-                ehUnico = true;
-                codigosExistentes.add(novoCodigo); // Adiciona para a próxima verificação não repeti-lo
-            }
-        }
-        return novoCodigo;
-    }
-
-    function lerXML(file, idx) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const parser = new DOMParser();
-            const xml = parser.parseFromString(e.target.result, "text/xml");
-            const emitente = xml.querySelector('emit > xNome')?.textContent || "";
+            // Cria um objeto vazio e preenche com as chaves do modelo
+            let novoProduto = {};
+            colunasModelo.forEach(col => novoProduto[col] = "");
             
-            const dets = xml.querySelectorAll('det');
-            dets.forEach((det, i) => {
-                const prod = det.querySelector('prod');
-                const imposto = det.querySelector('imposto');
-                
-                // Extração dos dados
-                const xmlEan = prod.querySelector('cEAN')?.textContent || "";
-                const xmlEanTrib = prod.querySelector('cEANTrib')?.textContent || "";
-                const xmlDesc = prod.querySelector('xProd')?.textContent || "";
-                const xmlNcm = prod.querySelector('NCM')?.textContent || "";
-                const xmlCest = prod.querySelector('CEST')?.textContent || "";
-                const xmlCprod = prod.querySelector('cProd')?.textContent || "";
-                const xmlUcom = prod.querySelector('uCom')?.textContent || "";
-                const xmlVuncom = (prod.querySelector('vUnCom')?.textContent || "0.00").replace('.', ',');
-                const xmlQcom = (prod.querySelector('qCom')?.textContent || "0").replace('.', ',');
-                const xmlOrig = imposto?.querySelector('ICMS orig')?.textContent || "0";
-
-                let item;
-                const searchEan = xmlEan.trim();
-
-                if (baseBling[searchEan]) {
-                    // MODO ATUALIZAÇÃO
-                    item = { ...baseBling[searchEan] };
-                    item._vinculado = true;
-                    
-                    const estAtual = parseFloat((item["Estoque"] || "0").replace(',', '.'));
-                    const estEntrada = parseFloat(xmlQcom.replace(',', '.'));
-                    
-                    item._estoqueAtual = estAtual;
-                    item._estoqueEntrada = estEntrada;
-                    item["Estoque"] = (estAtual + estEntrada).toFixed(2).replace('.', ',');
-
-                } else {
-                    // MODO NOVO
-                    item = {};
-                    colunasModelo.forEach(key => item[key] = "");
-                    
-                    item["Descrição"] = xmlDesc;
-                    item["Unidade"] = xmlUcom;
-                    item["NCM"] = xmlNcm;
-                    item["Origem"] = xmlOrig;
-                    item["Preço"] = xmlVuncom;
-                    item["Preço de custo"] = xmlVuncom;
-                    item["Estoque"] = xmlQcom;
-                    item["Cód. no fornecedor"] = xmlCprod;
-                    item["Fornecedor"] = emitente;
-                    
-                    item["GTIN/EAN"] = xmlEan ? `\t${xmlEan}` : "";
-                    item["GTIN/EAN da Embalagem"] = xmlEanTrib ? `\t${xmlEanTrib}` : "";
-                    
-                    item["CEST"] = xmlCest;
-                    item["Peso líquido (Kg)"] = "0,000";
-                    item["Peso bruto (Kg)"] = "0,000";
-                    item["Situação"] = "Ativo";
-                    item["Condição do Produto"] = "Novo";
-                    item["Itens p/ caixa"] = "1";
-
-                    // Usando a nossa função de código aleatório!
-                    item["Código"] = `${gerarCodigoUnico()}\t`; 
-                }
-
-                item._id = `prod-${idx}-${i}-${Date.now()}`;
-                item._selected = true;
-                item._custoOriginal = parseFloat(item["Preço de custo"].replace(',', '.') || 0);
-                item._precoOriginal = parseFloat(item["Preço"].replace(',', '.') || 0);
-                item._estoqueOriginal = parseFloat(item["Estoque"].replace(',', '.') || 0);
-
-                produtosCarregados.push(item);
-                renderizarItemLista(item);
-            });
-        };
-        reader.readAsText(file);
-    }
-
-    function renderizarItemLista(p) {
-        const div = document.createElement('div');
-        div.className = `p-3 hover:bg-blue-50 cursor-pointer transition-colors ${p._selected ? 'bg-blue-50' : ''}`;
-        div.id = `row-${p._id}`;
-        div.onclick = (e) => {
-            if(e.target.type !== 'checkbox') carregarEditor(p);
-        };
+            // Pega os dados básicos
+            const ean = prod.querySelector('cEAN')?.textContent || "";
+            const valorUn = (prod.querySelector('vUnCom')?.textContent || "0.00").replace('.', ',');
+            const qtd = (prod.querySelector('qCom')?.textContent || "0").replace('.', ',');
+            
+            // Preenche o objeto com o que achamos no XML
+            novoProduto["Descrição"] = prod.querySelector('xProd')?.textContent || "Produto Sem Nome";
+            novoProduto["Unidade"] = prod.querySelector('uCom')?.textContent || "";
+            novoProduto["NCM"] = prod.querySelector('NCM')?.textContent || "";
+            novoProduto["CEST"] = prod.querySelector('CEST')?.textContent || "";
+            novoProduto["Preço"] = valorUn;
+            novoProduto["Preço de custo"] = valorUn;
+            novoProduto["Estoque"] = qtd;
+            novoProduto["Fornecedor"] = fornecedor;
+            novoProduto["GTIN/EAN"] = ean ? `\t${ean}` : ""; // \t previne problemas no Excel
+            
+            // Gera um código aleatório simples (ex: PROD-A1B2)
+            const codigoAleatorio = Math.random().toString(36).substring(2, 6).toUpperCase();
+            novoProduto["Código"] = `P-${codigoAleatorio}`;
+            
+            // Adiciona valores padrão
+            novoProduto["Situação"] = "Ativo";
+            novoProduto["Condição do Produto"] = "Novo";
+            
+            produtos.push(novoProduto);
+        });
         
-        let statusHtml = p._vinculado ? 
-            `<span class="status-vinc">VINCULADO</span>` : 
-            `<span class="status-novo">NOVO (${p["Código"].trim()})</span>`;
-
-        div.innerHTML = `
-            <div class="flex justify-between items-start">
-                <div class="flex gap-2 items-start overflow-hidden">
-                    <input type="checkbox" class="mt-1 w-4 h-4 accent-blue-600" ${p._selected ? 'checked' : ''} onchange="toggleSel('${p._id}', this)">
-                    <div class="overflow-hidden">
-                        <div class="text-[10px] font-bold text-slate-500 truncate w-40">${p["GTIN/EAN"] || 'SEM EAN'}</div>
-                        <div class="font-bold text-xs truncate w-48 text-slate-800" title="${p["Descrição"]}">${p["Descrição"]}</div>
-                        <div class="flex gap-2 mt-1">
-                            ${statusHtml}
-                            <span class="text-[9px] bg-slate-200 px-1 rounded text-slate-600 font-bold">${p["Unidade"]}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-xs font-black text-emerald-600">R$ ${parseFloat(p["Preço"]).toFixed(2)}</div>
-                </div>
-            </div>
-        `;
-        document.getElementById('productList').appendChild(div);
+        renderizarLista();
     }
 
-    function toggleSel(id, cb) {
-        const p = produtosCarregados.find(x => x._id === id);
-        if(p) {
-            p._selected = cb.checked;
-            const row = document.getElementById(`row-${id}`);
-            if(row) {
-                if(p._selected) row.classList.add('bg-blue-50');
-                else row.classList.remove('bg-blue-50');
-            }
-        }
-    }
-
-    function toggleAllXML(cb) {
-        produtosCarregados.forEach(p => p._selected = cb.checked);
-        document.getElementById('productList').innerHTML = "";
-        produtosCarregados.forEach(p => renderizarItemLista(p));
-    }
-
-    function carregarEditor(p) {
-        produtoSelecionadoIdx = produtosCarregados.findIndex(x => x._id === p._id);
-        const area = document.getElementById('editorContent');
-        const grid = document.getElementById('fieldsGrid');
-        const calcInfo = document.getElementById('calcInfo');
+    // 4. RENDERIZAR A LISTA NA TELA
+    function renderizarLista() {
+        const divLista = document.getElementById('listaProdutos');
+        document.getElementById('contador').innerText = produtos.length;
+        divLista.innerHTML = ""; // Limpa a lista
         
-        area.classList.remove('hidden');
-        document.getElementById('editMainName').value = p["Descrição"];
-        document.getElementById('fatorInput').value = p["Itens p/ caixa"] || 1;
-        
-        if (p._vinculado) {
-            calcInfo.innerHTML = `
-                <div class="flex items-center gap-4 bg-yellow-50 p-3 rounded-lg border border-yellow-200 text-xs shadow-sm">
-                    <div class="font-bold text-yellow-800 uppercase flex flex-col items-center">
-                        <span class="text-[9px] text-yellow-600">ESTOQUE ATUAL</span>
-                        <span class="text-lg">${p._estoqueAtual || 0}</span>
-                    </div>
-                    <i class="fas fa-plus text-yellow-400"></i>
-                    <div class="font-bold text-blue-800 uppercase flex flex-col items-center">
-                        <span class="text-[9px] text-blue-600">ENTRADA NOTA</span>
-                        <span class="text-lg">${p._estoqueEntrada || 0}</span>
-                    </div>
-                    <i class="fas fa-equals text-yellow-400"></i>
-                    <div class="font-bold text-emerald-700 uppercase flex flex-col items-center">
-                        <span class="text-[9px] text-emerald-600">NOVO TOTAL</span>
-                        <span class="text-lg">${p["Estoque"]}</span>
-                    </div>
+        produtos.forEach((p, index) => {
+            const div = document.createElement('div');
+            // Estilização simples. Se for o selecionado, fica azulzinho.
+            div.className = `p-3 border rounded cursor-pointer transition-colors ${indiceSelecionado === index ? 'bg-blue-100 border-blue-300' : 'bg-white hover:bg-slate-50'}`;
+            
+            div.innerHTML = `
+                <div class="font-bold text-sm truncate text-slate-800">${p["Descrição"]}</div>
+                <div class="flex justify-between mt-1 text-xs text-slate-500">
+                    <span>Cod: ${p["Código"]}</span>
+                    <span class="font-black text-emerald-600">R$ ${p["Preço"]}</span>
                 </div>
             `;
-        } else {
-            calcInfo.innerHTML = "";
-        }
+            
+            // Quando clicar, abre o editor
+            div.onclick = () => abrirEditor(index);
+            divLista.appendChild(div);
+        });
+    }
 
-        grid.innerHTML = "";
+    // 5. ABRIR EDITOR PARA PERSONALIZAR
+    function abrirEditor(index) {
+        indiceSelecionado = index;
+        renderizarLista(); // Re-renderiza para atualizar a cor do item selecionado
         
-        colunasModelo.forEach(key => {
+        const produto = produtos[index];
+        document.getElementById('nomeProdutoAtual').innerText = produto["Descrição"];
+        
+        const form = document.getElementById('formularioEditor');
+        form.innerHTML = ""; // Limpa o formulário anterior
+        
+        // Cria um campo (input) para cada coluna do modelo
+        colunasModelo.forEach(coluna => {
             const div = document.createElement('div');
             div.innerHTML = `
-                <label class="block text-[9px] font-black text-slate-400 uppercase mb-1">${key}</label>
-                <input type="text" value="${p[key] || ''}" oninput="atualizarCampo('${key}', this.value)" 
-                    class="w-full bg-slate-50 border border-slate-200 rounded p-2 text-xs font-bold text-slate-700 focus:border-blue-500 outline-none transition-all ${p[key] ? 'field-filled' : ''}">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">${coluna}</label>
+                <input type="text" 
+                       value="${produto[coluna] || ''}" 
+                       oninput="atualizarDado(${index}, '${coluna}', this.value)"
+                       class="w-full border border-slate-300 rounded p-2 text-sm focus:border-blue-500 outline-none">
             `;
-            grid.appendChild(div);
+            form.appendChild(div);
         });
-
-        document.getElementById('fatorInput').oninput = function() {
-            const fator = parseFloat(this.value) || 1;
-            p["Itens p/ caixa"] = this.value;
-            
-            const custoUnit = p._custoOriginal / fator;
-            const precoUnit = p._precoOriginal / fator;
-            const estoqueTotal = p._estoqueOriginal * fator;
-
-            p["Preço de custo"] = custoUnit.toFixed(4).replace('.', ',');
-            p["Preço"] = precoUnit.toFixed(4).replace('.', ',');
-            p["Estoque"] = estoqueTotal;
-
-            carregarEditor(p); 
-        };
     }
 
-    function atualizarCampo(key, val) {
-        if(produtoSelecionadoIdx !== null) {
-            produtosCarregados[produtoSelecionadoIdx][key] = val;
-        }
-    }
-
-    function sincronizarNome(el) {
-        if(produtoSelecionadoIdx !== null) {
-            produtosCarregados[produtoSelecionadoIdx]["Descrição"] = el.value.toUpperCase();
-        }
-    }
-
-    let dir = "asc";
-    function ordenarTabela(n) {
-        const table = document.getElementById("labelsTable");
-        let switching = true, shouldSwitch, switchcount = 0;
+    // 6. ATUALIZAR DADO ENQUANTO DIGITA
+    function atualizarDado(indexProduto, chave, novoValor) {
+        produtos[indexProduto][chave] = novoValor;
         
-        while (switching) {
-            switching = false;
-            const rows = table.rows;
-            for (let i = 1; i < (rows.length - 1); i++) {
-                shouldSwitch = false;
-                const x = rows[i].getElementsByTagName("TD")[n];
-                const y = rows[i + 1].getElementsByTagName("TD")[n];
-                if (dir == "asc") {
-                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
-                } else {
-                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
-                }
-            }
-            if (shouldSwitch) {
-                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                switching = true;
-                switchcount++;
-            } else {
-                if (switchcount == 0 && dir == "asc") {
-                    dir = "desc";
-                    switching = true;
-                }
-            }
+        // Se mudou o nome ou código, atualiza o título e a lista (opcional, mas bom visualmente)
+        if(chave === "Descrição") {
+            document.getElementById('nomeProdutoAtual').innerText = novoValor;
         }
     }
 
-    function imprimirEtiquetas() {
-        const sel = document.querySelectorAll('.label-check:checked');
-        if(sel.length === 0) return alert("Selecione produtos!");
-        const area = document.getElementById('printArea');
-        area.innerHTML = ""; area.classList.remove('hidden');
-        sel.forEach(cb => {
-            const div = document.createElement('div');
-            div.className = "etiqueta";
-            div.innerHTML = `<div class="etiqueta-nome">${cb.dataset.nome}</div><div class="etiqueta-ean">${cb.dataset.ean}</div>`;
-            area.appendChild(div);
-        });
-        setTimeout(() => { window.print(); area.classList.add('hidden'); }, 100);
-    }
+    // 7. EXPORTAR PARA CSV
+    function exportarCSV() {
+        if (produtos.length === 0) {
+            alert("Não há produtos para exportar. Importe um XML primeiro.");
+            return;
+        }
 
-    function toggleAllLabels(source) {
-        document.querySelectorAll('.label-check').forEach(cb => cb.checked = source.checked);
-    }
-
-    function gerarCSV(listaProdutos, nomeArquivo) {
-        if(listaProdutos.length === 0) return alert("Sem produtos para exportar!");
+        // '\ufeff' ajuda o Excel a ler caracteres especiais (acentos, ç)
+        let conteudoCSV = "\ufeff"; 
         
-        let csvContent = "\ufeff" + colunasModelo.map(c => `"${c}"`).join(";") + "\r\n";
+        // Linha 1: Cabeçalhos (ex: "ID";"Código";"Descrição")
+        conteudoCSV += colunasModelo.map(col => `"${col}"`).join(";") + "\r\n";
 
-        listaProdutos.forEach(p => {
-            let row = colunasModelo.map(col => {
-                let val = p[col] === undefined || p[col] === null ? "" : String(p[col]);
-                return `"${val.replace(/"/g, '""')}"`;
+        // Linhas seguintes: Os dados dos produtos
+        produtos.forEach(prod => {
+            let linha = colunasModelo.map(col => {
+                let valor = prod[col] || "";
+                // Remove aspas internas para não quebrar o CSV
+                valor = String(valor).replace(/"/g, ''); 
+                return `"${valor}"`;
             }).join(";");
-            csvContent += row + "\r\n";
+            
+            conteudoCSV += linha + "\r\n";
         });
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        // Rotina padrão do JavaScript para baixar um arquivo
+        const blob = new Blob([conteudoCSV], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", `${nomeArquivo || 'exportacao_bling'}_${new Date().toISOString().slice(0,19).replace(/:/g,"-")}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
+        link.href = URL.createObjectURL(blob);
+        link.download = "produtos_exportados.csv";
         link.click();
-        document.body.removeChild(link);
     }
-
-    document.getElementById('btnExport').onclick = () => {
-        const sel = produtosCarregados.filter(p => p._selected);
-        if(sel.length === 0) return alert("Selecione produtos na lista!");
-        gerarCSV(sel, "exportacao_selecionados");
-    };
-
-    document.getElementById('btnExportAll').onclick = () => {
-        if(produtosCarregados.length === 0) return alert("Nenhum produto carregado!");
-        gerarCSV(produtosCarregados, "exportacao_xml_todos");
-    };
-    
-    function exportarBaseBling() {
-        if(listaCompletaBling.length === 0) return alert("Carregue o CSV do Bling primeiro!");
-        gerarCSV(listaCompletaBling, "backup_completo_bling");
-    }
-
 </script>
 </body>
 </html>
