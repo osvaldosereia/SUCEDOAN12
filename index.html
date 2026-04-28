@@ -2268,7 +2268,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             modalEl.classList.add('active');
         };
 
-        function renderBasketItemsList() {
+       function renderBasketItemsList() {
             let container = $('basket-items-container');
             let totalItemsCount = 0;
 
@@ -2283,18 +2283,29 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             currentBasketItems.forEach((item, index) => {
                 let p = item.pObj;
                 totalItemsCount += item.qty; 
+                
+                // Aproveita a mesma lógica de embalagem e preços do card principal
+                let embalagemHtml = p.embalagem ? `<div class="tag-embalagem-list">${p.embalagem}</div>` : '';
+                let oldPriceHtml = (p.discountPercent && p.discountPercent > 0) 
+                    ? `<span style="text-decoration: line-through; font-size: 0.65rem; color: #999; font-weight: normal;">${fmt(p.oldPrice)}</span>` 
+                    : '';
 
                 html += `
-                <div class="product-card-list" style="border: 1px solid var(--border-light); padding: 8px;">
-                    <img src="${p.img}" class="product-icon-list" style="width: 60px; height: 60px;">
+                <div class="product-card-list bordered">
+                    <img src="${p.img}" class="product-icon-list" alt="${p.name}">
                     <div class="product-info-list">
-                        <div class="product-name-list" style="font-size: 12px;">${p.name}</div>
-                        <div class="tag-preco-list" style="font-size: 14px;">${fmt(p.price)}</div>
-                    </div>
-                    <div class="qty-controls" style="padding: 4px 8px; font-size: 13px;">
-                        <i class="fa-solid fa-minus qty-btn" onclick="updateBasketItemQty(${index}, -1)"></i>
-                        <span style="font-weight:bold; width: 20px; text-align:center;">${item.qty}</span>
-                        <i class="fa-solid fa-plus qty-btn" onclick="updateBasketItemQty(${index}, 1)"></i>
+                        ${embalagemHtml}
+                        <div class="product-name-list">${p.name}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
+                            <div class="tag-preco-list">${oldPriceHtml} ${fmt(p.price)}</div>
+                            <div class="card-action-area">
+                                <div class="qty-controls" style="padding: 6px 10px; font-size: 14px; margin: 0;">
+                                    <i class="fa-solid fa-minus qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();"></i>
+                                    <span style="font-weight:bold; width: 20px; text-align:center;">${item.qty}</span>
+                                    <i class="fa-solid fa-plus qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();"></i>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>`;
             });
