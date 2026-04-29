@@ -702,24 +702,21 @@
             z-index: 2100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer;
         }
 
-        /* Botão de Compartilhar Elegante */
-        .btn-share-detail {
-            position: absolute;
-            top: max(20px, env(safe-area-inset-top));
-            left: 20px;
+        /* Novo Botão de Compartilhar Inline */
+        .btn-share-inline {
             width: 40px;
             height: 40px;
-            background: rgba(255,255,255,0.9);
+            background: #ffffff;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
-            z-index: 2100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             cursor: pointer;
             color: var(--text-dark);
-            border: none;
+            border: 1px solid var(--border-light);
+            flex-shrink: 0;
         }
 
         .modal-scroll-area {
@@ -733,7 +730,7 @@
         .detail-icon-box img { max-width: 100%; max-height: 100%; object-fit: contain; mix-blend-mode: multiply; }
 
         .detail-content { padding: 25px 20px; }
-        .modal-title { font-size: 22px; font-weight: 800; margin: 0 0 15px 0; line-height: 1.2; }
+        .modal-title { font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2; }
         
         .related-title { font-size: 16px; font-weight: 800; margin: 30px 20px 10px 20px; text-transform: uppercase; }
 
@@ -1036,9 +1033,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         <div class="detail-close" onclick="history.back()">
             <i class="fa-solid fa-xmark"></i>
         </div>
-        <div class="btn-share-detail" onclick="shareProduct()">
-            <i class="fa-solid fa-share-nodes"></i>
-        </div>
         
         <div class="modal-scroll-area" id="modal-scroll-area">
             <div class="detail-icon-box">
@@ -1046,7 +1040,13 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             </div>
             <div class="detail-content">
                 <div id="modalMetaTags"></div>
-                <h1 class="modal-title" id="modalTitle">Nome do Produto</h1>
+                
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
+                    <h1 class="modal-title" id="modalTitle" style="margin-bottom:0;">Nome do Produto</h1>
+                    <button class="btn-share-inline" onclick="shareProduct()" title="Compartilhar Produto">
+                        <i class="fa-solid fa-share-nodes"></i>
+                    </button>
+                </div>
                 
                 <div class="floating-action-bar">
                     <div class="modal-price-col">
@@ -1160,12 +1160,24 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 <input type="hidden" id="chk-voucher" value="">
             </div>
 
+            <!-- SECÃO CUPOM DE DESCONTO -->
+            <div class="chk-section" id="cupom-section">
+                <div class="chk-title">Cupom de Desconto</div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="chk-cupom" class="input-text" placeholder="Digite seu cupom" style="margin-bottom:0; text-transform: uppercase;">
+                    <button class="pay-btn" onclick="applyCoupon()" style="margin-bottom:0; background: var(--text-dark); color: white;">Aplicar</button>
+                </div>
+                <div id="cupom-msg" style="font-size: 13px; margin-top: 8px; font-weight: 600; display: none;"></div>
+            </div>
+
            <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal</span><span id="sum-sub">R$ 0,00</span></div>
                 
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-basket-row"><span>Desconto Promocional (Cesta)</span><span id="sum-basket-desc">R$ 0,00</span></div>
                 
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-desc-row"><span>Desconto Agendamento</span><span id="sum-desc">R$ 0,00</span></div>
+                
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-cupom-row"><span>Cupom Aplicado</span><span id="sum-cupom-desc">R$ 0,00</span></div>
                 
                 <div class="summary-row total"><span>Total</span><span id="sum-total">R$ 0,00</span></div>
             </div>
@@ -1179,20 +1191,21 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
     <script>
         // ========================================================
-        // ENGINE LOGIC
+        // ENGINE LOGIC E CONFIGURAÇÕES
         // ========================================================
         const $ = id => document.getElementById(id);
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-            viewMode: 2, // Ajustado para lista horizontal padrão
+            viewMode: 2, 
             mainCategories: [],
             activeCatIndex: -1,
             currentFilter: { type: 'cestas', value: '' },
-            pageLimit: 16 
+            pageLimit: 16,
+            appliedCoupon: null,
+            couponDiscount: 0
         };
 
-        // Nossa lista oficial (tudo em minúsculo e sem acento para não dar erro na comparação)
         const ORDEM_CATEGORIAS = [
             'mercearia basica', 'lavanderia', 'limpeza', 'cafe da manha', 
             'temperos', 'sucos e refris', 'bolachas e biscoitos', 'beleza', 
@@ -1210,6 +1223,12 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
           { "id": "cesta8", "nome": "Grande Koblenz", "oldPrice": 390, "preco": 370, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
           { "id": "cesta9", "nome": "Grande Bonini", "oldPrice": 380, "preco": 360, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] }
         ];
+
+        const COUPONS = {
+            "VIVI10": { type: "percentage", value: 10, minOrder: 150, excludeCategories: ["mercearia basica"] },
+            "DIREITO10": { type: "percentage", value: 10, minOrder: 150, excludeCategories: ["mercearia basica"] },
+            "BELA15": { type: "percentage", value: 15, minOrder: 200, includeCategories: ["beleza", "higiene"] }
+        };
         
         let currentBasketItems = [];
 
@@ -1226,7 +1245,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             if ($('basketDetailModal') && $('basketDetailModal').classList.contains('active')) {
                 closeBasketDetail();
             } else if ($('detailModal').classList.contains('active')) {
-                closeDetail(); // Use function to correctly clear URL
+                closeDetail(); 
             } else if ($('checkout-drawer').classList.contains('open')) {
                 closeCheckout();
             } else if ($('sidebar').classList.contains('open')) {
@@ -1279,7 +1298,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let isOfertasActive = STATE.currentFilter.type.startsWith('ofertas') || STATE.currentFilter.type === 'search' ? 'active' : '';
             let isCestasActive = STATE.currentFilter.type === 'cestas' ? 'active' : '';
             
-            // Cestas primeiro, depois Ofertas
             let html = `<div class="category-chip ${isCestasActive}" onclick="filterBy('cestas', '')"><i class="fa-solid fa-box-open" style="margin-right: 4px;"></i> Cestas Básicas</div>`;
             html += `<div class="category-chip ${isOfertasActive}" onclick="filterBy('ofertas', '')">Ofertas</div>`;
             
@@ -1296,8 +1314,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
            setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
-                    // Alteramos para scrollTo, calculando a distância do chip até a borda esquerda (offsetLeft)
-                    // Subtraímos 15 para manter a margem visual da tela
                     container.scrollTo({ 
                         left: activeChip.offsetLeft - 15, 
                         behavior: 'smooth' 
@@ -1305,12 +1321,11 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 }
             }, 50);
 
-            // Chamada para os sub-chips
             renderSubCategoryChips();
         }
 
         // ==========================================
-        // NOVO: RENDERIZADOR DE SUBCATEGORIAS / DESCONTOS
+        // RENDERIZADOR DE SUBCATEGORIAS / DESCONTOS
         // ==========================================
         function renderSubCategoryChips() {
             const container = $('sub-category-chips');
@@ -1374,7 +1389,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             setTimeout(() => {
                 let activeChip = container.querySelector('.active');
                 if (activeChip) {
-                    // Mesma lógica aplicada aos chips secundários
                     container.scrollTo({ 
                         left: activeChip.offsetLeft - 15, 
                         behavior: 'smooth' 
@@ -1932,11 +1946,10 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             STATE.deliveryOptions = options; let sel = options[STATE.selectedDeliveryIndex || 0]; 
             STATE.deliveryDiscount = sel.discount; STATE.deliveryDateStr = sel.dateStr;
             
-            // Botão alterado para 1 linha
             $('delivery-options-list').innerHTML = options.map((opt, i) => `<button class="pay-btn ${STATE.selectedDeliveryIndex===i ? 'selected' : ''}" onclick="selectDelivery(${i})"><span>${opt.title} (${opt.dateStr})</span> ${opt.discount > 0 ? `<span style="color:var(--success); font-weight: 800;">-${fmt(opt.discount)}</span>` : ''}</button>`).join('');
             
             renderCheckoutItems(); updateTotals();
-            $('checkout-drawer').scrollTop = 0; // <--- ADICIONE ESTA LINHA
+            $('checkout-drawer').scrollTop = 0;
             $('checkout-drawer').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back();
         };
         
@@ -2003,10 +2016,34 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             updateTotals(); saveCart(); renderCheckoutItems();
         };
 
+        // Lógica de Cupom de Desconto
+        window.applyCoupon = function() {
+            let code = $('chk-cupom').value.trim().toUpperCase();
+            if (!code) {
+                STATE.appliedCoupon = null;
+                updateTotals();
+                $('cupom-msg').style.display = 'none';
+                return;
+            }
+            if (COUPONS[code]) {
+                STATE.appliedCoupon = code;
+                $('cupom-msg').innerText = "Cupom aplicado com sucesso!";
+                $('cupom-msg').style.color = "var(--success)";
+                $('cupom-msg').style.display = 'block';
+            } else {
+                STATE.appliedCoupon = null;
+                $('cupom-msg').innerText = "Cupom inválido ou expirado.";
+                $('cupom-msg').style.color = "#ef4444";
+                $('cupom-msg').style.display = 'block';
+            }
+            updateTotals();
+        };
+
         function updateTotals() {
             let sumBase = 0; 
             let count = 0; 
             let basketDiscountTotal = 0;
+            let eligibleForCouponSubtotal = 0;
             
             Object.entries(STATE.cart).forEach(([id, q]) => { 
                 let p = STATE.prods.find(x => String(x.id) === String(id)); 
@@ -2014,8 +2051,24 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     sumBase += p.price * q; 
                     if (!String(id).startsWith('fee_cesta')) {
                         count += q; 
+                        
+                        // Validação de regras para cupom ativo
+                        if (STATE.appliedCoupon && COUPONS[STATE.appliedCoupon]) {
+                            let rule = COUPONS[STATE.appliedCoupon];
+                            let catN = norm(p.categoria);
+                            let isEligible = true;
+                            
+                            if (rule.excludeCategories && rule.excludeCategories.includes(catN)) {
+                                isEligible = false;
+                            }
+                            if (rule.includeCategories && !rule.includeCategories.includes(catN)) {
+                                isEligible = false;
+                            }
+                            if (isEligible) {
+                                eligibleForCouponSubtotal += p.price * q;
+                            }
+                        }
                     } else {
-                        // Calcula o desconto real baseado no oldPrice da cesta
                         let bId = String(id).replace('fee_', '');
                         let basketObj = BASKETS.find(b => b.id === bId);
                         if (basketObj && basketObj.oldPrice) {
@@ -2029,26 +2082,42 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             let badge = $('cart-badge');
             if (count > 0) { badge.style.display = 'block'; badge.innerText = count > 99 ? '99+' : count; } else { badge.style.display = 'none'; }
             
-            // O subtotal exibido será o valor total (com a cesta no preço normal) para evidenciar o desconto
             let subtotalVisual = sumBase + basketDiscountTotal;
             $('sum-sub').innerText = fmt(subtotalVisual); 
             
-            // Renderiza Desconto da Cesta
             $('sum-basket-desc').innerText = `- ${fmt(basketDiscountTotal)}`;
             $('sum-basket-row').style.display = basketDiscountTotal > 0 ? 'flex' : 'none';
 
-            // Renderiza Desconto de Agendamento
             $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; 
             $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
             
-            let finalTotal = sumBase - STATE.deliveryDiscount;
+            // Calcula o desconto do cupom
+            STATE.couponDiscount = 0;
+            if (STATE.appliedCoupon && COUPONS[STATE.appliedCoupon]) {
+                let rule = COUPONS[STATE.appliedCoupon];
+                if (sumBase >= rule.minOrder) {
+                    STATE.couponDiscount = eligibleForCouponSubtotal * (rule.value / 100);
+                    $('cupom-msg').innerText = "Cupom aplicado com sucesso!";
+                    $('cupom-msg').style.color = "var(--success)";
+                    $('cupom-msg').style.display = 'block';
+                } else {
+                    $('cupom-msg').innerText = `O cupom exige compra mínima de ${fmt(rule.minOrder)}.`;
+                    $('cupom-msg').style.color = "#ef4444";
+                    $('cupom-msg').style.display = 'block';
+                    STATE.couponDiscount = 0;
+                }
+            }
+
+            $('sum-cupom-desc').innerText = `- ${fmt(STATE.couponDiscount)}`;
+            $('sum-cupom-row').style.display = STATE.couponDiscount > 0 ? 'flex' : 'none';
+
+            let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount;
             $('sum-total').innerText = fmt(finalTotal);
             
             let btn = $('btn-send-order');
             if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
             if (typeof updateAllCardUIs === 'function') updateAllCardUIs();
 
-            // Atualiza a Barra Flutuante do Carrinho
             let fc = $('floating-cart');
             if (fc) {
                 if (count > 0) {
@@ -2063,7 +2132,7 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
 
         window.clearCart = function() {
             if(confirm("Deseja realmente esvaziar sua sacola?")) { 
-                STATE.cart = {}; STATE.cartOrder = []; updateTotals(); saveCart(); history.back(); 
+                STATE.cart = {}; STATE.cartOrder = []; STATE.appliedCoupon = null; $('chk-cupom').value = ""; updateTotals(); saveCart(); history.back(); 
             }
         };
 
@@ -2102,10 +2171,11 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                     }
                 } 
             });
-            let final = totalBruto - STATE.deliveryDiscount;
+            let final = totalBruto - STATE.deliveryDiscount - STATE.couponDiscount;
             
             if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA(S): -${fmt(totalDescontoCestas)}`;
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+            if (STATE.couponDiscount > 0) itemsTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
             
             const msg = `*PEDIDO #${orderId}*\n\n*CLIENTE:* ${nome}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n\n*TOTAL: ${fmt(final)}*`;
             
@@ -2228,7 +2298,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             window.currentBasketId = basketId;
         pushHistoryState('basket');
         
-        // MOSTRA OS ELEMENTOS PADRÃO DA CESTA SEMPRE QUE ABRIR
         let headerEl = $('basket-items-header');
         if(headerEl) headerEl.style.display = 'block';
         let containerEl = $('basket-items-container');
@@ -2284,7 +2353,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 let p = item.pObj;
                 totalItemsCount += item.qty; 
                 
-                // Aproveita a mesma lógica de embalagem e preços do card principal
                 let embalagemHtml = p.embalagem ? `<div class="tag-embalagem-list">${p.embalagem}</div>` : '';
                 let oldPriceHtml = (p.discountPercent && p.discountPercent > 0) 
                     ? `<span style="text-decoration: line-through; font-size: 0.65rem; color: #999; font-weight: normal;">${fmt(p.oldPrice)}</span>` 
@@ -2384,12 +2452,10 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 const bagIcon = document.querySelector('.fa-bag-shopping');
                 if(bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
                 
-                // ESCONDER A LISTA DE ITENS PARA LIMPAR A TELA DEPOIS DE ADICIONAR
                 $('basket-items-header').style.display = 'none';
                 $('basket-items-container').style.display = 'none';
                 $('basket-summary-container').style.display = 'none';
                 
-                // CHAMA O RENDER VIP COM A NOVA LÓGICA (SUCESSO + OFERTAS)
                 renderVIPList();
             } else {
                 alert("Nenhum produto válido para adicionar.");
@@ -2399,11 +2465,9 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
         function renderVIPList() {
             let container = $('vip-items-grid');
             
-            // LIMITAMOS A 4 OFERTAS PARA NÃO CONFUNDIR O CLIENTE, GARANTINDO QUE TENHAM ESTOQUE
             let ofertas = STATE.prods.filter(p => p.discountPercent >= 10 && p.stock > 0).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 4);
             if(ofertas.length === 0) ofertas = STATE.prods.filter(p => p.stock > 0).slice(0, 4); 
 
-            // CRIAMOS UM BANNER DE SUCESSO E TRAZEMOS OS BOTÕES PARA O TOPO
             let html = `
             <div style="background: var(--success); color: white; padding: 25px 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);">
                 <i class="fa-solid fa-circle-check" style="font-size: 48px; margin-bottom: 12px;"></i>
@@ -2453,7 +2517,6 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
             container.innerHTML = html;
             $('vip-list-container').style.display = 'block';
             
-            // Fazemos a tela rolar para o topo do modal para o cliente ver a mensagem de sucesso
             setTimeout(() => { 
                 let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
                 if(scrollArea) scrollArea.scrollTo({top: 0, behavior: 'smooth'}); 
@@ -2486,12 +2549,10 @@ src="https://www.facebook.com/tr?id=913298841339644&ev=PageView&noscript=1"
                 }
                 loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
                 
-                // Mudei o viewMode para 2 para iniciar no formato lista horizontal
                 STATE.viewMode = 2;
                 renderVitrineEngine();
                 renderCategoryChips();
                 
-                // NOVO: Lógica para carregar direto um produto ou categoria via URL
                 const urlParams = new URLSearchParams(window.location.search);
                 const productId = urlParams.get('p');
                 if (productId) {
