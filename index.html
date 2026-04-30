@@ -216,7 +216,7 @@
             height: calc(100dvh - var(--header-total) - env(safe-area-inset-top));
             padding-top: 15px; 
             scroll-padding-top: 15px; 
-            padding-bottom: max(90px, calc(75px + env(safe-area-inset-bottom)));
+            padding-bottom: max(90px, calc(80px + env(safe-area-inset-bottom)));
             overflow-y: auto;
             overflow-x: hidden;
             scroll-behavior: smooth;
@@ -242,29 +242,32 @@
         }
 
         .view-mode-2 { 
-            scroll-snap-type: y proximity; /* Ativa o efeito elástico vertical */
+            scroll-snap-type: y proximity; /* Efeito elastico ativado */
         }
-
-        .cat-section { 
-            margin-bottom: 45px; /* Aumentado o respiro entre as categorias */
-            scroll-snap-align: start; /* Faz o título parar certinho na tela */
-            scroll-margin-top: 15px; /* Mantém um respiro abaixo da barra de abas */
+        .view-mode-2 .product-page { 
+            display: flex; 
+            flex-direction: column; 
+            padding: 10px 15px; 
+            scroll-snap-align: none;
         }
 
         /* =========================================
            2.1 CARROSSEL DE CATEGORIAS (MERCADO)
         ========================================= */
-        .cat-section { margin-bottom: 15px; } 
+        .cat-section { 
+            margin-bottom: 45px; /* Aumentado respiro */
+            scroll-snap-align: start; /* Efeito elastico / ancora */
+            scroll-margin-top: 15px; 
+        } 
         
        .cat-header { 
-            padding: 5px 15px 5px; /* Ajustado para ficar mais perto dos chips */
+            padding: 5px 15px 5px; 
             font-weight: 800; 
             font-size: 1.25rem; 
             display: flex; 
             align-items: center; 
             justify-content: space-between;
             gap: 8px; 
-            /* border-bottom removido daqui */
             margin: 0 15px 0; 
             color: var(--text-dark);
             text-transform: capitalize;
@@ -295,11 +298,11 @@
             padding: 10px 15px 15px; 
         }
         
-       .btn-car-ctrl { 
+        .btn-car-ctrl { 
             flex: 1; 
             padding: 12px; 
-            background: #f2f2f5; /* Fundo cinza claro igual aos chips */
-            border: none; /* Contorno removido */
+            background: #f2f2f5; /* Fundo cinza sem contorno */
+            border: none; 
             border-radius: 12px; 
             font-weight: 800; 
             font-size: 13px;
@@ -309,12 +312,12 @@
             justify-content: center; 
             align-items: center; 
             gap: 8px;
-            box-shadow: none; /* Sombra removida para ficar flat */
+            box-shadow: none; 
             transition: all 0.2s;
         }
         
         .btn-car-ctrl:active { 
-            background: var(--bg-card); 
+            background: #e5e5ea; 
             transform: scale(0.98);
         }
 
@@ -421,11 +424,11 @@
             flex-direction: column;
             justify-content: space-between; 
             min-width: 0;
-            padding: 16px 0; /* Aumentar esse padding empurra o nome pra baixo e o valor pra cima */
+            padding: 16px 0; /* Padding aumenta e empurra o botao e titulo */
         }
-        
+
         .product-name-list {
-            font-weight: 500; 
+            font-weight: 500; /* Mais leve */
             font-size: 0.85rem;
             color: var(--text-dark);
             line-height: 1.3;
@@ -455,7 +458,7 @@
             background: var(--primary);
             color: #fff;
             padding: 8px 16px;
-            border-radius: 8px; /* Cantos quadrados igual ao controle de quantidade */
+            border-radius: 8px; /* Cantos quadrados igual ao seletor de +/- */
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
@@ -466,6 +469,44 @@
         }
         
         .btn-quick-add-list:active { opacity: 0.8; transform: scale(0.95); }
+
+        /* =========================================
+           LISTA DE COMPRAS (SELETORES)
+        ========================================= */
+        .sl-cat-group {
+            margin-bottom: 15px;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+        }
+        .sl-cat-title {
+            background: var(--bg-card);
+            padding: 12px 15px;
+            font-weight: 800;
+            font-size: 14px;
+            color: var(--text-dark);
+            text-transform: uppercase;
+        }
+        .sl-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text-dark);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .sl-item:active { background: #fafafa; }
+        .sl-item:last-child { border-bottom: none; }
+        .sl-item input {
+            margin-right: 12px;
+            width: 20px;
+            height: 20px;
+            accent-color: var(--text-dark);
+        }
 
         /* =========================================
            ESTILOS ESPECÍFICOS PARA CESTAS BÁSICAS
@@ -673,26 +714,6 @@
         .detail-content { padding: 25px 20px; }
         .modal-title { font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2; }
 
-        #modalMetaTags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
-
-        #modalMetaTags span {
-            background: #f3f3f3 !important;
-            padding: 6px 14px !important;
-            border-radius: 20px !important;
-            font-size: 10px !important;
-            font-weight: 700 !important;
-            color: #444 !important;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-block;
-        }
-        
         .floating-action-bar {
             position: relative !important;
             bottom: auto !important;
@@ -770,27 +791,62 @@
         .brand-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
         
         /* =========================================
-           CARRINHO FIXO INFERIOR
+           NOVA BOTTOM NAVIGATION BAR
         ========================================= */
         .fixed-bottom-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
-            background: var(--success);
-            color: #ffffff;
-            padding: 12px 15px calc(12px + env(safe-area-inset-bottom));
+            background: #ffffff;
+            display: flex;
+            align-items: stretch;
+            z-index: 2100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+            height: max(60px, calc(60px + env(safe-area-inset-bottom)));
+            padding-bottom: env(safe-area-inset-bottom);
+            border-top: 1px solid var(--border-light);
+        }
+
+        .nav-btn-left, .nav-btn-right {
+            flex: 1;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            z-index: 2100;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 800;
+            border: none;
             cursor: pointer;
             transition: background 0.2s;
         }
-        .fixed-bottom-bar:active { background: #047857; } 
-        .fc-info { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px;}
-        .fc-btn { font-size: 14px; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+
+        .nav-btn-left {
+            background: #ffffff;
+            color: var(--text-dark);
+            border-right: 1px solid var(--border-light);
+        }
+
+        .nav-btn-right {
+            background: var(--success);
+            color: #ffffff;
+            position: relative;
+        }
+
+        .nav-btn-left:active { background: var(--bg-card); }
+        .nav-btn-right:active { background: #047857; }
+        
+        .cart-badge-bottom {
+            background: #ef4444;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 4px;
+            display: none;
+            border: 2px solid var(--success);
+        }
 
     </style>
 </head>
@@ -802,12 +858,18 @@
 
     <div class="overlay" id="overlay"></div>
 
-    <div id="floating-cart" class="fixed-bottom-bar" onclick="openCheckout()">
-        <div class="fc-info">
-            <i class="fa-solid fa-bag-shopping"></i>
-            <span id="fc-count">0</span> itens | <span id="fc-total">R$ 0,00</span>
-        </div>
-        <div class="fc-btn">Ver Sacola <i class="fa-solid fa-arrow-right"></i></div>
+    <!-- NOVA BARRA INFERIOR (LISTA DE COMPRAS E SACOLA) -->
+    <div class="fixed-bottom-bar">
+        <button class="nav-btn-left" onclick="openShoppingList()">
+            <i class="fa-solid fa-list-check"></i> Lista de Compras
+        </button>
+        <button class="nav-btn-right" onclick="openCheckout()">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-bag-shopping"></i> 
+                <span id="nav-sacola-text">Sacola</span>
+            </div>
+            <span id="bottom-cart-count" class="cart-badge-bottom">0</span>
+        </button>
     </div>
     
     <header class="topbar">
@@ -863,7 +925,6 @@
         <div class="modal-scroll-area" id="modal-scroll-area">
             <div class="detail-icon-box"><img id="modalImg" src="" alt="Produto"></div>
             <div class="detail-content">
-                <div id="modalMetaTags"></div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
                     <h1 class="modal-title" id="modalTitle" style="margin-bottom:0;">Nome do Produto</h1>
                     <button class="btn-share-inline" onclick="shareProduct()" title="Compartilhar Produto"><i class="fa-solid fa-share-nodes"></i></button>
@@ -995,7 +1056,9 @@
             loadedCatIndex: 0,   
             appliedCoupon: null,
             couponDiscount: 0,
-            viewCat: ''
+            viewCat: '',
+            shoppingListStep: 'select',
+            shoppingListSelections: []
         };
 
         const ORDEM_CATEGORIAS = [
@@ -1070,6 +1133,25 @@
                 renderVitrineEngine(); 
             }
         };
+
+        window.openShoppingList = function() {
+            STATE.currentTab = 'lista_compras';
+            STATE.shoppingListStep = 'select';
+            $('tab-cestas').classList.remove('active');
+            $('tab-mercado').classList.remove('active');
+            $('vitrine').scrollTop = 0;
+            renderVitrineEngine();
+        };
+
+        window.generateShoppingList = function() {
+            let checkboxes = document.querySelectorAll('.sl-chk:checked');
+            if(checkboxes.length === 0) return alert("Selecione pelo menos um item da lista para buscar.");
+            
+            STATE.shoppingListSelections = Array.from(checkboxes).map(c => c.value);
+            STATE.shoppingListStep = 'results';
+            $('vitrine').scrollTop = 0;
+            renderVitrineEngine();
+        };
         
         function openSidebar() { pushHistoryState('sidebar'); $('sidebar').classList.add('open'); $('overlay').classList.add('open'); $('overlay').onclick = () => history.back(); }
         function closeSidebar() { $('sidebar').classList.remove('open'); $('overlay').classList.remove('open'); }
@@ -1088,7 +1170,7 @@
                     $('tab-cestas').classList.remove('active');
                     $('tab-mercado').classList.remove('active');
                 } else {
-                    if(STATE.currentTab !== 'ver_tudo') {
+                    if(STATE.currentTab !== 'ver_tudo' && STATE.currentTab !== 'lista_compras') {
                         $('tab-' + STATE.currentTab).classList.add('active');
                     }
                 }
@@ -1104,6 +1186,8 @@
             
             if(STATE.currentTab === 'ver_tudo') {
                 switchTab('mercado');
+            } else if (STATE.currentTab === 'lista_compras') {
+                openShoppingList();
             } else {
                 handleSearchInput();
             }
@@ -1167,7 +1251,6 @@
             }, 100);
         };
 
-       // Filtro do mini chip
         window.filterCarrosselSub = function(catIndex, subName) {
             STATE.mercadoCats[catIndex].activeSub = subName;
             
@@ -1199,7 +1282,6 @@
             }
         };
 
-        // Abertura da lista "Ver Tudo"
         window.openCategoryAll = function(catName) {
             STATE.currentTab = 'ver_tudo';
             STATE.viewCat = catName;
@@ -1271,7 +1353,7 @@
             updateTotals(); 
             saveCart();
             const fcBar = document.querySelector('.fixed-bottom-bar');
-            if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = 'var(--success)', 500); }
+            if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = '#ffffff', 500); }
         };
 
         // ==========================================
@@ -1369,7 +1451,7 @@
             }
         }
 
-        function createCategoryCarousel(catData, index) {
+        function createCategoryCarousel(catData, index, hideChips = false) {
             let catName = catData.name;
             let allProducts = catData.products;
             let activeSub = catData.activeSub || 'Todos';
@@ -1381,13 +1463,13 @@
             let header = `
                 <div class="cat-header">
                     <div class="cat-title-left"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${catName}</div>
-                    <div class="btn-ver-tudo" onclick="openCategoryAll('${catName}')">Ver Tudo</div>
+                    ${!hideChips ? `<div class="btn-ver-tudo" onclick="openCategoryAll('${catName}')">Ver Tudo</div>` : ''}
                 </div>`;
 
             let subs = [...new Set(allProducts.map(p => p.subcategoria))].filter(Boolean).sort();
             let chipsHtml = '';
             
-            if (subs.length > 0) {
+            if (!hideChips && subs.length > 0) {
                 chipsHtml += `<div class="mini-chips-container">`;
                 chipsHtml += `<div class="mini-chip ${activeSub === 'Todos' ? 'active' : ''}" onclick="filterCarrosselSub(${index}, 'Todos')">Todos</div>`;
                 subs.forEach(sub => {
@@ -1398,9 +1480,9 @@
 
             let filteredProducts = activeSub === 'Todos' ? allProducts : allProducts.filter(p => p.subcategoria === activeSub);
 
-           let slidesHtml = '';
-            for (let i = 0; i < filteredProducts.length; i += 2) { // Alterado para pular de 2 em 2
-                let chunk = filteredProducts.slice(i, i + 2); // Alterado para cortar de 2 em 2
+            let slidesHtml = '';
+            for (let i = 0; i < filteredProducts.length; i += 2) { 
+                let chunk = filteredProducts.slice(i, i + 2); 
                 let cardsHtml = chunk.map(p => renderCardHTML(p)).join('');
                 slidesHtml += `<div class="carousel-slide">${cardsHtml}</div>`;
             }
@@ -1416,10 +1498,8 @@
                 </div>
             `;
             
-            // Cria a linha preta separada
             let linhaPreta = `<div style="border-bottom: 2px solid var(--primary); margin: 0 15px 15px;"></div>`;
             
-            // Monta a seção colocando a linha preta DEPOIS dos chips (chipsHtml)
             section.innerHTML = header + chipsHtml + linhaPreta + carousel;
             return section;
         }
@@ -1434,8 +1514,91 @@
 
       function renderVitrineEngine() {
             const vitrine = $('vitrine');
+
+            // Fluxo: Lista de Compras
+            if (STATE.currentTab === 'lista_compras') {
+                vitrine.className = `main-container view-mode-2`;
+                let html = '';
+
+                if (STATE.shoppingListStep === 'select') {
+                    html += `<div style="padding: 15px 15px 5px;">
+                                <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 5px;">Lista de Compras</h2>
+                                <p style="color: var(--text-light); font-size: 14px; line-height: 1.4;">Marque os itens que precisa e nós organizamos os corredores para você.</p>
+                             </div>
+                             <div style="padding: 10px 15px 40px;">`;
+
+                    let catMap = {};
+                    STATE.prods.forEach(p => {
+                        if(p.categoria === 'Cestas' || p.stock <= 0) return;
+                        let c = p.categoria || 'Outros';
+                        let s = p.subcategoria || 'Geral';
+                        if(!catMap[c]) catMap[c] = new Set();
+                        catMap[c].add(s);
+                    });
+
+                    let sortedCats = Object.keys(catMap).sort((a,b) => {
+                        let idxA = ORDEM_CATEGORIAS.indexOf(norm(a));
+                        let idxB = ORDEM_CATEGORIAS.indexOf(norm(b));
+                        if(idxA===-1) idxA=999; if(idxB===-1) idxB=999;
+                        return idxA - idxB || a.localeCompare(b);
+                    });
+
+                    sortedCats.forEach(cat => {
+                        html += `<div class="sl-cat-group">
+                                    <div class="sl-cat-title">${cat}</div>`;
+                        let subs = Array.from(catMap[cat]).sort();
+                        subs.forEach(sub => {
+                            let val = `${cat}|${sub}`;
+                            html += `<label class="sl-item">
+                                        <input type="checkbox" class="sl-chk" value="${val}">
+                                        ${sub === 'Geral' ? 'Diversos (' + cat + ')' : sub}
+                                     </label>`;
+                        });
+                        html += `</div>`;
+                    });
+
+                    html += `<button class="btn-send" style="width:100%; margin-top: 10px; margin-bottom: 30px;" onclick="generateShoppingList()">Buscar Produtos <i class="fa-solid fa-magnifying-glass" style="margin-left: 8px;"></i></button>
+                            </div>`;
+
+                    vitrine.innerHTML = html;
+                    return;
+                }
+
+                if (STATE.shoppingListStep === 'results') {
+                    html += `<div style="padding: 15px; border-bottom: 1px solid var(--border-light); margin-bottom: 15px; display:flex; align-items:center; gap: 10px; cursor: pointer; color: var(--text-dark);" onclick="openShoppingList()">
+                                <i class="fa-solid fa-arrow-left"></i>
+                                <h2 style="font-size: 18px; font-weight: 800; margin:0;">Sua Lista Personalizada</h2>
+                             </div>`;
+                    
+                    let results = [];
+                    STATE.shoppingListSelections.forEach(sel => {
+                        let [cat, sub] = sel.split('|');
+                        let prods = STATE.prods.filter(p => p.categoria === cat && (p.subcategoria || 'Geral') === sub && p.stock > 0);
+                        if(prods.length > 0) {
+                            prods.sort((a,b) => b.discountPercent - a.discountPercent || a.name.localeCompare(b.name));
+                            results.push({ name: `${cat} - ${sub === 'Geral' ? 'Diversos' : sub}`, products: prods }); 
+                        }
+                    });
+
+                    if(results.length === 0) {
+                        html += `<div style="padding: 40px; text-align: center; color: var(--text-light);">Nenhum produto encontrado nas categorias selecionadas.</div>`;
+                        vitrine.innerHTML = html;
+                        return;
+                    }
+
+                    vitrine.innerHTML = html;
+
+                    let frag = document.createDocumentFragment();
+                    results.forEach((catData, idx) => {
+                        frag.appendChild(createCategoryCarousel(catData, 'sl_'+idx, true)); 
+                    });
+                    vitrine.appendChild(frag);
+                    lazyLoadImages();
+                    return;
+                }
+            }
             
-            // Fluxo 1.5: Ver Tudo de uma categoria
+            // Fluxo Ver Tudo de uma categoria
             if (STATE.currentTab === 'ver_tudo') {
                 vitrine.className = `main-container view-mode-2`;
                 let catName = STATE.viewCat;
@@ -1559,7 +1722,7 @@
                 $('related-grid').innerHTML = '';
                 
                 let catDataFake = { name: 'Sugestões para Você', products: finalRelated };
-                let carrosselRelacionados = createCategoryCarousel(catDataFake, 'related');
+                let carrosselRelacionados = createCategoryCarousel(catDataFake, 'related', true);
                 let sec = carrosselRelacionados.querySelector('.cat-section');
                 if(sec) sec.style.marginBottom = '0';
                 
@@ -1588,7 +1751,7 @@
             STATE.cart[currentModalProdId] = currentInCart + currentModalQty;
             updateTotals(); saveCart(); history.back();
             const fcBar = document.querySelector('.fixed-bottom-bar');
-            if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = 'var(--success)', 500); }
+            if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = '#ffffff', 500); }
         };
 
         window.openCheckout = function() {
@@ -1682,10 +1845,15 @@
             let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerText = `Mínimo ${fmt(MIN_ORDER)}`; } else { btn.disabled = false; btn.innerText = 'Enviar Pedido'; }
             if (typeof updateAllCardUIs === 'function') updateAllCardUIs();
 
-            let fc = $('floating-cart');
-            if (fc) {
-                $('fc-count').innerText = count; 
-                $('fc-total').innerText = fmt(finalTotal); 
+            let badge = $('bottom-cart-count');
+            let navSacolaText = $('nav-sacola-text');
+            if (count > 0) {
+                badge.style.display = 'inline-block'; 
+                badge.innerText = count > 99 ? '99+' : count; 
+                navSacolaText.innerText = fmt(finalTotal);
+            } else {
+                badge.style.display = 'none';
+                navSacolaText.innerText = 'Sacola';
             }
         }
 
@@ -1835,7 +2003,7 @@
 
             if (addedCount > 0) {
                 updateTotals(); saveCart();
-                const fcBar = document.querySelector('.fixed-bottom-bar'); if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = 'var(--success)', 500); }
+                const fcBar = document.querySelector('.fixed-bottom-bar'); if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = '#ffffff', 500); }
                 $('basket-items-header').style.display = 'none'; $('basket-items-container').style.display = 'none'; $('basket-summary-container').style.display = 'none';
                 renderVIPList();
             } else { alert("Nenhum produto válido para adicionar."); }
@@ -1843,9 +2011,7 @@
 
         function renderVIPList() {
             let container = $('vip-items-grid');
-            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10 && p.stock > 0).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 4);
-            if(ofertas.length === 0) ofertas = STATE.prods.filter(p => p.stock > 0).slice(0, 4); 
-
+            
             let html = `
             <div style="background: var(--success); color: white; padding: 25px 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);">
                 <i class="fa-solid fa-circle-check" style="font-size: 48px; margin-bottom: 12px;"></i>
