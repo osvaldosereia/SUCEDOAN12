@@ -404,8 +404,8 @@
         }
 
         .product-icon-list {
-            width: 80px; 
-            height: 80px;
+            width: 105px; /* Foto 30% maior */
+            height: 105px; /* Foto 30% maior */
             object-fit: contain;
             mix-blend-mode: normal;
             background: transparent;
@@ -1396,9 +1396,9 @@
 
             let filteredProducts = activeSub === 'Todos' ? allProducts : allProducts.filter(p => p.subcategoria === activeSub);
 
-            let slidesHtml = '';
-            for (let i = 0; i < filteredProducts.length; i += 3) {
-                let chunk = filteredProducts.slice(i, i + 3);
+           let slidesHtml = '';
+            for (let i = 0; i < filteredProducts.length; i += 2) { // Alterado para pular de 2 em 2
+                let chunk = filteredProducts.slice(i, i + 2); // Alterado para cortar de 2 em 2
                 let cardsHtml = chunk.map(p => renderCardHTML(p)).join('');
                 slidesHtml += `<div class="carousel-slide">${cardsHtml}</div>`;
             }
