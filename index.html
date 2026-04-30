@@ -154,15 +154,14 @@
       /* =========================================
            2. VITRINE E SCROLL
         ========================================= */
-       .main-container {
+      .main-container {
             position: fixed; 
             top: calc(var(--header-total) + env(safe-area-inset-top));
             left: 0;
             width: 100%;
             height: calc(100dvh - var(--header-total) - env(safe-area-inset-top));
             padding-top: 5px; 
-            /* Fixa o respiro na base da barra de busca */
-            scroll-padding-top: calc(var(--h-search) + 15px); 
+            scroll-padding-top: 8px; /* <--- AJUSTADO AQUI */
             padding-bottom: max(90px, calc(80px + env(safe-area-inset-bottom)));
             overflow-y: auto;
             overflow-x: hidden;
@@ -198,8 +197,8 @@
         .cat-section { 
             margin-bottom: 45px; 
             scroll-snap-align: start; 
-            scroll-margin-top: calc(var(--h-search) + 8px); /* Para certinho 8px abaixo da busca */
-        } 
+            scroll-margin-top: 8px; /* <--- AJUSTADO AQUI */
+        }
         
        .cat-header { 
             padding: 5px 15px 5px; font-weight: 800; font-size: 1.25rem; display: flex; 
