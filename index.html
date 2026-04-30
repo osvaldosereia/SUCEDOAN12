@@ -112,11 +112,7 @@
         }
 
         .logo-horizontal img {
-            height: 32px; width: 32px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-light);
-        }
-
-        .logo-horizontal span {
-            font-weight: 800; font-size: 17px; color: var(--text-dark);
+            height: 38px; width: auto; max-width: 180px; object-fit: contain; border: none; border-radius: 0;
         }
 
         .topbar-actions {
@@ -165,7 +161,7 @@
             width: 100%;
             height: calc(100dvh - var(--header-total) - env(safe-area-inset-top));
             padding-top: 5px; 
-            /* Fixa o respiro exato na base da barra de busca quando faz Snap */
+            /* Fixa o respiro na base da barra de busca */
             scroll-padding-top: calc(var(--h-search) + 15px); 
             padding-bottom: max(90px, calc(80px + env(safe-area-inset-bottom)));
             overflow-y: auto;
@@ -202,7 +198,7 @@
         .cat-section { 
             margin-bottom: 45px; 
             scroll-snap-align: start; 
-            scroll-margin-top: 15px; 
+            scroll-margin-top: calc(var(--h-search) + 8px); /* Para certinho 8px abaixo da busca */
         } 
         
        .cat-header { 
@@ -282,7 +278,7 @@
         }
 
         .product-icon-list {
-            width: 125px; height: 125px; object-fit: contain; mix-blend-mode: normal;
+            width: 100px; height: 100px; object-fit: contain; mix-blend-mode: normal;
             background: transparent; flex-shrink: 0; align-self: center;
         }
 
@@ -462,6 +458,7 @@
 
     <div class="overlay" id="overlay"></div>
 
+    <!-- NOVA BARRA INFERIOR (LISTA DE COMPRAS E SACOLA) -->
     <div class="fixed-bottom-bar">
         <button class="nav-btn-left" onclick="openShoppingList()">
             <i class="fa-solid fa-list-check"></i> Lista de Compras
@@ -485,7 +482,6 @@
     <div class="header-logo-actions">
         <div class="logo-horizontal" onclick="scrollToTop()">
             <img src="../img/logoantonia5.png" alt="Dona Antônia" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='">
-            <span>Dona Antônia</span>
         </div>
         <div class="topbar-actions">
             <div class="action-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975', '_blank')">
@@ -645,6 +641,7 @@
         </div>
     </div>
 
+    <!-- Área principal unificada -->
     <main class="main-container view-mode-1" id="vitrine"></main>
 
     <script>
@@ -858,29 +855,39 @@
 
         window.filterCarrosselSub = function(catIndex, subName) {
             STATE.mercadoCats[catIndex].activeSub = subName;
-            
             let catData = STATE.mercadoCats[catIndex];
             let prodsValidos = catData.products.filter(p => p.stock > 0);
-            let catDataFiltered = { ...catData, products: prodsValidos };
+            let filteredProducts = subName === 'Todos' ? prodsValidos : prodsValidos.filter(p => p.subcategoria === subName);
             
             let oldSectionId = 'section-' + norm(catData.name).replace(/\s+/g, '-');
-            let oldSection = document.getElementById(oldSectionId);
+            let section = document.getElementById(oldSectionId);
             
-            let currentScroll = 0;
-            if (oldSection) {
-                let oldChipsContainer = oldSection.querySelector('.mini-chips-container');
-                if (oldChipsContainer) currentScroll = oldChipsContainer.scrollLeft;
-            }
-            
-            let newSection = createCategoryCarousel(catDataFiltered, catIndex);
-            
-            if (oldSection) {
-                oldSection.replaceWith(newSection);
+            if (section) {
+                // Atualiza a interface visual dos chips sem trocar a div
+                let chips = section.querySelectorAll('.mini-chip');
+                chips.forEach(chip => {
+                    if (chip.innerText.trim() === subName || (chip.innerText.trim() === 'Todos' && subName === 'Todos')) {
+                        chip.classList.add('active');
+                    } else {
+                        chip.classList.remove('active');
+                    }
+                });
+
+                // Atualiza o miolo do carrossel em tempo real
+                let slidesHtml = '';
+                let isOfertas = catData.name === 'Ofertas da Semana';
+                let cardsPerSlide = isOfertas ? 2 : 3;
                 
-                let updatedSection = document.getElementById(oldSectionId);
-                if (updatedSection) {
-                    let newChipsContainer = updatedSection.querySelector('.mini-chips-container');
-                    if (newChipsContainer) newChipsContainer.scrollLeft = currentScroll;
+                for (let i = 0; i < filteredProducts.length; i += cardsPerSlide) { 
+                    let chunk = filteredProducts.slice(i, i + cardsPerSlide); 
+                    let cardsHtml = chunk.map(p => renderCardHTML(p)).join('');
+                    slidesHtml += `<div class="carousel-slide">${cardsHtml}</div>`;
+                }
+
+                let viewport = section.querySelector('.carousel-viewport');
+                if (viewport) {
+                    viewport.innerHTML = slidesHtml;
+                    viewport.scrollLeft = 0; 
                 }
                 
                 lazyLoadImages(); 
@@ -1065,6 +1072,8 @@
             section.className = 'cat-section';
             section.id = 'section-' + norm(catName).replace(/\s+/g, '-');
 
+            let isOfertas = catName === 'Ofertas da Semana';
+
             let header = `
                 <div class="cat-header">
                     <div class="cat-title-left"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${catName}</div>
@@ -1074,7 +1083,8 @@
             let subs = [...new Set(allProducts.map(p => p.subcategoria))].filter(Boolean).sort();
             let chipsHtml = '';
             
-            if (!hideChips && subs.length > 0) {
+            // Só mostra chips se não for Ofertas e não for pedido oculto pela lista de compras
+            if (!hideChips && !isOfertas && subs.length > 0) {
                 chipsHtml += `<div class="mini-chips-container">`;
                 chipsHtml += `<div class="mini-chip ${activeSub === 'Todos' ? 'active' : ''}" onclick="filterCarrosselSub(${index}, 'Todos')">Todos</div>`;
                 subs.forEach(sub => {
@@ -1086,8 +1096,10 @@
             let filteredProducts = activeSub === 'Todos' ? allProducts : allProducts.filter(p => p.subcategoria === activeSub);
 
             let slidesHtml = '';
-            for (let i = 0; i < filteredProducts.length; i += 3) { 
-                let chunk = filteredProducts.slice(i, i + 3); 
+            let cardsPerSlide = isOfertas ? 2 : 3;
+
+            for (let i = 0; i < filteredProducts.length; i += cardsPerSlide) { 
+                let chunk = filteredProducts.slice(i, i + cardsPerSlide); 
                 let cardsHtml = chunk.map(p => renderCardHTML(p)).join('');
                 slidesHtml += `<div class="carousel-slide">${cardsHtml}</div>`;
             }
@@ -1637,6 +1649,19 @@
             setTimeout(() => { let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area'); if(scrollArea) scrollArea.scrollTo({top: 0, behavior: 'smooth'}); }, 50);
         }
 
+        // Setup hide-on-scroll logic
+        function initScrollListeners() {
+            const vitrine = document.getElementById('vitrine');
+            vitrine.addEventListener('scroll', () => {
+                // If scrolling down significantly, hide the middle and bottom header parts
+                if (vitrine.scrollTop > 60) {
+                    document.body.classList.add('header-hidden');
+                } else if (vitrine.scrollTop <= 10) {
+                    document.body.classList.remove('header-hidden');
+                }
+            });
+        }
+
         async function init() {
             setTimeout(() => { let splash = $('splash-screen'); if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 400); } }, 2500);
 
@@ -1658,20 +1683,11 @@
                 loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
                 
                 switchTab('cestas');
+                initScrollListeners();
                 
                 const urlParams = new URLSearchParams(window.location.search);
                 const productId = urlParams.get('p');
                 if (productId) setTimeout(() => openDetail(productId), 500);
-
-                // Setup the hide-on-scroll logic
-                const vitrine = document.getElementById('vitrine');
-                vitrine.addEventListener('scroll', () => {
-                    if (vitrine.scrollTop > 50) {
-                        document.body.classList.add('header-hidden');
-                    } else if (vitrine.scrollTop <= 10) {
-                        document.body.classList.remove('header-hidden');
-                    }
-                });
 
             } catch (e) { 
                 console.error("Erro ao carregar os dados:", e);
