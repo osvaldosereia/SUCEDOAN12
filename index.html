@@ -172,8 +172,7 @@
             left: 0;
             width: 100%;
             height: var(--tabs-height);
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(15px);
+            background: var(--bg-card);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -185,7 +184,7 @@
         .tab-btn {
             flex: 1;
             height: 42px;
-            border: 1px solid var(--border-light);
+            border: 1px solid #a3a3a3;
             border-radius: 20px;
             background: #ffffff;
             color: var(--text-light);
@@ -261,6 +260,7 @@
             font-size: 1.25rem; 
             display: flex; 
             align-items: center; 
+            justify-content: space-between;
             gap: 8px; 
             border-bottom: 2px solid var(--primary); 
             margin: 0 15px 5px; 
@@ -314,6 +314,68 @@
         .btn-car-ctrl:active { 
             background: var(--bg-card); 
             transform: scale(0.98);
+        }
+
+        /* =========================================
+           NOVOS ELEMENTOS: MINI CHIPS E VER TUDO
+        ========================================= */
+        .cat-title-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-ver-tudo {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-dark);
+            background: var(--bg-card);
+            padding: 6px 12px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 1px solid var(--border-light);
+        }
+
+        .mini-chips-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 5px 15px 10px 15px;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .mini-chips-container::-webkit-scrollbar { display: none; }
+        
+        .mini-chip {
+            background: #ffffff;
+            border: 1px solid var(--border-light);
+            color: var(--text-light);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .mini-chip.active {
+            background: var(--text-dark);
+            color: #ffffff;
+            border-color: var(--text-dark);
+        }
+
+        .ver-tudo-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 5px 5px 20px;
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 10px;
+            cursor: pointer;
         }
 
         /* =========================================
@@ -947,7 +1009,8 @@
             mercadoCats: [],     
             loadedCatIndex: 0,   
             appliedCoupon: null,
-            couponDiscount: 0
+            couponDiscount: 0,
+            viewCat: '' // Usado para a tela 'ver_tudo'
         };
 
         const ORDEM_CATEGORIAS = [
@@ -1040,7 +1103,9 @@
                     $('tab-cestas').classList.remove('active');
                     $('tab-mercado').classList.remove('active');
                 } else {
-                    $('tab-' + STATE.currentTab).classList.add('active');
+                    if(STATE.currentTab !== 'ver_tudo') {
+                        $('tab-' + STATE.currentTab).classList.add('active');
+                    }
                 }
                 
                 $('vitrine').scrollTop = 0; 
@@ -1051,7 +1116,12 @@
         window.clearSearch = function() {
             $('app-search-input').value = '';
             $('clear-search-btn').style.display = 'none';
-            handleSearchInput();
+            
+            if(STATE.currentTab === 'ver_tudo') {
+                switchTab('mercado');
+            } else {
+                handleSearchInput();
+            }
         };
 
         window.toggleSubMenu = function(id, iconEl) {
@@ -1110,6 +1180,37 @@
                     handleSearchInput();
                 }
             }, 100);
+        };
+
+        // Filtro do mini chip
+        window.filterCarrosselSub = function(catIndex, subName) {
+            STATE.mercadoCats[catIndex].activeSub = subName;
+            
+            let catData = STATE.mercadoCats[catIndex];
+            let prodsValidos = catData.products.filter(p => p.stock > 0);
+            let catDataFiltered = { ...catData, products: prodsValidos };
+            
+            let newSection = createCategoryCarousel(catDataFiltered, catIndex);
+            
+            let oldSectionId = 'section-' + norm(catData.name).replace(/\s+/g, '-');
+            let oldSection = document.getElementById(oldSectionId);
+            
+            if (oldSection) {
+                oldSection.replaceWith(newSection);
+                lazyLoadImages(); 
+            }
+        };
+
+        // Abertura da lista "Ver Tudo"
+        window.openCategoryAll = function(catName) {
+            STATE.currentTab = 'ver_tudo';
+            STATE.viewCat = catName;
+            
+            $('tab-cestas').classList.remove('active');
+            $('tab-mercado').classList.remove('active');
+            
+            $('vitrine').scrollTop = 0;
+            renderVitrineEngine();
         };
 
         // ==========================================
@@ -1244,7 +1345,8 @@
                 
                 let prodsValidos = catData.products.filter(p => p.stock > 0);
                 if(prodsValidos.length > 0) {
-                    frag.appendChild(createCategoryCarousel(catData.name, prodsValidos, STATE.loadedCatIndex));
+                    let catDataFiltered = { ...catData, products: prodsValidos };
+                    frag.appendChild(createCategoryCarousel(catDataFiltered, STATE.loadedCatIndex));
                 }
                 
                 STATE.loadedCatIndex++;
@@ -1277,16 +1379,38 @@
             }
         }
 
-        function createCategoryCarousel(catName, products, index) {
+        function createCategoryCarousel(catData, index) {
+            let catName = catData.name;
+            let allProducts = catData.products;
+            let activeSub = catData.activeSub || 'Todos';
+
             let section = document.createElement('div');
             section.className = 'cat-section';
             section.id = 'section-' + norm(catName).replace(/\s+/g, '-');
 
-            let header = `<div class="cat-header"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${catName}</div>`;
+            let header = `
+                <div class="cat-header">
+                    <div class="cat-title-left"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${catName}</div>
+                    <div class="btn-ver-tudo" onclick="openCategoryAll('${catName}')">Ver Tudo</div>
+                </div>`;
+
+            let subs = [...new Set(allProducts.map(p => p.subcategoria))].filter(Boolean).sort();
+            let chipsHtml = '';
+            
+            if (subs.length > 0) {
+                chipsHtml += `<div class="mini-chips-container">`;
+                chipsHtml += `<div class="mini-chip ${activeSub === 'Todos' ? 'active' : ''}" onclick="filterCarrosselSub(${index}, 'Todos')">Todos</div>`;
+                subs.forEach(sub => {
+                    chipsHtml += `<div class="mini-chip ${activeSub === sub ? 'active' : ''}" onclick="filterCarrosselSub(${index}, '${sub}')">${sub}</div>`;
+                });
+                chipsHtml += `</div>`;
+            }
+
+            let filteredProducts = activeSub === 'Todos' ? allProducts : allProducts.filter(p => p.subcategoria === activeSub);
 
             let slidesHtml = '';
-            for (let i = 0; i < products.length; i += 3) {
-                let chunk = products.slice(i, i + 3);
+            for (let i = 0; i < filteredProducts.length; i += 3) {
+                let chunk = filteredProducts.slice(i, i + 3);
                 let cardsHtml = chunk.map(p => renderCardHTML(p)).join('');
                 slidesHtml += `<div class="carousel-slide">${cardsHtml}</div>`;
             }
@@ -1302,7 +1426,7 @@
                 </div>
             `;
             
-            section.innerHTML = header + carousel;
+            section.innerHTML = header + chipsHtml + carousel;
             return section;
         }
 
@@ -1316,6 +1440,36 @@
 
       function renderVitrineEngine() {
             const vitrine = $('vitrine');
+            
+            // Fluxo 1.5: Ver Tudo de uma categoria
+            if (STATE.currentTab === 'ver_tudo') {
+                vitrine.className = `main-container view-mode-2`;
+                let catName = STATE.viewCat;
+                let results = [];
+
+                if (catName === 'Ofertas da Semana') {
+                    results = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent);
+                } else {
+                    results = STATE.prods.filter(p => p.categoria === catName).sort((a,b) => {
+                        let descA = (a.discountPercent >= 25) ? a.discountPercent : 0;
+                        let descB = (b.discountPercent >= 25) ? b.discountPercent : 0;
+                        if (descA !== descB) return descB - descA;
+                        return a.name.localeCompare(b.name);
+                    });
+                }
+
+                let html = '<div class="product-page" style="padding: 10px 15px;">';
+                html += `
+                    <div class="ver-tudo-header" onclick="switchTab('mercado')">
+                        <i class="fa-solid fa-arrow-left"></i> Departamentos / ${catName}
+                    </div>
+                `;
+                results.forEach(p => html += renderCardHTML(p));
+                html += '</div>';
+                vitrine.innerHTML = html;
+                lazyLoadImages(); 
+                return;
+            }
             
             if (STATE.searchQuery.length >= 2) {
                 vitrine.className = `main-container view-mode-2`;
@@ -1410,7 +1564,8 @@
                 $('related-container').style.display = 'block';
                 $('related-grid').innerHTML = '';
                 
-                let carrosselRelacionados = createCategoryCarousel('Sugestões para Você', finalRelated, 'related');
+                let catDataFake = { name: 'Sugestões para Você', products: finalRelated };
+                let carrosselRelacionados = createCategoryCarousel(catDataFake, 'related');
                 let sec = carrosselRelacionados.querySelector('.cat-section');
                 if(sec) sec.style.marginBottom = '0';
                 
