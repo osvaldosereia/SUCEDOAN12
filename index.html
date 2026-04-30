@@ -1182,7 +1182,7 @@
             }, 100);
         };
 
-        // Filtro do mini chip
+       // Filtro do mini chip
         window.filterCarrosselSub = function(catIndex, subName) {
             STATE.mercadoCats[catIndex].activeSub = subName;
             
@@ -1190,13 +1190,28 @@
             let prodsValidos = catData.products.filter(p => p.stock > 0);
             let catDataFiltered = { ...catData, products: prodsValidos };
             
-            let newSection = createCategoryCarousel(catDataFiltered, catIndex);
-            
             let oldSectionId = 'section-' + norm(catData.name).replace(/\s+/g, '-');
             let oldSection = document.getElementById(oldSectionId);
             
+            // 1. Salva a posição atual do scroll dos chips antes de atualizar
+            let currentScroll = 0;
+            if (oldSection) {
+                let oldChipsContainer = oldSection.querySelector('.mini-chips-container');
+                if (oldChipsContainer) currentScroll = oldChipsContainer.scrollLeft;
+            }
+            
+            let newSection = createCategoryCarousel(catDataFiltered, catIndex);
+            
             if (oldSection) {
                 oldSection.replaceWith(newSection);
+                
+                // 2. Pega o novo container de chips que acabou de ser inserido e devolve o scroll
+                let updatedSection = document.getElementById(oldSectionId);
+                if (updatedSection) {
+                    let newChipsContainer = updatedSection.querySelector('.mini-chips-container');
+                    if (newChipsContainer) newChipsContainer.scrollLeft = currentScroll;
+                }
+                
                 lazyLoadImages(); 
             }
         };
