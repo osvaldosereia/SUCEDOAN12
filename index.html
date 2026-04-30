@@ -130,7 +130,6 @@
             background: #e8e8eb;
         }
 
-        /* Botão de limpar busca */
         .clear-search-btn {
             position: absolute;
             right: 12px;
@@ -218,7 +217,6 @@
             height: calc(100dvh - var(--header-total) - env(safe-area-inset-top));
             padding-top: 15px; 
             scroll-padding-top: 15px; 
-            /* Aumentado o respiro na base para a barra fixa não encobrir conteúdo */
             padding-bottom: max(90px, calc(75px + env(safe-area-inset-bottom)));
             overflow-y: auto;
             overflow-x: hidden;
@@ -256,10 +254,10 @@
         /* =========================================
            2.1 CARROSSEL DE CATEGORIAS (MERCADO)
         ========================================= */
-        .cat-section { margin-bottom: 25px; }
+        .cat-section { margin-bottom: 15px; } /* Ajuste fino do respiro inferior */
         
         .cat-header { 
-            padding: 15px 15px 10px; 
+            padding: 5px 15px 10px; /* Reduzido respiro acima do titulo */
             font-weight: 800; 
             font-size: 1.25rem; 
             display: flex; 
@@ -284,25 +282,24 @@
         .carousel-viewport::-webkit-scrollbar { display: none; }
         
         .carousel-slide { 
-            /* Trava exata na largura total para não estourar a tela do celular */
             flex: 0 0 100%; 
             scroll-snap-align: center; 
             display: flex; 
             flex-direction: column; 
-            gap: 8px; /* reduzido de 10px */
+            gap: 8px; 
         }
 
         .carousel-controls { 
             display: flex; 
             gap: 12px; 
-            padding: 10px 15px 15px; /* Ajuste no respiro dos botoes */
+            padding: 10px 15px 15px; 
         }
         
         .btn-car-ctrl { 
             flex: 1; 
             padding: 12px; 
-            background: #fdfdfd; 
-            border: 1px solid var(--border-light); 
+            background: #ffffff; 
+            border: 2px solid var(--text-dark); /* Destaque forte na borda */
             border-radius: 12px; 
             font-weight: 800; 
             font-size: 13px;
@@ -312,12 +309,12 @@
             justify-content: center; 
             align-items: center; 
             gap: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Sombra para elevar botão */
             transition: all 0.2s;
         }
         
         .btn-car-ctrl:active { 
-            background: #f0f0f0; 
+            background: var(--bg-card); 
             transform: scale(0.98);
         }
 
@@ -328,8 +325,8 @@
             background-color: var(--bg-card);
             border-radius: 12px;
             display: flex;
-            padding: 8px; /* reduzido de 10px para diminuir altura */
-            gap: 10px; /* reduzido de 12px */
+            padding: 8px; 
+            gap: 10px; 
             cursor: pointer;
             transition: opacity 0.2s;
             align-items: center;
@@ -360,13 +357,13 @@
         }
 
         .product-icon-list {
-            width: 90px; /* Reduzido de 120px para não empurrar os botões */
+            width: 90px; 
             height: 90px;
             object-fit: contain;
             mix-blend-mode: multiply;
             border-radius: 8px;
             background: #fff;
-            padding: 2px; /* Reduzido de 5px */
+            padding: 2px; 
             flex-shrink: 0;
         }
         
@@ -375,7 +372,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            min-width: 0; /* IMPEDIR OVERFLOW DA LARGURA */
+            min-width: 0; 
         }
         
         .product-name-list {
@@ -630,7 +627,8 @@
         }
 
         .modal-scroll-area {
-            flex: 1; overflow-y: auto; padding-bottom: 110px; -webkit-overflow-scrolling: touch;
+            /* Aumentado o respiro para garantir que o modal role por baixo da barra fixa */
+            flex: 1; overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch;
         }
 
         .detail-icon-box {
@@ -641,16 +639,6 @@
 
         .detail-content { padding: 25px 20px; }
         .modal-title { font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2; }
-        
-        .related-title { font-size: 16px; font-weight: 800; margin: 30px 20px 10px 20px; text-transform: uppercase; }
-
-        #related-grid { 
-            display: grid !important;
-            grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px !important;
-            padding: 0 20px 20px 20px !important;
-            height: auto !important;
-        }
 
         #modalMetaTags {
             display: flex;
@@ -749,7 +737,7 @@
         .brand-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
         
         /* =========================================
-           NOVO CARRINHO FIXO INFERIOR
+           CARRINHO FIXO INFERIOR
         ========================================= */
         .fixed-bottom-bar {
             position: fixed;
@@ -762,12 +750,14 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            z-index: 1300;
+            /* Z-index 2100 garante que fica A CIMA dos modais de produto (2000), 
+               mas os conteudos do modal rolam por baixo dela */
+            z-index: 2100;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: background 0.2s;
         }
-        .fixed-bottom-bar:active { background: #047857; } /* hover state nativo */
+        .fixed-bottom-bar:active { background: #047857; } 
         .fc-info { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px;}
         .fc-btn { font-size: 14px; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
 
@@ -781,7 +771,6 @@
 
     <div class="overlay" id="overlay"></div>
 
-    <!-- Barra Fixa Padrão App na base -->
     <div id="floating-cart" class="fixed-bottom-bar" onclick="openCheckout()">
         <div class="fc-info">
             <i class="fa-solid fa-bag-shopping"></i>
@@ -796,12 +785,10 @@
         <div class="topbar-search-container">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" id="app-search-input" class="topbar-search" placeholder="Buscar produtos..." oninput="handleSearchInput()">
-            <!-- Ícone de limpar busca -->
             <i class="fa-solid fa-xmark clear-search-btn" id="clear-search-btn" onclick="clearSearch()"></i>
         </div>
 
         <div class="topbar-actions">
-            <!-- Botão WhatsApp direto no header -->
             <div class="action-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975', '_blank')">
                 <i class="fa-brands fa-whatsapp" style="color: #25D366; font-size: 26px;"></i>
             </div>
@@ -864,9 +851,9 @@
                 </div>
                 <div class="modal-desc" id="modalDesc" style="color: var(--text-light); line-height: 1.5; font-size: 14px;"></div>
             </div>
+            
             <div id="related-container" style="display: none; padding-bottom: 20px;">
-                <h3 class="related-title">Veja também</h3>
-                <div class="product-grid" id="related-grid"></div>
+                <div id="related-grid"></div>
             </div>
         </div>
     </div>
@@ -1207,7 +1194,6 @@
             STATE.cart[id] = currentInCart + 1;
             updateTotals(); 
             saveCart();
-            // Efeito visual no carrinho flutuante ao invés da sacola que foi removida
             const fcBar = document.querySelector('.fixed-bottom-bar');
             if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = 'var(--success)', 500); }
         };
@@ -1221,28 +1207,42 @@
             vitrine.innerHTML = '';
             
             let catMap = {};
+            let ofertas = []; 
+
             STATE.prods.forEach(p => {
                 if(p.categoria === 'Cestas') return;
+                
+                if(p.discountPercent > 0) ofertas.push(p);
+                
                 let cat = p.categoria || 'Outros';
                 if(!catMap[cat]) catMap[cat] = [];
                 catMap[cat].push(p);
             });
 
-            STATE.mercadoCats = Object.keys(catMap).sort((a, b) => {
+            STATE.mercadoCats = [];
+            
+            if(ofertas.length > 0) {
+                ofertas.sort((a,b) => b.discountPercent - a.discountPercent);
+                STATE.mercadoCats.push({ name: 'Ofertas da Semana', products: ofertas });
+            }
+
+            let sortedCatNames = Object.keys(catMap).sort((a, b) => {
                 let idxA = ORDEM_CATEGORIAS.indexOf(norm(a));
                 let idxB = ORDEM_CATEGORIAS.indexOf(norm(b));
                 if (idxA === -1) idxA = 999;
                 if (idxB === -1) idxB = 999;
                 if (idxA !== idxB) return idxA - idxB;
                 return a.localeCompare(b);
-            }).map(catName => {
+            });
+
+            sortedCatNames.forEach(catName => {
                 let products = catMap[catName].sort((a,b) => {
                     let descA = (a.discountPercent >= 25) ? a.discountPercent : 0;
                     let descB = (b.discountPercent >= 25) ? b.discountPercent : 0;
                     if (descA !== descB) return descB - descA;
                     return a.name.localeCompare(b.name);
                 });
-                return { name: catName, products: products };
+                STATE.mercadoCats.push({ name: catName, products: products });
             });
 
             STATE.loadedCatIndex = 0;
@@ -1423,7 +1423,16 @@
             
             if(finalRelated.length > 0) {
                 $('related-container').style.display = 'block';
-                $('related-grid').innerHTML = finalRelated.map(prod => renderCardHTML(prod)).join('');
+                $('related-grid').innerHTML = '';
+                
+                // Reaproveita o motor do carrossel do mercado para gerar o bloco Veja Também
+                let carrosselRelacionados = createCategoryCarousel('Sugestões para Você', finalRelated, 'related');
+                
+                // Ajusta margem inferior para não sobrar espaço morto dentro do modal
+                let sec = carrosselRelacionados.querySelector('.cat-section');
+                if(sec) sec.style.marginBottom = '0';
+                
+                $('related-grid').appendChild(carrosselRelacionados);
                 lazyLoadImages(); 
             } else { $('related-container').style.display = 'none'; }
             
