@@ -246,25 +246,24 @@
         .view-mode-2 .product-page { 
             display: flex; 
             flex-direction: column; 
-            gap: 8px; 
-            padding: 10px; 
+            padding: 10px 15px; 
             scroll-snap-align: none;
         }
 
         /* =========================================
            2.1 CARROSSEL DE CATEGORIAS (MERCADO)
         ========================================= */
-        .cat-section { margin-bottom: 15px; } /* Ajuste fino do respiro inferior */
+        .cat-section { margin-bottom: 15px; } 
         
         .cat-header { 
-            padding: 5px 15px 10px; /* Reduzido respiro acima do titulo */
+            padding: 5px 15px 10px; 
             font-weight: 800; 
             font-size: 1.25rem; 
             display: flex; 
             align-items: center; 
             gap: 8px; 
             border-bottom: 2px solid var(--primary); 
-            margin: 0 15px 15px; 
+            margin: 0 15px 5px; 
             color: var(--text-dark);
             text-transform: capitalize;
         }
@@ -286,7 +285,6 @@
             scroll-snap-align: center; 
             display: flex; 
             flex-direction: column; 
-            gap: 8px; 
         }
 
         .carousel-controls { 
@@ -299,7 +297,7 @@
             flex: 1; 
             padding: 12px; 
             background: #ffffff; 
-            border: 2px solid var(--text-dark); /* Destaque forte na borda */
+            border: 2px solid var(--text-dark); 
             border-radius: 12px; 
             font-weight: 800; 
             font-size: 13px;
@@ -309,7 +307,7 @@
             justify-content: center; 
             align-items: center; 
             gap: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* Sombra para elevar botão */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
             transition: all 0.2s;
         }
         
@@ -319,101 +317,91 @@
         }
 
         /* =========================================
-           3. CARDS DE PRODUTO (MODO LISTA)
+           3. CARDS DE PRODUTO (NOVO ESTILO CLEAN)
         ========================================= */
         .product-card-list {
-            background-color: var(--bg-card);
-            border-radius: 12px;
             display: flex;
-            padding: 8px; 
-            gap: 10px; 
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+            background: transparent;
             cursor: pointer;
             transition: opacity 0.2s;
-            align-items: center;
             position: relative;
-            overflow: hidden;
-            border: 1px solid transparent;
             width: 100%;
         }
         
+        .product-card-list:last-child {
+            border-bottom: none;
+        }
+
         .esgotado {
             opacity: 0.5;
             filter: grayscale(100%);
             pointer-events: none !important;
         }
-        .esgotado-tag {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: 800;
-            font-size: 12px;
-            z-index: 10;
-            letter-spacing: 1px;
+
+        .product-info-list {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
         }
 
         .product-icon-list {
-            width: 90px; 
-            height: 90px;
+            width: 70px;
+            height: 70px;
             object-fit: contain;
-            mix-blend-mode: multiply;
-            border-radius: 8px;
-            background: #fff;
-            padding: 2px; 
+            mix-blend-mode: normal;
+            background: transparent;
             flex-shrink: 0;
         }
-        
-        .product-info-list {
+
+        .product-details {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            min-width: 0; 
+            min-width: 0;
+            padding-right: 10px;
         }
-        
+
         .product-name-list {
-            font-size: 13px;
             font-weight: 600;
+            font-size: 0.85rem;
             color: var(--text-dark);
+            line-height: 1.3;
             margin-bottom: 4px;
-            line-height: 1.2;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             word-wrap: break-word;
         }
-        
-        .tag-embalagem-list {
-            font-size: 10px; 
-            color: var(--primary);
-            background: #e6e6e6;
-            padding: 3px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-bottom: 4px;
-            display: inline-block;
-            width: fit-content;
-        }
-        
+
         .tag-preco-list {
-            font-size: 15px;
+            font-size: 0.95rem;
             font-weight: 800;
             color: var(--text-dark);
             display: flex;
-            flex-direction: column;
-            line-height: 1.1;
+            align-items: center;
         }
-        
+
+        .tag-embalagem-list {
+            font-size: 9px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 2px;
+            display: inline-block;
+        }
+
         .card-action-area {
             display: flex;
-            justify-content: flex-end;
             align-items: center;
+            flex-shrink: 0;
         }
         
         .btn-quick-add-list {
@@ -431,7 +419,6 @@
         }
         
         .btn-quick-add-list:active { opacity: 0.8; transform: scale(0.95); }
-        .product-card-list.bordered { border-color: var(--border-light); background: #ffffff; border: 1px solid var(--border-light); }
 
         /* =========================================
            ESTILOS ESPECÍFICOS PARA CESTAS BÁSICAS
@@ -627,7 +614,6 @@
         }
 
         .modal-scroll-area {
-            /* Aumentado o respiro para garantir que o modal role por baixo da barra fixa */
             flex: 1; overflow-y: auto; padding-bottom: 120px; -webkit-overflow-scrolling: touch;
         }
 
@@ -750,8 +736,6 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            /* Z-index 2100 garante que fica A CIMA dos modais de produto (2000), 
-               mas os conteudos do modal rolam por baixo dela */
             z-index: 2100;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             cursor: pointer;
@@ -866,10 +850,9 @@
                 <h1 class="modal-title" id="basketModalTitle">Nome da Cesta</h1>
                 <p style="font-weight: 600; margin-bottom: 20px; font-size: 18px;" id="basketModalPrice">R$ 0,00</p>
                 <div id="basket-items-header">
-                    <h3 class="related-title" style="margin: 0 0 15px 0;">Itens da Cesta</h3>
-                    <p style="font-size: 12px; color: #888; margin-bottom: 15px;">Ajuste as quantidades conforme necessário. Produtos não encontrados no sistema não serão exibidos.</p>
+                    <div style="background-color: #fee2e2; color: #dc2626; font-size: 18px; font-weight: 800; padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 15px;">Personalize a sua cesta</div>
                 </div>
-                <div id="basket-items-container" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                <div id="basket-items-container" style="display: flex; flex-direction: column;"></div>
                 <div id="basket-summary-container" style="background: var(--bg-card); padding: 18px; border-radius: 12px; margin-top: 20px; border: 1px solid var(--border-light);">
                     <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 16px; margin-bottom: 15px; color: var(--text-dark);">
                         <span>Total (<span id="basket-total-items">0</span> itens)</span>
@@ -1135,15 +1118,15 @@
         function renderCardHTML(prod) {
             let q = STATE.cart[prod.id] || 0;
             let isOutOfStock = prod.stock <= 0;
-            let esgotadoTag = isOutOfStock ? `<div class="esgotado-tag">ESGOTADO</div>` : '';
+            let esgotadoTag = isOutOfStock ? `<div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: #fff; padding: 4px 8px; border-radius: 4px; font-weight: 800; font-size: 10px; z-index: 10; white-space: nowrap;">ESGOTADO</div>` : '';
             let baseClassList = isOutOfStock ? 'product-card-list esgotado' : 'product-card-list';
             
             let discountBadge = (prod.discountPercent && prod.discountPercent > 0) 
-                ? `<div style="position: absolute; top: 0; right: 0; background: #ef4444; color: #fff; font-size: 0.7rem; padding: 3px 8px; font-weight: 800; border-bottom-left-radius: 8px; z-index: 5;">-${prod.discountPercent}%</div>` 
+                ? `<div style="position: absolute; top: 0; left: 0; background: #ef4444; color: #fff; font-size: 0.65rem; padding: 2px 6px; font-weight: 800; border-radius: 4px; z-index: 5;">-${prod.discountPercent}%</div>` 
                 : '';
                 
             let oldPriceHtml = (prod.discountPercent && prod.discountPercent > 0) 
-                ? `<span style="text-decoration: line-through; font-size: 0.65rem; color: #999; font-weight: normal;">${fmt(prod.oldPrice)}</span>` 
+                ? `<span style="text-decoration: line-through; font-size: 0.75rem; color: #999; font-weight: normal;">${fmt(prod.oldPrice)}</span> <span style="color:#ddd; margin:0 4px;">|</span> ` 
                 : '';
 
             let controlsHtml = q === 0 
@@ -1154,18 +1137,20 @@
             
             return `
                 <div class="${baseClassList}" onclick="openDetail('${prod.id}')">
-                    ${discountBadge}
-                    ${esgotadoTag}
-                    <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon-list lazy-img" alt="${prod.name}">
                     <div class="product-info-list">
-                        ${embalagemHtml}
-                        <div class="product-name-list">${prod.name}</div>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;">
-                            <div class="tag-preco-list">${oldPriceHtml} ${fmt(prod.price)}</div>
-                            <div class="card-action-area" id="action-card-${prod.id}">
-                                ${controlsHtml}
-                            </div>
+                        <div style="position: relative; flex-shrink: 0;">
+                            ${discountBadge}
+                            ${esgotadoTag}
+                            <img data-src="${prod.img}" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" class="product-icon-list lazy-img" alt="${prod.name}">
                         </div>
+                        <div class="product-details">
+                            ${embalagemHtml}
+                            <div class="product-name-list">${prod.name}</div>
+                            <div class="tag-preco-list">${oldPriceHtml} ${fmt(prod.price)}</div>
+                        </div>
+                    </div>
+                    <div class="card-action-area" id="action-card-${prod.id}">
+                        ${controlsHtml}
                     </div>
                 </div>`;
         }
@@ -1425,10 +1410,7 @@
                 $('related-container').style.display = 'block';
                 $('related-grid').innerHTML = '';
                 
-                // Reaproveita o motor do carrossel do mercado para gerar o bloco Veja Também
                 let carrosselRelacionados = createCategoryCarousel('Sugestões para Você', finalRelated, 'related');
-                
-                // Ajusta margem inferior para não sobrar espaço morto dentro do modal
                 let sec = carrosselRelacionados.querySelector('.cat-section');
                 if(sec) sec.style.marginBottom = '0';
                 
@@ -1656,8 +1638,26 @@
             currentBasketItems.forEach((item, index) => {
                 let p = item.pObj; totalItemsCount += item.qty; 
                 let embalagemHtml = p.embalagem ? `<div class="tag-embalagem-list">${p.embalagem}</div>` : '';
-                let oldPriceHtml = (p.discountPercent && p.discountPercent > 0) ? `<span style="text-decoration: line-through; font-size: 0.65rem; color: #999; font-weight: normal;">${fmt(p.oldPrice)}</span>` : '';
-                html += `<div class="product-card-list bordered"><img src="${p.img}" class="product-icon-list" alt="${p.name}"><div class="product-info-list">${embalagemHtml}<div class="product-name-list">${p.name}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;"><div class="tag-preco-list">${oldPriceHtml} ${fmt(p.price)}</div><div class="card-action-area"><div class="qty-controls" style="padding: 6px 10px; font-size: 14px; margin: 0;"><i class="fa-solid fa-minus qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();"></i><span style="font-weight:bold; width: 20px; text-align:center;">${item.qty}</span><i class="fa-solid fa-plus qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();"></i></div></div></div></div></div>`;
+                let oldPriceHtml = (p.discountPercent && p.discountPercent > 0) ? `<span style="text-decoration: line-through; font-size: 0.75rem; color: #999; font-weight: normal;">${fmt(p.oldPrice)}</span> <span style="color:#ddd; margin:0 4px;">|</span> ` : '';
+                
+                html += `
+                <div class="product-card-list" onclick="event.stopPropagation();">
+                    <div class="product-info-list">
+                        <img src="${p.img}" class="product-icon-list" alt="${p.name}">
+                        <div class="product-details">
+                            ${embalagemHtml}
+                            <div class="product-name-list">${p.name}</div>
+                            <div class="tag-preco-list">${oldPriceHtml} ${fmt(p.price)}</div>
+                        </div>
+                    </div>
+                    <div class="card-action-area">
+                        <div class="qty-controls" style="padding: 6px 10px; font-size: 14px; margin: 0;">
+                            <i class="fa-solid fa-minus qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();"></i>
+                            <span style="font-weight:bold; width: 20px; text-align:center;">${item.qty}</span>
+                            <i class="fa-solid fa-plus qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();"></i>
+                        </div>
+                    </div>
+                </div>`;
             });
             container.innerHTML = html;
             const basket = BASKETS.find(b => b.id === window.currentBasketId);
@@ -1694,30 +1694,21 @@
 
         function renderVIPList() {
             let container = $('vip-items-grid');
-            let ofertas = STATE.prods.filter(p => p.discountPercent >= 10 && p.stock > 0).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 4);
-            if(ofertas.length === 0) ofertas = STATE.prods.filter(p => p.stock > 0).slice(0, 4); 
-
+            
             let html = `
             <div style="background: var(--success); color: white; padding: 25px 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.2);">
                 <i class="fa-solid fa-circle-check" style="font-size: 48px; margin-bottom: 12px;"></i>
                 <h2 style="font-size: 22px; font-weight: 800; margin-bottom: 8px;">Cesta Adicionada!</h2>
                 <p style="font-size: 14px; opacity: 0.9;">Todos os itens foram para a sua sacola.</p>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 35px;">
-                <button class="btn-send" style="margin: 0; background: var(--primary); font-size: 16px; padding: 18px;" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)"><i class="fa-solid fa-bag-shopping" style="margin-right: 8px;"></i> Finalizar Pedido</button>
-                <button class="btn-send" style="margin: 0; background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border-light); font-size: 15px;" onclick="closeBasketDetail(); setTimeout(() => { scrollToTop(); switchTab('mercado'); }, 300)">Continuar Comprando</button>
-            </div>
-            <div style="font-weight: 800; font-size: 14px; margin-bottom: 15px; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px;">🌟 Aproveite e leve junto:</div>
-            `;
             
-            ofertas.forEach(p => {
-                let q = STATE.cart[p.id] || 0;
-                let controlsHtml = q === 0 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)"><i class="fa-solid fa-plus"></i> Adicionar</div>` : `<div class="qty-controls" style="padding: 6px 10px; font-size: 14px; margin: 0;"><i class="fa-solid fa-minus qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();"></i><span style="font-weight:bold; width: 20px; text-align:center;">${q}</span><i class="fa-solid fa-plus qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();"></i></div>`;
-                let pOriginal = fmt(p.oldPrice || p.price); let pOferta = fmt(p.price);
-                let precoHtml = (p.discountPercent > 0) ? `<span style="text-decoration: line-through; font-size: 0.75rem; color: #888; font-weight: normal;">${pOriginal}</span><span style="color: var(--success); font-size: 1.1rem;">${pOferta}</span>` : `<span style="color: var(--text-dark); font-size: 1.1rem;">${pOferta}</span>`;
-
-                html += `<div class="product-card-list bordered" onclick="openDetail('${p.id}')"><img data-src="${p.img}" src="${p.img}" class="product-icon-list" alt="${p.name}"><div class="product-info-list"><div class="product-name-list">${p.name}</div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:auto;"><div class="tag-preco-list" style="line-height: 1.2;">${precoHtml}</div><div class="card-action-area" id="action-vip-${p.id}">${controlsHtml}</div></div></div></div>`;
-            });
+            <h3 style="font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 20px; color: var(--text-dark);">O que você quer fazer agora?</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 35px;">
+                <button class="btn-send" style="margin: 0; background: var(--bg-card); color: var(--text-dark); border: 2px solid var(--text-dark); font-size: 16px; font-weight: 800; padding: 18px;" onclick="closeBasketDetail(); setTimeout(() => { scrollToTop(); switchTab('mercado'); }, 300)">Ver as Ofertas</button>
+                <button class="btn-send" style="margin: 0; background: var(--primary); font-size: 16px; padding: 18px;" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)"><i class="fa-solid fa-bag-shopping" style="margin-right: 8px;"></i> Finalizar Pedido</button>
+            </div>
+            `;
             
             container.innerHTML = html; $('vip-list-container').style.display = 'block';
             setTimeout(() => { let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area'); if(scrollArea) scrollArea.scrollTo({top: 0, behavior: 'smooth'}); }, 50);
