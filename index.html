@@ -21,7 +21,6 @@
             --brand: #5A3826;        
             --border-light: #eaeaea;
             
-            /* Variáveis de cabeçalho atualizadas para o novo layout de Tabs */
             --topbar-height: 60px;
             --tabs-height: 60px;
             --header-total: calc(var(--topbar-height) + var(--tabs-height));
@@ -106,7 +105,7 @@
             align-items: center;
         }
 
-        .topbar-search-container i {
+        .topbar-search-container .fa-magnifying-glass {
             position: absolute;
             left: 12px;
             color: var(--text-light);
@@ -119,7 +118,7 @@
             background: var(--bg-card);
             border-radius: 19px;
             border: none;
-            padding: 0 15px 0 35px;
+            padding: 0 35px 0 35px;
             font-family: 'Inter', sans-serif;
             font-size: 14px;
             outline: none;
@@ -131,10 +130,21 @@
             background: #e8e8eb;
         }
 
+        /* Botão de limpar busca */
+        .clear-search-btn {
+            position: absolute;
+            right: 12px;
+            color: var(--text-light);
+            font-size: 14px;
+            cursor: pointer;
+            display: none;
+            padding: 5px;
+        }
+
         .topbar-actions {
             display: flex;
             align-items: center;
-            gap: 22px; 
+            gap: 18px; 
             flex-shrink: 0;
         }
 
@@ -152,20 +162,6 @@
 
         .action-btn:active {
             opacity: 0.6;
-        }
-
-        .cart-badge {
-            position: absolute;
-            top: -2px;   
-            right: -6px; 
-            background: #ef4444;
-            color: white;
-            font-size: 10px;
-            font-weight: 800;
-            padding: 2px 5px;
-            border-radius: 10px;
-            display: none;
-            border: 2px solid #fff;
         }
 
         /* =========================================
@@ -222,7 +218,8 @@
             height: calc(100dvh - var(--header-total) - env(safe-area-inset-top));
             padding-top: 15px; 
             scroll-padding-top: 15px; 
-            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            /* Aumentado o respiro na base para a barra fixa não encobrir conteúdo */
+            padding-bottom: max(90px, calc(75px + env(safe-area-inset-bottom)));
             overflow-y: auto;
             overflow-x: hidden;
             scroll-behavior: smooth;
@@ -239,7 +236,6 @@
             padding: var(--gap);
         }
 
-        /* MODO 1: Grade 1x (Cards grandes / Cestas) */
         .view-mode-1 { scroll-snap-type: y mandatory; }
         .view-mode-1 .product-page { 
             display: grid;
@@ -248,7 +244,6 @@
             scroll-snap-stop: always;
         }
 
-        /* MODO 2: Lista Horizontal (Mercado / Busca) */
         .view-mode-2 { scroll-snap-type: none; }
         .view-mode-2 .product-page { 
             display: flex; 
@@ -261,7 +256,7 @@
         /* =========================================
            2.1 CARROSSEL DE CATEGORIAS (MERCADO)
         ========================================= */
-        .cat-section { margin-bottom: 30px; }
+        .cat-section { margin-bottom: 25px; }
         
         .cat-header { 
             padding: 15px 15px 10px; 
@@ -289,28 +284,28 @@
         .carousel-viewport::-webkit-scrollbar { display: none; }
         
         .carousel-slide { 
-            min-width: 100%; 
-            flex-shrink: 0; 
+            /* Trava exata na largura total para não estourar a tela do celular */
+            flex: 0 0 100%; 
             scroll-snap-align: center; 
             display: flex; 
             flex-direction: column; 
-            gap: 10px; 
+            gap: 8px; /* reduzido de 10px */
         }
 
         .carousel-controls { 
             display: flex; 
             gap: 12px; 
-            padding: 15px; 
+            padding: 10px 15px 15px; /* Ajuste no respiro dos botoes */
         }
         
         .btn-car-ctrl { 
             flex: 1; 
-            padding: 14px; 
+            padding: 12px; 
             background: #fdfdfd; 
             border: 1px solid var(--border-light); 
             border-radius: 12px; 
             font-weight: 800; 
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-dark); 
             cursor: pointer; 
             display: flex; 
@@ -333,14 +328,15 @@
             background-color: var(--bg-card);
             border-radius: 12px;
             display: flex;
-            padding: 10px;
-            gap: 12px;
+            padding: 8px; /* reduzido de 10px para diminuir altura */
+            gap: 10px; /* reduzido de 12px */
             cursor: pointer;
             transition: opacity 0.2s;
             align-items: center;
             position: relative;
             overflow: hidden;
             border: 1px solid transparent;
+            width: 100%;
         }
         
         .esgotado {
@@ -364,13 +360,13 @@
         }
 
         .product-icon-list {
-            width: 120px; /* Aumento de 20% solicitado */
-            height: 120px;
+            width: 90px; /* Reduzido de 120px para não empurrar os botões */
+            height: 90px;
             object-fit: contain;
             mix-blend-mode: multiply;
             border-radius: 8px;
             background: #fff;
-            padding: 5px;
+            padding: 2px; /* Reduzido de 5px */
             flex-shrink: 0;
         }
         
@@ -379,7 +375,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            min-width: 0; 
+            min-width: 0; /* IMPEDIR OVERFLOW DA LARGURA */
         }
         
         .product-name-list {
@@ -392,23 +388,24 @@
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            word-wrap: break-word;
         }
         
         .tag-embalagem-list {
-            font-size: 11px; 
+            font-size: 10px; 
             color: var(--primary);
             background: #e6e6e6;
-            padding: 3px 8px;
+            padding: 3px 6px;
             border-radius: 4px;
             text-transform: uppercase;
             font-weight: 700;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             display: inline-block;
             width: fit-content;
         }
         
         .tag-preco-list {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 800;
             color: var(--text-dark);
             display: flex;
@@ -600,7 +597,7 @@
         .overlay.open { opacity: 1; pointer-events: all; }
 
         /* =========================================
-           5. MODAIS (PRODUTO, CESTA, CHECKOUT) - MANTIDOS COMO ESTÃO
+           5. MODAIS (PRODUTO, CESTA, CHECKOUT)
         ========================================= */
         .full-screen-detail {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
@@ -751,24 +748,26 @@
         .brand-btn { padding: 8px; border: 1px solid var(--border-light); border-radius: 8px; background: #fff; font-weight: 600; font-size: 0.8rem; color: var(--text-light); cursor: pointer; text-align: center; transition: 0.2s; }
         .brand-btn.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
         
-        .floating-cart-bar {
+        /* =========================================
+           NOVO CARRINHO FIXO INFERIOR
+        ========================================= */
+        .fixed-bottom-bar {
             position: fixed;
-            bottom: max(20px, env(safe-area-inset-bottom));
-            left: 15px;
-            right: 15px;
+            bottom: 0;
+            left: 0;
+            width: 100%;
             background: var(--success);
             color: #ffffff;
-            padding: 14px 20px;
-            border-radius: 12px;
+            padding: 12px 15px calc(12px + env(safe-area-inset-bottom));
             display: flex;
             align-items: center;
             justify-content: space-between;
             z-index: 1300;
-            box-shadow: 0 4px 15px rgba(5, 150, 105, 0.4);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: background 0.2s;
         }
-        .floating-cart-bar:active { transform: scale(0.98); }
+        .fixed-bottom-bar:active { background: #047857; } /* hover state nativo */
         .fc-info { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px;}
         .fc-btn { font-size: 14px; font-weight: 700; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
 
@@ -782,7 +781,8 @@
 
     <div class="overlay" id="overlay"></div>
 
-    <div id="floating-cart" class="floating-cart-bar" style="display: none;" onclick="openCheckout()">
+    <!-- Barra Fixa Padrão App na base -->
+    <div id="floating-cart" class="fixed-bottom-bar" onclick="openCheckout()">
         <div class="fc-info">
             <i class="fa-solid fa-bag-shopping"></i>
             <span id="fc-count">0</span> itens | <span id="fc-total">R$ 0,00</span>
@@ -796,12 +796,14 @@
         <div class="topbar-search-container">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" id="app-search-input" class="topbar-search" placeholder="Buscar produtos..." oninput="handleSearchInput()">
+            <!-- Ícone de limpar busca -->
+            <i class="fa-solid fa-xmark clear-search-btn" id="clear-search-btn" onclick="clearSearch()"></i>
         </div>
 
         <div class="topbar-actions">
-            <div class="action-btn" onclick="openCheckout()">
-                <i class="fa-solid fa-bag-shopping"></i>
-                <span class="cart-badge" id="cart-badge">0</span>
+            <!-- Botão WhatsApp direto no header -->
+            <div class="action-btn" onclick="window.open('https://api.whatsapp.com/send?phone=5565998150975', '_blank')">
+                <i class="fa-brands fa-whatsapp" style="color: #25D366; font-size: 26px;"></i>
             </div>
             <div class="action-btn" onclick="openSidebar()">
                 <i class="fa-solid fa-bars-staggered"></i>
@@ -809,14 +811,12 @@
         </div>
     </header>
 
-    <!-- NOVO: Abas Principais (Substituindo Chips) -->
     <div class="main-tabs" id="main-tabs">
         <button class="tab-btn active" id="tab-cestas" onclick="switchTab('cestas')">CESTAS BÁSICAS</button>
         <button class="tab-btn" id="tab-mercado" onclick="switchTab('mercado')">MERCADO</button>
     </div>
 
     <div class="sidebar" id="sidebar">
-        <!-- Mantido sidebar e rodapé para manter a estrutura do app -->
         <i class="fa-solid fa-xmark btn-close-sidebar" onclick="closeSidebar()"></i>
         <div class="sidebar-header">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -841,7 +841,6 @@
     </div>
 
     <div class="full-screen-detail" id="detailModal">
-        <!-- Mantido layout Modal do Produto -->
         <div class="detail-close" onclick="history.back()"><i class="fa-solid fa-xmark"></i></div>
         <div class="modal-scroll-area" id="modal-scroll-area">
             <div class="detail-icon-box"><img id="modalImg" src="" alt="Produto"></div>
@@ -873,7 +872,6 @@
     </div>
 
     <div class="full-screen-detail" id="basketDetailModal">
-        <!-- Modal de Cestas Mantido -->
         <div class="detail-close" onclick="closeBasketDetail()"><i class="fa-solid fa-xmark"></i></div>
         <div class="modal-scroll-area" style="padding-bottom: 120px;">
             <div class="detail-icon-box" style="height: 30vh;"><img id="basketModalImg" src="" alt="Cesta"></div>
@@ -900,7 +898,6 @@
     </div>
 
    <div class="checkout-drawer" id="checkout-drawer">
-        <!-- Mantido layout e estrutura do Drawer de Checkout -->
         <div class="chk-header">Sua Sacola <i class="fa-solid fa-xmark" style="cursor: pointer;" onclick="history.back()"></i></div>
         <div class="chk-body">
             <div class="chk-section" id="chk-items-list"></div>
@@ -975,10 +972,10 @@
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-            currentTab: 'cestas', // Novo controlador de fluxo principal
+            currentTab: 'cestas', 
             searchQuery: '',
-            mercadoCats: [],     // Categorias agrupadas com produtos
-            loadedCatIndex: 0,   // Índice do motor de lazy load
+            mercadoCats: [],     
+            loadedCatIndex: 0,   
             appliedCoupon: null,
             couponDiscount: 0
         };
@@ -989,7 +986,6 @@
             'higiene', 'sabonete', 'shampoo',
         ];
 
-        // MANTIDO: Objetos BASKETS e COUPONS como originais
         const BASKETS = [
           { "id": "cesta1", "nome": "Economica Bonini", "oldPrice": 85, "preco": 80, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
           { "id": "cesta2", "nome": "Mini Bonini", "oldPrice": 165, "preco": 155, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
@@ -1034,6 +1030,7 @@
         function scrollToTop() { 
             $('vitrine').scrollTop = 0;
             $('app-search-input').value = '';
+            $('clear-search-btn').style.display = 'none';
             STATE.searchQuery = '';
             switchTab('cestas');
         }
@@ -1042,6 +1039,7 @@
             STATE.currentTab = tab;
             STATE.searchQuery = '';
             $('app-search-input').value = '';
+            $('clear-search-btn').style.display = 'none';
             
             $('tab-cestas').classList.toggle('active', tab === 'cestas');
             $('tab-mercado').classList.toggle('active', tab === 'mercado');
@@ -1060,12 +1058,14 @@
 
         let searchTimeout;
         window.handleSearchInput = function() {
+            let inputVal = $('app-search-input').value;
+            $('clear-search-btn').style.display = inputVal.length > 0 ? 'block' : 'none';
+
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
-                let q = norm($('app-search-input').value).trim();
+                let q = norm(inputVal).trim();
                 STATE.searchQuery = q;
                 
-                // Remove estado ativo dos botões se estiver buscando
                 if(q.length >= 2) {
                     $('tab-cestas').classList.remove('active');
                     $('tab-mercado').classList.remove('active');
@@ -1076,6 +1076,12 @@
                 $('vitrine').scrollTop = 0; 
                 renderVitrineEngine();
             }, 300);
+        };
+
+        window.clearSearch = function() {
+            $('app-search-input').value = '';
+            $('clear-search-btn').style.display = 'none';
+            handleSearchInput();
         };
 
         window.toggleSubMenu = function(id, iconEl) {
@@ -1123,7 +1129,6 @@
             if ($('sidebar').classList.contains('open')) history.back(); 
             switchTab('mercado');
             
-            // Pequeno delay para garantir que o DOM do Mercado renderizou e procurar o elemento
             setTimeout(() => {
                 let elId = 'section-' + norm(catName).replace(/\s+/g, '-');
                 let catElement = document.getElementById(elId);
@@ -1131,8 +1136,6 @@
                 if (catElement) {
                     catElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
-                    // Se a categoria ainda não foi renderizada pelo lazy load, forçamos o load total ou procuramos.
-                    // Para SPA, uma busca garante resolver o problema caso o usuário clique direto no menu
                     $('app-search-input').value = subName ? subName : catName;
                     handleSearchInput();
                 }
@@ -1204,8 +1207,9 @@
             STATE.cart[id] = currentInCart + 1;
             updateTotals(); 
             saveCart();
-            const bagIcon = document.querySelector('.fa-bag-shopping');
-            if(bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
+            // Efeito visual no carrinho flutuante ao invés da sacola que foi removida
+            const fcBar = document.querySelector('.fixed-bottom-bar');
+            if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = 'var(--success)', 500); }
         };
 
         // ==========================================
@@ -1216,7 +1220,6 @@
             vitrine.className = `main-container view-mode-2`;
             vitrine.innerHTML = '';
             
-            // Agrupar produtos por Categoria
             let catMap = {};
             STATE.prods.forEach(p => {
                 if(p.categoria === 'Cestas') return;
@@ -1225,7 +1228,6 @@
                 catMap[cat].push(p);
             });
 
-            // Ordernar Ofertas / Categorias Base
             STATE.mercadoCats = Object.keys(catMap).sort((a, b) => {
                 let idxA = ORDEM_CATEGORIAS.indexOf(norm(a));
                 let idxB = ORDEM_CATEGORIAS.indexOf(norm(b));
@@ -1255,7 +1257,6 @@
                 if(STATE.loadedCatIndex >= STATE.mercadoCats.length) break;
                 let catData = STATE.mercadoCats[STATE.loadedCatIndex];
                 
-                // Só renderiza a seção se tiver produtos com estoque maior que zero
                 let prodsValidos = catData.products.filter(p => p.stock > 0);
                 if(prodsValidos.length > 0) {
                     frag.appendChild(createCategoryCarousel(catData.name, prodsValidos, STATE.loadedCatIndex));
@@ -1264,7 +1265,6 @@
                 STATE.loadedCatIndex++;
             }
 
-            // Removendo sentinela antiga se houver
             let oldSentinel = document.getElementById('mercado-sentinel');
             if(oldSentinel) oldSentinel.remove();
 
@@ -1299,7 +1299,6 @@
 
             let header = `<div class="cat-header"><i class="fa-solid fa-tag" style="color: var(--primary);"></i> ${catName}</div>`;
 
-            // Divide os produtos em grupos (slides) de 3 cards
             let slidesHtml = '';
             for (let i = 0; i < products.length; i += 3) {
                 let chunk = products.slice(i, i + 3);
@@ -1325,7 +1324,6 @@
         window.scrollCarousel = function(carouselId, direction) {
             const wrapper = document.getElementById(carouselId);
             if (wrapper) {
-                // Rola o exato tamanho do card + o gap visível na tela
                 const scrollAmount = wrapper.clientWidth; 
                 wrapper.scrollBy({ left: direction * scrollAmount, behavior: 'smooth' });
             }
@@ -1334,7 +1332,6 @@
       function renderVitrineEngine() {
             const vitrine = $('vitrine');
             
-            // Fluxo 1: Busca em andamento (Pula tudo e traz a lista)
             if (STATE.searchQuery.length >= 2) {
                 vitrine.className = `main-container view-mode-2`;
                 let terms = STATE.searchQuery.split(' ').filter(t => t.trim().length > 0);
@@ -1357,7 +1354,6 @@
                 return;
             }
 
-            // Fluxo 2: Aba Cestas
             if (STATE.currentTab === 'cestas') {
                 vitrine.className = `main-container view-mode-1`;
                 let html = '<div class="product-page" style="gap: 15px; padding: 15px;">';
@@ -1384,7 +1380,6 @@
                 return; 
             } 
             
-            // Fluxo 3: Aba Mercado (Gatilho inicial)
             if (STATE.currentTab === 'mercado') {
                 initMercado();
             }
@@ -1406,7 +1401,7 @@
         }
 
         // ==========================================
-        // FLUXO DO MODAL PRODUTO E CARRINHO (MANTIDOS)
+        // FLUXO DO MODAL PRODUTO E CARRINHO
         // ==========================================
         window.openDetail = function(id) {
             let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
@@ -1452,8 +1447,8 @@
             if ((STATE.cart[currentModalProdId] || 0) === 0 && currentModalQty > 0) STATE.cartOrder.push(currentModalProdId);
             STATE.cart[currentModalProdId] = currentInCart + currentModalQty;
             updateTotals(); saveCart(); history.back();
-            const bagIcon = document.querySelector('.fa-bag-shopping');
-            if (bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
+            const fcBar = document.querySelector('.fixed-bottom-bar');
+            if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = 'var(--success)', 500); }
         };
 
         window.openCheckout = function() {
@@ -1530,7 +1525,6 @@
                 } 
             });
             
-            let badge = $('cart-badge'); if (count > 0) { badge.style.display = 'block'; badge.innerText = count > 99 ? '99+' : count; } else { badge.style.display = 'none'; }
             let subtotalVisual = sumBase + basketDiscountTotal;
             $('sum-sub').innerText = fmt(subtotalVisual); 
             $('sum-basket-desc').innerText = `- ${fmt(basketDiscountTotal)}`; $('sum-basket-row').style.display = basketDiscountTotal > 0 ? 'flex' : 'none';
@@ -1549,7 +1543,10 @@
             if (typeof updateAllCardUIs === 'function') updateAllCardUIs();
 
             let fc = $('floating-cart');
-            if (fc) { if (count > 0) { fc.style.display = 'flex'; $('fc-count').innerText = count; $('fc-total').innerText = fmt(finalTotal); } else { fc.style.display = 'none'; } }
+            if (fc) {
+                $('fc-count').innerText = count; 
+                $('fc-total').innerText = fmt(finalTotal); 
+            }
         }
 
         window.clearCart = function() { if(confirm("Deseja realmente esvaziar sua sacola?")) { STATE.cart = {}; STATE.cartOrder = []; STATE.appliedCoupon = null; $('chk-cupom').value = ""; updateTotals(); saveCart(); history.back(); } };
@@ -1680,7 +1677,7 @@
 
             if (addedCount > 0) {
                 updateTotals(); saveCart();
-                const bagIcon = document.querySelector('.fa-bag-shopping'); if(bagIcon) { bagIcon.style.color = 'var(--success)'; setTimeout(() => bagIcon.style.color = 'var(--text-dark)', 500); }
+                const fcBar = document.querySelector('.fixed-bottom-bar'); if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = 'var(--success)', 500); }
                 $('basket-items-header').style.display = 'none'; $('basket-items-container').style.display = 'none'; $('basket-summary-container').style.display = 'none';
                 renderVIPList();
             } else { alert("Nenhum produto válido para adicionar."); }
@@ -1737,7 +1734,6 @@
                 }
                 loadCart(); updateTotals(); carregarDadosSalvos(); renderSidebarMenu();
                 
-                // Inicia o app garantindo a vitrine de Cestas
                 switchTab('cestas');
                 
                 const urlParams = new URLSearchParams(window.location.search);
