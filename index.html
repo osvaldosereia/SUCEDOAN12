@@ -254,16 +254,16 @@
         ========================================= */
         .cat-section { margin-bottom: 15px; } 
         
-        .cat-header { 
-            padding: 5px 15px 10px; 
+       .cat-header { 
+            padding: 5px 15px 5px; /* Ajustado para ficar mais perto dos chips */
             font-weight: 800; 
             font-size: 1.25rem; 
             display: flex; 
             align-items: center; 
             justify-content: space-between;
             gap: 8px; 
-            border-bottom: 2px solid var(--primary); 
-            margin: 0 15px 5px; 
+            /* border-bottom removido daqui */
+            margin: 0 15px 0; 
             color: var(--text-dark);
             text-transform: capitalize;
         }
@@ -1414,9 +1414,12 @@
                 </div>
             `;
             
-            section.innerHTML = header + chipsHtml + carousel;
+            // Cria a linha preta separada
+            let linhaPreta = `<div style="border-bottom: 2px solid var(--primary); margin: 0 15px 15px;"></div>`;
+            
+            // Monta a seção colocando a linha preta DEPOIS dos chips (chipsHtml)
+            section.innerHTML = header + chipsHtml + linhaPreta + carousel;
             return section;
-        }
 
         window.scrollCarousel = function(carouselId, direction) {
             const wrapper = document.getElementById(carouselId);
