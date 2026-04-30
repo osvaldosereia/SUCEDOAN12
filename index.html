@@ -241,12 +241,14 @@
             scroll-snap-stop: always;
         }
 
-        .view-mode-2 { scroll-snap-type: none; }
-        .view-mode-2 .product-page { 
-            display: flex; 
-            flex-direction: column; 
-            padding: 10px 15px; 
-            scroll-snap-align: none;
+        .view-mode-2 { 
+            scroll-snap-type: y proximity; /* Ativa o efeito elástico vertical */
+        }
+
+        .cat-section { 
+            margin-bottom: 45px; /* Aumentado o respiro entre as categorias */
+            scroll-snap-align: start; /* Faz o título parar certinho na tela */
+            scroll-margin-top: 15px; /* Mantém um respiro abaixo da barra de abas */
         }
 
         /* =========================================
@@ -404,8 +406,8 @@
         }
 
         .product-icon-list {
-            width: 105px; /* Foto 30% maior */
-            height: 105px; /* Foto 30% maior */
+            width: 125px; /* Foto 20% maior */
+            height: 125px; 
             object-fit: contain;
             mix-blend-mode: normal;
             background: transparent;
@@ -419,9 +421,9 @@
             flex-direction: column;
             justify-content: space-between; 
             min-width: 0;
-            padding: 2px 0;
+            padding: 16px 0; /* Aumentar esse padding empurra o nome pra baixo e o valor pra cima */
         }
-
+        
         .product-name-list {
             font-weight: 500; 
             font-size: 0.85rem;
@@ -453,7 +455,7 @@
             background: var(--primary);
             color: #fff;
             padding: 8px 16px;
-            border-radius: 20px;
+            border-radius: 8px; /* Cantos quadrados igual ao controle de quantidade */
             font-size: 12px;
             font-weight: 700;
             cursor: pointer;
