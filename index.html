@@ -9,7 +9,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -48,40 +48,40 @@
         .main-container { position: fixed; top: calc(var(--header-total) + env(safe-area-inset-top)); left: 0; width: 100%; height: calc(100dvh - var(--header-total) - env(safe-area-inset-top)); padding-top: 15px; padding-bottom: max(85px, calc(85px + env(safe-area-inset-bottom))); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
         .main-container::-webkit-scrollbar { display: none; }
 
-        .ver-tudo-header { position: sticky; top: -15px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; padding: 16px 20px; font-size: 16px; z-index: 100; font-weight: 900; color: var(--text-dark); border-bottom: 1px solid var(--border-light); margin: -20px -20px 20px -20px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .ver-tudo-header { position: sticky; top: -15px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; padding: 16px 20px; font-size: 16px; z-index: 100; font-weight: 900; color: var(--text-dark); border-bottom: 1px solid var(--border-light); margin: -20px -20px 0 -20px; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
 
         .btn-ver-todos-cat { width: 100%; background: #ffffff; color: var(--text-dark); border: 1px solid var(--border-light); padding: 14px; border-radius: 12px; font-size: 14.5px; font-weight: 800; margin-top: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; text-decoration: none; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
         .btn-ver-todos-cat:active { background: #f8fafc; transform: scale(0.98); }
+        
+        .subcat-title { font-size: 15px; font-weight: 900; color: var(--text-light); padding: 25px 20px 10px 20px; background: var(--bg-body); border-bottom: 1px solid var(--border-light); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
         /* =========================================
-           3. NOVO DESIGN DO CARD HORIZONTAL UNIFICADO
+           3. DESIGN DO CARD HORIZONTAL ATUALIZADO
         ========================================= */
-        .product-card-list { display: flex; align-items: center; width: 100%; gap: 15px; background: transparent; padding: 14px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
+        .product-card-list { display: flex; align-items: stretch; width: 100%; gap: 16px; background: transparent; padding: 16px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
         .product-card-list:last-child { border-bottom: none; }
-        .esgotado { opacity: 0.5; filter: grayscale(100%); pointer-events: none !important; }
 
-        .img-wrapper { position: relative; width: 85px; height: 85px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 12px; padding: 4px; border: 1px solid var(--border-light); }
+        .img-wrapper { position: relative; width: 130px; height: 130px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; }
         .product-icon-list { width: 100%; height: 100%; object-fit: contain; }
         
-        .discount-badge { position: absolute; top: -6px; left: -6px; background: var(--danger); color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 5px; border-radius: 4px; z-index: 10; opacity: 0.95; }
-        .embalagem-tag { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: #f1f5f9; color: var(--text-light); font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 6px; z-index: 2; border: 1px solid var(--border-light); white-space: nowrap; }
+        .embalagem-tag-text { font-size: 11px; color: var(--text-light); text-transform: uppercase; margin-bottom: 4px; font-weight: 800; letter-spacing: 0.5px; }
 
-        .product-details { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; padding-right: 40px; }
-        .product-name-list { font-weight: 600; font-size: 14px; color: var(--text-dark); line-height: 1.25; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-details { flex: 1; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+        .product-name-list { font-weight: 600; font-size: 14.5px; color: var(--text-dark); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         
-        .price-container { display: flex; flex-direction: column; gap: 0px; }
-        .old-price { font-size: 12px; color: var(--text-light); text-decoration: line-through; font-weight: 600; }
-        .tag-preco-list { font-size: 16px; font-weight: 900; color: var(--text-dark); }
+        .price-container { display: flex; flex-direction: column; gap: 0px; margin-top: auto; padding-right: 45px;}
+        .old-price { font-size: 12.5px; color: var(--text-light); text-decoration: line-through; font-weight: 600; }
+        .tag-preco-list { font-size: 18px; font-weight: 900; color: var(--text-dark); margin-top: 2px; }
         
-        .card-action-area { position: absolute; right: 20px; bottom: 14px; display: flex; align-items: center; }
+        .card-action-area { position: absolute; right: 20px; bottom: 16px; display: flex; align-items: center; }
         
-        .btn-quick-add-list { background: #f1f5f9; color: var(--primary); width: 36px; height: 36px; border-radius: 50%; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; border: 1px solid var(--border-light); }
+        .btn-quick-add-list { background: #f1f5f9; color: var(--primary); width: 40px; height: 40px; border-radius: 50%; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; border: 1px solid var(--border-light); }
         .btn-quick-add-list:active { background: var(--primary); color: #ffffff; transform: scale(0.9); }
         
-        .qty-controls { display: flex; align-items: center; justify-content: space-between; border-radius: 20px; border: 1px solid var(--border-light); overflow: hidden; height: 36px; background: #ffffff; width: 85px; }
-        .qty-btn { width: 30px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 900; cursor: pointer; background: transparent; border: none; }
+        .qty-controls { display: flex; align-items: center; justify-content: space-between; border-radius: 20px; border: 1px solid var(--border-light); overflow: hidden; height: 40px; background: #ffffff; width: 95px; position: absolute; right: 20px; bottom: 16px; }
+        .qty-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 900; cursor: pointer; background: transparent; border: none; }
         .qty-btn:active { background: #f1f5f9; }
-        .qty-display { font-weight: 900; font-size: 14px; flex: 1; text-align: center; color: var(--text-dark); }
+        .qty-display { font-weight: 900; font-size: 15px; flex: 1; text-align: center; color: var(--text-dark); }
 
         /* =========================================
            4. PÁGINA INDIVIDUAL DO PRODUTO
@@ -89,13 +89,11 @@
         .prod-page-container { padding-bottom: 30px; }
         .prod-page-img-box { width: 100%; height: 38vh; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 25px; position: relative; border-bottom: 1px solid var(--border-light); }
         .prod-page-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .prod-page-embalagem { position: absolute; bottom: 20px; left: 20px; background: var(--bg-body); color: var(--text-dark); padding: 8px 14px; border-radius: 10px; font-weight: 800; font-size: 13.5px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .prod-page-info { padding: 25px 20px; background: #fff; }
         .prod-page-marca { font-size: 12px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; display: inline-block; background: #f1f5f9; padding: 4px 10px; border-radius: 6px; }
         .prod-page-title { font-size: 22px; font-weight: 900; line-height: 1.3; color: var(--text-dark); margin-bottom: 20px; }
         .prod-page-price-box { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 15px; }
         .prod-page-price { font-size: 32px; font-weight: 900; color: var(--text-dark); letter-spacing: -1px; }
-        .prod-page-oldprice { font-size: 16px; color: var(--text-light); text-decoration: line-through; margin-bottom: 6px; font-weight: 600; }
         
         .prod-page-desc-box { padding: 25px 20px; background: #fff; margin-top: 15px; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
         .prod-page-desc-title { font-size: 18px; font-weight: 900; margin-bottom: 15px; color: var(--text-dark); }
@@ -152,9 +150,9 @@
         .cart-item-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px dashed var(--border-light); gap: 15px; }
         .cart-item-row:last-child { border-bottom: none; padding-bottom: 0; }
         .cart-item-info { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
-        .cart-item-img { width: 60px; height: 60px; object-fit: contain; border: 1px solid #f1f5f9; border-radius: 10px; padding: 5px; flex-shrink: 0; background: #fff; }
+        .cart-item-img { width: 85px; height: 85px; object-fit: contain; flex-shrink: 0; background: transparent; }
         .cart-item-text-col { flex: 1; min-width: 0; }
-        .cart-item-name { font-weight: 700; font-size: 14px; color: var(--text-dark); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .cart-item-name { font-weight: 500; font-size: 13.5px; color: var(--text-light); line-height: 1.3; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         
         .cart-qty-ctrl { display: flex; align-items: center; background: #ffffff; border-radius: 10px; border: 1px solid var(--border-light); height: 38px; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
         .cart-qty-btn { width: 36px; height: 100%; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: var(--primary); font-weight: 900; cursor: pointer; }
@@ -193,6 +191,7 @@
 
     <div class="overlay" id="overlay"></div>
 
+    <!-- NAVEGAÇÃO INFERIOR APP NATIVO (4 ÍCONES) -->
     <div class="app-bottom-bar">
         <a href="#/" class="app-nav-item active" id="nav-cestas">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"></path></svg>
@@ -330,7 +329,7 @@
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-            searchQuery: '', openAccordions: {}, scrollMap: {}, basketCustomizations: {}, currentRoute: '#/',
+            searchQuery: '', scrollMap: {}, basketCustomizations: {}, currentRoute: '#/',
             appliedCoupon: null, couponDiscount: 0
         };
 
@@ -362,6 +361,13 @@
         function extractVolume(name) { let match = name.match(/(?:\d+(?:,\d+)?\s*(?:kg|g|ml|l|litros|litro|unidades|unidade|un|rolos|folhas))/i); return match ? match[0] : ''; }
         function encodeHash(str) { return encodeURIComponent(str).replace(/%20/g, '+'); }
         function decodeHash(str) { return decodeURIComponent(str.replace(/\+/g, '%20')); }
+        
+        // Formatação Title Case (Palavras >= 4 letras maiúsculas)
+        function formatName(name) { 
+            if(!name) return ""; 
+            let words = name.toLowerCase().split(/\s+/); 
+            return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); 
+        }
 
         const iconPlus = `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>`;
         const iconMinus = `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 12H4"></path></svg>`;
@@ -391,14 +397,13 @@
                 renderCestas();
                 document.title = "Dona Antônia - Supermercado e Cestas";
             } else if (hash === '#/ofertas') {
-                // AGORA EXISTE A FUNÇÃO CORRETA PARA AS OFERTAS
-                renderDepartamentoCompleto('Ofertas do Dia', 'Geral');
+                renderDepartamentoCompleto('Ofertas do Dia');
             } else if (hash === '#/mercado') {
                 initMercado();
                 document.title = "Mercado Completo - Dona Antônia";
             } else if (hash.startsWith('#/departamento/')) {
                 let parts = hash.split('/'); 
-                renderDepartamentoCompleto(decodeHash(parts[2]), decodeHash(parts[3]));
+                renderDepartamentoCompleto(decodeHash(parts[2]));
             } else if (hash.startsWith('#/produto/')) {
                 renderProductPage(decodeHash(hash.split('#/produto/')[1]));
             } else if (hash === '#/buscar') {
@@ -424,23 +429,28 @@
         window.clearSearch = function() { $('app-search-input').value = ''; $('clear-search-btn').style.display = 'none'; STATE.searchQuery = ''; window.history.back(); };
 
         // ==========================================
-        // RENDERIZAÇÃO DE CARDS (Design Unificado)
+        // RENDERIZAÇÃO DE CARDS
         // ==========================================
         function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
+            
+            // O Produto esgotado é tratado caso ele exista numa cesta montada. Na loja ele já foi filtrado no init().
             let isOutOfStock = prod.stock <= 0 && !isBasketItem;
             let esgotadoTag = isOutOfStock ? `<div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.85); color: #fff; padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 10px; z-index: 10;">ESGOTADO</div>` : '';
             let baseClass = isOutOfStock ? 'product-card-list esgotado' : 'product-card-list';
-            let oldPriceHtml = (prod.discountPercent > 0) ? `<span class="old-price">${fmt(prod.oldPrice)}</span>` : '';
+            
+            // Etiqueta vermelha em texto comum e não mais flutuante
+            let discountText = (prod.discountPercent > 0 && !isBasketItem) ? `<span style="color: var(--danger); margin-left: 4px; font-weight: 800;">(-${prod.discountPercent}%)</span>` : '';
+            let oldPriceHtml = (prod.discountPercent > 0) ? `<span class="old-price">${fmt(prod.oldPrice)}</span>${discountText}` : '';
+            
             let embalagem = prod.embalagem || extractVolume(prod.name);
-            let tagEmbalagem = embalagem ? `<div class="embalagem-tag">${embalagem}</div>` : '';
-            let discountBadge = prod.discountPercent > 0 && !isBasketItem ? `<div class="discount-badge">-${prod.discountPercent}%</div>` : '';
+            let tagEmbalagem = embalagem ? `<div class="embalagem-tag-text">${embalagem}</div>` : '';
 
             let onClickAction = isBasketItem ? "" : `onclick="window.location.hash='#/produto/${prod.slug}'"`;
 
             let controlsHtml = '';
             if (isBasketItem) {
-                controlsHtml = `<div class="qty-controls"><button class="qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button></div>`;
+                controlsHtml = `<div class="qty-controls" style="position:relative; right:0; bottom:0;"><button class="qty-btn" onclick="updateBasketItemQty(${index}, -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateBasketItemQty(${index}, 1); event.stopPropagation();">${iconPlus}</button></div>`;
             } else {
                 controlsHtml = q === 0 
                     ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)">${iconPlus}</div>`
@@ -450,15 +460,14 @@
             return `
                 <div class="${baseClass}" ${onClickAction}>
                     ${esgotadoTag}
-                    ${discountBadge}
                     <div class="img-wrapper">
-                        ${tagEmbalagem}
                         <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
                     </div>
                     <div class="product-details">
+                        ${tagEmbalagem}
                         <div class="product-name-list">${prod.name}</div>
                         <div class="price-container">
-                            ${oldPriceHtml}
+                            <div>${oldPriceHtml}</div>
                             <div class="tag-preco-list">${fmt(prod.price)}</div>
                         </div>
                         <div class="card-action-area" id="${isBasketItem ? 'basket-card-' + index : 'action-card-' + prod.id}">${controlsHtml}</div>
@@ -498,80 +507,91 @@
 
         function initMercado() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
-            let catMap = {}; let ofertas = []; 
+            let catMap = new Set(); let ofertas = []; 
             STATE.prods.forEach(p => { 
                 if(p.categoria === 'Cestas') return; 
                 if(p.discountPercent > 0) ofertas.push(p); 
-                let c = p.categoria || 'Outros'; let s = p.subcategoria || 'Geral'; 
-                if(!catMap[c]) catMap[c] = new Set(); catMap[c].add(s); 
+                let c = p.categoria || 'Outros'; 
+                catMap.add(c); 
             });
             
             let html = '';
             if(ofertas.length > 0) {
                 let catOfertas = { name: 'Ofertas do Dia', products: ofertas.sort((a,b) => b.discountPercent - a.discountPercent) };
                 
-                // Mudei o slice de (0,3) para (0,5) para dar mais movimento na tela inicial
-                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${catOfertas.products.slice(0, 5).map(p => renderCardHTML(p)).join('')}</div>`;
+                // Exibir RIGIDAMENTE apenas 3 ofertas
+                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${catOfertas.products.slice(0, 3).map(p => renderCardHTML(p)).join('')}</div>`;
                 
-                let btnHtml = catOfertas.products.length > 5 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${catOfertas.products.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                let btnHtml = catOfertas.products.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${catOfertas.products.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
                 
                 html += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px;"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
             }
 
             html += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
-            Object.keys(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat, index) => {
-                let catId = `accordion-${index}`;
-                let isOpen = STATE.openAccordions[catId] === true;
-                
-                html += `<div style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); overflow: hidden; transition: all 0.3s ease;">
-                            <button onclick="toggleAccordion('${catId}')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 20px; background: transparent; border: none; font-size: 16px; font-weight: 800; cursor: pointer; color: var(--text-dark);">
-                                <div style="display:flex; align-items:center; gap:14px;">
-                                    <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color: var(--text-dark);">
-                                        <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"></path></svg>
-                                    </div>
-                                    <span>${cat}</span>
+            Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
+                // Link Direto: Acabou a sanfona
+                html += `<a href="#/departamento/${encodeHash(cat)}" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
+                            <div style="display:flex; align-items:center; gap:14px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color: var(--text-dark);">
+                                    <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                                 </div>
-                                <svg class="svg-icon" id="icon-${catId}" viewBox="0 0 24 24" style="transition: transform 0.3s; color: var(--text-light); transform: ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};"><path d="M19 9l-7 7-7-7"></path></svg>
-                            </button>
-                            <div id="${catId}" style="display: ${isOpen ? 'block' : 'none'}; padding: 0 20px 15px; background: #fff;">
-                                <div style="border-top: 1px dashed var(--border-light); padding-top: 10px;">`;
-                
-                let subs = Array.from(catMap[cat]).sort();
-                subs.forEach((sub, subIdx) => {
-                    let displayName = sub === 'Geral' ? `Diversos (${cat})` : sub;
-                    let borderStyle = subIdx === subs.length - 1 ? 'border-bottom: none;' : 'border-bottom: 1px solid #f8fafc;';
-                    html += `<a href="#/departamento/${encodeHash(cat)}/${encodeHash(sub)}" style="padding: 16px 0; ${borderStyle} font-size: 15px; font-weight: 600; color: var(--text-light); text-decoration:none; display:flex; justify-content:space-between; align-items:center;">
-                                <span>${displayName}</span>
-                                <svg class="svg-icon" style="width:1.2em; height:1.2em; color: var(--text-light); opacity: 0.5;" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
-                             </a>`;
-                });
-                html += `</div></div></div>`;
+                                <span style="font-size: 16px; font-weight: 800;">${cat}</span>
+                            </div>
+                            <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
+                        </a>`;
             });
             html += '</div>'; vitrine.innerHTML = html; lazyLoadImages();
         }
 
-        window.toggleAccordion = function(id) {
-            let el = $(id); let icon = $('icon-' + id);
-            if(el.style.display === 'none') { el.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; STATE.openAccordions[id] = true; } 
-            else { el.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; STATE.openAccordions[id] = false; }
-        };
-
-        // AGORA TAMBÉM RENDERIZA A LISTA COMPLETA DE OFERTAS
-        function renderDepartamentoCompleto(cat, sub) {
+        // Renderizador Robusto com Subtítulos
+        function renderDepartamentoCompleto(cat) {
             let results = [];
             let displayName = "";
+            let html = '';
             
             if (cat === 'Ofertas do Dia') {
                 results = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent);
                 displayName = 'Ofertas do Dia';
+                document.title = `${displayName} - Dona Antônia`;
+                
+                // Agrupando Ofertas por Categoria
+                let groups = {};
+                results.forEach(p => {
+                    let c = p.categoria || 'Outros';
+                    if(!groups[c]) groups[c] = [];
+                    groups[c].push(p);
+                });
+                
+                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${displayName}</div><div style="background: #fff;">`;
+                
+                Object.keys(groups).sort().forEach(g => {
+                    html += `<h3 class="subcat-title">${g}</h3>`;
+                    groups[g].forEach(p => html += renderCardHTML(p));
+                });
+                
             } else {
-                results = STATE.prods.filter(p => p.categoria === cat && (p.subcategoria || 'Geral') === sub).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
-                displayName = sub === 'Geral' ? `Diversos (${cat})` : sub;
+                results = STATE.prods.filter(p => p.categoria === cat).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
+                displayName = cat;
+                document.title = `${displayName} - Dona Antônia`;
+                
+                // Agrupando Departamento por Subcategorias
+                let groups = {};
+                results.forEach(p => {
+                    let s = p.subcategoria || 'Geral';
+                    if(!groups[s]) groups[s] = [];
+                    groups[s].push(p);
+                });
+                
+                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${displayName}</div><div style="background: #fff;">`;
+                
+                Object.keys(groups).sort().forEach(g => {
+                    let subName = g === 'Geral' ? `Diversos (${cat})` : g;
+                    html += `<h3 class="subcat-title">${subName}</h3>`;
+                    groups[g].forEach(p => html += renderCardHTML(p));
+                });
             }
 
-            document.title = `${displayName} - Dona Antônia`;
-            let html = `<div style="padding: 15px 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${displayName}</div><div style="background: #fff;">`;
-            results.forEach(p => html += renderCardHTML(p)); html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
+            html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
         }
 
         function renderProductPage(id) {
@@ -581,16 +601,17 @@
             document.title = `${prod.name} - Dona Antônia`;
             
             let q = STATE.cart[prod.id] || 0;
-            let oldPriceHtml = (prod.discountPercent > 0) ? `<div class="prod-page-oldprice">De: ${fmt(prod.oldPrice)}</div>` : '';
-            let embalagemTag = prod.embalagem ? `<div class="prod-page-embalagem">${prod.embalagem}</div>` : '';
-            let discountBadge = prod.discountPercent > 0 ? `<div class="discount-badge" style="top:20px; left:20px; font-size:14px; padding:6px 12px;">-${prod.discountPercent}% OFF</div>` : '';
+            let discountText = (prod.discountPercent > 0) ? `<span style="color: var(--danger); margin-left: 4px; font-weight: 800;">(-${prod.discountPercent}%)</span>` : '';
+            let oldPriceHtml = (prod.discountPercent > 0) ? `<div class="prod-page-oldprice" style="display:inline-block;">De: ${fmt(prod.oldPrice)}</div> ${discountText}` : '';
+            
+            let embalagemTag = prod.embalagem ? `<div class="embalagem-tag-text" style="font-size:13px;">${prod.embalagem}</div>` : '';
             let descHtml = prod.descricao ? `<div class="prod-page-desc-box"><div class="prod-page-desc-title">Detalhes do Produto</div><div class="prod-page-desc-content">${prod.descricao}</div></div>` : '';
             
             let controlsHtml = q === 0 
                 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)" style="height:54px; width:100%; font-size:16px; border-radius:12px;">${iconPlus} Adicionar à Sacola</div>` 
-                : `<div class="qty-controls" style="height:54px; background:#f8fafc; width:100%; border-radius:12px;"><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display" style="font-size:20px;">${q}</span><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
+                : `<div class="qty-controls" style="height:54px; background:#f8fafc; width:100%; border-radius:12px; position:static;"><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display" style="font-size:20px;">${q}</span><button class="qty-btn" style="width:48px;" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
             
-            let html = `<div class="prod-page-container"><div class="ver-tudo-header" style="margin:-15px 0 0 0; box-shadow:none; border:none;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div><div class="prod-page-img-box">${discountBadge}<img src="${prod.img}" class="prod-page-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">${embalagemTag}</div><div class="prod-page-info"><div class="prod-page-marca">${prod.marca || prod.categoria}</div><h1 class="prod-page-title">${prod.name}</h1><div class="prod-page-price-box"><div>${oldPriceHtml}<div class="prod-page-price">${fmt(prod.price)}</div></div></div></div>${descHtml}</div><div class="prod-sticky-bottom" id="action-card-${prod.id}">${controlsHtml}</div>`;
+            let html = `<div class="prod-page-container"><div class="ver-tudo-header" style="margin:-15px 0 0 0; box-shadow:none; border:none;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div><div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'"></div><div class="prod-page-info"><div class="prod-page-marca">${prod.marca || prod.categoria}</div>${embalagemTag}<h1 class="prod-page-title" style="margin-top:6px;">${prod.name}</h1><div class="prod-page-price-box"><div style="width:100%;"><div style="margin-bottom:4px;">${oldPriceHtml}</div><div class="prod-page-price">${fmt(prod.price)}</div></div></div></div>${descHtml}</div><div class="prod-sticky-bottom" id="action-card-${prod.id}">${controlsHtml}</div>`;
             $('vitrine').innerHTML = html;
         }
 
@@ -697,7 +718,7 @@
                                 <div style="font-size: 15px; font-weight:900; color:var(--text-dark);">${fmt(p.price)}</div>
                             </div>
                         </div>
-                        <div class="cart-qty-ctrl">
+                        <div class="cart-qty-ctrl" style="position:static;">
                             <button class="cart-qty-btn" onclick="updateCartItem('${id}', -1)">${iconMinus}</button>
                             <span class="cart-qty-val">${q}</span>
                             <button class="cart-qty-btn" onclick="updateCartItem('${id}', 1)">${iconPlus}</button>
@@ -821,7 +842,6 @@
             products.forEach(p => {
                 p.discountPercent = 0; p.oldPrice = p.price;
                 
-                // 1. TENTA LER A VALIDADE DO JSON SE ELA EXISTIR
                 if (p.vencimento) {
                     let partes = p.vencimento.split('/'); 
                     if(partes.length === 3) {
@@ -833,17 +853,15 @@
                     }
                 }
                 
-                // 2. SE NÃO TEM VALIDADE OU O DESCONTO AINDA É 0, VAI PARA AS OFERTAS INTELIGENTES DO DIA
                 if (p.discountPercent === 0) eligibleForRandom.push(p);
             });
             
-            // Gerador matemático determinístico: As ofertas mudam sozinhas a cada 48 horas!
             let currentSeed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000)); 
             function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
             
             eligibleForRandom.sort((a, b) => { let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); let randA = seededRandom(currentSeed + idNumA); let randB = seededRandom(currentSeed + idNumB); return randA - randB; });
             
-            let r20 = 5, r15 = 5, r10 = 100; // Quantidade de ofertas falsas distribuídas
+            let r20 = 5, r15 = 5, r10 = 100; 
             eligibleForRandom.forEach(p => { if (r20 > 0) { p.discountPercent = 20; r20--; } else if (r15 > 0) { p.discountPercent = 15; r15--; } else if (r10 > 0) { p.discountPercent = 10; r10--; } });
             
             products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
@@ -853,8 +871,9 @@
             try {
                 const r2 = await fetchWithCache('/site/produtos.json', 'cache_prods');
                 if (r2 && r2.length > 0) {
-                    STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
-                        let baseName = p.nome ? p.nome.trim() : "Produto"; 
+                    // IMPLEMENTAÇÃO: Filtro Estrito de Estoque (> 0)
+                    STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
+                        let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
                         return { 
                             id: String(p.codigo || p.id), codigo: String(p.codigo || ""), name: baseName, slug: getFriendlySlug(baseName),
                             price: parseFloat(p.preco) * 1.01, stock: parseInt(p.estoque) || 0, 
