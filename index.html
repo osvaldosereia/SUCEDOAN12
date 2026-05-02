@@ -771,7 +771,7 @@
             if (count > 0) { badge.style.display = 'block'; badge.innerText = count > 99 ? '99+' : count; } else { badge.style.display = 'none'; }
         }
 
-       window.sendOrder = function() {
+      window.sendOrder = function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
             const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.replace(/\D/g,""); const whats = $('chk-whats').value.trim();
             const cep = $('chk-cep').value.replace(/\D/g,""); const bairro = $('chk-bairro').value.trim(); const endereco = $('chk-endereco').value.trim(); let cidade = $('chk-cidade').value;
@@ -800,10 +800,23 @@
                 Object.keys(STATE.basketCustomizations).forEach(bId => {
                     let diff = STATE.basketCustomizations[bId];
                     if(diff.changed) {
-                        customTxt += `*Cesta: ${diff.name} (Alterada)*\n`;
-                        if(diff.removed.length > 0) customTxt += `- Retirado: ${diff.removed.join(', ')}\n`;
-                        if(diff.added.length > 0) customTxt += `+ Adicionado: ${diff.added.join(', ')}\n`;
-                    } else { customTxt += `*Cesta: ${diff.name} (Sem alteração)*\n`; }
+                        customTxt += `*Cesta Escolhida:* ${diff.name} (Alterada)\n`;
+                        
+                        if(diff.removed.length > 0) {
+                            customTxt += `*Itens Retirados:*\n`;
+                            // O forEach garante que cada item retirado fique em uma linha própria com um traço
+                            diff.removed.forEach(item => customTxt += `- ${item}\n`);
+                        }
+                        
+                        if(diff.added.length > 0) {
+                            customTxt += `*Itens Adicionados:*\n`;
+                            // Cada item adicionado fica em uma linha própria com um sinal de mais
+                            diff.added.forEach(item => customTxt += `+ ${item}\n`);
+                        }
+                    } else { 
+                        customTxt += `*Cesta Escolhida:* ${diff.name} (Padrão)\n`; 
+                    }
+                    customTxt += `\n`; // Adiciona um pequeno espaço caso o cliente tenha pedido duas cestas diferentes
                 });
             } else { customTxt += `*Pedido Personalizado (Itens Avulsos)*\n`; }
             
@@ -811,7 +824,8 @@
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             if (STATE.couponDiscount > 0) itemsTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
             
-            const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL: ${fmt(final)}*${customTxt}`;
+            // A palavra TOTAL agora está isolada com os asteriscos do WhatsApp
+            const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL:* ${fmt(final)}${customTxt}`;
             
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
