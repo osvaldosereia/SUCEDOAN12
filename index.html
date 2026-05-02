@@ -36,7 +36,7 @@
            1. CABEÇALHO FIXO
         ========================================= */
         .header-main { position: fixed; top: 0; left: 0; width: 100%; height: max(var(--h-top), calc(var(--h-top) + env(safe-area-inset-top))); padding: env(safe-area-inset-top) 15px 0 15px; background: #ffffff; z-index: 1300; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-light); }
-        .header-logo { height: 34px; width: auto; object-fit: contain; cursor: pointer; flex-shrink: 0; display: none; }
+.header-logo { height: 34px; width: auto; object-fit: contain; cursor: pointer; flex-shrink: 0; }
         .search-container { flex: 1; position: relative; display: flex; align-items: center; }
         .search-icon-pos { position: absolute; left: 12px; color: var(--text-light); display: flex; align-items: center; }
         .topbar-search { width: 100%; height: 40px; background: #f3f4f6; border-radius: 20px; border: 1px solid transparent; padding: 0 32px 0 36px; font-family: 'Inter', sans-serif; font-size: 14px; outline: none; color: var(--text-dark); transition: 0.2s; }
@@ -61,8 +61,8 @@
         .btn-ver-todos-cat { width: 100%; background: #f3f4f6; color: var(--text-dark); border: 1px solid var(--border-light); padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 800; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
         .btn-ver-todos-cat:active { background: #e5e7eb; transform: scale(0.98); }
 
-        .ver-tudo-header { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; padding: 15px; font-size: 16px; z-index: 100; font-weight: 900; color: var(--text-dark); border-bottom: 1px solid var(--border-light); margin: -10px -15px 15px -15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-
+.ver-tudo-header { position: sticky; top: -10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; padding: 15px; font-size: 16px; z-index: 100; font-weight: 900; color: var(--text-dark); border-bottom: 1px solid var(--border-light); margin: -20px -15px 15px -15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        
         /* =========================================
            3. O NOVO "SUPER CARD" DE PRODUTO
         ========================================= */
@@ -481,7 +481,7 @@
             let gtin = prod.gtin ? `EAN/SKU: ${prod.gtin}` : `SKU: ${prod.codigo}`;
             let descHtml = prod.descricao ? `<div class="prod-page-desc-box"><div class="prod-page-desc-title">Detalhes do Produto</div><div class="prod-page-desc-content">${prod.descricao}</div></div>` : '';
             let controlsHtml = q === 0 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${prod.id}', event)" style="height:50px; font-size:16px;">${iconPlus} Adicionar</div>` : `<div class="qty-controls" style="height:50px;"><button class="qty-btn" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display" style="font-size:18px;">${q}</span><button class="qty-btn" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
-            let html = `<div class="prod-page-container"><div class="ver-tudo-header" style="margin:0; box-shadow:none; border:none;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div><div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}">${embalagemTag}</div><div class="prod-page-info"><div class="prod-page-marca">${prod.marca || prod.categoria}</div><h1 class="prod-page-title">${prod.name}</h1><div class="prod-page-gtin">${gtin}</div><div class="prod-page-price-box"><div>${oldPriceHtml}<div class="prod-page-price">${fmt(prod.price)}</div></div></div></div>${descHtml}</div><div class="prod-sticky-bottom" id="action-card-${prod.id}">${controlsHtml}</div>`;
+            let html = `<div class="prod-page-container"><div class="ver-tudo-header" style="margin:-10px 0 0 0; box-shadow:none; border:none;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Detalhes</div><div class="prod-page-img-box"><img src="${prod.img}" class="prod-page-img" alt="${prod.name}">${embalagemTag}</div><div class="prod-page-info"><div class="prod-page-marca">${prod.marca || prod.categoria}</div><h1 class="prod-page-title">${prod.name}</h1><div class="prod-page-gtin">${gtin}</div><div class="prod-page-price-box"><div>${oldPriceHtml}<div class="prod-page-price">${fmt(prod.price)}</div></div></div></div>${descHtml}</div><div class="prod-sticky-bottom" id="action-card-${prod.id}">${controlsHtml}</div>`;
             $('vitrine').innerHTML = html;
         }
 
