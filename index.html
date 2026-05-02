@@ -36,7 +36,7 @@
            1. CABEÇALHO FIXO
         ========================================= */
         .header-main { position: fixed; top: 0; left: 0; width: 100%; height: max(var(--h-top), calc(var(--h-top) + env(safe-area-inset-top))); padding: env(safe-area-inset-top) 15px 0 15px; background: #ffffff; z-index: 1300; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-light); }
-.header-logo { height: 34px; width: auto; object-fit: contain; cursor: pointer; flex-shrink: 0; }
+        .header-logo { height: 30px; width: auto; max-width: 100px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
         .search-container { flex: 1; position: relative; display: flex; align-items: center; }
         .search-icon-pos { position: absolute; left: 12px; color: var(--text-light); display: flex; align-items: center; }
         .topbar-search { width: 100%; height: 40px; background: #f3f4f6; border-radius: 20px; border: 1px solid transparent; padding: 0 32px 0 36px; font-family: 'Inter', sans-serif; font-size: 14px; outline: none; color: var(--text-dark); transition: 0.2s; }
@@ -54,15 +54,8 @@
         .main-container.no-tabs { top: max(var(--h-top), calc(var(--h-top) + env(safe-area-inset-top))); height: calc(100dvh - var(--h-top) - env(safe-area-inset-top)); }
         .main-container::-webkit-scrollbar { display: none; }
 
-        .cat-section { margin-bottom: 20px; background: #ffffff; padding: 15px; border-radius: 12px; border: 1px solid var(--border-light); }
-        .cat-header { padding-bottom: 12px; font-weight: 900; font-size: 1.15rem; display: flex; align-items: center; gap: 6px; color: var(--text-dark); border-bottom: 1px solid var(--border-light); margin-bottom: 15px; cursor: pointer;}
-        .cat-grid { display: flex; flex-direction: column; gap: 15px; }
-        
-        .btn-ver-todos-cat { width: 100%; background: #f3f4f6; color: var(--text-dark); border: 1px solid var(--border-light); padding: 14px; border-radius: 10px; font-size: 14px; font-weight: 800; margin-top: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
-        .btn-ver-todos-cat:active { background: #e5e7eb; transform: scale(0.98); }
+        .ver-tudo-header { position: sticky; top: -10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; padding: 15px; font-size: 16px; z-index: 100; font-weight: 900; color: var(--text-dark); border-bottom: 1px solid var(--border-light); margin: -20px -15px 15px -15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
 
-.ver-tudo-header { position: sticky; top: -10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); display: flex; align-items: center; gap: 12px; padding: 15px; font-size: 16px; z-index: 100; font-weight: 900; color: var(--text-dark); border-bottom: 1px solid var(--border-light); margin: -20px -15px 15px -15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
-        
         /* =========================================
            3. O NOVO "SUPER CARD" DE PRODUTO
         ========================================= */
@@ -73,7 +66,6 @@
         .img-wrapper { position: relative; width: 140px; height: 140px; flex-shrink: 0; align-self: flex-start; background: #ffffff; border: 1px solid var(--border-light); border-radius: 10px; padding: 6px; }
         .product-icon-list { width: 100%; height: 100%; object-fit: contain; }
         
-        /* Tag de Embalagem Remodelada na Foto (Discreta e Encostada na Direita) */
         .embalagem-tag { position: absolute; top: 12px; right: 0; background: #e5e7eb; color: #4b5563; font-size: 10px; font-weight: 700; padding: 3px 6px; border-radius: 4px 0 0 4px; z-index: 2; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); border-left: 1px solid var(--border-light); }
 
         .product-details { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; min-width: 0; }
@@ -113,14 +105,8 @@
         .prod-sticky-bottom { position: fixed; bottom: max(60px, calc(60px + env(safe-area-inset-bottom))); left: 0; width: 100%; background: #ffffff; padding: 12px 15px; display: flex; gap: 15px; border-top: 1px solid var(--border-light); z-index: 1000; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
 
         /* =========================================
-           5. LISTA DE COMPRAS E CESTAS
+           5. CESTAS BÁSICAS
         ========================================= */
-        .sl-cat-group { margin-bottom: 15px; background: #fff; border-radius: 12px; border: 1px solid var(--border-light); overflow: hidden; }
-        .sl-cat-title { background: #f9fafb; padding: 12px 15px; font-weight: 900; font-size: 14px; color: var(--text-dark); text-transform: uppercase; border-bottom: 1px solid var(--border-light); }
-        .sl-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid var(--border-light); font-size: 14px; font-weight: 600; color: var(--text-dark); cursor: pointer; }
-        .sl-item:last-child { border-bottom: none; }
-        .sl-item input { margin-right: 12px; width: 20px; height: 20px; accent-color: var(--primary); }
-
         .basket-card { background-color: var(--bg-card); border-radius: 12px; padding: 12px; border: 1px solid var(--border-light); display: flex; flex-direction: column; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 15px; }
         .basket-img { width: 100%; height: 240px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; background: #f3f4f6; }
         .basket-title { font-size: 16px; font-weight: 900; color: var(--text-dark); margin-bottom: 4px; }
@@ -190,9 +176,9 @@
     <div class="overlay" id="overlay"></div>
 
     <div class="fixed-bottom-bar">
-        <a href="#/lista" class="nav-btn-left">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 5H21M9 12H21M9 19H21M5 5H5.01M5 12H5.01M5 19H5.01"></path></svg>
-            Lista Pronta
+        <a href="#/busca-rapida" class="nav-btn-left">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            Busca Rápida
         </a>
         <div class="nav-btn-right" onclick="openCheckout()">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
@@ -202,7 +188,7 @@
     </div>
     
     <div class="header-main" id="header-main">
-        <!-- Logo removida da tela inicial conforme pedido para limpar -->
+        <a href="#/"><img src="../img/logoantonia5.png" alt="Dona Antônia" class="header-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2Y5ZmFmYiIvPjwvc3ZnPg=='"></a>
         <div class="search-container">
             <div class="search-icon-pos"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
             <input type="text" id="app-search-input" class="topbar-search" placeholder="Buscar produtos..." oninput="handleSearchInput()">
@@ -215,6 +201,7 @@
         <a href="#/mercado" class="tab-btn" id="tab-mercado" style="text-decoration:none;">MERCADO E HIGIENE</a>
     </div>
 
+    <!-- VITRINE (HUB DE ROTAS) -->
     <main class="main-container" id="vitrine"></main>
 
     <!-- MODAL DE CESTAS (PERSONALIZAÇÃO) -->
@@ -312,12 +299,9 @@
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
-            searchQuery: '', mercadoCats: [], loadedCatIndex: 0,   
-            shoppingListStep: 'select', shoppingListSelections: [],
-            scrollMap: {}, basketCustomizations: {}, currentRoute: '#/'
+            searchQuery: '', scrollMap: {}, basketCustomizations: {}, currentRoute: '#/'
         };
 
-        const ORDEM_CATEGORIAS = ['mercearia basica', 'lavanderia', 'limpeza', 'cafe da manha', 'temperos', 'sucos e refris', 'higiene', 'beleza', 'sabonete', 'shampoo', 'cabelo'];
         const BASKETS = [
           { "id": "cesta1", "nome": "Economica Bonini", "oldPrice": 85, "preco": 80, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
           { "id": "cesta2", "nome": "Mini Bonini", "oldPrice": 165, "preco": 155, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
@@ -330,8 +314,10 @@
           { "id": "cesta9", "nome": "Grande Bonini", "oldPrice": 380, "preco": 360, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] }
         ];
 
+        let currentBasketItems = [];
         const MIN_ORDER = 75; 
 
+        // UTILS
         function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
         function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
         function formatName(name) { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); }
@@ -356,19 +342,19 @@
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
             if($('checkout-drawer').classList.contains('open')) $('checkout-drawer').classList.remove('open');
 
-            $('main-tabs').style.transform = (hash.startsWith('#/produto/') || hash.startsWith('#/categoria/') || hash === '#/lista' || hash === '#/buscar') ? 'translateY(-150%)' : 'translateY(0)';
-            vitrine.classList.toggle('no-tabs', (hash.startsWith('#/produto/') || hash.startsWith('#/categoria/') || hash === '#/lista' || hash === '#/buscar'));
+            $('main-tabs').style.transform = (hash.startsWith('#/produto/') || hash.startsWith('#/departamento/') || hash === '#/busca-rapida' || hash === '#/buscar') ? 'translateY(-150%)' : 'translateY(0)';
+            vitrine.classList.toggle('no-tabs', (hash.startsWith('#/produto/') || hash.startsWith('#/departamento/') || hash === '#/busca-rapida' || hash === '#/buscar'));
 
             if (hash === '#/' || hash === '') {
                 $('tab-cestas').classList.add('active'); $('tab-mercado').classList.remove('active'); renderCestas();
             } else if (hash === '#/mercado') {
                 $('tab-cestas').classList.remove('active'); $('tab-mercado').classList.add('active'); initMercado();
-            } else if (hash.startsWith('#/categoria/')) {
-                renderCategoriaCompleta(decodeHash(hash.split('#/categoria/')[1]));
+            } else if (hash.startsWith('#/departamento/')) {
+                let parts = hash.split('/'); renderDepartamentoCompleto(decodeHash(parts[2]), decodeHash(parts[3]));
             } else if (hash.startsWith('#/produto/')) {
                 renderProductPage(decodeHash(hash.split('#/produto/')[1]));
-            } else if (hash === '#/lista') {
-                renderShoppingList();
+            } else if (hash === '#/busca-rapida') {
+                renderQuickSearch();
             } else if (hash === '#/buscar') {
                 renderSearch();
             }
@@ -378,9 +364,8 @@
 
         window.scrollToTop = function() { window.location.hash = '#/'; }
         window.switchTab = function(tab) { window.location.hash = tab === 'cestas' ? '#/' : '#/mercado'; };
-        window.openShoppingList = function() { window.location.hash = '#/lista'; STATE.shoppingListStep = 'select'; };
-        window.generateShoppingList = function() { let checkboxes = document.querySelectorAll('.sl-chk:checked'); if(checkboxes.length === 0) return alert("Marque pelo menos uma categoria."); STATE.shoppingListSelections = Array.from(checkboxes).map(c => c.value); STATE.shoppingListStep = 'results'; renderShoppingList(); };
-
+        window.openShoppingList = function() { window.location.hash = '#/busca-rapida'; };
+        
         let searchTimeout;
         window.handleSearchInput = function() {
             let inputVal = $('app-search-input').value; $('clear-search-btn').style.display = inputVal.length > 0 ? 'flex' : 'none';
@@ -388,8 +373,7 @@
             searchTimeout = setTimeout(() => {
                 let q = norm(inputVal).trim(); STATE.searchQuery = q;
                 if(q.length >= 2) { 
-                    if(window.location.hash !== '#/buscar') window.location.hash = '#/buscar';
-                    else renderSearch();
+                    if(window.location.hash !== '#/buscar') window.location.hash = '#/buscar'; else renderSearch();
                 } else { if(window.location.hash === '#/buscar') window.history.back(); }
             }, 300);
         };
@@ -434,41 +418,44 @@
             let html = '<div style="padding: 15px;">'; BASKETS.forEach(basket => { let priceHtml = basket.oldPrice ? `<div class="basket-price"><span style="text-decoration: line-through; font-size: 15px; color: #9ca3af; font-weight: 600; margin-right: 8px;">${fmt(basket.oldPrice)}</span>${fmt(basket.preco)}</div>` : `<div class="basket-price">${fmt(basket.preco)}</div>`; html += `<div class="basket-card" onclick="openBasketDetail('${basket.id}')"><img src="${basket.imagem}" class="basket-img" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'"><div class="basket-title">${basket.nome}</div>${priceHtml}<div class="btn-quick-add-list" style="background:#000; color:#fff;" onclick="event.stopPropagation(); openBasketDetail('${basket.id}');">Ver Itens da Cesta</div></div>`; }); html += '</div>'; $('vitrine').innerHTML = html;
         }
 
+        // NOVO MOTOR DO MERCADO (SANFONA / ACCORDION)
         function initMercado() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
-            let catMap = {}; let ofertas = []; 
-            STATE.prods.forEach(p => { if(p.categoria === 'Cestas') return; if(p.discountPercent > 0) ofertas.push(p); let cat = p.categoria || 'Outros'; if(!catMap[cat]) catMap[cat] = []; catMap[cat].push(p); });
-            STATE.mercadoCats = [];
-            if(ofertas.length > 0) STATE.mercadoCats.push({ name: 'Ofertas da Semana', products: ofertas.sort((a,b) => b.discountPercent - a.discountPercent) });
-            Object.keys(catMap).sort((a, b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach(catName => { STATE.mercadoCats.push({ name: catName, products: catMap[catName].sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name)) }); });
-            STATE.loadedCatIndex = 0; loadNextCategories(3); 
+            let catMap = {}; 
+            STATE.prods.forEach(p => { if(p.categoria === 'Cestas') return; let c = p.categoria || 'Outros'; let s = p.subcategoria || 'Geral'; if(!catMap[c]) catMap[c] = new Set(); catMap[c].add(s); });
+            
+            let html = '<div style="padding: 15px;"><h2 style="font-size:18px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
+            Object.keys(catMap).sort().forEach((cat, index) => {
+                let catId = `accordion-${index}`;
+                html += `<div style="margin-bottom: 12px; background: #fff; border-radius: 10px; border: 1px solid var(--border-light); overflow: hidden;">
+                            <button onclick="toggleAccordion('${catId}')" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #fff; border: none; font-size: 15px; font-weight: 800; cursor: pointer; color: var(--text-dark);">
+                                <span>${cat}</span>
+                                <svg class="svg-icon" id="icon-${catId}" viewBox="0 0 24 24" style="transition: transform 0.3s;"><path d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div id="${catId}" style="display: none; padding: 0 15px 15px; border-top: 1px solid var(--border-light); background: #f9fafb;">`;
+                
+                Array.from(catMap[cat]).sort().forEach(sub => {
+                    let displayName = sub === 'Geral' ? `Diversos (${cat})` : sub;
+                    html += `<div onclick="window.location.hash='#/departamento/${encodeHash(cat)}/${encodeHash(sub)}'" style="padding: 14px 0; border-bottom: 1px solid var(--border-light); font-size: 14.5px; font-weight: 600; color: var(--text-light); cursor: pointer; display:flex; justify-content:space-between; align-items:center;">
+                                <span>${displayName}</span>
+                                <svg class="svg-icon" style="width:1em; height:1em; opacity:0.3;" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"></path></svg>
+                             </div>`;
+                });
+                html += `</div></div>`;
+            });
+            html += '</div>'; vitrine.innerHTML = html;
         }
 
-        function loadNextCategories(count) {
-            const vitrine = $('vitrine'); let frag = document.createDocumentFragment();
-            for(let i=0; i < count; i++) {
-                if(STATE.loadedCatIndex >= STATE.mercadoCats.length) break;
-                let catData = STATE.mercadoCats[STATE.loadedCatIndex]; let prodsValidos = catData.products.filter(p => p.stock > 0);
-                if(prodsValidos.length > 0) frag.appendChild(createCategoryBlock({ ...catData, products: prodsValidos }));
-                STATE.loadedCatIndex++;
-            }
-            let oldSentinel = $('mercado-sentinel'); if(oldSentinel) oldSentinel.remove();
-            if(STATE.loadedCatIndex < STATE.mercadoCats.length) { let sentinel = document.createElement('div'); sentinel.id = 'mercado-sentinel'; sentinel.style.padding = '20px'; sentinel.innerHTML = '<div style="text-align:center; color:#ccc;">Carregando...</div>'; frag.appendChild(sentinel); }
-            vitrine.appendChild(frag); lazyLoadImages();
-            let newSentinel = $('mercado-sentinel'); if(newSentinel) { let observer = new IntersectionObserver((entries) => { if (entries[0].isIntersecting) { observer.disconnect(); setTimeout(() => loadNextCategories(2), 50); } }, { root: vitrine, rootMargin: '300px' }); observer.observe(newSentinel); }
-        }
+        window.toggleAccordion = function(id) {
+            let el = $(id); let icon = $('icon-' + id);
+            if(el.style.display === 'none') { el.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; } 
+            else { el.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }
+        };
 
-        function createCategoryBlock(catData) {
-            let section = document.createElement('div'); section.className = 'cat-section';
-            let header = `<div class="cat-header" onclick="window.location.hash='#/categoria/${encodeHash(catData.name)}'"><svg class="svg-icon" style="color:var(--primary)" viewBox="0 0 24 24"><path d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg> ${catData.name}</div>`;
-            let gridHtml = `<div class="cat-grid">${catData.products.slice(0, 3).map(p => renderCardHTML(p)).join('')}</div>`;
-            let btnHtml = catData.products.length > 3 ? `<a href="#/categoria/${encodeHash(catData.name)}" class="btn-ver-todos-cat" style="text-decoration:none;">Ver os ${catData.products.length} itens <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></a>` : '';
-            section.innerHTML = header + gridHtml + btnHtml; return section;
-        }
-
-        function renderCategoriaCompleta(catName) {
-            let results = catName === 'Ofertas da Semana' ? STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent) : STATE.prods.filter(p => p.categoria === catName).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
-            let html = `<div style="padding: 10px 15px;"><div class="ver-tudo-header" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${catName}</div>`;
+        function renderDepartamentoCompleto(cat, sub) {
+            let results = STATE.prods.filter(p => p.categoria === cat && (p.subcategoria || 'Geral') === sub).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
+            let displayName = sub === 'Geral' ? `Diversos (${cat})` : sub;
+            let html = `<div style="padding: 10px 15px;"><div class="ver-tudo-header" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${displayName}</div>`;
             results.forEach(p => html += renderCardHTML(p)); html += '</div>'; $('vitrine').innerHTML = html; lazyLoadImages();
         }
 
@@ -485,26 +472,25 @@
             $('vitrine').innerHTML = html;
         }
 
-        function renderShoppingList() {
-            let html = '';
-            if (STATE.shoppingListStep === 'select') {
-                html += `<div style="padding: 15px;"><div style="background: #eff6ff; color: #1e3a8a; font-size: 14px; font-weight: 800; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 5px; border: 1px solid #bfdbfe;">Marque as categorias que faltam na sua casa:</div></div><div style="padding: 0 15px 40px;">`;
-                let catMap = {}; STATE.prods.forEach(p => { if(p.categoria === 'Cestas' || p.stock <= 0) return; let c = p.categoria || 'Outros'; let s = p.subcategoria || 'Geral'; if(!catMap[c]) catMap[c] = new Set(); catMap[c].add(s); });
-                Object.keys(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach(cat => { html += `<div class="sl-cat-group"><div class="sl-cat-title">${cat}</div>`; Array.from(catMap[cat]).sort().forEach(sub => html += `<label class="sl-item"><input type="checkbox" class="sl-chk" value="${cat}|${sub}">${sub === 'Geral' ? 'Diversos (' + cat + ')' : sub}</label>`); html += `</div>`; });
-                html += `<button class="btn-send" style="margin-bottom: 20px;" onclick="generateShoppingList()">Montar Minha Lista</button></div>`;
-            } else {
-                html += `<div style="padding: 15px;"><div class="ver-tudo-header" onclick="STATE.shoppingListStep='select'; handleRoute();"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Sua Lista</div>`;
-                let results = []; STATE.shoppingListSelections.forEach(sel => { let [cat, sub] = sel.split('|'); let prods = STATE.prods.filter(p => p.categoria === cat && (p.subcategoria || 'Geral') === sub && p.stock > 0); if(prods.length > 0) results.push({ name: `${cat} - ${sub === 'Geral' ? 'Diversos' : sub}`, products: prods.sort((a,b) => b.discountPercent - a.discountPercent || a.name.localeCompare(b.name)) }); });
-                results.forEach(catData => { html += `<div style="padding:15px 0 5px; font-weight:900; color:var(--primary); font-size:18px;">${catData.name}</div>`; catData.products.forEach(p => html += renderCardHTML(p)); }); html += '</div>'; 
-            }
-            $('vitrine').innerHTML = html; lazyLoadImages();
+        // NOVA BUSCA RÁPIDA
+        function renderQuickSearch() {
+            const keywords = ['Arroz', 'Feijão', 'Óleo', 'Café', 'Açúcar', 'Leite', 'Macarrão', 'Biscoito', 'Refrigerante', 'Cerveja', 'Papel Higiênico', 'Sabonete', 'Shampoo', 'Pasta de Dente', 'Desodorante', 'Sabão em Pó', 'Amaciante', 'Detergente', 'Água Sanitária', 'Ração para Cão', 'Ração para Gato'];
+            let html = `<div style="padding: 15px;"><h2 style="font-size: 18px; font-weight: 900; margin-bottom: 5px; color: var(--text-dark);">O que você precisa hoje?</h2><p style="font-size: 14px; color: var(--text-light); margin-bottom: 20px;">Toque nas palavras abaixo para pesquisar rapidamente:</p><div style="display: flex; flex-wrap: wrap; gap: 10px;">`;
+            keywords.forEach(kw => { html += `<button onclick="doQuickSearch('${kw}')" style="padding: 12px 18px; background: #ffffff; border: 1px solid var(--border-light); border-radius: 20px; font-size: 14px; font-weight: 700; color: var(--text-dark); cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">${kw}</button>`; });
+            html += `</div></div>`; $('vitrine').innerHTML = html;
         }
+
+        window.doQuickSearch = function(kw) {
+            $('app-search-input').value = kw; $('clear-search-btn').style.display = 'flex';
+            STATE.searchQuery = kw; window.location.hash = '#/buscar';
+        };
 
         function renderSearch() {
             let terms = STATE.searchQuery.split(' ').filter(t => t.trim().length > 0); 
-            let results = STATE.prods.filter(p => { let textoBusca = norm(p.name + " " + p.categoria); return terms.every(term => textoBusca.includes(term)); });
-            if(results.length === 0) { $('vitrine').innerHTML = `<div style="padding: 40px; text-align: center; font-weight:600; color:var(--text-light)">Ops, não achamos "${STATE.searchQuery}".</div>`; return; }
-            let html = `<div style="padding: 10px 15px;"><div style="padding: 5px 0 15px; font-weight: 800; font-size:16px;">Resultados para "${STATE.searchQuery}"</div>`;
+            let results = STATE.prods.filter(p => { let textoBusca = norm(p.name + " " + p.categoria + " " + p.subcategoria); return terms.every(term => textoBusca.includes(term)); });
+            let header = `<div class="ver-tudo-header" style="margin:-20px -15px 15px -15px; top:-10px;" onclick="window.history.back()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${STATE.searchQuery ? `Resultados para "${STATE.searchQuery}"` : 'Busca'}</div>`;
+            if(results.length === 0) { $('vitrine').innerHTML = `<div style="padding: 10px 15px;">${header}<div style="padding: 40px; text-align: center; font-weight:600; color:var(--text-light)">Ops, não achamos "${STATE.searchQuery}".</div></div>`; return; }
+            let html = `<div style="padding: 10px 15px;">${header}`;
             results.forEach(p => html += renderCardHTML(p)); html += '</div>'; $('vitrine').innerHTML = html; lazyLoadImages();
         }
 
@@ -556,7 +542,6 @@
                 if (currentQty > 0) { valorOriginalProdutos += (currentQty * item.pObj.price); let currentInCart = STATE.cart[item.pObj.id] || 0; if (currentInCart === 0) STATE.cartOrder.push(item.pObj.id); STATE.cart[item.pObj.id] = currentInCart + currentQty; addedCount++; } 
             });
 
-            // Adiciona a cesta no registro mesmo se não teve alteração
             basketDiff.changed = hasChanges;
             STATE.basketCustomizations[basket.id] = basketDiff;
 
@@ -571,7 +556,7 @@
         }
 
         // ==========================================
-        // CHECKOUT 
+        // CHECKOUT E FINALIZAÇÃO
         // ==========================================
         window.openCheckout = function() {
             if (STATE.cartOrder.length === 0) return alert("Sua sacola está vazia!");
@@ -629,31 +614,26 @@
             Object.entries(STATE.cart).forEach(([cartId, q]) => { const p = STATE.prods.find(x => String(x.id) === String(cartId)); if (p) { totalBruto += p.price * q; if (!String(cartId).startsWith('fee_cesta')) itemsTxt += `${q}x ${p.name}\n`; else { let bId = String(cartId).replace('fee_', ''); let bObj = BASKETS.find(b => b.id === bId); if (bObj && bObj.oldPrice) totalDescontoCestas += ((bObj.oldPrice - bObj.preco) * q); } } });
             
             let final = totalBruto - STATE.deliveryDiscount;
-            if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
-            if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             
-            // Relatório Customização de Cestas no WhatsApp
-            let customTxt = "\n\n------------------------";
+            // Relatório Final Exato no WhatsApp
+            let customTxt = "\n\n------------------------\n";
             let hasBasket = Object.keys(STATE.basketCustomizations).length > 0;
             if (hasBasket) {
                 Object.keys(STATE.basketCustomizations).forEach(bId => {
                     let diff = STATE.basketCustomizations[bId];
                     if(diff.changed) {
-                        customTxt += `\n*${diff.name} (Alterada)*`;
-                        if(diff.removed.length > 0) customTxt += `\n- Retirado: ${diff.removed.join(', ')}`;
-                        if(diff.added.length > 0) customTxt += `\n+ Adicionado: ${diff.added.join(', ')}`;
-                    } else {
-                        customTxt += `\n*${diff.name} (Sem alteração)*`;
-                    }
+                        customTxt += `*${diff.name} (Alterada)*\n`;
+                        if(diff.removed.length > 0) customTxt += `- Retirado: ${diff.removed.join(', ')}\n`;
+                        if(diff.added.length > 0) customTxt += `+ Adicionado: ${diff.added.join(', ')}\n`;
+                    } else { customTxt += `*${diff.name} (Sem alteração)*\n`; }
                 });
-            } else {
-                customTxt += `\n*Pedido Personalizado (Itens avulsos)*`;
-            }
+            } else { customTxt += `*Pedido Personalizado*\n`; }
             
             const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL: ${fmt(final)}*${customTxt}`;
+            
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
-            // Limpa o carrinho após enviar
+            // Esvazia carrinho automaticamente
             STATE.cart = {}; STATE.cartOrder = []; STATE.basketCustomizations = {};
             saveCart(); updateTotals(); renderCheckoutItems(); closeCheckout();
             
