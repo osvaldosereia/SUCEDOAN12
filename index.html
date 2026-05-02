@@ -29,6 +29,16 @@
         html, body { height: 100dvh; overflow: hidden; font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-dark); }
 
         /* =========================================
+           0. SPLASH SCREEN
+        ========================================= */
+        #splash-screen {
+            position: fixed; inset: 0; background: var(--bg-card); z-index: 99999;
+            display: flex; align-items: center; justify-content: center; transition: opacity 0.4s ease;
+        }
+        #splash-screen img { width: 200px; animation: pulse 1.2s infinite alternate ease-in-out; }
+        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
+
+        /* =========================================
            1. CABEÇALHO FIXO
         ========================================= */
         .header-main {
@@ -210,6 +220,7 @@
 </head>
 <body>
 
+    <div id="splash-screen"><img src="../img/logoantonia5.png" alt="Carregando Dona Antônia..."></div>
     <div class="overlay" id="overlay"></div>
 
     <!-- NAVEGAÇÃO INFERIOR -->
@@ -299,14 +310,28 @@
                     <button class="pay-btn brand-btn" style="padding:10px;" onclick="selectVoucherBrand('Pluxee', this)">Pluxee</button>
                     <button class="pay-btn brand-btn" style="padding:10px;" onclick="selectVoucherBrand('Sodexo', this)">Sodexo</button>
                     <button class="pay-btn brand-btn" style="padding:10px;" onclick="selectVoucherBrand('Alelo', this)">Alelo</button>
+                    <button class="pay-btn brand-btn" style="padding:10px;" onclick="selectVoucherBrand('Flash', this)">Flash</button>
+                    <button class="pay-btn brand-btn" style="padding:10px;" onclick="selectVoucherBrand('Caju', this)">Caju</button>
+                    <button class="pay-btn brand-btn" style="padding:10px;" onclick="selectVoucherBrand('Ifood', this)">iFood</button>
                 </div>
                 <input type="hidden" id="chk-pagamento" value="PIX">
                 <input type="hidden" id="chk-voucher" value="">
             </div>
             
+            <div class="chk-section" id="cupom-section">
+                <div class="chk-title">Cupom de Desconto</div>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="chk-cupom" class="input-text" placeholder="Código" style="margin-bottom:0; text-transform: uppercase;">
+                    <button class="pay-btn" onclick="applyCoupon()" style="margin-bottom:0; background: var(--text-dark); color: white; border:none;">Aplicar</button>
+                </div>
+                <div id="cupom-msg" style="font-size: 14px; margin-top: 10px; font-weight: 800; display: none;"></div>
+            </div>
+
             <div class="chk-inline-summary">
                 <div class="summary-row"><span>Subtotal dos Produtos</span><span id="sum-sub">R$ 0,00</span></div>
                 <div class="summary-row" style="color: var(--success); display: none;" id="sum-basket-row"><span>Bônus Cesta</span><span id="sum-basket-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-desc-row"><span>Bônus Agendamento</span><span id="sum-desc">R$ 0,00</span></div>
+                <div class="summary-row" style="color: var(--success); display: none;" id="sum-cupom-row"><span>Cupom Aplicado</span><span id="sum-cupom-desc">R$ 0,00</span></div>
                 <div class="summary-row total"><span>Total a Pagar</span><span id="sum-total">R$ 0,00</span></div>
             </div>
             
@@ -321,14 +346,27 @@
             selectedDeliveryIndex: 0, deliveryDiscount: 0, deliveryDateStr: '',
             currentTab: 'cestas', searchQuery: '', mercadoCats: [], loadedCatIndex: 0,   
             viewCat: '', shoppingListStep: 'select', shoppingListSelections: [],
+            appliedCoupon: null, couponDiscount: 0,
             lastScrollPos: 0 // Memória de Rolagem
         };
 
-        const ORDEM_CATEGORIAS = ['mercearia basica', 'lavanderia', 'limpeza', 'cafe da manha', 'temperos', 'sucos e refris', 'higiene', 'beleza'];
+        const ORDEM_CATEGORIAS = ['mercearia basica', 'lavanderia', 'limpeza', 'cafe da manha', 'temperos', 'sucos e refris', 'higiene', 'beleza', 'sabonete', 'shampoo'];
         const BASKETS = [
-          { "id": "cesta1", "nome": "Economica Bonini", "preco": 80, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490"] },
-          { "id": "cesta2", "nome": "Mini Bonini", "oldPrice": 165, "preco": 155, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490"] }
+          { "id": "cesta1", "nome": "Economica Bonini", "oldPrice": 85, "preco": 80, "imagem": "img/cesta-basica-cuiaba-varzea-grande-economica.avif", "produtos": ["1x P0026", "1x P490", "1x P426", "1x P0248", "1x P0304", "1x P0151", "1x P434", "1x P435", "1x P433", "1x 76685539", "1x P0244", "1x P0239", "1x P0060", "1x P0309"] },
+          { "id": "cesta2", "nome": "Mini Bonini", "oldPrice": 165, "preco": 155, "imagem": "img/CESTA-MINI-BONINI.webp", "produtos": ["1x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta3", "nome": "Mini Koblenz", "oldPrice": 170, "preco": 160, "imagem": "img/CESTA-MINI-KOBLENZ.webp", "produtos": ["1x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x C0067", "1x P497", "1x 76409162", "1x P0244", "1x P0239", "1x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "1x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta4", "nome": "Pequena Bonini (Oferta)", "oldPrice": 215, "preco": 200, "imagem": "img/CESTA-PEQUENA-BONINI.webp", "produtos": ["2x P0026", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta5", "nome": "Pequena Koblenz (Oferta)", "oldPrice": 220, "preco": 205, "imagem": "img/CESTA-PEQUENA-KOBLENZ.webp", "produtos": ["2x P500", "2x P490", "1x P426", "2x P0248", "1x P0304", "1x P0151", "1x C0067", "1x P497", "2x 76409162", "1x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "2x P0311", "1x A102", "2x P0283", "1x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta6", "nome": "Média Koblenz", "oldPrice": 325, "preco": 310, "imagem": "img/CESTA-MEDIA-KOBLENZ.webp", "produtos": ["3x P500", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta7", "nome": "Média Bonini", "oldPrice": 320, "preco": 305, "imagem": "img/CESTA-MEDIA-BONINI.webp", "produtos": ["3x P0026", "3x P490", "2x P426", "3x P0248", "1x P0304", "1x P0151", "2x C0067", "2x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "3x P0311", "2x A102", "3x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta8", "nome": "Grande Koblenz", "oldPrice": 390, "preco": 370, "imagem": "img/CESTA-GRANDE-KOBLENZ.webp", "produtos": ["4x P500", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] },
+          { "id": "cesta9", "nome": "Grande Bonini", "oldPrice": 380, "preco": 360, "imagem": "img/CESTA-GRANDE-ALVINO.webp", "produtos": ["4x P440", "4x P490", "3x P426", "4x P0248", "1x P0304", "1x P0151", "2x C0067", "3x P497", "2x 76409162", "2x P0244", "1x P0239", "1x 77293314", "1x 15026198", "1x P481", "2x P0060", "4x P0311", "2x A102", "4x P0283", "2x P0105", "1x P430", "1x P491", "1x P0018", "1x P0015", "1x P447", "2x P498", "1x 16109433", "1x P0144"] }
         ];
+
+        const COUPONS = {
+            "VIVI10": { type: "percentage", value: 10, minOrder: 150, excludeCategories: ["mercearia basica"] },
+            "BELA15": { type: "percentage", value: 15, minOrder: 200, includeCategories: ["beleza", "higiene"] }
+        };
 
         let currentBasketItems = [];
         const MIN_ORDER = 75; 
@@ -337,7 +375,7 @@
         function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
         function formatName(name) { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); }
 
-        // Extrator de Volume/Peso para a Tag Visual
+        // Extração de volume otimizada
         function extractVolume(name) {
             let match = name.match(/(?:\d+(?:,\d+)?\s*(?:kg|g|ml|l|litros|litro|unidades|unidade|un|rolos|folhas))/i);
             return match ? match[0] : '';
@@ -352,9 +390,9 @@
             if (tab === 'mercado') initMercado(); else renderVitrineEngine(); 
         };
 
-        // MEMÓRIA DE ROLAGEM E NAVEGAÇÃO "HUB AND SPOKE"
+        // MEMÓRIA DE ROLAGEM E HUB AND SPOKE
         window.openCategoryAll = function(catName) {
-            STATE.lastScrollPos = $('vitrine').scrollTop; // Salva posição
+            STATE.lastScrollPos = $('vitrine').scrollTop;
             STATE.currentTab = 'ver_tudo'; STATE.viewCat = catName;
             $('tab-cestas').classList.remove('active'); $('tab-mercado').classList.remove('active');
             $('vitrine').scrollTop = 0; renderVitrineEngine();
@@ -364,7 +402,6 @@
             STATE.currentTab = 'mercado';
             $('tab-mercado').classList.add('active');
             initMercado();
-            // Restaura posição
             setTimeout(() => { $('vitrine').scrollTop = STATE.lastScrollPos; }, 50);
         };
 
@@ -416,9 +453,10 @@
 
         window.quickAddToCart = function(id, event) {
             event.stopPropagation(); let p = STATE.prods.find(x => String(x.id) === String(id)); if(!p) return;
-            let currentInCart = STATE.cart[id] || 0; if(currentInCart + 1 > p.stock) return alert("Ops! Limite de estoque.");
+            let currentInCart = STATE.cart[id] || 0; if(currentInCart + 1 > p.stock) return alert("Ops! Limite de estoque para este item.");
             if (currentInCart === 0) STATE.cartOrder.push(id); STATE.cart[id] = currentInCart + 1;
-            updateTotals(); const fcBar = document.querySelector('.fixed-bottom-bar'); if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = '#ffffff', 400); }
+            updateTotals(); saveCart();
+            const fcBar = document.querySelector('.fixed-bottom-bar'); if(fcBar) { fcBar.style.background = '#047857'; setTimeout(() => fcBar.style.background = '#ffffff', 400); }
             updateAllCardUIs();
         };
 
@@ -426,7 +464,7 @@
             let p = STATE.prods.find(x => String(x.id) === String(id)); if (!p) return;
             let n = Math.max(0, (STATE.cart[id] || 0) + delta); if (n > p.stock) return alert("Estoque insuficiente.");
             STATE.cart[id] = n; if (n === 0) { delete STATE.cart[id]; STATE.cartOrder = STATE.cartOrder.filter(x => String(x) !== String(id)); if(STATE.cartOrder.length === 0) closeCheckout(); }
-            updateTotals(); updateAllCardUIs(); renderCheckoutItems();
+            updateTotals(); saveCart(); updateAllCardUIs(); renderCheckoutItems();
         };
 
         window.updateAllCardUIs = function() {
@@ -463,7 +501,6 @@
             let newSentinel = $('mercado-sentinel'); if(newSentinel) { let observer = new IntersectionObserver((entries) => { if (entries[0].isIntersecting) { observer.disconnect(); setTimeout(() => loadNextCategories(2), 50); } }, { root: vitrine, rootMargin: '300px' }); observer.observe(newSentinel); }
         }
 
-        // BLOCO DE CATEGORIA (3 ITENS + BOTÃO VER TODOS)
         function createCategoryBlock(catData) {
             let section = document.createElement('div'); section.className = 'cat-section';
             let header = `<div class="cat-header"><i class="fa-solid fa-tag" style="color:var(--primary);"></i> ${catData.name}</div>`;
@@ -475,7 +512,26 @@
 
         function renderVitrineEngine() {
             const vitrine = $('vitrine');
-            if (STATE.currentTab === 'lista_compras') { /* Omitido lógica complexa de seleção para simplificar, mas seria mantida na prática */ vitrine.innerHTML = "<div style='padding:20px; text-align:center;'>Recurso em Otimização</div>"; return; }
+            if (STATE.currentTab === 'lista_compras') {
+                let html = '';
+                if (STATE.shoppingListStep === 'select') {
+                    html += `<div style="padding: 15px;"><div style="background: #eff6ff; color: #1e3a8a; font-size: 16px; font-weight: 800; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 5px; border: 1px solid #bfdbfe;">Marque as categorias que faltam na sua casa:</div></div><div style="padding: 0 15px 40px;">`;
+                    let catMap = {}; STATE.prods.forEach(p => { if(p.categoria === 'Cestas' || p.stock <= 0) return; let c = p.categoria || 'Outros'; let s = p.subcategoria || 'Geral'; if(!catMap[c]) catMap[c] = new Set(); catMap[c].add(s); });
+                    Object.keys(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach(cat => {
+                        html += `<div class="sl-cat-group"><div class="sl-cat-title">${cat}</div>`;
+                        Array.from(catMap[cat]).sort().forEach(sub => html += `<label class="sl-item"><input type="checkbox" class="sl-chk" value="${cat}|${sub}">${sub === 'Geral' ? 'Diversos (' + cat + ')' : sub}</label>`);
+                        html += `</div>`;
+                    });
+                    html += `<button class="btn-send" style="margin-bottom: 20px;" onclick="generateShoppingList()">Montar Minha Lista <i class="fa-solid fa-arrow-right"></i></button></div>`;
+                    vitrine.innerHTML = html; return;
+                }
+                if (STATE.shoppingListStep === 'results') {
+                    html += `<div style="padding: 15px;"><div class="ver-tudo-header" onclick="openShoppingList()"><i class="fa-solid fa-arrow-left"></i> Sua Lista</div>`;
+                    let results = []; STATE.shoppingListSelections.forEach(sel => { let [cat, sub] = sel.split('|'); let prods = STATE.prods.filter(p => p.categoria === cat && (p.subcategoria || 'Geral') === sub && p.stock > 0); if(prods.length > 0) results.push({ name: `${cat} - ${sub === 'Geral' ? 'Diversos' : sub}`, products: prods.sort((a,b) => b.discountPercent - a.discountPercent || a.name.localeCompare(b.name)) }); });
+                    results.forEach(catData => { html += `<div style="padding:15px 0 5px; font-weight:900; color:var(--primary); font-size:18px;">${catData.name}</div>`; catData.products.forEach(p => html += renderCardHTML(p)); });
+                    html += '</div>'; vitrine.innerHTML = html; lazyLoadImages(); return;
+                }
+            }
             
             if (STATE.currentTab === 'ver_tudo') {
                 let catName = STATE.viewCat; let results = catName === 'Ofertas da Semana' ? STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent) : STATE.prods.filter(p => p.categoria === catName).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
@@ -527,16 +583,46 @@
             }).join('');
         }
 
+        window.applyCoupon = function() {
+            let code = $('chk-cupom').value.trim().toUpperCase();
+            if (!code) { STATE.appliedCoupon = null; updateTotals(); $('cupom-msg').style.display = 'none'; return; }
+            if (COUPONS[code]) { STATE.appliedCoupon = code; $('cupom-msg').innerText = "Cupom aplicado!"; $('cupom-msg').style.color = "var(--success)"; $('cupom-msg').style.display = 'block'; } 
+            else { STATE.appliedCoupon = null; $('cupom-msg').innerText = "Cupom inválido."; $('cupom-msg').style.color = "var(--danger)"; $('cupom-msg').style.display = 'block'; }
+            updateTotals();
+        };
+
         function updateTotals() {
-            let sumBase = 0; let count = 0; let basketDiscountTotal = 0;
+            let sumBase = 0; let count = 0; let basketDiscountTotal = 0; let eligibleForCouponSubtotal = 0;
             Object.entries(STATE.cart).forEach(([id, q]) => { 
                 let p = STATE.prods.find(x => String(x.id) === String(id)); 
-                if (p) { sumBase += p.price * q; if (!String(id).startsWith('fee_cesta')) count += q; else { let bId = String(id).replace('fee_', ''); let basketObj = BASKETS.find(b => b.id === bId); if (basketObj && basketObj.oldPrice) basketDiscountTotal += ((basketObj.oldPrice - basketObj.preco) * q); } } 
+                if (p) { 
+                    sumBase += p.price * q; 
+                    if (!String(id).startsWith('fee_cesta')) {
+                        count += q; 
+                        if (STATE.appliedCoupon && COUPONS[STATE.appliedCoupon]) {
+                            let rule = COUPONS[STATE.appliedCoupon]; let catN = norm(p.categoria); let isEligible = true;
+                            if (rule.excludeCategories && rule.excludeCategories.includes(catN)) isEligible = false;
+                            if (rule.includeCategories && !rule.includeCategories.includes(catN)) isEligible = false;
+                            if (isEligible) eligibleForCouponSubtotal += p.price * q;
+                        }
+                    } else { let bId = String(id).replace('fee_', ''); let basketObj = BASKETS.find(b => b.id === bId); if (basketObj && basketObj.oldPrice) basketDiscountTotal += ((basketObj.oldPrice - basketObj.preco) * q); } 
+                } 
             });
+            
             let subtotalVisual = sumBase + basketDiscountTotal;
             $('sum-sub').innerText = fmt(subtotalVisual); 
             $('sum-basket-desc').innerText = `- ${fmt(basketDiscountTotal)}`; $('sum-basket-row').style.display = basketDiscountTotal > 0 ? 'flex' : 'none';
-            let finalTotal = sumBase - STATE.deliveryDiscount; $('sum-total').innerText = fmt(finalTotal);
+            $('sum-desc').innerText = `- ${fmt(STATE.deliveryDiscount)}`; $('sum-desc-row').style.display = STATE.deliveryDiscount > 0 ? 'flex' : 'none'; 
+            
+            STATE.couponDiscount = 0;
+            if (STATE.appliedCoupon && COUPONS[STATE.appliedCoupon]) {
+                let rule = COUPONS[STATE.appliedCoupon];
+                if (sumBase >= rule.minOrder) { STATE.couponDiscount = eligibleForCouponSubtotal * (rule.value / 100); $('cupom-msg').innerText = "Cupom aplicado!"; $('cupom-msg').style.color = "var(--success)"; $('cupom-msg').style.display = 'block'; } 
+                else { $('cupom-msg').innerText = `Mínimo de ${fmt(rule.minOrder)} para usar.`; $('cupom-msg').style.color = "var(--danger)"; $('cupom-msg').style.display = 'block'; STATE.couponDiscount = 0; }
+            }
+            $('sum-cupom-desc').innerText = `- ${fmt(STATE.couponDiscount)}`; $('sum-cupom-row').style.display = STATE.couponDiscount > 0 ? 'flex' : 'none';
+
+            let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount; $('sum-total').innerText = fmt(finalTotal);
             let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = '#9ca3af'; } else { btn.disabled = false; btn.innerHTML = '<i class="fa-brands fa-whatsapp" style="font-size:20px;"></i> Enviar Pedido'; btn.style.background = 'var(--success)'; }
             let badge = $('bottom-cart-count'); let navSacolaText = $('nav-sacola-text');
             if (count > 0) { badge.style.display = 'inline-block'; badge.innerText = count > 99 ? '99+' : count; navSacolaText.innerText = fmt(finalTotal); } else { badge.style.display = 'none'; navSacolaText.innerText = 'Sacola'; }
@@ -550,32 +636,109 @@
             if ((pag === 'Cartão Alimentação' || pag === 'Cartão Refeição') && !voucher) return alert("Por favor, selecione a bandeira.");
             if (voucher) pag += ` (${voucher})`;
             if (!nome || !cpf || !whats || !bairro || !endereco) return alert("Preencha todos os dados."); 
+            salvarDadosLocalmente({ nome, cpf: $('chk-cpf').value, whats, cep: $('chk-cep').value, bairro, endereco });
             btn.innerHTML = "Processando...";
-            const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let totalBruto = 0;
-            Object.entries(STATE.cart).forEach(([cartId, q]) => { const p = STATE.prods.find(x => String(x.id) === String(cartId)); if (p) { totalBruto += p.price * q; if (!String(cartId).startsWith('fee_cesta')) itemsTxt += `${q}x ${p.name}\n`; } });
-            let final = totalBruto - STATE.deliveryDiscount;
+            const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let totalBruto = 0; let totalDescontoCestas = 0;
+            Object.entries(STATE.cart).forEach(([cartId, q]) => { const p = STATE.prods.find(x => String(x.id) === String(cartId)); if (p) { totalBruto += p.price * q; if (!String(cartId).startsWith('fee_cesta')) itemsTxt += `${q}x ${p.name}\n`; else { let bId = String(cartId).replace('fee_', ''); let bObj = BASKETS.find(b => b.id === bId); if (bObj && bObj.oldPrice) totalDescontoCestas += ((bObj.oldPrice - bObj.preco) * q); } } });
+            let final = totalBruto - STATE.deliveryDiscount - STATE.couponDiscount;
+            if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
+            if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
+            if (STATE.couponDiscount > 0) itemsTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
             const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - Cuiabá/VG\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL: ${fmt(final)}*`;
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             setTimeout(() => { btn.innerHTML = `<i class="fa-brands fa-whatsapp" style="font-size:20px;"></i> Enviar Pedido`; }, 3000);
         };
 
-        // INICIALIZAÇÃO SIMULADA
+        // ==========================================
+        // DADOS REAIS, CACHE E UTILIDADES
+        // ==========================================
+        function loadCart() { try { let saved = localStorage.getItem('da_cart'); let savedOrder = localStorage.getItem('da_cart_order'); if (saved) STATE.cart = JSON.parse(saved); if (savedOrder) STATE.cartOrder = JSON.parse(savedOrder); } catch(e) {} }
+        function saveCart() { localStorage.setItem('da_cart', JSON.stringify(STATE.cart)); localStorage.setItem('da_cart_order', JSON.stringify(STATE.cartOrder)); }
+        function carregarDadosSalvos() { try { let d = JSON.parse(localStorage.getItem('da_user') || '{}'); if(d.nome) $('chk-nome').value = d.nome; if(d.cpf) $('chk-cpf').value = d.cpf; if(d.whats) $('chk-whats').value = d.whats; if(d.cep) $('chk-cep').value = d.cep; if(d.bairro) $('chk-bairro').value = d.bairro; if(d.endereco) $('chk-endereco').value = d.endereco; } catch(e){} }
+        function salvarDadosLocalmente(dados) { localStorage.setItem('da_user', JSON.stringify(dados)); }
+        
+        window.mascaraCPF = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); i.value = v; }
+        window.mascaraWhats = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); v = v.replace(/(\d)(\d{4})$/, "$1-$2"); i.value = v; }
+        window.mascaraCEP = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{5})(\d)/, "$1-$2"); i.value = v; }
+
+        async function fetchWithCache(url, key) {
+            try { let cached = localStorage.getItem(key); let cacheTime = localStorage.getItem(key + '_time'); let now = Date.now(); if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached); let res = await fetch(url).then(r => r.json()); localStorage.setItem(key, JSON.stringify(res)); localStorage.setItem(key + '_time', now); return res; } catch (e) { return []; }
+        }
+
+       function aplicarDescontos(products) {
+            let now = new Date(); let eligibleForRandom = [];
+            products.forEach(p => {
+                p.discountPercent = 0; p.oldPrice = p.price;
+                if (p.vencimento) {
+                    let partes = p.vencimento.split('/'); let vDate = new Date(partes[2], partes[1] - 1, partes[0]); let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
+                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35; else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30; else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;
+                }
+                if (p.discountPercent === 0) eligibleForRandom.push(p);
+            });
+            let currentSeed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000)); function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+            eligibleForRandom.sort((a, b) => { let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); let randA = seededRandom(currentSeed + idNumA); let randB = seededRandom(currentSeed + idNumB); return randA - randB; });
+            let r20 = 5, r15 = 5, r10 = 100; eligibleForRandom.forEach(p => { if (r20 > 0) { p.discountPercent = 20; r20--; } else if (r15 > 0) { p.discountPercent = 15; r15--; } else if (r10 > 0) { p.discountPercent = 10; r10--; } });
+            products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
+        }
+
+        window.openBasketDetail = function(basketId) {
+            const basket = BASKETS.find(b => b.id === basketId); if (!basket) return;
+            window.currentBasketId = basketId; pushHistoryState('basket');
+            $('basketModalImg').src = basket.imagem; $('basketModalTitle').innerText = basket.nome;
+            $('basketModalPrice').innerHTML = basket.oldPrice ? `<span style="text-decoration: line-through; font-size: 16px; color: #9ca3af; margin-right: 10px;">De: ${fmt(basket.oldPrice)}</span> Por: ${fmt(basket.preco)}` : "Valor Sugerido: " + fmt(basket.preco);
+            $('basket-items-header').style.display = 'block'; $('basket-items-container').style.display = 'flex'; $('basket-summary-container').style.display = 'block'; $('vip-list-container').style.display = 'none';
+            currentBasketItems = [];
+            basket.produtos.forEach(itemString => { let parts = itemString.split("x "); if(parts.length === 2) { let qty = parseInt(parts[0]); let pObj = STATE.prods.find(p => p.codigo === parts[1].trim() || p.id === parts[1].trim()); if (pObj) currentBasketItems.push({ pObj: pObj, qty: qty }); } });
+            renderBasketItemsList(); $('basketDetailModal').classList.add('active');
+        };
+
+        function renderBasketItemsList() {
+            let container = $('basket-items-container'); let totalItemsCount = 0;
+            if(currentBasketItems.length === 0) { container.innerHTML = "<p style='color: #888; text-align:center;'>Nenhum item carregado para esta cesta.</p>"; return; }
+            let html = '';
+            currentBasketItems.forEach((item, index) => {
+                let p = item.pObj; totalItemsCount += item.qty; let oldPriceHtml = (p.discountPercent > 0) ? `<span style="text-decoration: line-through; font-size: 12px; color: #9ca3af; font-weight: 600; margin-right: 6px;">${fmt(p.oldPrice)}</span>` : '';
+                html += `<div class="product-card-list" style="padding:10px;"><img src="${p.img}" class="product-icon-list" style="width:70px; height:70px;" alt="${p.name}"><div class="product-details"><div class="product-name-list" style="font-size:13px; margin-bottom:5px;">${p.name}</div><div style="display:flex; justify-content:space-between; align-items:flex-end;"><div class="tag-preco-list" style="font-size:15px;">${oldPriceHtml} ${fmt(p.price)}</div><div class="qty-controls" style="width:auto;"><button class="qty-btn" style="width:34px; height:34px;" onclick="updateBasketItemQty(${index}, -1)"><i class="fa-solid fa-minus" style="font-size:14px;"></i></button><span class="qty-display" style="font-size:14px;">${item.qty}</span><button class="qty-btn" style="width:34px; height:34px;" onclick="updateBasketItemQty(${index}, 1)"><i class="fa-solid fa-plus" style="font-size:14px;"></i></button></div></div></div></div>`;
+            });
+            container.innerHTML = html; const basket = BASKETS.find(b => b.id === window.currentBasketId);
+            $('basket-total-items').innerText = totalItemsCount; $('basket-total-price').innerText = basket ? fmt(basket.preco) : 'R$ 0,00';
+        }
+
+        window.updateBasketItemQty = function(index, delta) { let item = currentBasketItems[index]; if (!item) return; let newQty = item.qty + delta; if (newQty < 0) newQty = 0; if (newQty > item.pObj.stock) return alert("Estoque insuficiente."); item.qty = newQty; renderBasketItemsList(); };
+        window.closeBasketDetail = function() { $('basketDetailModal').classList.remove('active'); window.currentBasketId = null; };
+
+        window.addBasketToCart = function() {
+            if (!window.currentBasketId) return; const basket = BASKETS.find(b => b.id === window.currentBasketId); if (!basket) return;
+            let valorOriginalProdutos = 0; basket.produtos.forEach(itemString => { let parts = itemString.split("x "); if(parts.length === 2) { let qty = parseInt(parts[0]); let pObj = STATE.prods.find(p => p.codigo === parts[1].trim() || p.id === parts[1].trim()); if (pObj) valorOriginalProdutos += (qty * pObj.price); } });
+            let diferenca = basket.preco - valorOriginalProdutos; let addedCount = 0;
+            currentBasketItems.forEach(item => { if (item.qty > 0) { let pid = item.pObj.id; let currentInCart = STATE.cart[pid] || 0; if (currentInCart === 0) STATE.cartOrder.push(pid); STATE.cart[pid] = currentInCart + item.qty; addedCount++; } });
+            if (addedCount > 0 && Math.abs(diferenca) > 0.01) { let feeId = 'fee_' + basket.id; let isDiscount = diferenca < 0; let feeName = isDiscount ? 'Desconto Promo (' + basket.nome + ')' : 'Embalagem/Montagem (' + basket.nome + ')'; let feeProd = STATE.prods.find(p => p.id === feeId); if (!feeProd) { feeProd = { id: feeId, codigo: feeId, name: feeName, price: diferenca, stock: 9999, img: basket.imagem, categoria: 'Cestas' }; STATE.prods.push(feeProd); } let currentFee = STATE.cart[feeId] || 0; if (currentFee === 0) STATE.cartOrder.push(feeId); STATE.cart[feeId] = currentFee + 1; }
+            if (addedCount > 0) { updateTotals(); saveCart(); $('basket-items-header').style.display = 'none'; $('basket-items-container').style.display = 'none'; $('basket-summary-container').style.display = 'none'; renderVIPList(); }
+        };
+
+        function renderVIPList() {
+            let container = $('vip-items-grid'); container.innerHTML = `<div style="background: var(--success); color: white; padding: 25px 20px; border-radius: 16px; text-align: center; margin-bottom: 25px;"><i class="fa-solid fa-circle-check" style="font-size: 48px; margin-bottom: 15px;"></i><h2 style="font-size: 22px; font-weight: 900; margin-bottom: 8px;">Pronto! Cesta na Sacola.</h2></div><h3 style="font-size: 20px; font-weight: 900; text-align: center; margin-bottom: 20px;">O que você quer fazer agora?</h3><div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;"><button class="btn-send" style="background: #f9fafb; color: var(--text-dark); border: 2px solid var(--border-light);" onclick="closeBasketDetail(); setTimeout(() => { scrollToTop(); switchTab('mercado'); }, 300)">Continuar Comprando (Mercado)</button><button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)"><i class="fa-solid fa-bag-shopping" style="margin-right: 8px;"></i> Finalizar Pedido</button></div>`;
+            $('vip-list-container').style.display = 'block'; document.querySelector('#basketDetailModal .modal-scroll-area').scrollTo({top: 0, behavior: 'smooth'});
+        }
+
         async function init() {
-            setTimeout(() => { let splash = $('splash-screen'); if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 400); } }, 800);
-            
-            // Simulando base de dados
-            STATE.prods = [
-                { id: "1", name: "Arroz Tio João Tipo 1", price: 25.90, stock: 50, img: "https://via.placeholder.com/150", categoria: "mercearia basica", embalagem: "5 kg" },
-                { id: "2", name: "Feijão Carioca Camil", price: 8.90, stock: 50, img: "https://via.placeholder.com/150", categoria: "mercearia basica", embalagem: "1 kg" },
-                { id: "3", name: "Óleo de Soja Soya", price: 5.49, stock: 50, img: "https://via.placeholder.com/150", categoria: "mercearia basica", embalagem: "900 ml" },
-                { id: "4", name: "Açúcar Refinado União", price: 4.50, stock: 50, img: "https://via.placeholder.com/150", categoria: "mercearia basica", embalagem: "1 kg" },
-                { id: "5", name: "Detergente Líquido Ypê Neutro", price: 2.20, stock: 50, img: "https://via.placeholder.com/150", categoria: "limpeza", embalagem: "500 ml" },
-                { id: "6", name: "Sabão em Pó Omo Lavagem Perfeita", price: 14.90, stock: 50, img: "https://via.placeholder.com/150", categoria: "lavanderia", embalagem: "1,6 kg" },
-                { id: "7", name: "Amaciante Downy Brisa de Verão", price: 12.90, stock: 50, img: "https://via.placeholder.com/150", categoria: "lavanderia", embalagem: "500 ml" },
-                { id: "8", name: "Água Sanitária Qboa", price: 3.90, stock: 50, img: "https://via.placeholder.com/150", categoria: "limpeza", embalagem: "1 Litro" },
-                { id: "9", name: "Papel Higiênico Neve Folha Dupla", price: 9.80, stock: 50, img: "https://via.placeholder.com/150", categoria: "higiene", embalagem: "4 rolos" }
-            ];
-            switchTab('cestas');
+            setTimeout(() => { let splash = $('splash-screen'); if(splash) { splash.style.opacity = '0'; setTimeout(() => splash.style.display = 'none', 400); } }, 1500);
+            try {
+                const r2 = await fetchWithCache('/site/produtos.json', 'cache_prods');
+                if (r2 && r2.length > 0) {
+                    STATE.prods = r2.filter(x => x.situacao !== "I").map(p => {
+                        return { 
+                            id: String(p.codigo || p.id), codigo: String(p.codigo || ""), name: formatName(p.nome), 
+                            price: parseFloat(p.preco) * 1.01, stock: parseInt(p.estoque) || 0, 
+                            img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
+                            categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", 
+                            vencimento: p.validade || p.vencimento || null, embalagem: p.embalagem || extractVolume(p.nome)
+                        };
+                    });
+                    aplicarDescontos(STATE.prods);
+                }
+                loadCart(); carregarDadosSalvos(); switchTab('cestas'); updateTotals(); 
+            } catch (e) { console.error("Erro ao carregar dados:", e); }
         }
         
         document.addEventListener('DOMContentLoaded', init);
