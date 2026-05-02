@@ -35,7 +35,7 @@
            1. CABEÇALHO FIXO
         ========================================= */
         .header-main { position: fixed; top: 0; left: 0; width: 100%; height: max(var(--h-top), calc(var(--h-top) + env(safe-area-inset-top))); padding: env(safe-area-inset-top) 15px 0 15px; background: #ffffff; z-index: 1300; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--border-light); }
-        .header-logo { height: 44px; width: auto; max-width: 140px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
+        .header-logo { height: 35px; width: auto; max-width: 120px; object-fit: contain; cursor: pointer; flex-shrink: 0; }
         .search-container { flex: 1; position: relative; display: flex; align-items: center; }
         .search-icon-pos { position: absolute; left: 12px; color: var(--text-light); display: flex; align-items: center; }
         .topbar-search { width: 100%; height: 42px; background: #f3f4f6; border-radius: 21px; border: 1px solid transparent; padding: 0 32px 0 36px; font-family: 'Inter', sans-serif; font-size: 14.5px; outline: none; color: var(--text-dark); transition: 0.2s; }
@@ -72,7 +72,7 @@
         .card-action-area { display: flex; align-items: center; flex-shrink: 0; margin-top: 12px; width: 100%; }
         .btn-quick-add-list { background: var(--primary); color: #fff; padding: 0 15px; border-radius: 8px; height: 42px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
         .btn-quick-add-list:active { opacity: 0.8; transform: scale(0.98); }
-        .qty-controls { display: flex; align-items: center; justify-content: space-between; width: 100%; background: #f9fafb; border-radius: 8px; border: 1px solid var(--border-light); overflow: hidden; height: 42px; }
+        .qty-controls { display: flex; align-items: center; justify-content: space-between; width: 100%; border-radius: 8px; border: 1px solid var(--border-light); overflow: hidden; height: 42px; }
         .qty-btn { width: 44px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 900; cursor: pointer; background: transparent; border: none; }
         .qty-btn:active { background: #e5e7eb; }
         .qty-display { font-weight: 900; font-size: 15px; width: 30px; text-align: center; }
@@ -98,7 +98,7 @@
         .prod-page-desc-content ul { padding-left: 20px; margin-bottom: 15px; }
         .prod-page-desc-content li { margin-bottom: 8px; }
         
-        .prod-sticky-bottom { position: fixed; bottom: max(60px, calc(60px + env(safe-area-inset-bottom))); left: 0; width: 100%; background: #ffffff; padding: 12px 15px; display: flex; gap: 15px; border-top: 1px solid var(--border-light); z-index: 1000; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
+        .prod-sticky-bottom { position: fixed; bottom: max(65px, calc(65px + env(safe-area-inset-bottom))); left: 0; width: 100%; background: #ffffff; padding: 12px 15px; display: flex; gap: 15px; border-top: 1px solid var(--border-light); z-index: 1000; box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
 
         .sobre-container { padding: 30px 20px; text-align: center; }
         .sobre-logo { height: 90px; margin-bottom: 20px; object-fit: contain; }
@@ -160,7 +160,7 @@
         .cart-item-text-col { flex: 1; min-width: 0; }
         .cart-item-name { font-weight: 600; font-size: 13px; color: var(--text-dark); line-height: 1.2; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        .cart-qty-ctrl { display: flex; align-items: center; background: #f3f4f6; border-radius: 6px; border: 1px solid var(--border-light); height: 32px; flex-shrink: 0;}
+        .cart-qty-ctrl { display: flex; align-items: center; background: #ffffff; border-radius: 6px; border: 1px solid var(--border-light); height: 32px; flex-shrink: 0;}
         .cart-qty-btn { width: 32px; height: 100%; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: var(--primary); cursor: pointer; }
         .cart-qty-val { font-weight: 900; font-size: 13px; width: 24px; text-align: center; }
 
@@ -186,7 +186,7 @@
         .app-nav-item.active { color: var(--primary); }
         .app-nav-item .svg-icon { width: 1.6em; height: 1.6em; stroke-width: 2; }
         .app-nav-item .cart-badge { 
-            position: absolute; top: 8px; right: 50%; transform: translateX(12px); background: var(--danger); color: #fff; 
+            position: absolute; top: 8px; right: 50%; transform: translateX(8px); background: var(--danger); color: #fff; 
             font-size: 10px; font-weight: 900; padding: 2px 5px; border-radius: 10px; border: 2px solid #fff; display: none;
         }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); opacity: 0; pointer-events: none; z-index: 2400; transition: opacity 0.3s; }
@@ -199,7 +199,7 @@
 
     <!-- NAVEGAÇÃO INFERIOR APP NATIVO -->
     <div class="app-bottom-bar">
-        <a href="#/" class="app-nav-item" id="nav-inicio">
+        <a href="#/" class="app-nav-item active" id="nav-inicio">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><path d="M9 22V12h6v10"></path></svg>
             Início
         </a>
@@ -207,13 +207,13 @@
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"></path><path d="M7 7h.01"></path></svg>
             Ofertas
         </a>
-        <a href="#/cestas" class="app-nav-item" id="nav-cestas">
+        <a href="#/" class="app-nav-item" id="nav-cestas">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"></path></svg>
             Cestas
         </a>
-        <a href="#/mercado" class="app-nav-item" id="nav-mercado">
+        <a href="#/departamentos" class="app-nav-item" id="nav-mercado">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg>
-            Mercado
+            Departamentos
         </a>
         <a href="#/sobre" class="app-nav-item" id="nav-sobre">
             <svg class="svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
@@ -396,17 +396,16 @@
 
             // Atualiza Botões Inferiores Ativos
             document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
-            if(hash === '#/' || hash === '') $('nav-inicio').classList.add('active');
+            if(hash === '#/' || hash === '' || hash === '#/cestas') $('nav-inicio').classList.add('active');
             else if(hash === '#/ofertas') $('nav-ofertas').classList.add('active');
-            else if(hash === '#/cestas') $('nav-cestas').classList.add('active');
-            else if(hash === '#/mercado' || hash.startsWith('#/departamento/')) $('nav-mercado').classList.add('active');
+            else if(hash === '#/departamentos' || hash.startsWith('#/departamento/')) $('nav-mercado').classList.add('active');
             else if(hash === '#/sobre') $('nav-sobre').classList.add('active');
 
             if (hash === '#/' || hash === '' || hash === '#/cestas') {
                 renderCestas();
             } else if (hash === '#/ofertas') {
                 renderCategoriaCompleta('Ofertas do Dia');
-            } else if (hash === '#/mercado') {
+            } else if (hash === '#/departamentos') {
                 initMercado();
             } else if (hash.startsWith('#/departamento/')) {
                 let parts = hash.split('/'); renderDepartamentoCompleto(decodeHash(parts[2]), decodeHash(parts[3]));
@@ -435,7 +434,7 @@
         window.clearSearch = function() { $('app-search-input').value = ''; $('clear-search-btn').style.display = 'none'; STATE.searchQuery = ''; window.history.back(); };
 
         // ==========================================
-        // RENDERIZAÇÃO
+        // RENDERIZAÇÃO DE CARDS
         // ==========================================
         function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
@@ -446,7 +445,8 @@
             let embalagem = prod.embalagem || extractVolume(prod.name);
             let tagEmbalagem = embalagem ? `<div class="embalagem-tag">${embalagem}</div>` : '';
             
-            let bgQty = isBasketItem ? '#f9fafb' : '#f9fafb';
+            // CONTRASTE DO CONTROLE DE QUANTIDADE: Fundo cinza na vitrine, Fundo branco no modal da cesta
+            let bgQty = isBasketItem ? '#ffffff' : '#f3f4f6';
             
             let controlsHtml = '';
             if (isBasketItem) {
@@ -491,7 +491,7 @@
         window.updateAllCardUIs = function() {
             STATE.prods.forEach(p => { 
                 let q = STATE.cart[p.id] || 0; let els = document.querySelectorAll('#action-card-' + p.id); 
-                els.forEach(el => { el.innerHTML = q === 0 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)">${iconPlus} Adicionar</div>` : `<div class="qty-controls"><button class="qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`; }); 
+                els.forEach(el => { el.innerHTML = q === 0 ? `<div class="btn-quick-add-list" onclick="quickAddToCart('${p.id}', event)">${iconPlus} Adicionar</div>` : `<div class="qty-controls" style="background:#f3f4f6;"><button class="qty-btn" onclick="updateCartItem('${p.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateCartItem('${p.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`; }); 
             });
         };
 
@@ -501,7 +501,7 @@
             html += '</div>'; $('vitrine').innerHTML = html;
         }
 
-        // NOVO MOTOR DO MERCADO (SANFONA / ACCORDION)
+        // SANFONA DE DEPARTAMENTOS
         function initMercado() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
             let catMap = {}; let ofertas = []; 
@@ -618,7 +618,7 @@
         }
 
         // ==========================================
-        // LÓGICA DE CESTAS E MODAL
+        // LÓGICA DE CESTAS E MODAL (COM CARDS IGUAIS)
         // ==========================================
         window.openBasketDetail = function(basketId) {
             const basket = BASKETS.find(b => b.id === basketId); if (!basket) return;
@@ -669,7 +669,7 @@
         };
 
         function renderVIPList() {
-            $('vip-items-grid').innerHTML = `<div style="background: var(--success); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;"><div style="font-size: 40px; margin-bottom: 10px;">✓</div><h2 style="font-size: 20px; font-weight: 900; margin-bottom: 5px;">Cesta na Sacola!</h2></div><h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-bottom: 15px;">E agora?</h3><div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px;"><button class="btn-send" style="background: #f9fafb; color: var(--text-dark); border: 2px solid var(--border-light);" onclick="closeBasketDetail(); window.location.hash='#/mercado';">Comprar mais itens</button><button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button></div>`;
+            $('vip-items-grid').innerHTML = `<div style="background: var(--success); color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;"><div style="font-size: 40px; margin-bottom: 10px;">✓</div><h2 style="font-size: 20px; font-weight: 900; margin-bottom: 5px;">Cesta na Sacola!</h2></div><h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-bottom: 15px;">E agora?</h3><div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 30px;"><button class="btn-send" style="background: #f9fafb; color: var(--text-dark); border: 2px solid var(--border-light);" onclick="closeBasketDetail(); window.location.hash='#/departamentos';">Comprar mais itens</button><button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button></div>`;
             $('vip-list-container').style.display = 'block'; document.querySelector('#basketDetailModal .modal-scroll-area').scrollTo({top: 0, behavior: 'smooth'});
         }
 
@@ -754,8 +754,8 @@
 
             let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount; $('sum-total').innerText = fmt(finalTotal);
             let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = '#9ca3af'; } else { btn.disabled = false; btn.innerHTML = 'Enviar Pedido'; btn.style.background = 'var(--success)'; }
-            let badge = $('bottom-cart-count'); let navSacolaText = $('nav-sacola-text');
-            if (count > 0) { badge.style.display = 'inline-block'; badge.innerText = count > 99 ? '99+' : count; navSacolaText.innerText = fmt(finalTotal); } else { badge.style.display = 'none'; navSacolaText.innerText = 'Sacola'; }
+            let badge = $('bottom-cart-count'); 
+            if (count > 0) { badge.style.display = 'inline-block'; badge.innerText = count > 99 ? '99+' : count;} else { badge.style.display = 'none'; }
         }
 
        window.sendOrder = function() {
@@ -792,7 +792,7 @@
                         if(diff.added.length > 0) customTxt += `+ Adicionado: ${diff.added.join(', ')}\n`;
                     } else { customTxt += `*Cesta: ${diff.name} (Sem alteração)*\n`; }
                 });
-            } else { customTxt += `*Pedido Personalizado*\n`; }
+            } else { customTxt += `*Pedido Personalizado (Itens Avulsos)*\n`; }
             
             if (totalDescontoCestas > 0) itemsTxt += `\n🎁 BÔNUS CESTA: -${fmt(totalDescontoCestas)}`;
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
