@@ -45,7 +45,6 @@
         /* =========================================
            2. ÁREA DE CONTEÚDO (VITRINE)
         ========================================= */
-        /* Removido o scroll-behavior para evitar rolagem frenética ao trocar de tela */
         .main-container { position: fixed; top: calc(var(--header-total) + env(safe-area-inset-top)); left: 0; width: 100%; height: calc(100dvh - var(--header-total) - env(safe-area-inset-top)); padding-top: 15px; padding-bottom: max(85px, calc(85px + env(safe-area-inset-bottom))); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
         .main-container::-webkit-scrollbar { display: none; }
 
@@ -101,7 +100,6 @@
         .prod-page-desc-box { padding: 25px 20px; background: #fff; margin-top: 15px; border-top: 1px solid var(--border-light); border-bottom: 1px solid var(--border-light); }
         .prod-page-desc-title { font-size: 18px; font-weight: 900; margin-bottom: 15px; color: var(--text-dark); }
         
-        /* Regras estritas para formatar a descrição pesada do JSON */
         .prod-page-desc-content { font-size: 14.5px; color: var(--text-light); line-height: 1.6; }
         .prod-page-desc-content div { margin-bottom: 12px; }
         .prod-page-desc-content h2, .prod-page-desc-content span { font-size: 15px !important; font-weight: 800 !important; color: var(--text-dark) !important; margin: 20px 0 10px 0 !important; line-height: 1.4 !important; display: inline-block; }
@@ -195,7 +193,6 @@
 
     <div class="overlay" id="overlay"></div>
 
-    <!-- NAVEGAÇÃO INFERIOR APP NATIVO (4 ÍCONES) -->
     <div class="app-bottom-bar">
         <a href="#/" class="app-nav-item active" id="nav-cestas">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"></path></svg>
@@ -329,7 +326,6 @@
     </div>
 
     <script>
-        // Funções utilitárias
         const $ = id => document.getElementById(id);
         const STATE = {
             prods: [], cart: {}, cartOrder: [], deliveryOptions: [], 
@@ -382,12 +378,10 @@
             if(STATE.currentRoute) STATE.scrollMap[STATE.currentRoute] = vitrine.scrollTop;
             STATE.currentRoute = hash;
 
-            // Fechar modais ao trocar de rota
             if($('basketDetailModal').classList.contains('active')) $('basketDetailModal').classList.remove('active');
             if($('checkout-drawer').classList.contains('open')) $('checkout-drawer').classList.remove('open');
-            if($('overlay').classList.contains('open')) $('overlay').classList.remove('open'); // <-- Correção do overlay
+            if($('overlay').classList.contains('open')) $('overlay').classList.remove('open'); 
 
-            // Atualiza Botões Inferiores Ativos
             document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
             if(hash === '#/' || hash === '' || hash === '#/cestas') $('nav-cestas').classList.add('active');
             else if(hash === '#/ofertas') $('nav-ofertas').classList.add('active');
@@ -397,8 +391,8 @@
                 renderCestas();
                 document.title = "Dona Antônia - Supermercado e Cestas";
             } else if (hash === '#/ofertas') {
-                renderCategoriaCompleta('Ofertas do Dia');
-                document.title = "Ofertas do Dia - Dona Antônia";
+                // AGORA EXISTE A FUNÇÃO CORRETA PARA AS OFERTAS
+                renderDepartamentoCompleto('Ofertas do Dia', 'Geral');
             } else if (hash === '#/mercado') {
                 initMercado();
                 document.title = "Mercado Completo - Dona Antônia";
@@ -412,8 +406,7 @@
                 document.title = "Buscar - Dona Antônia";
             }
             
-            // Restaura a posição (sem scroll suave, pulo imediato)
-            vitrine.scrollTop = STATE.scrollMap[hash] || 0;
+            requestAnimationFrame(() => { vitrine.scrollTop = STATE.scrollMap[hash] || 0; });
         }
         window.addEventListener('hashchange', handleRoute);
 
@@ -516,10 +509,12 @@
             let html = '';
             if(ofertas.length > 0) {
                 let catOfertas = { name: 'Ofertas do Dia', products: ofertas.sort((a,b) => b.discountPercent - a.discountPercent) };
-                // Usando a estrutura unificada (agora no grid ela será empilhada)
-                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${catOfertas.products.slice(0, 3).map(p => renderCardHTML(p)).join('')}</div>`;
-                // <-- Correção do Botão "Ver todas as ofertas"
-                let btnHtml = catOfertas.products.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                
+                // Mudei o slice de (0,3) para (0,5) para dar mais movimento na tela inicial
+                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${catOfertas.products.slice(0, 5).map(p => renderCardHTML(p)).join('')}</div>`;
+                
+                let btnHtml = catOfertas.products.length > 5 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${catOfertas.products.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                
                 html += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px;"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
             }
 
@@ -561,9 +556,19 @@
             else { el.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; STATE.openAccordions[id] = false; }
         };
 
+        // AGORA TAMBÉM RENDERIZA A LISTA COMPLETA DE OFERTAS
         function renderDepartamentoCompleto(cat, sub) {
-            let results = cat === 'Ofertas do Dia' ? STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent) : STATE.prods.filter(p => p.categoria === cat && (p.subcategoria || 'Geral') === sub).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
-            let displayName = cat === 'Ofertas do Dia' ? cat : (sub === 'Geral' ? `Diversos (${cat})` : sub);
+            let results = [];
+            let displayName = "";
+            
+            if (cat === 'Ofertas do Dia') {
+                results = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent);
+                displayName = 'Ofertas do Dia';
+            } else {
+                results = STATE.prods.filter(p => p.categoria === cat && (p.subcategoria || 'Geral') === sub).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
+                displayName = sub === 'Geral' ? `Diversos (${cat})` : sub;
+            }
+
             document.title = `${displayName} - Dona Antônia`;
             let html = `<div style="padding: 15px 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${displayName}</div><div style="background: #fff;">`;
             results.forEach(p => html += renderCardHTML(p)); html += '</div></div>'; $('vitrine').innerHTML = html; lazyLoadImages();
@@ -815,6 +820,8 @@
             let now = new Date(); let eligibleForRandom = [];
             products.forEach(p => {
                 p.discountPercent = 0; p.oldPrice = p.price;
+                
+                // 1. TENTA LER A VALIDADE DO JSON SE ELA EXISTIR
                 if (p.vencimento) {
                     let partes = p.vencimento.split('/'); 
                     if(partes.length === 3) {
@@ -825,11 +832,20 @@
                         else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;
                     }
                 }
+                
+                // 2. SE NÃO TEM VALIDADE OU O DESCONTO AINDA É 0, VAI PARA AS OFERTAS INTELIGENTES DO DIA
                 if (p.discountPercent === 0) eligibleForRandom.push(p);
             });
-            let currentSeed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000)); function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+            
+            // Gerador matemático determinístico: As ofertas mudam sozinhas a cada 48 horas!
+            let currentSeed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000)); 
+            function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+            
             eligibleForRandom.sort((a, b) => { let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); let randA = seededRandom(currentSeed + idNumA); let randB = seededRandom(currentSeed + idNumB); return randA - randB; });
-            let r20 = 5, r15 = 5, r10 = 100; eligibleForRandom.forEach(p => { if (r20 > 0) { p.discountPercent = 20; r20--; } else if (r15 > 0) { p.discountPercent = 15; r15--; } else if (r10 > 0) { p.discountPercent = 10; r10--; } });
+            
+            let r20 = 5, r15 = 5, r10 = 100; // Quantidade de ofertas falsas distribuídas
+            eligibleForRandom.forEach(p => { if (r20 > 0) { p.discountPercent = 20; r20--; } else if (r15 > 0) { p.discountPercent = 15; r15--; } else if (r10 > 0) { p.discountPercent = 10; r10--; } });
+            
             products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
         }
 
