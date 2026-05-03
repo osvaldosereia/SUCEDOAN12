@@ -3,266 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerador de Prompts V2 - Dona Antônia</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap" rel="stylesheet">
-    
+    <title>Painel de Marketing - Dona Antônia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-body: #f1f5f9;
-            --bg-card: #ffffff;
-            --text-dark: #0f172a;
-            --text-light: #64748b;
             --primary: #000000;
-            --danger: #ef4444;
-            --border-light: #e2e8f0;
             --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --border: #e2e8f0;
             --accent: #6366f1;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-body); color: var(--text-dark); padding: 20px; }
-        .container { max-width: 1300px; margin: 0 auto; }
+        body { background-color: var(--bg); color: #0f172a; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
 
-        .panel { background: var(--bg-card); padding: 25px; border-radius: 16px; border: 1px solid var(--border-light); margin-bottom: 25px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-        .panel-title { font-weight: 900; font-size: 20px; margin-bottom: 20px; color: var(--primary); display: flex; align-items: center; gap: 10px; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+        .header h1 { font-weight: 900; font-size: 24px; }
 
-        /* FORMULÁRIO DE PROMPT */
-        .prompt-form { display: grid; gap: 15px; }
-        .prompt-form input, .prompt-form textarea { padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 14px; width: 100%; outline-color: var(--accent); }
-        .prompt-form textarea { height: 100px; resize: vertical; }
+        /* GESTÃO DE PROMPTS */
+        .prompt-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .prompt-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 15px; }
         
-        .tag-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
-        .btn-tag { padding: 6px 12px; background: #e0e7ff; color: var(--accent); border: 1px solid #c7d2fe; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .input-group { display: grid; gap: 10px; margin-bottom: 15px; }
+        .input-group input, .input-group textarea { padding: 12px; border: 1px solid var(--border); border-radius: 8px; width: 100%; outline-color: var(--accent); }
+        .input-group textarea { height: 80px; resize: vertical; }
+
+        .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .btn-tag { padding: 6px 12px; background: #eef2ff; color: var(--accent); border: 1px solid #c7d2fe; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; }
         .btn-tag:hover { background: var(--accent); color: white; }
 
-        .btn-save { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; justify-self: start; }
+        .btn-main { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; width: fit-content; }
 
-        /* LISTA DE PROMPTS SALVOS */
-        .saved-prompts { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
-        .prompt-card { background: #f8fafc; border: 1px solid var(--border-light); padding: 15px; border-radius: 12px; position: relative; }
-        .prompt-card h4 { font-weight: 800; margin-bottom: 8px; font-size: 14px; }
-        .prompt-card p { font-size: 12px; color: var(--text-light); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .btn-del-prompt { position: absolute; top: 10px; right: 10px; color: var(--danger); background: none; border: none; cursor: pointer; font-weight: 800; }
+        .saved-prompts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
+        .saved-item { background: #f1f5f9; padding: 8px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); }
+        .btn-del { color: var(--danger); cursor: pointer; border: none; background: none; font-weight: 900; }
 
-        /* FILTROS E GRID */
-        .filters { display: flex; gap: 15px; margin-bottom: 25px; }
-        .filters input { flex: 2; padding: 12px; border-radius: 8px; border: 1px solid var(--border-light); }
-        .filters select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border-light); }
+        /* FILTROS E PRODUTOS */
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; }
+        .filters input { flex: 2; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+        .filters select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 16px; padding: 20px; transition: 0.3s; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .card-img-box { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; background: #fff; border-radius: 12px; overflow: hidden; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 15px; position: relative; }
+        .badge { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 11px; }
+        .card-img-box { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
         .card-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        .card-title { font-weight: 700; font-size: 15px; height: 40px; overflow: hidden; margin-bottom: 10px; }
-        .card-prices { margin-bottom: 15px; }
-        .card-price-now { font-size: 20px; font-weight: 900; color: var(--text-dark); }
-        .card-price-off { font-size: 13px; color: var(--text-light); text-decoration: line-through; }
-
-        .card-actions { display: grid; gap: 10px; }
-        .card-actions select { padding: 10px; border-radius: 8px; border: 1px solid var(--border-light); font-size: 13px; font-weight: 600; }
+        .card-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; height: 34px; overflow: hidden; }
+        .card-price { font-weight: 900; font-size: 18px; margin-bottom: 15px; }
         
-        .btn-group-copy { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-copy-p { background: var(--success); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; }
-        .btn-copy-i { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px; }
+        .card-actions { display: grid; gap: 8px; }
+        .card-actions select { padding: 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-action { padding: 10px; border: none; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; color: white; }
+        .btn-p { background: var(--success); }
+        .btn-i { background: var(--accent); }
 
-        #toast { visibility: hidden; min-width: 250px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-weight: 600; box-shadow: 0 10px 15px rgba(0,0,0,0.2); }
-        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
-        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
-        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+        #toast { visibility: hidden; background: #333; color: white; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-weight: 600; }
+        #toast.show { visibility: visible; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="panel">
-            <div class="panel-title">⚙️ Gerenciador de Prompts</div>
-            <div class="prompt-form">
-                <input type="text" id="pName" placeholder="Nome do Prompt (ex: Post para Facebook)">
-                <div style="position: relative;">
-                    <textarea id="pText" placeholder="Escreva o comando aqui..."></textarea>
-                    <div class="tag-buttons">
-                        <button class="btn-tag" onclick="insertTag('[NOME]')">+ [NOME]</button>
-                        <button class="btn-tag" onclick="insertTag('[PRECO]')">+ [PRECO]</button>
-                        <button class="btn-tag" onclick="insertTag('[PRECO_ANTIGO]')">+ [PRECO_ANTIGO]</button>
-                        <button class="btn-tag" onclick="insertTag('[DESCONTO]')">+ [DESCONTO]</button>
-                    </div>
-                </div>
-                <button class="btn-save" onclick="savePrompt()">Salvar Prompt</button>
-            </div>
-
-            <div class="saved-prompts" id="savedPromptsList">
-                </div>
-        </div>
-
-        <div class="panel">
-            <div class="panel-title">📦 Produtos em Oferta</div>
-            <div class="filters">
-                <input type="text" id="search" placeholder="Filtrar por nome..." onkeyup="renderProducts()">
-                <select id="minDiscount" onchange="renderProducts()">
-                    <option value="0">Qualquer Desconto</option>
-                    <option value="20">Mínimo 20%</option>
-                    <option value="30">Mínimo 30%</option>
-                </select>
-            </div>
-
-            <div class="grid" id="productGrid">
-                </div>
-        </div>
+<div class="container">
+    <div class="header">
+        <h1>Gerador de Prompts Gemini</h1>
     </div>
 
-    <div id="toast">Copiado com sucesso!</div>
+    <div class="prompt-box">
+        <h2>1. Configure seus Prompts</h2>
+        <div class="input-group">
+            <input type="text" id="promptName" placeholder="Nome do Prompt (ex: Post Story)">
+            <textarea id="promptText" placeholder="Digite o comando para o Gemini..."></textarea>
+        </div>
+        <div class="tag-row">
+            <button class="btn-tag" onclick="addTag('[NOME]')">+ [NOME]</button>
+            <button class="btn-tag" onclick="addTag('[PRECO]')">+ [PRECO]</button>
+            <button class="btn-tag" onclick="addTag('[PRECO_ANTIGO]')">+ [PRECO_ANTIGO]</button>
+            <button class="btn-tag" onclick="addTag('[DESCONTO]')">+ [DESCONTO]</button>
+        </div>
+        <button class="btn-main" onclick="savePrompt()">Salvar Prompt</button>
 
-    <script>
-        // ESTADO
-        let allProducts = [];
-        let prompts = JSON.parse(localStorage.getItem('da_prompts_v2')) || [
-            { name: "Post Instagram", text: "Atue como copywriter. Crie uma legenda para o produto [NOME] que está por apenas [PRECO]. O valor anterior era [PRECO_ANTIGO]. Foque em urgência." }
-        ];
+        <div class="saved-prompts" id="savedPromptsList"></div>
+    </div>
 
-        // AUXILIARES
-        const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const norm = s => s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+    <div class="filters">
+        <input type="text" id="searchInput" placeholder="Buscar produto..." onkeyup="render()">
+        <select id="discountFilter" onchange="render()">
+            <option value="0">Todos os descontos</option>
+            <option value="20">Acima de 20%</option>
+            <option value="30">Acima de 30%</option>
+        </select>
+    </div>
 
-        // INSERIR TAG NO CURSOR
-        function insertTag(tag) {
-            const el = document.getElementById('pText');
-            const start = el.selectionStart;
-            const end = el.selectionEnd;
-            const text = el.value;
-            el.value = text.slice(0, start) + tag + text.slice(end);
-            el.focus();
-            el.setSelectionRange(start + tag.length, start + tag.length);
-        }
+    <div class="grid" id="productGrid"></div>
+</div>
 
-        // SALVAR PROMPT
-        function savePrompt() {
-            const name = document.getElementById('pName').value;
-            const text = document.getElementById('pText').value;
-            if(!name || !text) return alert("Preencha nome e texto!");
-            
-            prompts.push({ name, text });
-            localStorage.setItem('da_prompts_v2', JSON.stringify(prompts));
-            document.getElementById('pName').value = "";
-            document.getElementById('pText').value = "";
-            renderSavedPrompts();
-            renderProducts();
-        }
+<div id="toast">Copiado!</div>
 
-        function deletePrompt(idx) {
-            prompts.splice(idx, 1);
-            localStorage.setItem('da_prompts_v2', JSON.stringify(prompts));
-            renderSavedPrompts();
-            renderProducts();
-        }
-
-        function renderSavedPrompts() {
-            const list = document.getElementById('savedPromptsList');
-            list.innerHTML = prompts.map((p, i) => `
-                <div class="prompt-card">
-                    <button class="btn-del-prompt" onclick="deletePrompt(${i})">×</button>
-                    <h4>${p.name}</h4>
-                    <p>${p.text}</p>
-                </div>
-            `).join('');
-        }
-
-        // CÓPIA DE IMAGEM (A MÁGICA)
-        async function copyImage(imgUrl) {
-            try {
-                // Para copiar a imagem real, precisamos buscá-la como Blob
-                const response = await fetch(imgUrl);
-                const blob = await response.blob();
-                
-                // O Clipboard API exige que a imagem seja PNG para ser copiada em muitos sistemas
-                // Se sua imagem for WebP ou JPG, este método costuma converter automaticamente no ClipboardItem
-                const item = new ClipboardItem({ "image/png": blob });
-                await navigator.clipboard.write([item]);
-                showToast("Imagem copiada para o Clipboard!");
-            } catch (err) {
-                console.error(err);
-                alert("Erro ao copiar imagem. Certifique-se que está usando HTTPS e que o servidor permite acesso (CORS).");
+<script>
+    // --- LÓGICA DE DADOS (Copiada do seu arquivo original) ---
+    const STATE = { prods: [], prompts: JSON.parse(localStorage.getItem('da_mkt_prompts')) || [] };
+    
+    function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+    function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
+    function formatName(name) { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); }
+    
+    function aplicarDescontos(products) {
+        let now = new Date(); let eligibleForRandom = [];
+        products.forEach(p => {
+            p.discountPercent = 0; p.oldPrice = p.price;
+            if (p.vencimento) {
+                let partes = p.vencimento.split('/'); 
+                if(partes.length === 3) {
+                    let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
+                    let diff = (vDate - now) / (1000 * 60 * 60 * 24);
+                    if (diff >= 0 && diff <= 30) p.discountPercent = 35; 
+                    else if (diff > 30 && diff <= 60) p.discountPercent = 30; 
+                    else if (diff > 60 && diff <= 90) p.discountPercent = 25;
+                }
             }
+            if (p.discountPercent === 0) eligibleForRandom.push(p);
+        });
+        let seed = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).getTime();
+        function rnd(s) { let x = Math.sin(s++) * 10000; return x - Math.floor(x); }
+        eligibleForRandom.sort((a, b) => rnd(seed + (parseInt(a.id.replace(/\D/g, '')) || 0)) - rnd(seed + (parseInt(b.id.replace(/\D/g, '')) || 0)));
+        let r20 = 5, r15 = 5, r10 = 100; 
+        eligibleForRandom.forEach(p => { if (r20 > 0) { p.discountPercent = 20; r20--; } else if (r15 > 0) { p.discountPercent = 15; r15--; } else if (r10 > 0) { p.discountPercent = 10; r10--; } });
+        products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
+    }
+
+    // --- INTERFACE ---
+    function addTag(tag) {
+        const area = document.getElementById('promptText');
+        const pos = area.selectionStart;
+        area.value = area.value.slice(0, pos) + tag + area.value.slice(pos);
+        area.focus();
+    }
+
+    function savePrompt() {
+        const name = document.getElementById('promptName').value;
+        const text = document.getElementById('promptText').value;
+        if(!name || !text) return alert("Preencha o nome e o texto!");
+        STATE.prompts.push({ name, text });
+        localStorage.setItem('da_mkt_prompts', JSON.stringify(STATE.prompts));
+        document.getElementById('promptName').value = "";
+        document.getElementById('promptText').value = "";
+        render();
+    }
+
+    function delPrompt(idx) {
+        STATE.prompts.splice(idx, 1);
+        localStorage.setItem('da_mkt_prompts', JSON.stringify(STATE.prompts));
+        render();
+    }
+
+    // CÓPIA DE IMAGEM REAL (BLOBO BINÁRIO)
+    async function copyImage(url) {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            // A API de clipboard exige que a imagem seja do tipo PNG para colar em apps
+            const item = new ClipboardItem({ [blob.type]: blob });
+            await navigator.clipboard.write([item]);
+            toast("Imagem copiada!");
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao copiar imagem. Isso pode ocorrer se o servidor não permitir CORS ou se não estiver usando HTTPS.");
         }
+    }
 
-        // CÓPIA DE PROMPT
-        function copyPrompt(prodId) {
-            const prod = allProducts.find(p => p.id === prodId);
-            const promptIdx = document.getElementById(`sel-${prodId}`).value;
-            const template = prompts[promptIdx].text;
+    function copyPrompt(id) {
+        const prod = STATE.prods.find(p => p.id === id);
+        const selIdx = document.getElementById(`sel-${id}`).value;
+        if(STATE.prompts.length === 0) return alert("Crie um prompt primeiro!");
+        
+        let template = STATE.prompts[selIdx].text;
+        let final = template.replace(/\[NOME\]/g, prod.name)
+                            .replace(/\[PRECO\]/g, fmt(prod.price))
+                            .replace(/\[PRECO_ANTIGO\]/g, fmt(prod.oldPrice))
+                            .replace(/\[DESCONTO\]/g, prod.discountPercent + '%');
+        
+        navigator.clipboard.writeText(final);
+        toast("Texto do Prompt copiado!");
+    }
 
-            let final = template.replace(/\[NOME\]/g, prod.name)
-                                .replace(/\[PRECO\]/g, fmt(prod.price))
-                                .replace(/\[PRECO_ANTIGO\]/g, fmt(prod.oldPrice))
-                                .replace(/\[DESCONTO\]/g, prod.discountPercent + '%');
+    function toast(m) { const t = document.getElementById('toast'); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 2000); }
 
-            navigator.clipboard.writeText(final).then(() => showToast("Prompt de texto copiado!"));
-        }
+    function render() {
+        // Render lista de prompts
+        const pList = document.getElementById('savedPromptsList');
+        pList.innerHTML = STATE.prompts.map((p, i) => `<div class="saved-item">${p.name} <button class="btn-del" onclick="delPrompt(${i})">×</button></div>`).join('');
 
-        function showToast(msg) {
-            const t = document.getElementById("toast");
-            t.innerText = msg;
-            t.className = "show";
-            setTimeout(() => { t.className = t.className.replace("show", ""); }, 2500);
-        }
+        // Render produtos
+        const grid = document.getElementById('productGrid');
+        const search = norm(document.getElementById('searchInput').value);
+        const disc = parseInt(document.getElementById('discountFilter').value);
 
-        // LOGICA DE PRODUTOS (SIMPLIFICADA PARA O EXEMPLO)
-        function renderProducts() {
-            const grid = document.getElementById('productGrid');
-            const q = norm(document.getElementById('search').value);
-            const minD = parseInt(document.getElementById('minDiscount').value);
+        const filtered = STATE.prods.filter(p => p.discountPercent >= disc && norm(p.name).includes(search));
+        
+        const promptOpts = STATE.prompts.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
 
-            const filtered = allProducts.filter(p => {
-                return p.discountPercent >= minD && norm(p.name).includes(q);
-            });
-
-            grid.innerHTML = filtered.map(p => `
-                <div class="card">
-                    <div class="card-img-box">
-                        <img id="img-${p.id}" src="${p.img}">
-                    </div>
-                    <div class="card-title">${p.name}</div>
-                    <div class="card-prices">
-                        <div class="card-price-off">${fmt(p.oldPrice)}</div>
-                        <div class="card-price-now">${fmt(p.price)} <small style="color:var(--danger)">(-${p.discountPercent}%)</small></div>
-                    </div>
-                    <div class="card-actions">
-                        <select id="sel-${p.id}">
-                            ${prompts.map((pr, i) => `<option value="${i}">${pr.name}</option>`).join('')}
-                        </select>
-                        <div class="btn-group-copy">
-                            <button class="btn-copy-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
-                            <button class="btn-copy-i" onclick="copyImage('${p.img}')">Copiar Imagem</button>
-                        </div>
+        grid.innerHTML = filtered.map(p => `
+            <div class="card">
+                <div class="badge">-${p.discountPercent}%</div>
+                <div class="card-img-box"><img src="${p.img}"></div>
+                <div class="card-title">${p.name}</div>
+                <div class="card-price">${fmt(p.price)}</div>
+                <div class="card-actions">
+                    <select id="sel-${p.id}">${promptOpts}</select>
+                    <div class="btn-row">
+                        <button class="btn-action btn-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
+                        <button class="btn-action btn-i" onclick="copyImage('${p.img}')">Copiar Imagem</button>
                     </div>
                 </div>
-            `).join('');
+            </div>
+        `).join('');
+    }
+
+    async function init() {
+        try {
+            // AJUSTE DE CAMINHO: Tente carregar do caminho absoluto do seu site
+            const res = await fetch('/site/produtos.json').then(r => r.json());
+            STATE.prods = res.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => ({
+                id: String(p.codigo || p.id),
+                name: formatName(p.nome),
+                price: parseFloat(p.preco) * 1.01,
+                img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`,
+                vencimento: p.validade || p.vencimento || null
+            }));
+            aplicarDescontos(STATE.prods);
+            render();
+        } catch (e) { 
+            console.error("Erro ao carregar JSON:", e);
+            alert("Não foi possível carregar os produtos. Verifique se o arquivo /site/produtos.json existe e se você está rodando em um servidor (Live Server, XAMPP, etc).");
         }
+    }
 
-        // INICIALIZAÇÃO (Simulando a busca do seu produtos.json)
-        async function init() {
-            // Aqui você usaria o fetch real do seu produtos.json
-            // Vou carregar alguns dados de exemplo baseados na lógica do seu site original
-            allProducts = [
-                { id: "92238569", name: "Produto Exemplo 1", price: 10.00, oldPrice: 20.00, discountPercent: 50, img: "https://via.placeholder.com/300" },
-                { id: "83719006", name: "Produto Exemplo 2", price: 15.00, oldPrice: 25.00, discountPercent: 40, img: "https://via.placeholder.com/300" }
-            ];
-            
-            // Tente carregar os produtos reais se o arquivo existir
-            try {
-                const res = await fetch('/site/produtos.json').then(r => r.json());
-                // ... aplicar sua lógica de formatName e aplicarDescontos aqui ...
-            } catch(e) {}
-
-            renderSavedPrompts();
-            renderProducts();
-        }
-
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+    document.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
