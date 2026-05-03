@@ -381,14 +381,12 @@
         function encodeHash(str) { return encodeURIComponent(str).replace(/%20/g, '+'); }
         function decodeHash(str) { return decodeURIComponent(str.replace(/\+/g, '%20')); }
         
-        // Formatação Title Case (Palavras >= 4 letras maiúsculas)
         function formatName(name) { 
             if(!name) return ""; 
             let words = name.toLowerCase().split(/\s+/); 
             return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); 
         }
 
-        /* NOVA FUNÇÃO: Calcula os dias até o vencimento. Retorna Infinity se não possuir a data para cair pro fim da lista */
         function getDaysToExpiry(vencimento) {
             if (!vencimento) return Infinity; 
             let partes = vencimento.split('/');
@@ -469,7 +467,6 @@
             let esgotadoTag = isOutOfStock ? `<div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.85); color: #fff; padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 10px; z-index: 10;">ESGOTADO</div>` : '';
             let baseClass = isOutOfStock ? 'product-card-list esgotado' : 'product-card-list';
             
-            // Etiqueta de desconto modernizada e realocada
             let discountBadge = (prod.discountPercent > 0 && !isBasketItem) ? `<span style="color: var(--danger); font-size: 14px; margin-right: 5px; font-weight: 900;">-${prod.discountPercent}%</span>` : '';
             let oldPriceHtml = (prod.discountPercent > 0 && !isBasketItem) ? `<span class="old-price">${fmt(prod.oldPrice)}</span>` : '';
             
@@ -514,7 +511,6 @@
             let codigosText = codigosElement.getAttribute('data-codigos');
             if(!codigosText) return '';
             
-            // Limitando propositalmente até 20 itens através da matriz
             let itensCarrossel = codigosText.split(',').map(c => c.trim()).slice(0, 20);
             let htmlCards = '';
             
@@ -593,16 +589,13 @@
                 catMap.add(c); 
             });
             
-            // Injeta o Carrossel de Destaques logo no Início!
             let html = getCarrosselDestaquesHTML();
 
             if(ofertas.length > 0) {
-                // Seleção de cards guiada pelo menor prazo de vencimento disponível
                 let top3 = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
                                        .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
                                        .slice(0, 3);
                 
-                // Fallback: Se não encontrarmos 3 itens próximos de vencer, preenchemos a diferença com as maiores ofertas gerais
                 if (top3.length < 3) {
                     let alreadyIn = new Set(top3.map(p => p.id));
                     let complement = ofertas.filter(p => !alreadyIn.has(p.id))
@@ -635,13 +628,11 @@
         function renderDepartamentoCompleto(cat) {
             let html = '';
             
-            // Implementação personalizada e exclusiva para a aba de Ofertas
             if (cat === 'Ofertas do Dia') {
                 document.title = `Ofertas do Dia - Dona Antônia`;
                 let destaques = [];
                 let codigosElement = $('codigos-carrossel-destaque');
                 
-                // Primeiro passo: Processar as "Ofertas em Destaque" para apresentá-las no topo
                 if (codigosElement) {
                     let codigosText = codigosElement.getAttribute('data-codigos');
                     if (codigosText) {
@@ -666,14 +657,12 @@
                     }
                 }
                 
-                // Prevenir duplicidade na segunda lista (demais ofertas)
                 let destaquesIds = new Set(destaques.map(p => p.id));
                 let outrasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0 && !destaquesIds.has(p.id))
                                                .sort((a,b) => b.discountPercent - a.discountPercent);
                 
                 html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas do Dia</div><div style="background: #fff;">`;
                 
-                // Apresentar listas de forma contínua organizando pelo desconto, anulando lógicas de categorias.
                 if (destaques.length > 0) {
                     html += `<h3 class="subcat-title">Ofertas em Destaque</h3>`;
                     destaques.forEach(p => html += renderCardHTML(p));
@@ -685,7 +674,6 @@
                 }
                 
             } else {
-                // Fluxo e estruturação comum para as demais abas departamentais
                 let results = STATE.prods.filter(p => p.categoria === cat).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
                 document.title = `${cat} - Dona Antônia`;
                 
@@ -928,19 +916,17 @@
                         
                         if(diff.removed.length > 0) {
                             customTxt += `*Itens Retirados:*\n`;
-                            // O forEach garante que cada item retirado fique em uma linha própria com um traço
                             diff.removed.forEach(item => customTxt += `- ${item}\n`);
                         }
                         
                         if(diff.added.length > 0) {
                             customTxt += `*Itens Adicionados:*\n`;
-                            // Cada item adicionado fica em uma linha própria com um sinal de mais
                             diff.added.forEach(item => customTxt += `+ ${item}\n`);
                         }
                     } else { 
                         customTxt += `*Cesta Escolhida:* ${diff.name} (Padrão)\n`; 
                     }
-                    customTxt += `\n`; // Adiciona um pequeno espaço caso o cliente tenha pedido duas cestas diferentes
+                    customTxt += `\n`; 
                 });
             } else { customTxt += `*Pedido Personalizado (Itens Avulsos)*\n`; }
             
@@ -948,7 +934,6 @@
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             if (STATE.couponDiscount > 0) itemsTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
             
-            // A palavra TOTAL agora está isolada com os asteriscos do WhatsApp
             const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL:* ${fmt(final)}${customTxt}`;
             
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
@@ -975,10 +960,15 @@
             try { let cached = localStorage.getItem(key); let cacheTime = localStorage.getItem(key + '_time'); let now = Date.now(); if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached); let res = await fetch(url).then(r => r.json()); localStorage.setItem(key, JSON.stringify(res)); localStorage.setItem(key + '_time', now); return res; } catch (e) { return []; }
         }
 
+       // Função com a lógica de Descontos Semanais (Domingo a Sábado) implementada e detalhada!
        function aplicarDescontos(products) {
-            let now = new Date(); let eligibleForRandom = [];
+            let now = new Date(); 
+            let eligibleForRandom = [];
+            
+            // 1. Varre todos os produtos para limpar descontos antigos e aplicar a regra de Vencimento
             products.forEach(p => {
-                p.discountPercent = 0; p.oldPrice = p.price;
+                p.discountPercent = 0; 
+                p.oldPrice = p.price;
                 
                 if (p.vencimento) {
                     let partes = p.vencimento.split('/'); 
@@ -991,25 +981,63 @@
                     }
                 }
                 
+                // Se o produto NÃO recebeu desconto por validade, ele é elegível para o sorteio aleatório
                 if (p.discountPercent === 0) eligibleForRandom.push(p);
             });
             
-            let currentSeed = Math.floor(now.getTime() / (48 * 60 * 60 * 1000)); 
-            function seededRandom(seed) { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); }
+            // --- INÍCIO DO CÁLCULO DA SEMENTE (SEED) SEMANAL ---
             
-            eligibleForRandom.sort((a, b) => { let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); let randA = seededRandom(currentSeed + idNumA); let randB = seededRandom(currentSeed + idNumB); return randA - randB; });
+            // now.getDay() retorna um número de 0 (Domingo) a 6 (Sábado)
+            let diaDaSemana = now.getDay();
             
+            // Cria uma data voltando no tempo exatamente para o Domingo passado à 00:00:00.
+            // Se hoje já for domingo, diaDaSemana será 0, e a data continuará sendo hoje à meia noite.
+            let domingoDaSemana = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diaDaSemana);
+            
+            // Obtém o carimbo de tempo (timestamp) desse domingo para servir de âncora durante toda a semana
+            let currentSeed = domingoDaSemana.getTime(); 
+            
+            // --- FIM DO CÁLCULO ---
+
+            // Função matemática que gera números pseudo-aleatórios com base na nossa semente do Domingo
+            function seededRandom(seed) { 
+                let x = Math.sin(seed++) * 10000; 
+                return x - Math.floor(x); 
+            }
+            
+            // Ordena os produtos elegíveis embaralhando-os de forma fixa durante a semana
+            eligibleForRandom.sort((a, b) => { 
+                let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); 
+                let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); 
+                
+                // Soma a semente semanal com o ID do produto para que a ordem mude toda semana, 
+                // mas permaneça a mesma para os mesmos produtos durante a semana vigente.
+                let randA = seededRandom(currentSeed + idNumA); 
+                let randB = seededRandom(currentSeed + idNumB); 
+                
+                return randA - randB; 
+            });
+            
+            // Define os limites de produtos para cada faixa de desconto (5 de 20%, 5 de 15% e 100 de 10%)
             let r20 = 5, r15 = 5, r10 = 100; 
-            eligibleForRandom.forEach(p => { if (r20 > 0) { p.discountPercent = 20; r20--; } else if (r15 > 0) { p.discountPercent = 15; r15--; } else if (r10 > 0) { p.discountPercent = 10; r10--; } });
             
-            products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
+            // Distribui os descontos respeitando os limites acima
+            eligibleForRandom.forEach(p => { 
+                if (r20 > 0) { p.discountPercent = 20; r20--; } 
+                else if (r15 > 0) { p.discountPercent = 15; r15--; } 
+                else if (r10 > 0) { p.discountPercent = 10; r10--; } 
+            });
+            
+            // Aplica o desconto matematicamente no preço de exibição
+            products.forEach(p => { 
+                if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); 
+            });
         }
 
         async function init() {
             try {
                 const r2 = await fetchWithCache('/site/produtos.json', 'cache_prods');
                 if (r2 && r2.length > 0) {
-                    // IMPLEMENTAÇÃO: Filtro Estrito de Estoque (> 0)
                     STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
                         let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
                         return { 
