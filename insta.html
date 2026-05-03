@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Marketing V3 - Dona Antônia</title>
+    <title>Painel de Marketing Profissional - Dona Antônia</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -16,278 +16,322 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg); color: #0f172a; padding: 20px; }
+        body { background-color: var(--bg); color: #0f172a; padding: 20px; padding-bottom: 120px; }
         .container { max-width: 1200px; margin: 0 auto; }
 
+        /* HEADER */
         .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
-        .header h1 { font-weight: 900; font-size: 24px; }
+        .header h1 { font-weight: 900; font-size: 26px; border-left: 5px solid var(--accent); padding-left: 15px; }
 
         /* GESTÃO DE PROMPTS */
-        .prompt-box { background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-        .prompt-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 15px; }
+        .prompt-box { background: white; padding: 25px; border-radius: 16px; border: 1px solid var(--border); margin-bottom: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .prompt-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 20px; color: var(--primary); }
         
-        .input-group { display: grid; gap: 10px; margin-bottom: 15px; }
-        .input-group input, .input-group textarea { padding: 12px; border: 1px solid var(--border); border-radius: 8px; width: 100%; outline-color: var(--accent); font-size: 14px; }
-        .input-group textarea { height: 100px; resize: vertical; }
+        .input-group { display: grid; gap: 12px; margin-bottom: 15px; }
+        .input-group input, .input-group textarea { padding: 14px; border: 1px solid var(--border); border-radius: 10px; width: 100%; font-size: 14px; outline-color: var(--accent); background: #fcfcfc; }
+        .input-group textarea { height: 120px; resize: vertical; line-height: 1.5; }
 
-        .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
-        .btn-tag { padding: 6px 12px; background: #eef2ff; color: var(--accent); border: 1px solid #c7d2fe; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; }
+        .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .btn-tag { padding: 8px 14px; background: #eef2ff; color: var(--accent); border: 1px solid #c7d2fe; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
         .btn-tag:hover { background: var(--accent); color: white; }
 
-        .btn-main { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; }
-        .btn-cancel { padding: 12px 24px; background: #94a3b8; color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; margin-left: 10px; display: none; }
+        .form-footer { display: flex; align-items: center; gap: 15px; }
+        .btn-main { padding: 14px 28px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-cancel { padding: 14px 20px; background: #f1f5f9; color: #64748b; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; display: none; }
 
-        .saved-prompts { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
-        .saved-item { background: #f1f5f9; padding: 12px; border-radius: 12px; border: 1px solid var(--border); position: relative; }
-        .saved-item h4 { font-size: 13px; font-weight: 800; margin-bottom: 5px; color: var(--primary); }
-        .saved-item p { font-size: 11px; color: var(--text-light); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .saved-actions { display: flex; gap: 10px; margin-top: 8px; }
-        .btn-small { background: none; border: none; font-size: 11px; font-weight: 700; cursor: pointer; padding: 0; }
+        /* LISTA DE PROMPTS */
+        .saved-prompts { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; }
+        .saved-item { background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid var(--border); position: relative; }
+        .saved-item h4 { font-size: 14px; font-weight: 800; margin-bottom: 6px; color: var(--primary); }
+        .saved-item p { font-size: 12px; color: #64748b; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+        .saved-actions { display: flex; gap: 12px; margin-top: 10px; }
+        .btn-sml { background: none; border: none; font-size: 12px; font-weight: 700; cursor: pointer; }
         .btn-edit { color: var(--accent); }
         .btn-del { color: var(--danger); }
 
-        /* FILTROS E PRODUTOS */
-        .filters { display: flex; gap: 15px; margin-bottom: 20px; }
-        .filters input { flex: 2; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
-        .filters select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
+        /* FILTROS */
+        .filters { display: flex; gap: 15px; margin-bottom: 25px; }
+        .filters input { flex: 2; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: white; }
+        .filters select { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: white; font-weight: 600; }
 
         /* GRID E CARDS */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; display: flex; flex-direction: column; transition: 0.2s; }
-        .card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
-        .badge { position: absolute; top: 15px; right: 15px; background: var(--danger); color: white; padding: 5px 10px; border-radius: 8px; font-weight: 900; font-size: 12px; z-index: 2; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+        .card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 25px; position: relative; display: flex; flex-direction: column; transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         
-        .card-img-box { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+        .badge { position: absolute; top: 15px; right: 15px; background: var(--danger); color: white; padding: 6px 12px; border-radius: 10px; font-weight: 900; font-size: 13px; box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
+        
+        .card-img-box { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
         .card-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        .card-title { font-weight: 700; font-size: 15px; margin-bottom: 10px; height: 40px; overflow: hidden; line-height: 1.3; }
-        .card-price { font-weight: 900; font-size: 20px; margin-bottom: 20px; }
+        .card-title { font-weight: 700; font-size: 16px; margin-bottom: 12px; height: 42px; overflow: hidden; line-height: 1.3; color: var(--primary); }
+        .card-prices { margin-bottom: 20px; }
+        .price-old { font-size: 14px; color: #94a3b8; text-decoration: line-through; display: block; margin-bottom: 2px; font-weight: 600; }
+        .price-new { font-weight: 900; font-size: 22px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
         
-        .card-actions { display: grid; gap: 10px; margin-bottom: 20px; }
-        .card-actions select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-weight: 600; background: #f8fafc; }
+        .card-actions { display: grid; gap: 12px; margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 12px; }
+        .card-actions select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-weight: 700; width: 100%; }
         
         .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-action { padding: 12px; border: none; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s; }
-        .btn-action:active { transform: scale(0.95); }
-        .btn-p { background: var(--success); }
-        .btn-i { background: var(--accent); }
+        .btn-act { padding: 12px; border: none; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-p { background: var(--success); box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+        .btn-i { background: var(--accent); box-shadow: 0 4px 12px rgba(99,102,241,0.2); }
 
-        /* LOGO NO CARD */
-        .card-footer-logo { border-top: 1px solid var(--border); padding-top: 15px; display: flex; justify-content: center; margin-top: auto; }
-        .card-footer-logo img { height: 35px; width: auto; object-fit: contain; filter: grayscale(1) opacity(0.5); transition: 0.3s; }
-        .card:hover .card-footer-logo img { filter: grayscale(0) opacity(1); }
+        .card-footer-logo { border-top: 1px solid var(--border); padding-top: 20px; display: flex; justify-content: center; margin-top: auto; }
+        .card-footer-logo img { height: 40px; width: auto; object-fit: contain; }
 
-        #toast { visibility: hidden; background: #0f172a; color: white; text-align: center; border-radius: 50px; padding: 16px 30px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-weight: 700; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        #toast.show { visibility: visible; animation: slideUp 0.3s forwards; }
-        @keyframes slideUp { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+        /* FAB */
+        .fab { position: fixed; bottom: 30px; right: 30px; width: 70px; height: 70px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(99,102,241,0.4); cursor: pointer; z-index: 2000; border: none; transition: 0.3s; }
+        .fab:hover { transform: scale(1.1) rotate(10deg); }
+        .fab svg { width: 30px; height: 30px; fill: white; }
+
+        /* TOAST */
+        #toast { visibility: hidden; background: #0f172a; color: white; text-align: center; border-radius: 50px; padding: 16px 40px; position: fixed; z-index: 5000; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        #toast.show { visibility: visible; animation: fadeInUp 0.4s forwards; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>Gerador de Marketing - Dona Antônia</h1>
+        <h1>Dashboard Marketing Dona Antônia</h1>
     </div>
 
     <div class="prompt-box">
-        <h2 id="form-title">1. Configurar Novo Prompt</h2>
+        <h2 id="formTitle">Criar Novo Prompt</h2>
         <div class="input-group">
-            <input type="text" id="promptName" placeholder="Ex: Post Promocional Instagram">
-            <textarea id="promptText" placeholder="Escreva aqui o comando. Use os botões abaixo para inserir as tags automáticas..."></textarea>
+            <input type="text" id="pName" placeholder="Nome do Prompt (ex: Story Promocional)">
+            <textarea id="pText" placeholder="Escreva o comando para o Gemini. Use os botões de tags para preenchimento dinâmico."></textarea>
         </div>
         <div class="tag-row">
-            <button class="btn-tag" onclick="addTag('[NOME]')">+ [NOME]</button>
-            <button class="btn-tag" onclick="addTag('[PRECO]')">+ [PRECO]</button>
-            <button class="btn-tag" onclick="addTag('[PRECO_ANTIGO]')">+ [PRECO_ANTIGO]</button>
-            <button class="btn-tag" onclick="addTag('[DESCONTO]')">+ [DESCONTO]</button>
+            <button class="btn-tag" onclick="insertTag('[NOME]')">+ [NOME]</button>
+            <button class="btn-tag" onclick="insertTag('[PRECO]')">+ [PRECO]</button>
+            <button class="btn-tag" onclick="insertTag('[PRECO_ANTIGO]')">+ [PRECO_ANTIGO]</button>
+            <button class="btn-tag" onclick="insertTag('[DESCONTO]')">+ [DESCONTO]</button>
         </div>
-        <div style="display: flex;">
-            <button class="btn-main" id="btn-save-action" onclick="savePrompt()">Salvar Prompt</button>
-            <button class="btn-cancel" id="btn-cancel-edit" onclick="cancelEdit()">Cancelar Edição</button>
+        <div class="form-footer">
+            <button class="btn-main" id="btnSave" onclick="savePrompt()">Salvar Prompt</button>
+            <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
         </div>
 
-        <div class="saved-prompts" id="savedPromptsList"></div>
+        <div class="saved-prompts" id="promptsListUI"></div>
     </div>
 
     <div class="filters">
-        <input type="text" id="searchInput" placeholder="Pesquisar por nome do produto..." onkeyup="render()">
-        <select id="discountFilter" onchange="render()">
-            <option value="0">Ver todas as ofertas</option>
+        <input type="text" id="searchUI" placeholder="Pesquisar produto pelo nome..." onkeyup="render()">
+        <select id="discUI" onchange="render()">
+            <option value="0">Ver Tudo</option>
             <option value="20">Descontos +20%</option>
             <option value="30">Descontos +30%</option>
         </select>
     </div>
 
-    <div class="grid" id="productGrid"></div>
+    <div class="grid" id="gridUI"></div>
 </div>
 
-<div id="toast">Copiado!</div>
+<button class="fab" title="Otimizar imagem local para WebP" onclick="document.getElementById('fileIn').click()">
+    <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+</button>
+<input type="file" id="fileIn" style="display:none" accept="image/*" onchange="optimizeImg(event)">
+
+<div id="toast">Copiado com sucesso!</div>
 
 <script>
-    // --- ESTADO E CONFIGURAÇÕES ---
+    // --- ESTADO ---
     const STATE = { 
         prods: [], 
-        prompts: JSON.parse(localStorage.getItem('da_mkt_prompts')) || [],
-        editingIndex: -1 
+        prompts: JSON.parse(localStorage.getItem('da_mkt_v5')) || [],
+        editingIdx: -1 
     };
-    
-    // Caminho da Logo recuperado do seu código original
-    const LOGO_URL = "../img/logoantonia5.png";
+    const LOGO = "../img/logoantonia5.png";
 
-    // --- FUNÇÕES DE DADOS (Padrão do seu Site) ---
+    // --- FORMATAÇÃO E LÓGICA (IDÊNTICA AO SITE ORIGINAL) ---
     const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const norm = s => s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
-    const formatName = name => { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); };
     
     function aplicarDescontos(products) {
-        let now = new Date(); let eligibleForRandom = [];
+        let now = new Date(); let eligible = [];
         products.forEach(p => {
             p.discountPercent = 0; p.oldPrice = p.price;
             if (p.vencimento) {
-                let partes = p.vencimento.split('/'); 
-                if(partes.length === 3) {
-                    let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
+                let pt = p.vencimento.split('/'); 
+                if(pt.length === 3) {
+                    let vDate = new Date(pt[2], pt[1] - 1, pt[0]); 
                     let diff = (vDate - now) / (1000 * 60 * 60 * 24);
                     if (diff >= 0 && diff <= 30) p.discountPercent = 35; 
                     else if (diff > 30 && diff <= 60) p.discountPercent = 30; 
                     else if (diff > 60 && diff <= 90) p.discountPercent = 25;
                 }
             }
-            if (p.discountPercent === 0) eligibleForRandom.push(p);
+            if (p.discountPercent === 0) eligible.push(p);
         });
         let seed = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).getTime();
-        function rnd(s) { let x = Math.sin(s++) * 10000; return x - Math.floor(x); }
-        eligibleForRandom.sort((a, b) => rnd(seed + (parseInt(a.id.replace(/\D/g, '')) || 0)) - rnd(seed + (parseInt(b.id.replace(/\D/g, '')) || 0)));
-        let r20 = 5, r15 = 5, r10 = 100; 
-        eligibleForRandom.forEach(p => { if (r20 > 0) { p.discountPercent = 20; r20--; } else if (r15 > 0) { p.discountPercent = 15; r15--; } else if (r10 > 0) { p.discountPercent = 10; r10--; } });
+        const rnd = s => { let x = Math.sin(s++) * 10000; return x - Math.floor(x); };
+        eligible.sort((a, b) => rnd(seed + (parseInt(a.id) || 0)) - rnd(seed + (parseInt(b.id) || 0)));
+        let r20 = 5, r15 = 5, r10 = 100;
+        eligible.forEach(p => { 
+            if (r20 > 0) { p.discountPercent = 20; r20--; } 
+            else if (r15 > 0) { p.discountPercent = 15; r15--; } 
+            else if (r10 > 0) { p.discountPercent = 10; r10--; } 
+        });
         products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
     }
 
-    // --- FUNÇÕES DE PROMPT ---
-    function addTag(tag) {
-        const area = document.getElementById('promptText');
-        const pos = area.selectionStart;
-        area.value = area.value.slice(0, pos) + tag + area.value.slice(pos);
+    // --- PROMPTS ---
+    function insertTag(tag) {
+        const area = document.getElementById('pText');
+        const start = area.selectionStart;
+        area.value = area.value.slice(0, start) + tag + area.value.slice(start);
         area.focus();
     }
 
     function savePrompt() {
-        const name = document.getElementById('promptName').value;
-        const text = document.getElementById('promptText').value;
-        if(!name || !text) return alert("Por favor, preencha o nome e o texto do prompt.");
-        
-        if(STATE.editingIndex > -1) {
-            STATE.prompts[STATE.editingIndex] = { name, text };
-            STATE.editingIndex = -1;
-            document.getElementById('form-title').innerText = "1. Configurar Novo Prompt";
-            document.getElementById('btn-save-action').innerText = "Salvar Prompt";
-            document.getElementById('btn-cancel-edit').style.display = "none";
+        const name = document.getElementById('pName').value.trim();
+        const text = document.getElementById('pText').value.trim();
+        if(!name || !text) return alert("Preencha todos os campos.");
+
+        if(STATE.editingIdx > -1) {
+            STATE.prompts[STATE.editingIdx] = { name, text };
+            cancelEdit();
         } else {
             STATE.prompts.push({ name, text });
         }
-        
-        localStorage.setItem('da_mkt_prompts', JSON.stringify(STATE.prompts));
-        document.getElementById('promptName').value = "";
-        document.getElementById('promptText').value = "";
+        localStorage.setItem('da_mkt_v5', JSON.stringify(STATE.prompts));
+        document.getElementById('pName').value = "";
+        document.getElementById('pText').value = "";
         render();
     }
 
-    function editPrompt(idx) {
+    function startEdit(idx) {
+        STATE.editingIdx = idx;
         const p = STATE.prompts[idx];
-        document.getElementById('promptName').value = p.name;
-        document.getElementById('promptText').value = p.text;
-        STATE.editingIndex = idx;
-        
-        document.getElementById('form-title').innerText = "📝 Editando Prompt: " + p.name;
-        document.getElementById('btn-save-action').innerText = "Atualizar Prompt";
-        document.getElementById('btn-cancel-edit').style.display = "block";
-        document.querySelector('.prompt-box').scrollIntoView({ behavior: 'smooth' });
+        document.getElementById('pName').value = p.name;
+        document.getElementById('pText').value = p.text;
+        document.getElementById('formTitle').innerText = "Editando Prompt: " + p.name;
+        document.getElementById('btnSave').innerText = "Atualizar Prompt";
+        document.getElementById('btnCancel').style.display = "block";
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function cancelEdit() {
-        STATE.editingIndex = -1;
-        document.getElementById('promptName').value = "";
-        document.getElementById('promptText').value = "";
-        document.getElementById('form-title').innerText = "1. Configurar Novo Prompt";
-        document.getElementById('btn-save-action').innerText = "Salvar Prompt";
-        document.getElementById('btn-cancel-edit').style.display = "none";
+        STATE.editingIdx = -1;
+        document.getElementById('pName').value = "";
+        document.getElementById('pText').value = "";
+        document.getElementById('formTitle').innerText = "Criar Novo Prompt";
+        document.getElementById('btnSave').innerText = "Salvar Prompt";
+        document.getElementById('btnCancel').style.display = "none";
     }
 
-    function delPrompt(idx) {
-        if(confirm("Deseja excluir este prompt?")) {
+    function deletePrompt(idx) {
+        if(confirm("Eliminar prompt?")) {
             STATE.prompts.splice(idx, 1);
-            localStorage.setItem('da_mkt_prompts', JSON.stringify(STATE.prompts));
+            localStorage.setItem('da_mkt_v5', JSON.stringify(STATE.prompts));
             render();
         }
     }
 
-    // --- CÓPIA ---
-    async function copyImage(url) {
+    // --- CÓPIA E AÇÕES ---
+    async function copyImg(url) {
         try {
-            const response = await fetch(url);
-            const blob = await response.blob();
+            const res = await fetch(url);
+            const blob = await res.blob();
             const item = new ClipboardItem({ [blob.type]: blob });
             await navigator.clipboard.write([item]);
-            toast("Imagem copiada para a área de transferência!");
-        } catch (e) {
-            alert("Erro ao copiar imagem. Certifique-se de estar em um ambiente seguro (HTTPS) ou localhost.");
-        }
+            showToast("Imagem copiada para o clipboard!");
+        } catch (e) { alert("Erro ao copiar imagem (HTTPS necessário)."); }
     }
 
     function copyPrompt(id) {
         const prod = STATE.prods.find(p => p.id === id);
-        const selIdx = document.getElementById(`sel-${id}`).value;
+        const sel = document.getElementById(`sel-${id}`).value;
         if(STATE.prompts.length === 0) return alert("Crie um prompt primeiro!");
         
-        let template = STATE.prompts[selIdx].text;
+        // CORREÇÃO CRÍTICA: Substituição de Tags
+        let template = STATE.prompts[sel].text;
         let final = template.replace(/\[NOME\]/g, prod.name)
                             .replace(/\[PRECO\]/g, fmt(prod.price))
                             .replace(/\[PRECO_ANTIGO\]/g, fmt(prod.oldPrice))
                             .replace(/\[DESCONTO\]/g, prod.discountPercent + '%');
         
         navigator.clipboard.writeText(final);
-        toast("Texto do prompt copiado com sucesso!");
+        showToast("Prompt preenchido e copiado!");
     }
 
-    function toast(m) { const t = document.getElementById('toast'); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 2500); }
+    function showToast(m) { 
+        const t = document.getElementById('toast'); t.innerText = m; 
+        t.className = "show"; setTimeout(() => t.className = "", 3000); 
+    }
 
-    // --- RENDERIZAÇÃO ---
+    // --- OTIMIZAÇÃO WEBP ---
+    function optimizeImg(e) {
+        const file = e.target.files[0]; if(!file) return;
+        showToast("Otimizando...");
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(ev) {
+            const img = new Image(); img.src = ev.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width; canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                let quality = 0.9; let data;
+                function check() {
+                    data = canvas.toDataURL('image/webp', quality);
+                    const kb = (data.length * 0.75) / 1024;
+                    if(kb > 500 && quality > 0.1) { quality -= 0.1; check(); }
+                    else {
+                        const l = document.createElement('a'); l.href = data;
+                        l.download = file.name.split('.')[0] + ".webp"; l.click();
+                        showToast("WebP baixado (<500KB)!");
+                    }
+                }
+                check();
+            }
+        }
+    }
+
+    // --- RENDER ---
     function render() {
-        // Prompts Salvos
-        const pList = document.getElementById('savedPromptsList');
-        pList.innerHTML = STATE.prompts.map((p, i) => `
+        // Lista Prompts
+        document.getElementById('promptsListUI').innerHTML = STATE.prompts.map((p, i) => `
             <div class="saved-item">
                 <h4>${p.name}</h4>
                 <p>${p.text}</p>
                 <div class="saved-actions">
-                    <button class="btn-small btn-edit" onclick="editPrompt(${i})">Editar</button>
-                    <button class="btn-small btn-del" onclick="delPrompt(${i})">Excluir</button>
+                    <button class="btn-sml btn-edit" onclick="startEdit(${i})">Editar</button>
+                    <button class="btn-sml btn-del" onclick="deletePrompt(${i})">Excluir</button>
                 </div>
             </div>
         `).join('');
 
-        // Grid de Produtos
-        const grid = document.getElementById('productGrid');
-        const search = norm(document.getElementById('searchInput').value);
-        const disc = parseInt(document.getElementById('discountFilter').value);
-        const filtered = STATE.prods.filter(p => p.discountPercent >= disc && norm(p.name).includes(search));
-        const promptOpts = STATE.prompts.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
+        // Grid Produtos
+        const grid = document.getElementById('gridUI');
+        const query = norm(document.getElementById('searchUI').value);
+        const minD = parseInt(document.getElementById('discUI').value);
+
+        const filtered = STATE.prods.filter(p => p.discountPercent >= minD && norm(p.name).includes(query));
+        const opts = STATE.prompts.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
 
         grid.innerHTML = filtered.map(p => `
             <div class="card">
-                <div class="badge">-${p.discountPercent}%</div>
-                <div class="card-img-box"><img src="${p.img}" onerror="this.src='../img/logoantonia5.png'"></div>
+                ${p.discountPercent > 0 ? `<div class="badge">-${p.discountPercent}%</div>` : ''}
+                <div class="card-img-box"><img src="${p.img}" onerror="this.src='${LOGO}'"></div>
                 <div class="card-title">${p.name}</div>
-                <div class="card-price">${fmt(p.price)}</div>
+                <div class="card-prices">
+                    <span class="price-old">${p.discountPercent > 0 ? fmt(p.oldPrice) : ''}</span>
+                    <span class="price-new">${fmt(p.price)}</span>
+                </div>
                 <div class="card-actions">
-                    <select id="sel-${p.id}">${promptOpts || '<option>Nenhum prompt salvo</option>'}</select>
+                    <select id="sel-${p.id}">${opts || '<option>Nenhum prompt</option>'}</select>
                     <div class="btn-row">
-                        <button class="btn-action btn-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
-                        <button class="btn-action btn-i" onclick="copyImage('${p.img}')">Copiar Imagem</button>
+                        <button class="btn-act btn-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
+                        <button class="btn-act btn-i" onclick="copyImg('${p.img}')">Copiar Imagem</button>
                     </div>
                 </div>
                 <div class="card-footer-logo">
-                    <img src="${LOGO_URL}" alt="Dona Antônia">
+                    <img src="${LOGO}">
                 </div>
             </div>
         `).join('');
@@ -298,18 +342,15 @@
             const res = await fetch('/site/produtos.json').then(r => r.json());
             STATE.prods = res.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => ({
                 id: String(p.codigo || p.id),
-                name: formatName(p.nome),
+                name: p.nome.toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase()),
                 price: parseFloat(p.preco) * 1.01,
                 img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`,
                 vencimento: p.validade || p.vencimento || null
             }));
             aplicarDescontos(STATE.prods);
             render();
-        } catch (e) { 
-            console.error("Erro no carregamento:", e);
-        }
+        } catch (e) { console.error("Erro no JSON", e); }
     }
-
     document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
