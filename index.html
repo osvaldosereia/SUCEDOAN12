@@ -204,8 +204,9 @@
 </head>
 <body>
 
-    <!-- EDITE AQUI OS CÓDIGOS DOS PRODUTOS DO CARROSSEL DE DESTAQUE. BASTA SEPARAR POR VÍRGULA -->
-    <div id="codigos-carrossel-destaque" data-codigos="383494C, P490, P0026" style="display: none;"></div>
+    <!-- EDITE AQUI OS CÓDIGOS DOS PRODUTOS E OS DESCONTOS DO CARROSSEL DE DESTAQUE. -->
+    <!-- Formato: "CODIGO:DESCONTO", separe por vírgula. Ex: "383494C:30, P490:15, P0026:20" -->
+    <div id="codigos-carrossel-destaque" data-codigos="383494C:30, P490:15, P0026:20" style="display: none;"></div>
 
     <div class="overlay" id="overlay"></div>
 
@@ -492,8 +493,8 @@
                 </div>`;
         }
 
-        // ==========================================
-        // CARROSSSEL DINÂMICO DE DESTAQUES
+       // ==========================================
+        // CARROSSEL DINÂMICO DE DESTAQUES
         // ==========================================
         function getCarrosselDestaquesHTML() {
             let codigosElement = $('codigos-carrossel-destaque');
@@ -501,12 +502,35 @@
             let codigosText = codigosElement.getAttribute('data-codigos');
             if(!codigosText) return '';
             
-            let codigos = codigosText.split(',').map(c => c.trim());
+            // 1. Dividimos a string por vírgula para pegar cada par "codigo:desconto"
+            let itensCarrossel = codigosText.split(',').map(c => c.trim());
             let htmlCards = '';
             
-            codigos.forEach(cod => {
-                let prod = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod);
-                if(prod) {
+            itensCarrossel.forEach(item => {
+                // 2. Divide o item usando os dois pontos ":" (Ex: "383494C:30" vira ["383494C", "30"])
+                let partes = item.split(':');
+                let cod = partes[0].trim();
+                // Verifica se foi passado um desconto (posição 1), se não, fica null
+                let customDiscount = partes.length > 1 ? parseInt(partes[1].trim()) : null;
+
+                // 3. Procura o produto no banco de dados principal
+                let prodOriginal = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod);
+                
+                if(prodOriginal) {
+                    // 4. CLONAGEM: Clonamos o produto para não alterar o preço dele no resto da loja!
+                    let prod = { ...prodOriginal }; 
+                    
+                    // 5. Se existe um desconto customizado no HTML, aplicamos apenas neste clone
+                    if(customDiscount && !isNaN(customDiscount)) {
+                        prod.discountPercent = customDiscount;
+                        // O preço original base (sem desconto) é o oldPrice. Se ele ainda não tiver, é o price atual.
+                        let precoBase = prod.oldPrice || prod.price; 
+                        prod.oldPrice = precoBase;
+                        // Calcula o novo preço com o desconto informado no HTML
+                        prod.price = precoBase * (1 - (customDiscount / 100));
+                    }
+                    
+                    // 6. Renderiza o card e adiciona na lista do carrossel
                     htmlCards += `<div class="carrossel-item">${renderCardHTML(prod)}</div>`;
                 }
             });
