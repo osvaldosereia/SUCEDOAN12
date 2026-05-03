@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Prompts Gemini - Dona Antônia</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Variáveis de cores baseadas no seu layout */
+        :root {
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            --primary: #000000;
+            --danger: #ef4444;
+            --border-light: #e2e8f0;
+            --success: #10b981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-dark); padding: 20px; }
+
+        .container { max-width: 1200px; margin: 0 auto; }
+
+        h1 { font-weight: 900; margin-bottom: 20px; font-size: 24px; }
+
+        /* PAINEL DE CONFIGURAÇÃO DE PROMPTS */
+        .panel { background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border-light); margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .panel-title { font-weight: 800; font-size: 18px; margin-bottom: 15px; border-bottom: 1px solid var(--border-light); padding-bottom: 10px; }
+        
+        .prompt-manager { display: flex; gap: 10px; margin-bottom: 15px; }
+        .prompt-manager input { flex: 1; padding: 10px; border: 1px solid var(--border-light); border-radius: 8px; outline: none; }
+        .prompt-manager button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        
+        .prompt-list { display: flex; flex-direction: column; gap: 10px; }
+        .prompt-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg-body); padding: 10px; border-radius: 8px; border: 1px solid var(--border-light); }
+        .prompt-item-text { font-size: 14px; color: var(--text-light); }
+        .btn-remove { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;}
+
+        /* FILTROS */
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filters input, .filters select { padding: 12px; border: 1px solid var(--border-light); border-radius: 8px; outline: none; min-width: 200px; flex: 1; }
+
+        /* GRID DE PRODUTOS */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        
+        .card { background: var(--bg-card); border: 1px solid var(--border-light); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; position: relative; }
+        .card-discount { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 12px; }
+        .card-img { width: 100%; height: 150px; object-fit: contain; margin-bottom: 15px; }
+        .card-title { font-weight: 600; font-size: 15px; margin-bottom: 10px; line-height: 1.3; flex: 1; }
+        .card-price-old { font-size: 12px; color: var(--text-light); text-decoration: line-through; }
+        .card-price { font-size: 18px; font-weight: 900; color: var(--text-dark); margin-bottom: 15px; }
+        
+        .card-action select { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border-light); border-radius: 6px; outline: none; }
+        .btn-copy { width: 100%; padding: 12px; background: var(--success); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .btn-copy:active { transform: scale(0.98); }
+
+        /* Toast Message (Aviso de copiado) */
+        #toast { visibility: hidden; min-width: 250px; background-color: var(--text-dark); color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 1; left: 50%; bottom: 30px; font-weight: 600; transform: translateX(-50%); }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Painel Gerador de Prompts - Ofertas</h1>
+
+        <div class="panel">
+            <div class="panel-title">1. Prompts Padrão</div>
+            <p style="font-size: 13px; color: var(--text-light); margin-bottom: 10px;">
+                Crie seus textos base. Use as tags <strong>[NOME]</strong>, <strong>[PRECO]</strong>, <strong>[PRECO_ANTIGO]</strong> e <strong>[DESCONTO]</strong>. O sistema substituirá automaticamente.
+            </p>
+            <div class="prompt-manager">
+                <input type="text" id="newPromptInput" placeholder="Ex: Crie um post para Instagram sobre [NOME] que está de [PRECO_ANTIGO] por [PRECO]...">
+                <button onclick="addPrompt()">Adicionar Prompt</button>
+            </div>
+            <div class="prompt-list" id="promptListUI">
+                </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">2. Buscar Ofertas</div>
+            <div class="filters">
+                <input type="text" id="searchInput" placeholder="Buscar por nome do produto..." onkeyup="renderProducts()">
+                <select id="discountFilter" onchange="renderProducts()">
+                    <option value="0">Todos os descontos</option>
+                    <option value="10">Acima de 10%</option>
+                    <option value="20">Acima de 20%</option>
+                    <option value="30">Acima de 30%</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid" id="productGrid">
+            </div>
+    </div>
+
+    <div id="toast">Prompt copiado com sucesso! 🎉</div>
+
+    <script>
+        // ==========================================
+        // 1. ESTADO DA APLICAÇÃO E VARIÁVEIS
+        // ==========================================
+        let allProducts = [];
+        let prompts = [
+            "Atue como um copywriter focado em conversão. Crie uma legenda de Instagram chamativa para o produto [NOME]. Destaque que ele caiu de [PRECO_ANTIGO] para apenas [PRECO] ([DESCONTO]% de desconto). Inclua emojis e CTA para o link na bio.",
+            "Faça um roteiro de vídeo curto (Reels/TikTok) de 15 segundos para vender o produto [NOME] que está em oferta por [PRECO]."
+        ];
+
+        // Funções de formatação (iguais ao seu site)
+        function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
+        function formatName(name) { 
+            if(!name) return ""; 
+            let words = name.toLowerCase().split(/\s+/); 
+            return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); 
+        }
+
+        // ==========================================
+        // 2. LÓGICA DE PRODUTOS E DESCONTOS (Do seu site original)
+        // ==========================================
+        function aplicarDescontos(products) {
+            let now = new Date(); 
+            let eligibleForRandom = [];
+            
+            products.forEach(p => {
+                p.discountPercent = 0; 
+                p.oldPrice = p.price;
+                
+                if (p.vencimento) {
+                    let partes = p.vencimento.split('/'); 
+                    if(partes.length === 3) {
+                        let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
+                        let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
+                        if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35; 
+                        else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30; 
+                        else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;
+                    }
+                }
+                if (p.discountPercent === 0) eligibleForRandom.push(p);
+            });
+            
+            let diaDaSemana = now.getDay();
+            let domingoDaSemana = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diaDaSemana);
+            let currentSeed = domingoDaSemana.getTime(); 
+            
+            function seededRandom(seed) { 
+                let x = Math.sin(seed++) * 10000; 
+                return x - Math.floor(x); 
+            }
+            
+            eligibleForRandom.sort((a, b) => { 
+                let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); 
+                let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); 
+                let randA = seededRandom(currentSeed + idNumA); 
+                let randB = seededRandom(currentSeed + idNumB); 
+                return randA - randB; 
+            });
+            
+            let r20 = 5, r15 = 5, r10 = 100; 
+            
+            eligibleForRandom.forEach(p => { 
+                if (r20 > 0) { p.discountPercent = 20; r20--; } 
+                else if (r15 > 0) { p.discountPercent = 15; r15--; } 
+                else if (r10 > 0) { p.discountPercent = 10; r10--; } 
+            });
+            
+            products.forEach(p => { 
+                if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); 
+            });
+        }
+
+        async function fetchWithCache(url, key) {
+            try { 
+                let cached = localStorage.getItem(key); 
+                let cacheTime = localStorage.getItem(key + '_time'); 
+                let now = Date.now(); 
+                if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached); 
+                
+                // Em ambiente real, isso tentará buscar do seu site
+                let res = await fetch(url).then(r => r.json()); 
+                localStorage.setItem(key, JSON.stringify(res)); 
+                localStorage.setItem(key + '_time', now); 
+                return res; 
+            } catch (e) { 
+                console.log("Aviso: Usando dados mockados para demonstração.");
+                // Dados de fallback caso esteja rodando localmente sem servidor
+                return [
+                    { id: "1", codigo: "1", nome: "Arroz Tio João 5kg", preco: "25.00", estoque: "10", url_imagem: "https://via.placeholder.com/150", situacao: "A" },
+                    { id: "2", codigo: "2", nome: "Feijão Carioca 1kg", preco: "8.50", estoque: "20", url_imagem: "https://via.placeholder.com/150", situacao: "A" },
+                    { id: "3", codigo: "3", nome: "Óleo de Soja 900ml", preco: "6.20", estoque: "30", url_imagem: "https://via.placeholder.com/150", situacao: "A", validade: "10/05/2026" }
+                ]; 
+            }
+        }
+
+        async function init() {
+            renderPrompts();
+            
+            // Busca os dados da mesma forma que o site original
+            const r2 = await fetchWithCache('/site/produtos.json', 'cache_prods');
+            if (r2 && r2.length > 0) {
+                allProducts = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
+                    let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
+                    return { 
+                        id: String(p.codigo || p.id), 
+                        name: baseName, 
+                        price: parseFloat(p.preco) * 1.01, 
+                        stock: parseInt(p.estoque) || 0, 
+                        img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
+                        vencimento: p.validade || p.vencimento || null,
+                    };
+                });
+                aplicarDescontos(allProducts);
+                renderProducts();
+            }
+        }
+
+        // ==========================================
+        // 3. INTERFACE E INTERAÇÕES
+        // ==========================================
+        
+        function renderPrompts() {
+            const list = document.getElementById('promptListUI');
+            list.innerHTML = prompts.map((p, index) => `
+                <div class="prompt-item">
+                    <div class="prompt-item-text"><strong>Opção ${index + 1}:</strong> ${p}</div>
+                    <button class="btn-remove" onclick="removePrompt(${index})">Excluir</button>
+                </div>
+            `).join('');
+        }
+
+        function addPrompt() {
+            const input = document.getElementById('newPromptInput');
+            if (input.value.trim() !== "") {
+                prompts.push(input.value.trim());
+                input.value = "";
+                renderPrompts();
+                renderProducts(); // Atualiza os selects nos cards
+            }
+        }
+
+        function removePrompt(index) {
+            prompts.splice(index, 1);
+            renderPrompts();
+            renderProducts(); // Atualiza os selects nos cards
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            const searchTerms = norm(document.getElementById('searchInput').value).split(' ');
+            const minDiscount = parseInt(document.getElementById('discountFilter').value);
+
+            // Filtra: Apenas ofertas, que batam com a busca e com o desconto mínimo
+            const ofertas = allProducts.filter(p => {
+                if (p.discountPercent <= 0) return false; // Só mostra o que é oferta
+                if (p.discountPercent < minDiscount) return false;
+                
+                let searchTxt = norm(p.name);
+                return searchTerms.every(term => searchTxt.includes(term));
+            });
+
+            // Cria opções para o select de prompts
+            const promptOptions = prompts.map((p, i) => `<option value="${i}">Prompt ${i + 1}</option>`).join('');
+
+            grid.innerHTML = ofertas.map(p => `
+                <div class="card">
+                    <div class="card-discount">-${p.discountPercent}%</div>
+                    <img src="${p.img}" class="card-img" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjY2JkNWUxIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xNiAxMVY3YTQgNCAwIDAwLTggMHY0TTRgOWgxNmwxIDEySDNsMS0xMnoiLz48L3N2Zz4='">
+                    <div class="card-title">${p.name}</div>
+                    <div class="card-price-old">${fmt(p.oldPrice)}</div>
+                    <div class="card-price">${fmt(p.price)}</div>
+                    
+                    <div class="card-action">
+                        <select id="sel-prompt-${p.id}">
+                            ${promptOptions}
+                        </select>
+                        <button class="btn-copy" onclick="generateAndCopy('${p.id}')">Copiar para Gemini</button>
+                    </div>
+                </div>
+            `).join('');
+
+            if(ofertas.length === 0) {
+                grid.innerHTML = "<p style='color: var(--text-light)'>Nenhuma oferta encontrada com esses filtros.</p>";
+            }
+        }
+
+        // ==========================================
+        // 4. LÓGICA DE GERAÇÃO E CÓPIA DO PROMPT
+        // ==========================================
+        function generateAndCopy(productId) {
+            // 1. Acha o produto e o prompt selecionado
+            const prod = allProducts.find(p => p.id === productId);
+            const promptIndex = document.getElementById(`sel-prompt-${productId}`).value;
+            let textTemplate = prompts[promptIndex];
+
+            // 2. Substitui as tags no texto
+            textTemplate = textTemplate.replace(/\[NOME\]/g, prod.name);
+            textTemplate = textTemplate.replace(/\[PRECO\]/g, fmt(prod.price));
+            textTemplate = textTemplate.replace(/\[PRECO_ANTIGO\]/g, fmt(prod.oldPrice));
+            textTemplate = textTemplate.replace(/\[DESCONTO\]/g, prod.discountPercent);
+
+            // 3. Monta o texto final estruturado para o Gemini
+            // Enviamos a URL da imagem no prompt, pois o Gemini acessa a internet e lê imagens via link
+            let finalPrompt = `${textTemplate}\n\n`;
+            finalPrompt += `--- DADOS DE REFERÊNCIA ---\n`;
+            finalPrompt += `Produto: ${prod.name}\n`;
+            finalPrompt += `Valor: ${fmt(prod.price)}\n`;
+            
+            // Precisamos garantir que a URL seja absoluta se for um caminho relativo
+            let imageUrl = prod.img;
+            if (imageUrl.startsWith('/')) {
+                imageUrl = window.location.origin + imageUrl;
+            }
+            finalPrompt += `URL da Imagem de Referência: ${imageUrl}\n`;
+
+            // 4. Copia para a área de transferência
+            navigator.clipboard.writeText(finalPrompt).then(() => {
+                showToast();
+            }).catch(err => {
+                console.error('Erro ao copiar: ', err);
+                alert("Erro ao copiar o texto. Verifique as permissões do navegador.");
+            });
+        }
+
+        function showToast() {
+            var x = document.getElementById("toast");
+            x.className = "show";
+            setTimeout(function(){ x.className = x.className.replace("show", ""); }, 3000);
+        }
+
+        // Inicializa o sistema ao carregar a página
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>
