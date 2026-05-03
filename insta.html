@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Marketing Profissional - Dona Antônia</title>
+    <title>Marketing Hub V5 - Dona Antônia</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -67,15 +67,15 @@
         .card-title { font-weight: 700; font-size: 16px; margin-bottom: 12px; height: 42px; overflow: hidden; line-height: 1.3; color: var(--primary); }
         .card-prices { margin-bottom: 20px; }
         .price-old { font-size: 14px; color: #94a3b8; text-decoration: line-through; display: block; margin-bottom: 2px; font-weight: 600; }
-        .price-new { font-weight: 900; font-size: 22px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .price-new { font-weight: 900; font-size: 22px; color: var(--primary); }
         
         .card-actions { display: grid; gap: 12px; margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 12px; }
         .card-actions select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-weight: 700; width: 100%; }
         
         .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .btn-act { padding: 12px; border: none; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
-        .btn-p { background: var(--success); box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
-        .btn-i { background: var(--accent); box-shadow: 0 4px 12px rgba(99,102,241,0.2); }
+        .btn-p { background: var(--success); }
+        .btn-i { background: var(--accent); }
 
         .card-footer-logo { border-top: 1px solid var(--border); padding-top: 20px; display: flex; justify-content: center; margin-top: auto; }
         .card-footer-logo img { height: 40px; width: auto; object-fit: contain; }
@@ -86,7 +86,7 @@
         .fab svg { width: 30px; height: 30px; fill: white; }
 
         /* TOAST */
-        #toast { visibility: hidden; background: #0f172a; color: white; text-align: center; border-radius: 50px; padding: 16px 40px; position: fixed; z-index: 5000; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+        #toast { visibility: hidden; background: #0f172a; color: white; text-align: center; border-radius: 50px; padding: 16px 40px; position: fixed; z-index: 5000; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; }
         #toast.show { visibility: visible; animation: fadeInUp 0.4s forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
     </style>
@@ -94,15 +94,13 @@
 <body>
 
 <div class="container">
-    <div class="header">
-        <h1>Dashboard Marketing Dona Antônia</h1>
-    </div>
+    <div class="header"><h1>Dashboard Marketing Dona Antônia</h1></div>
 
     <div class="prompt-box">
         <h2 id="formTitle">Criar Novo Prompt</h2>
         <div class="input-group">
             <input type="text" id="pName" placeholder="Nome do Prompt (ex: Story Promocional)">
-            <textarea id="pText" placeholder="Escreva o comando para o Gemini. Use os botões de tags para preenchimento dinâmico."></textarea>
+            <textarea id="pText" placeholder="Escreva o comando para o Gemini."></textarea>
         </div>
         <div class="tag-row">
             <button class="btn-tag" onclick="insertTag('[NOME]')">+ [NOME]</button>
@@ -114,12 +112,11 @@
             <button class="btn-main" id="btnSave" onclick="savePrompt()">Salvar Prompt</button>
             <button class="btn-cancel" id="btnCancel" onclick="cancelEdit()">Cancelar</button>
         </div>
-
         <div class="saved-prompts" id="promptsListUI"></div>
     </div>
 
     <div class="filters">
-        <input type="text" id="searchUI" placeholder="Pesquisar produto pelo nome..." onkeyup="render()">
+        <input type="text" id="searchUI" placeholder="Pesquisar produto..." onkeyup="render()">
         <select id="discUI" onchange="render()">
             <option value="0">Ver Tudo</option>
             <option value="20">Descontos +20%</option>
@@ -130,23 +127,19 @@
     <div class="grid" id="gridUI"></div>
 </div>
 
-<button class="fab" title="Otimizar imagem local para WebP" onclick="document.getElementById('fileIn').click()">
+<button class="fab" title="Otimizar PNG local (<1MB)" onclick="document.getElementById('fileIn').click()">
     <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
 </button>
-<input type="file" id="fileIn" style="display:none" accept="image/*" onchange="optimizeImg(event)">
+<input type="file" id="fileIn" style="display:none" accept="image/*" onchange="optimizePng(event)">
 
-<div id="toast">Copiado com sucesso!</div>
+<div id="toast">Copiado!</div>
 
 <script>
     // --- ESTADO ---
-    const STATE = { 
-        prods: [], 
-        prompts: JSON.parse(localStorage.getItem('da_mkt_v5')) || [],
-        editingIdx: -1 
-    };
+    const STATE = { prods: [], prompts: JSON.parse(localStorage.getItem('da_mkt_v6')) || [], editingIdx: -1 };
     const LOGO = "../img/logoantonia5.png";
 
-    // --- FORMATAÇÃO E LÓGICA (IDÊNTICA AO SITE ORIGINAL) ---
+    // --- LÓGICA DE DADOS ---
     const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const norm = s => s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
     
@@ -178,28 +171,22 @@
         products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
     }
 
-    // --- PROMPTS ---
+    // --- TAGS E SALVAMENTO ---
     function insertTag(tag) {
         const area = document.getElementById('pText');
-        const start = area.selectionStart;
-        area.value = area.value.slice(0, start) + tag + area.value.slice(start);
+        const pos = area.selectionStart;
+        area.value = area.value.slice(0, pos) + tag + area.value.slice(pos);
         area.focus();
     }
 
     function savePrompt() {
         const name = document.getElementById('pName').value.trim();
         const text = document.getElementById('pText').value.trim();
-        if(!name || !text) return alert("Preencha todos os campos.");
-
-        if(STATE.editingIdx > -1) {
-            STATE.prompts[STATE.editingIdx] = { name, text };
-            cancelEdit();
-        } else {
-            STATE.prompts.push({ name, text });
-        }
-        localStorage.setItem('da_mkt_v5', JSON.stringify(STATE.prompts));
-        document.getElementById('pName').value = "";
-        document.getElementById('pText').value = "";
+        if(!name || !text) return alert("Preencha os campos.");
+        if(STATE.editingIdx > -1) { STATE.prompts[STATE.editingIdx] = { name, text }; cancelEdit(); }
+        else { STATE.prompts.push({ name, text }); }
+        localStorage.setItem('da_mkt_v6', JSON.stringify(STATE.prompts));
+        document.getElementById('pName').value = ""; document.getElementById('pText').value = "";
         render();
     }
 
@@ -208,65 +195,51 @@
         const p = STATE.prompts[idx];
         document.getElementById('pName').value = p.name;
         document.getElementById('pText').value = p.text;
-        document.getElementById('formTitle').innerText = "Editando Prompt: " + p.name;
-        document.getElementById('btnSave').innerText = "Atualizar Prompt";
+        document.getElementById('formTitle').innerText = "Editando: " + p.name;
+        document.getElementById('btnSave').innerText = "Atualizar";
         document.getElementById('btnCancel').style.display = "block";
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function cancelEdit() {
         STATE.editingIdx = -1;
-        document.getElementById('pName').value = "";
-        document.getElementById('pText').value = "";
+        document.getElementById('pName').value = ""; document.getElementById('pText').value = "";
         document.getElementById('formTitle').innerText = "Criar Novo Prompt";
         document.getElementById('btnSave').innerText = "Salvar Prompt";
         document.getElementById('btnCancel').style.display = "none";
     }
 
-    function deletePrompt(idx) {
-        if(confirm("Eliminar prompt?")) {
-            STATE.prompts.splice(idx, 1);
-            localStorage.setItem('da_mkt_v5', JSON.stringify(STATE.prompts));
-            render();
-        }
-    }
-
-    // --- CÓPIA E AÇÕES ---
+    // --- AÇÕES ---
     async function copyImg(url) {
         try {
             const res = await fetch(url);
             const blob = await res.blob();
             const item = new ClipboardItem({ [blob.type]: blob });
             await navigator.clipboard.write([item]);
-            showToast("Imagem copiada para o clipboard!");
-        } catch (e) { alert("Erro ao copiar imagem (HTTPS necessário)."); }
+            showToast("Imagem copiada!");
+        } catch (e) { alert("Use HTTPS ou Localhost."); }
     }
 
     function copyPrompt(id) {
         const prod = STATE.prods.find(p => p.id === id);
-        const sel = document.getElementById(`sel-${id}`).value;
-        if(STATE.prompts.length === 0) return alert("Crie um prompt primeiro!");
+        const selIdx = document.getElementById(`sel-${id}`).value;
+        if(STATE.prompts.length === 0) return alert("Crie um prompt!");
         
-        // CORREÇÃO CRÍTICA: Substituição de Tags
-        let template = STATE.prompts[sel].text;
+        // REVISÃO: Substituição Global de Tags
+        let template = STATE.prompts[selIdx].text;
         let final = template.replace(/\[NOME\]/g, prod.name)
                             .replace(/\[PRECO\]/g, fmt(prod.price))
                             .replace(/\[PRECO_ANTIGO\]/g, fmt(prod.oldPrice))
                             .replace(/\[DESCONTO\]/g, prod.discountPercent + '%');
         
         navigator.clipboard.writeText(final);
-        showToast("Prompt preenchido e copiado!");
+        showToast("Prompt preenchido!");
     }
 
-    function showToast(m) { 
-        const t = document.getElementById('toast'); t.innerText = m; 
-        t.className = "show"; setTimeout(() => t.className = "", 3000); 
-    }
-
-    // --- OTIMIZAÇÃO WEBP ---
-    function optimizeImg(e) {
+    // OTIMIZAÇÃO PNG < 1MB
+    function optimizePng(e) {
         const file = e.target.files[0]; if(!file) return;
-        showToast("Otimizando...");
+        showToast("Otimizando para PNG...");
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = function(ev) {
@@ -274,65 +247,64 @@
             img.onload = function() {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                canvas.width = img.width; canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                let quality = 0.9; let data;
-                function check() {
-                    data = canvas.toDataURL('image/webp', quality);
+                let scale = 1.0;
+                let data;
+                function process() {
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    ctx.clearRect(0,0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    data = canvas.toDataURL('image/png');
                     const kb = (data.length * 0.75) / 1024;
-                    if(kb > 500 && quality > 0.1) { quality -= 0.1; check(); }
+                    if(kb > 1024 && scale > 0.1) { scale -= 0.1; process(); }
                     else {
                         const l = document.createElement('a'); l.href = data;
-                        l.download = file.name.split('.')[0] + ".webp"; l.click();
-                        showToast("WebP baixado (<500KB)!");
+                        l.download = file.name.split('.')[0] + ".png"; l.click();
+                        showToast("PNG baixado (<1MB)!");
                     }
                 }
-                check();
+                process();
             }
         }
     }
 
+    function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
+
     // --- RENDER ---
     function render() {
-        // Lista Prompts
         document.getElementById('promptsListUI').innerHTML = STATE.prompts.map((p, i) => `
             <div class="saved-item">
                 <h4>${p.name}</h4>
                 <p>${p.text}</p>
                 <div class="saved-actions">
                     <button class="btn-sml btn-edit" onclick="startEdit(${i})">Editar</button>
-                    <button class="btn-sml btn-del" onclick="deletePrompt(${i})">Excluir</button>
+                    <button class="btn-sml btn-del" onclick="if(confirm('Apagar?')){STATE.prompts.splice(${i},1);localStorage.setItem('da_mkt_v6',JSON.stringify(STATE.prompts));render()}">Excluir</button>
                 </div>
             </div>
         `).join('');
 
-        // Grid Produtos
-        const grid = document.getElementById('gridUI');
         const query = norm(document.getElementById('searchUI').value);
         const minD = parseInt(document.getElementById('discUI').value);
-
         const filtered = STATE.prods.filter(p => p.discountPercent >= minD && norm(p.name).includes(query));
         const opts = STATE.prompts.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
 
-        grid.innerHTML = filtered.map(p => `
+        document.getElementById('gridUI').innerHTML = filtered.map(p => `
             <div class="card">
                 ${p.discountPercent > 0 ? `<div class="badge">-${p.discountPercent}%</div>` : ''}
                 <div class="card-img-box"><img src="${p.img}" onerror="this.src='${LOGO}'"></div>
                 <div class="card-title">${p.name}</div>
                 <div class="card-prices">
                     <span class="price-old">${p.discountPercent > 0 ? fmt(p.oldPrice) : ''}</span>
-                    <span class="price-new">${fmt(p.price)}</span>
+                    <span class="price-new" style="display:block">${fmt(p.price)}</span>
                 </div>
                 <div class="card-actions">
                     <select id="sel-${p.id}">${opts || '<option>Nenhum prompt</option>'}</select>
                     <div class="btn-row">
-                        <button class="btn-act btn-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
-                        <button class="btn-act btn-i" onclick="copyImg('${p.img}')">Copiar Imagem</button>
+                        <button class="btn-act btn-p" onclick="copyPrompt('${p.id}')">Prompt</button>
+                        <button class="btn-act btn-i" onclick="copyImg('${p.img}')">Imagem</button>
                     </div>
                 </div>
-                <div class="card-footer-logo">
-                    <img src="${LOGO}">
-                </div>
+                <div class="card-footer-logo"><img src="${LOGO}"></div>
             </div>
         `).join('');
     }
@@ -342,14 +314,13 @@
             const res = await fetch('/site/produtos.json').then(r => r.json());
             STATE.prods = res.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => ({
                 id: String(p.codigo || p.id),
-                name: p.nome.toLowerCase().replace(/(^\w|\s\w)/g, m => m.toUpperCase()),
+                name: p.nome.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
                 price: parseFloat(p.preco) * 1.01,
                 img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`,
                 vencimento: p.validade || p.vencimento || null
             }));
-            aplicarDescontos(STATE.prods);
-            render();
-        } catch (e) { console.error("Erro no JSON", e); }
+            aplicarDescontos(STATE.prods); render();
+        } catch (e) { console.error(e); }
     }
     document.addEventListener('DOMContentLoaded', init);
 </script>
