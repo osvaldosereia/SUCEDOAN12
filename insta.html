@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel de Marketing - Dona Antônia</title>
+    <title>Painel de Marketing V3 - Dona Antônia</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -27,56 +27,73 @@
         .prompt-box h2 { font-size: 18px; font-weight: 800; margin-bottom: 15px; }
         
         .input-group { display: grid; gap: 10px; margin-bottom: 15px; }
-        .input-group input, .input-group textarea { padding: 12px; border: 1px solid var(--border); border-radius: 8px; width: 100%; outline-color: var(--accent); }
-        .input-group textarea { height: 80px; resize: vertical; }
+        .input-group input, .input-group textarea { padding: 12px; border: 1px solid var(--border); border-radius: 8px; width: 100%; outline-color: var(--accent); font-size: 14px; }
+        .input-group textarea { height: 100px; resize: vertical; }
 
-        .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .tag-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
         .btn-tag { padding: 6px 12px; background: #eef2ff; color: var(--accent); border: 1px solid #c7d2fe; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; }
         .btn-tag:hover { background: var(--accent); color: white; }
 
-        .btn-main { padding: 12px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; width: fit-content; }
+        .btn-main { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; }
+        .btn-cancel { padding: 12px 24px; background: #94a3b8; color: white; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; margin-left: 10px; display: none; }
 
-        .saved-prompts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
-        .saved-item { background: #f1f5f9; padding: 8px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); }
-        .btn-del { color: var(--danger); cursor: pointer; border: none; background: none; font-weight: 900; }
+        .saved-prompts { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
+        .saved-item { background: #f1f5f9; padding: 12px; border-radius: 12px; border: 1px solid var(--border); position: relative; }
+        .saved-item h4 { font-size: 13px; font-weight: 800; margin-bottom: 5px; color: var(--primary); }
+        .saved-item p { font-size: 11px; color: var(--text-light); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .saved-actions { display: flex; gap: 10px; margin-top: 8px; }
+        .btn-small { background: none; border: none; font-size: 11px; font-weight: 700; cursor: pointer; padding: 0; }
+        .btn-edit { color: var(--accent); }
+        .btn-del { color: var(--danger); }
 
         /* FILTROS E PRODUTOS */
         .filters { display: flex; gap: 15px; margin-bottom: 20px; }
         .filters input { flex: 2; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
         .filters select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); }
 
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 15px; position: relative; }
-        .badge { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 11px; }
-        .card-img-box { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        /* GRID E CARDS */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: white; border: 1px solid var(--border); border-radius: 16px; padding: 20px; position: relative; display: flex; flex-direction: column; transition: 0.2s; }
+        .card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .badge { position: absolute; top: 15px; right: 15px; background: var(--danger); color: white; padding: 5px 10px; border-radius: 8px; font-weight: 900; font-size: 12px; z-index: 2; }
+        
+        .card-img-box { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
         .card-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        .card-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; height: 34px; overflow: hidden; }
-        .card-price { font-weight: 900; font-size: 18px; margin-bottom: 15px; }
+        .card-title { font-weight: 700; font-size: 15px; margin-bottom: 10px; height: 40px; overflow: hidden; line-height: 1.3; }
+        .card-price { font-weight: 900; font-size: 20px; margin-bottom: 20px; }
         
-        .card-actions { display: grid; gap: 8px; }
-        .card-actions select { padding: 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; }
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .btn-action { padding: 10px; border: none; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; color: white; }
+        .card-actions { display: grid; gap: 10px; margin-bottom: 20px; }
+        .card-actions select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-weight: 600; background: #f8fafc; }
+        
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn-action { padding: 12px; border: none; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-action:active { transform: scale(0.95); }
         .btn-p { background: var(--success); }
         .btn-i { background: var(--accent); }
 
-        #toast { visibility: hidden; background: #333; color: white; text-align: center; border-radius: 50px; padding: 16px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-weight: 600; }
-        #toast.show { visibility: visible; }
+        /* LOGO NO CARD */
+        .card-footer-logo { border-top: 1px solid var(--border); padding-top: 15px; display: flex; justify-content: center; margin-top: auto; }
+        .card-footer-logo img { height: 35px; width: auto; object-fit: contain; filter: grayscale(1) opacity(0.5); transition: 0.3s; }
+        .card:hover .card-footer-logo img { filter: grayscale(0) opacity(1); }
+
+        #toast { visibility: hidden; background: #0f172a; color: white; text-align: center; border-radius: 50px; padding: 16px 30px; position: fixed; z-index: 1000; left: 50%; bottom: 30px; transform: translateX(-50%); font-weight: 700; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        #toast.show { visibility: visible; animation: slideUp 0.3s forwards; }
+        @keyframes slideUp { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h1>Gerador de Prompts Gemini</h1>
+        <h1>Gerador de Marketing - Dona Antônia</h1>
     </div>
 
     <div class="prompt-box">
-        <h2>1. Configure seus Prompts</h2>
+        <h2 id="form-title">1. Configurar Novo Prompt</h2>
         <div class="input-group">
-            <input type="text" id="promptName" placeholder="Nome do Prompt (ex: Post Story)">
-            <textarea id="promptText" placeholder="Digite o comando para o Gemini..."></textarea>
+            <input type="text" id="promptName" placeholder="Ex: Post Promocional Instagram">
+            <textarea id="promptText" placeholder="Escreva aqui o comando. Use os botões abaixo para inserir as tags automáticas..."></textarea>
         </div>
         <div class="tag-row">
             <button class="btn-tag" onclick="addTag('[NOME]')">+ [NOME]</button>
@@ -84,17 +101,20 @@
             <button class="btn-tag" onclick="addTag('[PRECO_ANTIGO]')">+ [PRECO_ANTIGO]</button>
             <button class="btn-tag" onclick="addTag('[DESCONTO]')">+ [DESCONTO]</button>
         </div>
-        <button class="btn-main" onclick="savePrompt()">Salvar Prompt</button>
+        <div style="display: flex;">
+            <button class="btn-main" id="btn-save-action" onclick="savePrompt()">Salvar Prompt</button>
+            <button class="btn-cancel" id="btn-cancel-edit" onclick="cancelEdit()">Cancelar Edição</button>
+        </div>
 
         <div class="saved-prompts" id="savedPromptsList"></div>
     </div>
 
     <div class="filters">
-        <input type="text" id="searchInput" placeholder="Buscar produto..." onkeyup="render()">
+        <input type="text" id="searchInput" placeholder="Pesquisar por nome do produto..." onkeyup="render()">
         <select id="discountFilter" onchange="render()">
-            <option value="0">Todos os descontos</option>
-            <option value="20">Acima de 20%</option>
-            <option value="30">Acima de 30%</option>
+            <option value="0">Ver todas as ofertas</option>
+            <option value="20">Descontos +20%</option>
+            <option value="30">Descontos +30%</option>
         </select>
     </div>
 
@@ -104,12 +124,20 @@
 <div id="toast">Copiado!</div>
 
 <script>
-    // --- LÓGICA DE DADOS (Copiada do seu arquivo original) ---
-    const STATE = { prods: [], prompts: JSON.parse(localStorage.getItem('da_mkt_prompts')) || [] };
+    // --- ESTADO E CONFIGURAÇÕES ---
+    const STATE = { 
+        prods: [], 
+        prompts: JSON.parse(localStorage.getItem('da_mkt_prompts')) || [],
+        editingIndex: -1 
+    };
     
-    function fmt(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
-    function norm(s) { return s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : ""; }
-    function formatName(name) { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); }
+    // Caminho da Logo recuperado do seu código original
+    const LOGO_URL = "../img/logoantonia5.png";
+
+    // --- FUNÇÕES DE DADOS (Padrão do seu Site) ---
+    const fmt = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const norm = s => s ? String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+    const formatName = name => { if(!name) return ""; let words = name.toLowerCase().split(/\s+/); return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); };
     
     function aplicarDescontos(products) {
         let now = new Date(); let eligibleForRandom = [];
@@ -135,7 +163,7 @@
         products.forEach(p => { if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); });
     }
 
-    // --- INTERFACE ---
+    // --- FUNÇÕES DE PROMPT ---
     function addTag(tag) {
         const area = document.getElementById('promptText');
         const pos = area.selectionStart;
@@ -146,32 +174,63 @@
     function savePrompt() {
         const name = document.getElementById('promptName').value;
         const text = document.getElementById('promptText').value;
-        if(!name || !text) return alert("Preencha o nome e o texto!");
-        STATE.prompts.push({ name, text });
+        if(!name || !text) return alert("Por favor, preencha o nome e o texto do prompt.");
+        
+        if(STATE.editingIndex > -1) {
+            STATE.prompts[STATE.editingIndex] = { name, text };
+            STATE.editingIndex = -1;
+            document.getElementById('form-title').innerText = "1. Configurar Novo Prompt";
+            document.getElementById('btn-save-action').innerText = "Salvar Prompt";
+            document.getElementById('btn-cancel-edit').style.display = "none";
+        } else {
+            STATE.prompts.push({ name, text });
+        }
+        
         localStorage.setItem('da_mkt_prompts', JSON.stringify(STATE.prompts));
         document.getElementById('promptName').value = "";
         document.getElementById('promptText').value = "";
         render();
     }
 
-    function delPrompt(idx) {
-        STATE.prompts.splice(idx, 1);
-        localStorage.setItem('da_mkt_prompts', JSON.stringify(STATE.prompts));
-        render();
+    function editPrompt(idx) {
+        const p = STATE.prompts[idx];
+        document.getElementById('promptName').value = p.name;
+        document.getElementById('promptText').value = p.text;
+        STATE.editingIndex = idx;
+        
+        document.getElementById('form-title').innerText = "📝 Editando Prompt: " + p.name;
+        document.getElementById('btn-save-action').innerText = "Atualizar Prompt";
+        document.getElementById('btn-cancel-edit').style.display = "block";
+        document.querySelector('.prompt-box').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // CÓPIA DE IMAGEM REAL (BLOBO BINÁRIO)
+    function cancelEdit() {
+        STATE.editingIndex = -1;
+        document.getElementById('promptName').value = "";
+        document.getElementById('promptText').value = "";
+        document.getElementById('form-title').innerText = "1. Configurar Novo Prompt";
+        document.getElementById('btn-save-action').innerText = "Salvar Prompt";
+        document.getElementById('btn-cancel-edit').style.display = "none";
+    }
+
+    function delPrompt(idx) {
+        if(confirm("Deseja excluir este prompt?")) {
+            STATE.prompts.splice(idx, 1);
+            localStorage.setItem('da_mkt_prompts', JSON.stringify(STATE.prompts));
+            render();
+        }
+    }
+
+    // --- CÓPIA ---
     async function copyImage(url) {
         try {
             const response = await fetch(url);
             const blob = await response.blob();
-            // A API de clipboard exige que a imagem seja do tipo PNG para colar em apps
             const item = new ClipboardItem({ [blob.type]: blob });
             await navigator.clipboard.write([item]);
-            toast("Imagem copiada!");
+            toast("Imagem copiada para a área de transferência!");
         } catch (e) {
-            console.error(e);
-            alert("Erro ao copiar imagem. Isso pode ocorrer se o servidor não permitir CORS ou se não estiver usando HTTPS.");
+            alert("Erro ao copiar imagem. Certifique-se de estar em um ambiente seguro (HTTPS) ou localhost.");
         }
     }
 
@@ -187,37 +246,48 @@
                             .replace(/\[DESCONTO\]/g, prod.discountPercent + '%');
         
         navigator.clipboard.writeText(final);
-        toast("Texto do Prompt copiado!");
+        toast("Texto do prompt copiado com sucesso!");
     }
 
-    function toast(m) { const t = document.getElementById('toast'); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 2000); }
+    function toast(m) { const t = document.getElementById('toast'); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 2500); }
 
+    // --- RENDERIZAÇÃO ---
     function render() {
-        // Render lista de prompts
+        // Prompts Salvos
         const pList = document.getElementById('savedPromptsList');
-        pList.innerHTML = STATE.prompts.map((p, i) => `<div class="saved-item">${p.name} <button class="btn-del" onclick="delPrompt(${i})">×</button></div>`).join('');
+        pList.innerHTML = STATE.prompts.map((p, i) => `
+            <div class="saved-item">
+                <h4>${p.name}</h4>
+                <p>${p.text}</p>
+                <div class="saved-actions">
+                    <button class="btn-small btn-edit" onclick="editPrompt(${i})">Editar</button>
+                    <button class="btn-small btn-del" onclick="delPrompt(${i})">Excluir</button>
+                </div>
+            </div>
+        `).join('');
 
-        // Render produtos
+        // Grid de Produtos
         const grid = document.getElementById('productGrid');
         const search = norm(document.getElementById('searchInput').value);
         const disc = parseInt(document.getElementById('discountFilter').value);
-
         const filtered = STATE.prods.filter(p => p.discountPercent >= disc && norm(p.name).includes(search));
-        
         const promptOpts = STATE.prompts.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
 
         grid.innerHTML = filtered.map(p => `
             <div class="card">
                 <div class="badge">-${p.discountPercent}%</div>
-                <div class="card-img-box"><img src="${p.img}"></div>
+                <div class="card-img-box"><img src="${p.img}" onerror="this.src='../img/logoantonia5.png'"></div>
                 <div class="card-title">${p.name}</div>
                 <div class="card-price">${fmt(p.price)}</div>
                 <div class="card-actions">
-                    <select id="sel-${p.id}">${promptOpts}</select>
+                    <select id="sel-${p.id}">${promptOpts || '<option>Nenhum prompt salvo</option>'}</select>
                     <div class="btn-row">
                         <button class="btn-action btn-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
                         <button class="btn-action btn-i" onclick="copyImage('${p.img}')">Copiar Imagem</button>
                     </div>
+                </div>
+                <div class="card-footer-logo">
+                    <img src="${LOGO_URL}" alt="Dona Antônia">
                 </div>
             </div>
         `).join('');
@@ -225,7 +295,6 @@
 
     async function init() {
         try {
-            // AJUSTE DE CAMINHO: Tente carregar do caminho absoluto do seu site
             const res = await fetch('/site/produtos.json').then(r => r.json());
             STATE.prods = res.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => ({
                 id: String(p.codigo || p.id),
@@ -237,8 +306,7 @@
             aplicarDescontos(STATE.prods);
             render();
         } catch (e) { 
-            console.error("Erro ao carregar JSON:", e);
-            alert("Não foi possível carregar os produtos. Verifique se o arquivo /site/produtos.json existe e se você está rodando em um servidor (Live Server, XAMPP, etc).");
+            console.error("Erro no carregamento:", e);
         }
     }
 
