@@ -56,7 +56,7 @@
         .subcat-title { font-size: 15px; font-weight: 900; color: var(--text-light); padding: 25px 20px 10px 20px; background: var(--bg-body); border-bottom: 1px solid var(--border-light); margin: 0; text-transform: uppercase; letter-spacing: 1px; }
 
         /* =========================================
-           3. DESIGN DO CARD HORIZONTAL ATUALIZADO
+           3. DESIGN DO CARD HORIZONTAL E CARROSSEL
         ========================================= */
         .product-card-list { display: flex; align-items: stretch; width: 100%; gap: 16px; background: transparent; padding: 16px 20px; border-bottom: 1px solid var(--border-light); cursor: pointer; position: relative; }
         .product-card-list:last-child { border-bottom: none; }
@@ -71,7 +71,7 @@
         
         .price-container { display: flex; flex-direction: column; gap: 0px; margin-top: auto; padding-right: 45px;}
         .old-price { font-size: 12.5px; color: var(--text-light); text-decoration: line-through; font-weight: 600; }
-        .tag-preco-list { font-size: 18px; font-weight: 900; color: var(--text-dark); margin-top: 2px; }
+        .tag-preco-list { font-size: 18px; font-weight: 900; color: var(--text-dark); margin-top: 2px; display: flex; align-items: center; }
         
         .card-action-area { position: absolute; right: 20px; bottom: 16px; display: flex; align-items: center; }
         
@@ -82,6 +82,13 @@
         .qty-btn { width: 34px; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--primary); font-weight: 900; cursor: pointer; background: transparent; border: none; }
         .qty-btn:active { background: #f1f5f9; }
         .qty-display { font-weight: 900; font-size: 15px; flex: 1; text-align: center; color: var(--text-dark); }
+
+        /* CLASSES DO CARROSSEL */
+        .offers-carousel-wrapper { margin: 10px -20px 20px -20px; }
+        .offers-carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; padding: 10px 20px; gap: 16px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .offers-carousel::-webkit-scrollbar { display: none; }
+        .carousel-item-wrapper { flex: 0 0 100%; scroll-snap-align: center; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.03); overflow: hidden; }
+        .carousel-item-wrapper .product-card-list { border-bottom: none; }
 
         /* =========================================
            4. PÁGINA INDIVIDUAL DO PRODUTO
@@ -429,19 +436,36 @@
         window.clearSearch = function() { $('app-search-input').value = ''; $('clear-search-btn').style.display = 'none'; STATE.searchQuery = ''; window.history.back(); };
 
         // ==========================================
-        // RENDERIZAÇÃO DE CARDS
+        // RENDERIZAÇÃO DE CARDS E CARROSSEL
         // ==========================================
+        function generateOffersCarouselHTML() {
+            // Pegamos as principais ofertas para um visual limpo e atraente (limitado a 6 itens)
+            let ofertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent).slice(0, 6);
+            if (ofertas.length === 0) return '';
+            
+            let itemsHtml = ofertas.map(p => `<div class="carousel-item-wrapper">${renderCardHTML(p)}</div>`).join('');
+            
+            return `
+                <div class="offers-carousel-wrapper">
+                    <div style="padding: 0 20px; margin-bottom: 10px; font-size: 18px; font-weight: 900; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                        <svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas em Destaque
+                    </div>
+                    <div class="offers-carousel">
+                        ${itemsHtml}
+                    </div>
+                </div>`;
+        }
+
         function renderCardHTML(prod, isBasketItem = false, index = null) {
             let q = isBasketItem ? prod.basketQty : (STATE.cart[prod.id] || 0);
             
-            // O Produto esgotado é tratado caso ele exista numa cesta montada. Na loja ele já foi filtrado no init().
             let isOutOfStock = prod.stock <= 0 && !isBasketItem;
             let esgotadoTag = isOutOfStock ? `<div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.85); color: #fff; padding: 4px 8px; border-radius: 6px; font-weight: 900; font-size: 10px; z-index: 10;">ESGOTADO</div>` : '';
             let baseClass = isOutOfStock ? 'product-card-list esgotado' : 'product-card-list';
             
-            // Etiqueta vermelha em texto comum e não mais flutuante
-            let discountText = (prod.discountPercent > 0 && !isBasketItem) ? `<span style="color: var(--danger); margin-left: 4px; font-weight: 800;">(-${prod.discountPercent}%)</span>` : '';
-            let oldPriceHtml = (prod.discountPercent > 0) ? `<span class="old-price">${fmt(prod.oldPrice)}</span>${discountText}` : '';
+            // Alteração: Desconto vermelho ao lado do valor atual
+            let discountText = (prod.discountPercent > 0 && !isBasketItem) ? `<span style="color: var(--danger); margin-right: 6px; font-weight: 900;">-${prod.discountPercent}%</span>` : '';
+            let oldPriceHtml = (prod.discountPercent > 0 && !isBasketItem) ? `<span class="old-price">${fmt(prod.oldPrice)}</span>` : '';
             
             let embalagem = prod.embalagem || extractVolume(prod.name);
             let tagEmbalagem = embalagem ? `<div class="embalagem-tag-text">${embalagem}</div>` : '';
@@ -457,8 +481,9 @@
                     : `<div class="qty-controls"><button class="qty-btn" onclick="updateCartItem('${prod.id}', -1); event.stopPropagation();">${iconMinus}</button><span class="qty-display">${q}</span><button class="qty-btn" onclick="updateCartItem('${prod.id}', 1); event.stopPropagation();">${iconPlus}</button></div>`;
             }
 
+            // Inserimos o data-codigo como solicitado
             return `
-                <div class="${baseClass}" ${onClickAction}>
+                <div class="${baseClass}" ${onClickAction} data-codigo="${prod.codigo || prod.id}">
                     ${esgotadoTag}
                     <div class="img-wrapper">
                         <img data-src="${prod.img}" src="${placeholderImg}" class="product-icon-list lazy-img" alt="${prod.name}" onerror="this.src='${errorImgFallback}'">
@@ -468,7 +493,7 @@
                         <div class="product-name-list">${prod.name}</div>
                         <div class="price-container">
                             <div>${oldPriceHtml}</div>
-                            <div class="tag-preco-list">${fmt(prod.price)}</div>
+                            <div class="tag-preco-list">${discountText}${fmt(prod.price)}</div>
                         </div>
                         <div class="card-action-area" id="${isBasketItem ? 'basket-card-' + index : 'action-card-' + prod.id}">${controlsHtml}</div>
                     </div>
@@ -507,29 +532,28 @@
 
         function initMercado() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
-            let catMap = new Set(); let ofertas = []; 
+            let catMap = new Set(); 
             STATE.prods.forEach(p => { 
                 if(p.categoria === 'Cestas') return; 
-                if(p.discountPercent > 0) ofertas.push(p); 
                 let c = p.categoria || 'Outros'; 
                 catMap.add(c); 
             });
             
             let html = '';
-            if(ofertas.length > 0) {
-                let catOfertas = { name: 'Ofertas do Dia', products: ofertas.sort((a,b) => b.discountPercent - a.discountPercent) };
-                
-                // Exibir RIGIDAMENTE apenas 3 ofertas
-                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${catOfertas.products.slice(0, 3).map(p => renderCardHTML(p)).join('')}</div>`;
-                
-                let btnHtml = catOfertas.products.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${catOfertas.products.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
-                
-                html += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px;"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
+            
+            // Adicionando o Carrossel Moderno de Ofertas no Topo
+            let carouselHtml = generateOffersCarouselHTML();
+            if(carouselHtml) {
+                html += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-top: 15px; padding-bottom: 5px; margin-bottom: 15px;">
+                            ${carouselHtml}
+                            <div style="padding: 0 20px 15px 20px;">
+                                <button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button>
+                            </div>
+                         </div>`;
             }
 
             html += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
             Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
-                // Link Direto: Acabou a sanfona
                 html += `<a href="#/departamento/${encodeHash(cat)}" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
                             <div style="display:flex; align-items:center; gap:14px;">
                                 <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color: var(--text-dark);">
@@ -543,7 +567,6 @@
             html += '</div>'; vitrine.innerHTML = html; lazyLoadImages();
         }
 
-        // Renderizador Robusto com Subtítulos
         function renderDepartamentoCompleto(cat) {
             let results = [];
             let displayName = "";
@@ -554,7 +577,6 @@
                 displayName = 'Ofertas do Dia';
                 document.title = `${displayName} - Dona Antônia`;
                 
-                // Agrupando Ofertas por Categoria
                 let groups = {};
                 results.forEach(p => {
                     let c = p.categoria || 'Outros';
@@ -574,7 +596,6 @@
                 displayName = cat;
                 document.title = `${displayName} - Dona Antônia`;
                 
-                // Agrupando Departamento por Subcategorias
                 let groups = {};
                 results.forEach(p => {
                     let s = p.subcategoria || 'Geral';
@@ -601,7 +622,7 @@
             document.title = `${prod.name} - Dona Antônia`;
             
             let q = STATE.cart[prod.id] || 0;
-            let discountText = (prod.discountPercent > 0) ? `<span style="color: var(--danger); margin-left: 4px; font-weight: 800;">(-${prod.discountPercent}%)</span>` : '';
+            let discountText = (prod.discountPercent > 0) ? `<span style="color: var(--danger); font-weight: 900; margin-left: 6px;">(-${prod.discountPercent}%)</span>` : '';
             let oldPriceHtml = (prod.discountPercent > 0) ? `<div class="prod-page-oldprice" style="display:inline-block;">De: ${fmt(prod.oldPrice)}</div> ${discountText}` : '';
             
             let embalagemTag = prod.embalagem ? `<div class="embalagem-tag-text" style="font-size:13px;">${prod.embalagem}</div>` : '';
@@ -682,8 +703,22 @@
         };
 
         function renderVIPList() {
-            $('vip-items-grid').innerHTML = `<div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);"><div style="font-size: 45px; margin-bottom: 10px;">✓</div><h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Cesta na Sacola!</h2></div><h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-bottom: 15px; color: var(--text-dark);">E agora?</h3><div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;"><button class="btn-send" style="background: #ffffff; color: var(--text-dark); border: 2px solid var(--border-light); box-shadow:none;" onclick="closeBasketDetail(); window.location.hash='#/mercado';">Comprar mais itens</button><button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button></div>`;
-            $('vip-list-container').style.display = 'block'; document.querySelector('#basketDetailModal .modal-scroll-area').scrollTo({top: 0, behavior: 'smooth'});
+            let carouselHtml = generateOffersCarouselHTML();
+            $('vip-items-grid').innerHTML = `
+                <div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+                    <div style="font-size: 45px; margin-bottom: 10px;">✓</div>
+                    <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Cesta na Sacola!</h2>
+                </div>
+                <h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-bottom: 15px; color: var(--text-dark);">E agora?</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;">
+                    <button class="btn-send" style="background: #ffffff; color: var(--text-dark); border: 2px solid var(--border-light); box-shadow:none;" onclick="closeBasketDetail(); window.location.hash='#/mercado';">Comprar mais itens</button>
+                    <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button>
+                </div>
+                ${carouselHtml}
+            `;
+            $('vip-list-container').style.display = 'block'; 
+            document.querySelector('#basketDetailModal .modal-scroll-area').scrollTo({top: 0, behavior: 'smooth'});
+            lazyLoadImages(); // Carregar imagens do carrossel injetado
         }
 
         // ==========================================
@@ -804,19 +839,17 @@
                         
                         if(diff.removed.length > 0) {
                             customTxt += `*Itens Retirados:*\n`;
-                            // O forEach garante que cada item retirado fique em uma linha própria com um traço
                             diff.removed.forEach(item => customTxt += `- ${item}\n`);
                         }
                         
                         if(diff.added.length > 0) {
                             customTxt += `*Itens Adicionados:*\n`;
-                            // Cada item adicionado fica em uma linha própria com um sinal de mais
                             diff.added.forEach(item => customTxt += `+ ${item}\n`);
                         }
                     } else { 
                         customTxt += `*Cesta Escolhida:* ${diff.name} (Padrão)\n`; 
                     }
-                    customTxt += `\n`; // Adiciona um pequeno espaço caso o cliente tenha pedido duas cestas diferentes
+                    customTxt += `\n`; 
                 });
             } else { customTxt += `*Pedido Personalizado (Itens Avulsos)*\n`; }
             
@@ -824,7 +857,6 @@
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             if (STATE.couponDiscount > 0) itemsTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
             
-            // A palavra TOTAL agora está isolada com os asteriscos do WhatsApp
             const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL:* ${fmt(final)}${customTxt}`;
             
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
@@ -885,7 +917,6 @@
             try {
                 const r2 = await fetchWithCache('/site/produtos.json', 'cache_prods');
                 if (r2 && r2.length > 0) {
-                    // IMPLEMENTAÇÃO: Filtro Estrito de Estoque (> 0)
                     STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
                         let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
                         return { 
