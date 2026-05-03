@@ -388,6 +388,18 @@
             return words.map((w, index) => (w.length >= 4 || index === 0) ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' '); 
         }
 
+        /* NOVA FUNÇÃO: Calcula os dias até o vencimento. Retorna Infinity se não possuir a data para cair pro fim da lista */
+        function getDaysToExpiry(vencimento) {
+            if (!vencimento) return Infinity; 
+            let partes = vencimento.split('/');
+            if (partes.length === 3) {
+                let vDate = new Date(partes[2], partes[1] - 1, partes[0]);
+                let diff = (vDate - new Date()) / (1000 * 60 * 60 * 24);
+                return diff >= 0 ? diff : Infinity; 
+            }
+            return Infinity;
+        }
+
         const iconPlus = `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>`;
         const iconMinus = `<svg class="svg-icon" viewBox="0 0 24 24"><path d="M20 12H4"></path></svg>`;
         const placeholderImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8fafc'/%3E%3C/svg%3E";
@@ -502,35 +514,27 @@
             let codigosText = codigosElement.getAttribute('data-codigos');
             if(!codigosText) return '';
             
-            // 1. Dividimos a string por vírgula para pegar cada par "codigo:desconto"
-            let itensCarrossel = codigosText.split(',').map(c => c.trim());
+            // Limitando propositalmente até 20 itens através da matriz
+            let itensCarrossel = codigosText.split(',').map(c => c.trim()).slice(0, 20);
             let htmlCards = '';
             
             itensCarrossel.forEach(item => {
-                // 2. Divide o item usando os dois pontos ":" (Ex: "383494C:30" vira ["383494C", "30"])
                 let partes = item.split(':');
                 let cod = partes[0].trim();
-                // Verifica se foi passado um desconto (posição 1), se não, fica null
                 let customDiscount = partes.length > 1 ? parseInt(partes[1].trim()) : null;
 
-                // 3. Procura o produto no banco de dados principal
                 let prodOriginal = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod);
                 
                 if(prodOriginal) {
-                    // 4. CLONAGEM: Clonamos o produto para não alterar o preço dele no resto da loja!
                     let prod = { ...prodOriginal }; 
                     
-                    // 5. Se existe um desconto customizado no HTML, aplicamos apenas neste clone
                     if(customDiscount && !isNaN(customDiscount)) {
                         prod.discountPercent = customDiscount;
-                        // O preço original base (sem desconto) é o oldPrice. Se ele ainda não tiver, é o price atual.
                         let precoBase = prod.oldPrice || prod.price; 
                         prod.oldPrice = precoBase;
-                        // Calcula o novo preço com o desconto informado no HTML
                         prod.price = precoBase * (1 - (customDiscount / 100));
                     }
                     
-                    // 6. Renderiza o card e adiciona na lista do carrossel
                     htmlCards += `<div class="carrossel-item">${renderCardHTML(prod)}</div>`;
                 }
             });
@@ -593,12 +597,22 @@
             let html = getCarrosselDestaquesHTML();
 
             if(ofertas.length > 0) {
-                let catOfertas = { name: 'Ofertas do Dia', products: ofertas.sort((a,b) => b.discountPercent - a.discountPercent) };
+                // Seleção de cards guiada pelo menor prazo de vencimento disponível
+                let top3 = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
+                                       .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
+                                       .slice(0, 3);
                 
-                // Exibir RIGIDAMENTE apenas 3 ofertas antigas abaixo
-                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${catOfertas.products.slice(0, 3).map(p => renderCardHTML(p)).join('')}</div>`;
+                // Fallback: Se não encontrarmos 3 itens próximos de vencer, preenchemos a diferença com as maiores ofertas gerais
+                if (top3.length < 3) {
+                    let alreadyIn = new Set(top3.map(p => p.id));
+                    let complement = ofertas.filter(p => !alreadyIn.has(p.id))
+                                            .sort((a,b) => b.discountPercent - a.discountPercent);
+                    top3 = [...top3, ...complement].slice(0, 3);
+                }
                 
-                let btnHtml = catOfertas.products.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${catOfertas.products.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${top3.map(p => renderCardHTML(p)).join('')}</div>`;
+                
+                let btnHtml = ofertas.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
                 
                 html += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px;"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
             }
@@ -619,33 +633,61 @@
         }
 
         function renderDepartamentoCompleto(cat) {
-            let results = [];
-            let displayName = "";
             let html = '';
             
+            // Implementação personalizada e exclusiva para a aba de Ofertas
             if (cat === 'Ofertas do Dia') {
-                results = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0).sort((a,b) => b.discountPercent - a.discountPercent);
-                displayName = 'Ofertas do Dia';
-                document.title = `${displayName} - Dona Antônia`;
+                document.title = `Ofertas do Dia - Dona Antônia`;
+                let destaques = [];
+                let codigosElement = $('codigos-carrossel-destaque');
                 
-                let groups = {};
-                results.forEach(p => {
-                    let c = p.categoria || 'Outros';
-                    if(!groups[c]) groups[c] = [];
-                    groups[c].push(p);
-                });
+                // Primeiro passo: Processar as "Ofertas em Destaque" para apresentá-las no topo
+                if (codigosElement) {
+                    let codigosText = codigosElement.getAttribute('data-codigos');
+                    if (codigosText) {
+                        let itensCarrossel = codigosText.split(',').map(c => c.trim()).slice(0, 20);
+                        itensCarrossel.forEach(item => {
+                            let partes = item.split(':'); 
+                            let cod = partes[0].trim(); 
+                            let customDiscount = partes.length > 1 ? parseInt(partes[1].trim()) : null;
+                            let prodOriginal = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod);
+                            
+                            if (prodOriginal) {
+                                let prod = { ...prodOriginal };
+                                if (customDiscount && !isNaN(customDiscount)) {
+                                    prod.discountPercent = customDiscount;
+                                    let precoBase = prod.oldPrice || prod.price; 
+                                    prod.oldPrice = precoBase;
+                                    prod.price = precoBase * (1 - (customDiscount / 100));
+                                }
+                                destaques.push(prod);
+                            }
+                        });
+                    }
+                }
                 
-                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${displayName}</div><div style="background: #fff;">`;
+                // Prevenir duplicidade na segunda lista (demais ofertas)
+                let destaquesIds = new Set(destaques.map(p => p.id));
+                let outrasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0 && !destaquesIds.has(p.id))
+                                               .sort((a,b) => b.discountPercent - a.discountPercent);
                 
-                Object.keys(groups).sort().forEach(g => {
-                    html += `<h3 class="subcat-title">${g}</h3>`;
-                    groups[g].forEach(p => html += renderCardHTML(p));
-                });
+                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas do Dia</div><div style="background: #fff;">`;
+                
+                // Apresentar listas de forma contínua organizando pelo desconto, anulando lógicas de categorias.
+                if (destaques.length > 0) {
+                    html += `<h3 class="subcat-title">Ofertas em Destaque</h3>`;
+                    destaques.forEach(p => html += renderCardHTML(p));
+                }
+                
+                if (outrasOfertas.length > 0) {
+                    html += `<h3 class="subcat-title">Mais Ofertas (Maiores Descontos)</h3>`;
+                    outrasOfertas.forEach(p => html += renderCardHTML(p));
+                }
                 
             } else {
-                results = STATE.prods.filter(p => p.categoria === cat).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
-                displayName = cat;
-                document.title = `${displayName} - Dona Antônia`;
+                // Fluxo e estruturação comum para as demais abas departamentais
+                let results = STATE.prods.filter(p => p.categoria === cat).sort((a,b) => (b.discountPercent >= 25 ? b.discountPercent : 0) - (a.discountPercent >= 25 ? a.discountPercent : 0) || a.name.localeCompare(b.name));
+                document.title = `${cat} - Dona Antônia`;
                 
                 let groups = {};
                 results.forEach(p => {
@@ -654,7 +696,7 @@
                     groups[s].push(p);
                 });
                 
-                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${displayName}</div><div style="background: #fff;">`;
+                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> ${cat}</div><div style="background: #fff;">`;
                 
                 Object.keys(groups).sort().forEach(g => {
                     let subName = g === 'Geral' ? `Diversos (${cat})` : g;
