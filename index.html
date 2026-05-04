@@ -625,22 +625,22 @@
             let htmlMercado = getCarrosselDestaquesHTML();
 
             if(ofertas.length > 0) {
-                let top3 = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
+                let topOfertas = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
                                        .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
-                                       .slice(0, 3);
+                                       .slice(0, 9);
                 
-                if (top3.length < 3) {
-                    let alreadyIn = new Set(top3.map(p => p.id));
+                if (topOfertas.length < 9) {
+                    let alreadyIn = new Set(topOfertas.map(p => p.id));
                     let complement = ofertas.filter(p => !alreadyIn.has(p.id))
                                             .sort((a,b) => b.discountPercent - a.discountPercent);
-                    top3 = [...top3, ...complement].slice(0, 3);
+                    topOfertas = [...topOfertas, ...complement].slice(0, 9);
                 }
                 
-                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${top3.map(p => renderCardHTML(p)).join('')}</div>`;
+                let carrosselHtml = `<div class="carrossel-wrapper" style="padding: 0 20px 10px 20px;">${topOfertas.map(p => `<div class="carrossel-item">${renderCardHTML(p)}</div>`).join('')}</div>`;
                 
-                let btnHtml = ofertas.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                let btnHtml = ofertas.length > 9 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
                 
-                htmlMercado += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
+                htmlMercado += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${carrosselHtml}${btnHtml}</div>`;
             }
 
             htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
@@ -681,22 +681,22 @@
             let html = getCarrosselDestaquesHTML();
 
             if(ofertas.length > 0) {
-                let top3 = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
+                let topOfertas = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
                                        .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
-                                       .slice(0, 3);
+                                       .slice(0, 9);
                 
-                if (top3.length < 3) {
-                    let alreadyIn = new Set(top3.map(p => p.id));
+                if (topOfertas.length < 9) {
+                    let alreadyIn = new Set(topOfertas.map(p => p.id));
                     let complement = ofertas.filter(p => !alreadyIn.has(p.id))
                                             .sort((a,b) => b.discountPercent - a.discountPercent);
-                    top3 = [...top3, ...complement].slice(0, 3);
+                    topOfertas = [...topOfertas, ...complement].slice(0, 9);
                 }
                 
-                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${top3.map(p => renderCardHTML(p)).join('')}</div>`;
+                let carrosselHtml = `<div class="carrossel-wrapper" style="padding: 0 20px 10px 20px;">${topOfertas.map(p => `<div class="carrossel-item">${renderCardHTML(p)}</div>`).join('')}</div>`;
                 
-                let btnHtml = ofertas.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                let btnHtml = ofertas.length > 9 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
                 
-                html += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px;"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
+                html += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${carrosselHtml}${btnHtml}</div>`;
             }
 
             html += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
@@ -995,22 +995,22 @@
             let htmlMercado = getCarrosselDestaquesHTML();
 
             if(ofertas.length > 0) {
-                let top3 = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
+                let topOfertas = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
                                        .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
-                                       .slice(0, 3);
+                                       .slice(0, 9);
                 
-                if (top3.length < 3) {
-                    let alreadyIn = new Set(top3.map(p => p.id));
+                if (topOfertas.length < 9) {
+                    let alreadyIn = new Set(topOfertas.map(p => p.id));
                     let complement = ofertas.filter(p => !alreadyIn.has(p.id))
                                             .sort((a,b) => b.discountPercent - a.discountPercent);
-                    top3 = [...top3, ...complement].slice(0, 3);
+                    topOfertas = [...topOfertas, ...complement].slice(0, 9);
                 }
                 
-                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${top3.map(p => renderCardHTML(p)).join('')}</div>`;
+                let carrosselHtml = `<div class="carrossel-wrapper" style="padding: 0 20px 10px 20px;">${topOfertas.map(p => `<div class="carrossel-item">${renderCardHTML(p)}</div>`).join('')}</div>`;
                 
-                let btnHtml = ofertas.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="closeBasketDetail(); window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                let btnHtml = ofertas.length > 9 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="closeBasketDetail(); window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
                 
-                htmlMercado += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="closeBasketDetail(); window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
+                htmlMercado += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="closeBasketDetail(); window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${carrosselHtml}${btnHtml}</div>`;
             }
 
             htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
