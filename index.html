@@ -763,40 +763,78 @@
         window.closeBasketDetail = function() { $('basketDetailModal').classList.remove('active'); window.currentBasketId = null; };
 
         window.addBasketToCart = function() {
-            if (!window.currentBasketId) return; const basket = BASKETS.find(b => b.id === window.currentBasketId); if (!basket) return;
+    if (!window.currentBasketId) return; 
+    const basket = BASKETS.find(b => b.id === window.currentBasketId); 
+    if (!basket) return;
+    
+    // 1. Calcula o valor dos itens no PADRÃO da cesta para gerar a taxa fixa
+    let origItemsMap = {}; 
+    let valorPadraoCesta = 0;
+    basket.produtos.forEach(str => { 
+        let p = str.split("x "); 
+        if(p.length === 2) {
+            let qtd = parseInt(p[0]);
+            let cod = p[1].trim();
+            origItemsMap[cod] = qtd; 
             
-            let origItemsMap = {}; basket.produtos.forEach(str => { let p = str.split("x "); if(p.length===2) origItemsMap[p[1].trim()] = parseInt(p[0]); });
-            let basketDiff = { id: basket.id, name: basket.nome, removed: [], added: [] }; let hasChanges = false; let valorOriginalProdutos = 0; let addedCount = 0;
-
-            currentBasketItems.forEach(item => { 
-                let pid = item.pObj.codigo || item.pObj.id; let origQty = origItemsMap[pid] || 0; let currentQty = item.qty;
-                if (currentQty < origQty) { basketDiff.removed.push(`${origQty - currentQty}x ${item.pObj.name}`); hasChanges = true; } 
-                else if (currentQty > origQty) { basketDiff.added.push(`${currentQty - origQty}x ${item.pObj.name}`); hasChanges = true; }
-                if (currentQty > 0) { valorOriginalProdutos += (currentQty * item.pObj.price); let currentInCart = STATE.cart[item.pObj.id] || 0; if (currentInCart === 0) STATE.cartOrder.push(item.pObj.id); STATE.cart[item.pObj.id] = currentInCart + currentQty; addedCount++; } 
-            });
-
-            basketDiff.changed = hasChanges;
-            STATE.basketCustomizations[basket.id] = basketDiff;
-
-            let diferenca = basket.preco - valorOriginalProdutos; 
-            if (addedCount > 0 && Math.abs(diferenca) > 0.01) { let feeId = 'fee_' + basket.id; let isDiscount = diferenca < 0; let feeName = isDiscount ? 'Desconto Promo (' + basket.nome + ')' : 'Embalagem/Montagem (' + basket.nome + ')'; let feeProd = STATE.prods.find(p => p.id === feeId); if (!feeProd) { feeProd = { id: feeId, codigo: feeId, name: feeName, price: diferenca, stock: 9999, img: basket.imagem, categoria: 'Cestas' }; STATE.prods.push(feeProd); } let currentFee = STATE.cart[feeId] || 0; if (currentFee === 0) STATE.cartOrder.push(feeId); STATE.cart[feeId] = currentFee + 1; }
-            if (addedCount > 0) { updateTotals(); saveCart(); $('basket-items-header').style.display = 'none'; $('basket-items-container').style.display = 'none'; $('basket-summary-container').style.display = 'none'; renderVIPList(); }
-        };
-
-        function renderVIPList() {
-            $('vip-items-grid').innerHTML = `
-                <div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
-                    <div style="font-size: 45px; margin-bottom: 10px;">✓</div>
-                    <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Cesta na Sacola!</h2>
-                </div>
-                ${getCarrosselDestaquesHTML()}
-                <h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-top: 15px; margin-bottom: 15px; color: var(--text-dark);">E agora?</h3>
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;">
-                    <button class="btn-send" style="background: #ffffff; color: var(--text-dark); border: 2px solid var(--border-light); box-shadow:none;" onclick="closeBasketDetail(); window.location.hash='#/mercado';">Comprar mais itens</button>
-                    <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button>
-                </div>`;
-            $('vip-list-container').style.display = 'block'; document.querySelector('#basketDetailModal .modal-scroll-area').scrollTo({top: 0, behavior: 'smooth'});
+            let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
+            if(pObj) valorPadraoCesta += (pObj.price * qtd);
         }
+    });
+
+    // Esta é a taxa fixa de embalagem ou desconto do combo, que não deve mudar se o cliente adicionar mais coisas
+    let diferencaFixa = basket.preco - valorPadraoCesta;
+
+    let basketDiff = { id: basket.id, name: basket.nome, removed: [], added: [] }; 
+    let hasChanges = false; 
+    let addedCount = 0;
+
+    // 2. Joga os itens (com suas quantidades atuais modificadas) para o carrinho
+    currentBasketItems.forEach(item => { 
+        let pid = item.pObj.codigo || item.pObj.id; 
+        let origQty = origItemsMap[pid] || 0; 
+        let currentQty = item.qty;
+        
+        if (currentQty < origQty) { basketDiff.removed.push(`${origQty - currentQty}x ${item.pObj.name}`); hasChanges = true; } 
+        else if (currentQty > origQty) { basketDiff.added.push(`${currentQty - origQty}x ${item.pObj.name}`); hasChanges = true; }
+        
+        if (currentQty > 0) { 
+            let currentInCart = STATE.cart[item.pObj.id] || 0; 
+            if (currentInCart === 0) STATE.cartOrder.push(item.pObj.id); 
+            STATE.cart[item.pObj.id] = currentInCart + currentQty; 
+            addedCount++; 
+        } 
+    });
+
+    basketDiff.changed = hasChanges;
+    STATE.basketCustomizations[basket.id] = basketDiff;
+
+    // 3. Aplica a diferença fixa ao carrinho
+    if (addedCount > 0 && Math.abs(diferencaFixa) > 0.01) { 
+        let feeId = 'fee_' + basket.id; 
+        let isDiscount = diferencaFixa < 0; 
+        let feeName = isDiscount ? 'Desconto Promo (' + basket.nome + ')' : 'Embalagem/Montagem (' + basket.nome + ')'; 
+        let feeProd = STATE.prods.find(p => p.id === feeId); 
+        
+        if (!feeProd) { 
+            feeProd = { id: feeId, codigo: feeId, name: feeName, price: diferencaFixa, stock: 9999, img: basket.imagem, categoria: 'Cestas' }; 
+            STATE.prods.push(feeProd); 
+        } 
+        
+        let currentFee = STATE.cart[feeId] || 0; 
+        if (currentFee === 0) STATE.cartOrder.push(feeId); 
+        STATE.cart[feeId] = currentFee + 1; 
+    }
+    
+    if (addedCount > 0) { 
+        updateTotals(); 
+        saveCart(); 
+        $('basket-items-header').style.display = 'none'; 
+        $('basket-items-container').style.display = 'none'; 
+        $('basket-summary-container').style.display = 'none'; 
+        renderVIPList(); 
+    }
+};
 
         // ==========================================
         // CHECKOUT E CUPOM
