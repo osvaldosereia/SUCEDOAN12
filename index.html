@@ -231,7 +231,10 @@
         </a>
         <div class="app-nav-item" onclick="openCheckout()">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-            Carrinho
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                <span>Carrinho</span>
+                <span id="bottom-cart-total" style="font-size: 11px; color: var(--success); font-weight: 900; display: none; line-height: 1;">R$ 0,00</span>
+            </div>
             <span class="cart-badge" id="bottom-cart-count">0</span>
         </div>
     </div>
@@ -263,7 +266,8 @@
                 <div id="basket-items-header" style="background: #fef2f2; color: #dc2626; font-size: 15px; font-weight: 800; padding: 14px; border-radius: 12px; text-align: center; margin-bottom: 20px; border: 1px solid #fca5a5;">Ajuste os itens da sua cesta conforme sua necessidade:</div>
                 <div id="basket-items-container" style="display: flex; flex-direction: column; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-light); overflow: hidden;"></div>
                 <div id="basket-summary-container" style="background: #ffffff; padding: 20px; border-radius: 16px; margin-top: 25px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
-                    <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; margin-bottom: 20px; color: var(--text-dark);"><span>Total (<span id="basket-total-items">0</span> itens)</span><span id="basket-total-price">R$ 0,00</span></div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; margin-bottom: 15px; color: var(--text-dark);"><span>Total (<span id="basket-total-items">0</span> itens)</span><span id="basket-total-price">R$ 0,00</span></div>
+                    <div id="basket-diff-container" style="display: none; margin-bottom: 15px; font-size: 13px; color: var(--text-light); background: #f8fafc; padding: 12px; border-radius: 10px; border: 1px dashed var(--border-light);"></div>
                     <button class="btn-send" onclick="addBasketToCart()">Adicionar Cesta à Sacola</button>
                 </div>
                 <div id="vip-list-container" style="display: none; margin-top: 20px;"><div id="vip-items-grid"></div></div>
@@ -503,7 +507,7 @@
                     <div class="product-details">
                         ${tagEmbalagem}
                         <div class="product-name-list">${prod.name}</div>
-                       <div class="price-container">
+                        <div class="price-container">
                             <div>${oldPriceHtml}</div>
                             <div class="tag-preco-list">${isBasketItem ? '' : discountBadge + fmt(prod.price)}</div>
                         </div>
@@ -854,12 +858,15 @@
             const basket = BASKETS.find(b => b.id === window.currentBasketId);
             
             let valorPadraoCesta = 0;
+            let origMap = {};
             if(basket) {
                 basket.produtos.forEach(str => { 
                     let p = str.split("x "); 
                     if(p.length === 2) {
                         let qtd = parseInt(p[0]);
-                        let pObj = STATE.prods.find(x => x.codigo === p[1].trim() || String(x.id) === p[1].trim());
+                        let cod = p[1].trim();
+                        origMap[cod] = qtd;
+                        let pObj = STATE.prods.find(x => x.codigo === cod || String(x.id) === cod);
                         if(pObj) valorPadraoCesta += (pObj.price * qtd);
                     }
                 });
@@ -870,6 +877,35 @@
 
             $('basket-total-items').innerText = totalItemsCount; 
             $('basket-total-price').innerText = basket ? fmt(precoDinamicoAtual) : 'R$ 0,00';
+            
+            // Lógica do DIFF (Adicionados / Retirados visualmente no Modal)
+            let diffAdded = [];
+            let diffRemoved = [];
+            currentBasketItems.forEach(item => {
+                let pid = item.pObj.codigo || item.pObj.id;
+                let origQty = origMap[pid] || 0;
+                let currentQty = item.qty;
+                if(currentQty > origQty) diffAdded.push(`${currentQty - origQty}x ${item.pObj.name}`);
+                else if(currentQty < origQty) diffRemoved.push(`${origQty - currentQty}x ${item.pObj.name}`);
+            });
+            
+            let diffContainer = $('basket-diff-container');
+            if(diffContainer) {
+                if(diffAdded.length > 0 || diffRemoved.length > 0) {
+                    let diffHtml = '<div style="font-weight: 800; margin-bottom: 8px; color: var(--text-dark);">Alterações feitas na cesta:</div>';
+                    if(diffAdded.length > 0) {
+                        diffHtml += '<div style="color: var(--success); margin-bottom: 6px;"><strong>+ Adicionados:</strong><br>' + diffAdded.map(x => `+ ${x}`).join('<br>') + '</div>';
+                    }
+                    if(diffRemoved.length > 0) {
+                        diffHtml += '<div style="color: var(--danger);"><strong>- Retirados:</strong><br>' + diffRemoved.map(x => `- ${x}`).join('<br>') + '</div>';
+                    }
+                    diffContainer.innerHTML = diffHtml;
+                    diffContainer.style.display = 'block';
+                } else {
+                    diffContainer.style.display = 'none';
+                    diffContainer.innerHTML = '';
+                }
+            }
             
             lazyLoadImages();
         }
@@ -948,17 +984,60 @@
         };
 
         function renderVIPList() {
+            let catMap = new Set(); let ofertas = []; 
+            STATE.prods.forEach(p => { 
+                if(p.categoria === 'Cestas') return; 
+                if(p.discountPercent > 0) ofertas.push(p); 
+                let c = p.categoria || 'Outros'; 
+                catMap.add(c); 
+            });
+            
+            let htmlMercado = getCarrosselDestaquesHTML();
+
+            if(ofertas.length > 0) {
+                let top3 = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
+                                       .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
+                                       .slice(0, 3);
+                
+                if (top3.length < 3) {
+                    let alreadyIn = new Set(top3.map(p => p.id));
+                    let complement = ofertas.filter(p => !alreadyIn.has(p.id))
+                                            .sort((a,b) => b.discountPercent - a.discountPercent);
+                    top3 = [...top3, ...complement].slice(0, 3);
+                }
+                
+                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${top3.map(p => renderCardHTML(p)).join('')}</div>`;
+                
+                let btnHtml = ofertas.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="closeBasketDetail(); window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                
+                htmlMercado += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="closeBasketDetail(); window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
+            }
+
+            htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
+            Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
+                htmlMercado += `<a href="#/departamento/${encodeHash(cat)}" onclick="closeBasketDetail();" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
+                            <div style="display:flex; align-items:center; gap:14px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color: var(--text-dark);">
+                                    <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                                </div>
+                                <span style="font-size: 16px; font-weight: 800;">${cat}</span>
+                            </div>
+                            <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
+                        </a>`;
+            });
+            htmlMercado += '</div>';
+
             $('vip-items-grid').innerHTML = `
                 <div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
                     <div style="font-size: 45px; margin-bottom: 10px;">✓</div>
                     <h2 style="font-size: 22px; font-weight: 900; margin-bottom: 5px;">Cesta na Sacola!</h2>
                 </div>
-                ${getCarrosselDestaquesHTML()}
-                <h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-top: 15px; margin-bottom: 15px; color: var(--text-dark);">E agora?</h3>
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px;">
-                    <button class="btn-send" style="background: #ffffff; color: var(--text-dark); border: 2px solid var(--border-light); box-shadow:none;" onclick="closeBasketDetail(); window.location.hash='#/mercado';">Comprar mais itens</button>
+                <h3 style="font-size: 18px; font-weight: 900; text-align: center; margin-top: 15px; margin-bottom: 15px; color: var(--text-dark); padding: 0 20px;">Veja mais produtos que você pode estar precisando:</h3>
+                ${htmlMercado}
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 30px; padding: 0 20px;">
                     <button class="btn-send" onclick="closeBasketDetail(); setTimeout(() => openCheckout(), 300)">Finalizar Pedido</button>
                 </div>`;
+            
             $('vip-list-container').style.display = 'block'; 
             let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
             if(scrollArea) scrollArea.scrollTo({top: 0, behavior: 'smooth'});
@@ -1047,8 +1126,20 @@
 
             let finalTotal = sumBase - STATE.deliveryDiscount - STATE.couponDiscount; $('sum-total').innerText = fmt(finalTotal);
             let btn = $('btn-send-order'); if (finalTotal < MIN_ORDER) { btn.disabled = true; btn.innerHTML = `Pedido Mínimo: ${fmt(MIN_ORDER)}`; btn.style.background = 'var(--text-light)'; btn.style.boxShadow = 'none'; } else { btn.disabled = false; btn.innerHTML = 'Enviar Pedido via WhatsApp'; btn.style.background = 'var(--success)'; btn.style.boxShadow = '0 4px 15px rgba(16, 185, 129, 0.3)'; }
+            
             let badge = $('bottom-cart-count'); 
-            if (count > 0) { badge.style.display = 'block'; badge.innerText = count > 99 ? '99+' : count; } else { badge.style.display = 'none'; }
+            let bottomTotal = $('bottom-cart-total');
+            if (count > 0) { 
+                badge.style.display = 'block'; 
+                badge.innerText = count > 99 ? '99+' : count; 
+                if(bottomTotal) {
+                    bottomTotal.style.display = 'block';
+                    bottomTotal.innerText = fmt(finalTotal);
+                }
+            } else { 
+                badge.style.display = 'none'; 
+                if(bottomTotal) bottomTotal.style.display = 'none';
+            }
         }
 
       window.sendOrder = function() {
