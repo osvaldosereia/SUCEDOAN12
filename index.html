@@ -503,9 +503,9 @@
                     <div class="product-details">
                         ${tagEmbalagem}
                         <div class="product-name-list">${prod.name}</div>
-                        <div class="price-container">
+                       <div class="price-container">
                             <div>${oldPriceHtml}</div>
-                            <div class="tag-preco-list">${discountBadge}${fmt(prod.price)}</div>
+                            <div class="tag-preco-list">${isBasketItem ? '' : discountBadge + fmt(prod.price)}</div>
                         </div>
                         <div class="card-action-area" id="${isBasketItem ? 'basket-card-' + index : 'action-card-' + prod.id}">${controlsHtml}</div>
                     </div>
