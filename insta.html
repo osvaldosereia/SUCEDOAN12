@@ -54,31 +54,35 @@
         .filters input { flex: 2; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: white; }
         .filters select { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: white; font-weight: 600; }
 
-        /* GRID E CARDS */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
-        .card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 25px; position: relative; display: flex; flex-direction: column; transition: 0.3s; }
+        /* GRID E CARDS - Modificado para 5 por linha */
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+        @media (max-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+
+        .card { background: white; border: 1px solid var(--border); border-radius: 20px; padding: 20px; position: relative; display: flex; flex-direction: column; transition: 0.3s; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         
         .badge { position: absolute; top: 15px; right: 15px; background: var(--danger); color: white; padding: 6px 12px; border-radius: 10px; font-weight: 900; font-size: 13px; box-shadow: 0 4px 10px rgba(239,68,68,0.3); }
         
-        .card-img-box { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
+        .card-img-box { width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
         .card-img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        .card-title { font-weight: 700; font-size: 16px; margin-bottom: 12px; height: 42px; overflow: hidden; line-height: 1.3; color: var(--primary); }
-        .card-prices { margin-bottom: 20px; }
-        .price-old { font-size: 14px; color: #94a3b8; text-decoration: line-through; display: block; margin-bottom: 2px; font-weight: 600; }
-        .price-new { font-weight: 900; font-size: 22px; color: var(--primary); }
+        .card-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; height: 38px; overflow: hidden; line-height: 1.3; color: var(--primary); }
+        .card-prices { margin-bottom: 15px; }
+        .price-old { font-size: 12px; color: #94a3b8; text-decoration: line-through; display: block; margin-bottom: 2px; font-weight: 600; }
+        .price-new { font-weight: 900; font-size: 18px; color: var(--primary); }
         
-        .card-actions { display: grid; gap: 12px; margin-bottom: 25px; background: #f8fafc; padding: 15px; border-radius: 12px; }
-        .card-actions select { padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 13px; font-weight: 700; width: 100%; }
+        .card-actions { display: grid; gap: 10px; margin-bottom: 15px; background: #f8fafc; padding: 12px; border-radius: 12px; }
+        .card-actions select { padding: 8px; border-radius: 8px; border: 1px solid var(--border); font-size: 12px; font-weight: 700; width: 100%; }
         
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .btn-act { padding: 12px; border: none; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .btn-act { padding: 10px; border: none; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; color: white; transition: 0.2s; text-transform: uppercase; letter-spacing: 0.5px; }
         .btn-p { background: var(--success); }
         .btn-i { background: var(--accent); }
 
-        .card-footer-logo { border-top: 1px solid var(--border); padding-top: 20px; display: flex; justify-content: center; margin-top: auto; }
-        .card-footer-logo img { height: 40px; width: auto; object-fit: contain; }
+        .card-footer-logo { border-top: 1px solid var(--border); padding-top: 15px; display: flex; justify-content: center; margin-top: auto; }
+        .card-footer-logo img { height: 30px; width: auto; object-fit: contain; }
 
         /* FAB */
         .fab { position: fixed; bottom: 30px; right: 30px; width: 70px; height: 70px; background: var(--accent); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(99,102,241,0.4); cursor: pointer; z-index: 2000; border: none; transition: 0.3s; }
@@ -89,6 +93,29 @@
         #toast { visibility: hidden; background: #0f172a; color: white; text-align: center; border-radius: 50px; padding: 16px 40px; position: fixed; z-index: 5000; left: 50%; bottom: 40px; transform: translateX(-50%); font-weight: 800; }
         #toast.show { visibility: visible; animation: fadeInUp 0.4s forwards; }
         @keyframes fadeInUp { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+        /* ESTILOS DO EDITOR DE IMAGEM */
+        #editorModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 3000; align-items: center; justify-content: center; flex-direction: column; }
+        .editor-container { background: white; border-radius: 16px; padding: 20px; width: 95%; max-width: 900px; display: flex; gap: 20px; flex-wrap: wrap; }
+        .editor-tools { flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px; }
+        .editor-tools h3 { font-size: 18px; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 10px; }
+        .tool-group { display: flex; flex-direction: column; gap: 5px; }
+        .tool-group label { font-size: 12px; font-weight: 700; color: #64748b; }
+        .tool-group input, .tool-group select { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Inter'; }
+        
+        .editor-workspace { flex: 2; display: flex; justify-content: center; align-items: center; background: #e2e8f0; border-radius: 12px; overflow: hidden; min-height: 400px; }
+        
+        /* Área que simula a imagem final */
+        #canvasContainer { position: relative; background: #fff; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        #canvasContainer.format-square { width: 400px; height: 400px; }
+        #canvasContainer.format-reels { width: 300px; height: 533px; }
+        #editorBgImage { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
+        
+        .draggable-text { position: absolute; z-index: 10; cursor: move; padding: 5px 10px; border: 2px dashed transparent; user-select: none; white-space: nowrap; line-height: 1; }
+        .draggable-text:hover { border-color: rgba(255,255,255,0.5); }
+        .draggable-text.active { border-color: var(--accent); }
+
+        .editor-actions { width: 100%; display: flex; justify-content: flex-end; gap: 15px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; }
     </style>
 </head>
 <body>
@@ -127,10 +154,72 @@
     <div class="grid" id="gridUI"></div>
 </div>
 
+<!-- Inputs de arquivo ocultos -->
+<input type="file" id="fileIn" style="display:none" accept="image/*" onchange="optimizePng(event)">
+<input type="file" id="editorFileIn" style="display:none" accept="image/*" onchange="loadEditorImage(event)">
+
+<!-- MODAL DO EDITOR -->
+<div id="editorModal">
+    <div class="editor-container">
+        <div class="editor-tools">
+            <h3>Ferramentas de Arte</h3>
+            
+            <div class="tool-group">
+                <label>Formato da Imagem</label>
+                <select id="edFormat" onchange="changeFormat()">
+                    <option value="square">Quadrado (Post/Carrossel)</option>
+                    <option value="reels">Vertical (Reels/Stories)</option>
+                </select>
+            </div>
+
+            <div class="tool-group">
+                <label>Novo Texto</label>
+                <input type="text" id="edTextInput" placeholder="Digite aqui...">
+                <button class="btn-act btn-p" onclick="addText()" style="margin-top: 5px;">+ Adicionar Texto</button>
+            </div>
+
+            <div id="textControls" style="display: none; flex-direction: column; gap: 10px; margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                <label style="font-size: 12px; font-weight: 700; color: var(--accent);">Editando Texto Selecionado</label>
+                
+                <div class="tool-group">
+                    <label>Tamanho (px)</label>
+                    <input type="number" id="edSize" value="30" onchange="updateSelectedText()">
+                </div>
+                
+                <div class="tool-group">
+                    <label>Cor do Texto</label>
+                    <input type="color" id="edColor" value="#ffffff" onchange="updateSelectedText()">
+                </div>
+
+                <div class="tool-group">
+                    <label>Cor de Fundo (Legenda)</label>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="color" id="edBgColor" value="#ef4444" onchange="updateSelectedText()">
+                        <button class="btn-act" style="background:#64748b;" onclick="removeTextBg()">Sem Fundo</button>
+                    </div>
+                </div>
+
+                <button class="btn-act btn-del" style="background: var(--danger);" onclick="deleteSelectedText()">Excluir Texto</button>
+            </div>
+        </div>
+
+        <div class="editor-workspace">
+            <div id="canvasContainer" class="format-square">
+                <img id="editorBgImage" src="">
+                <!-- Textos serão injetados aqui -->
+            </div>
+        </div>
+
+        <div class="editor-actions">
+            <button class="btn-cancel" style="display: block;" onclick="closeEditor()">Cancelar</button>
+            <button class="btn-main" onclick="downloadArt()">Baixar PNG (Otimizado)</button>
+        </div>
+    </div>
+</div>
+
 <button class="fab" title="Otimizar PNG local (<1MB)" onclick="document.getElementById('fileIn').click()">
     <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
 </button>
-<input type="file" id="fileIn" style="display:none" accept="image/*" onchange="optimizePng(event)">
 
 <div id="toast">Copiado!</div>
 
@@ -210,22 +299,11 @@
     }
 
     // --- AÇÕES ---
-    async function copyImg(url) {
-        try {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            const item = new ClipboardItem({ [blob.type]: blob });
-            await navigator.clipboard.write([item]);
-            showToast("Imagem copiada!");
-        } catch (e) { alert("Use HTTPS ou Localhost."); }
-    }
-
     function copyPrompt(id) {
         const prod = STATE.prods.find(p => p.id === id);
         const selIdx = document.getElementById(`sel-${id}`).value;
         if(STATE.prompts.length === 0) return alert("Crie um prompt!");
         
-        // REVISÃO: Substituição Global de Tags
         let template = STATE.prompts[selIdx].text;
         let final = template.replace(/\[NOME\]/g, prod.name)
                             .replace(/\[PRECO\]/g, fmt(prod.price))
@@ -236,7 +314,7 @@
         showToast("Prompt preenchido!");
     }
 
-    // OTIMIZAÇÃO PNG < 1MB
+    // OTIMIZAÇÃO PNG < 1MB Original
     function optimizePng(e) {
         const file = e.target.files[0]; if(!file) return;
         showToast("Otimizando para PNG...");
@@ -270,7 +348,226 @@
 
     function showToast(m) { const t = document.getElementById('toast'); t.innerText = m; t.className = "show"; setTimeout(() => t.className = "", 3000); }
 
-    // --- RENDER ---
+    // --- LÓGICA DO EDITOR DE ARTE ---
+    let selectedTextEl = null;
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    function openEditorUpload() {
+        document.getElementById('editorFileIn').click();
+    }
+
+    function loadEditorImage(e) {
+        const file = e.target.files[0]; if(!file) return;
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(ev) {
+            document.getElementById('editorBgImage').src = ev.target.result;
+            document.getElementById('editorModal').style.display = 'flex';
+            // Limpa textos anteriores
+            document.querySelectorAll('.draggable-text').forEach(el => el.remove());
+            selectedTextEl = null;
+            document.getElementById('textControls').style.display = 'none';
+        }
+        e.target.value = ''; // reseta o input
+    }
+
+    function closeEditor() {
+        document.getElementById('editorModal').style.display = 'none';
+    }
+
+    function changeFormat() {
+        const format = document.getElementById('edFormat').value;
+        const container = document.getElementById('canvasContainer');
+        container.className = format === 'square' ? 'format-square' : 'format-reels';
+    }
+
+    function addText() {
+        const textVal = document.getElementById('edTextInput').value.trim();
+        if(!textVal) return alert("Digite um texto primeiro.");
+
+        const container = document.getElementById('canvasContainer');
+        const textDiv = document.createElement('div');
+        textDiv.className = 'draggable-text';
+        textDiv.innerText = textVal;
+        
+        // Estilos padrão
+        textDiv.style.left = '50px';
+        textDiv.style.top = '50px';
+        textDiv.style.fontSize = '30px';
+        textDiv.style.color = '#ffffff';
+        textDiv.style.backgroundColor = '#ef4444';
+        textDiv.style.fontFamily = 'Inter';
+        textDiv.style.fontWeight = '900';
+
+        // Eventos de Drag & Drop
+        textDiv.addEventListener('mousedown', startDrag);
+        
+        container.appendChild(textDiv);
+        selectText(textDiv);
+        document.getElementById('edTextInput').value = '';
+    }
+
+    function selectText(element) {
+        document.querySelectorAll('.draggable-text').forEach(el => el.classList.remove('active'));
+        selectedTextEl = element;
+        selectedTextEl.classList.add('active');
+        
+        // Atualiza painel lateral
+        document.getElementById('textControls').style.display = 'flex';
+        document.getElementById('edSize').value = parseInt(selectedTextEl.style.fontSize);
+        
+        // Converte RGB para HEX para o input color
+        const rgb2hex = (rgb) => {
+            if(rgb.startsWith('transparent') || rgb === '') return '#000000';
+            let res = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if(!res) return rgb;
+            return "#" + ("0" + parseInt(res[1], 10).toString(16)).slice(-2) +
+                         ("0" + parseInt(res[2], 10).toString(16)).slice(-2) +
+                         ("0" + parseInt(res[3], 10).toString(16)).slice(-2);
+        };
+        document.getElementById('edColor').value = rgb2hex(selectedTextEl.style.color);
+        
+        let bgCol = selectedTextEl.style.backgroundColor;
+        document.getElementById('edBgColor').value = (bgCol === 'transparent' || bgCol === '') ? '#ffffff' : rgb2hex(bgCol);
+    }
+
+    function updateSelectedText() {
+        if(!selectedTextEl) return;
+        selectedTextEl.style.fontSize = document.getElementById('edSize').value + 'px';
+        selectedTextEl.style.color = document.getElementById('edColor').value;
+        selectedTextEl.style.backgroundColor = document.getElementById('edBgColor').value;
+    }
+
+    function removeTextBg() {
+        if(!selectedTextEl) return;
+        selectedTextEl.style.backgroundColor = 'transparent';
+    }
+
+    function deleteSelectedText() {
+        if(!selectedTextEl) return;
+        selectedTextEl.remove();
+        selectedTextEl = null;
+        document.getElementById('textControls').style.display = 'none';
+    }
+
+    // Lógica de Mouse para Arrastar
+    function startDrag(e) {
+        isDragging = true;
+        selectText(e.target);
+        const rect = selectedTextEl.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+    }
+
+    document.getElementById('canvasContainer').addEventListener('mousemove', function(e) {
+        if (isDragging && selectedTextEl) {
+            const containerRect = this.getBoundingClientRect();
+            let x = e.clientX - containerRect.left - offsetX;
+            let y = e.clientY - containerRect.top - offsetY;
+            selectedTextEl.style.left = x + 'px';
+            selectedTextEl.style.top = y + 'px';
+        }
+    });
+
+    document.addEventListener('mouseup', () => { isDragging = false; });
+
+    // RENDERIZAÇÃO FINAL PARA PNG
+    function downloadArt() {
+        showToast("Gerando arte...");
+        document.querySelectorAll('.draggable-text').forEach(el => el.classList.remove('active'));
+
+        const format = document.getElementById('edFormat').value;
+        const targetWidth = 1080;
+        const targetHeight = format === 'square' ? 1080 : 1920;
+        
+        const cContainer = document.getElementById('canvasContainer');
+        const scaleFactorX = targetWidth / cContainer.offsetWidth;
+        const scaleFactorY = targetHeight / cContainer.offsetHeight;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+
+        const img = document.getElementById('editorBgImage');
+        
+        // Simular Object-Fit Cover no Canvas
+        const imgRatio = img.naturalWidth / img.naturalHeight;
+        const canvasRatio = targetWidth / targetHeight;
+        let drawWidth, drawHeight, drawX, drawY;
+
+        if (imgRatio > canvasRatio) {
+            drawHeight = targetHeight;
+            drawWidth = img.naturalWidth * (targetHeight / img.naturalHeight);
+            drawX = (targetWidth - drawWidth) / 2;
+            drawY = 0;
+        } else {
+            drawWidth = targetWidth;
+            drawHeight = img.naturalHeight * (targetWidth / img.naturalWidth);
+            drawX = 0;
+            drawY = (targetHeight - drawHeight) / 2;
+        }
+
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+
+        // Desenhar Textos
+        const texts = document.querySelectorAll('.draggable-text');
+        texts.forEach(t => {
+            const x = parseInt(t.style.left) * scaleFactorX;
+            const y = parseInt(t.style.top) * scaleFactorY;
+            const fontSize = parseInt(t.style.fontSize) * scaleFactorX;
+            const textStr = t.innerText;
+            
+            ctx.font = `900 ${fontSize}px Inter`;
+            ctx.textBaseline = "top";
+            const paddingX = 10 * scaleFactorX;
+            const paddingY = 5 * scaleFactorY;
+            
+            const metrics = ctx.measureText(textStr);
+            const textWidth = metrics.width;
+            
+            // Fundo
+            if(t.style.backgroundColor && t.style.backgroundColor !== 'transparent') {
+                ctx.fillStyle = t.style.backgroundColor;
+                ctx.fillRect(x, y, textWidth + (paddingX * 2), fontSize + (paddingY * 2));
+            }
+            
+            // Texto
+            ctx.fillStyle = t.style.color;
+            ctx.fillText(textStr, x + paddingX, y + paddingY + (fontSize * 0.1)); // ajuste visual base
+        });
+
+        // Lógica de Compressão para < 1MB
+        let qualityScale = 1.0;
+        let dataUrl;
+        
+        function compressAndDownload() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width * qualityScale;
+            tempCanvas.height = canvas.height * qualityScale;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+            
+            dataUrl = tempCanvas.toDataURL('image/png');
+            const kbSize = (dataUrl.length * 0.75) / 1024;
+            
+            if (kbSize > 1024 && qualityScale > 0.4) {
+                qualityScale -= 0.1;
+                compressAndDownload(); // Reduz resolução gradativamente até caber
+            } else {
+                const link = document.createElement('a');
+                link.download = `arte_dona_antonia_${format}.png`;
+                link.href = dataUrl;
+                link.click();
+                showToast("Arte salva com sucesso!");
+                closeEditor();
+            }
+        }
+        compressAndDownload();
+    }
+
+    // --- RENDER DA TELA PRINCIPAL ---
     function render() {
         document.getElementById('promptsListUI').innerHTML = STATE.prompts.map((p, i) => `
             <div class="saved-item">
@@ -288,6 +585,7 @@
         const filtered = STATE.prods.filter(p => p.discountPercent >= minD && norm(p.name).includes(query));
         const opts = STATE.prompts.map((p, i) => `<option value="${i}">${p.name}</option>`).join('');
 
+        // Alterado o grid para 1 botão na linha e removido o botão imagem
         document.getElementById('gridUI').innerHTML = filtered.map(p => `
             <div class="card">
                 ${p.discountPercent > 0 ? `<div class="badge">-${p.discountPercent}%</div>` : ''}
@@ -299,9 +597,9 @@
                 </div>
                 <div class="card-actions">
                     <select id="sel-${p.id}">${opts || '<option>Nenhum prompt</option>'}</select>
-                    <div class="btn-row">
-                        <button class="btn-act btn-p" onclick="copyPrompt('${p.id}')">Prompt</button>
-                        <button class="btn-act btn-i" onclick="copyImg('${p.img}')">Imagem</button>
+                    <div class="btn-row" style="grid-template-columns: 1fr;">
+                        <button class="btn-act btn-p" onclick="copyPrompt('${p.id}')">Copiar Prompt</button>
+                        <button class="btn-act btn-i" onclick="openEditorUpload()">Criar Arte</button>
                     </div>
                 </div>
                 <div class="card-footer-logo"><img src="${LOGO}"></div>
