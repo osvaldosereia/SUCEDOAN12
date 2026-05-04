@@ -868,7 +868,7 @@
             }
         };
 
-        // FUNÇÃO RESTAURADA E CORRIGIDA: Troca o modal para a tela de Sucesso
+       // FUNÇÃO RESTAURADA E CORRIGIDA: Troca o modal para a tela de Sucesso
         function renderVIPList() {
             $('vip-items-grid').innerHTML = `
                 <div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
@@ -884,6 +884,9 @@
             $('vip-list-container').style.display = 'block'; 
             let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
             if(scrollArea) scrollArea.scrollTo({top: 0, behavior: 'smooth'});
+            
+            // CORREÇÃO: Força o carregamento das imagens (Lazy Load) após renderizar o HTML
+            lazyLoadImages(); 
         }
 
         // ==========================================
