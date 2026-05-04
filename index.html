@@ -187,18 +187,19 @@
         .overlay.open { opacity: 1; pointer-events: all; }
 
         /* =========================================
-           8. CARROSSSEL DE DESTAQUES
+           8. CARROSSSEL DE DESTAQUES E OFERTAS
         ========================================= */
         .carrossel-destaque-container { background: transparent; border-bottom: 1px solid var(--border-light); margin-bottom: 15px; }
         .carrossel-wrapper { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 15px; padding: 10px 20px 25px 20px; -webkit-overflow-scrolling: touch; }
         .carrossel-wrapper::-webkit-scrollbar { display: none; }
-        .carrossel-item { width: 76vw; flex-shrink: 0; scroll-snap-align: start; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.04); position: relative; overflow: hidden; }
-        .carrossel-item .product-card-list { border-bottom: none; padding: 14px; background: transparent; gap: 12px;}
-        .carrossel-item .img-wrapper { width: 95px; height: 95px; }
-        .carrossel-item .product-name-list { font-size: 13.5px; -webkit-line-clamp: 2; }
-        .carrossel-item .qty-controls { right: 14px; bottom: 14px; }
-        .carrossel-item .btn-quick-add-list { right: 14px; bottom: 14px; }
-        .carrossel-item .price-container { padding-right: 90px; }
+        
+        .carrossel-column { width: 85vw; flex-shrink: 0; scroll-snap-align: start; display: flex; flex-direction: column; gap: 12px; position: relative; }
+        .carrossel-column .product-card-list { border-bottom: none; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.04); padding: 14px; gap: 12px;}
+        .carrossel-column .img-wrapper { width: 95px; height: 95px; }
+        .carrossel-column .product-name-list { font-size: 13.5px; -webkit-line-clamp: 2; }
+        .carrossel-column .qty-controls { right: 14px; bottom: 14px; }
+        .carrossel-column .btn-quick-add-list { right: 14px; bottom: 14px; }
+        .carrossel-column .price-container { padding-right: 90px; }
 
         /* NOVO CARROSSEL PARA CESTAS DA TELA INICIAL (1.3 CARDS) */
         .carrossel-basket-item { width: 76vw; flex-shrink: 0; scroll-snap-align: start; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.04); position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 14px; cursor: pointer; transition: transform 0.2s;}
@@ -440,7 +441,7 @@
                 renderCestas();
                 document.title = "Cestas Básicas - Dona Antônia";
             } else if (hash === '#/ofertas') {
-                renderDepartamentoCompleto('Ofertas do Dia');
+                renderDepartamentoCompleto('Ofertas');
             } else if (hash === '#/mercado') {
                 initMercado();
                 document.title = "Mercado Completo - Dona Antônia";
@@ -517,49 +518,65 @@
         }
 
        // ==========================================
-        // CARROSSEL DINÂMICO DE DESTAQUES
+        // CARROSSEL DINÂMICO DE OFERTAS (UNIFICADO)
         // ==========================================
-        function getCarrosselDestaquesHTML() {
+        function getCarrosselOfertasHTML(isVIP = false) {
+            let destaques = [];
             let codigosElement = $('codigos-carrossel-destaque');
-            if(!codigosElement) return '';
-            let codigosText = codigosElement.getAttribute('data-codigos');
-            if(!codigosText) return '';
             
-            let itensCarrossel = codigosText.split(',').map(c => c.trim()).slice(0, 20);
-            let htmlCards = '';
-            
-            itensCarrossel.forEach(item => {
-                let partes = item.split(':');
-                let cod = partes[0].trim();
-                let customDiscount = partes.length > 1 ? parseInt(partes[1].trim()) : null;
-
-                let prodOriginal = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod);
-                
-                if(prodOriginal) {
-                    let prod = { ...prodOriginal }; 
-                    
-                    if(customDiscount && !isNaN(customDiscount)) {
-                        prod.discountPercent = customDiscount;
-                        let precoBase = prod.oldPrice || prod.price; 
-                        prod.oldPrice = precoBase;
-                        prod.price = precoBase * (1 - (customDiscount / 100));
-                    }
-                    
-                    htmlCards += `<div class="carrossel-item">${renderCardHTML(prod)}</div>`;
+            if (codigosElement) {
+                let codigosText = codigosElement.getAttribute('data-codigos');
+                if (codigosText) {
+                    let itensCarrossel = codigosText.split(',').map(c => c.trim()).slice(0, 20);
+                    itensCarrossel.forEach(item => {
+                        let partes = item.split(':'); 
+                        let cod = partes[0].trim(); 
+                        let customDiscount = partes.length > 1 ? parseInt(partes[1].trim()) : null;
+                        let prodOriginal = STATE.prods.find(p => String(p.codigo) === cod || String(p.id) === cod);
+                        
+                        if (prodOriginal) {
+                            let prod = { ...prodOriginal };
+                            if (customDiscount && !isNaN(customDiscount)) {
+                                prod.discountPercent = customDiscount;
+                                let precoBase = prod.oldPrice || prod.price; 
+                                prod.oldPrice = precoBase;
+                                prod.price = precoBase * (1 - (customDiscount / 100));
+                            }
+                            destaques.push(prod);
+                        }
+                    });
                 }
-            });
+            }
             
-            if(htmlCards === '') return '';
+            let destaquesIds = new Set(destaques.map(p => p.id));
+            let outrasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0 && !destaquesIds.has(p.id))
+                                           .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento));
             
+            let todasOfertas = [...destaques, ...outrasOfertas];
+
+            if(todasOfertas.length === 0) return '';
+
+            let columnsHtml = '';
+            for(let i = 0; i < todasOfertas.length; i += 3) {
+                let chunk = todasOfertas.slice(i, i + 3);
+                let chunkHtml = chunk.map(p => renderCardHTML(p)).join('');
+                columnsHtml += `<div class="carrossel-column">${chunkHtml}</div>`;
+            }
+
+            let onClickBtn = isVIP ? "closeBasketDetail(); window.location.hash='#/ofertas'" : "window.location.hash='#/ofertas'";
+            
+            let btnHtml = todasOfertas.length > 3 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="${onClickBtn}" class="btn-ver-todos-cat">Ver todas as ${todasOfertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+
             return `
-            <div class="carrossel-destaque-container">
-                <div style="padding: 20px 20px 5px 20px; font-size: 18px; font-weight: 900; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
-                    <svg class="svg-icon" style="color: var(--danger)" viewBox="0 0 24 24"><path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
-                    Ofertas em Destaque
+            <div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); margin-bottom: 15px; border-top: 1px solid var(--border-light);">
+                <div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="${onClickBtn}">
+                    <svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> 
+                    Ofertas
                 </div>
-                <div class="carrossel-wrapper">
-                    ${htmlCards}
+                <div class="carrossel-wrapper" style="padding: 0 20px 10px 20px; align-items: flex-start;">
+                    ${columnsHtml}
                 </div>
+                ${btnHtml}
             </div>`;
         }
 
@@ -613,35 +630,15 @@
             });
             htmlCestas += `</div></div>`;
 
-            // --- 2. MERCADO (IDÊNTICO) ---
-            let catMap = new Set(); let ofertas = []; 
+            // --- 2. MERCADO ---
+            let catMap = new Set(); 
             STATE.prods.forEach(p => { 
                 if(p.categoria === 'Cestas') return; 
-                if(p.discountPercent > 0) ofertas.push(p); 
                 let c = p.categoria || 'Outros'; 
                 catMap.add(c); 
             });
             
-            let htmlMercado = getCarrosselDestaquesHTML();
-
-            if(ofertas.length > 0) {
-                let topOfertas = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
-                                       .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
-                                       .slice(0, 9);
-                
-                if (topOfertas.length < 9) {
-                    let alreadyIn = new Set(topOfertas.map(p => p.id));
-                    let complement = ofertas.filter(p => !alreadyIn.has(p.id))
-                                            .sort((a,b) => b.discountPercent - a.discountPercent);
-                    topOfertas = [...topOfertas, ...complement].slice(0, 9);
-                }
-                
-                let carrosselHtml = `<div class="carrossel-wrapper" style="padding: 0 20px 10px 20px;">${topOfertas.map(p => `<div class="carrossel-item">${renderCardHTML(p)}</div>`).join('')}</div>`;
-                
-                let btnHtml = ofertas.length > 9 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
-                
-                htmlMercado += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${carrosselHtml}${btnHtml}</div>`;
-            }
+            let htmlMercado = getCarrosselOfertasHTML(false);
 
             htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
             Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
@@ -670,34 +667,14 @@
 
         function initMercado() {
             const vitrine = $('vitrine'); vitrine.innerHTML = '';
-            let catMap = new Set(); let ofertas = []; 
+            let catMap = new Set(); 
             STATE.prods.forEach(p => { 
                 if(p.categoria === 'Cestas') return; 
-                if(p.discountPercent > 0) ofertas.push(p); 
                 let c = p.categoria || 'Outros'; 
                 catMap.add(c); 
             });
             
-            let html = getCarrosselDestaquesHTML();
-
-            if(ofertas.length > 0) {
-                let topOfertas = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
-                                       .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
-                                       .slice(0, 9);
-                
-                if (topOfertas.length < 9) {
-                    let alreadyIn = new Set(topOfertas.map(p => p.id));
-                    let complement = ofertas.filter(p => !alreadyIn.has(p.id))
-                                            .sort((a,b) => b.discountPercent - a.discountPercent);
-                    topOfertas = [...topOfertas, ...complement].slice(0, 9);
-                }
-                
-                let carrosselHtml = `<div class="carrossel-wrapper" style="padding: 0 20px 10px 20px;">${topOfertas.map(p => `<div class="carrossel-item">${renderCardHTML(p)}</div>`).join('')}</div>`;
-                
-                let btnHtml = ofertas.length > 9 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
-                
-                html += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${carrosselHtml}${btnHtml}</div>`;
-            }
+            let html = getCarrosselOfertasHTML(false);
 
             html += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
             Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
@@ -717,8 +694,8 @@
         function renderDepartamentoCompleto(cat) {
             let html = '';
             
-            if (cat === 'Ofertas do Dia') {
-                document.title = `Ofertas do Dia - Dona Antônia`;
+            if (cat === 'Ofertas' || cat === 'Ofertas do Dia') {
+                document.title = `Ofertas - Dona Antônia`;
                 let destaques = [];
                 let codigosElement = $('codigos-carrossel-destaque');
                 
@@ -750,7 +727,7 @@
                 let outrasOfertas = STATE.prods.filter(p => p.categoria !== 'Cestas' && p.discountPercent > 0 && !destaquesIds.has(p.id))
                                                .sort((a,b) => b.discountPercent - a.discountPercent);
                 
-                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas do Dia</div><div style="background: #fff;">`;
+                html = `<div style="padding: 15px 0 0 0;"><div class="ver-tudo-header" onclick="window.history.back()" style="margin: -15px 0 0 0;"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Ofertas</div><div style="background: #fff;">`;
                 
                 if (destaques.length > 0) {
                     html += `<h3 class="subcat-title">Ofertas em Destaque</h3>`;
@@ -984,34 +961,14 @@
         };
 
         function renderVIPList() {
-            let catMap = new Set(); let ofertas = []; 
+            let catMap = new Set(); 
             STATE.prods.forEach(p => { 
                 if(p.categoria === 'Cestas') return; 
-                if(p.discountPercent > 0) ofertas.push(p); 
                 let c = p.categoria || 'Outros'; 
                 catMap.add(c); 
             });
             
-            let htmlMercado = getCarrosselDestaquesHTML();
-
-            if(ofertas.length > 0) {
-                let topOfertas = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
-                                       .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
-                                       .slice(0, 9);
-                
-                if (topOfertas.length < 9) {
-                    let alreadyIn = new Set(topOfertas.map(p => p.id));
-                    let complement = ofertas.filter(p => !alreadyIn.has(p.id))
-                                            .sort((a,b) => b.discountPercent - a.discountPercent);
-                    topOfertas = [...topOfertas, ...complement].slice(0, 9);
-                }
-                
-                let carrosselHtml = `<div class="carrossel-wrapper" style="padding: 0 20px 10px 20px;">${topOfertas.map(p => `<div class="carrossel-item">${renderCardHTML(p)}</div>`).join('')}</div>`;
-                
-                let btnHtml = ofertas.length > 9 ? `<div style="padding: 0 20px 15px 20px;"><button onclick="closeBasketDetail(); window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
-                
-                htmlMercado += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="closeBasketDetail(); window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${carrosselHtml}${btnHtml}</div>`;
-            }
+            let htmlMercado = getCarrosselOfertasHTML(true);
 
             htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
             Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
