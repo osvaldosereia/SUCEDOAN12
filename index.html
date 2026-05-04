@@ -199,6 +199,13 @@
         .carrossel-item .qty-controls { right: 14px; bottom: 14px; }
         .carrossel-item .btn-quick-add-list { right: 14px; bottom: 14px; }
         .carrossel-item .price-container { padding-right: 90px; }
+
+        /* NOVO CARROSSEL PARA CESTAS DA TELA INICIAL (1.3 CARDS) */
+        .carrossel-basket-item { width: 76vw; flex-shrink: 0; scroll-snap-align: start; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 15px rgba(0,0,0,0.04); position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 14px; cursor: pointer; transition: transform 0.2s;}
+        .carrossel-basket-item:active { transform: translateY(2px); }
+        .carrossel-basket-item .basket-img { width: 100%; height: 210px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; background: #f1f5f9; }
+        .carrossel-basket-item .basket-title { font-size: 17px; font-weight: 900; color: var(--text-dark); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .carrossel-basket-item .basket-price { font-size: 18px; font-weight: 900; color: var(--danger); margin-bottom: 12px; letter-spacing: -0.5px; }
     </style>
 </head>
 <body>
@@ -210,9 +217,9 @@
 
     <!-- NAVEGAÇÃO INFERIOR APP NATIVO (4 ÍCONES) -->
     <div class="app-bottom-bar">
-        <a href="#/" class="app-nav-item active" id="nav-cestas">
-            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"></path></svg>
-            Cestas
+        <a href="#/" class="app-nav-item active" id="nav-inicio">
+            <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><path d="M9 22V12h6v10"></path></svg>
+            Início
         </a>
         <a href="#/mercado" class="app-nav-item" id="nav-mercado">
             <svg class="svg-icon" viewBox="0 0 24 24"><path d="M3 9l1.5 12h15L21 9M3 9h18M3 9L4.5 3h15L21 9"></path></svg>
@@ -350,7 +357,6 @@
             appliedCoupon: null, couponDiscount: 0
         };
 
-        // Adicionada a declaração global para evitar erros de referência
         let currentBasketItems = [];
 
         const ORDEM_CATEGORIAS = ['mercearia basica', 'cafe da manha', 'macarrao e molhos', 'temperos', 'sucos e refris', 'bebidas', 'frios', 'congelados', 'hortifruti', 'padaria', 'carnes', 'limpeza', 'lavanderia', 'beleza', 'higiene', 'sabonete', 'shampoo', 'cabelo'];
@@ -419,13 +425,16 @@
             if($('overlay').classList.contains('open')) $('overlay').classList.remove('open'); 
 
             document.querySelectorAll('.app-nav-item').forEach(el => el.classList.remove('active'));
-            if(hash === '#/' || hash === '' || hash === '#/cestas') $('nav-cestas').classList.add('active');
+            if(hash === '#/' || hash === '') $('nav-inicio').classList.add('active');
             else if(hash === '#/ofertas') $('nav-ofertas').classList.add('active');
             else if(hash === '#/mercado' || hash.startsWith('#/departamento/')) $('nav-mercado').classList.add('active');
 
-            if (hash === '#/' || hash === '' || hash === '#/cestas') {
-                renderCestas();
+            if (hash === '#/' || hash === '') {
+                renderInicio();
                 document.title = "Dona Antônia - Supermercado e Cestas";
+            } else if (hash === '#/cestas') {
+                renderCestas();
+                document.title = "Cestas Básicas - Dona Antônia";
             } else if (hash === '#/ofertas') {
                 renderDepartamentoCompleto('Ofertas do Dia');
             } else if (hash === '#/mercado') {
@@ -574,6 +583,81 @@
         // ==========================================
         // RENDERIZAÇÃO: PÁGINAS PRINCIPAIS
         // ==========================================
+
+        // NOVA PÁGINA INICIAL (CESTAS + MERCADO)
+        function renderInicio() {
+            const vitrine = $('vitrine'); vitrine.innerHTML = '';
+            
+            // --- 1. CARROSSEL CESTAS ---
+            let htmlCestas = `
+            <div class="carrossel-destaque-container" style="margin-top: 15px; border-bottom: none;">
+                <div style="padding: 0 20px 10px 20px; font-size: 20px; font-weight: 900; color: var(--text-dark); display: flex; align-items: center; gap: 8px;">
+                    <svg class="svg-icon" style="color: var(--success)" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"></path></svg>
+                    Cestas Básicas
+                </div>
+                <div class="carrossel-wrapper">
+            `;
+            BASKETS.forEach(basket => { 
+                let priceHtml = basket.oldPrice ? `<div class="basket-price"><span style="text-decoration: line-through; font-size: 14px; color: #94a3b8; font-weight: 600; margin-right: 8px;">${fmt(basket.oldPrice)}</span>${fmt(basket.preco)}</div>` : `<div class="basket-price">${fmt(basket.preco)}</div>`; 
+                htmlCestas += `
+                <div class="carrossel-basket-item" onclick="openBasketDetail('${basket.id}')">
+                    <img src="${basket.imagem}" class="basket-img" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'">
+                    <div class="basket-title">${basket.nome}</div>
+                    ${priceHtml}
+                    <div class="btn-quick-add-list" style="background:var(--text-dark); color:#fff; height:40px; width:100%; border-radius:10px; font-size:13.5px;" onclick="event.stopPropagation(); openBasketDetail('${basket.id}');">Personalizar Cesta</div>
+                </div>`; 
+            });
+            htmlCestas += `</div></div>`;
+
+            // --- 2. MERCADO (IDÊNTICO) ---
+            let catMap = new Set(); let ofertas = []; 
+            STATE.prods.forEach(p => { 
+                if(p.categoria === 'Cestas') return; 
+                if(p.discountPercent > 0) ofertas.push(p); 
+                let c = p.categoria || 'Outros'; 
+                catMap.add(c); 
+            });
+            
+            let htmlMercado = getCarrosselDestaquesHTML();
+
+            if(ofertas.length > 0) {
+                let top3 = [...ofertas].filter(p => getDaysToExpiry(p.vencimento) !== Infinity)
+                                       .sort((a, b) => getDaysToExpiry(a.vencimento) - getDaysToExpiry(b.vencimento))
+                                       .slice(0, 3);
+                
+                if (top3.length < 3) {
+                    let alreadyIn = new Set(top3.map(p => p.id));
+                    let complement = ofertas.filter(p => !alreadyIn.has(p.id))
+                                            .sort((a,b) => b.discountPercent - a.discountPercent);
+                    top3 = [...top3, ...complement].slice(0, 3);
+                }
+                
+                let gridHtml = `<div class="cat-grid" style="padding:0; background: #fff;">${top3.map(p => renderCardHTML(p)).join('')}</div>`;
+                
+                let btnHtml = ofertas.length > 3 ? `<div style="padding: 15px 20px;"><button onclick="window.location.hash='#/ofertas'" class="btn-ver-todos-cat">Ver todas as ${ofertas.length} ofertas <svg class="svg-icon" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg></button></div>` : '';
+                
+                htmlMercado += `<div style="background:var(--bg-card); border-bottom: 1px solid var(--border-light); padding-bottom: 5px; margin-bottom: 15px; border-top: 1px solid var(--border-light);"><div class="cat-header" style="padding-top:20px; padding-left:20px; padding-right:20px; padding-bottom:15px; font-size:18px; font-weight:900; color:var(--text-dark); cursor:pointer; display:flex; align-items:center; gap:8px;" onclick="window.location.hash='#/ofertas'"><svg class="svg-icon" style="color:var(--danger)" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Ofertas do Dia</div>${gridHtml}${btnHtml}</div>`;
+            }
+
+            htmlMercado += '<div style="padding: 15px 20px;"><h2 style="font-size:20px; font-weight:900; margin-bottom:15px; color:var(--text-dark);">Departamentos</h2>';
+            Array.from(catMap).sort((a,b) => (ORDEM_CATEGORIAS.indexOf(norm(a)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(a)) : 999) - (ORDEM_CATEGORIAS.indexOf(norm(b)) > -1 ? ORDEM_CATEGORIAS.indexOf(norm(b)) : 999) || a.localeCompare(b)).forEach((cat) => {
+                htmlMercado += `<a href="#/departamento/${encodeHash(cat)}" style="margin-bottom: 15px; background: #fff; border-radius: 16px; border: 1px solid var(--border-light); box-shadow: 0 4px 10px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: center; padding: 20px; text-decoration: none; color: var(--text-dark); cursor: pointer; transition: 0.2s;">
+                            <div style="display:flex; align-items:center; gap:14px;">
+                                <div style="width: 38px; height: 38px; border-radius: 10px; background: #f1f5f9; display:flex; align-items:center; justify-content:center; color: var(--text-dark);">
+                                    <svg class="svg-icon" style="width: 1.2em; height: 1.2em;" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                                </div>
+                                <span style="font-size: 16px; font-weight: 800;">${cat}</span>
+                            </div>
+                            <svg class="svg-icon" viewBox="0 0 24 24" style="color: var(--text-light); opacity: 0.5;"><path d="M9 5l7 7-7 7"></path></svg>
+                        </a>`;
+            });
+            htmlMercado += '</div>'; 
+            
+            vitrine.innerHTML = htmlCestas + htmlMercado; 
+            lazyLoadImages();
+        }
+
+        // PÁGINA APENAS COM LISTA DE CESTAS (Legado preservado)
         function renderCestas() {
             let html = '<div style="padding: 15px 20px;">'; 
             BASKETS.forEach(basket => { let priceHtml = basket.oldPrice ? `<div class="basket-price"><span style="text-decoration: line-through; font-size: 16px; color: #94a3b8; font-weight: 600; margin-right: 10px;">${fmt(basket.oldPrice)}</span>${fmt(basket.preco)}</div>` : `<div class="basket-price">${fmt(basket.preco)}</div>`; html += `<div class="basket-card" onclick="openBasketDetail('${basket.id}')"><img src="${basket.imagem}" class="basket-img" alt="${basket.nome}" onerror="this.src='../img/logoantonia5.png'"><div class="basket-title">${basket.nome}</div>${priceHtml}<div class="btn-quick-add-list" style="background:var(--text-dark); color:#fff; height:48px; width:100%; border-radius:12px;" onclick="event.stopPropagation(); openBasketDetail('${basket.id}');">Ver Itens da Cesta</div></div>`; }); 
@@ -747,7 +831,6 @@
             renderBasketItemsList(); $('basketDetailModal').classList.add('active');
         };
 
-        // Função reescrita para garantir o recálculo ao vivo do preço
         function renderBasketItemsList() {
             let container = $('basket-items-container'); 
             let totalItemsCount = 0;
@@ -799,7 +882,6 @@
             const basket = BASKETS.find(b => b.id === window.currentBasketId); 
             if (!basket) return;
             
-            // 1. Calcula o valor dos itens no PADRÃO da cesta para gerar a taxa fixa
             let origItemsMap = {}; 
             let valorPadraoCesta = 0;
             basket.produtos.forEach(str => { 
@@ -814,14 +896,12 @@
                 }
             });
 
-            // Esta é a taxa fixa de embalagem ou desconto do combo, que não deve mudar se o cliente adicionar mais coisas
             let diferencaFixa = basket.preco - valorPadraoCesta;
 
             let basketDiff = { id: basket.id, name: basket.nome, removed: [], added: [] }; 
             let hasChanges = false; 
             let addedCount = 0;
 
-            // 2. Joga os itens (com suas quantidades atuais modificadas) para o carrinho
             currentBasketItems.forEach(item => { 
                 let pid = item.pObj.codigo || item.pObj.id; 
                 let origQty = origItemsMap[pid] || 0; 
@@ -841,7 +921,6 @@
             basketDiff.changed = hasChanges;
             STATE.basketCustomizations[basket.id] = basketDiff;
 
-            // 3. Aplica a diferença fixa ao carrinho
             if (addedCount > 0 && Math.abs(diferencaFixa) > 0.01) { 
                 let feeId = 'fee_' + basket.id; 
                 let isDiscount = diferencaFixa < 0; 
@@ -864,11 +943,10 @@
                 $('basket-items-header').style.display = 'none'; 
                 $('basket-items-container').style.display = 'none'; 
                 $('basket-summary-container').style.display = 'none'; 
-                renderVIPList(); // A função recriada é chamada aqui!
+                renderVIPList(); 
             }
         };
 
-       // FUNÇÃO RESTAURADA E CORRIGIDA: Troca o modal para a tela de Sucesso
         function renderVIPList() {
             $('vip-items-grid').innerHTML = `
                 <div style="background: var(--success); color: white; padding: 25px; border-radius: 16px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
@@ -885,7 +963,6 @@
             let scrollArea = document.querySelector('#basketDetailModal .modal-scroll-area');
             if(scrollArea) scrollArea.scrollTo({top: 0, behavior: 'smooth'});
             
-            // CORREÇÃO: Força o carregamento das imagens (Lazy Load) após renderizar o HTML
             lazyLoadImages(); 
         }
 
