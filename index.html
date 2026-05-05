@@ -276,59 +276,66 @@
         </div>
     </div>
 
-   <!-- CHECKOUT DRAWER -->
-   <div class="checkout-drawer" id="checkout-drawer">
-        <div class="chk-header">Minha Sacola <div style="cursor: pointer; padding: 5px;" onclick="closeCheckout()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div></div>
-        <div class="chk-body">
-            
-            <div class="chk-section" id="chk-items-list" style="padding: 10px 20px;"></div>
-            
-            <div class="chk-section">
-                <div class="chk-title">Agendamento de Entrega</div>
-                <div class="pay-options" id="delivery-options-list"></div>
-            </div>
-            
-            <div class="chk-section">
-                <div class="chk-title">Onde vamos entregar?</div>
-                <div class="city-selector">
-                    <button class="city-btn active" id="btn-city-cba" onclick="selectCity('Cuiabá', this)">Cuiabá</button>
-                    <button class="city-btn" id="btn-city-vg" onclick="selectCity('Várzea Grande', this)">V. Grande</button>
-                    <input type="hidden" id="chk-cidade" value="Cuiabá">
-                </div>
+  <!-- CHECKOUT DRAWER -->
+<div class="checkout-drawer" id="checkout-drawer">
+    <div class="chk-header">Minha Sacola <div style="cursor: pointer; padding: 5px;" onclick="closeCheckout()"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg></div></div>
+    <div class="chk-body">
+        
+        <div class="chk-section" id="chk-items-list" style="padding: 10px 20px;"></div>
+        
+        <div class="chk-section">
+            <div class="chk-title">Agendamento de Entrega</div>
+            <div class="pay-options" id="delivery-options-list"></div>
+        </div>
+        
+        <!-- ==========================================
+             SEÇÃO MODIFICADA: DADOS DO CLIENTE
+             - Campos de endereço e WhatsApp removidos
+             - Mantido apenas Nome e CPF
+             - Título alterado para "Seus Dados"
+        =========================================== -->
+        <div class="chk-section">
+            <div class="chk-title">Seus Dados</div>
 
-                <div class="input-group"><label class="input-label">Nome Completo</label><input type="text" id="chk-nome" class="input-text" placeholder="Quem vai receber?" required></div>
-                <div class="input-group"><label class="input-label">WhatsApp (Para combinarmos)</label><input type="tel" id="chk-whats" class="input-text" placeholder="(65) 99999-9999" maxlength="15" oninput="mascaraWhats(this)" required></div>
-                <div class="input-group"><label class="input-label">CPF <span style="color:var(--danger); font-size:11px;">(Necessário para Nota Fiscal)</span></label><input type="tel" id="chk-cpf" class="input-text" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)" required></div>
-                
-                <div style="display: flex; gap: 12px; margin-bottom: 15px;">
-                    <div style="flex: 1;"><label class="input-label">CEP</label><input type="tel" id="chk-cep" class="input-text" placeholder="00000-000" maxlength="9" oninput="mascaraCEP(this)"></div>
-                    <div style="flex: 1.5;"><label class="input-label">Bairro</label><input type="text" id="chk-bairro" class="input-text" placeholder="Seu bairro"></div>
-                </div>
-                <div class="input-group" style="margin-bottom:0;"><label class="input-label">Endereço Completo</label><input type="text" id="chk-endereco" class="input-text" placeholder="Rua, Número e Complemento"></div>
-            </div>
-            
-            <div class="chk-section">
-                <div class="chk-title">Pagamento (Ao receber o pedido)</div>
-                <div class="pay-options" id="main-payment-options">
-                    <button class="pay-btn selected" onclick="selectPayment('PIX', this)">PIX</button>
-                    <button class="pay-btn" onclick="selectPayment('Dinheiro', this)">Dinheiro</button>
-                    <button class="pay-btn" onclick="selectPayment('Débito', this)">Débito</button>
-                    <button class="pay-btn" onclick="selectPayment('Crédito', this)">Crédito</button>
-                    <button class="pay-btn" onclick="selectPayment('Cartão Alimentação', this)">Alimentação</button>
-                    <button class="pay-btn" onclick="selectPayment('Cartão Refeição', this)">Refeição</button>
-                </div>
-                <div id="voucher-brands-container" style="display:none; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-light);">
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Pluxee', this)">Pluxee</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Sodexo', this)">Sodexo</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Alelo', this)">Alelo</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Flash', this)">Flash</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Caju', this)">Caju</button>
-                    <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Ifood', this)">iFood</button>
-                </div>
-                <input type="hidden" id="chk-pagamento" value="PIX">
-                <input type="hidden" id="chk-voucher" value="">
+            <!-- Campo: Nome Completo -->
+            <div class="input-group">
+                <label class="input-label">Nome Completo</label>
+                <input type="text" id="chk-nome" class="input-text" placeholder="Seu nome" required>
             </div>
 
+            <!-- Campo: CPF -->
+            <!-- Nota: margin-bottom foi setado para 0 pois é o último elemento desta div -->
+            <div class="input-group" style="margin-bottom:0;">
+                <label class="input-label">CPF <span style="color:var(--danger); font-size:11px;">(Necessário para Nota Fiscal)</span></label>
+                <input type="tel" id="chk-cpf" class="input-text" placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)" required>
+            </div>
+        </div>
+        <!-- FIM DA SEÇÃO MODIFICADA -->
+        
+        <div class="chk-section">
+            <div class="chk-title">Pagamento (Ao receber o pedido)</div>
+            <div class="pay-options" id="main-payment-options">
+                <button class="pay-btn selected" onclick="selectPayment('PIX', this)">PIX</button>
+                <button class="pay-btn" onclick="selectPayment('Dinheiro', this)">Dinheiro</button>
+                <button class="pay-btn" onclick="selectPayment('Débito', this)">Débito</button>
+                <button class="pay-btn" onclick="selectPayment('Crédito', this)">Crédito</button>
+                <button class="pay-btn" onclick="selectPayment('Cartão Alimentação', this)">Alimentação</button>
+                <button class="pay-btn" onclick="selectPayment('Cartão Refeição', this)">Refeição</button>
+            </div>
+            <div id="voucher-brands-container" style="display:none; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-light);">
+                <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Pluxee', this)">Pluxee</button>
+                <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Sodexo', this)">Sodexo</button>
+                <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Alelo', this)">Alelo</button>
+                <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Flash', this)">Flash</button>
+                <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Caju', this)">Caju</button>
+                <button class="pay-btn brand-btn" style="padding:12px;" onclick="selectVoucherBrand('Ifood', this)">iFood</button>
+            </div>
+            <input type="hidden" id="chk-pagamento" value="PIX">
+            <input type="hidden" id="chk-voucher" value="">
+        </div>
+
+    </div>
+</div>
             <div class="chk-section" id="cupom-section">
                 <div class="chk-title">Cupom de Desconto</div>
                 <div style="display: flex; gap: 12px;">
@@ -1099,14 +1106,13 @@
             }
         }
 
-      window.sendOrder = function() {
+     window.sendOrder = function() {
             const btn = $('btn-send-order'); if (btn.disabled) return;
-            const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.replace(/\D/g,""); const whats = $('chk-whats').value.trim();
-            const cep = $('chk-cep').value.replace(/\D/g,""); const bairro = $('chk-bairro').value.trim(); const endereco = $('chk-endereco').value.trim(); let cidade = $('chk-cidade').value;
+            const nome = $('chk-nome').value.trim(); const cpf = $('chk-cpf').value.replace(/\D/g,"");
             let pag = $('chk-pagamento').value; let voucher = $('chk-voucher').value;
             if ((pag === 'Cartão Alimentação' || pag === 'Cartão Refeição') && !voucher) return alert("Por favor, selecione a bandeira do cartão."); if (voucher) pag += ` (${voucher})`;
-            if (!nome || !cpf || !whats || !bairro || !endereco) return alert("Preencha todos os dados de entrega para prosseguir."); 
-            salvarDadosLocalmente({ nome, cpf: $('chk-cpf').value, whats, cep: $('chk-cep').value, bairro, endereco, cidade });
+            if (!nome || !cpf) return alert("Preencha seu Nome e CPF para prosseguir."); 
+            salvarDadosLocalmente({ nome, cpf: $('chk-cpf').value });
             
             btn.innerHTML = "Processando...";
             const orderId = String(Date.now()).slice(-6); let itemsTxt = ""; let totalBruto = 0; let totalDescontoCestas = 0;
@@ -1141,7 +1147,7 @@
             if (STATE.deliveryDiscount > 0) itemsTxt += `\n📅 BÔNUS AGENDAMENTO: -${fmt(STATE.deliveryDiscount)}`;
             if (STATE.couponDiscount > 0) itemsTxt += `\n🎟️ CUPOM (${STATE.appliedCoupon}): -${fmt(STATE.couponDiscount)}`;
             
-            const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*WHATSAPP:* ${whats}\n*ENDEREÇO:* ${endereco}, ${bairro} - ${cidade}/MT\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL:* ${fmt(final)}${customTxt}`;
+            const msg = `*PEDIDO #${orderId}*\n*NOME:* ${nome}\n*CPF:* ${cpf}\n*PAGAMENTO:* ${pag}\n*ENTREGA:* ${STATE.deliveryDateStr}\n\n*ITENS:*\n${itemsTxt}\n*TOTAL:* ${fmt(final)}${customTxt}`;
             
             window.location.href = `https://api.whatsapp.com/send?phone=5565998150975&text=${encodeURIComponent(msg)}`;
             
@@ -1156,7 +1162,7 @@
         // ==========================================
         function loadCart() { try { let saved = localStorage.getItem('da_cart'); let savedOrder = localStorage.getItem('da_cart_order'); let savedCustom = localStorage.getItem('da_custom'); if (saved) STATE.cart = JSON.parse(saved); if (savedOrder) STATE.cartOrder = JSON.parse(savedOrder); if (savedCustom) STATE.basketCustomizations = JSON.parse(savedCustom); } catch(e) {} }
         function saveCart() { localStorage.setItem('da_cart', JSON.stringify(STATE.cart)); localStorage.setItem('da_cart_order', JSON.stringify(STATE.cartOrder)); localStorage.setItem('da_custom', JSON.stringify(STATE.basketCustomizations));}
-        function carregarDadosSalvos() { try { let d = JSON.parse(localStorage.getItem('da_user') || '{}'); if(d.nome) $('chk-nome').value = d.nome; if(d.cpf) $('chk-cpf').value = d.cpf; if(d.whats) $('chk-whats').value = d.whats; if(d.cep) $('chk-cep').value = d.cep; if(d.bairro) $('chk-bairro').value = d.bairro; if(d.endereco) $('chk-endereco').value = d.endereco; if(d.cidade && d.cidade === 'Várzea Grande') { $('chk-cidade').value = 'Várzea Grande'; $('btn-city-vg').classList.add('active'); $('btn-city-cba').classList.remove('active'); } } catch(e){} }
+function carregarDadosSalvos() { try { let d = JSON.parse(localStorage.getItem('da_user') || '{}'); if(d.nome) $('chk-nome').value = d.nome; if(d.cpf) $('chk-cpf').value = d.cpf; } catch(e){} }
         function salvarDadosLocalmente(dados) { localStorage.setItem('da_user', JSON.stringify(dados)); }
         
         window.mascaraCPF = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d)/, "$1.$2"); v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2"); i.value = v; }
