@@ -1163,100 +1163,111 @@ const BASKETS = [
         window.mascaraWhats = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{2})(\d)/g, "($1) $2"); v = v.replace(/(\d)(\d{4})$/, "$1-$2"); i.value = v; }
         window.mascaraCEP = function(i) { let v = i.value.replace(/\D/g, ""); v = v.replace(/^(\d{5})(\d)/, "$1-$2"); i.value = v; }
 
-        async function fetchWithCache(url, key) {
-            try { let cached = localStorage.getItem(key); let cacheTime = localStorage.getItem(key + '_time'); let now = Date.now(); if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached); let res = await fetch(url).then(r => r.json()); localStorage.setItem(key, JSON.stringify(res)); localStorage.setItem(key + '_time', now); return res; } catch (e) { return []; }
+    async function fetchWithCache(url, key) {
+        try { 
+            let cached = localStorage.getItem(key); 
+            let cacheTime = localStorage.getItem(key + '_time'); 
+            let now = Date.now(); 
+            if (cached && cacheTime && (now - cacheTime < 30 * 60000)) return JSON.parse(cached); 
+            let res = await fetch(url).then(r => r.json()); 
+            localStorage.setItem(key, JSON.stringify(res)); 
+            localStorage.setItem(key + '_time', now); 
+            return res; 
+        } catch (e) { 
+            return []; 
         }
+    }
 
-       function aplicarDescontos(products) {
-            let now = new Date(); 
-            let eligibleForRandom = [];
+    function aplicarDescontos(products) {
+        let now = new Date(); 
+        let eligibleForRandom = [];
+        
+        // 1. Varre todos os produtos para limpar descontos antigos e aplicar a regra de Vencimento
+        products.forEach(p => {
+            p.discountPercent = 0; 
+            p.oldPrice = p.price;
             
-            // 1. Varre todos os produtos para limpar descontos antigos e aplicar a regra de Vencimento
-            products.forEach(p => {
-                p.discountPercent = 0; 
-                p.oldPrice = p.price;
-                
-                if (p.vencimento) {
-                    let partes = p.vencimento.split('/'); 
-                    if(partes.length === 3) {
-                        let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
-                        let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
-                        if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35; 
-                        else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30; 
-                        else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;
-                    }
+            if (p.vencimento) {
+                let partes = p.vencimento.split('/'); 
+                if(partes.length === 3) {
+                    let vDate = new Date(partes[2], partes[1] - 1, partes[0]); 
+                    let daysToExpiry = (vDate - now) / (1000 * 60 * 60 * 24);
+                    if (daysToExpiry >= 0 && daysToExpiry <= 30) p.discountPercent = 35; 
+                    else if (daysToExpiry > 30 && daysToExpiry <= 60) p.discountPercent = 30; 
+                    else if (daysToExpiry > 60 && daysToExpiry <= 90) p.discountPercent = 25;
                 }
-                
-                // Se o produto NÃO recebeu desconto por validade, ele é elegível para o sorteio aleatório
-                if (p.discountPercent === 0) eligibleForRandom.push(p);
-            });
-            
-            // --- INÍCIO DO CÁLCULO DA SEMENTE (SEED) SEMANAL ---
-            
-            // now.getDay() retorna um número de 0 (Domingo) a 6 (Sábado)
-            let diaDaSemana = now.getDay();
-            
-            // Cria uma data voltando no tempo exatamente para o Domingo passado à 00:00:00.
-            let domingoDaSemana = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diaDaSemana);
-            
-            // Obtém o carimbo de tempo (timestamp) desse domingo para servir de âncora durante toda a semana
-            let currentSeed = domingoDaSemana.getTime(); 
-            
-            // --- FIM DO CÁLCULO ---
-
-            // Função matemática que gera números pseudo-aleatórios com base na nossa semente do Domingo
-            function seededRandom(seed) { 
-                let x = Math.sin(seed++) * 10000; 
-                return x - Math.floor(x); 
             }
             
-            // Ordena os produtos elegíveis embaralhando-os de forma fixa durante a semana
-            eligibleForRandom.sort((a, b) => { 
-                let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); 
-                let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); 
-                
-                let randA = seededRandom(currentSeed + idNumA); 
-                let randB = seededRandom(currentSeed + idNumB); 
-                
-                return randA - randB; 
-            });
-            
-            // Define os limites de produtos para cada faixa de desconto (5 de 20%, 5 de 15% e 100 de 10%)
-            let r20 = 5, r15 = 5, r10 = 100; 
-            
-            // Distribui os descontos respeitando os limites acima
-            eligibleForRandom.forEach(p => { 
-                if (r20 > 0) { p.discountPercent = 20; r20--; } 
-                else if (r15 > 0) { p.discountPercent = 15; r15--; } 
-                else if (r10 > 0) { p.discountPercent = 10; r10--; } 
-            });
-            
-            // Aplica o desconto matematicamente no preço de exibição
-            products.forEach(p => { 
-                if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); 
-            });
-        }
+            // Se o produto NÃO recebeu desconto por validade, ele é elegível para o sorteio aleatório
+            if (p.discountPercent === 0) eligibleForRandom.push(p);
+        });
+        
+        // --- INÍCIO DO CÁLCULO DA SEMENTE (SEED) SEMANAL ---
+        
+        // now.getDay() retorna um número de 0 (Domingo) a 6 (Sábado)
+        let diaDaSemana = now.getDay();
+        
+        // Cria uma data voltando no tempo exatamente para o Domingo passado à 00:00:00.
+        let domingoDaSemana = new Date(now.getFullYear(), now.getMonth(), now.getDate() - diaDaSemana);
+        
+        // Obtém o carimbo de tempo (timestamp) desse domingo para servir de âncora durante toda a semana
+        let currentSeed = domingoDaSemana.getTime(); 
+        
+        // --- FIM DO CÁLCULO ---
 
-        async function init() {
-            try {
-                const r2 = await fetchWithCache('/site/produtos.json', 'cache_prods');
-                if (r2 && r2.length > 0) {
-                    STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
-                        let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
-                        return { 
-                            id: String(p.codigo || p.id), codigo: String(p.codigo || ""), name: baseName, slug: getFriendlySlug(baseName),
-                            price: parseFloat(p.preco) * 1.05, stock: parseInt(p.estoque) || 0, 
-                            img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
-                            categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", 
-                            vencimento: p.validade || p.vencimento || null, embalagem: p.embalagem || extractVolume(p.nome),
-                            marca: p.marca || "", descricao: p.descricao || "", gtin: p.gtin || ""
-                        };
-                    });
-                    aplicarDescontos(STATE.prods);
-                }
-                loadCart(); carregarDadosSalvos(); updateTotals(); handleRoute();
-            } catch (e) { console.error("Erro na inicialização:", e); }
+        // Função matemática que gera números pseudo-aleatórios com base na nossa semente do Domingo
+        function seededRandom(seed) { 
+            let x = Math.sin(seed++) * 10000; 
+            return x - Math.floor(x); 
         }
+        
+        // Ordena os produtos elegíveis embaralhando-os de forma fixa durante a semana
+        eligibleForRandom.sort((a, b) => { 
+            let idNumA = parseInt(a.id.replace(/\D/g, '')) || (a.name ? a.name.charCodeAt(0) : 0); 
+            let idNumB = parseInt(b.id.replace(/\D/g, '')) || (b.name ? b.name.charCodeAt(0) : 0); 
+            
+            let randA = seededRandom(currentSeed + idNumA); 
+            let randB = seededRandom(currentSeed + idNumB); 
+            
+            return randA - randB; 
+        });
+        
+        // Define os limites de produtos para cada faixa de desconto (5 de 20%, 5 de 15% e 100 de 10%)
+        let r20 = 5, r15 = 5, r10 = 100; 
+        
+        // Distribui os descontos respeitando os limites acima
+        eligibleForRandom.forEach(p => { 
+            if (r20 > 0) { p.discountPercent = 20; r20--; } 
+            else if (r15 > 0) { p.discountPercent = 15; r15--; } 
+            else if (r10 > 0) { p.discountPercent = 10; r10--; } 
+        });
+        
+        // Aplica o desconto matematicamente no preço de exibição
+        products.forEach(p => { 
+            if (p.discountPercent > 0) p.price = p.oldPrice * (1 - p.discountPercent / 100); 
+        });
+    }
+
+    async function init() {
+        try {
+            const r2 = await fetchWithCache('/site/produtos.json?v=2', 'cache_prods_v2');
+            if (r2 && r2.length > 0) {
+                STATE.prods = r2.filter(x => x.situacao !== "I" && parseInt(x.estoque || 0) > 0).map(p => {
+                    let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
+                    return { 
+                        id: String(p.codigo || p.id), codigo: String(p.codigo || ""), name: baseName, slug: getFriendlySlug(baseName),
+                        price: parseFloat(p.preco) * 1.05, stock: parseInt(p.estoque) || 0, 
+                        img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
+                        categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", 
+                        vencimento: p.validade || p.vencimento || null, embalagem: p.embalagem || extractVolume(p.nome),
+                        marca: p.marca || "", descricao: p.descricao || "", gtin: p.gtin || ""
+                    };
+                });
+                aplicarDescontos(STATE.prods);
+            }
+            loadCart(); carregarDadosSalvos(); updateTotals(); handleRoute();
+        } catch (e) { console.error("Erro na inicialização:", e); }
+    }
         
         document.addEventListener('DOMContentLoaded', init);
     </script>
