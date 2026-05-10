@@ -1245,7 +1245,7 @@ const BASKETS = [
                         let baseName = p.nome ? formatName(p.nome.trim()) : "Produto"; 
                         return { 
                             id: String(p.codigo || p.id), codigo: String(p.codigo || ""), name: baseName, slug: getFriendlySlug(baseName),
-                            price: parseFloat(p.preco) * 1.01, stock: parseInt(p.estoque) || 0, 
+                            price: parseFloat(p.preco) * 1.05, stock: parseInt(p.estoque) || 0, 
                             img: p.url_imagem || `/site/img/produtos/${p.codigo || p.id}.webp`, 
                             categoria: p.categoria || "Outros", subcategoria: p.subcategoria || "", 
                             vencimento: p.validade || p.vencimento || null, embalagem: p.embalagem || extractVolume(p.nome),
