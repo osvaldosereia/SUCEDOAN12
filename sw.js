@@ -1,5 +1,5 @@
-// Mudamos para v2 para forçar o telemóvel dos clientes a atualizar o sistema!
-const CACHE_NAME = 'dona-antonia-app-v8'; 
+// Mudamos a versão do cache para forçar os celulares dos clientes a atualizarem o sistema!
+const CACHE_NAME = 'dona-antonia-app-v9'; 
 const urlsToCache = [
   './index.html',
   './manifest.json'
@@ -14,18 +14,18 @@ self.addEventListener('install', (event) => {
         return cache.addAll(urlsToCache);
       })
   );
-  // Obriga o telemóvel a ativar esta nova versão imediatamente
+  // Obriga o celular a ativar esta nova versão imediatamente
   self.skipWaiting();
 });
 
-// 2. Limpeza de Caches Antigos (Apaga o v1 e deixa só o v2 para não encher a memória)
+// 2. Limpeza de Caches Antigos (Apaga as versões velhas e deixa só a atual para não encher a memória)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('A apagar cache antigo:', cacheName);
+            console.log('Apagando cache antigo:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -35,18 +35,18 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. Intercetar as requisições com INTELIGÊNCIA PARA IMAGENS
+// 3. Interceptar as requisições com INTELIGÊNCIA PARA IMAGENS
 self.addEventListener('fetch', (event) => {
-  // Se o que o site está a pedir for uma IMAGEM (webp, png, jpg, avif)...
+  // Se o que o site está pedindo for uma IMAGEM (webp, png, jpg, avif)...
   if (event.request.destination === 'image' || event.request.url.match(/\.(webp|png|jpg|jpeg|avif)$/)) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
-        // Se a imagem já estiver no cache do telemóvel, devolve na hora! (Super rápido)
+        // Se a imagem já estiver no cache do celular, devolve na hora! (Super rápido)
         if (cachedResponse) {
           return cachedResponse;
         }
 
-        // Se não estiver, vai à internet (GitHub) procurar...
+        // Se não estiver, vai à internet procurar...
         return fetch(event.request).then((networkResponse) => {
           // Garante que a imagem veio certinha antes de a guardar
           if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
@@ -64,7 +64,7 @@ self.addEventListener('fetch', (event) => {
       })
     );
   } else {
-    // Para o resto das coisas (HTML, JSON), funciona como tu já tinhas feito
+    // Para o resto das coisas (HTML, JSON), funciona buscando primeiro no cache e depois na rede
     event.respondWith(
       caches.match(event.request)
         .then((response) => {
